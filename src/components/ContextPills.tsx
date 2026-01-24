@@ -38,10 +38,10 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
         <Section title="Focused node + surrounding">
           <Pill icon={<Layers3 className="h-3 w-3 text-blue-500" />} label={`Doc ${focused.documentId.slice(0, 6)} · Node ${focused.blockId?.slice(0, 6) || "-"}`} />
           {focused.beforeIds?.slice(0, 2).map((id) => (
-            <Pill key={`b-${id}`} subtle icon={<FileText className="h-3 w-3 text-gray-500" />} label={`Prev ${id.slice(0, 6)}`} />
+            <Pill key={`b-${id}`} subtle icon={<FileText className="h-3 w-3 text-stone-500" />} label={`Prev ${id.slice(0, 6)}`} />
           ))}
           {focused.afterIds?.slice(0, 2).map((id) => (
-            <Pill key={`a-${id}`} subtle icon={<FileText className="h-3 w-3 text-gray-500" />} label={`Next ${id.slice(0, 6)}`} />
+            <Pill key={`a-${id}`} subtle icon={<FileText className="h-3 w-3 text-stone-500" />} label={`Next ${id.slice(0, 6)}`} />
           ))}
         </Section>
       )}

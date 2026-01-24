@@ -804,6 +804,7 @@ import type * as tools_sendEmail from "../tools/sendEmail.js";
 import type * as tools_sendEmailMutations from "../tools/sendEmailMutations.js";
 import type * as tools_sendNotification from "../tools/sendNotification.js";
 import type * as tools_sendSms from "../tools/sendSms.js";
+import type * as tools_shared_structuredOutput from "../tools/shared/structuredOutput.js";
 import type * as tools_social_instagramTools from "../tools/social/instagramTools.js";
 import type * as tools_social_linkedinTools from "../tools/social/linkedinTools.js";
 import type * as tools_spreadsheet_spreadsheetCrudTools from "../tools/spreadsheet/spreadsheetCrudTools.js";
@@ -1634,6 +1635,7 @@ declare const fullApi: ApiFromModules<{
   "tools/sendEmailMutations": typeof tools_sendEmailMutations;
   "tools/sendNotification": typeof tools_sendNotification;
   "tools/sendSms": typeof tools_sendSms;
+  "tools/shared/structuredOutput": typeof tools_shared_structuredOutput;
   "tools/social/instagramTools": typeof tools_social_instagramTools;
   "tools/social/linkedinTools": typeof tools_social_linkedinTools;
   "tools/spreadsheet/spreadsheetCrudTools": typeof tools_spreadsheet_spreadsheetCrudTools;

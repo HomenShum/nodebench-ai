@@ -113,24 +113,24 @@ export function EnhancedTimelineStrip({
 
   return (
     <div
-      className={`${sticky ? 'sticky top-0 z-40' : ''} bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm ${className}`}
+      className={`${sticky ? 'sticky top-0 z-40' : ''} bg-white/95 backdrop-blur-sm border-b border-stone-200 shadow-sm ${className}`}
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Header with filter toggle */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-gray-400" />
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <Clock className="w-4 h-4 text-stone-400" />
+            <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
               Activity Timeline
             </span>
-            <span className="text-xs text-gray-400">({filteredEvents.length})</span>
+            <span className="text-xs text-stone-400">({filteredEvents.length})</span>
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
               showFilters || activeFilters.size > 0
                 ? 'bg-blue-100 text-blue-700'
-                : 'text-gray-500 hover:bg-gray-100'
+                : 'text-stone-500 hover:bg-stone-100'
             }`}
           >
             <Filter className="w-3 h-3" />
@@ -162,7 +162,7 @@ export function EnhancedTimelineStrip({
                       key={cat}
                       onClick={() => toggleFilter(cat)}
                       className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-all ${
-                        isActive ? config.color : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                        isActive ? config.color : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
                       }`}
                     >
                       <Icon className="w-3 h-3" />
@@ -171,7 +171,7 @@ export function EnhancedTimelineStrip({
                   );
                 })}
                 {activeFilters.size > 0 && (
-                  <button onClick={clearFilters} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                  <button onClick={clearFilters} className="text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1">
                     <X className="w-3 h-3" /> Clear
                   </button>
                 )}
@@ -185,7 +185,7 @@ export function EnhancedTimelineStrip({
           <button
             type="button"
             onClick={() => scroll('left')}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors"
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -212,7 +212,7 @@ export function EnhancedTimelineStrip({
                       onClick={() => onEventClick?.(event)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all ${
                         isActive
-                          ? 'bg-gray-900 text-white border-gray-900'
+                          ? 'bg-stone-900 text-white border-stone-900'
                           : `${config.color} hover:shadow-sm`
                       }`}
                       whileHover={{ scale: 1.02 }}
@@ -231,7 +231,7 @@ export function EnhancedTimelineStrip({
                 })}
               </AnimatePresence>
               {filteredEvents.length === 0 && (
-                <span className="text-xs text-gray-400 italic">No events match filters</span>
+                <span className="text-xs text-stone-400 italic">No events match filters</span>
               )}
             </div>
           </div>
@@ -239,7 +239,7 @@ export function EnhancedTimelineStrip({
           <button
             type="button"
             onClick={() => scroll('right')}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors"
             aria-label="Scroll right"
           >
             <ChevronRight className="w-4 h-4" />

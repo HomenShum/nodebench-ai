@@ -169,12 +169,12 @@ export function CleanSidebar({
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-gray-100">
+      <div className="h-16 flex items-center px-4 border-b border-stone-100">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg shadow-black/10">
             <span className="text-white font-bold text-sm">N</span>
           </div>
-          <span className="text-lg font-bold text-gray-900 tracking-tight">Nodebench AI</span>
+          <span className="text-lg font-bold text-stone-900 tracking-tight">Nodebench AI</span>
         </div>
       </div>
 
@@ -190,124 +190,131 @@ export function CleanSidebar({
 
       {/* Dashboard Links */}
       <div className="px-3 mt-4 mb-2">
-        <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="px-3 mb-2 text-xs font-semibold text-stone-400 uppercase tracking-wider">
           Dashboards
         </div>
         <div className="space-y-1">
-          <a
-            href="#cost"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          <button
+            type="button"
+            onClick={() => onViewChange?.('cost-dashboard')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'cost-dashboard'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <DollarSign className={`w-4 h-4 ${
-              currentView === 'cost-dashboard' ? 'text-green-600' : 'text-gray-400'
+              currentView === 'cost-dashboard' ? 'text-green-600' : 'text-stone-400'
             }`} />
             <span>Cost Dashboard</span>
-          </a>
-          <a
-            href="#industry"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange?.('industry-updates')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'industry-updates'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <TrendingUp className={`w-4 h-4 ${
-              currentView === 'industry-updates' ? 'text-blue-600' : 'text-gray-400'
+              currentView === 'industry-updates' ? 'text-blue-600' : 'text-stone-400'
             }`} />
             <span>Industry Updates</span>
-          </a>
+          </button>
         </div>
       </div>
 
       {/* X Algorithm Features */}
       <div className="px-3 mt-4 mb-2">
-        <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="px-3 mb-2 text-xs font-semibold text-stone-400 uppercase tracking-wider">
           Discovery
         </div>
         <div className="space-y-1">
-          <a
-            href="/for-you"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          <button
+            type="button"
+            onClick={() => onViewChange?.('for-you-feed')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'for-you-feed'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <Sparkles className={`w-4 h-4 ${
-              currentView === 'for-you-feed' ? 'text-purple-600' : 'text-gray-400'
+              currentView === 'for-you-feed' ? 'text-purple-600' : 'text-stone-400'
             }`} />
             <span>For You</span>
-          </a>
-          <a
-            href="/recommendations"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange?.('document-recommendations')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'document-recommendations'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <BookOpen className={`w-4 h-4 ${
-              currentView === 'document-recommendations' ? 'text-indigo-600' : 'text-gray-400'
+              currentView === 'document-recommendations' ? 'text-indigo-600' : 'text-stone-400'
             }`} />
             <span>Recommendations</span>
-          </a>
-          <a
-            href="/marketplace"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange?.('agent-marketplace')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'agent-marketplace'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <Zap className={`w-4 h-4 ${
-              currentView === 'agent-marketplace' ? 'text-yellow-600' : 'text-gray-400'
+              currentView === 'agent-marketplace' ? 'text-yellow-600' : 'text-stone-400'
             }`} />
             <span>Agent Marketplace</span>
-          </a>
-          <a
-            href="/github"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange?.('github-explorer')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'github-explorer'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <Github className={`w-4 h-4 ${
-              currentView === 'github-explorer' ? 'text-gray-900' : 'text-gray-400'
+              currentView === 'github-explorer' ? 'text-stone-900' : 'text-stone-400'
             }`} />
             <span>GitHub Explorer</span>
-          </a>
-          <a
-            href="/pr-suggestions"
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewChange?.('pr-suggestions')}
+            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
               currentView === 'pr-suggestions'
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-stone-100 text-stone-900'
+                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
             }`}
           >
             <GitPullRequest className={`w-4 h-4 ${
-              currentView === 'pr-suggestions' ? 'text-green-600' : 'text-gray-400'
+              currentView === 'pr-suggestions' ? 'text-green-600' : 'text-stone-400'
             }`} />
             <span>PR Suggestions</span>
-          </a>
+          </button>
         </div>
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-gray-200 mx-5 my-2" />
+      <div className="h-px bg-stone-200 mx-5 my-2" />
 
       {/* Context Area: File Explorer */}
       <div className="flex-1 overflow-y-auto">
         {/* Context Header */}
         <div className="px-5 mb-3 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
             File Explorer
           </span>
-          <FolderOpen className="w-3.5 h-3.5 text-gray-400" />
+          <FolderOpen className="w-3.5 h-3.5 text-stone-400" />
         </div>
 
         {/* Recent Documents */}
@@ -316,11 +323,11 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={() => setIsDocsOpen(!isDocsOpen)}
-              className="flex items-center justify-between w-full text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 hover:text-gray-700 px-2"
+              className="flex items-center justify-between w-full text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 hover:text-stone-700 px-2"
             >
               <span>Recent Documents</span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium normal-case">
+                <span className="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded font-medium normal-case">
                   {recentDocs.length}
                 </span>
                 {isDocsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -338,11 +345,11 @@ export function CleanSidebar({
                       onClick={() => onDocumentSelect?.(doc._id)}
                       className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors ${isSelected
                         ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                         }`}
                       title={doc.title || 'Untitled'}
                     >
-                      <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                      <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-500' : 'text-stone-400 group-hover:text-stone-500'
                         }`} />
                       <span className="truncate text-left">
                         {doc.title || 'Untitled'}
@@ -361,11 +368,11 @@ export function CleanSidebar({
         <div className="px-3 pb-2">
           <button
             type="button"
-            className="w-full flex items-center gap-2 px-2.5 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors"
+            className="w-full flex items-center gap-2 px-2.5 py-2 text-sm text-stone-500 hover:bg-stone-100 hover:text-stone-700 rounded-lg transition-colors"
           >
             <Trash2 className="h-4 w-4" />
             <span>Trash</span>
-            <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+            <span className="ml-auto text-xs bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded">
               {trash.length}
             </span>
           </button>
@@ -373,7 +380,7 @@ export function CleanSidebar({
       )}
 
       {/* User Profile - Bottom */}
-      <div className="p-4 border-t border-gray-100 bg-white space-y-3">
+      <div className="p-4 border-t border-stone-100 bg-white space-y-3">
         <div className="flex items-center gap-3">
           {(() => {
             const displayName = isAnonymous ? "Guest" : (user?.name ?? user?.email ?? "Guest");
@@ -385,19 +392,19 @@ export function CleanSidebar({
               <img
                 src={imgSrc}
                 alt={displayName + " avatar"}
-                className="h-9 w-9 rounded-full object-cover border border-gray-100"
+                className="h-9 w-9 rounded-full object-cover border border-stone-100"
               />
             ) : (
-              <div className="h-9 w-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-semibold border border-slate-200">
+              <div className="h-9 w-9 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 text-xs font-semibold border border-stone-200">
                 {initial}
               </div>
             );
           })()}
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-gray-900 truncate">
+            <div className="text-sm font-semibold text-stone-900 truncate">
               {isAnonymous ? "Guest User" : (user?.name ?? "User")}
             </div>
-            <div className="text-[11px] text-gray-500 font-medium">
+            <div className="text-[11px] text-stone-500 font-medium">
               {isAnonymous ? "Limited preview" : "Pro Account"}
             </div>
           </div>
@@ -405,7 +412,7 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={() => onOpenSettings?.('profile')}
-              className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 text-stone-400 hover:text-stone-600 rounded-lg hover:bg-stone-100 transition-colors"
               title="Settings"
               aria-label="Open settings"
             >
@@ -418,7 +425,7 @@ export function CleanSidebar({
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all shadow-sm active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg bg-stone-900 text-white hover:bg-stone-800 transition-all shadow-sm active:scale-[0.98]"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
               <path

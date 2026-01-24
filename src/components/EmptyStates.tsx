@@ -39,11 +39,11 @@ export function EmptyState({ title, description, icon: Icon = Inbox, action, cla
       initial="hidden"
       animate="visible"
     >
-      <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-        <Icon className="h-8 w-8 text-gray-400" />
+      <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center mb-4">
+        <Icon className="h-8 w-8 text-stone-400" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
+      <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
+      <p className="text-sm text-stone-500 max-w-sm mb-6">{description}</p>
       {action && (
         <button
           onClick={action.onClick}
@@ -140,10 +140,10 @@ export function ErrorState({ title = 'Something went wrong', message = 'An unexp
       <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mb-4">
         <AlertCircle className="h-8 w-8 text-red-500" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 max-w-sm mb-6">{message}</p>
+      <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
+      <p className="text-sm text-stone-500 max-w-sm mb-6">{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+        <button onClick={onRetry} className="flex items-center gap-2 px-4 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm font-medium hover:bg-stone-200 transition-colors">
           <RefreshCw className="h-4 w-4" />
           Try Again
         </button>
@@ -163,8 +163,8 @@ export function OfflineState() {
       <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-4">
         <WifiOff className="h-8 w-8 text-amber-500" />
       </div>
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">You're offline</h3>
-      <p className="text-sm text-gray-500 max-w-sm">Check your internet connection and try again.</p>
+      <h3 className="text-lg font-semibold text-stone-800 mb-2">You're offline</h3>
+      <p className="text-sm text-stone-500 max-w-sm">Check your internet connection and try again.</p>
     </motion.div>
   );
 }

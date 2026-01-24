@@ -207,9 +207,6 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     </motion.div>
                 </div>
 
-                {/* Floating Metrics around Orb */}
-                <MetricTag label="GLOBAL_SENTIMENT" value="0.72" color="text-emerald-700" className="top-0 -right-12" />
-                <MetricTag label="TEMPORAL_DRIFT" value="+0.04" color="text-indigo-600" className="bottom-8 -left-16" />
             </div>
 
             {/* 2. PERSONALIZED STATS HORIZON */}
@@ -269,21 +266,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
             </div>
 
-            {/* Live Terminal Crawl (Footer) */}
-            <div className="absolute bottom-6 left-8 right-8 flex justify-between items-center text-[9px] font-mono text-stone-400 uppercase tracking-widest">
-                <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Live_Sync_Active
-                    </span>
-                    <span>Buffer: 98%</span>
-                </div>
-                <div className="flex items-center gap-6">
-                    <span>{new Date().toLocaleTimeString()}</span>
-                    <span>Lat_0.02ms</span>
-                    <span>Secure_Auth_v2.1</span>
-                </div>
-            </div>
+
 
         </div>
     );
@@ -350,10 +333,10 @@ function QuickActionButton({
             onClick={onClick}
             title={label}
             className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${isPrimary
-                    ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
-                    : isSecondary
-                        ? "px-3 bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
-                        : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
+                ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
+                : isSecondary
+                    ? "px-3 bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
+                    : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
                 }`}
         >
             {icon}
@@ -423,7 +406,7 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
 
                 <h3 className="text-2xl font-serif font-bold italic mb-4 tracking-tight">{title}</h3>
                 <p className={`text-sm font-serif leading-relaxed mb-10
-          ${isDark ? 'text-slate-400' : 'text-stone-500'}
+          ${isDark ? 'text-stone-400' : 'text-stone-500'}
         `}>
                     {desc}
                 </p>

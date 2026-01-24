@@ -13,7 +13,7 @@ const CalendarHomeHub = lazy(() =>
 );
 
 const viewFallback = (
-  <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
+  <div className="h-full w-full flex items-center justify-center text-sm text-stone-500">
     Loading view...
   </div>
 );

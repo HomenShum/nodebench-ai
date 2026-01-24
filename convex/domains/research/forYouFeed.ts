@@ -980,6 +980,266 @@ export const recordEngagement = mutation({
 // TEST QUERIES (for debugging without auth)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RELATED FEEDS (Google Image Search Pattern)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Get related feed items based on similarity to a source item
+ * Similar to Google Image Search's "Related Images" feature
+ *
+ * Matching strategies:
+ * 1. Same tags (highest weight)
+ * 2. Same source/provider
+ * 3. Same item type
+ * 4. Similar timestamp (within 7 days)
+ * 5. Title/snippet keyword overlap
+ */
+export const getRelatedFeedItems = query({
+  args: {
+    sourceItemId: v.string(),
+    sourceType: v.optional(v.string()),
+    sourceTags: v.optional(v.array(v.string())),
+    sourceTitle: v.optional(v.string()),
+    sourceProvider: v.optional(v.string()),
+    sourceTimestamp: v.optional(v.number()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const {
+      sourceItemId,
+      sourceType,
+      sourceTags = [],
+      sourceTitle = "",
+      sourceProvider,
+      sourceTimestamp,
+      limit = 8,
+    } = args;
+
+    // Extract keywords from title for matching
+    const titleKeywords = sourceTitle
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3)
+      .slice(0, 5);
+
+    // Collect candidates from multiple sources
+    const candidates: Array<{
+      item: RankedCandidate;
+      score: number;
+      matchReasons: string[];
+    }> = [];
+
+    // 1. Search feedItems table
+    const feedItems = await ctx.db
+      .query("feedItems")
+      .withIndex("by_creation_time")
+      .order("desc")
+      .take(100);
+
+    for (const item of feedItems) {
+      if (item._id === sourceItemId) continue;
+
+      const matchReasons: string[] = [];
+      let score = 0;
+
+      // Tag matching (highest weight)
+      const itemTags = item.tags || [];
+      const tagOverlap = sourceTags.filter((t) =>
+        itemTags.some((it: string) => it.toLowerCase() === t.toLowerCase())
+      );
+      if (tagOverlap.length > 0) {
+        score += tagOverlap.length * 25;
+        matchReasons.push(`Tags: ${tagOverlap.join(", ")}`);
+      }
+
+      // Source matching
+      if (sourceProvider && item.source === sourceProvider) {
+        score += 15;
+        matchReasons.push(`Same source: ${sourceProvider}`);
+      }
+
+      // Type matching
+      if (sourceType && item.type === sourceType) {
+        score += 10;
+        matchReasons.push(`Same type: ${sourceType}`);
+      }
+
+      // Title keyword matching
+      const itemTitle = (item.title || "").toLowerCase();
+      const keywordMatches = titleKeywords.filter((kw) => itemTitle.includes(kw));
+      if (keywordMatches.length > 0) {
+        score += keywordMatches.length * 8;
+        matchReasons.push(`Keywords: ${keywordMatches.join(", ")}`);
+      }
+
+      // Recency bonus (within 7 days of source)
+      if (sourceTimestamp) {
+        const itemTs = item.createdAt || item._creationTime;
+        const daysDiff = Math.abs(itemTs - sourceTimestamp) / (1000 * 60 * 60 * 24);
+        if (daysDiff <= 7) {
+          score += Math.max(0, 10 - daysDiff);
+          matchReasons.push("Recent");
+        }
+      }
+
+      if (score > 0) {
+        candidates.push({
+          item: {
+            itemId: item._id,
+            itemType: (item.type as ItemType) || "feed_item",
+            source: "out_of_network",
+            title: item.title || "Untitled",
+            snippet: item.summary?.substring(0, 150) || "",
+            metadata: {
+              source: item.source,
+              url: item.url,
+              tags: item.tags,
+            },
+            timestamp: item.createdAt || item._creationTime,
+            dateString: getDateString(item.createdAt || item._creationTime),
+            phoenixScore: score,
+            relevanceReason: matchReasons[0] || "Related content",
+            engagementPrediction: { view: 0.6, click: 0.4, save: 0.2, share: 0.1 },
+          },
+          score,
+          matchReasons,
+        });
+      }
+    }
+
+    // 2. Search industryUpdates table
+    const updates = await ctx.db
+      .query("industryUpdates")
+      .withIndex("by_scanned_at")
+      .order("desc")
+      .take(50);
+
+    for (const update of updates) {
+      if (update._id === sourceItemId) continue;
+
+      const matchReasons: string[] = [];
+      let score = 0;
+
+      // Provider matching
+      if (sourceProvider && update.provider === sourceProvider) {
+        score += 15;
+        matchReasons.push(`Same provider: ${sourceProvider}`);
+      }
+
+      // Title keyword matching
+      const updateTitle = (update.title || "").toLowerCase();
+      const keywordMatches = titleKeywords.filter((kw) => updateTitle.includes(kw));
+      if (keywordMatches.length > 0) {
+        score += keywordMatches.length * 10;
+        matchReasons.push(`Keywords: ${keywordMatches.join(", ")}`);
+      }
+
+      // High relevance bonus
+      if (update.relevance && update.relevance >= 70) {
+        score += 5;
+        matchReasons.push("High relevance");
+      }
+
+      if (score > 0) {
+        candidates.push({
+          item: {
+            itemId: update._id,
+            itemType: "update",
+            source: "out_of_network",
+            title: update.title,
+            snippet: update.summary?.substring(0, 150) || "",
+            metadata: {
+              provider: update.provider,
+              url: update.url,
+              relevance: update.relevance,
+            },
+            timestamp: update.scannedAt,
+            dateString: getDateString(update.scannedAt),
+            phoenixScore: score,
+            relevanceReason: matchReasons[0] || "Industry update",
+            engagementPrediction: { view: 0.5, click: 0.35, save: 0.15, share: 0.08 },
+          },
+          score,
+          matchReasons,
+        });
+      }
+    }
+
+    // 3. Search landingPageLog (daily brief items)
+    const landingItems = await ctx.db
+      .query("landingPageLog")
+      .withIndex("by_createdAt")
+      .order("desc")
+      .take(30);
+
+    for (const item of landingItems) {
+      if (item._id === sourceItemId) continue;
+
+      const matchReasons: string[] = [];
+      let score = 0;
+
+      // Tag matching
+      const itemTags = item.tags || [];
+      const tagOverlap = sourceTags.filter((t) =>
+        itemTags.some((it: string) => it.toLowerCase() === t.toLowerCase())
+      );
+      if (tagOverlap.length > 0) {
+        score += tagOverlap.length * 20;
+        matchReasons.push(`Tags: ${tagOverlap.join(", ")}`);
+      }
+
+      // Title keyword matching
+      const itemTitle = (item.title || "").toLowerCase();
+      const keywordMatches = titleKeywords.filter((kw) => itemTitle.includes(kw));
+      if (keywordMatches.length > 0) {
+        score += keywordMatches.length * 8;
+        matchReasons.push(`Keywords: ${keywordMatches.join(", ")}`);
+      }
+
+      if (score > 0) {
+        candidates.push({
+          item: {
+            itemId: item._id,
+            itemType: "update",
+            source: "trending",
+            title: item.title,
+            snippet: item.markdown?.substring(0, 150) || "",
+            metadata: {
+              kind: item.kind,
+              source: item.source || "Daily Brief",
+              url: item.url,
+              tags: item.tags,
+            },
+            timestamp: item.createdAt,
+            dateString: item.day || getDateString(item.createdAt),
+            phoenixScore: score,
+            relevanceReason: matchReasons[0] || "Daily brief",
+            engagementPrediction: { view: 0.55, click: 0.38, save: 0.18, share: 0.1 },
+          },
+          score,
+          matchReasons,
+        });
+      }
+    }
+
+    // Sort by score and return top results
+    candidates.sort((a, b) => b.score - a.score);
+
+    const results = candidates.slice(0, limit).map((c) => ({
+      ...c.item,
+      matchScore: c.score,
+      matchReasons: c.matchReasons,
+    }));
+
+    return {
+      items: results,
+      totalCandidates: candidates.length,
+      sourceItemId,
+    };
+  },
+});
+
 /**
  * Test query to verify candidate sourcing works (no auth required)
  */

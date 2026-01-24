@@ -198,7 +198,7 @@ function UpdateCard({ update }: UpdateCardProps) {
   const relevanceColor =
     update.relevance >= 80 ? "text-green-500" :
     update.relevance >= 60 ? "text-yellow-500" :
-    "text-gray-500";
+    "text-stone-500";
 
   const relevanceLabel =
     update.relevance >= 80 ? "High" :

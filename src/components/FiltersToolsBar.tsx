@@ -91,8 +91,8 @@ export default function FiltersToolsBar(props: Props) {
               onClick={() => setFilter(t.id)}
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 ${
                 isActive
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+                  ? "bg-stone-900 text-white border-stone-900 shadow-sm"
+                  : "bg-white text-stone-600 border-stone-200 hover:border-stone-300 hover:text-stone-900"
               }`}
               role="tab"
               aria-selected={isActive}
@@ -101,7 +101,7 @@ export default function FiltersToolsBar(props: Props) {
               <span className={isActive ? "opacity-90" : "opacity-70"}>{t.icon}</span>
               <span>{t.label}</span>
               {count > 0 && (
-                <span className={`ml-0.5 tabular-nums ${isActive ? 'text-white/70' : 'text-gray-400'}`}>
+                <span className={`ml-0.5 tabular-nums ${isActive ? 'text-white/70' : 'text-stone-400'}`}>
                   {count}
                 </span>
               )}
@@ -113,22 +113,22 @@ export default function FiltersToolsBar(props: Props) {
       {/* Right: View toggle + Actions */}
       <div className="flex items-center gap-3">
         {/* View mode toggle */}
-        <div className="flex gap-0.5 bg-gray-100/80 backdrop-blur-sm p-1 rounded-xl border border-gray-200/50 shadow-sm">
+        <div className="flex gap-0.5 bg-stone-100/80 backdrop-blur-sm p-1 rounded-xl border border-stone-200/50 shadow-sm">
           <button
             onClick={() => setViewMode("cards")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-gray-900 bg-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-stone-900 bg-white shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-white/60"}`}
           >
             Cards
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "list" ? "text-gray-900 bg-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "list" ? "text-stone-900 bg-white shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-white/60"}`}
           >
             List
           </button>
           <button
             onClick={() => setViewMode("segmented")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-gray-900 bg-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-stone-900 bg-white shadow-sm" : "text-stone-500 hover:text-stone-700 hover:bg-white/60"}`}
             title="Show grouped sections"
           >
             Segmented
@@ -139,7 +139,7 @@ export default function FiltersToolsBar(props: Props) {
         <button
           onClick={onUploadClick}
           disabled={!loggedInUser || isUploading}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-stone-900 text-white hover:bg-stone-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <Plus className="h-4 w-4" />
           <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
@@ -147,7 +147,7 @@ export default function FiltersToolsBar(props: Props) {
 
         {/* Upload progress */}
         {isUploading && uploadProgress && (
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-stone-500">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span className="truncate max-w-[120px]">{uploadProgress}</span>
           </div>
@@ -168,11 +168,11 @@ export default function FiltersToolsBar(props: Props) {
 
         {/* Bulk selection actions */}
         {selectedCount > 0 && (
-          <div className="flex items-center gap-1 ml-1 pl-3 border-l border-gray-200">
-            <span className="text-xs font-medium text-gray-500 mr-2">{selectedCount} selected</span>
+          <div className="flex items-center gap-1 ml-1 pl-3 border-l border-stone-200">
+            <span className="text-xs font-medium text-stone-500 mr-2">{selectedCount} selected</span>
             <button
               type="button"
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
               onClick={onBulkToggleFavorite}
               title="Toggle favorite"
             >
@@ -184,15 +184,15 @@ export default function FiltersToolsBar(props: Props) {
               onClick={onBulkArchive}
               title="Move to trash"
             >
-              <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
+              <Trash2 className="h-4 w-4 text-stone-400 hover:text-red-500" />
             </button>
             <button
               type="button"
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
               onClick={onClearSelection}
               title="Clear selection"
             >
-              <X className="h-4 w-4 text-gray-400" />
+              <X className="h-4 w-4 text-stone-400" />
             </button>
           </div>
         )}

@@ -54,7 +54,7 @@ const SECTOR_COLORS: Record<string, { bg: string; text: string }> = {
   deeptech: { bg: "bg-indigo-100", text: "text-indigo-700" },
   climate: { bg: "bg-emerald-100", text: "text-emerald-700" },
   technology: { bg: "bg-gray-100", text: "text-gray-700" },
-  other: { bg: "bg-slate-100", text: "text-slate-700" },
+  other: { bg: "bg-stone-100", text: "text-stone-700" },
 };
 
 // Verification status badges

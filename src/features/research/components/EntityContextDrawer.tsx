@@ -567,27 +567,27 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {/* Banker-Grade: Technical Specs */}
               {insight?.technicalSpecs && (
-                <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800 space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Technical Specs</div>
+                <div className="rounded-md border border-stone-200 bg-stone-50 p-3 text-xs text-stone-800 space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Technical Specs</div>
 
                   {insight.technicalSpecs.repoStats && (
-                    <div className="pb-2 border-b border-slate-200">
+                    <div className="pb-2 border-b border-stone-200">
                       <div className="grid grid-cols-3 gap-2">
                         <div className="text-center">
                           <div className="text-xs font-bold">{insight.technicalSpecs.repoStats.stars}</div>
-                          <div className="text-[9px] uppercase text-slate-500">Stars</div>
+                          <div className="text-[9px] uppercase text-stone-500">Stars</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs font-bold">{insight.technicalSpecs.repoStats.forks}</div>
-                          <div className="text-[9px] uppercase text-slate-500">Forks</div>
+                          <div className="text-[9px] uppercase text-stone-500">Forks</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs font-bold text-emerald-600">+{insight.technicalSpecs.repoStats.starVelocity}</div>
-                          <div className="text-[9px] uppercase text-slate-500">Velocity</div>
+                          <div className="text-[9px] uppercase text-stone-500">Velocity</div>
                         </div>
                       </div>
                       {/* Deep Dive Repo Panel */}
-                      <div className="mt-3 pt-2 border-t border-slate-200/50">
+                      <div className="mt-3 pt-2 border-t border-stone-200/50">
                         <RepoStatsPanel
                           repoUrl={insight.technicalSpecs.repoStats.url || "https://github.com/example/repo"}
                           initialData={insight.technicalSpecs}

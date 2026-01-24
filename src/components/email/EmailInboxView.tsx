@@ -54,9 +54,9 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
   });
 
   return (
-    <div className="flex flex-col h-full bg-slate-900">
+    <div className="flex flex-col h-full bg-stone-900">
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-stone-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -64,25 +64,25 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Email Inbox</h1>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-stone-400">
                 {stats?.unreadCount || 0} unread • {stats?.totalThreads || 0} total
               </p>
             </div>
           </div>
-          <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <button className="p-2 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors">
             <RefreshCw className="h-5 w-5" />
           </button>
         </div>
 
         {/* Search */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-stone-400" />
           <input
             type="text"
             placeholder="Search emails..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 bg-stone-800 border border-stone-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
           />
         </div>
 
@@ -100,7 +100,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 filter === key
                   ? 'bg-blue-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  : 'bg-stone-800 text-stone-400 hover:text-white'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -116,8 +116,8 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               onClick={() => setSelectedCategory(null)}
               className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                 !selectedCategory
-                  ? 'bg-slate-600 text-white'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-stone-600 text-white'
+                  : 'bg-stone-800 text-stone-400 hover:text-white'
               }`}
             >
               All Categories
@@ -128,8 +128,8 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
                 onClick={() => setSelectedCategory(cat.name)}
                 className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                   selectedCategory === cat.name
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-stone-600 text-white'
+                    : 'bg-stone-800 text-stone-400 hover:text-white'
                 }`}
               >
                 {cat.name} ({cat.count})
@@ -144,9 +144,9 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
         {isLoading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="p-4 bg-slate-800/50 rounded-lg animate-pulse">
-                <div className="h-4 bg-slate-700 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-slate-700 rounded w-1/2" />
+              <div key={i} className="p-4 bg-stone-800/50 rounded-lg animate-pulse">
+                <div className="h-4 bg-stone-700 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-stone-700 rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -163,7 +163,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
             ))}
           </AnimatePresence>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400">
+          <div className="flex flex-col items-center justify-center h-full text-stone-400">
             <Mail className="h-12 w-12 mb-4 opacity-50" />
             <p>No emails found</p>
             {searchQuery && (
@@ -212,7 +212,7 @@ function EmailThreadRow({
     urgent: 'bg-red-500',
     high: 'bg-orange-500',
     normal: 'bg-blue-500',
-    low: 'bg-slate-500',
+    low: 'bg-stone-500',
   };
 
   return (
@@ -221,12 +221,12 @@ function EmailThreadRow({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
       onClick={onClick}
-      className={`p-4 border-b border-slate-800 cursor-pointer transition-colors ${
+      className={`p-4 border-b border-stone-800 cursor-pointer transition-colors ${
         isSelected
           ? 'bg-blue-900/30 border-l-2 border-l-blue-500'
           : thread.isRead
-            ? 'hover:bg-slate-800/50'
-            : 'bg-slate-800/30 hover:bg-slate-800/50'
+            ? 'hover:bg-stone-800/50'
+            : 'bg-stone-800/30 hover:bg-stone-800/50'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -242,25 +242,25 @@ function EmailThreadRow({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className={`text-sm truncate ${!thread.isRead ? 'font-semibold text-white' : 'text-slate-300'}`}>
+            <span className={`text-sm truncate ${!thread.isRead ? 'font-semibold text-white' : 'text-stone-300'}`}>
               {thread.latestFrom || 'Unknown'}
             </span>
             <div className="flex items-center gap-2 ml-2">
               {thread.isStarred && <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />}
               {thread.lastMessageAt && (
-                <span className="text-xs text-slate-500 whitespace-nowrap">
+                <span className="text-xs text-stone-500 whitespace-nowrap">
                   {formatDate(thread.lastMessageAt)}
                 </span>
               )}
             </div>
           </div>
 
-          <p className={`text-sm truncate mb-1 ${!thread.isRead ? 'text-white' : 'text-slate-400'}`}>
+          <p className={`text-sm truncate mb-1 ${!thread.isRead ? 'text-white' : 'text-stone-400'}`}>
             {thread.subject}
           </p>
 
           {thread.snippet && (
-            <p className="text-xs text-slate-500 truncate mb-2">
+            <p className="text-xs text-stone-500 truncate mb-2">
               {thread.snippet}
             </p>
           )}
@@ -279,20 +279,20 @@ function EmailThreadRow({
               </span>
             )}
             {thread.aiCategory && (
-              <span className="px-2 py-0.5 bg-slate-700 text-slate-300 text-xs rounded flex items-center gap-1">
+              <span className="px-2 py-0.5 bg-stone-700 text-stone-300 text-xs rounded flex items-center gap-1">
                 <Tag className="h-3 w-3" />
                 {thread.aiCategory}
               </span>
             )}
             {thread.messageCount > 1 && (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-stone-500">
                 {thread.messageCount} messages
               </span>
             )}
           </div>
         </div>
 
-        <ChevronRight className="h-5 w-5 text-slate-600 mt-1" />
+        <ChevronRight className="h-5 w-5 text-stone-600 mt-1" />
       </div>
     </motion.div>
   );

@@ -154,7 +154,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
   const [monthLabel, yearLabel] = monthYearLabel.split(" ");
 
   return (
-    <div className="w-full font-mono text-slate-900 select-none">
+    <div className="w-full font-mono text-stone-900 select-none">
       <div className="z-10 transition-all duration-500 shadow-none space-y-5">
 
         {/* --- ROW 1: HEADER & CHART --- */}
@@ -182,7 +182,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                 evidenceMap={evidenceMap}
               />
             ) : (
-              <div className="w-full h-full bg-slate-50 rounded flex items-center justify-center text-slate-300 text-xs">
+              <div className="w-full h-full bg-stone-50 rounded flex items-center justify-center text-stone-300 text-xs">
                 No chart data
               </div>
             )}
@@ -193,7 +193,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         <div className="grid grid-cols-12 gap-4 mb-4">
           {/* LEFT COL (7/12): CAPABILITIES GRID */}
           <div className="col-span-7 flex flex-col justify-end">
-            <div className="text-[9px] uppercase tracking-widest text-slate-400 mb-2 border-b border-slate-100 pb-1">
+            <div className="text-[9px] uppercase tracking-widest text-stone-400 mb-2 border-b border-stone-100 pb-1">
               AI Capabilities
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -219,29 +219,29 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
               <div className="flex justify-center items-center relative h-20 mb-2">
                 <DonutChart data={safeCharts.marketShare} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[7px] font-bold uppercase text-slate-400 leading-none mb-0.5">
+                  <span className="text-[7px] font-bold uppercase text-stone-400 leading-none mb-0.5">
                     {topShare.label}
                   </span>
-                  <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-slate-900 leading-none" />
-                  <span className="text-[6px] text-slate-300 mt-0.5">of sources</span>
+                  <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-stone-900 leading-none" />
+                  <span className="text-[6px] text-stone-300 mt-0.5">of sources</span>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-20 mb-2 bg-slate-50 rounded">
-                <PieChart className="w-6 h-6 text-slate-200 mb-1" />
-                <span className="text-[8px] text-slate-300">No share data</span>
+              <div className="flex flex-col items-center justify-center h-20 mb-2 bg-stone-50 rounded">
+                <PieChart className="w-6 h-6 text-stone-200 mb-1" />
+                <span className="text-[8px] text-stone-300">No share data</span>
               </div>
             )}
 
             {/* Tech Readiness Buckets */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[7px] uppercase tracking-wider text-slate-400">
+              <div className="flex justify-between text-[7px] uppercase tracking-wider text-stone-400">
                 <span>Exist</span><span>Emerging</span><span>Sci-Fi</span>
               </div>
               <div className="flex justify-between gap-1 h-8">
-                <BucketColumn count={safeTech.existing} color="bg-slate-900" delta={deltas?.techReadiness?.existing} />
+                <BucketColumn count={safeTech.existing} color="bg-stone-900" delta={deltas?.techReadiness?.existing} />
                 <BucketColumn count={safeTech.emerging} color="bg-indigo-500" delta={deltas?.techReadiness?.emerging} />
-                <BucketColumn count={safeTech.sciFi} color="bg-slate-200" delta={deltas?.techReadiness?.sciFi} />
+                <BucketColumn count={safeTech.sciFi} color="bg-stone-200" delta={deltas?.techReadiness?.sciFi} />
               </div>
             </div>
           </div>
@@ -281,7 +281,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
           </div>
         </div>
         {/* --- ROW 3: KEY STATS WITH DELTAS --- */}
-        <div className="flex justify-between items-center gap-2 border-t border-slate-100 pt-3 mb-3">
+        <div className="flex justify-between items-center gap-2 border-t border-stone-100 pt-3 mb-3">
           {keyStats.map((stat, i) => {
             const statDelta = deltas?.keyStats?.[i]?.delta;
             const statHint = getKeyStatHint(stat.label);
@@ -290,17 +290,17 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
             return (
               <div key={i} className="flex flex-col">
                 <span
-                  className="text-[8px] text-slate-400 uppercase tracking-wider mb-0.5"
+                  className="text-[8px] text-stone-400 uppercase tracking-wider mb-0.5"
                   title={statHint ?? undefined}
                 >
                   {stat.label}
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-xs font-bold text-slate-900">{displayValue}</span>
+                  <span className="text-xs font-bold text-stone-900">{displayValue}</span>
                   {statDelta !== undefined && statDelta !== null && statDelta !== 0 && (
                     <DeltaIndicator value={statDelta} size="sm" />
                   )}
-                  {displayContext && <span className="text-[8px] font-bold text-slate-400">{displayContext}</span>}
+                  {displayContext && <span className="text-[8px] font-bold text-stone-400">{displayContext}</span>}
                 </div>
               </div>
             );

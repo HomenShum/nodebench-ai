@@ -59,6 +59,7 @@ export { FeedCard, type FeedItem } from "./FeedCard";
 export { DashboardPanel } from "./DashboardPanel";
 export { SignalCard } from "./SignalCard";
 export { ActionCard } from "./ActionCard";
+export { RelatedFeedsGrid, type RelatedFeedItem } from "./RelatedFeedsGrid";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODEL EVALUATION & BENCHMARKS

@@ -44,15 +44,15 @@ export function SourcesPanel({ activeSources, onToggleSource }: SourcesPanelProp
                                 key={source.id}
                                 onClick={() => onToggleSource(source.id)}
                                 className={`group w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm transition-colors select-none ${isActive
-                                    ? 'bg-gray-50 text-[var(--text-primary)]'
-                                    : 'text-[var(--text-secondary)] hover:bg-gray-50'
+                                    ? 'bg-stone-50 text-[var(--text-primary)]'
+                                    : 'text-[var(--text-secondary)] hover:bg-stone-50'
                                     }`}
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                     <span className={`font-bold shrink-0 transition-opacity ${source.color} ${isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'}`}>
                                         {source.icon}
                                     </span>
-                                    <span className={`font-medium truncate transition-colors ${isActive ? 'text-gray-900' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                                    <span className={`font-medium truncate transition-colors ${isActive ? 'text-stone-900' : 'text-stone-600 group-hover:text-stone-900'}`}>
                                         {source.name}
                                     </span>
                                 </div>

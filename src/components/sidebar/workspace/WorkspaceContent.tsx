@@ -18,7 +18,7 @@ export function WorkspaceContent(props: WorkspaceContentProps) {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {/* Full implementation will be added as we extract from backup */}
             <div className="flex-1 overflow-auto p-4">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-stone-600">
                     Workspace content being extracted...
                 </div>
             </div>

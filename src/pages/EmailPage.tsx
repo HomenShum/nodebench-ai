@@ -16,12 +16,12 @@ export function EmailPage() {
   const [selectedThreadId, setSelectedThreadId] = useState<Id<"emailThreads"> | null>(null);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950">
+    <div className="flex flex-col h-screen bg-stone-950">
       {/* Top Navigation */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-stone-800">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-white">Email Intelligence</h1>
-          <div className="flex items-center gap-1 bg-slate-900 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-stone-900 rounded-lg p-1">
             <TabButton
               active={activeTab === 'inbox'}
               onClick={() => {
@@ -40,10 +40,10 @@ export function EmailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <button className="p-2 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors">
             <RefreshCw className="h-5 w-5" />
           </button>
-          <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+          <button className="p-2 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors">
             <Settings className="h-5 w-5" />
           </button>
         </div>
@@ -54,7 +54,7 @@ export function EmailPage() {
         {activeTab === 'inbox' ? (
           <>
             {/* Email List */}
-            <div className={`${selectedThreadId ? 'hidden md:block md:w-1/3 lg:w-2/5' : 'w-full'} border-r border-slate-800`}>
+            <div className={`${selectedThreadId ? 'hidden md:block md:w-1/3 lg:w-2/5' : 'w-full'} border-r border-stone-800`}>
               <EmailInboxView
                 selectedThreadId={selectedThreadId}
                 onSelectThread={setSelectedThreadId}
@@ -77,7 +77,7 @@ export function EmailPage() {
 
             {/* Empty State for Desktop */}
             {!selectedThreadId && (
-              <div className="hidden md:flex flex-1 items-center justify-center text-slate-500">
+              <div className="hidden md:flex flex-1 items-center justify-center text-stone-500">
                 <div className="text-center">
                   <Inbox className="h-16 w-16 mx-auto mb-4 opacity-30" />
                   <p>Select an email to view</p>
@@ -113,7 +113,7 @@ function TabButton({
       className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
         active
           ? 'bg-blue-600 text-white'
-          : 'text-slate-400 hover:text-white'
+          : 'text-stone-400 hover:text-white'
       }`}
     >
       {icon}

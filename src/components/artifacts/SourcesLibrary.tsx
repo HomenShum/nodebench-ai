@@ -64,10 +64,10 @@ function getProviderColor(provider: ArtifactProvider | undefined): string {
     case "twitter": return "bg-sky-50 text-sky-600 border-sky-200";
     case "linkedin": return "bg-blue-50 text-blue-700 border-blue-200";
     case "crunchbase": return "bg-orange-50 text-orange-600 border-orange-200";
-    case "github": return "bg-gray-50 text-gray-800 border-gray-200";
+    case "github": return "bg-stone-50 text-stone-800 border-stone-200";
     case "news": return "bg-emerald-50 text-emerald-600 border-emerald-200";
     case "arxiv": return "bg-amber-50 text-amber-700 border-amber-200";
-    default: return "bg-gray-50 text-gray-600 border-gray-200";
+    default: return "bg-stone-50 text-stone-600 border-stone-200";
   }
 }
 
@@ -231,19 +231,19 @@ export function SourcesLibrary({
   }
   
   return (
-    <div className="mt-12 border-t-2 border-gray-200 pt-8">
+    <div className="mt-12 border-t-2 border-stone-200 pt-8">
       {/* Header */}
       <div 
         className="flex items-center justify-between mb-4 cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gray-100 rounded-lg">
-            <Library className="w-5 h-5 text-gray-600" />
+          <div className="p-2 bg-stone-100 rounded-lg">
+            <Library className="w-5 h-5 text-stone-600" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900">{title}</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="font-bold text-stone-900">{title}</h3>
+            <p className="text-xs text-stone-500">
               {artifacts.length} source{artifacts.length !== 1 ? 's' : ''} discovered
               {artifacts.filter(a => a.flags.isPinned).length > 0 && (
                 <span className="ml-2 text-purple-600">
@@ -258,12 +258,12 @@ export function SourcesLibrary({
           {/* Group By Toggle */}
           {!isCollapsed && (
             <div className="flex items-center gap-1 text-xs">
-              <Filter className="w-3.5 h-3.5 text-gray-400" />
+              <Filter className="w-3.5 h-3.5 text-stone-400" />
               <select
                 value={groupBy}
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-gray-100 border-none rounded px-2 py-1 text-xs text-gray-600 focus:ring-1 focus:ring-purple-300"
+                className="bg-stone-100 border-none rounded px-2 py-1 text-xs text-stone-600 focus:ring-1 focus:ring-purple-300"
               >
                 <option value="provider">By Provider</option>
                 <option value="kind">By Type</option>
@@ -272,11 +272,11 @@ export function SourcesLibrary({
             </div>
           )}
           
-          <button className="p-1 hover:bg-gray-100 rounded">
+          <button className="p-1 hover:bg-stone-100 rounded">
             {isCollapsed ? (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
+              <ChevronDown className="w-5 h-5 text-stone-400" />
             ) : (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
+              <ChevronUp className="w-5 h-5 text-stone-400" />
             )}
           </button>
         </div>
@@ -301,10 +301,10 @@ export function SourcesLibrary({
               
               return (
                 <div key={group}>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2 flex items-center gap-2">
                     {groupBy === "kind" && getKindIcon(group as ArtifactKind)}
                     {label}
-                    <span className="text-gray-400">({items.length})</span>
+                    <span className="text-stone-400">({items.length})</span>
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {items.slice(0, showAll ? items.length : 4).map(artifact => (
@@ -329,7 +329,7 @@ export function SourcesLibrary({
             <div className="text-center pt-4">
               <button
                 onClick={() => setShowAll(!showAll)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-lg text-sm font-medium text-stone-700 transition-colors"
               >
                 {showAll ? (
                   <>

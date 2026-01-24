@@ -152,16 +152,16 @@ export default function RecommendationAnalyticsDashboard() {
   const isLoading = acceptanceData === undefined || rejectionReasons === undefined;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-[#faf9f6] p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-2">
               <BarChart3 size={32} />
               Recommendation Analytics
             </h1>
-            <p className="text-slate-600 mt-1">
+            <p className="text-stone-600 mt-1">
               User feedback and engagement metrics for recommendations
             </p>
           </div>
@@ -185,7 +185,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -197,8 +197,8 @@ export default function RecommendationAnalyticsDashboard() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <Activity className="animate-spin mx-auto text-slate-400 mb-2" size={32} />
-            <p className="text-slate-600">Loading metrics...</p>
+            <Activity className="animate-spin mx-auto text-stone-400 mb-2" size={32} />
+            <p className="text-stone-600">Loading metrics...</p>
           </div>
         )}
 
@@ -268,12 +268,12 @@ export default function RecommendationAnalyticsDashboard() {
             </div>
 
             {/* Action Breakdown */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <div className="bg-white border border-stone-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-stone-900">
                   Action Breakdown
                 </h2>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-stone-500">
                   {metrics.total} total actions
                 </span>
               </div>
@@ -307,18 +307,18 @@ export default function RecommendationAnalyticsDashboard() {
             </div>
 
             {/* Top Rejection Reasons */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <div className="bg-white border border-stone-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-stone-900">
                   Top Rejection Reasons
                 </h2>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-stone-500">
                   {rejectionReasons?.length || 0} unique reasons
                 </span>
               </div>
 
               {!rejectionReasons || rejectionReasons.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-stone-500">
                   No rejection reasons recorded yet
                 </div>
               ) : (
@@ -371,15 +371,15 @@ export default function RecommendationAnalyticsDashboard() {
 
             {/* Empty State */}
             {metrics.total === 0 && (
-              <div className="bg-white border border-slate-200 rounded-lg p-12 text-center">
-                <BarChart3 className="mx-auto text-slate-300 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              <div className="bg-white border border-stone-200 rounded-lg p-12 text-center">
+                <BarChart3 className="mx-auto text-stone-300 mb-4" size={48} />
+                <h3 className="text-lg font-semibold text-stone-900 mb-2">
                   No Recommendation Data Yet
                 </h3>
-                <p className="text-slate-600 mb-4">
+                <p className="text-stone-600 mb-4">
                   Recommendation feedback will appear here once users interact with suggestions.
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-stone-500">
                   Make sure the RecommendationPanel component is integrated into your app.
                 </p>
               </div>

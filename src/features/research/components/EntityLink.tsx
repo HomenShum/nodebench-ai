@@ -122,11 +122,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     case "topic":
       return {
-        text: "text-slate-700",
-        bg: "bg-slate-50 hover:bg-slate-100",
-        border: "border-slate-200",
-        icon: "text-slate-500",
-        badge: "bg-slate-100 text-slate-700",
+        text: "text-stone-700",
+        bg: "bg-stone-50 hover:bg-stone-100",
+        border: "border-stone-200",
+        icon: "text-stone-500",
+        badge: "bg-stone-100 text-stone-700",
       };
     case "region":
       return {

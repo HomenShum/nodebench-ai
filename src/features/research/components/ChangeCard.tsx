@@ -110,9 +110,9 @@ function SeverityBadge({ severity }: { severity: Severity }) {
       label: "Medium",
     },
     low: {
-      bg: "bg-slate-50",
-      text: "text-slate-600",
-      border: "border-slate-200",
+      bg: "bg-stone-50",
+      text: "text-stone-600",
+      border: "border-stone-200",
       icon: <Info className="w-3 h-3" />,
       label: "Low",
     },
@@ -193,8 +193,8 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
       label: "Model Update",
     },
     minor_update: {
-      bg: "bg-slate-100",
-      text: "text-slate-600",
+      bg: "bg-stone-100",
+      text: "text-stone-600",
       icon: <Info className="w-3 h-3" />,
       label: "Minor",
     },
@@ -232,9 +232,9 @@ function formatTimeAgo(timestamp: number): string {
  */
 function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
   return (
-    <div className="font-mono text-xs rounded border border-slate-200 overflow-hidden">
+    <div className="font-mono text-xs rounded border border-stone-200 overflow-hidden">
       {hunk.context && (
-        <div className="bg-slate-50 px-3 py-1 text-slate-500 border-b border-slate-200">
+        <div className="bg-stone-50 px-3 py-1 text-stone-500 border-b border-stone-200">
           {hunk.context}
         </div>
       )}
@@ -350,13 +350,13 @@ export function ChangeCard({
               {diff.affectedSections.slice(0, 3).map((section) => (
                 <span
                   key={section}
-                  className="px-1.5 py-0.5 text-[10px] bg-slate-100 text-slate-600 rounded"
+                  className="px-1.5 py-0.5 text-[10px] bg-stone-100 text-stone-600 rounded"
                 >
                   {section}
                 </span>
               ))}
               {diff.affectedSections.length > 3 && (
-                <span className="px-1.5 py-0.5 text-[10px] bg-slate-100 text-slate-500 rounded">
+                <span className="px-1.5 py-0.5 text-[10px] bg-stone-100 text-stone-500 rounded">
                   +{diff.affectedSections.length - 3} more
                 </span>
               )}
@@ -395,7 +395,7 @@ export function ChangeCard({
                 {diff.affectedSections.map((section) => (
                   <span
                     key={section}
-                    className="px-2 py-1 text-xs bg-slate-100 text-slate-600 rounded"
+                    className="px-2 py-1 text-xs bg-stone-100 text-stone-600 rounded"
                   >
                     {section}
                   </span>
@@ -450,7 +450,7 @@ export function ChangeListItem({ diff, source, selected = false, onSelect }: Cha
     critical: "bg-red-500",
     high: "bg-orange-500",
     medium: "bg-amber-500",
-    low: "bg-slate-400",
+    low: "bg-stone-400",
   };
 
   return (

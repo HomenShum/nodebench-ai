@@ -92,7 +92,7 @@ interface AgentCardProps {
 function AgentCard({ agent, rank }: AgentCardProps) {
   const getRankColor = (rank: number) => {
     if (rank === 1) return "text-yellow-500";
-    if (rank === 2) return "text-gray-400";
+    if (rank === 2) return "text-stone-400";
     if (rank === 3) return "text-orange-600";
     return "text-[var(--text-secondary)]";
   };

@@ -10,9 +10,7 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "reporter": [
       [
@@ -42,9 +40,7 @@
         "outputDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "chromium",
         "name": "chromium",
         "testDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
@@ -52,7 +48,7 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 120000
+        "timeout": 30000
       }
     ],
     "shard": null,
@@ -63,209 +59,19 @@
     "workers": 16,
     "webServer": null
   },
-  "suites": [
+  "suites": [],
+  "errors": [
     {
-      "title": "test-duplicate-fix.spec.ts",
-      "file": "test-duplicate-fix.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "Fast Agent - No duplicate responses",
-          "ok": false,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "failed",
-                  "duration": 24544,
-                  "error": {
-                    "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').or(locator('button:has-text(\"Send\")').first()).or(locator('button[aria-label*=\"Send\"]').first()) to be visible\u001b[22m\n",
-                    "stack": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').or(locator('button:has-text(\"Send\")').first()).or(locator('button[aria-label*=\"Send\"]').first()) to be visible\u001b[22m\n\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:52:20",
-                    "location": {
-                      "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
-                      "column": 20,
-                      "line": 52
-                    },
-                    "snippet": "\u001b[0m \u001b[90m 50 |\u001b[39m   )\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 52 |\u001b[39m   \u001b[36mawait\u001b[39m sendButton\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 53 |\u001b[39m\n \u001b[90m 54 |\u001b[39m   \u001b[90m// Clear previous logs to isolate this send operation\u001b[39m\n \u001b[90m 55 |\u001b[39m   consoleLogs\u001b[33m.\u001b[39mlength \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\u001b[0m"
-                  },
-                  "errors": [
-                    {
-                      "location": {
-                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
-                        "column": 20,
-                        "line": 52
-                      },
-                      "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').or(locator('button:has-text(\"Send\")').first()).or(locator('button[aria-label*=\"Send\"]').first()) to be visible\u001b[22m\n\n\n  50 |   );\n  51 |\n> 52 |   await sendButton.waitFor({ state: 'visible', timeout: 5000 });\n     |                    ^\n  53 |\n  54 |   // Clear previous logs to isolate this send operation\n  55 |   consoleLogs.length = 0;\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:52:20"
-                    }
-                  ],
-                  "stdout": [
-                    {
-                      "text": "[BROWSER] [vite] connecting...\n"
-                    },
-                    {
-                      "text": "[BROWSER] [vite] connected.\n"
-                    },
-                    {
-                      "text": "[BROWSER] [vite] connecting...\n"
-                    },
-                    {
-                      "text": "[BROWSER] [vite] connected.\n"
-                    },
-                    {
-                      "text": "[BROWSER] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
-                    },
-                    {
-                      "text": "[TEST] ✅ App loaded\n"
-                    },
-                    {
-                      "text": "[TEST] ✅ Clicked Fast Agent button\n"
-                    },
-                    {
-                      "text": "[TEST] ✅ Found input field\n"
-                    },
-                    {
-                      "text": "[TEST] ✅ Typed test message\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-01-23T21:55:17.818Z",
-                  "annotations": [],
-                  "attachments": [
-                    {
-                      "name": "screenshot",
-                      "contentType": "image/png",
-                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---No-duplicate-responses-chromium\\test-failed-1.png"
-                    },
-                    {
-                      "name": "video",
-                      "contentType": "video/webm",
-                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---No-duplicate-responses-chromium\\video.webm"
-                    },
-                    {
-                      "name": "error-context",
-                      "contentType": "text/markdown",
-                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---No-duplicate-responses-chromium\\error-context.md"
-                    }
-                  ],
-                  "errorLocation": {
-                    "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
-                    "column": 20,
-                    "line": 52
-                  }
-                }
-              ],
-              "status": "unexpected"
-            }
-          ],
-          "id": "4a65931f060b15a4d90b-62b693bca3da98148936",
-          "file": "test-duplicate-fix.spec.ts",
-          "line": 3,
-          "column": 1
-        },
-        {
-          "title": "Fast Agent - Rapid click protection",
-          "ok": false,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 1,
-                  "parallelIndex": 0,
-                  "status": "failed",
-                  "duration": 8678,
-                  "error": {
-                    "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').first() to be visible\u001b[22m\n",
-                    "stack": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').first() to be visible\u001b[22m\n\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:135:20",
-                    "location": {
-                      "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
-                      "column": 20,
-                      "line": 135
-                    },
-                    "snippet": "\u001b[0m \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m   \u001b[36mconst\u001b[39m sendButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 135 |\u001b[39m   \u001b[36mawait\u001b[39m sendButton\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 136 |\u001b[39m\n \u001b[90m 137 |\u001b[39m   consoleLogs\u001b[33m.\u001b[39mlength \u001b[33m=\u001b[39m \u001b[35m0\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 138 |\u001b[39m\u001b[0m"
-                  },
-                  "errors": [
-                    {
-                      "location": {
-                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
-                        "column": 20,
-                        "line": 135
-                      },
-                      "message": "TimeoutError: locator.waitFor: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button[type=\"submit\"]').first() to be visible\u001b[22m\n\n\n  133 |\n  134 |   const sendButton = page.locator('button[type=\"submit\"]').first();\n> 135 |   await sendButton.waitFor({ state: 'visible', timeout: 5000 });\n      |                    ^\n  136 |\n  137 |   consoleLogs.length = 0;\n  138 |\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts:135:20"
-                    }
-                  ],
-                  "stdout": [
-                    {
-                      "text": "[BROWSER] [vite] connecting...\n"
-                    },
-                    {
-                      "text": "[BROWSER] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
-                    },
-                    {
-                      "text": "[BROWSER] [vite] connected.\n"
-                    }
-                  ],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-01-23T21:55:45.445Z",
-                  "annotations": [],
-                  "attachments": [
-                    {
-                      "name": "screenshot",
-                      "contentType": "image/png",
-                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---Rapid-click-protection-chromium\\test-failed-1.png"
-                    },
-                    {
-                      "name": "video",
-                      "contentType": "video/webm",
-                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---Rapid-click-protection-chromium\\video.webm"
-                    },
-                    {
-                      "name": "error-context",
-                      "contentType": "text/markdown",
-                      "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\test-duplicate-fix-Fast-Agent---Rapid-click-protection-chromium\\error-context.md"
-                    }
-                  ],
-                  "errorLocation": {
-                    "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\test-duplicate-fix.spec.ts",
-                    "column": 20,
-                    "line": 135
-                  }
-                }
-              ],
-              "status": "unexpected"
-            }
-          ],
-          "id": "4a65931f060b15a4d90b-bd67a6ba1430c189ba85",
-          "file": "test-duplicate-fix.spec.ts",
-          "line": 110,
-          "column": 1
-        }
-      ]
+      "message": "Error: No tests found",
+      "stack": "Error: No tests found"
     }
   ],
-  "errors": [],
   "stats": {
-    "startTime": "2026-01-23T21:55:16.039Z",
-    "duration": 40300.626,
+    "startTime": "2026-01-24T02:02:22.707Z",
+    "duration": 96.077,
     "expected": 0,
     "skipped": 0,
-    "unexpected": 2,
+    "unexpected": 0,
     "flaky": 0
   }
 }

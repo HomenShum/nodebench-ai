@@ -144,19 +144,19 @@ export function NotificationActivityPanel({
           emptyText: "text-[10px] text-stone-400",
         }
       : {
-          container: "pt-4 border-t border-gray-100 space-y-3",
-          title: "text-xs font-semibold text-gray-700",
-          subtitle: "text-[10px] text-gray-500",
+          container: "pt-4 border-t border-stone-100 space-y-3",
+          title: "text-xs font-semibold text-stone-700",
+          subtitle: "text-[10px] text-stone-500",
           statsGrid: "grid grid-cols-2 md:grid-cols-4 gap-2",
-          statCard: "bg-gray-50 rounded p-2 text-center",
-          statValue: "text-sm font-bold text-gray-900",
-          statLabel: "text-[10px] text-gray-500",
+          statCard: "bg-stone-50 rounded p-2 text-center",
+          statValue: "text-sm font-bold text-stone-900",
+          statLabel: "text-[10px] text-stone-500",
           logList: "space-y-2",
-          logItem: "border border-gray-200 rounded p-2 bg-white",
-          logTitle: "text-xs font-semibold text-gray-800 line-clamp-1",
-          logMeta: "text-[10px] text-gray-400 uppercase tracking-wide",
-          logBody: "text-[10px] text-gray-500 line-clamp-2",
-          emptyText: "text-[10px] text-gray-500",
+          logItem: "border border-stone-200 rounded p-2 bg-white",
+          logTitle: "text-xs font-semibold text-stone-800 line-clamp-1",
+          logMeta: "text-[10px] text-stone-400 uppercase tracking-wide",
+          logBody: "text-[10px] text-stone-500 line-clamp-2",
+          emptyText: "text-[10px] text-stone-500",
         };
 
   return (

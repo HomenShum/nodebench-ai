@@ -35,9 +35,9 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
     return (
       <div className={`p-4 ${className}`}>
         <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-1/3" />
-          <div className="h-16 bg-gray-100 rounded" />
-          <div className="h-16 bg-gray-100 rounded" />
+          <div className="h-4 bg-stone-200 rounded w-1/3" />
+          <div className="h-16 bg-stone-100 rounded" />
+          <div className="h-16 bg-stone-100 rounded" />
         </div>
       </div>
     );
@@ -52,12 +52,12 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-stone-50 transition-colors"
       >
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-purple-500" />
           <span className="text-sm font-semibold text-gray-900">Suggestions</span>
-          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+          <span className="text-xs text-gray-500 bg-stone-100 px-1.5 py-0.5 rounded-full">
             {recommendations.length}
           </span>
         </div>

@@ -5465,7 +5465,7 @@ export function DocumentsHomeHub({
                     {/* Lane watermark */}
 
                     <span
-                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-blue-400" : key === "done" ? "text-emerald-400" : key === "blocked" ? "text-rose-400" : "text-slate-400"}`}
+                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-blue-400" : key === "done" ? "text-emerald-400" : key === "blocked" ? "text-rose-400" : "text-stone-400"}`}
                     >
                       <ListTodo className="h-14 w-14 rotate-12" />
                     </span>
@@ -5489,7 +5489,7 @@ export function DocumentsHomeHub({
                     <div className="flex items-center justify-between mb-2">
                       {editingLane === key ? (
                         <input
-                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-slate-700"}`}
+                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-stone-700"}`}
                           autoFocus
                           value={laneDraft}
                           onChange={(e) => setLaneDraft(e.target.value)}
@@ -5509,7 +5509,7 @@ export function DocumentsHomeHub({
                         />
                       ) : (
                         <h3
-                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-slate-700"}`}
+                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-stone-700"}`}
                           title="Click to rename lane"
                           onClick={() => startEditLane(key)}
                         >
@@ -5519,7 +5519,7 @@ export function DocumentsHomeHub({
 
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-blue-50 border-blue-200 text-blue-700" : key === "done" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-slate-50 border-slate-200 text-slate-700"}`}
+                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-blue-50 border-blue-200 text-blue-700" : key === "done" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-stone-50 border-stone-200 text-stone-700"}`}
                         >
                           {sorted.length}
                         </span>

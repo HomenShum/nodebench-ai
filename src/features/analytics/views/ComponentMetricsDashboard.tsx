@@ -29,18 +29,18 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon, trend }: MetricCardProps) {
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-white border border-stone-200 rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-2">
-        <div className="text-slate-600 text-sm font-medium">{title}</div>
-        <div className="text-slate-400">{icon}</div>
+        <div className="text-stone-600 text-sm font-medium">{title}</div>
+        <div className="text-stone-400">{icon}</div>
       </div>
-      <div className="text-2xl font-bold text-slate-900 mb-1">{value}</div>
-      {subtitle && <div className="text-xs text-slate-500">{subtitle}</div>}
+      <div className="text-2xl font-bold text-stone-900 mb-1">{value}</div>
+      {subtitle && <div className="text-xs text-stone-500">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${
           trend.direction === 'up' ? 'text-green-600' :
           trend.direction === 'down' ? 'text-red-600' :
-          'text-slate-500'
+          'text-stone-500'
         }`}>
           {trend.direction === 'up' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           <span>{Math.abs(trend.value)}%</span>
@@ -70,16 +70,16 @@ function SourcePerformanceBar({
   const percentage = maxCount > 0 ? (itemCount / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-slate-100 last:border-0">
+    <div className="py-2 border-b border-stone-100 last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm font-medium text-slate-700 truncate flex-1">
+        <div className="text-sm font-medium text-stone-700 truncate flex-1">
           {sourceName}
         </div>
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <div className="flex items-center gap-3 text-xs text-stone-500">
           <span className="font-mono">{itemCount} items</span>
           {impressions > 0 && (
             <>
-              <span className="text-slate-300">|</span>
+              <span className="text-stone-300">|</span>
               <span className="flex items-center gap-1">
                 <Eye size={12} />
                 {impressions}
@@ -88,7 +88,7 @@ function SourcePerformanceBar({
           )}
           {clicks > 0 && (
             <>
-              <span className="text-slate-300">|</span>
+              <span className="text-stone-300">|</span>
               <span className="flex items-center gap-1">
                 <MousePointerClick size={12} />
                 {clicks}
@@ -97,7 +97,7 @@ function SourcePerformanceBar({
           )}
           {ctr > 0 && (
             <>
-              <span className="text-slate-300">|</span>
+              <span className="text-stone-300">|</span>
               <span className="font-semibold text-blue-600">
                 {(ctr * 100).toFixed(1)}% CTR
               </span>
@@ -105,7 +105,7 @@ function SourcePerformanceBar({
           )}
         </div>
       </div>
-      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -124,24 +124,24 @@ interface CategoryBreakdownProps {
 
 function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: CategoryBreakdownProps) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+    <div className="flex items-center justify-between py-2 border-b border-stone-100 last:border-0">
       <div className="flex-1">
-        <div className="text-sm font-medium text-slate-700">{category}</div>
+        <div className="text-sm font-medium text-stone-700">{category}</div>
         <div className="flex items-center gap-2 mt-1">
-          <div className="h-1.5 bg-slate-100 rounded-full flex-1 max-w-[100px]">
+          <div className="h-1.5 bg-stone-100 rounded-full flex-1 max-w-[100px]">
             <div
               className="h-full bg-purple-500 rounded-full"
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <span className="text-xs text-slate-500">{percentage.toFixed(0)}%</span>
+          <span className="text-xs text-stone-500">{percentage.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="flex items-center gap-3 text-xs text-slate-500">
+      <div className="flex items-center gap-3 text-xs text-stone-500">
         <span className="font-mono">{itemCount} items</span>
         {avgReadTime && avgReadTime > 0 && (
           <>
-            <span className="text-slate-300">|</span>
+            <span className="text-stone-300">|</span>
             <span className="flex items-center gap-1">
               <Clock size={12} />
               {Math.round(avgReadTime)}s
@@ -294,16 +294,16 @@ export default function ComponentMetricsDashboard() {
   const isLoading = todayMetrics === undefined || topSources === undefined;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-[#faf9f6] p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-2">
               <BarChart3 size={32} />
               Analytics Dashboard
             </h1>
-            <p className="text-slate-600 mt-1">
+            <p className="text-stone-600 mt-1">
               Component-level performance metrics for reports
             </p>
           </div>
@@ -311,12 +311,12 @@ export default function ComponentMetricsDashboard() {
           <div className="flex items-center gap-3">
             {/* Date Selector */}
             <div className="flex items-center gap-2">
-              <Calendar size={18} className="text-slate-400" />
+              <Calendar size={18} className="text-stone-400" />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -324,7 +324,7 @@ export default function ComponentMetricsDashboard() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(Number(e.target.value))}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={1}>Last 24 hours</option>
               <option value={7}>Last 7 days</option>
@@ -333,10 +333,10 @@ export default function ComponentMetricsDashboard() {
 
             <button
               onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className="p-2 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-2 border border-stone-300 rounded-lg hover:bg-stone-100 transition-colors"
               title="Go to today"
             >
-              <RefreshCw size={18} className="text-slate-600" />
+              <RefreshCw size={18} className="text-stone-600" />
             </button>
           </div>
         </div>
@@ -344,8 +344,8 @@ export default function ComponentMetricsDashboard() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <Activity className="animate-spin mx-auto text-slate-400 mb-2" size={32} />
-            <p className="text-slate-600">Loading metrics...</p>
+            <Activity className="animate-spin mx-auto text-stone-400 mb-2" size={32} />
+            <p className="text-stone-600">Loading metrics...</p>
           </div>
         )}
 
@@ -384,18 +384,18 @@ export default function ComponentMetricsDashboard() {
             </div>
 
             {/* Source Performance */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
+            <div className="bg-white border border-stone-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-stone-900">
                   Source Performance
                 </h2>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-stone-500">
                   {sourceMetrics.length} sources tracked
                 </span>
               </div>
 
               {sourceMetrics.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-stone-500">
                   No source data available for {selectedDate}
                 </div>
               ) : (
@@ -418,18 +418,18 @@ export default function ComponentMetricsDashboard() {
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Category Breakdown */}
-              <div className="bg-white border border-slate-200 rounded-lg p-6">
+              <div className="bg-white border border-stone-200 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-stone-900">
                     Category Breakdown
                   </h2>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-stone-500">
                     {categoryMetrics.length} categories
                   </span>
                 </div>
 
                 {categoryMetrics.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
+                  <div className="text-center py-8 text-stone-500">
                     No category data available for {selectedDate}
                   </div>
                 ) : (
@@ -448,18 +448,18 @@ export default function ComponentMetricsDashboard() {
               </div>
 
               {/* Top Performers (Last 7 Days) */}
-              <div className="bg-white border border-slate-200 rounded-lg p-6">
+              <div className="bg-white border border-stone-200 rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-slate-900">
+                  <h2 className="text-lg font-semibold text-stone-900">
                     Top Performers
                   </h2>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-stone-500">
                     Last {dateRange} days
                   </span>
                 </div>
 
                 {!topSources || topSources.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
+                  <div className="text-center py-8 text-stone-500">
                     No performance data available
                   </div>
                 ) : (
@@ -467,23 +467,23 @@ export default function ComponentMetricsDashboard() {
                     {topSources.map((source, index) => (
                       <div
                         key={source.sourceName}
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-stone-50 rounded-lg"
                       >
                         <div className="flex items-center gap-3">
                           <div className={`
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
                             ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                              index === 1 ? 'bg-slate-200 text-slate-700' :
+                              index === 1 ? 'bg-stone-200 text-stone-700' :
                               index === 2 ? 'bg-orange-100 text-orange-700' :
-                              'bg-slate-100 text-slate-600'}
+                              'bg-stone-100 text-stone-600'}
                           `}>
                             {index + 1}
                           </div>
                           <div>
-                            <div className="font-medium text-slate-900">
+                            <div className="font-medium text-stone-900">
                               {source.sourceName}
                             </div>
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-stone-500">
                               {source.totalItems} items • {source.recordCount} records
                             </div>
                           </div>
@@ -495,7 +495,7 @@ export default function ComponentMetricsDashboard() {
                             </div>
                           )}
                           {source.avgEngagement > 0 && (
-                            <div className="text-xs text-slate-500">
+                            <div className="text-xs text-stone-500">
                               {source.avgEngagement.toFixed(0)} engagement
                             </div>
                           )}

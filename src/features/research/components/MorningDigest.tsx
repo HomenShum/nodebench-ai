@@ -163,22 +163,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     }
   }, [cachedSummary, generatedSummary]);
 
-  // Sample fallback data when no real data exists
+  // Empty state data - NO fake news. Shows honest empty state.
   const sampleDigestData = useMemo(() => ({
-    marketMovers: [
-      { title: 'NVDA surges 8% on AI infrastructure demand outlook', source: 'Bloomberg' },
-      { title: 'OpenAI valued at $300B in latest funding round', source: 'TechCrunch' },
-      { title: 'Anthropic announces Claude Opus 4.5 with 5-hour task horizons', source: 'The Verge' },
-    ],
-    watchlistRelevant: [
-      { title: 'Universal Reasoning Models achieve ARC-AGI breakthroughs', source: 'ArXiv' },
-      { title: 'TimeLens establishes new baseline for video temporal grounding', source: 'ArXiv' },
-      { title: 'Agent reliability benchmarks show significant improvements', source: 'METR' },
-    ],
-    riskAlerts: [
-      { title: 'EU AI Act enforcement begins Q1 2025 - compliance review recommended', source: 'Reuters' },
-    ],
-    trackedHashtags: ['#ai-agents', '#reasoning', '#multimodal'],
+    marketMovers: [] as Array<{ title: string; source: string }>,
+    watchlistRelevant: [] as Array<{ title: string; source: string }>,
+    riskAlerts: [] as Array<{ title: string; source: string }>,
+    trackedHashtags: [] as string[],
   }), []);
 
   // Track if using sample data
@@ -769,20 +759,18 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               {digestStats.map((stat, idx) => (
                 <div
                   key={stat.id}
-                  className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 cursor-default ${
-                    stat.sentiment === 'bullish'
+                  className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 cursor-default ${stat.sentiment === 'bullish'
                       ? 'bg-gradient-to-r from-stone-100 to-amber-50 dark:from-stone-800 dark:to-amber-900/20 border border-amber-300/50 dark:border-amber-600/30 hover:border-amber-400'
                       : stat.sentiment === 'bearish'
-                      ? 'bg-gradient-to-r from-stone-100 to-rose-50 dark:from-stone-800 dark:to-rose-900/20 border border-rose-300/50 dark:border-rose-600/30 hover:border-rose-400'
-                      : 'bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 hover:border-stone-400'
-                  }`}
+                        ? 'bg-gradient-to-r from-stone-100 to-rose-50 dark:from-stone-800 dark:to-rose-900/20 border border-rose-300/50 dark:border-rose-600/30 hover:border-rose-400'
+                        : 'bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 hover:border-stone-400'
+                    }`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <span className={`text-lg font-bold ${
-                    stat.sentiment === 'bullish' ? 'text-amber-700 dark:text-amber-400'
-                    : stat.sentiment === 'bearish' ? 'text-rose-700 dark:text-rose-400'
-                    : 'text-stone-800 dark:text-stone-200'
-                  }`}>
+                  <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-amber-700 dark:text-amber-400'
+                      : stat.sentiment === 'bearish' ? 'text-rose-700 dark:text-rose-400'
+                        : 'text-stone-800 dark:text-stone-200'
+                    }`}>
                     {stat.value}
                   </span>
                   <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
@@ -895,11 +883,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
                         className="flex items-start gap-3 flex-1 text-left"
                       >
-                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${
-                          item.label === 'Market' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
-                          : item.label === 'Risk' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
-                          : 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
-                        }`}>
+                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
+                            : item.label === 'Risk' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
+                              : 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                          }`}>
                           {item.label}
                         </span>
                         <span className="text-sm text-stone-700 dark:text-stone-300 leading-snug line-clamp-2 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors">{item.text}</span>
@@ -1054,11 +1041,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 {/* Section Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-stone-200/50 dark:border-stone-700/50 bg-gradient-to-r from-transparent via-stone-100/30 dark:via-stone-800/30 to-transparent">
                   <div className="flex items-center gap-4">
-                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                      section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
-                      : section.sentiment === 'bearish' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
-                      : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'
-                    }`}>
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 ${section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                        : section.sentiment === 'bearish' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
+                          : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'
+                      }`}>
                       {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
@@ -1066,10 +1052,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-widest">{section.items.length} signals</span>
                         {section.sentiment !== 'neutral' && (
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${
-                            section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
-                            : 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'
-                          }`}>
+                          <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
+                              : 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'
+                            }`}>
                             {section.sentiment}
                           </span>
                         )}
@@ -1097,11 +1082,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           onClick={() => onItemClick?.(item)}
                           className="flex items-start gap-3 flex-1 cursor-pointer"
                         >
-                          <span className={`mt-2 h-2 w-2 rounded-full transition-all duration-300 ${
-                            item.relevance === 'high' ? 'bg-stone-700 dark:bg-stone-300 shadow-sm shadow-stone-500/50'
-                            : item.relevance === 'medium' ? 'bg-amber-600 dark:bg-amber-400 shadow-sm shadow-amber-500/50'
-                            : 'bg-stone-400 dark:bg-stone-600'
-                          } group-hover/item:scale-125`} />
+                          <span className={`mt-2 h-2 w-2 rounded-full transition-all duration-300 ${item.relevance === 'high' ? 'bg-stone-700 dark:bg-stone-300 shadow-sm shadow-stone-500/50'
+                              : item.relevance === 'medium' ? 'bg-amber-600 dark:bg-amber-400 shadow-sm shadow-amber-500/50'
+                                : 'bg-stone-400 dark:bg-stone-600'
+                            } group-hover/item:scale-125`} />
                           <div className="text-sm font-medium text-stone-700 dark:text-stone-300 leading-relaxed group-hover/item:text-stone-900 dark:group-hover/item:text-stone-100 transition-colors">
                             <CrossLinkedText
                               text={item.text}
@@ -1130,11 +1114,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide ${
-                            item.relevance === 'high' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
-                            : item.relevance === 'medium' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
-                            : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-stone-700'
-                          }`}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide ${item.relevance === 'high' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
+                              : item.relevance === 'medium' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                                : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-stone-700'
+                            }`}>
                             {item.relevance === 'high' ? 'Priority' : item.relevance === 'medium' ? 'Watch' : 'FYI'}
                           </span>
                         </div>

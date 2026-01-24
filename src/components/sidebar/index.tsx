@@ -93,10 +93,10 @@ export function Sidebar({
                 <div className="px-3 pt-4">
                     <button
                         onClick={onGoHome}
-                        className="group w-full flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+                        className="group w-full flex items-center gap-3 py-2.5 px-3 rounded-lg cursor-pointer transition-colors hover:bg-stone-50 border border-stone-200 hover:border-stone-300"
                     >
-                        <Home className="w-4 h-4 shrink-0 text-gray-500 group-hover:text-gray-700" />
-                        <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900">
+                        <Home className="w-4 h-4 shrink-0 text-stone-500 group-hover:text-stone-700" />
+                        <span className="text-sm font-medium text-stone-600 group-hover:text-stone-900">
                             Home
                         </span>
                     </button>
@@ -117,7 +117,7 @@ export function Sidebar({
                     {/* Full workspace implementation from original Sidebar.tsx would be extracted here */}
                     {/* Including: TabNavigation, DocumentsList, TasksList, Integration panels, etc. */}
                     <div className="flex-1 overflow-auto p-4">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-stone-600">
                             Workspace content (full implementation to be extracted from original Sidebar.tsx)
                         </div>
                     </div>
@@ -127,14 +127,14 @@ export function Sidebar({
             {/* Fast Agent View */}
             {appMode === 'fast-agent' && (
                 <div className="flex-1 overflow-auto p-4">
-                    <div className="text-sm text-gray-600">Fast Agent view</div>
+                    <div className="text-sm text-stone-600">Fast Agent view</div>
                 </div>
             )}
 
             {/* Dossier View */}
             {appMode === 'dossier' && (
                 <div className="flex-1 overflow-auto p-4">
-                    <div className="text-sm text-gray-600">Dossier view</div>
+                    <div className="text-sm text-stone-600">Dossier view</div>
                 </div>
             )}
 

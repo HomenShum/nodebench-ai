@@ -42,12 +42,12 @@ const STATUS_META: Record<
   },
   insufficient_data: {
     label: "Needs data",
-    className: "bg-slate-50 text-slate-700 border-slate-200",
+    className: "bg-stone-50 text-stone-700 border-stone-200",
     icon: <MinusCircle className="w-3.5 h-3.5" />,
   },
   skipped: {
     label: "Skipped",
-    className: "bg-slate-50 text-slate-700 border-slate-200",
+    className: "bg-stone-50 text-stone-700 border-stone-200",
     icon: <MinusCircle className="w-3.5 h-3.5" />,
   },
 };
@@ -76,7 +76,7 @@ export function ActionCard({
     (action.status === "proposed" && action.content && action.content.length > 50);
 
   return (
-    <div className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all duration-200">
+    <div className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-xl overflow-hidden hover:border-stone-300 hover:shadow-sm transition-all duration-200">
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-900 to-slate-400" />
 
       <button
@@ -84,13 +84,13 @@ export function ActionCard({
         onClick={() => setIsExpanded((v) => !v)}
         className="w-full text-left pl-5 pr-4 py-4 flex items-start gap-3"
       >
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-bold mt-0.5">
+        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center text-xs font-bold mt-0.5">
           {index + 1}
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Recommended Move (imperative title) */}
-          <h3 className="text-base font-semibold text-[color:var(--text-primary)] leading-snug group-hover:text-slate-900">
+          <h3 className="text-base font-semibold text-[color:var(--text-primary)] leading-snug group-hover:text-stone-900">
             {action.label}
           </h3>
 
@@ -106,21 +106,21 @@ export function ActionCard({
 
             {/* Deliverable badge */}
             {action.deliverable && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200 rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200 rounded-full">
                 <FileText className="w-2.5 h-2.5" />
                 {action.deliverable}
               </span>
             )}
 
             {linkedSignals > 0 && (
-              <span className="text-[10px] text-slate-600 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-200">
+              <span className="text-[10px] text-stone-600 bg-stone-50 px-2 py-0.5 rounded-full border border-stone-200">
                 Links to {linkedSignals} signal{linkedSignals !== 1 ? "s" : ""}
               </span>
             )}
           </div>
         </div>
 
-        <div className="flex-shrink-0 text-[color:var(--text-secondary)] group-hover:text-slate-700 transition-colors mt-0.5">
+        <div className="flex-shrink-0 text-[color:var(--text-secondary)] group-hover:text-stone-700 transition-colors mt-0.5">
           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </div>
       </button>
@@ -132,8 +132,8 @@ export function ActionCard({
             <div className="flex items-start gap-2 text-sm">
               <Clock3 className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
               <div>
-                <span className="font-medium text-slate-700">Why now: </span>
-                <span className="text-slate-600">{action.whyNow}</span>
+                <span className="font-medium text-stone-700">Why now: </span>
+                <span className="text-stone-600">{action.whyNow}</span>
               </div>
             </div>
           )}
@@ -143,8 +143,8 @@ export function ActionCard({
             <div className="flex items-start gap-2 text-sm">
               <Target className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
               <div>
-                <span className="font-medium text-slate-700">Expected outcome: </span>
-                <span className="text-slate-600">{action.expectedOutcome}</span>
+                <span className="font-medium text-stone-700">Expected outcome: </span>
+                <span className="text-stone-600">{action.expectedOutcome}</span>
               </div>
             </div>
           )}
@@ -166,7 +166,7 @@ export function ActionCard({
 
           {/* Evidence Refs */}
           {linkedEvidence > 0 && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 text-xs text-stone-500">
               <LinkIcon className="w-3 h-3" />
               <span>Backed by {linkedEvidence} evidence source{linkedEvidence !== 1 ? "s" : ""}</span>
             </div>
@@ -177,7 +177,7 @@ export function ActionCard({
             <button
               type="button"
               onClick={() => onRunDeepDive(action)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-medium rounded-lg hover:bg-stone-800 transition-colors"
             >
               <Zap className="w-4 h-4" />
               Run deep dive

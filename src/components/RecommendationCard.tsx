@@ -79,16 +79,16 @@ export function RecommendationCard({
         className="absolute top-2 right-2 p-1 rounded-full hover:bg-black/10 transition-colors"
         aria-label="Dismiss recommendation"
       >
-        <X className="h-3.5 w-3.5 text-gray-500" />
+        <X className="h-3.5 w-3.5 text-stone-500" />
       </button>
 
       {/* Content */}
       <div className="flex items-start gap-3 pr-6">
         <div className="flex-shrink-0 mt-0.5">
-          <Icon className="h-4 w-4 text-gray-600" />
+          <Icon className="h-4 w-4 text-stone-600" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-800 leading-snug">{message}</p>
+          <p className="text-sm text-stone-800 leading-snug">{message}</p>
 
           {!feedbackGiven && !showRating && (
             <div className="mt-2 flex items-center gap-2">
@@ -111,7 +111,7 @@ export function RecommendationCard({
                     title="This is helpful"
                     aria-label="Mark as helpful"
                   >
-                    <ThumbsUp className="h-3.5 w-3.5 text-gray-400 group-hover:text-green-600" />
+                    <ThumbsUp className="h-3.5 w-3.5 text-stone-400 group-hover:text-green-600" />
                   </button>
                   <button
                     type="button"
@@ -120,7 +120,7 @@ export function RecommendationCard({
                     title="Not relevant"
                     aria-label="Not relevant"
                   >
-                    <ThumbsDown className="h-3.5 w-3.5 text-gray-400 group-hover:text-red-600" />
+                    <ThumbsDown className="h-3.5 w-3.5 text-stone-400 group-hover:text-red-600" />
                   </button>
                 </div>
               )}
@@ -132,9 +132,9 @@ export function RecommendationCard({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-3 p-2 bg-white/50 rounded border border-gray-200"
+              className="mt-3 p-2 bg-white/50 rounded border border-stone-200"
             >
-              <p className="text-xs text-gray-600 mb-2">How helpful was this suggestion?</p>
+              <p className="text-xs text-stone-600 mb-2">How helpful was this suggestion?</p>
               <div className="flex items-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -149,7 +149,7 @@ export function RecommendationCard({
                       className={`h-4 w-4 ${
                         star <= rating
                           ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
+                          : 'text-stone-300'
                       }`}
                     />
                   </button>
@@ -170,7 +170,7 @@ export function RecommendationCard({
                     setShowRating(false);
                     onClick(id);
                   }}
-                  className="text-xs px-2 py-1 text-gray-600 hover:text-gray-800"
+                  className="text-xs px-2 py-1 text-stone-600 hover:text-stone-800"
                 >
                   Skip
                 </button>
@@ -183,7 +183,7 @@ export function RecommendationCard({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-2 text-xs text-gray-500"
+              className="mt-2 text-xs text-stone-500"
             >
               Thanks for your feedback!
             </motion.div>
