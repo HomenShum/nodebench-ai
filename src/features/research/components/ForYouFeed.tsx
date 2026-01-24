@@ -14,7 +14,7 @@ export function ForYouFeed() {
 
   const handleEngagement = async (itemId: string, action: "view" | "click" | "save" | "share") => {
     try {
-      await recordEngagement({ userId: itemId as any, itemId, action });
+      await recordEngagement({ itemId, action });
     } catch (error) {
       console.error("Failed to record engagement:", error);
     }

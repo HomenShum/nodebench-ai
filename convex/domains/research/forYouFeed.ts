@@ -14,6 +14,7 @@ import {
   internalAction,
   internalMutation,
   internalQuery,
+  mutation,
   query,
 } from "../../_generated/server";
 import { internal } from "../../_generated/api";
@@ -638,9 +639,8 @@ export const saveFeedSnapshot = internalMutation({
 /**
  * Record engagement event
  */
-export const recordEngagement = internalMutation({
+export const recordEngagement = mutation({
   args: {
-    userId: v.id("users"),
     itemId: v.string(),
     action: v.union(
       v.literal("view"),
@@ -649,9 +649,25 @@ export const recordEngagement = internalMutation({
       v.literal("share")
     ),
   },
-  handler: async (ctx, { userId, itemId, action }) => {
+  handler: async (ctx, { itemId, action }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_token", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
     await ctx.db.insert("feedEngagements", {
-      userId,
+      userId: user._id,
       itemId,
       action,
       timestamp: Date.now(),
