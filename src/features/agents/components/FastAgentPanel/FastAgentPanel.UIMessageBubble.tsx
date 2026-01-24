@@ -569,25 +569,31 @@ function extractDomain(url?: string): string | null {
   }
 }
 
-/** Get favicon URL for a domain using Google's favicon service */
-function getFaviconUrl(url?: string): string | null {
-  const domain = extractDomain(url);
-  if (!domain) return null;
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+/** Format time ago like X.com (e.g., "5m", "2h", "3d") */
+function formatTimeAgo(timestamp?: string | number): string {
+  if (!timestamp) return '';
+  const ms = typeof timestamp === 'string' ? Date.parse(timestamp) : timestamp;
+  if (!Number.isFinite(ms)) return '';
+
+  const seconds = Math.floor((Date.now() - ms) / 1000);
+  if (seconds < 60) return 'now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d`;
+
+  return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-/** Get source type icon based on citation type */
-function getSourceTypeIcon(type: string): React.ReactNode {
-  const iconClass = "h-3 w-3";
+/** Get source config based on citation type */
+function getSourceConfig(type: string): { icon: typeof Globe; color: string; bg: string } {
   switch (type.toLowerCase()) {
-    case 'web':
     case 'news':
-      return <Globe className={iconClass} />;
+      return { icon: Zap, color: 'text-orange-400', bg: 'bg-orange-500/20' };
     case 'academic':
     case 'arxiv':
-      return <BrainCircuit className={iconClass} />;
+      return { icon: BrainCircuit, color: 'text-purple-400', bg: 'bg-purple-500/20' };
     default:
-      return <Globe className={iconClass} />;
+      return { icon: Globe, color: 'text-blue-400', bg: 'bg-blue-500/20' };
   }
 }
 
@@ -595,138 +601,76 @@ function SourcesCitedDropdown({ library, basisMs }: { library: CitationLibrary; 
   const citations = getOrderedCitations(library);
   if (citations.length === 0) return null;
 
-  const asOf = typeof basisMs === 'number' && Number.isFinite(basisMs) ? formatBriefDateTime(basisMs) : null;
+  const asOf = typeof basisMs === 'number' && Number.isFinite(basisMs) ? formatTimeAgo(basisMs) : null;
 
   return (
-    <details className="mt-4 group rounded-xl border border-[var(--border-color)] bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)]/30 dark:from-[var(--bg-secondary)] dark:to-[var(--bg-primary)]/50 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between rounded-xl hover:bg-[var(--bg-hover)]/50 transition-colors duration-150">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/40">
-            <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+    <details className="mt-4 group rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/30 overflow-hidden">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+            <Globe className="h-4 w-4 text-blue-400" />
           </div>
-          <span>Sources cited</span>
-          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
-            {citations.length}
-          </span>
+          <div>
+            <span className="block">Sources</span>
+            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+              {citations.length} cited {asOf && `· ${asOf}`}
+            </span>
+          </div>
         </div>
-        <ChevronDown className="h-4 w-4 text-[var(--text-muted)] group-open:rotate-180 transition-transform duration-200" />
+        <ChevronDown className="h-4 w-4 text-slate-400 group-open:rotate-180 transition-transform duration-200" />
       </summary>
 
-      <div className="px-4 pb-4 pt-2 space-y-3">
-        {/* Response basis timestamp */}
-        {asOf && (
-          <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]/50">
-            <Clock className="h-3.5 w-3.5" />
-            <span>Response based on data as of</span>
-            <span className="font-semibold text-[var(--text-primary)]">{asOf}</span>
-          </div>
-        )}
-
-        {/* Citation cards */}
-        {citations.map((c) => {
+      <div className="border-t border-slate-200 dark:border-slate-700/50">
+        {/* Citation list */}
+        {citations.map((c, index) => {
           const domain = extractDomain(c.url);
-          const faviconUrl = getFaviconUrl(c.url);
+          const config = getSourceConfig(c.type);
+          const SourceIcon = config.icon;
+          const timeAgo = formatTimeAgo(c.publishedAt);
 
           return (
-            <div
+            <a
               key={c.id}
-              className="group/card relative rounded-lg border border-[var(--border-color)]/60 bg-[var(--bg-primary)] dark:bg-[var(--bg-secondary)]/50 p-3 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all duration-150"
+              href={c.url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "flex items-start gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors group/item cursor-pointer",
+                index !== citations.length - 1 && "border-b border-slate-200 dark:border-slate-700/50"
+              )}
             >
-              {/* Citation number badge */}
-              <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-bold shadow-sm">
-                {c.number}
+              {/* Source icon */}
+              <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ring-slate-200 dark:ring-slate-700", config.bg)}>
+                <SourceIcon className={cn("w-5 h-5", config.color)} />
               </div>
 
-              {/* Header row: favicon + title + type badge */}
-              <div className="flex items-start gap-3 ml-3">
-                {/* Favicon or fallback icon */}
-                <div className="flex-shrink-0 mt-0.5">
-                  {faviconUrl ? (
-                    <img
-                      src={faviconUrl}
-                      alt=""
-                      className="w-5 h-5 rounded"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className="w-5 h-5 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <Globe className="h-3 w-3 text-gray-400" />
-                    </div>
-                  )}
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                {/* Header row */}
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className={cn("text-sm font-semibold", config.color)}>
+                    {domain || c.type}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-600">·</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{timeAgo || 'recently'}</span>
+                  <span className="ml-auto text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-200 dark:bg-slate-700/50 px-1.5 py-0.5 rounded">
+                    [{c.number}]
+                  </span>
                 </div>
 
-                {/* Title and metadata */}
-                <div className="min-w-0 flex-1">
-                  {/* Title row */}
-                  <div className="flex items-start gap-2">
-                    <div className="min-w-0 flex-1">
-                      {c.url ? (
-                        <a
-                          href={c.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-[var(--text-primary)] hover:text-blue-600 dark:hover:text-blue-400 line-clamp-2 transition-colors group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400"
-                          title={c.label}
-                        >
-                          {c.label}
-                          <ExternalLink className="inline-block ml-1 h-3 w-3 opacity-0 group-hover/card:opacity-100 transition-opacity" />
-                        </a>
-                      ) : (
-                        <span className="text-sm font-medium text-[var(--text-primary)] line-clamp-2" title={c.label}>
-                          {c.label}
-                        </span>
-                      )}
-                    </div>
+                {/* Title */}
+                <h4 className="text-[15px] font-medium text-slate-800 dark:text-slate-200 leading-snug mb-1 group-hover/item:text-blue-500 dark:group-hover/item:text-blue-400 transition-colors line-clamp-2">
+                  {c.label}
+                </h4>
 
-                    {/* Type badge */}
-                    <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium">
-                      {getSourceTypeIcon(c.type)}
-                      {c.type}
-                    </span>
-                  </div>
-
-                  {/* Domain display */}
-                  {domain && (
-                    <div className="mt-1 text-[11px] text-[var(--text-muted)] font-medium">
-                      {domain}
-                    </div>
-                  )}
-
-                  {/* Metadata row: author, dates */}
-                  {(c.publishedAt || c.accessedAt || c.author) && (
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
-                      {c.author && (
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          <span className="truncate max-w-[150px]">{c.author}</span>
-                        </span>
-                      )}
-                      {c.publishedAt && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span className="font-medium">{formatCitationDateOnly(c.publishedAt) ?? c.publishedAt}</span>
-                        </span>
-                      )}
-                      {c.accessedAt && (
-                        <span className="flex items-center gap-1 text-[var(--text-muted)]">
-                          <Eye className="h-3 w-3" />
-                          <span>{formatCitationDateTime(c.accessedAt) ?? c.accessedAt}</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Summary/full text */}
-                  {c.fullText && (
-                    <p className="mt-2 text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] line-clamp-2 leading-relaxed">
-                      {c.fullText}
-                    </p>
-                  )}
-                </div>
+                {/* Snippet */}
+                {c.fullText && (
+                  <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                    {c.fullText}
+                  </p>
+                )}
               </div>
-            </div>
+            </a>
           );
         })}
       </div>
