@@ -27,6 +27,7 @@ interface LinkupSearchResult {
     name: string;
     url: string;
     snippet: string;
+    publishedAt?: string;
   }>;
   results?: Array<{
     type: "text" | "image" | "video" | "audio";
@@ -34,6 +35,9 @@ interface LinkupSearchResult {
     url: string;
     content?: string;
     thumbnail?: string;
+    publishedAt?: string;
+    published_at?: string;
+    date?: string;
   }>;
   // Structured output (when outputType: "structured")
   structured?: Record<string, unknown>;
@@ -49,6 +53,13 @@ function extractDomain(url: string): string {
   } catch {
     return '';
   }
+}
+
+function getPublishedAt(input: unknown): string | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const obj = input as Record<string, unknown>;
+  const v = obj["publishedAt"] ?? obj["published_at"] ?? obj["date"];
+  return typeof v === "string" && v.trim().length > 0 ? v : undefined;
 }
 
 function filterLinkupImagesByQuery<T extends { url: string; name?: string }>(
@@ -332,6 +343,7 @@ The tool returns verified sources that get stored in the artifact system.`,
           url: text.url,
           domain: extractDomain(text.url),
           description: text.content?.substring(0, 200) || '',
+	          publishedAt: getPublishedAt(text),
         }));
 
         // Structured data marker for artifact extraction
@@ -360,6 +372,7 @@ The tool returns verified sources that get stored in the artifact system.`,
           url: source.url,
           domain: extractDomain(source.url),
           description: source.snippet?.substring(0, 200) || '',
+	          publishedAt: getPublishedAt(source),
         }));
 
         // Structured data marker for artifact extraction

@@ -22,6 +22,9 @@ interface LinkupStructuredResult {
     name: string;
     url: string;
     snippet?: string;
+    publishedAt?: string;
+    published_at?: string;
+    date?: string;
   }>;
 }
 
@@ -101,6 +104,13 @@ function extractDomain(url: string): string {
   } catch {
     return '';
   }
+}
+
+function getPublishedAt(input: unknown): string | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const obj = input as Record<string, unknown>;
+  const v = obj["publishedAt"] ?? obj["published_at"] ?? obj["date"];
+  return typeof v === "string" && v.trim().length > 0 ? v : undefined;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -253,6 +263,7 @@ IMPORTANT:
           domain: extractDomain(src.url),
           description: src.snippet || '',
           citationIndex: idx + 1,
+	          publishedAt: getPublishedAt(src),
         }));
         result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sourceGalleryData, null, 2)}\n-->\n\n`;
       }

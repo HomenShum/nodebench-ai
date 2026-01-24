@@ -60,7 +60,7 @@ Examples:
 
       const sourceGalleryItems = response.results
         .filter((r: { url?: string }) => typeof r.url === "string" && r.url.length > 0)
-        .map((r: { title: string; url: string; snippet?: string }) => {
+	        .map((r: { title: string; url: string; snippet?: string; publishedAt?: string }) => {
           let domain: string | undefined;
           try {
             domain = new URL(r.url).hostname.replace(/^www\./, "");
@@ -72,6 +72,7 @@ Examples:
             url: r.url,
             domain,
             description: r.snippet ? r.snippet.slice(0, 240) : undefined,
+	            publishedAt: r.publishedAt,
           };
         });
 
@@ -154,7 +155,7 @@ Use this for simple queries where speed matters more than comprehensiveness.`,
 
       const sourceGalleryItems = results
         .filter((r: { url?: string }) => typeof r.url === "string" && r.url.length > 0)
-        .map((r: { title: string; url: string; snippet?: string }) => {
+	        .map((r: { title: string; url: string; snippet?: string; publishedAt?: string }) => {
           let domain: string | undefined;
           try {
             domain = new URL(r.url).hostname.replace(/^www\./, "");
@@ -166,6 +167,7 @@ Use this for simple queries where speed matters more than comprehensiveness.`,
             url: r.url,
             domain,
             description: r.snippet ? r.snippet.slice(0, 240) : undefined,
+	            publishedAt: r.publishedAt,
           };
         });
 

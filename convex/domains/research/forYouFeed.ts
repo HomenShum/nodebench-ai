@@ -173,7 +173,7 @@ export const getOutOfNetworkCandidates = internalQuery({
       .query("feedItems")
       .withIndex("by_creation_time")
       .order("desc")
-      .take(Math.floor(limit / 2));
+      .take(Math.floor(limit / 3));
 
     for (const item of feedItems) {
       candidates.push({
@@ -188,6 +188,37 @@ export const getOutOfNetworkCandidates = internalQuery({
           score: item.score,
         },
         timestamp: item.createdAt || item._creationTime,
+      });
+    }
+
+    // NEW: Include landing page signals (daily brief published content)
+    const today = new Date().toISOString().split("T")[0];
+    const landingSignals = await ctx.db
+      .query("landingPageLog")
+      .withIndex("by_createdAt")
+      .order("desc")
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("kind"), "signal"),
+          q.eq(q.field("kind"), "brief")
+        )
+      )
+      .take(Math.floor(limit / 3));
+
+    for (const signal of landingSignals) {
+      candidates.push({
+        itemId: signal._id,
+        itemType: "update",
+        source: "out_of_network",
+        title: signal.title,
+        snippet: signal.markdown?.substring(0, 200) || "",
+        metadata: {
+          kind: signal.kind,
+          source: signal.source || "Daily Brief",
+          url: signal.url,
+          tags: signal.tags,
+        },
+        timestamp: signal.createdAt,
       });
     }
 
@@ -234,7 +265,7 @@ export const getTrendingCandidates = internalQuery({
       .query("feedItems")
       .withIndex("by_creation_time")
       .order("desc")
-      .take(Math.floor(limit / 2));
+      .take(Math.floor(limit / 3));
 
     for (const item of feedItems) {
       candidates.push({
@@ -250,6 +281,63 @@ export const getTrendingCandidates = internalQuery({
         },
         timestamp: item.createdAt || item._creationTime,
       });
+    }
+
+    // NEW: Include daily brief memory features (curated AI-synthesized content)
+    const latestMemory = await ctx.db
+      .query("dailyBriefMemories")
+      .order("desc")
+      .first();
+
+    if (latestMemory && latestMemory.features) {
+      for (const feature of latestMemory.features.slice(0, Math.floor(limit / 4))) {
+        // Only include passing or high-priority features
+        if (feature.status === "passing" || (feature.priority && feature.priority >= 7)) {
+          candidates.push({
+            itemId: `brief-${latestMemory._id}-${feature.id}`,
+            itemType: "update",
+            source: "trending",
+            title: feature.name,
+            snippet: feature.testCriteria?.substring(0, 200) || feature.notes || "",
+            metadata: {
+              kind: "daily_brief",
+              type: feature.type,
+              status: feature.status,
+              priority: feature.priority,
+              dateString: latestMemory.dateString,
+            },
+            timestamp: feature.updatedAt || latestMemory.generatedAt,
+          });
+        }
+      }
+    }
+
+    // NEW: Boost items with high engagement (feedback loop)
+    const recentEngagements = await ctx.db
+      .query("feedEngagements")
+      .order("desc")
+      .take(100);
+
+    // Count engagements per item
+    const engagementCounts = new Map<string, number>();
+    for (const engagement of recentEngagements) {
+      const count = engagementCounts.get(engagement.itemId) || 0;
+      // Weight by action type: share > save > click > view
+      const weight = engagement.action === "share" ? 4 :
+                     engagement.action === "save" ? 3 :
+                     engagement.action === "click" ? 2 : 1;
+      engagementCounts.set(engagement.itemId, count + weight);
+    }
+
+    // Add engagement boost to metadata of existing candidates
+    for (const candidate of candidates) {
+      const boost = engagementCounts.get(candidate.itemId as string) || 0;
+      if (boost > 0) {
+        candidate.metadata = {
+          ...candidate.metadata,
+          engagementBoost: boost,
+        };
+      }
     }
 
     return candidates;

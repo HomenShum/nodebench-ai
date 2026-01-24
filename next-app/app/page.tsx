@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Zap, CheckCircle } from "lucide-react";
+import { Activity, Zap, CheckCircle, Bot, FileText } from "lucide-react";
 
 export const metadata = {
   title: "NodeBench AI - SSR",
@@ -69,6 +69,46 @@ export default function Home() {
                   </div>
                   <div className="text-sm text-slate-600 mt-1">
                     Human-in-the-loop review performance and automation opportunities
+                  </div>
+                </div>
+                <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  →
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/agents"
+              className="block p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-slate-900 group-hover:text-blue-600">
+                    <Bot size={16} className="inline mr-2" />
+                    Agents Dashboard
+                  </div>
+                  <div className="text-sm text-slate-600 mt-1">
+                    Orchestrate AI agents for research and analysis
+                  </div>
+                </div>
+                <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                  →
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/documents"
+              className="block p-4 border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all group"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-slate-900 group-hover:text-blue-600">
+                    <FileText size={16} className="inline mr-2" />
+                    Documents Hub
+                  </div>
+                  <div className="text-sm text-slate-600 mt-1">
+                    Document management, tasks, and planner
                   </div>
                 </div>
                 <div className="text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">

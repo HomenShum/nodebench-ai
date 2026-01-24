@@ -10,6 +10,7 @@ export interface WebSource {
   description?: string;
   favicon?: string;
   previewImage?: string;
+  publishedAt?: string;
 }
 
 export interface PersonProfile {

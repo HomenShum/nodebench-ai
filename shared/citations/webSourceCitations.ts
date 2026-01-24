@@ -7,6 +7,7 @@ export interface WebSourceLike {
   url: string;
   domain?: string;
   description?: string;
+  publishedAt?: string;
 }
 
 function normalizeUrlForId(url: string): string {
