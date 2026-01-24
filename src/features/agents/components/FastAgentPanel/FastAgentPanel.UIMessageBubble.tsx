@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
@@ -70,12 +70,40 @@ interface FastAgentUIMessageBubbleProps {
 }
 
 /**
- * Image component with loading and error states
+ * Image component with lazy loading using IntersectionObserver
+ * Only loads image when it's about to enter the viewport
  * Memoized to prevent re-renders when parent updates
  */
 const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Lazy load using IntersectionObserver
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.disconnect(); // Only need to observe once
+          }
+        });
+      },
+      {
+        rootMargin: '200px 0px', // Start loading 200px before entering viewport
+        threshold: 0,
+      }
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
 
   if (error) {
     return (
@@ -98,22 +126,33 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
   }
 
   return (
-    <div className="relative">
-      {loading && (
+    <div ref={containerRef} className="relative min-h-[100px]">
+      {/* Show placeholder until visible */}
+      {!isVisible && (
         <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded">
-          <Loader2 className="h-6 w-6 animate-spin text-[var(--text-muted)]" />
+          <div className="text-xs text-[var(--text-muted)]">Loading...</div>
         </div>
       )}
-      <img
-        src={src}
-        alt={alt}
-        className={cn(className, loading && 'opacity-0')}
-        onLoad={() => setLoading(false)}
-        onError={() => {
-          setLoading(false);
-          setError(true);
-        }}
-      />
+      {/* Only load image once visible */}
+      {isVisible && (
+        <>
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded">
+              <Loader2 className="h-6 w-6 animate-spin text-[var(--text-muted)]" />
+            </div>
+          )}
+          <img
+            src={src}
+            alt={alt}
+            className={cn(className, loading && 'opacity-0')}
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setError(true);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 });

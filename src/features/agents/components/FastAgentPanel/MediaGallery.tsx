@@ -43,12 +43,13 @@ export function YouTubeGallery({ videos }: YouTubeGalleryProps) {
               className="video-card"
               onClick={() => setSelectedVideo(video)}
             >
-              {/* Thumbnail */}
+              {/* Thumbnail - lazy loaded */}
               <div className="video-thumbnail">
                 <img
                   src={video.thumbnail || `https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`}
                   alt={video.title}
                   className="thumbnail-img"
+                  loading="lazy"
                 />
                 <div className="play-overlay">
                   <Play className="play-icon" />
