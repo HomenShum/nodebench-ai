@@ -158,8 +158,56 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
 });
 
 /**
+ * Type guard to check if output is a structured tool response
+ * Structured outputs have: kind, version, summary, data
+ */
+function isStructuredToolOutput(output: unknown): output is {
+  kind: string;
+  version: number;
+  summary: string;
+  data: Record<string, unknown>;
+} {
+  if (!output || typeof output !== 'object') return false;
+  const obj = output as Record<string, unknown>;
+  return (
+    typeof obj.kind === 'string' &&
+    typeof obj.version === 'number' &&
+    typeof obj.summary === 'string' &&
+    obj.data !== undefined
+  );
+}
+
+/**
+ * Parse structured tool output directly (fast path)
+ */
+function parseStructuredOutput(output: { kind: string; data: Record<string, unknown> }) {
+  const { kind, data } = output;
+
+  switch (kind) {
+    case 'youtube_search_results':
+      return { youtubeVideos: (data.videos as YouTubeVideo[]) || [] };
+    case 'sec_filing_results':
+      return { secDocuments: (data.documents as SECDocument[]) || [] };
+    case 'company_selection':
+      return { companySelectionData: data as { prompt: string; companies: CompanyOption[] } };
+    case 'people_selection':
+      return { peopleSelectionData: data as { prompt: string; people: PersonOption[] } };
+    case 'event_selection':
+      return { eventSelectionData: data as { prompt: string; events: EventOption[] } };
+    case 'news_selection':
+      return { newsSelectionData: data as { prompt: string; articles: NewsArticleOption[] } };
+    default:
+      return {};
+  }
+}
+
+/**
  * Helper to render tool output with markdown support and gallery layout for images, videos, and SEC documents
  * Memoized to prevent expensive regex parsing on every render
+ *
+ * Performance optimization:
+ * 1. Fast path: If output is structured object, parse directly (no regex)
+ * 2. Slow path: Fall back to regex parsing for legacy string outputs
  */
 const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
   output,
@@ -175,8 +223,40 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
   onNewsSelect?: (article: NewsArticleOption) => void;
 }) {
   // Memoize the expensive parsing operations
-  // Optimized: Single-pass regex extraction instead of 8+ separate regex calls
   const parsedData = useMemo(() => {
+    // FAST PATH: Structured tool output (no regex needed)
+    if (isStructuredToolOutput(output)) {
+      const structured = parseStructuredOutput(output);
+      const secDocuments = structured.secDocuments || [];
+
+      // Convert SEC documents to FileViewer format
+      const fileViewerFiles: FileViewerFile[] = secDocuments.map(doc => ({
+        url: doc.viewerUrl || doc.documentUrl,
+        fileType: doc.documentUrl.endsWith('.pdf') ? 'pdf' : 'html' as 'pdf' | 'html' | 'txt',
+        title: doc.title,
+        metadata: {
+          formType: doc.formType,
+          date: doc.filingDate,
+          source: 'SEC EDGAR',
+          accessionNumber: doc.accessionNumber,
+        },
+      }));
+
+      return {
+        youtubeVideos: structured.youtubeVideos || [],
+        fileViewerFiles,
+        companySelectionData: structured.companySelectionData || null,
+        peopleSelectionData: structured.peopleSelectionData || null,
+        eventSelectionData: structured.eventSelectionData || null,
+        newsSelectionData: structured.newsSelectionData || null,
+        hasMultipleImages: false,
+        imageUrls: [],
+        beforeImages: output.summary || '',
+        restOfContent: '',
+      };
+    }
+
+    // SLOW PATH: Legacy regex parsing for string outputs
     const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
     // Single-pass extraction of all embedded data blocks
