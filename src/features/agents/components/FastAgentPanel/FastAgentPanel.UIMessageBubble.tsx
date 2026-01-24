@@ -7,7 +7,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -49,6 +49,7 @@ import {
 import type { CitationType } from '@/features/research/types/citationSchema';
 import type { EntityType } from '@/features/research/types/entitySchema';
 import { makeWebSourceCitationId } from '../../../../../shared/citations/webSourceCitations';
+import { formatBriefDateTime } from '@/lib/briefDate';
 
 interface FastAgentUIMessageBubbleProps {
   message: UIMessage;
@@ -539,49 +540,195 @@ function isFusionSearchTool(toolName: string | undefined): boolean {
     toolName.includes('fusion') && toolName.includes('Search');
 }
 
-function SourcesCitedDropdown({ library }: { library: CitationLibrary }) {
+function formatCitationDateOnly(input?: string): string | null {
+  if (!input) return null;
+  const ms = Date.parse(input);
+  if (!Number.isFinite(ms)) return input;
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(ms);
+}
+
+function formatCitationDateTime(input?: string): string | null {
+  if (!input) return null;
+  const ms = Date.parse(input);
+  if (!Number.isFinite(ms)) return input;
+  return formatBriefDateTime(ms);
+}
+
+/** Extract domain from URL for display (e.g., "wired.com" from "https://www.wired.com/story/...") */
+function extractDomain(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+}
+
+/** Get favicon URL for a domain using Google's favicon service */
+function getFaviconUrl(url?: string): string | null {
+  const domain = extractDomain(url);
+  if (!domain) return null;
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+}
+
+/** Get source type icon based on citation type */
+function getSourceTypeIcon(type: string): React.ReactNode {
+  const iconClass = "h-3 w-3";
+  switch (type.toLowerCase()) {
+    case 'web':
+    case 'news':
+      return <Globe className={iconClass} />;
+    case 'academic':
+    case 'arxiv':
+      return <BrainCircuit className={iconClass} />;
+    default:
+      return <Globe className={iconClass} />;
+  }
+}
+
+function SourcesCitedDropdown({ library, basisMs }: { library: CitationLibrary; basisMs?: number }) {
   const citations = getOrderedCitations(library);
   if (citations.length === 0) return null;
 
+  const asOf = typeof basisMs === 'number' && Number.isFinite(basisMs) ? formatBriefDateTime(basisMs) : null;
+
   return (
-    <details className="mt-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/50 dark:bg-[var(--bg-secondary)] dark:border-[var(--border-color)]">
-      <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center justify-between">
-        <span>Sources cited ({citations.length})</span>
-        <ChevronDown className="h-4 w-4 text-[var(--text-muted)]" />
-      </summary>
-      <div className="px-3 pb-3 pt-1 space-y-2">
-        {citations.map((c) => (
-          <div key={c.id} className="flex gap-2">
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-semibold">
-              {c.number}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                {c.url ? (
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-medium text-blue-600 hover:underline truncate"
-                    title={c.label}
-                  >
-                    {c.label}
-                  </a>
-                ) : (
-                  <span className="text-xs font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate" title={c.label}>
-                    {c.label}
-                  </span>
-                )}
-                <span className="text-[10px] px-1.5 py-0.5 rounded border bg-blue-50 text-blue-600 border-blue-200">
-                  {c.type}
-                </span>
-              </div>
-              <div className="text-[11px] text-[var(--text-secondary)] dark:text-[var(--text-muted)] line-clamp-2">
-                {c.fullText}
-              </div>
-            </div>
+    <details className="mt-4 group rounded-xl border border-[var(--border-color)] bg-gradient-to-b from-[var(--bg-primary)] to-[var(--bg-secondary)]/30 dark:from-[var(--bg-secondary)] dark:to-[var(--bg-primary)]/50 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between rounded-xl hover:bg-[var(--bg-hover)]/50 transition-colors duration-150">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/40">
+            <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
-        ))}
+          <span>Sources cited</span>
+          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+            {citations.length}
+          </span>
+        </div>
+        <ChevronDown className="h-4 w-4 text-[var(--text-muted)] group-open:rotate-180 transition-transform duration-200" />
+      </summary>
+
+      <div className="px-4 pb-4 pt-2 space-y-3">
+        {/* Response basis timestamp */}
+        {asOf && (
+          <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] pb-2 border-b border-[var(--border-color)]/50">
+            <Clock className="h-3.5 w-3.5" />
+            <span>Response based on data as of</span>
+            <span className="font-semibold text-[var(--text-primary)]">{asOf}</span>
+          </div>
+        )}
+
+        {/* Citation cards */}
+        {citations.map((c) => {
+          const domain = extractDomain(c.url);
+          const faviconUrl = getFaviconUrl(c.url);
+
+          return (
+            <div
+              key={c.id}
+              className="group/card relative rounded-lg border border-[var(--border-color)]/60 bg-[var(--bg-primary)] dark:bg-[var(--bg-secondary)]/50 p-3 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all duration-150"
+            >
+              {/* Citation number badge */}
+              <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-[10px] font-bold shadow-sm">
+                {c.number}
+              </div>
+
+              {/* Header row: favicon + title + type badge */}
+              <div className="flex items-start gap-3 ml-3">
+                {/* Favicon or fallback icon */}
+                <div className="flex-shrink-0 mt-0.5">
+                  {faviconUrl ? (
+                    <img
+                      src={faviconUrl}
+                      alt=""
+                      className="w-5 h-5 rounded"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <Globe className="h-3 w-3 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Title and metadata */}
+                <div className="min-w-0 flex-1">
+                  {/* Title row */}
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      {c.url ? (
+                        <a
+                          href={c.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-[var(--text-primary)] hover:text-blue-600 dark:hover:text-blue-400 line-clamp-2 transition-colors group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400"
+                          title={c.label}
+                        >
+                          {c.label}
+                          <ExternalLink className="inline-block ml-1 h-3 w-3 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                        </a>
+                      ) : (
+                        <span className="text-sm font-medium text-[var(--text-primary)] line-clamp-2" title={c.label}>
+                          {c.label}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Type badge */}
+                    <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium">
+                      {getSourceTypeIcon(c.type)}
+                      {c.type}
+                    </span>
+                  </div>
+
+                  {/* Domain display */}
+                  {domain && (
+                    <div className="mt-1 text-[11px] text-[var(--text-muted)] font-medium">
+                      {domain}
+                    </div>
+                  )}
+
+                  {/* Metadata row: author, dates */}
+                  {(c.publishedAt || c.accessedAt || c.author) && (
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
+                      {c.author && (
+                        <span className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="truncate max-w-[150px]">{c.author}</span>
+                        </span>
+                      )}
+                      {c.publishedAt && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span className="font-medium">{formatCitationDateOnly(c.publishedAt) ?? c.publishedAt}</span>
+                        </span>
+                      )}
+                      {c.accessedAt && (
+                        <span className="flex items-center gap-1 text-[var(--text-muted)]">
+                          <Eye className="h-3 w-3" />
+                          <span>{formatCitationDateTime(c.accessedAt) ?? c.accessedAt}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Summary/full text */}
+                  {c.fullText && (
+                    <p className="mt-2 text-xs text-[var(--text-secondary)] dark:text-[var(--text-muted)] line-clamp-2 leading-relaxed">
+                      {c.fullText}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </details>
   );
@@ -1137,11 +1284,172 @@ export function FastAgentUIMessageBubble({
   const { citedCitationLibrary, entityLibrary } = useMemo(() => {
     if (isUser) return { citedCitationLibrary: undefined, entityLibrary: undefined };
 
+		// Parse NodeBench live-feed tool output into deterministic citation records so
+		// tokens like `{{cite:feed_1|...}}` can resolve to URLs + published dates.
+		function parseLiveFeedToolOutput(text: string): Array<{
+			id: string;
+			title: string;
+			url?: string;
+			source?: string;
+			publishedAt?: string;
+			summary?: string;
+		}> {
+			const raw = String(text ?? "");
+			if (!raw.includes("Latest feed items") && !raw.includes("Top Headlines")) return [];
+
+			const lines = raw.split(/\r?\n/);
+			type Item = {
+				idx: number;
+				title: string;
+				url?: string;
+				source?: string;
+				publishedAt?: string;
+				summary?: string;
+			};
+			const items: Item[] = [];
+			let cur: Item | null = null;
+
+			const pushCur = () => {
+				if (!cur) return;
+				items.push(cur);
+				cur = null;
+			};
+
+			for (const line of lines) {
+				const mIndex = /^\s*(\d+)\.\s+(.*)\s*$/.exec(line);
+				if (mIndex) {
+					pushCur();
+					cur = { idx: Number(mIndex[1]), title: mIndex[2] };
+					continue;
+				}
+
+				if (!cur) continue;
+
+				const mSource = /^\s*(?:-\s*)?Source:\s*(.*?)\s*(?:\||$)/.exec(line);
+				if (mSource && !cur.source) {
+					cur.source = mSource[1]?.trim();
+				}
+
+				const mPublished = /Published:\s*([^|\n]+)\s*$/.exec(line);
+				if (mPublished && !cur.publishedAt) {
+					cur.publishedAt = mPublished[1]?.trim();
+				}
+
+				const mUrl = /^\s*(?:-\s*)?URL:\s*(\S.*)\s*$/.exec(line);
+				if (mUrl && !cur.url) {
+					cur.url = mUrl[1]?.trim();
+				}
+
+				const mSummary = /^\s*(?:-\s*)?Summary:\s*(\S.*)\s*$/.exec(line);
+				if (mSummary && !cur.summary) {
+					cur.summary = mSummary[1]?.trim();
+				}
+			}
+			pushCur();
+
+			return items
+				.filter((i) => Number.isFinite(i.idx) && i.idx > 0 && Boolean(i.title))
+				.map((i) => ({
+					id: `feed_${i.idx}`,
+					title: i.title,
+					url: i.url,
+					source: i.source,
+					publishedAt: i.publishedAt,
+					summary: i.summary,
+				}));
+		}
+
+		// Many assistant responses include a markdown "Sources Cited" section with real links
+		// (e.g. `- [Title](https://...) {{cite:feed_1|Title|type:source}}`).
+		// If tool-result parts aren't persisted, this is still enough to make the dropdown titles clickable.
+		function parseCitationUrlsFromText(text: string): Map<string, string> {
+			const urlById = new Map<string, string>();
+			const raw = String(text ?? '');
+			if (!raw.includes('{{cite:')) return urlById;
+
+			const extractUrl = (line: string | undefined): string | undefined => {
+				const rawLine = String(line ?? '').trim();
+				if (!rawLine) return undefined;
+
+				const mUrlLine = /\bURL:\s*(https?:\/\/\S+)\s*$/i.exec(rawLine);
+				if (mUrlLine?.[1]) return mUrlLine[1].trim();
+
+				const mMdLink = /\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/.exec(rawLine);
+				if (mMdLink?.[1]) return mMdLink[1].trim();
+
+				const mPlain = /(https?:\/\/\S+)/.exec(rawLine);
+				if (mPlain?.[1]) return mPlain[1].trim();
+				return undefined;
+			};
+
+			const lines = raw.split(/\r?\n/);
+			for (let i = 0; i < lines.length; i++) {
+				const line = lines[i] ?? '';
+				const citeIds: string[] = [];
+				const citeRe = /\{\{cite:([^|}]+)(?:\|([^|}]+))?(?:\|type:([^}]+))?\}\}/g;
+				let m: RegExpExecArray | null;
+				while ((m = citeRe.exec(line))) {
+					if (m[1]) citeIds.push(m[1]);
+				}
+				if (citeIds.length === 0) continue;
+
+				const url =
+					extractUrl(line) ??
+					extractUrl(lines[i + 1]) ??
+					extractUrl(lines[i + 2]);
+				if (!url) continue;
+
+				for (const id of citeIds) {
+					if (!urlById.has(id)) urlById.set(id, url);
+				}
+			}
+
+			return urlById;
+		}
+
+		// Use the message timestamp as the stable "accessed" time for any sources used in this response.
+		// (Avoids confusing per-render Date.now() differences.)
+		const accessedAt = new Date(
+			typeof message._creationTime === 'number' && Number.isFinite(message._creationTime)
+				? message._creationTime
+				: Date.now(),
+		).toISOString();
+
     // Build a master library from fusion search results (tool outputs embed structured payload markers)
     let masterCitationLibrary = createCitationLibrary();
     const seenCitationIds = new Set<string>();
 
     const toolResultParts = message.parts.filter((p: any) => p.type === 'tool-result');
+
+			// Ingest live feed tool outputs so `feed_#` citations can resolve to real URLs.
+			for (const part of toolResultParts) {
+				const toolName = (part as any).toolName as string | undefined;
+				const toolOutput = (part as any).output ?? (part as any).result;
+				const outputText = typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput ?? '', null, 2);
+				// Tool name may vary depending on how it's registered; also allow content-based detection.
+				const looksLikeLiveFeed =
+					(toolName && toolName.toLowerCase().includes('l ivefeed'.replace(' ', ''))) ||
+					outputText.includes('Latest feed items') ||
+					outputText.includes('Top Headlines');
+				if (!looksLikeLiveFeed) continue;
+
+				for (const item of parseLiveFeedToolOutput(outputText)) {
+					if (!item.id || seenCitationIds.has(item.id)) continue;
+					seenCitationIds.add(item.id);
+
+					masterCitationLibrary = addCitation(masterCitationLibrary, {
+						id: item.id,
+						type: 'source',
+						label: (item.title || item.id).slice(0, 120),
+						fullText: [item.title, item.summary].filter(Boolean).join(' — ').slice(0, 500),
+						url: item.url,
+						author: item.source,
+						publishedAt: item.publishedAt,
+						accessedAt,
+					});
+				}
+			}
+
     for (const part of toolResultParts) {
       const toolName = (part as any).toolName as string | undefined;
       if (!isFusionSearchTool(toolName)) continue;
@@ -1162,7 +1470,7 @@ export function FastAgentUIMessageBubble({
           url: r.url,
           author: r.source,
           publishedAt: r.publishedAt,
-          accessedAt: new Date().toISOString(),
+				accessedAt,
         });
       }
     }
@@ -1190,13 +1498,16 @@ export function FastAgentUIMessageBubble({
           fullText: [s.title, s.description].filter(Boolean).join(' — ').slice(0, 500),
           url,
           author: s.domain,
-          accessedAt: new Date().toISOString(),
+				publishedAt: s.publishedAt,
+				accessedAt,
         });
       }
     }
 
-    // Build the "cited" library in order of appearance in the final text, so markers are [1], [2], ...
-    const citationTokens = parseCitations(visibleText || message.text || '');
+			// Build the "cited" library in order of appearance in the final text, so markers are [1], [2], ...
+			const finalText = visibleText || message.text || '';
+			const urlByCitationId = parseCitationUrlsFromText(finalText);
+			const citationTokens = parseCitations(finalText);
     const citeOrder: string[] = [];
     const citeTokenById = new Map<string, typeof citationTokens[number]>();
     for (const token of citationTokens) {
@@ -1213,15 +1524,16 @@ export function FastAgentUIMessageBubble({
         const tokenType = (token?.type as CitationType | undefined) ?? undefined;
         const type = tokenType ?? base?.type ?? 'source';
 
-        citedCitationLibrary = addCitation(citedCitationLibrary, {
+				citedCitationLibrary = addCitation(citedCitationLibrary, {
           id,
           type,
           label: token?.label || base?.label || id,
           fullText: base?.fullText || token?.label || id,
-          url: base?.url,
+					url: base?.url ?? urlByCitationId.get(id),
           author: base?.author,
           publishedAt: base?.publishedAt,
-          accessedAt: base?.accessedAt,
+					// Ensure we always show a deterministic date, even for citations that only exist as inline tokens.
+					accessedAt: base?.accessedAt ?? accessedAt,
         });
       }
     }
@@ -1730,7 +2042,7 @@ export function FastAgentUIMessageBubble({
 
         {/* "Sources cited" dropdown (derived from inline citation tokens) */}
         {!isUser && citedCitationLibrary && message.status !== 'streaming' && (
-          <SourcesCitedDropdown library={citedCitationLibrary} />
+			<SourcesCitedDropdown library={citedCitationLibrary} basisMs={message._creationTime} />
         )}
 
         {/* Status indicator and actions */}
