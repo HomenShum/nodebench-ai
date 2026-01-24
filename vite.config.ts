@@ -231,10 +231,6 @@ window.addEventListener('message', async (message) => {
         manualChunks(id) {
           // Vendor chunks - only split large/important libraries
           if (id.includes('/node_modules/')) {
-            // Icons must be in same chunk as React to ensure proper initialization
-            if (id.includes('/node_modules/lucide-react/')) {
-              return 'react-vendor';
-            }
             // React core (keep small and cacheable)
             if (id.match(/\/node_modules\/(react\/|react-dom\/|scheduler\/)/)) {
               return 'react-vendor';
@@ -246,10 +242,8 @@ window.addEventListener('message', async (message) => {
             if (id.includes('/node_modules/convex/')) {
               return 'convex-vendor';
             }
-            // Charts (lazy loaded, should be separate)
-            if (id.includes('/node_modules/recharts/')) {
-              return 'charts';
-            }
+            // Let Vite handle lucide-react and recharts naturally (no manual chunking)
+            // to avoid initialization order issues
             // Editor ecosystem (heavy, should be separate)
             if (id.includes('/node_modules/@tiptap/') || id.includes('/node_modules/@blocknote/')) {
               return 'editor-vendor';
