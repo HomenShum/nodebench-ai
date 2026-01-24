@@ -189,6 +189,30 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const location = useLocation();
   const navigate = useNavigate();
 
+  // User stats for unread briefings badge
+  const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
+  // Current user for avatar
+  const user = useQuery(api.domains.auth.auth.loggedInUser);
+  // Authentication state
+  const { isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
+  const [isAnonSigningIn, setIsAnonSigningIn] = useState(false);
+  // Show guest CTA when not authenticated
+  const showGuestWorkspaceCta = !isAuthenticated && !user;
+
+  // Handle anonymous sign in
+  const handleAnonymousSignIn = useCallback(async () => {
+    setIsAnonSigningIn(true);
+    try {
+      await signIn("anonymous");
+    } catch (error) {
+      console.error("Anonymous sign-in failed:", error);
+      toast.error("Failed to sign in anonymously");
+    } finally {
+      setIsAnonSigningIn(false);
+    }
+  }, [signIn]);
+
   const [isGridMode, setIsGridMode] = useState(false);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -221,6 +245,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   } | null>(null);
   // Fast Agent thread navigation (for inline agent "View in Panel" link)
   const [fastAgentThreadId, setFastAgentThreadId] = useState<string | null>(null);
+  // Settings modal state
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [settingsInitialTab, setSettingsTab] = useState<string>('usage');
+
+  // Open settings modal with optional tab
+  const openSettings = useCallback((tab?: string) => {
+    if (tab) setSettingsTab(tab);
+    setShowSettingsModal(true);
+  }, []);
   // Removed MCP panel persistence and shortcut (no AIChatPanel)
 
   // Command Palette state with global Cmd/Ctrl+K shortcut
@@ -258,7 +291,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     setFastAgentThreadId,
     setSelectedDocumentIdsForAgent,
     setCurrentView,
-    onDocumentSelect: handleDocumentSelect,
+    onDocumentSelect,
     setIsGridMode,
     setIsTransitioning,
     setMentionPopover,
@@ -322,7 +355,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             setShowResearchDossier(true);
           }}
           selectedDocumentId={selectedDocumentId}
-          onDocumentSelect={handleDocumentSelect}
+          onDocumentSelect={onDocumentSelect}
           currentView={currentView}
           onViewChange={setCurrentView}
         />
@@ -541,7 +574,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                         embedded
                         initialTab={researchHubInitialTab}
                         onGoHome={() => setShowResearchDossier(false)}
-                        onDocumentSelect={(id) => handleDocumentSelect(id as Id<"documents">)}
+                        onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
                         onEnterWorkspace={() => setCurrentView('documents')}
                         activeSources={activeSources}
                         onToggleSource={(sourceId) => setActiveSources(prev =>
@@ -552,7 +585,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   )}
                 </AnimatePresence>
               ) : currentView === 'public' ? (
-                <PublicDocuments onDocumentSelect={handleDocumentSelect} />
+                <PublicDocuments onDocumentSelect={onDocumentSelect} />
               ) : currentView === 'spreadsheets' ? (
                 <Suspense fallback={viewFallback}>
                   {selectedSpreadsheetId ? (
@@ -576,7 +609,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <AgentsHub />
               ) : currentView === 'calendar' ? (
                 <CalendarHomeHub
-                  onDocumentSelect={handleDocumentSelect}
+                  onDocumentSelect={onDocumentSelect}
                   onGridModeToggle={() => setIsGridMode((v) => !v)}
                 />
               ) : currentView === 'roadmap' ? (
@@ -674,14 +707,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     {(isGridMode || !!selectedDocumentId) ? (
                       <TabManager
                         selectedDocumentId={selectedDocumentId}
-                        onDocumentSelect={handleDocumentSelect}
+                        onDocumentSelect={onDocumentSelect}
                         isGridMode={isGridMode}
                         setIsGridMode={setIsGridMode}
                         currentView={currentView}
                       />
                     ) : (
                       <DocumentsHomeHub
-                        onDocumentSelect={(id) => handleDocumentSelect(id)}
+                        onDocumentSelect={(id) => onDocumentSelect(id)}
                         onGridModeToggle={() => setIsGridMode((v) => !v)}
                         selectedTaskId={selectedTaskId}
                         selectedTaskSource={selectedTaskSource}
