@@ -696,6 +696,73 @@ export const getForYouFeed = query({
   },
 });
 
+/**
+ * Get public For You feed (no auth required)
+ * Returns trending and out-of-network content for anonymous users
+ */
+export const getPublicForYouFeed = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { limit = 20 }) => {
+    // Get trending candidates directly (no user context needed)
+    const trending = await ctx.runQuery(
+      internal.domains.research.forYouFeed.getTrendingCandidates,
+      { limit: Math.floor(limit / 2) }
+    );
+
+    // Get a sample user to fetch out-of-network (or just use trending if no users)
+    const sampleUser = await ctx.db.query("users").first();
+    let outOfNetwork: FeedCandidate[] = [];
+
+    if (sampleUser) {
+      outOfNetwork = await ctx.runQuery(
+        internal.domains.research.forYouFeed.getOutOfNetworkCandidates,
+        { userId: sampleUser._id, limit: Math.floor(limit / 2) }
+      );
+    }
+
+    // Combine and dedupe by itemId
+    const seen = new Set<string>();
+    const combined: FeedCandidate[] = [];
+
+    for (const item of [...trending, ...outOfNetwork]) {
+      const id = typeof item.itemId === 'string' ? item.itemId : String(item.itemId);
+      if (!seen.has(id)) {
+        seen.add(id);
+        combined.push(item);
+      }
+    }
+
+    // Sort by timestamp (most recent first) and limit
+    const sorted = combined
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, limit);
+
+    // Calculate mix ratio
+    const sourceCount = {
+      in_network: 0,
+      out_of_network: sorted.filter((c) => c.source === "out_of_network").length,
+      trending: sorted.filter((c) => c.source === "trending").length,
+    };
+
+    const total = sorted.length || 1;
+    const mixRatio = {
+      inNetwork: 0,
+      outOfNetwork: sourceCount.out_of_network / total,
+      trending: sourceCount.trending / total,
+    };
+
+    return {
+      items: sorted,
+      totalCandidates: combined.length,
+      mixRatio,
+      generatedAt: Date.now(),
+      isPublic: true,
+    };
+  },
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // STORAGE MUTATIONS
 // ═══════════════════════════════════════════════════════════════════════════

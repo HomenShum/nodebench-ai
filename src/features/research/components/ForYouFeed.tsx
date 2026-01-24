@@ -1,26 +1,35 @@
 /**
  * For You Feed Component
  * Displays personalized content using X's For You algorithm
+ * Falls back to public feed for non-authenticated users
  */
 
 import React from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { TrendingUp, Eye, Bookmark, Share2, ExternalLink } from "lucide-react";
+import { TrendingUp, Eye, Bookmark, Share2, ExternalLink, Globe } from "lucide-react";
 
 export function ForYouFeed() {
-  const feed = useQuery(api.domains.research.forYouFeed.getForYouFeed, { limit: 20 });
+  // Try authenticated feed first
+  const authFeed = useQuery(api.domains.research.forYouFeed.getForYouFeed, { limit: 20 });
+  // Always fetch public feed as fallback
+  const publicFeed = useQuery(api.domains.research.forYouFeed.getPublicForYouFeed, { limit: 20 });
   const recordEngagement = useMutation(api.domains.research.forYouFeed.recordEngagement);
+
+  // Use authenticated feed if it has items, otherwise fall back to public
+  const isPublicMode = !authFeed?.items?.length && publicFeed?.items?.length;
+  const feed = isPublicMode ? publicFeed : authFeed;
 
   const handleEngagement = async (itemId: string, action: "view" | "click" | "save" | "share") => {
     try {
       await recordEngagement({ itemId, action });
     } catch (error) {
-      console.error("Failed to record engagement:", error);
+      // Silently fail for non-authenticated users
+      console.debug("Engagement tracking requires authentication");
     }
   };
 
-  if (!feed) {
+  if (!feed && !publicFeed) {
     return (
       <div className="p-8 text-center text-[var(--text-secondary)]">
         Loading your personalized feed...
@@ -28,7 +37,8 @@ export function ForYouFeed() {
     );
   }
 
-  if (feed.items.length === 0) {
+  // If both are empty, show message
+  if (!feed?.items?.length && !publicFeed?.items?.length) {
     return (
       <div className="p-8 text-center text-[var(--text-secondary)]">
         <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -37,38 +47,53 @@ export function ForYouFeed() {
     );
   }
 
+  // Use public feed if auth feed is empty
+  const displayFeed = feed?.items?.length ? feed : publicFeed;
+  if (!displayFeed) return null;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <TrendingUp className="w-6 h-6" />
-          For You
+          {isPublicMode ? <Globe className="w-6 h-6" /> : <TrendingUp className="w-6 h-6" />}
+          {isPublicMode ? "Trending Feed" : "For You"}
         </h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Personalized content • {Math.round(feed.mixRatio.inNetwork * 100)}% in-network,{" "}
-          {Math.round(feed.mixRatio.outOfNetwork * 100)}% discovery
+          {isPublicMode ? (
+            <>Public feed • Sign in for personalized recommendations</>
+          ) : (
+            <>Personalized content • {Math.round(displayFeed.mixRatio.inNetwork * 100)}% in-network,{" "}
+            {Math.round(displayFeed.mixRatio.outOfNetwork * 100)}% discovery</>
+          )}
         </p>
       </div>
 
       {/* Feed Stats */}
       <div className="flex items-center gap-4 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg text-sm">
         <span className="text-[var(--text-secondary)]">
-          Generated from {feed.totalCandidates} candidates
+          Generated from {displayFeed.totalCandidates} candidates
         </span>
         <span className="text-[var(--text-muted)]">•</span>
         <span className="text-[var(--text-secondary)]">
-          Updated {new Date(feed.generatedAt).toLocaleTimeString()}
+          Updated {new Date(displayFeed.generatedAt).toLocaleTimeString()}
         </span>
+        {isPublicMode && (
+          <>
+            <span className="text-[var(--text-muted)]">•</span>
+            <span className="text-orange-500 font-medium">Public Mode</span>
+          </>
+        )}
       </div>
 
       {/* Feed Items */}
       <div className="space-y-4">
-        {feed.items.map((item: any) => (
+        {displayFeed.items.map((item: any) => (
           <FeedItem
             key={item.itemId}
             item={item}
             onEngagement={handleEngagement}
+            isPublicMode={isPublicMode}
           />
         ))}
       </div>
@@ -79,9 +104,10 @@ export function ForYouFeed() {
 interface FeedItemProps {
   item: any;
   onEngagement: (itemId: string, action: "view" | "click" | "save" | "share") => void;
+  isPublicMode?: boolean;
 }
 
-function FeedItem({ item, onEngagement }: FeedItemProps) {
+function FeedItem({ item, onEngagement, isPublicMode }: FeedItemProps) {
   const sourceColors = {
     in_network: "bg-blue-500",
     out_of_network: "bg-purple-500",
