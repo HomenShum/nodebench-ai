@@ -1,24 +1,23 @@
 /**
  * For You Feed Component
- * Modern card-based design inspired by X.com and Instagram
+ * Pinterest-style masonry board design
  */
 
 import React, { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
-  TrendingUp,
   Bookmark,
   Share2,
   ExternalLink,
   Globe,
-  MessageCircle,
   Heart,
   MoreHorizontal,
   Sparkles,
   Zap,
   Clock,
   ArrowUpRight,
+  TrendingUp,
 } from "lucide-react";
 
 export function ForYouFeed() {
@@ -39,10 +38,10 @@ export function ForYouFeed() {
 
   if (!displayFeed) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-400">Loading your feed...</p>
+          <div className="w-10 h-10 border-3 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 text-sm">Loading your feed...</p>
         </div>
       </div>
     );
@@ -50,44 +49,44 @@ export function ForYouFeed() {
 
   if (!displayFeed.items?.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-10 h-10 text-slate-600" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-sm mx-auto px-6">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Sparkles className="w-8 h-8 text-gray-400" />
           </div>
-          <h2 className="text-xl font-semibold text-white mb-2">No items yet</h2>
-          <p className="text-slate-400">Check back soon for trending content and personalized recommendations.</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">No pins yet</h2>
+          <p className="text-gray-500 text-sm">Check back soon for trending content and personalized recommendations.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-20 backdrop-blur-xl bg-slate-900/80 border-b border-slate-800">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl ${isPublicMode ? 'bg-orange-500/20' : 'bg-blue-500/20'}`}>
+              <div className={`p-2 rounded-full ${isPublicMode ? 'bg-orange-100' : 'bg-red-100'}`}>
                 {isPublicMode ? (
-                  <Globe className="w-5 h-5 text-orange-400" />
+                  <Globe className="w-5 h-5 text-orange-600" />
                 ) : (
-                  <Sparkles className="w-5 h-5 text-blue-400" />
+                  <Sparkles className="w-5 h-5 text-red-600" />
                 )}
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">
-                  {isPublicMode ? "Discover" : "For You"}
+                <h1 className="text-lg font-bold text-gray-900">
+                  {isPublicMode ? "Explore" : "For You"}
                 </h1>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-gray-500">
                   {isPublicMode
-                    ? "Trending • Sign in to personalize"
-                    : `${Math.round(displayFeed.mixRatio.outOfNetwork * 100)}% discovery`}
+                    ? "Trending ideas • Sign in to save"
+                    : `${Math.round(displayFeed.mixRatio.outOfNetwork * 100)}% new discoveries`}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
+            <div className="flex items-center gap-2 text-xs text-gray-400">
               <Clock className="w-3.5 h-3.5" />
               <span>{new Date(displayFeed.generatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
@@ -95,22 +94,23 @@ export function ForYouFeed() {
         </div>
       </div>
 
-      {/* Feed Content */}
-      <div className="max-w-2xl mx-auto">
-        {displayFeed.items.map((item: any, index: number) => (
-          <FeedCard
-            key={item.itemId}
-            item={item}
-            onEngagement={handleEngagement}
-            isFirst={index === 0}
-          />
-        ))}
+      {/* Pinterest-style Masonry Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+          {displayFeed.items.map((item: any) => (
+            <PinCard
+              key={item.itemId}
+              item={item}
+              onEngagement={handleEngagement}
+            />
+          ))}
+        </div>
 
         {/* End of Feed */}
-        <div className="py-12 text-center border-t border-slate-800 mx-4">
-          <p className="text-slate-500 text-sm">You're all caught up!</p>
-          <p className="text-slate-600 text-xs mt-1">
-            Generated from {displayFeed.totalCandidates} candidates
+        <div className="py-10 text-center mt-8">
+          <p className="text-gray-400 text-sm">You've seen all the pins!</p>
+          <p className="text-gray-300 text-xs mt-1">
+            Curated from {displayFeed.totalCandidates} ideas
           </p>
         </div>
       </div>
@@ -118,33 +118,34 @@ export function ForYouFeed() {
   );
 }
 
-interface FeedCardProps {
+interface PinCardProps {
   item: any;
   onEngagement: (itemId: string, action: "view" | "click" | "save" | "share") => void;
-  isFirst?: boolean;
 }
 
-function FeedCard({ item, onEngagement, isFirst }: FeedCardProps) {
-  const [liked, setLiked] = useState(false);
+function PinCard({ item, onEngagement }: PinCardProps) {
   const [saved, setSaved] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Generate a gradient based on the item source
-  const gradients = {
-    in_network: "from-blue-600/20 to-indigo-600/20",
-    out_of_network: "from-purple-600/20 to-pink-600/20",
-    trending: "from-orange-600/20 to-red-600/20",
+  // Source-based accent colors (Pinterest-inspired)
+  const sourceStyles = {
+    in_network: { accent: "bg-blue-500", label: "Following", icon: Heart },
+    out_of_network: { accent: "bg-purple-500", label: "Discover", icon: Sparkles },
+    trending: { accent: "bg-red-500", label: "Trending", icon: Zap },
   };
 
-  const sourceConfig = {
-    in_network: { label: "Following", icon: Heart, color: "text-blue-400", bg: "bg-blue-500/20" },
-    out_of_network: { label: "Discover", icon: Sparkles, color: "text-purple-400", bg: "bg-purple-500/20" },
-    trending: { label: "Trending", icon: Zap, color: "text-orange-400", bg: "bg-orange-500/20" },
+  const style = sourceStyles[item.source as keyof typeof sourceStyles] || sourceStyles.trending;
+  const SourceIcon = style.icon;
+
+  // Random-ish image height for masonry effect (based on content length)
+  const getCardHeight = () => {
+    const snippetLength = item.snippet?.length || 0;
+    if (snippetLength > 200) return "h-72";
+    if (snippetLength > 100) return "h-56";
+    return "h-44";
   };
 
-  const config = sourceConfig[item.source as keyof typeof sourceConfig] || sourceConfig.trending;
-  const SourceIcon = config.icon;
-
-  // Extract domain from URL for display
+  // Extract domain
   const getDomain = (url?: string) => {
     if (!url) return null;
     try {
@@ -155,12 +156,6 @@ function FeedCard({ item, onEngagement, isFirst }: FeedCardProps) {
   };
 
   const domain = getDomain(item.metadata?.url);
-
-  const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setLiked(!liked);
-    onEngagement(item.itemId, "click");
-  };
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -184,162 +179,135 @@ function FeedCard({ item, onEngagement, isFirst }: FeedCardProps) {
   };
 
   return (
-    <article
-      className={`border-b border-slate-800 hover:bg-slate-800/30 transition-all duration-200 cursor-pointer group ${isFirst ? 'border-t-0' : ''}`}
-      onClick={handleOpen}
+    <div
+      className="break-inside-avoid mb-4"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="px-4 py-5">
-        {/* Card Header */}
-        <div className="flex items-start gap-3 mb-3">
-          {/* Source Avatar */}
-          <div className={`w-10 h-10 rounded-full ${config.bg} flex items-center justify-center flex-shrink-0 ring-2 ring-slate-800`}>
-            <SourceIcon className={`w-5 h-5 ${config.color}`} />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            {/* Source & Time Row */}
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`text-sm font-semibold ${config.color}`}>
-                {item.metadata?.source || config.label}
-              </span>
-              {item.metadata?.kind === "daily_brief" && (
-                <span className="px-1.5 py-0.5 text-[10px] font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 rounded-full border border-amber-500/30">
-                  AI Curated
-                </span>
-              )}
-              <span className="text-slate-600">·</span>
-              <span className="text-xs text-slate-500">
-                {formatTimeAgo(item.timestamp)}
-              </span>
-              <div className="ml-auto">
-                <button
-                  type="button"
-                  title="More options"
-                  aria-label="More options"
-                  onClick={(e) => e.stopPropagation()}
-                  className="p-1.5 hover:bg-slate-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <MoreHorizontal className="w-4 h-4 text-slate-500" />
-                </button>
-              </div>
-            </div>
-
-            {/* Title */}
-            <h3 className="text-[15px] font-medium text-white leading-snug mb-2 group-hover:text-blue-400 transition-colors">
-              {item.title}
-            </h3>
-          </div>
-        </div>
-
-        {/* Content Preview */}
-        {item.snippet && (
-          <p className="text-[15px] text-slate-300 leading-relaxed mb-3 line-clamp-3 pl-[52px]">
-            {cleanSnippet(item.snippet)}
-          </p>
-        )}
-
-        {/* Link Preview Card */}
-        {domain && (
-          <div className="ml-[52px] mb-3 rounded-xl border border-slate-700 overflow-hidden hover:border-slate-600 transition-colors">
-            <div className={`h-32 bg-gradient-to-br ${gradients[item.source as keyof typeof gradients] || gradients.trending} flex items-center justify-center`}>
-              <div className="text-4xl opacity-30">
-                {getSourceEmoji(item.metadata?.source)}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-800/50">
-              <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
-                <ExternalLink className="w-3 h-3" />
-                <span>{domain}</span>
-              </div>
-              <p className="text-sm text-slate-300 font-medium line-clamp-1">
-                {item.title}
-              </p>
+      <article
+        onClick={handleOpen}
+        className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100 hover:border-gray-200"
+      >
+        {/* Image/Gradient Header */}
+        <div className={`relative ${getCardHeight()} bg-gradient-to-br ${getGradient(item.source, item.metadata?.source)}`}>
+          {/* Source Badge */}
+          <div className="absolute top-3 left-3">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm shadow-sm`}>
+              <SourceIcon className={`w-3.5 h-3.5 ${getIconColor(item.source)}`} />
+              <span className="text-xs font-medium text-gray-700">{style.label}</span>
             </div>
           </div>
-        )}
 
-        {/* Phoenix Score Badge */}
-        {item.phoenixScore && (
-          <div className="ml-[52px] mb-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/30 rounded-full">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs font-medium text-green-400">{item.phoenixScore}% match</span>
-          </div>
-        )}
+          {/* AI Badge */}
+          {item.metadata?.kind === "daily_brief" && (
+            <div className="absolute top-3 right-3">
+              <div className="px-2 py-1 rounded-full bg-amber-400/90 backdrop-blur-sm shadow-sm">
+                <span className="text-[10px] font-bold text-white">AI</span>
+              </div>
+            </div>
+          )}
 
-        {/* Action Bar */}
-        <div className="flex items-center justify-between pl-[52px] pt-2">
-          <div className="flex items-center gap-1">
-            {/* Comment/View */}
-            <button
-              type="button"
-              title="View details"
-              aria-label="View details"
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-blue-500/10 text-slate-500 hover:text-blue-400 transition-all group/btn"
-            >
-              <MessageCircle className="w-[18px] h-[18px]" />
-              <span className="text-xs font-medium opacity-0 group-hover/btn:opacity-100 transition-opacity">View</span>
-            </button>
-
-            {/* Like */}
-            <button
-              type="button"
-              title={liked ? "Unlike" : "Like"}
-              aria-label={liked ? "Unlike" : "Like"}
-              onClick={handleLike}
-              className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
-                liked
-                  ? 'text-pink-500 hover:bg-pink-500/10'
-                  : 'text-slate-500 hover:bg-pink-500/10 hover:text-pink-400'
-              }`}
-            >
-              <Heart className={`w-[18px] h-[18px] ${liked ? 'fill-current' : ''}`} />
-            </button>
-
-            {/* Save */}
+          {/* Hover Actions Overlay */}
+          <div className={`absolute inset-0 bg-black/40 flex items-center justify-center gap-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
             <button
               type="button"
               title={saved ? "Unsave" : "Save"}
               aria-label={saved ? "Unsave" : "Save"}
               onClick={handleSave}
-              className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all ${
+              className={`p-3 rounded-full transition-all ${
                 saved
-                  ? 'text-blue-500 hover:bg-blue-500/10'
-                  : 'text-slate-500 hover:bg-blue-500/10 hover:text-blue-400'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-red-500 hover:text-white'
               }`}
             >
-              <Bookmark className={`w-[18px] h-[18px] ${saved ? 'fill-current' : ''}`} />
+              <Bookmark className={`w-5 h-5 ${saved ? 'fill-current' : ''}`} />
             </button>
-
-            {/* Share */}
             <button
               type="button"
               title="Share"
               aria-label="Share"
               onClick={handleShare}
-              className="flex items-center gap-2 px-3 py-2 rounded-full text-slate-500 hover:bg-green-500/10 hover:text-green-400 transition-all"
+              className="p-3 rounded-full bg-white text-gray-700 hover:bg-gray-100 transition-all"
             >
-              <Share2 className="w-[18px] h-[18px]" />
+              <Share2 className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Open Link */}
+          {/* Source Icon Watermark */}
+          <div className="absolute bottom-4 right-4 opacity-20">
+            <span className="text-6xl">{getSourceEmoji(item.metadata?.source)}</span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4">
+          {/* Title */}
+          <h3 className="font-semibold text-gray-900 text-sm leading-snug mb-2 line-clamp-2 group-hover:text-red-600 transition-colors">
+            {item.title}
+          </h3>
+
+          {/* Snippet */}
+          {item.snippet && (
+            <p className="text-gray-500 text-xs leading-relaxed line-clamp-3 mb-3">
+              {cleanSnippet(item.snippet)}
+            </p>
+          )}
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+            {/* Source/Domain */}
+            <div className="flex items-center gap-1.5 text-gray-400">
+              {domain ? (
+                <>
+                  <ExternalLink className="w-3 h-3" />
+                  <span className="text-[11px] truncate max-w-[100px]">{domain}</span>
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="text-[11px]">{item.metadata?.source || 'Feed'}</span>
+                </>
+              )}
+            </div>
+
+            {/* Time */}
+            <span className="text-[11px] text-gray-400">
+              {formatTimeAgo(item.timestamp)}
+            </span>
+          </div>
+
+          {/* Phoenix Score */}
+          {item.phoenixScore && (
+            <div className="mt-3 flex items-center gap-1.5">
+              <div className="w-full bg-gray-100 rounded-full h-1">
+                <div
+                  className="bg-gradient-to-r from-green-400 to-emerald-500 h-1 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(item.phoenixScore, 100)}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-medium text-emerald-600 whitespace-nowrap">{item.phoenixScore}%</span>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Save Button (Mobile/Always visible) */}
+        <div className="absolute bottom-4 right-4 sm:hidden">
           <button
             type="button"
-            title="Open in new tab"
-            aria-label="Open in new tab"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpen();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
+            title={saved ? "Unsave" : "Save"}
+            aria-label={saved ? "Unsave" : "Save"}
+            onClick={handleSave}
+            className={`p-2 rounded-full shadow-md ${
+              saved
+                ? 'bg-red-500 text-white'
+                : 'bg-white text-gray-600'
+            }`}
           >
-            <span>Open</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <Bookmark className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
           </button>
         </div>
-      </div>
-    </article>
+      </article>
+    </div>
   );
 }
 
@@ -356,11 +324,45 @@ function formatTimeAgo(timestamp: number): string {
 }
 
 function cleanSnippet(snippet: string): string {
-  // Remove JSON-like content that sometimes appears in snippets
   if (snippet.startsWith('{') || snippet.startsWith('[')) {
-    return 'View full content →';
+    return 'Tap to explore →';
   }
   return snippet;
+}
+
+function getGradient(source: string, metaSource?: string): string {
+  // Pinterest-style soft gradients
+  const gradients: Record<string, string> = {
+    in_network: "from-blue-100 via-blue-50 to-indigo-100",
+    out_of_network: "from-purple-100 via-pink-50 to-rose-100",
+    trending: "from-orange-100 via-amber-50 to-yellow-100",
+  };
+
+  // Special source-specific gradients
+  const sourceGradients: Record<string, string> = {
+    'YCombinator': "from-orange-200 via-orange-100 to-amber-50",
+    'TechCrunch': "from-green-100 via-emerald-50 to-teal-100",
+    'Hugging Face': "from-yellow-100 via-amber-50 to-orange-100",
+    'ArXiv': "from-red-100 via-rose-50 to-pink-100",
+    'GitHub': "from-gray-200 via-slate-100 to-gray-50",
+    'Reddit': "from-orange-200 via-red-100 to-orange-50",
+    'Daily Brief': "from-amber-100 via-yellow-50 to-orange-100",
+  };
+
+  if (metaSource && sourceGradients[metaSource]) {
+    return sourceGradients[metaSource];
+  }
+
+  return gradients[source] || gradients.trending;
+}
+
+function getIconColor(source: string): string {
+  const colors: Record<string, string> = {
+    in_network: "text-blue-500",
+    out_of_network: "text-purple-500",
+    trending: "text-red-500",
+  };
+  return colors[source] || colors.trending;
 }
 
 function getSourceEmoji(source?: string): string {
