@@ -15,6 +15,9 @@ import {
   BarChart3,
   Menu,
   X,
+  BookOpen,
+  User,
+  LogIn,
 } from "lucide-react";
 
 const navItems = [
@@ -27,6 +30,9 @@ const navItems = [
   { href: "/spreadsheets", label: "Spreadsheets", icon: Table2 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/analytics/hitl", label: "Analytics", icon: BarChart3 },
+  { href: "/onboarding", label: "Get Started", icon: BookOpen },
+  { href: "/profile", label: "Profile", icon: User },
+  { href: "/login", label: "Sign In", icon: LogIn },
 ];
 
 export function Navigation() {
