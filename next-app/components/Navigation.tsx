@@ -18,6 +18,9 @@ import {
   BookOpen,
   User,
   LogIn,
+  Mail,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 
 const navItems = [
@@ -28,8 +31,11 @@ const navItems = [
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/roadmap", label: "Roadmap", icon: Map },
   { href: "/spreadsheets", label: "Spreadsheets", icon: Table2 },
+  { href: "/email", label: "Email", icon: Mail },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/analytics/hitl", label: "Analytics", icon: BarChart3 },
+  { href: "/analytics/hitl", label: "HITL Analytics", icon: BarChart3 },
+  { href: "/analytics/components", label: "Components", icon: Layers },
+  { href: "/analytics/recommendations", label: "Recommendations", icon: Sparkles },
   { href: "/onboarding", label: "Get Started", icon: BookOpen },
   { href: "/profile", label: "Profile", icon: User },
   { href: "/login", label: "Sign In", icon: LogIn },
