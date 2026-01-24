@@ -18,11 +18,22 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://next-app-khaki-five
 
 export const metadata: Metadata = {
   title: {
-    default: "NodeBench AI - AI Research Platform",
+    default: "NodeBench AI - Benchmark AI Research Agents",
     template: "%s | NodeBench AI",
   },
-  description: "AI-powered research and analytics platform with real-time market signals, document management, and intelligent agents.",
-  keywords: ["AI research", "market analysis", "document management", "analytics", "AI agents"],
+  description: "Benchmark AI agent research capabilities on node-based knowledge graphs. Store context in traversable nodes, measure agent performance, and scale intelligent research workflows.",
+  keywords: [
+    "AI agent benchmarking",
+    "knowledge graph",
+    "AI research agents",
+    "node-based context",
+    "agent performance",
+    "research automation",
+    "knowledge nodes",
+    "AI workflow",
+    "agent evaluation",
+    "context storage",
+  ],
   authors: [{ name: "NodeBench AI" }],
   creator: "NodeBench AI",
   metadataBase: new URL(baseUrl),
@@ -31,13 +42,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: baseUrl,
     siteName: "NodeBench AI",
-    title: "NodeBench AI - AI Research Platform",
-    description: "AI-powered research and analytics platform with real-time market signals, document management, and intelligent agents.",
+    title: "NodeBench AI - Benchmark AI Research Agents",
+    description: "Benchmark AI agent research capabilities on node-based knowledge graphs. Store context in traversable nodes and measure agent performance at scale.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "NodeBench AI - AI Research Platform",
-    description: "AI-powered research and analytics platform with real-time market signals and intelligent agents.",
+    title: "NodeBench AI - Benchmark AI Research Agents",
+    description: "Benchmark AI agents on node-based knowledge graphs. Measure research performance, store context in nodes, scale intelligent workflows.",
   },
   robots: {
     index: true,
