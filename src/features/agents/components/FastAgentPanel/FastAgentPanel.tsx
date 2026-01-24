@@ -283,6 +283,10 @@ export function FastAgentPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Ref-based callback pattern for stable handleSendMessage reference
+  // This prevents re-renders when callback dependencies change
+  const handleSendMessageRef = useRef<(content?: string) => Promise<void>>();
+
   // Track auto-created documents to avoid duplicates (by agentThreadId) and processed message IDs
   const autoDocCreatedThreadIdsRef = useRef<Set<string>>(new Set());
 
@@ -996,6 +1000,14 @@ export function FastAgentPanel({
     anonymousSession,
   ]);
 
+  // Update ref for stable callback reference
+  handleSendMessageRef.current = handleSendMessage;
+
+  // Stable callback wrapper - never changes reference, always calls latest implementation
+  const stableSendMessage = useCallback((content?: string) => {
+    return handleSendMessageRef.current?.(content);
+  }, []);
+
   // Auto-send contextual open prompt once streaming mode is active.
   useEffect(() => {
     if (!isOpen) return;
@@ -1014,10 +1026,10 @@ export function FastAgentPanel({
     lastAutoSentRequestIdRef.current = requestId;
 
     console.log('[FastAgentPanel] ✅ Auto-send ALLOWED - requestId:', requestId);
-    handleSendMessage(message);
+    stableSendMessage(message);
     setPendingAutoSend(null);
     onOptionsConsumed?.();
-  }, [isOpen, pendingAutoSend, chatMode, isBusy, openOptions?.requestId, handleSendMessage, onOptionsConsumed]);
+  }, [isOpen, pendingAutoSend, chatMode, isBusy, openOptions?.requestId, stableSendMessage, onOptionsConsumed]);
 
   // No client heuristics; coordinator-only routing
 
@@ -1876,7 +1888,7 @@ export function FastAgentPanel({
               <FastAgentInputBar
                 input={input}
                 setInput={setInput}
-                onSend={() => handleSendMessage(input)}
+                onSend={() => stableSendMessage(input)}
                 isStreaming={isBusy}
                 onStop={handleStopStreaming}
                 selectedModel={selectedModel}
