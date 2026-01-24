@@ -3,8 +3,7 @@
 
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { StreamId } from "@convex-dev/persistent-text-streaming";
 import { api } from "../../../../../convex/_generated/api";
@@ -50,14 +49,12 @@ export function StreamingMessage({ message }: StreamingMessageProps) {
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             return !inline && match ? (
-              <SyntaxHighlighter
-                style={vscDarkPlus}
+              <LazySyntaxHighlighter
                 language={match[1]}
                 PreTag="div"
-                {...props}
               >
                 {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              </LazySyntaxHighlighter>
             ) : (
               <code className={className} {...props}>
                 {children}

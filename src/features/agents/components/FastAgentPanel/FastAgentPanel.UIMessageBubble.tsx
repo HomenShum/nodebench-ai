@@ -5,8 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
 import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
@@ -70,8 +69,9 @@ interface FastAgentUIMessageBubbleProps {
 
 /**
  * Image component with loading and error states
+ * Memoized to prevent re-renders when parent updates
  */
-function SafeImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -114,7 +114,7 @@ function SafeImage({ src, alt, className }: { src: string; alt: string; classNam
       />
     </div>
   );
-}
+});
 
 /**
  * Helper to render tool output with markdown support and gallery layout for images, videos, and SEC documents
@@ -134,16 +134,30 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
   onNewsSelect?: (article: NewsArticleOption) => void;
 }) {
   // Memoize the expensive parsing operations
+  // Optimized: Single-pass regex extraction instead of 8+ separate regex calls
   const parsedData = useMemo(() => {
     const outputText = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
 
-    // Extract YouTube gallery data
-    const youtubeMatch = outputText.match(/<!-- YOUTUBE_GALLERY_DATA\n([\s\S]*?)\n-->/);
-    const youtubeVideos: YouTubeVideo[] = youtubeMatch ? JSON.parse(youtubeMatch[1]) : [];
+    // Single-pass extraction of all embedded data blocks
+    // Pattern matches: <!-- TYPE_DATA\n{json}\n-->
+    const DATA_BLOCK_PATTERN = /<!-- (\w+)_DATA\n([\s\S]*?)\n-->/g;
+    const extractedData: Record<string, string> = {};
+    let match;
+    while ((match = DATA_BLOCK_PATTERN.exec(outputText)) !== null) {
+      extractedData[match[1]] = match[2];
+    }
 
-    // Extract SEC gallery data
-    const secMatch = outputText.match(/<!-- SEC_GALLERY_DATA\n([\s\S]*?)\n-->/);
-    const secDocuments: SECDocument[] = secMatch ? JSON.parse(secMatch[1]) : [];
+    // Parse extracted data with safe JSON parsing
+    const safeParse = <T,>(key: string): T | null => {
+      try {
+        return extractedData[key] ? JSON.parse(extractedData[key]) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const youtubeVideos: YouTubeVideo[] = safeParse('YOUTUBE_GALLERY') || [];
+    const secDocuments: SECDocument[] = safeParse('SEC_GALLERY') || [];
 
     // Convert SEC documents to FileViewer format
     const fileViewerFiles: FileViewerFile[] = secDocuments.map(doc => ({
@@ -158,52 +172,22 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
       },
     }));
 
-    // Extract company selection data
-    const companySelectionMatch = outputText.match(/<!-- COMPANY_SELECTION_DATA\n([\s\S]*?)\n-->/);
-    const companySelectionData: { prompt: string; companies: CompanyOption[] } | null = companySelectionMatch
-      ? JSON.parse(companySelectionMatch[1])
-      : null;
+    const companySelectionData = safeParse<{ prompt: string; companies: CompanyOption[] }>('COMPANY_SELECTION');
+    const peopleSelectionData = safeParse<{ prompt: string; people: PersonOption[] }>('PEOPLE_SELECTION');
+    const eventSelectionData = safeParse<{ prompt: string; events: EventOption[] }>('EVENT_SELECTION');
+    const newsSelectionData = safeParse<{ prompt: string; articles: NewsArticleOption[] }>('NEWS_SELECTION');
 
-    // Extract people selection data
-    const peopleSelectionMatch = outputText.match(/<!-- PEOPLE_SELECTION_DATA\n([\s\S]*?)\n-->/);
-    const peopleSelectionData: { prompt: string; people: PersonOption[] } | null = peopleSelectionMatch
-      ? JSON.parse(peopleSelectionMatch[1])
-      : null;
+    // Single-pass image extraction with combined regex
+    const IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const imageUrls: { url: string; alt: string }[] = [];
+    let imgMatch;
+    while ((imgMatch = IMAGE_PATTERN.exec(outputText)) !== null) {
+      imageUrls.push({ alt: imgMatch[1] || 'Image', url: imgMatch[2] });
+    }
+    const hasMultipleImages = imageUrls.length > 2;
 
-    // Extract event selection data
-    const eventSelectionMatch = outputText.match(/<!-- EVENT_SELECTION_DATA\n([\s\S]*?)\n-->/);
-    const eventSelectionData: { prompt: string; events: EventOption[] } | null = eventSelectionMatch
-      ? JSON.parse(eventSelectionMatch[1])
-      : null;
-
-    // Extract news selection data
-    const newsSelectionMatch = outputText.match(/<!-- NEWS_SELECTION_DATA\n([\s\S]*?)\n-->/);
-    const newsSelectionData: { prompt: string; articles: NewsArticleOption[] } | null = newsSelectionMatch
-      ? JSON.parse(newsSelectionMatch[1])
-      : null;
-
-    // Check if this output contains multiple images (for gallery layout)
-    const imageMatches = outputText.match(/!\[.*?\]\(.*?\)/g) || [];
-    const hasMultipleImages = imageMatches.length > 2;
-
-    // Extract image URLs for gallery
-    const imageUrls = imageMatches.map(match => {
-      const urlMatch = match.match(/\((.*?)\)/);
-      const altMatch = match.match(/!\[(.*?)\]/);
-      return {
-        url: urlMatch?.[1] || '',
-        alt: altMatch?.[1] || 'Image'
-      };
-    });
-
-    // Remove gallery data markers and all selection data from content
-    const cleanedContent = outputText
-      .replace(/<!-- YOUTUBE_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
-      .replace(/<!-- SEC_GALLERY_DATA\n[\s\S]*?\n-->\n*/g, '')
-      .replace(/<!-- COMPANY_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
-      .replace(/<!-- PEOPLE_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
-      .replace(/<!-- EVENT_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '')
-      .replace(/<!-- NEWS_SELECTION_DATA\n[\s\S]*?\n-->\n*/g, '');
+    // Single replace to remove all data blocks
+    const cleanedContent = outputText.replace(/<!-- \w+_DATA\n[\s\S]*?\n-->\n*/g, '');
 
     // Split content to separate images section from rest
     const parts = cleanedContent.split(/## Images\s*\n*/);
@@ -357,8 +341,9 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
 
 /**
  * FileTextPreview - Shows a preview of text file contents
+ * Memoized to prevent re-fetching when parent updates
  */
-function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
+const FileTextPreview = React.memo(function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
   const [content, setContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -384,6 +369,7 @@ function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: str
     <div className="flex flex-col">
       {/* Text File Header */}
       <button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className="px-4 py-3 bg-gradient-to-r from-blue-50 to-[var(--bg-primary)] dark:from-blue-900/20 dark:to-[var(--bg-primary)] flex items-center gap-3 border-b border-[var(--border-color)] hover:from-blue-100 dark:hover:from-blue-900/30 transition-colors"
       >
@@ -421,7 +407,7 @@ function FileTextPreview({ fileUrl, fileName }: { fileUrl: string; fileName: str
       )}
     </div>
   );
-}
+});
 
 // Agent role icons and labels
 const agentRoleConfig = {
@@ -434,8 +420,9 @@ const agentRoleConfig = {
 
 /**
  * ThinkingAccordion - Collapsible section for agent reasoning
+ * Memoized to prevent re-renders during streaming updates
  */
-function ThinkingAccordion({
+const ThinkingAccordion = React.memo(function ThinkingAccordion({
   reasoning,
   isStreaming
 }: {
@@ -449,6 +436,7 @@ function ThinkingAccordion({
   return (
     <div className="mb-4 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--bg-secondary)]/30">
       <button
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
       >
@@ -470,7 +458,7 @@ function ThinkingAccordion({
       )}
     </div>
   );
-}
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FUSION SEARCH RESULT PARSING
@@ -1931,14 +1919,12 @@ export function FastAgentUIMessageBubble({
                     }
 
                     return !inline && match ? (
-                      <SyntaxHighlighter
-                        style={vscDarkPlus}
+                      <LazySyntaxHighlighter
                         language={language}
                         PreTag="div"
-                        {...props}
                       >
                         {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
+                      </LazySyntaxHighlighter>
                     ) : (
                       <code className={cn(
                         "px-1 py-0.5 rounded text-xs font-mono",

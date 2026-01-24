@@ -3,8 +3,7 @@
 
 import React, { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
 import { User, Bot, Zap, Clock, Loader2 } from 'lucide-react';
 import { useSmoothText } from '@convex-dev/agent/react';
 import { LiveThinking } from './FastAgentPanel.LiveThinking';
@@ -104,14 +103,12 @@ export function MessageBubble({
                   code({ inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
-                      <SyntaxHighlighter
-                        style={vscDarkPlus}
+                      <LazySyntaxHighlighter
                         language={match[1]}
                         PreTag="div"
-                        {...props}
                       >
                         {String(children).replace(/\n$/, '')}
-                      </SyntaxHighlighter>
+                      </LazySyntaxHighlighter>
                     ) : (
                       <code className={className} {...props}>
                         {children}
