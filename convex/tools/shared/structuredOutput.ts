@@ -174,6 +174,53 @@ export const FusionSearchOutput = BaseStructuredOutput.extend({
 });
 
 // ============================================================================
+// Linkup Web Search Output
+// ============================================================================
+
+export const WebSourceSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  domain: z.string(),
+  description: z.string().optional(),
+  publishedAt: z.string().optional(),
+});
+
+export const ImageResultSchema = z.object({
+  url: z.string(),
+  alt: z.string(),
+  thumbnail: z.string().optional(),
+});
+
+export const VideoResultSchema = z.object({
+  url: z.string(),
+  title: z.string(),
+  thumbnail: z.string().optional(),
+});
+
+export const AudioResultSchema = z.object({
+  url: z.string(),
+  title: z.string(),
+});
+
+export const LinkupSearchOutput = BaseStructuredOutput.extend({
+  kind: z.literal("linkup_search_results"),
+  data: z.object({
+    query: z.string(),
+    sources: z.array(WebSourceSchema).optional(),
+    images: z.array(ImageResultSchema).optional(),
+    videos: z.array(VideoResultSchema).optional(),
+    audios: z.array(AudioResultSchema).optional(),
+    citationKey: z.array(z.object({
+      marker: z.string(),
+      title: z.string(),
+      domain: z.string(),
+    })).optional(),
+  }),
+});
+
+export type LinkupSearchOutputType = z.infer<typeof LinkupSearchOutput>;
+
+// ============================================================================
 // Union of all structured outputs
 // ============================================================================
 
@@ -185,6 +232,7 @@ export const StructuredToolOutput = z.discriminatedUnion("kind", [
   EventSelectionOutput,
   NewsSelectionOutput,
   FusionSearchOutput,
+  LinkupSearchOutput,
 ]);
 
 export type StructuredToolOutputType = z.infer<typeof StructuredToolOutput>;

@@ -265,177 +265,111 @@ The tool returns verified sources that get stored in the artifact system.`,
       }
 
       // ═══════════════════════════════════════════════════════════════════════
-      // FORMAT RESPONSE
-      // IMPORTANT: We emit structured data markers for artifact extraction,
-      // but human-readable output uses citation markers [1], [2] NOT raw URLs.
-      // This prevents the LLM from copying URLs into its response.
+      // FORMAT RESPONSE AS STRUCTURED OUTPUT
+      // Frontend parses JSON directly, no regex needed
       // ═══════════════════════════════════════════════════════════════════════
 
-      let result = "";
       const citationMap: Array<{ marker: string; title: string; domain: string }> = [];
 
-      // NOTE: We intentionally do NOT emit the provider's natural-language `answer` here.
-      // In practice it can contain citation indices that don't align with the returned `sources` list,
-      // which makes downstream evaluation and UI grounding unreliable.
-
-      // Add images if present
+      // Process images
+      let images: Array<{ url: string; alt: string; thumbnail?: string }> | undefined;
       if (imageResults.length > 0) {
         const filteredImages = filterLinkupImagesByQuery(imageResults, args.query);
         const chosenImages = (filteredImages.length > 0 ? filteredImages : imageResults).slice(0, 10);
         imageCount = chosenImages.length;
-
-        // Prepare structured data for artifact extraction (not shown to user)
-        const images = chosenImages.map((image) => ({
+        images = chosenImages.map((image) => ({
           url: image.url,
           alt: image.name || "Image",
           thumbnail: image.thumbnail,
         }));
-
-        // Structured data marker for artifact extraction
-        result += `<!-- IMAGE_DATA\n${JSON.stringify(images, null, 2)}\n-->\n\n`;
-
-        // Human-readable: just list image names, no URLs
-        result += "## Images Found\n\n";
-        chosenImages.forEach((image, idx) => {
-          const altText = image.name || `Image ${idx + 1}`;
-          result += `- ${altText}\n`;
-        });
-        result += "\n";
       }
 
-      // Add videos if present (keep video tags for playback, URLs are necessary here)
+      // Process videos
+      let videos: Array<{ url: string; title: string; thumbnail?: string }> | undefined;
       if (videoResults.length > 0) {
-        // Structured data for artifact extraction
-        const videos = videoResults.slice(0, 5).map((video) => ({
+        videos = videoResults.slice(0, 5).map((video) => ({
           url: video.url,
           title: video.name || "Video",
           thumbnail: video.thumbnail,
         }));
-        result += `<!-- VIDEO_DATA\n${JSON.stringify(videos, null, 2)}\n-->\n\n`;
-
-        result += "## Videos Found\n\n";
-        videoResults.slice(0, 5).forEach((video, idx) => {
-          result += `- ${video.name || `Video ${idx + 1}`}\n`;
-        });
-        result += "\n";
       }
 
-      // Add audios if present
+      // Process audios
+      let audios: Array<{ url: string; title: string }> | undefined;
       if (audioResults.length > 0) {
-        const audios = audioResults.slice(0, 5).map((audio) => ({
+        audios = audioResults.slice(0, 5).map((audio) => ({
           url: audio.url,
           title: audio.name || "Audio",
         }));
-        result += `<!-- AUDIO_DATA\n${JSON.stringify(audios, null, 2)}\n-->\n\n`;
-
-        result += "## Audio Found\n\n";
-        audioResults.slice(0, 5).forEach((audio, idx) => {
-          result += `- ${audio.name || `Audio ${idx + 1}`}\n`;
-        });
-        result += "\n";
       }
 
-      // Add text results if using searchResults output type
+      // Process sources (from text results or sources array)
+      let sources: Array<{ title: string; url: string; domain: string; description?: string; publishedAt?: string }> | undefined;
+
       if (textResults.length > 0 && !data.answer) {
-        // Prepare structured data for artifact extraction
-        const sources = textResults.slice(0, 10).map((text) => ({
+        sources = textResults.slice(0, 10).map((text) => ({
           title: text.name,
           url: text.url,
           domain: extractDomain(text.url),
           description: text.content?.substring(0, 200) || '',
-	          publishedAt: getPublishedAt(text),
+          publishedAt: getPublishedAt(text),
         }));
-
-        // Structured data marker for artifact extraction
-        result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sources, null, 2)}\n-->\n\n`;
-
-        // Human-readable: use citation markers, NOT URLs
-        result += "## Search Results\n\n";
+        // Build citation map
         textResults.slice(0, 5).forEach((text, idx) => {
-          const marker = `[${idx + 1}]`;
-          const domain = extractDomain(text.url);
-          citationMap.push({ marker, title: text.name, domain });
-
-          result += `${marker} **${text.name}** (${domain})\n`;
-          if (text.content) {
-            result += `   ${text.content.substring(0, 200)}...\n`;
-          }
-          result += "\n";
+          citationMap.push({ marker: `[${idx + 1}]`, title: text.name, domain: extractDomain(text.url) });
         });
-      }
-
-      // Add sources (for sourcedAnswer output type)
-      if (data.sources && data.sources.length > 0) {
-        // Prepare structured data for artifact extraction
-        const sources = data.sources.slice(0, 10).map((source) => ({
+      } else if (data.sources && data.sources.length > 0) {
+        sources = data.sources.slice(0, 10).map((source) => ({
           title: source.name,
           url: source.url,
           domain: extractDomain(source.url),
           description: source.snippet?.substring(0, 200) || '',
-	          publishedAt: getPublishedAt(source),
+          publishedAt: getPublishedAt(source),
         }));
-
-        // Structured data marker for artifact extraction
-        result += `<!-- SOURCE_GALLERY_DATA\n${JSON.stringify(sources, null, 2)}\n-->\n\n`;
-
-        // Human-readable: use citation markers, NOT URLs
-        result += "## Sources\n\n";
+        // Build citation map
         data.sources.slice(0, 5).forEach((source, idx) => {
-          const marker = `[${idx + 1}]`;
-          const domain = extractDomain(source.url);
-          citationMap.push({ marker, title: source.name, domain });
-
-          result += `${marker} **${source.name}** (${domain})\n`;
-          if (source.snippet) {
-            result += `   ${source.snippet.substring(0, 200)}...\n`;
-          }
-          result += "\n";
+          citationMap.push({ marker: `[${idx + 1}]`, title: source.name, domain: extractDomain(source.url) });
         });
-
-        // Grounded synthesis: derive high-level themes from titles/snippets (no extra facts).
-        const themeDefs: Array<{ label: string; keywords: string[] }> = [
-          { label: "Reasoning models and algorithmic improvements", keywords: ["reasoning", "evolution", "evolutionary", "algorithm", "gemini", "llm"] },
-          { label: "Physical AI, robotics, and hardware (e.g., CES)", keywords: ["physical", "robot", "robotics", "ces", "chip", "hardware", "gpu", "pc"] },
-          { label: "AI for science and health", keywords: ["science", "drug", "materials", "disease", "sleep", "medical", "biology", "chemistry", "physics"] },
-          { label: "Enterprise deployment and ROI", keywords: ["enterprise", "roi", "deployment", "quality", "cost", "productivity"] },
-        ];
-
-        const sourceText = data.sources.slice(0, 5).map((s, i) => ({
-          marker: `[${i + 1}]`,
-          text: `${s.name} ${(s.snippet || "")}`.toLowerCase(),
-        }));
-
-        result += "## Themes (Grounded)\n\n";
-        for (const theme of themeDefs) {
-          const hits = sourceText
-            .filter(s => theme.keywords.some(k => s.text.includes(k)))
-            .map(s => s.marker);
-          if (hits.length > 0) {
-            result += `- ${theme.label}: ${hits.join(" ")}\n`;
-          }
-        }
-        result += "\n";
-
-        // Lightweight, fully-grounded summary that only reuses the source titles/snippets.
-        // This avoids unsupported specifics while still answering the user's "what's new" intent.
-        result += "## Highlights (From Sources)\n\n";
-        data.sources.slice(0, 5).forEach((source, idx) => {
-          const marker = `[${idx + 1}]`;
-          const snippet = (source.snippet || "").trim();
-          const short = snippet ? `${snippet.substring(0, 180)}...` : "No snippet available.";
-          result += `- ${marker} ${short}\n`;
-        });
-        result += "\n";
       }
 
-      // Add citation legend at the end (helps LLM reference correctly)
-      if (citationMap.length > 0) {
-        result += "\n---\n**Citation Key:** ";
-        result += citationMap.map(c => `${c.marker} ${c.domain}`).join(" | ");
-        result += "\n\n**Note:** URLs are stored in artifact system. Reference sources by citation marker or name.\n";
+      // Build human-readable summary for LLM
+      const summaryParts: string[] = [];
+
+      if (sources && sources.length > 0) {
+        const sourceList = sources.slice(0, 3).map((s, i) => `[${i + 1}] ${s.title} (${s.domain})`).join('\n');
+        summaryParts.push(`Found ${sources.length} sources:\n${sourceList}${sources.length > 3 ? `\n...and ${sources.length - 3} more` : ''}`);
       }
+      if (images && images.length > 0) {
+        summaryParts.push(`Found ${images.length} images`);
+      }
+      if (videos && videos.length > 0) {
+        summaryParts.push(`Found ${videos.length} videos`);
+      }
+      if (audios && audios.length > 0) {
+        summaryParts.push(`Found ${audios.length} audio clips`);
+      }
+
+      const summary = summaryParts.length > 0
+        ? `Web search for "${args.query}":\n${summaryParts.join('\n\n')}`
+        : `No results found for "${args.query}"`;
+
+      // Create structured output
+      const structuredOutput = {
+        kind: 'linkup_search_results' as const,
+        version: 1,
+        summary,
+        data: {
+          query: args.query,
+          sources,
+          images,
+          videos,
+          audios,
+          citationKey: citationMap.length > 0 ? citationMap : undefined,
+        },
+      };
 
       success = true;
+      const result = JSON.stringify(structuredOutput);
 
       // ═══════════════════════════════════════════════════════════════════════
       // CACHE STORE (MVP: simple TTL cache)

@@ -178,6 +178,15 @@ window.addEventListener('message', async (message) => {
   },
   optimizeDeps: {
     include: ["react", "react-dom", "rehype-raw", "rehype-sanitize", "rehype-parse", "hast-util-raw"],
+    // Exclude heavy libraries that are lazy-loaded to speed up dev server start
+    exclude: ["@pdfme/generator"],
+  },
+  // esbuild options for transforms (not minification - we use terser for that)
+  esbuild: {
+    // Remove legal comments for smaller transforms
+    legalComments: 'none',
+    // Tree shake during transforms
+    treeShaking: true,
   },
   test: {
     globals: true,
@@ -191,6 +200,8 @@ window.addEventListener('message', async (message) => {
     minify: "terser", // Switch to terser for better compression (~20-30% better than esbuild)
     target: "es2020",
     cssMinify: true,
+    // Modern browsers don't need module preload polyfill
+    modulePreload: { polyfill: false },
     terserOptions: {
       compress: {
         drop_console: true, // Remove console.logs in production
@@ -206,6 +217,12 @@ window.addEventListener('message', async (message) => {
       },
     },
     rollupOptions: {
+      // Aggressive tree shaking for smaller bundles
+      treeshake: {
+        moduleSideEffects: 'no-external', // Assume external deps have side effects, tree-shake internal
+        propertyReadSideEffects: false,   // Reading properties doesn't have side effects
+        tryCatchDeoptimization: false,    // Don't deoptimize try-catch blocks
+      },
       output: {
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
@@ -236,6 +253,22 @@ window.addEventListener('message', async (message) => {
             // Spreadsheet engine (very heavy)
             if (id.includes('/node_modules/xlsx')) {
               return 'spreadsheet-vendor';
+            }
+            // Date utilities (commonly used, stable)
+            if (id.includes('/node_modules/date-fns/')) {
+              return 'date-vendor';
+            }
+            // Animation library (Framer Motion - heavy)
+            if (id.includes('/node_modules/framer-motion/')) {
+              return 'motion-vendor';
+            }
+            // Markdown/syntax highlighting (heavy)
+            if (id.includes('/node_modules/prismjs/') || id.includes('/node_modules/highlight.js/')) {
+              return 'syntax-vendor';
+            }
+            // Zod (validation, commonly used)
+            if (id.includes('/node_modules/zod/')) {
+              return 'zod-vendor';
             }
             // Let everything else be handled by Vite's default splitting
             // This avoids creating one massive vendor chunk
