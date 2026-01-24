@@ -30,7 +30,7 @@ const priorityColors = {
   low: 'border-l-blue-500 bg-blue-50',
 };
 
-export function RecommendationCard({
+export const RecommendationCard = React.memo(function RecommendationCard({
   id,
   type,
   priority,
@@ -192,7 +192,11 @@ export function RecommendationCard({
       </div>
     </motion.div>
   );
-}
+}, (prevProps, nextProps) =>
+  prevProps.id === nextProps.id &&
+  prevProps.priority === nextProps.priority &&
+  prevProps.message === nextProps.message
+);
 
 export default RecommendationCard;
 

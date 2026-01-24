@@ -28,7 +28,7 @@ interface QuickAccessCardProps {
   onClick?: () => void;
 }
 
-function QuickAccessCard({ title, description, icon: Icon, color, count, onClick }: QuickAccessCardProps) {
+const QuickAccessCard = React.memo(function QuickAccessCard({ title, description, icon: Icon, color, count, onClick }: QuickAccessCardProps) {
   return (
     <motion.button
       onClick={onClick}
@@ -51,7 +51,7 @@ function QuickAccessCard({ title, description, icon: Icon, color, count, onClick
       </div>
     </motion.button>
   );
-}
+});
 
 export function WorkspaceGrid({
   className = '',
@@ -59,10 +59,10 @@ export function WorkspaceGrid({
   onDocumentSelect,
   onCreateDocument,
 }: WorkspaceGridProps) {
-  // Fetch counts
-  const documents = useQuery(api.domains.documents.documents.listDocuments, { limit: 100 });
-  const tasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 100 });
-  const events = useQuery(api.domains.calendar.events.listEvents, { limit: 50 });
+  // Fetch only what we need - 4 recent docs for display, counts come from separate queries if needed
+  const documents = useQuery(api.domains.documents.documents.listDocuments, { limit: 10 });
+  const tasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 20 });
+  const events = useQuery(api.domains.calendar.events.listEvents, { limit: 10 });
 
   const docCount = documents?.length ?? 0;
   const pendingTaskCount = tasks?.filter((t) => t.status === 'pending').length ?? 0;

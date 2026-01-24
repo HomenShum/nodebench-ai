@@ -162,7 +162,7 @@ interface UpdateCardProps {
   };
 }
 
-function UpdateCard({ update }: UpdateCardProps) {
+const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -315,6 +315,6 @@ function UpdateCard({ update }: UpdateCardProps) {
       )}
     </div>
   );
-}
+}, (prevProps, nextProps) => prevProps.update.id === nextProps.update.id && prevProps.update.status === nextProps.update.status);
 
 export default IndustryUpdatesPanel;

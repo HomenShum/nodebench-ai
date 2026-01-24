@@ -28,7 +28,7 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-function StatCard({ label, value, icon: Icon, trend, color, onClick }: StatCardProps) {
+const StatCard = React.memo(function StatCard({ label, value, icon: Icon, trend, color, onClick }: StatCardProps) {
   return (
     <motion.button
       onClick={onClick}
@@ -49,15 +49,15 @@ function StatCard({ label, value, icon: Icon, trend, color, onClick }: StatCardP
       <div className="text-xs opacity-70 mt-1">{label}</div>
     </motion.button>
   );
-}
+});
 
 export function PersonalDashboard({ className = '', onNavigate }: PersonalDashboardProps) {
   const timeContext = useTimeContext();
 
-  // Fetch user stats
-  const tasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 100 });
-  const documents = useQuery(api.domains.documents.documents.listDocuments, { limit: 100 });
-  const events = useQuery(api.domains.calendar.events.listEvents, { limit: 50 });
+  // Fetch user stats - reduced limits since we only need counts
+  const tasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 50 });
+  const documents = useQuery(api.domains.documents.documents.listDocuments, { limit: 20 });
+  const events = useQuery(api.domains.calendar.events.listEvents, { limit: 20 });
   const behaviorSummary = useQuery(api.domains.recommendations.behaviorTracking.getBehaviorSummary);
 
   const stats = useMemo(() => {
