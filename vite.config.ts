@@ -177,7 +177,7 @@ window.addEventListener('message', async (message) => {
     ],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "rehype-raw", "rehype-sanitize", "rehype-parse", "hast-util-raw"],
+    include: ["react", "react-dom", "lucide-react", "recharts", "rehype-raw", "rehype-sanitize", "rehype-parse", "hast-util-raw"],
     // Exclude heavy libraries that are lazy-loaded to speed up dev server start
     exclude: ["@pdfme/generator"],
   },
@@ -231,6 +231,10 @@ window.addEventListener('message', async (message) => {
         manualChunks(id) {
           // Vendor chunks - only split large/important libraries
           if (id.includes('/node_modules/')) {
+            // Icons must be in same chunk as React to ensure proper initialization
+            if (id.includes('/node_modules/lucide-react/')) {
+              return 'react-vendor';
+            }
             // React core (keep small and cacheable)
             if (id.match(/\/node_modules\/(react\/|react-dom\/|scheduler\/)/)) {
               return 'react-vendor';
@@ -241,10 +245,6 @@ window.addEventListener('message', async (message) => {
             // Convex (API client)
             if (id.includes('/node_modules/convex/')) {
               return 'convex-vendor';
-            }
-            // Icons (must load before charts that use them)
-            if (id.includes('/node_modules/lucide-react/')) {
-              return 'icons-vendor';
             }
             // Charts (lazy loaded, should be separate)
             if (id.includes('/node_modules/recharts/')) {
