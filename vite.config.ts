@@ -242,6 +242,10 @@ window.addEventListener('message', async (message) => {
             if (id.includes('/node_modules/convex/')) {
               return 'convex-vendor';
             }
+            // Icons (must load before charts that use them)
+            if (id.includes('/node_modules/lucide-react/')) {
+              return 'icons-vendor';
+            }
             // Charts (lazy loaded, should be separate)
             if (id.includes('/node_modules/recharts/')) {
               return 'charts';
