@@ -177,7 +177,7 @@ window.addEventListener('message', async (message) => {
     ],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "lucide-react", "recharts", "rehype-raw", "rehype-sanitize", "rehype-parse", "hast-util-raw"],
+    include: ["react", "react-dom", "rehype-raw", "rehype-sanitize", "rehype-parse", "hast-util-raw"],
     // Exclude heavy libraries that are lazy-loaded to speed up dev server start
     exclude: ["@pdfme/generator"],
   },
@@ -217,11 +217,11 @@ window.addEventListener('message', async (message) => {
       },
     },
     rollupOptions: {
-      // Aggressive tree shaking for smaller bundles
+      // Tree shaking - be careful with external deps that have side effects
       treeshake: {
-        moduleSideEffects: 'no-external', // Assume external deps have side effects, tree-shake internal
-        propertyReadSideEffects: false,   // Reading properties doesn't have side effects
-        tryCatchDeoptimization: false,    // Don't deoptimize try-catch blocks
+        moduleSideEffects: true, // Don't assume side-effect-free (fixes lucide-react init)
+        propertyReadSideEffects: false,
+        tryCatchDeoptimization: false,
       },
       output: {
         chunkFileNames: "assets/[name]-[hash].js",
