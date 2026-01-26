@@ -597,3 +597,595 @@ export const enrichPersonInternal = internalAction({
     return enrichPersonCore(args.personName, args.knownCompany, args.knownRole);
   },
 });
+
+// ============================================================================
+// IMAGE ANALYSIS: Reverse Image Search using Serper
+// ============================================================================
+
+interface ReverseImageResult {
+  title: string;
+  link: string;
+  source: string;
+  thumbnail?: string;
+  position: number;
+}
+
+async function reverseImageSearchCore(
+  imageUrl: string,
+  maxResults: number = 10
+): Promise<{
+  success: boolean;
+  error?: string;
+  imageUrl: string;
+  results: ReverseImageResult[];
+  relatedPages: Array<{ title: string; url: string; snippet?: string }>;
+  note: string;
+}> {
+  const SERPER_API_KEY = process.env.SERPER_API_KEY;
+
+  if (!SERPER_API_KEY) {
+    return {
+      success: false,
+      error: "SERPER_API_KEY not configured. Reverse image search requires Serper API.",
+      imageUrl,
+      results: [],
+      relatedPages: [],
+      note: "API key missing",
+    };
+  }
+
+  try {
+    // Serper reverse image search endpoint
+    const response = await fetch("https://google.serper.dev/images", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-KEY": SERPER_API_KEY,
+      },
+      body: JSON.stringify({
+        q: imageUrl,
+        num: maxResults,
+        type: "reverse",
+      }),
+    });
+
+    if (!response.ok) {
+      // If reverse image search isn't available, try regular image search with URL
+      console.warn(`[reverseImageSearch] Reverse search failed (${response.status}), trying image search`);
+
+      const imageSearchResponse = await fetch("https://google.serper.dev/images", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-KEY": SERPER_API_KEY,
+        },
+        body: JSON.stringify({
+          q: `image: ${imageUrl}`,
+          num: maxResults,
+        }),
+      });
+
+      if (!imageSearchResponse.ok) {
+        const errorBody = await imageSearchResponse.text();
+        return {
+          success: false,
+          error: `Serper API error: ${imageSearchResponse.status} - ${errorBody}`,
+          imageUrl,
+          results: [],
+          relatedPages: [],
+          note: "API request failed",
+        };
+      }
+
+      const imageData = await imageSearchResponse.json();
+      const images = imageData.images || [];
+
+      return {
+        success: true,
+        imageUrl,
+        results: images.slice(0, maxResults).map((img: any, idx: number) => ({
+          title: img.title || "Untitled",
+          link: img.link || img.imageUrl || "",
+          source: img.source || extractDomain(img.link || ""),
+          thumbnail: img.thumbnailUrl || img.imageUrl,
+          position: idx + 1,
+        })),
+        relatedPages: images.slice(0, 5).map((img: any) => ({
+          title: img.title || "Untitled",
+          url: img.link || "",
+          snippet: img.snippet,
+        })),
+        note: "Results from image search (reverse search not available)",
+      };
+    }
+
+    const data = await response.json();
+    const images = data.images || [];
+    const organic = data.organic || [];
+
+    return {
+      success: true,
+      imageUrl,
+      results: images.slice(0, maxResults).map((img: any, idx: number) => ({
+        title: img.title || "Untitled",
+        link: img.link || img.imageUrl || "",
+        source: img.source || extractDomain(img.link || ""),
+        thumbnail: img.thumbnailUrl || img.imageUrl,
+        position: idx + 1,
+      })),
+      relatedPages: organic.slice(0, 10).map((page: any) => ({
+        title: page.title || "Untitled",
+        url: page.link || "",
+        snippet: page.snippet,
+      })),
+      note: "Found pages where this image appears. No facial recognition used.",
+    };
+  } catch (error) {
+    console.error("[reverseImageSearch] Error:", error);
+    return {
+      success: false,
+      error: `Reverse image search failed: ${error}`,
+      imageUrl,
+      results: [],
+      relatedPages: [],
+      note: "Search error",
+    };
+  }
+}
+
+// ============================================================================
+// IMAGE ANALYSIS: OCR + Context using Gemini Vision
+// ============================================================================
+
+interface ImageAnalysisResult {
+  visibleText: string[];
+  identifiedLogos: string[];
+  eventContext: string;
+  settingDescription: string;
+  potentialIdentifiers: Array<{
+    type: string;
+    value: string;
+    confidence: string;
+  }>;
+}
+
+async function analyzeImageContextCore(
+  imageUrl: string
+): Promise<{
+  success: boolean;
+  error?: string;
+  imageUrl: string;
+  analysis: ImageAnalysisResult;
+  suggestedSearchQueries: string[];
+  note: string;
+}> {
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+
+  if (!GEMINI_API_KEY) {
+    return {
+      success: false,
+      error: "GEMINI_API_KEY not configured. Image analysis requires Google Gemini.",
+      imageUrl,
+      analysis: {
+        visibleText: [],
+        identifiedLogos: [],
+        eventContext: "",
+        settingDescription: "",
+        potentialIdentifiers: [],
+      },
+      suggestedSearchQueries: [],
+      note: "API key missing",
+    };
+  }
+
+  try {
+    // Fetch the image
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      return {
+        success: false,
+        error: `Failed to fetch image: ${imageResponse.status}`,
+        imageUrl,
+        analysis: {
+          visibleText: [],
+          identifiedLogos: [],
+          eventContext: "",
+          settingDescription: "",
+          potentialIdentifiers: [],
+        },
+        suggestedSearchQueries: [],
+        note: "Could not fetch image",
+      };
+    }
+
+    const imageBlob = await imageResponse.blob();
+    const imageBase64 = Buffer.from(await imageBlob.arrayBuffer()).toString("base64");
+    const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
+
+    // Use Gemini Vision API
+    const { GoogleGenAI, createUserContent } = await import("@google/genai");
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
+    const analysisPrompt = `Analyze this image and extract ALL useful information for identifying who or what is shown.
+
+DO NOT attempt facial recognition. Instead, look for:
+
+1. VISIBLE TEXT (OCR):
+   - Name tags, badges, lanyards
+   - Business cards
+   - Presentation slides with names
+   - Signage, banners
+   - Clothing text (company shirts, etc.)
+
+2. COMPANY/ORGANIZATION LOGOS:
+   - Logos on clothing, podiums, backdrops
+   - Company branding visible anywhere
+   - Event sponsor logos
+
+3. EVENT CONTEXT:
+   - Type of event (conference, panel, interview, etc.)
+   - Event name if visible
+   - Award ceremonies, product launches
+
+4. SETTING DESCRIPTION:
+   - Office environment
+   - Conference stage
+   - Interview setup
+   - Location clues
+
+5. OTHER IDENTIFIERS:
+   - Company names mentioned
+   - Award names
+   - Product names visible
+
+Return as JSON:
+{
+  "visibleText": ["Any text found via OCR"],
+  "identifiedLogos": ["Company/org logos visible"],
+  "eventContext": "Description of what type of event/setting this appears to be",
+  "settingDescription": "Physical setting description",
+  "potentialIdentifiers": [
+    {
+      "type": "name_tag|badge|slide|logo|signage|clothing",
+      "value": "What was found",
+      "confidence": "high|medium|low"
+    }
+  ]
+}
+
+IMPORTANT: Be thorough with OCR - read ALL visible text.
+Return ONLY valid JSON.`;
+
+    const contents = createUserContent([
+      {
+        inlineData: {
+          data: imageBase64,
+          mimeType,
+        },
+      },
+      { text: analysisPrompt },
+    ]);
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents,
+    });
+
+    const responseText = response.text || "";
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      throw new Error("Failed to parse Gemini response as JSON");
+    }
+
+    const analysis: ImageAnalysisResult = JSON.parse(jsonMatch[0]);
+
+    // Generate search queries based on analysis
+    const suggestedQueries: string[] = [];
+
+    // Add queries based on visible text
+    for (const text of analysis.visibleText) {
+      if (text.length > 3 && text.length < 50) {
+        suggestedQueries.push(`"${text}"`);
+      }
+    }
+
+    // Add queries based on logos
+    for (const logo of analysis.identifiedLogos) {
+      suggestedQueries.push(`${logo} executive`);
+      suggestedQueries.push(`${logo} founder`);
+    }
+
+    // Add event-based queries
+    if (analysis.eventContext && analysis.eventContext.length > 5) {
+      suggestedQueries.push(analysis.eventContext);
+    }
+
+    // Add identifier-based queries
+    for (const identifier of analysis.potentialIdentifiers) {
+      if (identifier.confidence === "high" && identifier.value.length > 3) {
+        suggestedQueries.push(`"${identifier.value}"`);
+      }
+    }
+
+    return {
+      success: true,
+      imageUrl,
+      analysis,
+      suggestedSearchQueries: [...new Set(suggestedQueries)].slice(0, 10),
+      note: "Image analyzed for visible text, logos, and context. NO facial recognition used.",
+    };
+  } catch (error) {
+    console.error("[analyzeImageContext] Error:", error);
+    return {
+      success: false,
+      error: `Image analysis failed: ${error}`,
+      imageUrl,
+      analysis: {
+        visibleText: [],
+        identifiedLogos: [],
+        eventContext: "",
+        settingDescription: "",
+        potentialIdentifiers: [],
+      },
+      suggestedSearchQueries: [],
+      note: "Analysis error",
+    };
+  }
+}
+
+// ============================================================================
+// AGENT TOOL: Reverse Image Search
+// ============================================================================
+
+export const reverseImageSearch = createTool({
+  description: `Find where an image appears on the web using reverse image search.
+
+Use this to:
+- Find articles/pages where a photo appears
+- Discover the original source of an image
+- Find related coverage about someone in a photo
+- Identify press releases, news articles featuring the image
+
+This does NOT use facial recognition - it finds exact/similar image matches.
+Returns URLs of pages where the image appears.`,
+  args: z.object({
+    imageUrl: z.string().describe("Public URL of the image to search for"),
+    maxResults: z.number().default(10).describe("Maximum number of results to return"),
+  }),
+  handler: async (ctx, args) => {
+    return reverseImageSearchCore(args.imageUrl, args.maxResults);
+  },
+});
+
+// ============================================================================
+// AGENT TOOL: Image Context Analysis (OCR + Visual Analysis)
+// ============================================================================
+
+export const analyzeImageContext = createTool({
+  description: `Analyze an image for visible text, logos, and contextual clues.
+
+Use this to extract:
+- Visible text (OCR): name tags, badges, slides, signage
+- Company logos on clothing, backdrops, etc.
+- Event context (conference, interview, etc.)
+- Setting details
+
+This is NOT facial recognition. It reads visible text and identifies logos.
+Perfect for finding clues about who's in a photo without biometric analysis.`,
+  args: z.object({
+    imageUrl: z.string().describe("Public URL of the image to analyze"),
+  }),
+  handler: async (ctx, args) => {
+    return analyzeImageContextCore(args.imageUrl);
+  },
+});
+
+// ============================================================================
+// AGENT TOOL: Research Person from Image (Combined Workflow)
+// ============================================================================
+
+export const researchPersonFromImage = createTool({
+  description: `Complete workflow to research a person from their photo.
+
+This combines:
+1. Reverse image search - find where the image appears online
+2. Image context analysis - extract visible text, logos, event details
+3. Entity extraction - identify people mentioned on pages where image appears
+4. Profile enrichment - find LinkedIn, Twitter, news about identified people
+
+Use for: identifying speakers at events, researching executives from photos,
+finding background on people in news images.
+
+ETHICAL: Uses image matching + text analysis only. NO facial recognition.`,
+  args: z.object({
+    imageUrl: z.string().describe("Public URL of the image to research"),
+    maxPagesToAnalyze: z.number().default(3).describe("Max pages to analyze for entities"),
+  }),
+  handler: async (ctx, args) => {
+    const { imageUrl, maxPagesToAnalyze } = args;
+    const allPeople: ExtractedPerson[] = [];
+    const allCompanies: ExtractedCompany[] = [];
+    const pagesSources: string[] = [];
+
+    // Step 1: Reverse image search
+    const reverseSearchResult = await reverseImageSearchCore(imageUrl, 10);
+
+    // Step 2: Image context analysis
+    const imageAnalysis = await analyzeImageContextCore(imageUrl);
+
+    // Step 3: Extract entities from pages where image was found
+    const pagesToAnalyze = reverseSearchResult.relatedPages.slice(0, maxPagesToAnalyze);
+
+    for (const page of pagesToAnalyze) {
+      if (!page.url) continue;
+
+      try {
+        const entityResult = await extractEntitiesCore(page.url, undefined, "both");
+        if (entityResult.success) {
+          allPeople.push(...entityResult.people);
+          allCompanies.push(...entityResult.companies);
+          pagesSources.push(page.url);
+        }
+      } catch (error) {
+        console.warn(`[researchPersonFromImage] Failed to extract from ${page.url}:`, error);
+      }
+    }
+
+    // Step 4: Also search based on image analysis clues
+    if (imageAnalysis.success) {
+      for (const query of imageAnalysis.suggestedSearchQueries.slice(0, 3)) {
+        const searchResults = await webSearch(query, 3);
+        for (const result of searchResults) {
+          if (result.url && !pagesSources.includes(result.url)) {
+            try {
+              const entityResult = await extractEntitiesCore(result.url, undefined, "people");
+              if (entityResult.success && entityResult.people.length > 0) {
+                allPeople.push(...entityResult.people);
+                pagesSources.push(result.url);
+              }
+            } catch (error) {
+              // Skip failed extractions
+            }
+          }
+        }
+      }
+    }
+
+    // Deduplicate people by name
+    const uniquePeopleMap = new Map<string, ExtractedPerson>();
+    for (const person of allPeople) {
+      const key = person.name.toLowerCase();
+      if (!uniquePeopleMap.has(key) ||
+          (person.confidence === "high" && uniquePeopleMap.get(key)?.confidence !== "high")) {
+        uniquePeopleMap.set(key, person);
+      }
+    }
+    const uniquePeople = Array.from(uniquePeopleMap.values());
+
+    // Step 5: Enrich top candidates
+    const enrichedPeople: any[] = [];
+    const founderRoles = ["founder", "ceo", "cto", "president", "partner", "director"];
+
+    // Prioritize people with founder/exec roles
+    const prioritizedPeople = uniquePeople.sort((a, b) => {
+      const aIsFounder = founderRoles.some(r => (a.role || "").toLowerCase().includes(r)) ? 1 : 0;
+      const bIsFounder = founderRoles.some(r => (b.role || "").toLowerCase().includes(r)) ? 1 : 0;
+      return bIsFounder - aIsFounder;
+    }).slice(0, 5);
+
+    for (const person of prioritizedPeople) {
+      try {
+        const enriched = await enrichPersonCore(person.name, person.company, person.role);
+        if (enriched.success) {
+          enrichedPeople.push({
+            ...person,
+            enrichment: enriched.person,
+            dataSources: enriched.dataSources,
+          });
+        } else {
+          enrichedPeople.push(person);
+        }
+      } catch (error) {
+        enrichedPeople.push(person);
+      }
+    }
+
+    // Deduplicate companies
+    const uniqueCompaniesMap = new Map<string, ExtractedCompany>();
+    for (const company of allCompanies) {
+      const key = company.name.toLowerCase();
+      if (!uniqueCompaniesMap.has(key)) {
+        uniqueCompaniesMap.set(key, company);
+      }
+    }
+    const uniqueCompanies = Array.from(uniqueCompaniesMap.values());
+
+    return {
+      success: true,
+      imageUrl,
+      method: "reverse_image_search_plus_context_analysis_plus_entity_extraction",
+      note: "Research conducted using image matching, OCR, and text analysis. NO facial recognition or biometric analysis.",
+
+      imageAnalysis: imageAnalysis.success ? {
+        visibleText: imageAnalysis.analysis.visibleText,
+        logos: imageAnalysis.analysis.identifiedLogos,
+        eventContext: imageAnalysis.analysis.eventContext,
+        setting: imageAnalysis.analysis.settingDescription,
+      } : null,
+
+      reverseSearchResults: reverseSearchResult.results.slice(0, 5),
+
+      identifiedPeople: enrichedPeople,
+      relatedCompanies: uniqueCompanies,
+
+      sourcePages: pagesSources,
+
+      stats: {
+        pagesAnalyzed: pagesSources.length,
+        peopleFound: uniquePeople.length,
+        companiesFound: uniqueCompanies.length,
+        enrichedProfiles: enrichedPeople.length,
+      },
+    };
+  },
+});
+
+// ============================================================================
+// INTERNAL ACTIONS: Image Analysis for other Convex functions
+// ============================================================================
+
+export const reverseImageSearchInternal = internalAction({
+  args: {
+    imageUrl: v.string(),
+    maxResults: v.optional(v.number()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    imageUrl: v.string(),
+    results: v.array(v.object({
+      title: v.string(),
+      link: v.string(),
+      source: v.string(),
+      thumbnail: v.optional(v.string()),
+      position: v.number(),
+    })),
+    relatedPages: v.array(v.object({
+      title: v.string(),
+      url: v.string(),
+      snippet: v.optional(v.string()),
+    })),
+    note: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    return reverseImageSearchCore(args.imageUrl, args.maxResults || 10);
+  },
+});
+
+export const analyzeImageContextInternal = internalAction({
+  args: {
+    imageUrl: v.string(),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    imageUrl: v.string(),
+    analysis: v.object({
+      visibleText: v.array(v.string()),
+      identifiedLogos: v.array(v.string()),
+      eventContext: v.string(),
+      settingDescription: v.string(),
+      potentialIdentifiers: v.array(v.object({
+        type: v.string(),
+        value: v.string(),
+        confidence: v.string(),
+      })),
+    }),
+    suggestedSearchQueries: v.array(v.string()),
+    note: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    return analyzeImageContextCore(args.imageUrl);
+  },
+});
