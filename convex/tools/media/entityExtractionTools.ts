@@ -1,0 +1,599 @@
+// convex/tools/media/entityExtractionTools.ts
+// Entity extraction from articles - NO facial recognition
+// Uses LLM-based NER to identify people and companies from text
+"use node";
+
+import { createTool } from "@convex-dev/agent";
+import { z } from "zod";
+import { internalAction } from "../../_generated/server";
+import { internal } from "../../_generated/api";
+import { v } from "convex/values";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
+import { getLlmModel } from "../../../shared/llm/modelCatalog";
+
+// Helper to get the appropriate language model
+function getLanguageModel(modelName: string) {
+  if (modelName.startsWith("claude-")) return anthropic(modelName);
+  if (modelName.startsWith("gemini-")) return google(modelName);
+  return openai.chat(modelName);
+}
+
+// Helper to extract domain from URL
+function extractDomain(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.replace('www.', '');
+  } catch {
+    return 'unknown';
+  }
+}
+
+// ============================================================================
+// HELPER: Fetch article content
+// ============================================================================
+
+async function fetchArticleContent(url: string): Promise<string> {
+  const LINKUP_API_KEY = process.env.LINKUP_API_KEY;
+
+  if (!LINKUP_API_KEY) {
+    // Fallback: try simple fetch
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; NodeBenchBot/1.0)',
+        },
+      });
+      const html = await response.text();
+      // Basic HTML to text conversion
+      return html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 10000);
+    } catch (error) {
+      throw new Error(`Failed to fetch URL: ${error}`);
+    }
+  }
+
+  // Use Linkup API for better content extraction
+  try {
+    const response = await fetch('https://api.linkup.so/v1/fetch', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LINKUP_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        outputType: 'content',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Linkup API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.content || data.summary || '';
+  } catch (error) {
+    console.warn('[fetchArticleContent] Linkup failed, using fallback:', error);
+    // Fallback to simple fetch
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; NodeBenchBot/1.0)',
+      },
+    });
+    const html = await response.text();
+    return html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 10000);
+  }
+}
+
+// ============================================================================
+// HELPER: Web search for enrichment
+// ============================================================================
+
+interface SearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+async function webSearch(query: string, maxResults: number = 5): Promise<SearchResult[]> {
+  const LINKUP_API_KEY = process.env.LINKUP_API_KEY;
+
+  if (!LINKUP_API_KEY) {
+    console.warn('[webSearch] No LINKUP_API_KEY, returning empty results');
+    return [];
+  }
+
+  try {
+    const response = await fetch('https://api.linkup.so/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LINKUP_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        q: query,
+        depth: 'standard',
+        outputType: 'sourcedAnswer',
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`[webSearch] Linkup API error: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const sources = data.sources || data.results || [];
+
+    return sources.slice(0, maxResults).map((s: any) => ({
+      title: s.name || s.title || '',
+      url: s.url || '',
+      snippet: s.snippet || s.content || '',
+    }));
+  } catch (error) {
+    console.warn('[webSearch] Error:', error);
+    return [];
+  }
+}
+
+// ============================================================================
+// CORE LOGIC: Entity extraction
+// ============================================================================
+
+interface ExtractedPerson {
+  name: string;
+  role?: string;
+  company?: string;
+  confidence: string;
+  context?: string;
+}
+
+interface ExtractedCompany {
+  name: string;
+  type?: string;
+  industry?: string;
+  fundingStage?: string;
+  confidence: string;
+}
+
+async function extractEntitiesCore(
+  articleUrl: string | undefined,
+  articleText: string | undefined,
+  focusOn: "people" | "companies" | "both"
+): Promise<{
+  success: boolean;
+  error?: string;
+  articleUrl?: string;
+  people: ExtractedPerson[];
+  companies: ExtractedCompany[];
+  totalPeople?: number;
+  totalCompanies?: number;
+  note?: string;
+}> {
+  if (!articleUrl && !articleText) {
+    return {
+      success: false,
+      error: "Must provide either articleUrl or articleText",
+      people: [],
+      companies: [],
+    };
+  }
+
+  let textToAnalyze = articleText || "";
+
+  // If URL provided, fetch the article content
+  if (articleUrl && !articleText) {
+    try {
+      textToAnalyze = await fetchArticleContent(articleUrl);
+    } catch (error) {
+      console.error("[extractEntities] Failed to fetch URL:", error);
+      return {
+        success: false,
+        error: `Failed to fetch article: ${error}`,
+        people: [],
+        companies: [],
+      };
+    }
+  }
+
+  if (!textToAnalyze || textToAnalyze.length < 50) {
+    return {
+      success: false,
+      error: "Article text too short or empty",
+      people: [],
+      companies: [],
+    };
+  }
+
+  // Use LLM for entity extraction
+  const extractionPrompt = `Analyze this article and extract all mentioned entities.
+
+ARTICLE TEXT:
+${textToAnalyze.slice(0, 8000)}
+
+Extract the following:
+${focusOn === "people" || focusOn === "both" ? `
+PEOPLE:
+- Name (full name if available)
+- Role/Title (CEO, Founder, CTO, etc.)
+- Company they work for
+- Confidence level (high/medium/low)
+- A brief context where they're mentioned
+` : ""}
+
+${focusOn === "companies" || focusOn === "both" ? `
+COMPANIES:
+- Company name
+- Type (startup, corporation, venture fund, etc.)
+- Industry
+- Funding stage if mentioned
+- Confidence level (high/medium/low)
+` : ""}
+
+Return as JSON:
+{
+  "people": [
+    {
+      "name": "John Doe",
+      "role": "CEO",
+      "company": "TechCorp",
+      "confidence": "high",
+      "context": "said John Doe, CEO of TechCorp"
+    }
+  ],
+  "companies": [
+    {
+      "name": "TechCorp",
+      "type": "startup",
+      "industry": "AI/ML",
+      "fundingStage": "Series B",
+      "confidence": "high"
+    }
+  ]
+}
+
+IMPORTANT: Only extract entities CLEARLY mentioned. Do not guess.
+Return ONLY valid JSON.`;
+
+  try {
+    const result = await generateText({
+      model: getLanguageModel(getLlmModel("router", "openai")),
+      prompt: extractionPrompt,
+      temperature: 0.1,
+    });
+
+    const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Failed to extract JSON from response");
+    }
+
+    const extracted = JSON.parse(jsonMatch[0]);
+
+    return {
+      success: true,
+      articleUrl,
+      people: extracted.people || [],
+      companies: extracted.companies || [],
+      totalPeople: (extracted.people || []).length,
+      totalCompanies: (extracted.companies || []).length,
+      note: "Entities extracted using AI text analysis. No facial recognition used.",
+    };
+  } catch (error) {
+    console.error("[extractEntities] Extraction error:", error);
+    return {
+      success: false,
+      error: `Entity extraction failed: ${error}`,
+      people: [],
+      companies: [],
+    };
+  }
+}
+
+// ============================================================================
+// CORE LOGIC: Person enrichment
+// ============================================================================
+
+interface EnrichedPerson {
+  name: string;
+  linkedInUrl?: string;
+  twitterHandle?: string;
+  crunchbaseUrl?: string;
+  companies: string[];
+  roles: string[];
+  recentNews: Array<{ title: string; source: string; url: string }>;
+}
+
+async function enrichPersonCore(
+  personName: string,
+  knownCompany?: string,
+  knownRole?: string
+): Promise<{
+  success: boolean;
+  person: EnrichedPerson;
+  dataSources: string[];
+  note: string;
+}> {
+  const enrichedData: EnrichedPerson = {
+    name: personName,
+    companies: knownCompany ? [knownCompany] : [],
+    roles: knownRole ? [knownRole] : [],
+    recentNews: [],
+  };
+
+  // Search for LinkedIn profile
+  const linkedInResults = await webSearch(
+    `site:linkedin.com/in "${personName}" ${knownCompany || ""} ${knownRole || ""}`,
+    3
+  );
+  const linkedInResult = linkedInResults.find(s => s.url.includes("linkedin.com/in/"));
+  if (linkedInResult) {
+    enrichedData.linkedInUrl = linkedInResult.url;
+  }
+
+  // Search for Twitter/X profile
+  const twitterResults = await webSearch(
+    `site:twitter.com OR site:x.com "${personName}" ${knownCompany || ""}`,
+    3
+  );
+  const twitterResult = twitterResults.find(s =>
+    s.url.includes("twitter.com/") || s.url.includes("x.com/")
+  );
+  if (twitterResult) {
+    const handleMatch = twitterResult.url.match(/(?:twitter\.com|x\.com)\/([^\/\?]+)/);
+    if (handleMatch && !['search', 'explore', 'home', 'i'].includes(handleMatch[1])) {
+      enrichedData.twitterHandle = `@${handleMatch[1]}`;
+    }
+  }
+
+  // Search for Crunchbase profile
+  const crunchbaseResults = await webSearch(
+    `site:crunchbase.com/person "${personName}"`,
+    2
+  );
+  const crunchbaseResult = crunchbaseResults.find(s => s.url.includes("crunchbase.com/person"));
+  if (crunchbaseResult) {
+    enrichedData.crunchbaseUrl = crunchbaseResult.url;
+  }
+
+  // Search for recent news
+  const newsResults = await webSearch(
+    `"${personName}" ${knownCompany || ""} news`,
+    5
+  );
+  enrichedData.recentNews = newsResults
+    .filter(s => !s.url.includes("linkedin.com") && !s.url.includes("twitter.com"))
+    .slice(0, 5)
+    .map(s => ({
+      title: s.title,
+      source: extractDomain(s.url),
+      url: s.url,
+    }));
+
+  return {
+    success: true,
+    person: enrichedData,
+    dataSources: [
+      enrichedData.linkedInUrl ? "LinkedIn" : null,
+      enrichedData.twitterHandle ? "Twitter/X" : null,
+      enrichedData.crunchbaseUrl ? "Crunchbase" : null,
+      enrichedData.recentNews.length > 0 ? "News" : null,
+    ].filter((s): s is string => s !== null),
+    note: "All data from public web searches. No facial recognition used.",
+  };
+}
+
+// ============================================================================
+// AGENT TOOL: Extract entities from article
+// ============================================================================
+
+export const extractEntitiesFromArticle = createTool({
+  description: `Extract people and companies mentioned in a news article.
+
+Use this tool when you need to:
+- Identify founders, executives, or key people mentioned in an article
+- Find companies discussed in news stories
+- Build a list of people and their roles from press coverage
+
+This tool uses AI-based Named Entity Recognition - NO facial recognition.
+Returns structured data about people (name, role, company) and companies.`,
+  args: z.object({
+    articleUrl: z.string().optional().describe("URL of the article to analyze"),
+    articleText: z.string().optional().describe("Raw text of the article if URL not available"),
+    focusOn: z.enum(["people", "companies", "both"]).default("both").describe("What entities to extract"),
+  }),
+  handler: async (ctx, args) => {
+    return extractEntitiesCore(args.articleUrl, args.articleText, args.focusOn);
+  },
+});
+
+// ============================================================================
+// AGENT TOOL: Enrich person profile
+// ============================================================================
+
+export const enrichPersonProfile = createTool({
+  description: `Enrich a person's profile with public information from the web.
+
+After extracting a person from an article, use this to find:
+- Their LinkedIn profile URL
+- Twitter/X handle
+- Other companies they're associated with
+- Recent news about them
+
+This uses web search only - NO facial recognition or biometric data.`,
+  args: z.object({
+    personName: z.string().describe("Full name of the person"),
+    knownCompany: z.string().optional().describe("Company they're known to work at"),
+    knownRole: z.string().optional().describe("Their role/title if known"),
+  }),
+  handler: async (ctx, args) => {
+    return enrichPersonCore(args.personName, args.knownCompany, args.knownRole);
+  },
+});
+
+// ============================================================================
+// AGENT TOOL: Research founders from article (combined workflow)
+// ============================================================================
+
+export const researchFoundersFromArticle = createTool({
+  description: `Research founders and executives mentioned in a news article.
+
+This is a complete workflow that:
+1. Extracts all people and companies from the article
+2. Identifies likely founders/executives by role
+3. Enriches their profiles with LinkedIn, Twitter, Crunchbase
+4. Returns a comprehensive research package
+
+Use for: founder research, competitive intelligence, investor research.
+All data from public sources - NO facial recognition or biometric data.`,
+  args: z.object({
+    articleUrl: z.string().describe("URL of the news article to analyze"),
+    focusRoles: z.array(z.string()).default(["founder", "ceo", "cto", "president", "partner", "managing director"]).describe("Roles to focus on"),
+    maxPeople: z.number().default(5).describe("Maximum number of people to enrich"),
+  }),
+  handler: async (ctx, args) => {
+    const { articleUrl, focusRoles, maxPeople } = args;
+
+    // Step 1: Extract entities from article
+    const extractionResult = await extractEntitiesCore(articleUrl, undefined, "both");
+
+    if (!extractionResult.success) {
+      return {
+        success: false,
+        error: extractionResult.error,
+        founders: [] as any[],
+        companies: [] as ExtractedCompany[],
+      };
+    }
+
+    // Step 2: Filter to focus roles
+    const relevantPeople = extractionResult.people.filter(p => {
+      const role = (p.role || "").toLowerCase();
+      return focusRoles.some(fr => role.includes(fr.toLowerCase()));
+    }).slice(0, maxPeople);
+
+    // Step 3: Enrich each person's profile
+    const enrichedFounders: any[] = [];
+    for (const person of relevantPeople) {
+      try {
+        const enriched = await enrichPersonCore(
+          person.name,
+          person.company,
+          person.role
+        );
+
+        if (enriched.success) {
+          enrichedFounders.push({
+            ...person,
+            enrichment: enriched.person,
+            dataSources: enriched.dataSources,
+          });
+        } else {
+          enrichedFounders.push(person);
+        }
+      } catch (error) {
+        console.warn(`[researchFoundersFromArticle] Failed to enrich ${person.name}:`, error);
+        enrichedFounders.push(person);
+      }
+    }
+
+    return {
+      success: true,
+      articleUrl,
+      method: "article_text_analysis_and_web_enrichment",
+      note: "All data from public sources (article text, LinkedIn, Twitter, Crunchbase). No facial recognition or biometric analysis used.",
+      founders: enrichedFounders,
+      companies: extractionResult.companies,
+      stats: {
+        totalPeopleFound: extractionResult.people.length,
+        foundersIdentified: enrichedFounders.length,
+        companiesFound: extractionResult.companies.length,
+      },
+    };
+  },
+});
+
+// ============================================================================
+// INTERNAL ACTIONS: For use by other Convex functions
+// ============================================================================
+
+export const extractEntitiesInternal = internalAction({
+  args: {
+    articleUrl: v.optional(v.string()),
+    articleText: v.optional(v.string()),
+    focusOn: v.optional(v.union(v.literal("people"), v.literal("companies"), v.literal("both"))),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    error: v.optional(v.string()),
+    people: v.array(v.object({
+      name: v.string(),
+      role: v.optional(v.string()),
+      company: v.optional(v.string()),
+      confidence: v.string(),
+      context: v.optional(v.string()),
+    })),
+    companies: v.array(v.object({
+      name: v.string(),
+      type: v.optional(v.string()),
+      industry: v.optional(v.string()),
+      fundingStage: v.optional(v.string()),
+      confidence: v.string(),
+    })),
+  }),
+  handler: async (ctx, args) => {
+    const result = await extractEntitiesCore(
+      args.articleUrl,
+      args.articleText,
+      args.focusOn || "both"
+    );
+    return {
+      success: result.success,
+      error: result.error,
+      people: result.people,
+      companies: result.companies,
+    };
+  },
+});
+
+export const enrichPersonInternal = internalAction({
+  args: {
+    personName: v.string(),
+    knownCompany: v.optional(v.string()),
+    knownRole: v.optional(v.string()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    person: v.object({
+      name: v.string(),
+      linkedInUrl: v.optional(v.string()),
+      twitterHandle: v.optional(v.string()),
+      crunchbaseUrl: v.optional(v.string()),
+      companies: v.array(v.string()),
+      roles: v.array(v.string()),
+      recentNews: v.array(v.object({
+        title: v.string(),
+        source: v.string(),
+        url: v.string(),
+      })),
+    }),
+    dataSources: v.array(v.string()),
+    note: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    return enrichPersonCore(args.personName, args.knownCompany, args.knownRole);
+  },
+});
