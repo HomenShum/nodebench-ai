@@ -481,6 +481,23 @@ curl https://nodebench-mcp-openbb.onrender.com/health
 curl https://nodebench-mcp-research.onrender.com/health
 ```
 
+### Verification scripts
+
+After deploying to Render, run the verification script to test all endpoints:
+
+```powershell
+# PowerShell (Windows)
+.\scripts\verify-mcp-deployment.ps1 -Token $env:MCP_HTTP_TOKEN
+
+# Bash (Unix/Linux/macOS)
+./scripts/verify-mcp-deployment.sh $MCP_HTTP_TOKEN
+```
+
+The scripts test:
+- Health endpoints for all 3 servers
+- JSON-RPC `tools/list` for core-agent
+- Root endpoints for OpenBB and Research servers
+
 ## What to watch for next
 
 Common follow-on issues:
