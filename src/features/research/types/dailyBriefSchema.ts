@@ -288,6 +288,30 @@ export interface DailyBriefPayload {
   meta: DailyBriefMeta;
   /** Quality metrics for above-the-fold KPI tiles */
   quality?: QualityMetrics;
+  /** Optional "Did you know" update (LLM-generated, judge-verified) */
+  didYouKnow?: {
+    messageText: string;
+    artifactId: string;
+    passed: boolean;
+    sourcesUsed: Array<{ url: string; citationId: string; title?: string; publishedAtIso?: string }>;
+    checks: {
+      noEmDash: boolean;
+      allSourcesHavePublishedAtIso: boolean;
+      hasFactPerSource: boolean;
+      allFactsHaveCitations: boolean;
+      nonGenericFacts: boolean;
+      hasPrediction: boolean;
+      predictionsHaveCitations: boolean;
+      performanceClaimsAttributed: boolean;
+    };
+    llmJudge: {
+      passed: boolean;
+      modelUsed: string;
+      artifactId: string;
+    };
+    judgeExplanation?: string;
+    judgeReasons?: string[];
+  };
   actI: {
     title: string;
     /** Coverage summary - items, sources, freshness */
@@ -334,7 +358,9 @@ export interface ExecutiveBriefRecord {
 
 export const DailyBriefJSONSchema = {
   name: "generate_daily_brief",
-  strict: true,
+  // NOTE: OpenAI "strict" JSON schema mode requires every property to be listed in `required` at every object level.
+  // This schema intentionally allows optional fields, so strict mode must remain off.
+  strict: false,
   schema: {
     type: "object" as const,
     required: ["meta", "actI", "actII", "actIII"],
@@ -361,6 +387,7 @@ export const DailyBriefJSONSchema = {
           synthesis: { type: "string" as const, description: "Coverage summary. NO BULLETS. NO URLS." },
           topSources: {
             type: "array" as const,
+            maxItems: 6,
             items: {
               type: "object" as const,
               required: ["source", "count"],
@@ -387,6 +414,7 @@ export const DailyBriefJSONSchema = {
           },
           signals: {
             type: "array" as const,
+            maxItems: 6,
             items: {
               type: "object" as const,
               required: ["id", "headline", "synthesis", "evidence"],
@@ -397,6 +425,7 @@ export const DailyBriefJSONSchema = {
                 synthesis: { type: "string" as const, description: "Analysis of this signal." },
                 evidence: {
                   type: "array" as const,
+                  maxItems: 5,
                   items: {
                     type: "object" as const,
                     required: ["id", "source", "title", "url", "publishedAt", "relevance"],
@@ -415,6 +444,7 @@ export const DailyBriefJSONSchema = {
                 },
                 relatedSignalIds: {
                   type: "array" as const,
+                  maxItems: 8,
                   items: { type: "string" as const }
                 }
               }
@@ -431,6 +461,7 @@ export const DailyBriefJSONSchema = {
           synthesis: { type: "string" as const },
           actions: {
             type: "array" as const,
+            maxItems: 6,
             items: {
               type: "object" as const,
               required: ["id", "label", "status", "content", "linkedSignalIds"],
@@ -445,6 +476,7 @@ export const DailyBriefJSONSchema = {
                 content: { type: "string" as const, description: "Deep dive content or skip reason." },
                 linkedSignalIds: {
                   type: "array" as const,
+                  maxItems: 8,
                   items: { type: "string" as const },
                   description: "IDs from Act II that justify this action."
                 },
@@ -472,6 +504,7 @@ export const DailyBriefJSONSchema = {
               data: {
                 type: "array" as const,
                 description: "Inline data array. No external URLs.",
+                maxItems: 200,
                 items: { type: "object" as const, additionalProperties: true }
               },
               spec: {
@@ -487,6 +520,7 @@ export const DailyBriefJSONSchema = {
           },
           trendingTags: {
             type: "array" as const,
+            maxItems: 12,
             items: { type: "string" as const }
           }
         }

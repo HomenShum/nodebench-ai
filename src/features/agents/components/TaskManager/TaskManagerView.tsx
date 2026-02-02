@@ -11,6 +11,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useQuery } from 'convex/react';
+import { useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
 import { 
   Calendar,
@@ -95,6 +96,10 @@ interface TaskManagerViewProps {
 }
 
 export function TaskManagerView({ isPublic = false, className }: TaskManagerViewProps) {
+  // Check authentication - use public query for unauthenticated users
+  const { isAuthenticated } = useConvexAuth();
+  const effectiveIsPublic = isPublic || !isAuthenticated;
+  
   // State
   const [selectedSessionId, setSelectedSessionId] = useState<Id<"agentTaskSessions"> | null>(null);
   const [statusFilter, setStatusFilter] = useState<TaskSessionStatus | 'all'>('all');
@@ -114,18 +119,18 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
     dateTo,
   }), [statusFilter, typeFilter, dateFrom, dateTo]);
 
-  // Fetch sessions - use public or authenticated query
+  // Fetch sessions - use public or authenticated query based on auth status
   const publicSessions = useQuery(
     api.domains.taskManager.queries.getPublicTaskSessions,
-    isPublic ? queryArgs : 'skip'
+    effectiveIsPublic ? queryArgs : 'skip'
   );
 
   const userSessions = useQuery(
     api.domains.taskManager.queries.getUserTaskSessions,
-    !isPublic ? queryArgs : 'skip'
+    !effectiveIsPublic ? queryArgs : 'skip'
   );
 
-  const sessionsData = isPublic ? publicSessions : userSessions;
+  const sessionsData = effectiveIsPublic ? publicSessions : userSessions;
   const sessions = (sessionsData?.sessions || []) as TaskSession[];
   const isLoading = sessionsData === undefined;
 

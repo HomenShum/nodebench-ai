@@ -77,10 +77,34 @@ export function ForYouFeed() {
 
   if (!displayFeed) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-700 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-stone-500 text-sm font-light">Loading...</p>
+      <div className="min-h-screen bg-canvas-warm p-6">
+        <div className="space-y-4 animate-pulse">
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="space-y-2">
+              <div className="h-6 bg-stone-200/60 rounded w-40" />
+              <div className="h-3 bg-stone-100 rounded w-56" />
+            </div>
+            <div className="h-9 bg-stone-200/60 rounded-lg w-24" />
+          </div>
+          {/* Card grid skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-stone-200/60 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-stone-200/60 rounded w-3/4" />
+                    <div className="h-3 bg-stone-100 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 bg-stone-100 rounded w-full" />
+                  <div className="h-3 bg-stone-100 rounded w-5/6" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -88,7 +112,7 @@ export function ForYouFeed() {
 
   if (!displayFeed.items?.length) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
+      <div className="min-h-screen bg-canvas-warm flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-6">
           <h2 className="text-xl font-light text-stone-900 mb-2">Nothing to show yet</h2>
           <p className="text-stone-500 text-sm font-light">Check back soon for the latest updates.</p>
@@ -98,7 +122,7 @@ export function ForYouFeed() {
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-[#faf9f6]">
+    <div ref={containerRef} className="min-h-screen bg-canvas-warm">
       {/* Masthead */}
       <header className="border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-6 py-6">
@@ -287,9 +311,8 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
             <button
               type="button"
               onClick={handleSave}
-              className={`ml-auto p-2 rounded-full transition-colors ${
-                saved ? 'text-emerald-700 bg-emerald-50' : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
-              }`}
+              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-emerald-700 bg-emerald-50' : 'text-stone-400 hover:text-stone-600 hover:bg-stone-50'
+                }`}
               title={saved ? "Saved" : "Save for later"}
               aria-label={saved ? "Saved" : "Save for later"}
             >

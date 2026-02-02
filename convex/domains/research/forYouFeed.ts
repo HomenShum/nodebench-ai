@@ -19,6 +19,7 @@ import {
 } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { Doc } from "../../_generated/dataModel";
+import type { VerificationSignals } from "../verification/integrations/feedVerification";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -36,6 +37,19 @@ export interface FeedCandidate {
   metadata: Record<string, any>;
   timestamp: number;
   dateString?: string; // YYYY-MM-DD for grouping
+  /** Entity linking metadata (Wikidata IDs for canonical identification) */
+  entityLinks?: {
+    primary?: {
+      wikidataId: string;
+      canonicalName: string;
+      entityType: "person" | "company" | "organization" | "location" | "other";
+    };
+    secondary?: Array<{
+      wikidataId: string;
+      canonicalName: string;
+      entityType: "person" | "company" | "organization" | "location" | "other";
+    }>;
+  };
 }
 
 export interface RankedCandidate extends FeedCandidate {
@@ -47,6 +61,20 @@ export interface RankedCandidate extends FeedCandidate {
     save: number;
     share: number;
   };
+  /** Verification signals for insight+correctness ranking */
+  verification?: {
+    sourceTier: "tier1_authoritative" | "tier2_reliable" | "tier3_unverified";
+    verificationStatus: "verified" | "corroborated" | "unverified" | "disputed";
+    confidence: number;
+    hasContradictions: boolean;
+    badge: {
+      type: "verified" | "reliable" | "needs_review" | "disputed" | "none";
+      label: string;
+      tooltip: string;
+    };
+  };
+  /** Insight-optimized score (combines correctness + insight density) */
+  insightScore?: number;
 }
 
 export interface DateGroup {
@@ -65,6 +93,14 @@ export interface ForYouFeedResult {
     trending: number;
   };
   generatedAt: number;
+  /** Verification quality metrics for the feed */
+  verificationMetrics?: {
+    verifiedCount: number;
+    reliableCount: number;
+    unverifiedCount: number;
+    verificationRate: number;
+    avgConfidence: number;
+  };
 }
 
 /**
@@ -87,6 +123,51 @@ function formatDateLabel(dateString: string): string {
   } else {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
+}
+
+/** Verification badge type matching RankedCandidate interface */
+type VerificationBadge = {
+  type: "verified" | "reliable" | "needs_review" | "disputed" | "none";
+  label: string;
+  tooltip: string;
+};
+
+/**
+ * Compute verification badge for UI display
+ */
+function computeVerificationBadge(
+  sourceTier: "tier1_authoritative" | "tier2_reliable" | "tier3_unverified",
+  insightDensity: number
+): VerificationBadge {
+  if (sourceTier === "tier1_authoritative") {
+    return {
+      type: "verified",
+      label: "Verified",
+      tooltip: "From authoritative source (SEC, FDA, official announcement)",
+    };
+  }
+
+  if (sourceTier === "tier2_reliable") {
+    return {
+      type: "reliable",
+      label: "Reliable",
+      tooltip: "From reliable news source or verified expert",
+    };
+  }
+
+  if (insightDensity >= 2) {
+    return {
+      type: "needs_review",
+      label: "Unverified",
+      tooltip: "High insight density but source not verified",
+    };
+  }
+
+  return {
+    type: "none",
+    label: "",
+    tooltip: "",
+  };
 }
 
 /**
@@ -131,7 +212,7 @@ const FEED_CONFIG = {
     trending: 0.1, // 10% trending across platform
   },
 
-  /** Phoenix ML ranking weights */
+  /** Phoenix ML ranking weights (engagement-optimized) */
   phoenixWeights: {
     recency: 0.2, // How recent is the content
     relevance: 0.4, // Semantic similarity to user interests
@@ -139,11 +220,44 @@ const FEED_CONFIG = {
     diversity: 0.15, // Avoid filter bubbles
   },
 
+  /** Insight+Correctness ranking weights (quality-optimized) */
+  insightWeights: {
+    correctness: 0.4, // Verification status + source tier
+    insightDensity: 0.3, // Verified claims per content length
+    recency: 0.15, // Time decay (week-based)
+    relevance: 0.15, // User interest alignment
+  },
+
+  /** Source credibility tiers for verification */
+  sourceTiers: {
+    authoritative: 1.0, // SEC, FDA, official announcements
+    reliable: 0.7, // Major news outlets, verified experts
+    unverified: 0.2, // Social media, unverified blogs
+  },
+
+  /** Enable insight-optimized ranking (vs pure engagement) */
+  useInsightRanking: true,
+
+  /** Max candidates to verify per feed generation */
+  maxVerificationBatch: 30,
+
   /** Use free Grok models via OpenRouter for cost efficiency */
   useFreegrokModels: true,
 
   /** Refresh interval for feed regeneration (5 minutes) */
   feedRefreshMs: 5 * 60 * 1000,
+
+  /** Enable entity linking enrichment for feed candidates */
+  enableEntityEnrichment: true,
+
+  /** Max candidates to enrich per feed generation (cost control) */
+  maxEntityEnrichment: 15,
+
+  /** Enable LLM judge validation for entity links (higher accuracy, more cost) */
+  enableEntityValidation: false,
+
+  /** Minimum confidence threshold to include entity link (0-1) */
+  minEntityConfidence: 0.5,
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -282,7 +396,7 @@ export const getOutOfNetworkCandidates = internalQuery({
       });
     }
 
-    // NEW: Include LinkedIn funding posts
+    // NEW: Include LinkedIn funding posts with entity linking
     const linkedinPosts = await ctx.db
       .query("linkedinFundingPosts")
       .withIndex("by_postedAt")
@@ -290,6 +404,15 @@ export const getOutOfNetworkCandidates = internalQuery({
       .take(Math.floor(limit / 4));
 
     for (const post of linkedinPosts) {
+      // Build entity links if entityId (Wikidata ID) is available
+      const entityLinks = post.entityId ? {
+        primary: {
+          wikidataId: post.entityId,
+          canonicalName: post.companyName, // Will be enriched later if needed
+          entityType: "company" as const,
+        },
+      } : undefined;
+
       candidates.push({
         itemId: post._id,
         itemType: "update",
@@ -304,9 +427,11 @@ export const getOutOfNetworkCandidates = internalQuery({
           roundType: post.roundType,
           amount: post.amountRaw,
           companyName: post.companyName,
+          entityId: post.entityId, // Wikidata ID for canonical identification
         },
         timestamp: post.postedAt,
         dateString: getDateString(post.postedAt),
+        entityLinks,
       });
     }
 
@@ -498,6 +623,159 @@ export const getCandidates = internalAction({
   },
 });
 
+/**
+ * Enrich candidates with entity links (for candidates missing entityLinks)
+ * Uses the entity linking service to resolve company names to Wikidata IDs
+ *
+ * Now uses LLM-calibrated confidence without heuristic adjustments.
+ * Optionally validates links using LLM judge for higher accuracy.
+ */
+export const enrichCandidatesWithEntityLinks = internalAction({
+  args: {
+    candidates: v.array(v.any()),
+    maxEnrich: v.optional(v.number()), // Limit how many to enrich (cost control)
+    enableValidation: v.optional(v.boolean()), // Enable LLM judge validation
+    minConfidence: v.optional(v.number()), // Minimum confidence to include
+  },
+  handler: async (ctx, args): Promise<FeedCandidate[]> => {
+    const {
+      candidates,
+      maxEnrich = FEED_CONFIG.maxEntityEnrichment,
+      enableValidation = FEED_CONFIG.enableEntityValidation,
+      minConfidence = FEED_CONFIG.minEntityConfidence,
+    } = args;
+
+    const enriched: FeedCandidate[] = [];
+    let enrichCount = 0;
+    let validatedCount = 0;
+
+    for (const candidate of candidates) {
+      // Skip if already has entity links
+      if (candidate.entityLinks?.primary) {
+        enriched.push(candidate);
+        continue;
+      }
+
+      // Only enrich certain types that have company/entity references
+      const isEnrichable =
+        candidate.metadata?.kind === "linkedin_funding" ||
+        candidate.metadata?.companyName ||
+        candidate.itemType === "update";
+
+      if (!isEnrichable || enrichCount >= maxEnrich) {
+        enriched.push(candidate);
+        continue;
+      }
+
+      // Extract entity name from candidate
+      const entityName =
+        candidate.metadata?.companyName ||
+        extractCompanyFromTitle(candidate.title);
+
+      if (!entityName) {
+        enriched.push(candidate);
+        continue;
+      }
+
+      try {
+        // Call entity linking service (uses LLM-calibrated confidence)
+        const linkResult = await ctx.runAction(
+          internal.domains.enrichment.entityLinkingService.linkEntity,
+          {
+            name: entityName,
+            context: candidate.snippet || candidate.title,
+            expectedType: "company",
+            sourceType: "feedItem",
+            sourceId: String(candidate.itemId),
+            mentionType: "primary",
+          }
+        );
+
+        enrichCount++;
+
+        // Apply confidence threshold
+        if (!linkResult.found || !linkResult.wikidataId || linkResult.confidence < minConfidence) {
+          enriched.push(candidate);
+          continue;
+        }
+
+        // Optional: Validate using LLM judge for high-confidence links
+        let isValidated = false;
+        if (enableValidation && validatedCount < 5) { // Limit validation calls
+          try {
+            const validation = await ctx.runAction(
+              internal.domains.enrichment.entityLinkingJudge.validateEntityLink,
+              {
+                query: entityName,
+                context: candidate.snippet || candidate.title,
+                linkedWikidataId: linkResult.wikidataId,
+                linkedName: linkResult.canonicalName || entityName,
+                linkedDescription: linkResult.description,
+                originalConfidence: linkResult.confidence,
+              }
+            );
+            validatedCount++;
+            isValidated = validation.isCorrect;
+
+            // Skip if validation fails
+            if (!validation.isCorrect && validation.judgeConfidence > 0.7) {
+              console.log(`[forYouFeed] Entity validation failed for ${entityName}: ${validation.reasoning}`);
+              enriched.push(candidate);
+              continue;
+            }
+          } catch (validationError) {
+            console.warn(`[forYouFeed] Validation error for ${entityName}:`, validationError);
+            // Continue without validation
+          }
+        }
+
+        enriched.push({
+          ...candidate,
+          entityLinks: {
+            primary: {
+              wikidataId: linkResult.wikidataId,
+              canonicalName: linkResult.canonicalName || entityName,
+              entityType: (linkResult.entityType || "company") as "person" | "company" | "organization" | "location" | "other",
+            },
+          },
+          metadata: {
+            ...candidate.metadata,
+            entityId: linkResult.wikidataId,
+            entityConfidence: linkResult.confidence,
+            entityValidated: isValidated,
+          },
+          });
+      } catch (error) {
+        console.error(`[forYouFeed] Entity enrichment failed for ${entityName}:`, error);
+        enriched.push(candidate);
+      }
+    }
+
+    console.log(`[forYouFeed] Enriched ${enrichCount} candidates with entity links (${validatedCount} validated)`);
+    return enriched;
+  },
+});
+
+/**
+ * Helper to extract company name from title
+ */
+function extractCompanyFromTitle(title: string): string | null {
+  // Common patterns: "Company raised $X", "Company announces", "Company closes"
+  const patterns = [
+    /^([A-Z][a-zA-Z0-9\s]+)\s+(?:raised|raises|closes|secures|announces)/i,
+    /^([A-Z][a-zA-Z0-9\s]+),?\s+the\s+/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = title.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+
+  return null;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // STEP 2: PHOENIX ML RANKING (Grok-Powered)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -527,8 +805,14 @@ export const rankWithPhoenix = internalAction({
       }
     );
 
-    // Build ranking prompt (Phoenix ML pattern)
-    const prompt = `You are Phoenix ML, an advanced ranking system from X's For You algorithm.
+    // Build ranking prompt (Phoenix ML pattern with insight+correctness optimization)
+    const prompt = `You are Phoenix ML, an advanced ranking system optimized for INSIGHT DENSITY and CORRECTNESS.
+
+RANKING PHILOSOPHY:
+- Prioritize factual accuracy over engagement bait
+- Verified claims from authoritative sources rank higher
+- Insight density = actionable facts per minute of reading
+- Contradicted or disputed content ranks lower
 
 User Context:
 - User ID: ${userId}
@@ -540,20 +824,29 @@ ${idx + 1}. [${c.source}] ${c.title}
    Type: ${c.itemType}
    Snippet: ${c.snippet}
    Age: ${Math.round((Date.now() - c.timestamp) / (1000 * 60 * 60))} hours old
+   Source: ${(c.metadata as Record<string, unknown>)?.source || (c.metadata as Record<string, unknown>)?.provider || "unknown"}
 `).join("\n")}
 
-Task: Rank these candidates by predicted user engagement using multi-action prediction.
+Task: Rank by INSIGHT + CORRECTNESS using this scoring:
+- Correctness (40%): Is content from authoritative source? Verifiable claims?
+- Insight Density (30%): Novel facts, actionable conclusions per reading time
+- Relevance (15%): User interest alignment
+- Recency (15%): Freshness with 1-week decay
 
-For each candidate, provide:
-1. Relevance score (0-100): How relevant to user interests
-2. Engagement prediction (0-1 each): {view, click, save, share}
-3. Brief reason (10-15 words): Why this matters to the user
+For each candidate, evaluate:
+1. phoenixScore (0-100): Combined insight+correctness score
+2. sourceCredibility: "authoritative" | "reliable" | "unverified"
+3. insightDensity (0-5): Insights per minute estimate
+4. engagement prediction (0-1 each): {view, click, save, share}
+5. relevanceReason (10-15 words): Why this matters
 
-Return JSON array ordered by combined score (use weights: relevance 40%, engagement 60%):
+Return JSON array ordered by phoenixScore:
 [
   {
     "idx": 1,
     "phoenixScore": 95,
+    "sourceCredibility": "authoritative",
+    "insightDensity": 3.2,
     "relevanceReason": "...",
     "engagement": {"view": 0.9, "click": 0.8, "save": 0.5, "share": 0.3}
   },
@@ -578,6 +871,8 @@ Return JSON array ordered by combined score (use weights: relevance 40%, engagem
       const rankings = JSON.parse(response.content) as Array<{
         idx: number;
         phoenixScore: number;
+        sourceCredibility?: "authoritative" | "reliable" | "unverified";
+        insightDensity?: number;
         relevanceReason: string;
         engagement: {
           view: number;
@@ -587,21 +882,61 @@ Return JSON array ordered by combined score (use weights: relevance 40%, engagem
         };
       }>;
 
-      // Map back to candidates
+      // Map back to candidates with verification signals
       const ranked: RankedCandidate[] = rankings.map((r) => {
         const candidate = candidates[r.idx - 1] as FeedCandidate;
+
+        // Prefer real verification enrichment if present; otherwise fall back to LLM-provided sourceCredibility.
+        const existingVerification = (candidate as any).verification as VerificationSignals | undefined;
+
+        const sourceTierMap: Record<string, VerificationSignals["sourceTier"]> = {
+          authoritative: "tier1_authoritative",
+          reliable: "tier2_reliable",
+          unverified: "tier3_unverified",
+        };
+
+        const fallbackTier =
+          sourceTierMap[r.sourceCredibility || "unverified"] || "tier3_unverified";
+
+        const sourceTier = existingVerification?.sourceTier ?? fallbackTier;
+        const badge = computeVerificationBadge(sourceTier, r.insightDensity || 0);
+        const verification: VerificationSignals = existingVerification
+          ? { ...existingVerification, badge }
+          : {
+              sourceTier,
+              verificationStatus:
+                sourceTier === "tier1_authoritative"
+                  ? ("verified" as const)
+                  : sourceTier === "tier2_reliable"
+                    ? ("corroborated" as const)
+                    : ("unverified" as const),
+              confidence:
+                sourceTier === "tier1_authoritative"
+                  ? 0.9
+                  : sourceTier === "tier2_reliable"
+                    ? 0.7
+                    : 0.3,
+              hasContradictions: false,
+              verifiedClaimCount: 0,
+              totalClaimCount: 0,
+              authoritativeSourceUrls: [],
+              badge,
+            };
+
         return {
           ...candidate,
           phoenixScore: r.phoenixScore,
           relevanceReason: r.relevanceReason,
           engagementPrediction: r.engagement,
+          verification,
+          insightScore: r.insightDensity ? r.insightDensity * 20 : undefined, // Normalize to 0-100
         };
       });
 
       return ranked;
     } catch (error) {
       console.error("[forYouFeed] Phoenix ranking failed:", error);
-      // Fallback: simple recency-based ranking
+      // Fallback: simple recency-based ranking with default verification
       return candidates.map((c: FeedCandidate) => ({
         ...c,
         phoenixScore: 50,
@@ -611,6 +946,17 @@ Return JSON array ordered by combined score (use weights: relevance 40%, engagem
           click: 0.3,
           save: 0.1,
           share: 0.05,
+        },
+        verification: {
+          sourceTier: "tier3_unverified" as const,
+          verificationStatus: "unverified" as const,
+          confidence: 0,
+          hasContradictions: false,
+          badge: {
+            type: "none" as const,
+            label: "",
+            tooltip: "",
+          },
         },
       }));
     }
@@ -696,12 +1042,30 @@ export const generateForYouFeed = internalAction({
     console.log(`[forYouFeed] Generating feed for user ${userId}`);
 
     // STEP 1: Candidate Sourcing (Thunder)
-    const candidates = await ctx.runAction(
+    let candidates = await ctx.runAction(
       internal.domains.research.forYouFeed.getCandidates,
       { userId }
     );
 
     console.log(`[forYouFeed] Sourced ${candidates.length} candidates`);
+
+    // STEP 1.5: Entity Link Enrichment (optional)
+    if (FEED_CONFIG.enableEntityEnrichment) {
+      candidates = await ctx.runAction(
+        internal.domains.research.forYouFeed.enrichCandidatesWithEntityLinks,
+        { candidates, maxEnrich: FEED_CONFIG.maxEntityEnrichment }
+      );
+      console.log(`[forYouFeed] Entity enrichment complete`);
+    }
+
+    // STEP 1.75: Verification Enrichment (quality signals)
+    if (FEED_CONFIG.useInsightRanking) {
+      candidates = await ctx.runAction(
+        internal.domains.verification.integrations.feedVerification.enrichCandidatesWithVerification,
+        { candidates, maxToVerify: FEED_CONFIG.maxVerificationBatch }
+      );
+      console.log(`[forYouFeed] Verification enrichment complete`);
+    }
 
     // STEP 2: Phoenix ML Ranking
     const ranked = await ctx.runAction(
@@ -733,6 +1097,30 @@ export const generateForYouFeed = internalAction({
       trending: sourceCount.trending / total,
     };
 
+    // Compute verification metrics
+    const verifiedCount = mixed.filter(
+      (c) => c.verification?.sourceTier === "tier1_authoritative"
+    ).length;
+    const reliableCount = mixed.filter(
+      (c) => c.verification?.sourceTier === "tier2_reliable"
+    ).length;
+    const unverifiedCount = mixed.filter(
+      (c) => c.verification?.sourceTier === "tier3_unverified" || !c.verification
+    ).length;
+    const avgConfidence = mixed.reduce(
+      (sum, c) => sum + (c.verification?.confidence || 0), 0
+    ) / (total || 1);
+
+    const verificationMetrics = {
+      verifiedCount,
+      reliableCount,
+      unverifiedCount,
+      verificationRate: (verifiedCount + reliableCount) / (total || 1),
+      avgConfidence,
+    };
+
+    console.log(`[forYouFeed] Verification metrics: ${JSON.stringify(verificationMetrics)}`);
+
     // Group items by date
     const dateGroups = groupByDate(mixed);
 
@@ -750,6 +1138,7 @@ export const generateForYouFeed = internalAction({
       totalCandidates: candidates.length,
       mixRatio,
       generatedAt: Date.now(),
+      verificationMetrics,
     };
   },
 });
@@ -877,6 +1266,17 @@ export const getPublicForYouFeed = query({
       phoenixScore: 50,
       relevanceReason: "Public feed item",
       engagementPrediction: { view: 0.5, click: 0.3, save: 0.1, share: 0.05 },
+      verification: {
+        sourceTier: "tier3_unverified" as const,
+        verificationStatus: "unverified" as const,
+        confidence: 0,
+        hasContradictions: false,
+        badge: {
+          type: "none" as const,
+          label: "",
+          tooltip: "",
+        },
+      },
     })) as RankedCandidate[];
 
     // Group by date

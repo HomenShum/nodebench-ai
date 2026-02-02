@@ -38,9 +38,8 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
   };
 
   // Create accessible description
-  const ariaLabel = `${title}: ${value}${subtitle ? `. ${subtitle}` : ''}${
-    trend ? `. Trend: ${trend.direction === 'up' ? 'increasing' : 'decreasing'} by ${Math.abs(trend.value)} percent` : ''
-  }`;
+  const ariaLabel = `${title}: ${value}${subtitle ? `. ${subtitle}` : ''}${trend ? `. Trend: ${trend.direction === 'up' ? 'increasing' : 'decreasing'} by ${Math.abs(trend.value)} percent` : ''
+    }`;
 
   return (
     <div
@@ -55,9 +54,8 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
       <div className="text-2xl font-bold mb-1">{value}</div>
       {subtitle && <div className="text-xs opacity-60">{subtitle}</div>}
       {trend && (
-        <div className={`flex items-center gap-1 text-xs mt-2 ${
-          trend.direction === 'up' ? 'text-green-600' : 'text-red-600'
-        }`}>
+        <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' : 'text-red-600'
+          }`}>
           <TrendingUp size={12} className={trend.direction === 'down' ? 'rotate-180' : ''} />
           <span>{Math.abs(trend.value)}%</span>
         </div>
@@ -169,7 +167,7 @@ export default function HITLAnalyticsDashboard() {
     // Calculate efficiency: high approval rate + low review time = good
     const efficiency =
       approvalRate > 0.7 && avgReviewTimeSeconds < 10 ? 'high' :
-      approvalRate > 0.5 && avgReviewTimeSeconds < 30 ? 'medium' : 'low';
+        approvalRate > 0.5 && avgReviewTimeSeconds < 30 ? 'medium' : 'low';
 
     return {
       total,
@@ -198,7 +196,7 @@ export default function HITLAnalyticsDashboard() {
   const isLoading = approvalData === undefined || reviewTimeByType === undefined;
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] p-6">
+    <div className="min-h-screen bg-canvas-warm p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -384,7 +384,7 @@ function BriefingSectionInner({
           </div>
           <div className="grid grid-cols-2 gap-3">
             {briefingStats.map((stat) => (
-              <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+              <div key={stat.label} className="rounded-md border border-stone-100 bg-canvas-warm p-3">
                 <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
                 <div className="text-2xl font-serif font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
                 <div className="text-[10px] text-stone-400">{stat.hint}</div>
@@ -424,15 +424,15 @@ function BriefingSectionInner({
             <p className="text-base font-serif font-bold text-[color:var(--text-primary)]">Narrative spine</p>
           </div>
           <div className="space-y-3 text-xs text-stone-600">
-            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+            <div className="rounded-md border border-stone-100 bg-canvas-warm p-3">
               <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Act I</div>
               <div className="mt-1 text-sm text-stone-700">{actI?.headline || actI?.title || 'Setup'}</div>
             </div>
-            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+            <div className="rounded-md border border-stone-100 bg-canvas-warm p-3">
               <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Act II</div>
               <div className="mt-1 text-sm text-stone-700">{actII?.title || 'Signals'}</div>
             </div>
-            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+            <div className="rounded-md border border-stone-100 bg-canvas-warm p-3">
               <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Act III</div>
               <div className="mt-1 text-sm text-stone-700">{actIII?.title || 'Actions'}</div>
             </div>
@@ -459,7 +459,7 @@ function BriefingSectionInner({
           </div>
           <div className="grid grid-cols-2 gap-3">
             {qualityStats.map((stat) => (
-              <div key={stat.label} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3">
+              <div key={stat.label} className="rounded-md border border-stone-100 bg-canvas-warm p-3">
                 <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">{stat.label}</div>
                 <div className="text-2xl font-serif font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
                 <div className="text-[10px] text-stone-400">{stat.hint}</div>
@@ -512,7 +512,7 @@ function BriefingSectionInner({
                   key={tag}
                   type="button"
                   onClick={() => onAskAI?.(`Track "${tag}" and surface the latest signals and actions.`)}
-                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-[#faf9f6] text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                  className="px-3 py-1 text-[10px] font-bold uppercase tracking-tight border border-stone-200 bg-canvas-warm text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
                 >
                   {tag}
                 </button>
@@ -522,7 +522,7 @@ function BriefingSectionInner({
             )}
           </div>
           {actI?.filteredOutNote && (
-            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3 text-xs text-stone-600">
+            <div className="rounded-md border border-stone-100 bg-canvas-warm p-3 text-xs text-stone-600">
               <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Filtered</div>
               <div className="mt-1">{actI.filteredOutNote}</div>
             </div>
@@ -548,7 +548,7 @@ function BriefingSectionInner({
           <div className="space-y-3">
             {provenanceLog.length > 0 ? (
               provenanceLog.map((entry: any, idx: number) => (
-                <div key={`${entry.connector}-${idx}`} className="rounded-md border border-stone-100 bg-[#faf9f6] p-3 space-y-1">
+                <div key={`${entry.connector}-${idx}`} className="rounded-md border border-stone-100 bg-canvas-warm p-3 space-y-1">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">
                     {entry.connector || 'Source'} - {entry.resultCount ?? 0} hits
                   </div>
@@ -563,7 +563,7 @@ function BriefingSectionInner({
             )}
           </div>
           {generationMeta && (
-            <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-3 space-y-2">
+            <div className="rounded-md border border-stone-100 bg-canvas-warm p-3 space-y-2">
               <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Generation</div>
               <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
                 <div className="flex items-center justify-between">
@@ -610,7 +610,7 @@ function BriefingSectionInner({
           <div className="space-y-2">
             {signalLedger.length > 0 ? (
               signalLedger.map((signal, index) => (
-                <div key={signal.id} className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div key={signal.id} className="rounded-md border border-stone-100 bg-canvas-warm px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-xs font-bold uppercase tracking-widest text-stone-400">Signal {index + 1}</div>
@@ -657,13 +657,13 @@ function BriefingSectionInner({
                 key={item.label}
                 type="button"
                 onClick={() => onAskAI?.(item.prompt)}
-                className="w-full text-left rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 text-xs font-semibold text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
+                className="w-full text-left rounded-md border border-stone-100 bg-canvas-warm px-4 py-3 text-xs font-semibold text-stone-600 hover:text-emerald-900 hover:border-emerald-900 transition-colors"
               >
                 {item.label}
               </button>
             ))}
           </div>
-          <div className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3 space-y-2">
+          <div className="rounded-md border border-stone-100 bg-canvas-warm px-4 py-3 space-y-2">
             <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Action mix</div>
             <div className="grid grid-cols-2 gap-2 text-xs text-stone-600">
               <div className="flex items-center justify-between">
@@ -731,7 +731,7 @@ function BriefingSectionInner({
             </div>
             <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2">
               {(isCoverageExpanded ? coverageItems : coverageItems.slice(0, 12)).map((item, idx) => (
-                <div key={`${item.title}-${idx}`} className="rounded-md border border-stone-100 bg-[#faf9f6] px-4 py-3">
+                <div key={`${item.title}-${idx}`} className="rounded-md border border-stone-100 bg-canvas-warm px-4 py-3">
                   <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-stone-400">
                     <span>{item.source ?? 'Source'}</span>
                     {item.category && <span className="text-stone-300">• {item.category}</span>}
@@ -832,9 +832,9 @@ function BriefingSectionInner({
 function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) => void }) {
   const actTopSources = Array.isArray(data.topSources)
     ? data.topSources
-        .map((source: any) => normalizeSourceEntry(source))
-        .filter((entry): entry is { name: string; count: string | number | null } => Boolean(entry))
-        .slice(0, 5)
+      .map((source: any) => normalizeSourceEntry(source))
+      .filter((entry): entry is { name: string; count: string | number | null } => Boolean(entry))
+      .slice(0, 5)
     : [];
 
   return (
@@ -908,7 +908,7 @@ function ActIIContent({
         </div>
       ) : (
         signals.map((signal: any, idx: number) => (
-          <div key={idx} className="group p-10 border border-stone-200 bg-[#faf9f6] shadow-sm hover:shadow-xl transition-all duration-500">
+          <div key={idx} className="group p-10 border border-stone-200 bg-canvas-warm shadow-sm hover:shadow-xl transition-all duration-500">
             <div className="flex items-start justify-between gap-12">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-6">
@@ -934,7 +934,7 @@ function ActIIContent({
               {onAskAI && (
                 <button
                   onClick={() => onAskAI(`Tell me more about: ${signal.headline}`)}
-                  className="shrink-0 px-6 py-3 text-[11px] font-black text-emerald-900 border border-emerald-900 hover:bg-emerald-900 hover:text-[#faf9f6] transition-all uppercase tracking-widest"
+                  className="shrink-0 px-6 py-3 text-[11px] font-black text-emerald-900 border border-emerald-900 hover:bg-emerald-900 hover:text-canvas-warm transition-all uppercase tracking-widest"
                 >
                   Analyze
                 </button>
@@ -1018,7 +1018,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                 </div>
                 <SignalMomentumMini keyword={action.title || action.headline || "signal"} />
                 {(action.status || action.deliverable || action.expectedOutcome || action.risks) && (
-                  <div className="rounded-md border border-stone-100 bg-[#faf9f6] p-4 text-xs text-stone-600 space-y-2">
+                  <div className="rounded-md border border-stone-100 bg-canvas-warm p-4 text-xs text-stone-600 space-y-2">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Action Specs</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {action.status && (
@@ -1067,7 +1067,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
               {onAskAI && (
                 <button
                   onClick={() => onAskAI(`Implementation strategy for: ${action.title || action.headline}`)}
-                  className="shrink-0 px-8 py-4 text-[10px] font-black text-[#faf9f6] bg-emerald-950 hover:bg-black transition-all uppercase tracking-widest shadow-xl"
+                  className="shrink-0 px-8 py-4 text-[10px] font-black text-canvas-warm bg-emerald-950 hover:bg-black transition-all uppercase tracking-widest shadow-xl"
                 >
                   Execute
                 </button>

@@ -31,14 +31,13 @@ export const AUTONOMOUS_MODEL_CONFIG = {
   /** Maximum retries before falling back to paid model */
   maxFreeModelRetries: 3,
 
-  /** Known good free models - PROVEN via evaluation (Jan 2026)
-   * Primary: devstral-2 (70s avg, 100% pass) and mimo-v2-flash (152s avg, 100% pass)
-   * Others available but may have capacity issues */
+  /** Known good baseline OpenRouter models.
+   * Note: many providers retire ":free" slugs over time; prefer stable paid slugs for production reliability. */
   knownFreeModels: [
-    "mistralai/devstral-2512:free",    // PROVEN: fastest free model, 100% pass
-    "xiaomi/mimo-v2-flash:free",        // PROVEN: reliable, 100% pass
-    "deepseek/deepseek-r1:free",        // Available but may rate limit
-    "meta-llama/llama-4-maverick:free", // Available but may rate limit
+    "z-ai/glm-4.7-flash",       // Cheap and reliable for JSON-heavy tasks
+    "mistralai/devstral-2512",  // Strong extraction/summarization
+    "xiaomi/mimo-v2-flash",     // Strong general model (paid slug)
+    "deepseek/deepseek-r1",     // Reasoning fallback (paid slug)
   ] as const,
 
   /** Paid model fallback chain (used only if all free models fail) */
@@ -134,11 +133,16 @@ export const selectModelForTask = internalQuery({
         .filter((q) => q.eq(q.field("isActive"), true))
         .take(20) as Doc<"freeModels">[];
 
-      const bestFree = rankedFree.find((m) =>
+      const matchesRequirements = (m: Doc<"freeModels">) =>
         m.contextLength >= requirements.minContext &&
         (!needsToolUse || m.capabilities.toolUse) &&
-        (!needsVision || m.capabilities.vision)
-      ) ?? null;
+        (!needsVision || m.capabilities.vision);
+
+      // Prefer non-vision models for text-only tasks to avoid vision-first models dominating rank.
+      const bestFree =
+        (!needsVision ? rankedFree.find((m) => matchesRequirements(m) && !m.capabilities.vision) : null) ??
+        rankedFree.find((m) => matchesRequirements(m)) ??
+        null;
 
       if (bestFree) {
         return {
@@ -190,26 +194,10 @@ export const getAutonomousFallbackChain = internalQuery({
     const chain: ModelSelectionResult[] = [];
     const needsVision = Boolean(requireVision);
 
-    // Add discovered free models first
-    const freeModels = await ctx.db
-      .query("freeModels")
-      .withIndex("by_rank")
-      .filter((q) => q.eq(q.field("isActive"), true))
-      .take(5) as Doc<"freeModels">[];
-
-    for (let i = 0; i < freeModels.length; i++) {
-      if (needsVision && !freeModels[i].capabilities.vision) continue;
-      chain.push({
-        modelId: freeModels[i].openRouterId,
-        provider: "openrouter",
-        isFree: true,
-        fallbackLevel: chain.length,
-      });
-    }
-
-    // Add known free models as backup
-    for (const knownFree of AUTONOMOUS_MODEL_CONFIG.knownFreeModels) {
-      if (!chain.some((m) => m.modelId === knownFree)) {
+    // For text-only tasks, start with known good free models (PROVEN) before "discovered" models.
+    // Discovered models can be mis-ranked and degrade output quality for publishing/validation.
+    if (!needsVision) {
+      for (const knownFree of AUTONOMOUS_MODEL_CONFIG.knownFreeModels) {
         chain.push({
           modelId: knownFree,
           provider: "openrouter",
@@ -217,6 +205,35 @@ export const getAutonomousFallbackChain = internalQuery({
           fallbackLevel: chain.length,
         });
       }
+    }
+
+    // Add discovered free models next
+    const freeModels = await ctx.db
+      .query("freeModels")
+      .withIndex("by_rank")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .take(12) as Doc<"freeModels">[];
+
+    const preferred: Doc<"freeModels">[] = [];
+    const nonPreferred: Doc<"freeModels">[] = [];
+    for (const m of freeModels) {
+      if (needsVision) {
+        if (!m.capabilities.vision) continue;
+        preferred.push(m);
+        continue;
+      }
+      // For text tasks, prefer non-vision models first.
+      (m.capabilities.vision ? nonPreferred : preferred).push(m);
+    }
+
+    for (const m of [...preferred, ...nonPreferred]) {
+      if (chain.some((c) => c.modelId === m.openRouterId)) continue;
+      chain.push({
+        modelId: m.openRouterId,
+        provider: "openrouter",
+        isFree: true,
+        fallbackLevel: chain.length,
+      });
     }
 
     // Add paid fallback chain last

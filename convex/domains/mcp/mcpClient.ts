@@ -6,6 +6,7 @@ import { v } from "convex/values";
 import { action } from "../../_generated/server";
 import { api, internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
+import { validateMcpServerUrl } from "../operations/mcpSecurity";
 
 const rateLimiter = new Map<string, { count: number; expiresAt: number }>();
 const MAX_INLINE_RAW_CHARS = 120_000;
@@ -111,8 +112,22 @@ export const callMcpTool: any = action({
         return { success: false, error: "Server not found", serverId };
       }
 
+      if (server.isEnabled === false) {
+        return { success: false, error: "Server is disabled", serverId, serverName: server.name };
+      }
+
       if (!server.url) {
         return { success: false, error: "Server URL not configured", serverId, serverName: server.name };
+      }
+
+      const urlCheck = validateMcpServerUrl(server.url);
+      if (!urlCheck.valid) {
+        return {
+          success: false,
+          error: `Blocked MCP server URL: ${urlCheck.reason ?? "invalid_url"}`,
+          serverId,
+          serverName: server.name,
+        };
       }
 
       // Generate unique request ID for JSON-RPC 2.0

@@ -6,6 +6,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -17,6 +18,7 @@
   from {
     width: 280px;
   }
+
   to {
     width: 60px;
   }
@@ -26,6 +28,7 @@
   from {
     width: 60px;
   }
+
   to {
     width: 280px;
   }
@@ -36,6 +39,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -47,6 +51,7 @@
     transform: scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
@@ -55,9 +60,12 @@
 
 /* Pulse animation */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -68,6 +76,7 @@
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
@@ -75,9 +84,12 @@
 
 /* Bounce animation */
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-4px);
   }
@@ -88,6 +100,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -98,9 +111,11 @@
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -109,7 +124,7 @@
 /* Apply animations to FastAgentPanel */
 .fast-agent-panel {
   animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Base layout - overlay mode (fixed positioning) */
   position: fixed;
   top: 0;
@@ -120,7 +135,7 @@
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  background: var(--bg-primary, #fff);
+  background: var(--bg-primary, #faf9f6);
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
 }
 
@@ -158,7 +173,7 @@
 }
 
 /* Main chat area inside content */
-.fast-agent-panel-content > .flex-1 {
+.fast-agent-panel-content>.flex-1 {
   flex: 1 1 0%;
   min-width: 0;
   min-height: 0;
@@ -250,12 +265,10 @@
 
 /* Loading shimmer */
 .loading-shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--bg-secondary) 0%,
-    var(--bg-tertiary) 50%,
-    var(--bg-secondary) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--bg-secondary) 0%,
+      var(--bg-tertiary) 50%,
+      var(--bg-secondary) 100%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
 }
@@ -358,6 +371,7 @@ button:disabled {
 
 /* Responsive animations */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -376,6 +390,7 @@ button:disabled {
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
+
   button,
   input,
   textarea {
@@ -391,6 +406,7 @@ button:disabled {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -407,6 +423,7 @@ button:disabled {
     opacity: 0;
     max-height: 0;
   }
+
   to {
     opacity: 1;
     max-height: 500px;
@@ -422,9 +439,11 @@ button:disabled {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
+
   100% {
     transform: scale(1);
   }
@@ -443,7 +462,8 @@ button:disabled {
 /* Timeline item smooth transitions */
 .timeline-item {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateZ(0); /* Enable GPU acceleration */
+  transform: translateZ(0);
+  /* Enable GPU acceleration */
 }
 
 .timeline-item:hover {
@@ -497,10 +517,14 @@ button:disabled {
 
 /* Typing indicator smooth animation */
 @keyframes typingDot {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }
+
   30% {
     opacity: 1;
     transform: translateY(-8px);
@@ -558,7 +582,7 @@ button:disabled {
   right: 0;
   width: 320px;
   max-height: 400px;
-  background: var(--bg-secondary, #f5f5f5);
+  background: var(--bg-secondary, #faf9f6);
   border: 1px solid var(--border-color, #e5e5e5);
   border-radius: 0.5rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);

@@ -22,7 +22,7 @@ interface MessageBubbleProps {
 /**
  * MessageBubble - Renders a single message with markdown, code highlighting, and live updates
  */
-export function MessageBubble({
+export const MessageBubble = React.memo(function MessageBubble({
   message,
   isStreaming = false,
   liveThinking = [],
@@ -391,4 +391,4 @@ export function MessageBubble({
       `}</style>
     </div>
   );
-}
+});

@@ -806,6 +806,53 @@ export function validateUrl(url: string): { valid: boolean; reason?: string } {
 }
 
 /**
+ * Validate an MCP server URL for SSRF protection.
+ *
+ * Unlike `validateUrl`, this is intended for calling *user-configured MCP servers*.
+ * We enforce HTTPS + block localhost/private networks, but do not apply the
+ * external data-source allowlist.
+ */
+export function validateMcpServerUrl(url: string): { valid: boolean; reason?: string } {
+  // Parse URL
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { valid: false, reason: "invalid_url_format" };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1"
+  ) {
+    return { valid: false, reason: "localhost_blocked" };
+  }
+
+  const privateIpPatterns = [
+    /^10\./,
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^fc00:/,
+  ];
+
+  for (const pattern of privateIpPatterns) {
+    if (pattern.test(hostname)) {
+      return { valid: false, reason: "private_ip_blocked" };
+    }
+  }
+
+  if (parsed.protocol !== "https:") {
+    return { valid: false, reason: "https_required" };
+  }
+
+  return { valid: true };
+}
+
+/**
  * Sanitize string inputs to prevent injection
  */
 export function sanitizeString(input: string, maxLength = 1000): string {

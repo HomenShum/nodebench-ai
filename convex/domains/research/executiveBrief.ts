@@ -356,18 +356,52 @@ async function callOpenAIStructured(
   }
 
   const openai = new OpenAI({ apiKey });
-  const completion = await openai.chat.completions.create({
-    model: args.model,
-    messages: [
-      { role: "system", content: args.system },
-      { role: "user", content: args.user },
-    ],
-    response_format: { type: "json_schema", json_schema: DailyBriefJSONSchema as any },
-    temperature: args.temperature ?? 0.2,
-    max_completion_tokens: args.maxTokens ?? 2200,
-  });
 
-  return completion.choices[0]?.message?.content ?? "";
+  const messages = [
+    { role: "system" as const, content: args.system },
+    { role: "user" as const, content: args.user },
+  ];
+
+  const temperature = args.temperature ?? 0.2;
+  const maxTokens = args.maxTokens ?? 2200;
+
+  const create = async (response_format: any, tokenParam: "max_completion_tokens" | "max_tokens") => {
+    const payload: any = {
+      model: args.model,
+      messages,
+      response_format,
+      temperature,
+    };
+    payload[tokenParam] = maxTokens;
+    return await openai.chat.completions.create(payload);
+  };
+
+  // Primary attempt: json_schema (best when supported and non-flaky).
+  const runWithTokenFallback = async (response_format: any) => {
+    try {
+      // Some OpenAI models (e.g., GPT-5.x) require max_completion_tokens.
+      return await create(response_format, "max_completion_tokens");
+    } catch (e: any) {
+      const msg = String(e?.message || e);
+      if (/Unsupported parameter: 'max_completion_tokens'/.test(msg)) {
+        return await create(response_format, "max_tokens");
+      }
+      if (/Unsupported parameter: 'max_tokens'/.test(msg)) {
+        return await create(response_format, "max_completion_tokens");
+      }
+      throw e;
+    }
+  };
+
+  const completion = await runWithTokenFallback({ type: "json_schema", json_schema: DailyBriefJSONSchema as any });
+
+  const content = completion.choices[0]?.message?.content ?? "";
+  if (typeof content === "string" && content.trim().length > 0) return content;
+
+  // Fallback: json_object is more broadly supported and avoids empty payloads on some models.
+  const fallback = await runWithTokenFallback({ type: "json_object" });
+
+  return fallback.choices[0]?.message?.content ?? "";
 }
 
 function validateEvidenceUrlsAgainstFeed(
@@ -461,6 +495,10 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
     memoryId: v.id("dailyBriefMemories"),
     forceRefresh: v.optional(v.boolean()),
     model: v.optional(v.string()),
+    didYouKnowUrls: v.optional(v.array(v.string())),
+    didYouKnowTonePreset: v.optional(
+      v.union(v.literal("homer_bot_clone"), v.literal("casual_concise"), v.literal("professional"))
+    ),
   },
   handler: async (ctx, args): Promise<any> => {
     const memory: any = await ctx.runQuery(
@@ -587,6 +625,12 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
       "Act II signals must each include 1-5 evidence objects from the feed items (evidence.url must match).",
       "Act III actions must NEVER include failure strings; use status=\"insufficient_data\" with an explanation instead.",
       "",
+      "HARD OUTPUT LIMITS (do not exceed):",
+      "- actI.topSources: max 6",
+      "- actII.signals: max 6",
+      "- actII.signals[].evidence: max 5",
+      "- actIII.actions: max 6",
+      "",
       "CONTEXT JSON:",
       JSON.stringify(context, null, 2),
     ].join("\n");
@@ -600,7 +644,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
         model,
         system,
         user: baseUser,
-        maxTokens: 2600,
+        maxTokens: 4200,
         temperature: 0.2,
       });
       const first = parseAndValidateBrief(json);
@@ -625,6 +669,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
           buildRetryPrompt(validation ?? first.validation),
           "",
           "Rewrite ONLY the synthesis fields and action contents. Keep evidence objects and IDs unchanged unless required by schema.",
+          "If your previous output was truncated, output a complete JSON object within the HARD OUTPUT LIMITS.",
           "",
           "PREVIOUS JSON:",
           json,
@@ -637,7 +682,7 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
           model,
           system,
           user: retryPrompt,
-          maxTokens: 2600,
+          maxTokens: 4200,
           temperature: 0.15,
         });
         const second = parseAndValidateBrief(json);
@@ -657,6 +702,46 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
           }
         }
       }
+
+      // Final fallback: if OpenAI output is empty/truncated/non-JSON, regenerate via OpenRouter fallback chain.
+      // This prevents persistent "Unexpected end of JSON input" failures from blocking production briefs.
+      if (!parsed && typeof validation?.errors?.[0] === "string" && /JSON parse error:/i.test(validation.errors[0])) {
+        const fallbackResponse = await ctx.runAction(
+          internal.domains.models.autonomousModelResolver.executeWithFallback,
+          {
+            taskType: "analysis",
+            messages: [
+              {
+                role: "system",
+                content:
+                  system +
+                  "\n\nYou MUST output valid JSON only. Do not use markdown fences. Follow the HARD OUTPUT LIMITS.",
+              },
+              { role: "user", content: baseUser },
+            ],
+            maxTokens: 4200,
+            temperature: 0.15,
+          }
+        );
+
+        json = fallbackResponse.content ?? "";
+        const third = parseAndValidateBrief(json);
+        parsed = third.payload;
+        validation = third.validation;
+
+        if (parsed) {
+          parsed = canonicalizeEvidenceFromLibrary(parsed, evidenceLibrary);
+          const evidenceUrlErrors = validateEvidenceUrlsAgainstFeed(parsed, allowedEvidenceUrls);
+          if (evidenceUrlErrors.length > 0) {
+            parsed = null;
+            validation = {
+              valid: false,
+              errors: [...(third.validation?.errors ?? []), ...evidenceUrlErrors],
+              warnings: third.validation?.warnings ?? [],
+            };
+          }
+        }
+      }
     } catch (err: any) {
       console.warn("[executiveBrief] generation failed", err?.message || err);
       validation = { valid: false, errors: [String(err?.message || err)], warnings: [] };
@@ -671,6 +756,51 @@ export const generateExecutiveBriefForMemoryInternal = internalAction({
         features,
       });
       parsed = canonicalizeEvidenceFromLibrary(parsed, evidenceLibrary);
+    }
+
+    // Optional: generate a "Did you know" update from the freshest evidence URLs.
+    // This is post-processing and does not affect the core Structured Output validity.
+    try {
+      const overrideUrls = Array.isArray(args.didYouKnowUrls)
+        ? args.didYouKnowUrls.filter((u) => typeof u === "string").map((u) => u.trim()).filter(Boolean)
+        : [];
+
+      const pickedUrls = (overrideUrls.length > 0
+        ? [...new Set(overrideUrls)]
+        : [...new Set(
+            (evidenceLibrary as any[])
+              .map((e) => (e && typeof e.url === "string" ? e.url.trim() : ""))
+              .filter((u: string) => u.length > 0)
+          )]
+      ).slice(0, 2);
+
+      if (pickedUrls.length > 0) {
+        const dykWorkflowId = `dailybrief_dyk_${memory.dateString}_${String(memory._id)}_${overrideUrls.length > 0 ? "override" : "auto"}`;
+        const didYouKnowRun = await ctx.runAction(
+          internal.domains.narrative.didYouKnow.generateAndJudgeDidYouKnowFromUrls,
+          {
+            workflowId: dykWorkflowId,
+            urls: pickedUrls,
+            tonePreset: args.didYouKnowTonePreset ?? "homer_bot_clone",
+            preferLinkup: true,
+          }
+        );
+
+        if (didYouKnowRun.judge?.passed) {
+          (parsed as any).didYouKnow = {
+            messageText: didYouKnowRun.output.messageText,
+            artifactId: String(didYouKnowRun.didYouKnowArtifactId),
+            passed: true,
+            sourcesUsed: didYouKnowRun.output.sourcesUsed,
+            checks: didYouKnowRun.judge.checks,
+            llmJudge: didYouKnowRun.judge.llmJudge,
+            judgeExplanation: didYouKnowRun.judge.explanation,
+            judgeReasons: didYouKnowRun.judge.reasons,
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("[executiveBrief] didYouKnow generation failed (non-fatal)", e);
     }
 
     const generatedAt = Date.now();
@@ -716,6 +846,10 @@ export const generateExecutiveBriefForMemory = action({
     memoryId: v.id("dailyBriefMemories"),
     forceRefresh: v.optional(v.boolean()),
     model: v.optional(v.string()),
+    didYouKnowUrls: v.optional(v.array(v.string())),
+    didYouKnowTonePreset: v.optional(
+      v.union(v.literal("homer_bot_clone"), v.literal("casual_concise"), v.literal("professional"))
+    ),
   },
   handler: async (ctx, args): Promise<any> => {
     const userId = await getAuthUserId(ctx);

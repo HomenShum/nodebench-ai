@@ -163,7 +163,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
   `.trim();
 
   return (
-    <div className="min-h-screen bg-[#faf9f6]">
+    <div className="min-h-screen bg-canvas-warm">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -184,11 +184,10 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
                 key={id}
                 type="button"
                 onClick={() => setActiveSection(id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors ${
-                  activeSection === id
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors ${activeSection === id
                     ? 'bg-emerald-900 text-white'
                     : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                }`}
+                  }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {label}

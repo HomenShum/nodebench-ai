@@ -56,6 +56,22 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
       .filter(Boolean) as TooltipEvidence[];
   };
 
+  // Memoize scale calculations that only depend on data values and grid config
+  const { minY, maxY, range, xSteps } = useMemo(() => {
+    if (!config?.series?.length) return { minY: 0, maxY: 1, range: 1, xSteps: 1 };
+    const minYRaw = Math.min(...allValues, 0);
+    const maxYRaw = Math.max(...allValues, 1);
+    const computedMinY = typeof config.gridScale?.min === "number" ? config.gridScale.min : Math.min(0, minYRaw);
+    const computedMaxY = typeof config.gridScale?.max === "number" ? config.gridScale.max : Math.max(maxYRaw * 1.1, 1);
+    const computedRange = Math.max(computedMaxY - computedMinY, 1);
+    const computedXSteps = Math.max(
+      Math.max(...config.series.map((s) => s.data.length - 1)),
+      config.xAxisLabels.length - 1,
+      1,
+    );
+    return { minY: computedMinY, maxY: computedMaxY, range: computedRange, xSteps: computedXSteps };
+  }, [allValues, config?.series, config?.gridScale?.min, config?.gridScale?.max, config?.xAxisLabels?.length]);
+
   // Early return AFTER all hooks are called
   if (!config?.series?.length) {
     return <div className="w-full h-full rounded-md bg-slate-50" />;
@@ -65,20 +81,6 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
   const height = 160;
   const paddingX = 20;
   const paddingY = 20;
-  const minYRaw = Math.min(...allValues, 0);
-  const maxYRaw = Math.max(...allValues, 1);
-  const minY = typeof config.gridScale?.min === "number" ? config.gridScale.min : Math.min(0, minYRaw);
-  const maxY =
-    typeof config.gridScale?.max === "number"
-      ? config.gridScale.max
-      : Math.max(maxYRaw * 1.1, 1);
-  const range = Math.max(maxY - minY, 1);
-
-  const xSteps = Math.max(
-    Math.max(...config.series.map((s) => s.data.length - 1)),
-    config.xAxisLabels.length - 1,
-    1,
-  );
 
   const gridLines = [0.25, 0.5, 0.75];
 

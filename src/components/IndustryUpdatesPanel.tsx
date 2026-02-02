@@ -18,37 +18,35 @@ import {
   AlertCircle,
   Filter,
 } from "lucide-react";
+import { IndustryUpdatesSkeleton } from "./skeletons";
+
+const providers = ["anthropic", "openai", "google", "langchain", "vercel", "xai"];
+
+const providerLabels: Record<string, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  google: "Google DeepMind",
+  langchain: "LangChain",
+  vercel: "Vercel AI SDK",
+  xai: "xAI",
+};
 
 export function IndustryUpdatesPanel() {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
   const suggestions = useQuery(api.domains.monitoring.industryUpdates.getImplementationSuggestions);
 
-  if (!suggestions) {
-    return (
-      <div className="p-8 text-center text-[var(--text-secondary)]">
-        Loading industry updates...
-      </div>
-    );
-  }
-
-  const providers = ["anthropic", "openai", "google", "langchain", "vercel", "xai"];
-
-  const providerLabels: Record<string, string> = {
-    anthropic: "Anthropic",
-    openai: "OpenAI",
-    google: "Google DeepMind",
-    langchain: "LangChain",
-    vercel: "Vercel AI SDK",
-    xai: "xAI",
-  };
-
-  const filteredSuggestions = useMemo(() =>
-    selectedProvider
+  // Hooks must be called before any conditional returns
+  const filteredSuggestions = useMemo(() => {
+    if (!suggestions) return [];
+    return selectedProvider
       ? suggestions.topSuggestions.filter((s: any) => s.provider === providerLabels[selectedProvider])
-      : suggestions.topSuggestions,
-    [selectedProvider, suggestions.topSuggestions]
-  );
+      : suggestions.topSuggestions;
+  }, [selectedProvider, suggestions]);
+
+  if (!suggestions) {
+    return <IndustryUpdatesSkeleton />;
+  }
 
   return (
     <div className="p-6 space-y-6">

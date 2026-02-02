@@ -1,0 +1,103 @@
+# Changelog
+
+All notable changes to NodeBench AI are documented in this file.
+
+For in-app release notes, see Research Hub > Changelog.
+
+---
+
+## v0.4.0 (February 1, 2026)
+
+Major release: DRANE narrative engine, entity linking, verification pipeline, Ralph-style bug loop with vault persistence, LinkedIn archive lifecycle tooling, UI polish layer, and comprehensive operational self-maintenance.
+
+### DRANE: Deep Research Agentic Narrative Engine
+
+- **Newsroom agent pipeline**: Scout > Historian > Analyst > Publisher (4-agent LangGraph orchestration) with CommentHarvester for social listening
+- **Temporal knowledge graph**: Narrative threads, events, posts, disputes, and correlations tracked across entities over time
+- **Golden sets and QA framework**: Deterministic QA lane with `qaFramework:runFullSuite` CI gate and per-run validation via `qaFramework:validateWorkflowRun`
+- **Guards and safety**: Claim classifier, trust scoring, content rights enforcement, quarantine, self-citation guard, abuse resistance
+- **Adapters**: Brief, feed, and LinkedIn data translated into narrative events
+- **Did You Know**: LLM-judged fact generation from URLs with `publishedAtIso` enforcement and tone presets
+
+### Entity Linking and Deduplication
+
+- **Wikidata-based entity resolution**: LLM-powered entity linking with caching in `entityProfiles` table
+- **LLM judge**: Disambiguation and validation of entity matches
+- **Mention tracking**: Cross-content entity occurrence tracking and promotion
+
+### Verification Pipeline
+
+- **Multi-source fact-checking**: Verdicts from VERIFIED (Tier1) through CONTRADICTED, OUTDATED, INSUFFICIENT
+- **Contradiction detection**: Cross-reference conflicts surfaced across narrative events
+- **Ground truth and public source registries**: Authoritative fact baselines for calibration
+- **Audit trail**: Full decision logging for every verification step
+- **Integration adapters**: LinkedIn, artifact, feed, and narrative verification hooks
+
+### Bug Loop (Ralph-Style Back Pressure)
+
+- **Client error capture**: `src/main.tsx` reports `window.error` and `unhandledrejection` to `bugLoop:reportClientError` with local rate limit
+- **Deduped bug cards**: Deterministic signature with transparent `signatureDerivation` (messageHead, stackHead, route, section)
+- **Occurrence artifacts**: Each error occurrence stored as a `sourceArtifacts` row with SHA-256 content dedup, linked from `occurrenceArtifacts[]` on the card (capped at 25 per card)
+- **Ralph investigation**: LLM-generated triage plan (summary, likelyCauses, reproSteps, filesToInspect, testsToAdd) attached as investigation artifact
+- **Human-in-the-loop columns**: inbox > ralph_investigate > human_approve > ralph_fix > human_review > done / wont_fix
+- **Vault export**: `npm run bugloop:export:vault` exports bug cards + occurrence artifacts + investigation artifacts to `vault/master/notes/` as markdown with frontmatter
+
+### LinkedIn Archive Lifecycle
+
+- **Archive-level idempotency**: `logLinkedInPost` dedupes by dateString + persona + postType + metadata.part + content
+- **Pre-post idempotency**: Workflows skip posting if archive row exists for dateString + persona + postType
+- **Archive audit**: `linkedinArchiveAudit:runArchiveAudit` reports duplicates, reused URNs, and content anomalies
+- **Cleanup tools**: Duplicate removal, URN reuse cleanup, orphan row deletion (all with dry-run)
+- **Legacy edits**: "Unknown" > "Undisclosed" text fixes, demo URL replacement
+- **Test row purge**: Strict-rule deletion of persona=TEST rows and hard test signals
+
+### Self Maintenance (Nightly Autonomous)
+
+- **Invariant audits**: LinkedIn archive, Did You Know integrity, Daily Brief propagation, bug loop substrate
+- **Bug loop checks**: All cards have occurrenceArtifacts, signatureDerivation, and investigation artifacts where expected
+- **Boolean-gated reports**: `passed` flag with optional LLM explanation, persisted to `checkpoints` table
+- **Cron**: `runNightlySelfMaintenanceCron` scheduled daily
+
+### UI Polish
+
+- **Skeleton loaders**: FeedCardSkeleton, DigestSkeleton, DealCardSkeleton, BriefingSkeleton, CostDashboardSkeleton, IndustryUpdatesSkeleton, ViewSkeleton
+- **Design system primitives**: Button, Card, Toast, SidebarButton, EmptyState components
+- **FastAgentPanel**: Thread tab bar, swarm quick actions, animation polish, input bar improvements
+- **Research views**: Cinematic Home, Entity Profile, Morning Digest, For You Feed, Sticky Dashboard updates
+- **Sidebar**: CleanSidebar and SidebarGlobalNav redesign
+- **Routing**: `useMainLayoutRouting` hook updates
+- **Narrative UI**: NarrativeRoadmap (ThreadLane, EventMarker, SentimentBar, CorrelationLine), NarrativeCard, NarrativeFeed (PostCard, ReplyThread, EvidenceDrawer)
+- **Social UI**: LinkedInPostCard and LinkedInPostArchiveView with dedup toggle
+
+### Backend Improvements
+
+- **Schema**: Major expansion with tables for narrative threads, events, posts, disputes, entity profiles, verification claims, and more
+- **Crons**: Extended with narrative, self-maintenance, and privacy enforcement schedules
+- **Model resolver**: Autonomous model fallback chain updates
+- **Privacy enforcement**: Expanded retention and enforcement policies
+- **SLO collector**: Extended metrics collection
+- **MCP security**: Additional security checks
+- **Knowledge graph**: Updates to entity relationship tracking
+- **Executive brief**: Did You Know integration with URL override and tone presets
+- **For You feed**: Expanded feed generation pipeline
+- **Entity extraction tools**: Structured entity output for ethical founder/executive research
+- **Image research tools**: Reverse image search and OCR
+
+### Scripts and Tooling
+
+- **Vault**: `npm run vault:init`, `npm run vault:health`, `npm run vault:merge` for Obsidian + Git file vault
+- **Bug loop export**: `npm run bugloop:export:vault` for external filesystem context preservation
+- **Golden sets**: DRANE audit golden set generation and reporting
+- **Test scripts**: Image research tools, verification E2E, OpenRouter provider tests
+
+### Documentation
+
+- **AGENTS.md**: Complete agent workflow guide with operational runbooks, verification coverage map, and 10 Claude Code power-user tips
+- **UI_POLISH_ROADMAP.md**: Phased UI improvement plan benchmarked against Linear, Notion, Perplexity, Arc
+- **.github/pull_request_template.md**: PR audit checklist with newsroom/DRANE validation steps
+
+---
+
+## v0.3.6 (January 20, 2026)
+
+See README.md for v0.3.6 and earlier release notes.

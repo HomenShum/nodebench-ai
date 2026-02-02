@@ -305,16 +305,19 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
   "mimo-v2-flash-free": {
     alias: "mimo-v2-flash-free",
     provider: "openrouter",
-    sdkId: "xiaomi/mimo-v2-flash:free",  // PROVEN: 100% pass, 152s avg
+    // NOTE: OpenRouter retired the free period for this slug. Keep the alias for backward compatibility.
+    // If you truly need a free default, use devstral-2-free.
+    sdkId: "xiaomi/mimo-v2-flash",  // Paid slug (free tier ended)
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 262_144 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+    pricing: { inputPerMillion: 0.20, outputPerMillion: 0.60 },
   },
   "devstral-2-free": {
     alias: "devstral-2-free",
     provider: "openrouter",
-    sdkId: "mistralai/devstral-2512:free",  // PROVEN: 100% pass, 70s avg (FASTEST)
+    // NOTE: OpenRouter retired the free period for this slug. Keep the alias for backward compatibility.
+    sdkId: "mistralai/devstral-2512",  // Paid slug (free tier ended)
     capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 262_144 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+    pricing: { inputPerMillion: 0.20, outputPerMillion: 0.60 },
   },
   "deepseek-r1-free": {
     alias: "deepseek-r1-free",
@@ -411,8 +414,9 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "gemini-pro": "gemini-3-pro",
   "gemini": "gemini-3-flash",
 
-  // OpenRouter free-tier model IDs (accept common user-provided forms - Jan 2026)
+  // OpenRouter MiMo V2 Flash (free tier ended; keep legacy aliases for compatibility)
   "xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
+  "xiaomi/mimo-v2-flash": "mimo-v2-flash-free",
   "mimo": "mimo-v2-flash-free",
   "mimo-v2": "mimo-v2-flash-free",
   // Devstral 2 (latest)

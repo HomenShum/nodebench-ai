@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { screen, cleanup } from '@testing-library/react';
+import { renderWithRouter } from './testUtils';
 
 // Mock heavy deps early
 vi.mock('convex/react', async () => {
@@ -41,7 +42,7 @@ describe('DocumentsHomeHub header pills', () => {
   });
 
   it('renders the unified pill group with Documents active', () => {
-    render(<Wrapper />);
+    renderWithRouter(<Wrapper />);
     const tablist = screen.getAllByRole('tablist', { name: 'Primary hubs' })[0];
     expect(tablist).toBeTruthy();
     const docs = screen.getAllByRole('tab', { name: 'Documents' })[0];

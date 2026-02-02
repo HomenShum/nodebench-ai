@@ -193,6 +193,11 @@ export const getUserTaskSessions = query({
     dateTo: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // Return empty for unauthenticated users (guest mode)
+    const rawUserId = await getAuthUserId(ctx);
+    if (!rawUserId) {
+      return { sessions: [], hasMore: false, nextCursor: null };
+    }
     const userId = await getSafeUserId(ctx);
     const limit = args.limit ?? 50;
 

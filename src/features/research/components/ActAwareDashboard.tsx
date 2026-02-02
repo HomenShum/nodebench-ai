@@ -56,7 +56,7 @@ function ActIIChangeView({
           <div className="text-sm text-stone-400 italic">No active narratives detected.</div>
         ) : (
           drivers.map((signal: any, i: number) => (
-            <div key={i} className="group cursor-default">
+            <div key={signal.headline ?? i} className="group cursor-default">
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-900/40 group-hover:bg-emerald-900 transition-colors" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900/50 group-hover:text-emerald-900 transition-colors">
@@ -107,8 +107,8 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
         <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-emerald-900/60 mb-2">
           <span>Source Distribution</span>
         </div>
-        {(summary?.breakdown || []).slice(0, 4).map((item: { source: string; count: number }, i: number) => (
-          <div key={i} className="flex items-center justify-between group">
+        {(summary?.breakdown || []).slice(0, 4).map((item: { source: string; count: number }) => (
+          <div key={item.source} className="flex items-center justify-between group">
             <span className="text-xs font-serif text-stone-600 group-hover:text-emerald-900 transition-colors capitalize">{item.source}</span>
             <div className="flex items-center gap-2">
               <div className="w-24 h-1.5 bg-stone-200 rounded-full overflow-hidden">

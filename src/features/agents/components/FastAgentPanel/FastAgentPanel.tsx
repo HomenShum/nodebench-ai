@@ -1691,27 +1691,27 @@ export function FastAgentPanel({
                   {!activeThreadId && (!messagesToRender || messagesToRender.length === 0) && (
                     <div className="flex-1 flex flex-col overflow-y-auto">
                       {/* Hero Section */}
-                      <div className="flex flex-col items-center justify-center pt-8 pb-6 px-4">
+                      <div className="flex flex-col items-center justify-center pt-10 pb-8 px-4">
                         {/* Big Robot Icon */}
-                        <div className="w-16 h-16 rounded-2xl bg-[var(--text-primary)] flex items-center justify-center mb-4">
-                          <Bot className="w-9 h-9 text-[var(--bg-primary)]" />
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 flex items-center justify-center mb-5 shadow-lg">
+                          <Bot className="w-9 h-9 text-white" />
                         </div>
 
                         {/* Title */}
-                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">
+                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
                           Nodebench AI
                         </h2>
 
                        {/* Marketing Tagline */}
-                       <p className="text-sm text-[var(--text-muted)] text-center max-w-xs">
+                       <p className="text-[13px] text-[var(--text-muted)] text-center max-w-[280px] leading-relaxed">
                          Your intelligent research assistant. Search, analyze, and discover insights across documents, filings, and media.
                        </p>
                      </div>
 
                       {/* Recent threads / last run */}
-                      <div className="px-4 pb-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-semibold text-[var(--text-secondary)]">
+                      <div className="px-4 pb-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">
                             Recent chats
                           </div>
                           {threads.length > 0 && (
@@ -1727,12 +1727,12 @@ export function FastAgentPanel({
                         <div className="space-y-2">
                           {threadsStatus === "LoadingFirstPage" ? (
                             <>
-                              <div className="h-10 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] animate-pulse" />
-                              <div className="h-10 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] animate-pulse" />
+                              <div className="h-12 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 animate-pulse" />
+                              <div className="h-12 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 animate-pulse" />
                             </>
                           ) : threads.length === 0 ? (
-                            <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] px-3 py-2">
-                              <div className="text-[11px] text-[var(--text-muted)]">
+                            <div className="rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--bg-secondary)]/30 px-4 py-3 text-center">
+                              <div className="text-[12px] text-[var(--text-muted)]">
                                 No chats yet — try a quick action below to start one.
                               </div>
                             </div>
@@ -1849,24 +1849,28 @@ export function FastAgentPanel({
 
             {/* Anonymous User Banner */}
             {anonymousSession.isAnonymous && !anonymousSession.isLoading && (
-              <div className={`mx-4 mt-2 px-3 py-2 rounded-lg border ${anonymousSession.canSendMessage
-                ? 'bg-blue-500/10 border-blue-500/30'
-                : 'bg-amber-500/10 border-amber-500/30'
+              <div className={`mx-3 mt-2 px-3 py-2.5 rounded-xl border backdrop-blur-sm ${anonymousSession.canSendMessage
+                ? 'bg-gradient-to-r from-blue-50/80 to-indigo-50/80 border-blue-200/50'
+                : 'bg-gradient-to-r from-amber-50/80 to-orange-50/80 border-amber-200/50'
                 }`}>
-                <div className="flex items-center justify-between gap-2 text-sm">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <div className="flex items-center gap-2.5">
                     {anonymousSession.canSendMessage ? (
                       <>
-                        <MessageSquare className="w-4 h-4 text-blue-400" />
-                        <span className="text-[var(--text-secondary)]">
-                          <span className="font-medium text-[var(--text-primary)]">{anonymousSession.remaining}</span>
+                        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                        </div>
+                        <span className="text-[12px] text-stone-600">
+                          <span className="font-semibold text-stone-800">{anonymousSession.remaining}</span>
                           {' '}of {anonymousSession.limit} free messages remaining today
                         </span>
                       </>
                     ) : (
                       <>
-                        <LogIn className="w-4 h-4 text-amber-400" />
-                        <span className="text-[var(--text-secondary)]">
+                        <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
+                          <LogIn className="w-3.5 h-3.5 text-amber-600" />
+                        </div>
+                        <span className="text-[12px] text-stone-600">
                           Daily limit reached. Sign in for unlimited access!
                         </span>
                       </>
@@ -1874,7 +1878,7 @@ export function FastAgentPanel({
                   </div>
                   <a
                     href="/sign-in"
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
                   >
                     <LogIn className="w-3 h-3" />
                     Sign in

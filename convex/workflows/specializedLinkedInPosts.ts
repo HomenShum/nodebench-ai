@@ -192,6 +192,8 @@ export const postFDAUpdates = internalAction({
     testMode: v.optional(v.boolean()),
     // Multi-post control
     maxPostsPerRun: v.optional(v.number()), // Default: 3 posts max
+    forcePost: v.optional(v.boolean()),
+    allowDemoData: v.optional(v.boolean()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -205,11 +207,22 @@ export const postFDAUpdates = internalAction({
     const lookbackHours = args.lookbackHours ?? 24;
     const testMode = args.testMode ?? false;
     const maxPosts = args.maxPostsPerRun ?? 3;
+    const forcePost = args.forcePost ?? false;
+    const allowDemoData = args.allowDemoData ?? false;
+
+    if (allowDemoData && !testMode) {
+      throw new Error("Refusing allowDemoData unless testMode=true");
+    }
 
     console.log(`[FDAUpdates] Searching for FDA updates in last ${lookbackHours}h`);
 
     // Step 1: Get recent FDA events from our DD pipeline
-    const fdaUpdates = await discoverRecentFDAUpdates(ctx, lookbackHours, args.sectors);
+    const fdaUpdates = await discoverRecentFDAUpdates(
+      ctx,
+      lookbackHours,
+      args.sectors,
+      allowDemoData,
+    );
 
     if (fdaUpdates.length === 0) {
       return {
@@ -248,7 +261,7 @@ export const postFDAUpdates = internalAction({
       try {
         const { generateText } = await import("ai");
         const { getLanguageModelSafe } = await import("../domains/agents/mcp_tools/models/modelResolver");
-        const model = getLanguageModelSafe("mimo-v2-flash-free");
+        const model = getLanguageModelSafe("devstral-2-free");
 
       const detailedSummary = fdaUpdates.map(u => {
         const expedited = u.breakthroughDesignation ? " [BREAKTHROUGH DESIGNATION]" : "";
@@ -358,7 +371,8 @@ COMPETITIVE INTELLIGENCE: [text]`;
     }
 
     // Step 3: Post each to LinkedIn with spacing
-    const postUrns: string[] = [];
+    const dateString = new Date().toISOString().split("T")[0];
+    const postUrnsByPart: Array<string | null> = new Array(posts.length).fill(null);
     const postedUpdates: { postUrn: string; updates: FDAUpdate[] }[] = [];
 
     // Track which updates go in which post (approvals go in post 0, then deep-dives)
@@ -369,6 +383,23 @@ COMPETITIVE INTELLIGENCE: [text]`;
     console.log(`[FDAUpdates] Starting to post ${posts.length} posts to LinkedIn...`);
     for (let i = 0; i < posts.length; i++) {
       try {
+        if (!forcePost) {
+          const match = await ctx.runQuery(
+            internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
+            {
+              dateString,
+              persona: "FDA",
+              postType: "fda",
+              content: posts[i],
+              part: i + 1,
+            },
+          );
+          if (match.exactMatchId) {
+            console.warn(`[FDAUpdates] Skipping post ${i + 1}/${posts.length} (duplicate archived content)`);
+            continue;
+          }
+        }
+
         // Space out posts to avoid rate limiting
         if (i > 0) {
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -391,7 +422,7 @@ COMPETITIVE INTELLIGENCE: [text]`;
           continue;
         }
 
-        postUrns.push(result.postUrn);
+        postUrnsByPart[i] = result.postUrn;
         console.log(`[FDAUpdates] ✓ Posted ${i + 1}/${posts.length}: ${result.postUrl}`);
 
         // Track which updates were in this post
@@ -412,7 +443,8 @@ COMPETITIVE INTELLIGENCE: [text]`;
     }
 
     // Step 4: Record posts for timeline tracking (dedup and future queries)
-    for (const { postUrn, updates } of postedUpdates) {
+    for (let i = 0; i < postedUpdates.length; i++) {
+      const { postUrn, updates } = postedUpdates[i];
       const postUrl = `https://www.linkedin.com/feed/update/${postUrn}`;
       for (const update of updates) {
         try {
@@ -426,7 +458,7 @@ COMPETITIVE INTELLIGENCE: [text]`;
             sourceUrl: update.sourceUrl,
             postUrn,
             postUrl,
-            postPart: postedUpdates.indexOf({ postUrn, updates }) + 1,
+            postPart: i + 1,
             totalParts: postedUpdates.length,
             progressionType: update.progressionType,
           });
@@ -436,13 +468,34 @@ COMPETITIVE INTELLIGENCE: [text]`;
       }
     }
 
+    // Archive all posted content
+    for (let i = 0; i < posts.length; i++) {
+      const urn = postUrnsByPart[i];
+      if (!urn) continue;
+      try {
+        await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+          dateString,
+          persona: "FDA",
+          postId: urn,
+          postUrl: `https://www.linkedin.com/feed/update/${urn}`,
+          content: posts[i],
+          factCheckCount: 0,
+          postType: "fda",
+          metadata: { part: i + 1, totalParts: posts.length },
+        });
+      } catch (e) {
+        console.warn(`[FDAUpdates] Failed to archive post ${i + 1}:`, e);
+      }
+    }
+
+    const postedUrns = postUrnsByPart.filter((u): u is string => typeof u === "string" && u.length > 0);
     return {
-      success: postUrns.length > 0,
-      posted: postUrns.length > 0,
-      postUrns,
-      postsCreated: postUrns.length,
+      success: postedUrns.length > 0,
+      posted: postedUrns.length > 0,
+      postUrns: postedUrns,
+      postsCreated: postedUrns.length,
       updatesFound: fdaUpdates.length,
-      message: `Posted ${postUrns.length}/${posts.length} posts for ${fdaUpdates.length} FDA updates`,
+      message: `Posted ${postedUrns.length}/${posts.length} posts for ${fdaUpdates.length} FDA updates`,
     };
   },
 });
@@ -450,7 +503,8 @@ COMPETITIVE INTELLIGENCE: [text]`;
 async function discoverRecentFDAUpdates(
   ctx: any,
   lookbackHours: number,
-  sectors?: string[]
+  sectors?: string[],
+  allowDemoData?: boolean
 ): Promise<FDAUpdate[]> {
   // Query FDA cache from DD pipeline
   const cutoff = Date.now() - lookbackHours * 60 * 60 * 1000;
@@ -465,8 +519,12 @@ async function discoverRecentFDAUpdates(
     )) as any[];
 
     if (!fdaCache || fdaCache.length === 0) {
+      if (!allowDemoData) {
+        console.log(`[FDAUpdates] No FDA events found in cache`);
+        return [];
+      }
+
       console.log(`[FDAUpdates] No FDA events found in cache, using DEMO mock data`);
-      // Return mock data to demonstrate AI-powered analysis
       return [
         {
           type: "pma",
@@ -674,54 +732,6 @@ async function discoverFDAViaFusionSearch(ctx: any, lookbackHours: number): Prom
     }
 
     console.log(`[FDAUpdates] Fusion search found ${updates.length} updates`);
-
-    // DEMO FALLBACK: If no real data, use mock data to demonstrate AI analysis
-    if (updates.length === 0) {
-      console.log(`[FDAUpdates] No real data found, using DEMO mock data to showcase AI analysis`);
-      return [
-        {
-          type: "pma",
-          companyName: "Medtronic",
-          productName: "Micra AV2 Leadless Pacemaker",
-          decisionDate: new Date().toISOString().split("T")[0],
-          approvalNumber: "P210015",
-          description: "First leadless pacemaker with advanced AV synchrony for heart failure patients",
-          sourceUrl: "https://www.medtronic.com/fda-approval-demo",
-          breakthroughDesignation: true,
-          indication: "Heart failure with reduced ejection fraction",
-          patientPopulation: "Adults with bradycardia requiring ventricular pacing",
-          expeditedProgram: "breakthrough" as const,
-          progressionType: "new",
-        },
-        {
-          type: "bla",
-          companyName: "Gilead Sciences",
-          productName: "Lenacapavir (HIV Prevention)",
-          decisionDate: new Date().toISOString().split("T")[0],
-          approvalNumber: "BLA125831",
-          description: "First twice-yearly injectable HIV prevention therapy",
-          sourceUrl: "https://www.gilead.com/lenacapavir-demo",
-          breakthroughDesignation: true,
-          indication: "HIV prevention (PrEP)",
-          patientPopulation: "High-risk adults for HIV acquisition",
-          expeditedProgram: "breakthrough" as const,
-          progressionType: "new",
-        },
-        {
-          type: "510k",
-          companyName: "Abbott",
-          productName: "FreeStyle Libre 4 Plus CGM",
-          decisionDate: new Date().toISOString().split("T")[0],
-          approvalNumber: "K234567",
-          description: "Next-generation continuous glucose monitor with enhanced accuracy",
-          sourceUrl: "https://abbott.com/freestyle-demo",
-          indication: "Diabetes management",
-          patientPopulation: "Adults and children with diabetes mellitus",
-          progressionType: "new",
-        },
-      ];
-    }
-
     return updates;
   } catch (error: any) {
     console.error(`[FDAUpdates] Fusion search fallback failed:`, error);
@@ -1044,6 +1054,22 @@ export const postAcademicResearch = internalAction({
         }
       }
 
+      // Archive the post
+      const archiveDate = new Date().toISOString().split("T")[0];
+      try {
+        await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+          dateString: archiveDate,
+          persona: "RESEARCH",
+          postId: result.postUrn,
+          postUrl,
+          content: postContent,
+          factCheckCount: 0,
+          postType: "research",
+        });
+      } catch (e) {
+        console.warn("[AcademicResearch] Failed to archive post:", e);
+      }
+
       return {
         success: true,
         posted: true,
@@ -1233,6 +1259,22 @@ export const postClinicalTrialMilestones = internalAction({
         } catch (error: any) {
           console.warn(`[ClinicalTrials] Failed to record post for ${milestone.sponsor}:`, error.message);
         }
+      }
+
+      // Archive the post
+      const archiveDate2 = new Date().toISOString().split("T")[0];
+      try {
+        await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+          dateString: archiveDate2,
+          persona: "CLINICAL",
+          postId: result.postUrn,
+          postUrl,
+          content: postContent,
+          factCheckCount: 0,
+          postType: "clinical",
+        });
+      } catch (e) {
+        console.warn("[ClinicalTrials] Failed to archive post:", e);
       }
 
       return {
@@ -1441,6 +1483,22 @@ export const postMAActivity = internalAction({
         } catch (error: any) {
           console.warn(`[MAActivity] Failed to record post for ${deal.acquirer} → ${deal.target}:`, error.message);
         }
+      }
+
+      // Archive the post
+      const archiveDate3 = new Date().toISOString().split("T")[0];
+      try {
+        await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+          dateString: archiveDate3,
+          persona: "MA",
+          postId: result.postUrn,
+          postUrl,
+          content: postContent,
+          factCheckCount: 0,
+          postType: "ma",
+        });
+      } catch (e) {
+        console.warn("[MAActivity] Failed to archive post:", e);
       }
 
       return {

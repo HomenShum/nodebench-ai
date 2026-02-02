@@ -37,11 +37,10 @@ function MetricCard({ title, value, subtitle, icon, trend }: MetricCardProps) {
       <div className="text-2xl font-bold text-stone-900 mb-1">{value}</div>
       {subtitle && <div className="text-xs text-stone-500">{subtitle}</div>}
       {trend && (
-        <div className={`flex items-center gap-1 text-xs mt-2 ${
-          trend.direction === 'up' ? 'text-green-600' :
-          trend.direction === 'down' ? 'text-red-600' :
-          'text-stone-500'
-        }`}>
+        <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' :
+            trend.direction === 'down' ? 'text-red-600' :
+              'text-stone-500'
+          }`}>
           {trend.direction === 'up' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           <span>{Math.abs(trend.value)}%</span>
         </div>
@@ -294,7 +293,7 @@ export default function ComponentMetricsDashboard() {
   const isLoading = todayMetrics === undefined || topSources === undefined;
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] p-6">
+    <div className="min-h-screen bg-canvas-warm p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -474,8 +473,8 @@ export default function ComponentMetricsDashboard() {
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
                             ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
                               index === 1 ? 'bg-stone-200 text-stone-700' :
-                              index === 2 ? 'bg-orange-100 text-orange-700' :
-                              'bg-stone-100 text-stone-600'}
+                                index === 2 ? 'bg-orange-100 text-orange-700' :
+                                  'bg-stone-100 text-stone-600'}
                           `}>
                             {index + 1}
                           </div>

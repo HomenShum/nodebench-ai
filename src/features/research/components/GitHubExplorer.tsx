@@ -19,8 +19,25 @@ export function GitHubExplorer() {
 
   if (!trendingRepos) {
     return (
-      <div className="p-8 text-center text-[var(--text-secondary)]">
-        Loading GitHub Explorer...
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <Github className="w-6 h-6" />
+            GitHub Explorer
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
+            Discover trending AI repositories ranked by Phoenix ML
+          </p>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse bg-[var(--bg-secondary)] rounded-lg p-5 space-y-3">
+              <div className="h-5 bg-[var(--bg-tertiary)] rounded w-2/3" />
+              <div className="h-4 bg-[var(--bg-tertiary)] rounded w-full" />
+              <div className="h-3 bg-[var(--bg-tertiary)] rounded w-1/4" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -69,9 +86,14 @@ export function GitHubExplorer() {
 
       {/* Repository List */}
       {trendingRepos.length === 0 ? (
-        <div className="p-8 text-center text-[var(--text-secondary)]">
-          <Github className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No repositories found for this language</p>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 bg-[var(--bg-secondary)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Github className="w-8 h-8 text-[var(--text-secondary)]" />
+          </div>
+          <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No repositories found</h3>
+          <p className="text-sm text-[var(--text-secondary)] max-w-xs mx-auto">
+            {selectedLanguage ? `No trending ${selectedLanguage} repositories right now.` : "No trending repositories found."}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">

@@ -151,6 +151,191 @@ async function webSearch(query: string, maxResults: number = 5): Promise<SearchR
 }
 
 // ============================================================================
+// HELPER: Entity linking to Wikidata using LLM
+// ============================================================================
+
+interface WikidataLinkResult {
+  found: boolean;
+  wikidataId?: string;
+  canonicalName?: string;
+  description?: string;
+  confidence: number;
+  method: string;
+}
+
+/**
+ * Link entity to Wikidata using LLM-assessed confidence
+ * Uses calibrated LLM confidence without heuristic adjustments
+ */
+async function linkEntityToWikidata(
+  name: string,
+  context?: string,
+  expectedType?: "person" | "company"
+): Promise<WikidataLinkResult> {
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+  if (!OPENAI_API_KEY) {
+    return { found: false, confidence: 0, method: "skipped_no_api_key" };
+  }
+
+  try {
+    // Step 1: Normalize query using LLM (fix typos, resolve aliases)
+    const normalizePrompt = `You are an entity name normalization expert. Given a query, determine if it needs correction.
+
+QUERY: "${name}"
+${context ? `CONTEXT: "${context}"` : ""}
+
+Tasks:
+1. Fix obvious typos (e.g., "Elon Muk" -> "Elon Musk")
+2. Expand aliases/nicknames to canonical names (e.g., "Diddy" -> "Sean Combs")
+3. If the query is already correct, keep it unchanged
+
+Respond with JSON only:
+{
+  "normalizedQuery": "corrected name or original",
+  "wasModified": true/false,
+  "confidence": 0.0-1.0
+}`;
+
+    const normalizeResult = await generateText({
+      model: openai.chat("gpt-4o-mini"),
+      prompt: normalizePrompt,
+      temperature: 0.1,
+    });
+
+    let searchQuery = name;
+    const normalizeMatch = normalizeResult.text.match(/\{[\s\S]*\}/);
+    if (normalizeMatch) {
+      const normalized = JSON.parse(normalizeMatch[0]);
+      if (normalized.wasModified && normalized.confidence > 0.6) {
+        searchQuery = normalized.normalizedQuery;
+      }
+    }
+
+    // Step 2: Search Wikidata
+    const wikidataUrl = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(searchQuery)}&language=en&format=json&origin=*&limit=5`;
+    const wikidataResponse = await fetch(wikidataUrl);
+    const wikidataData = await wikidataResponse.json();
+    const candidates = wikidataData.search || [];
+
+    if (candidates.length === 0) {
+      return { found: false, confidence: 0.1, method: "no_wikidata_results" };
+    }
+
+    // Step 3: Always use LLM to assess match quality (even for single candidate)
+    const candidateList = candidates
+      .map((c: any, i: number) => `${i + 1}. ${c.label} (${c.id}): ${c.description || "No description"}`)
+      .join("\n");
+
+    const disambiguatePrompt = `You are an entity disambiguation expert. Select the BEST matching entity.
+
+QUERY: "${searchQuery}"
+${context ? `CONTEXT: "${context}"` : ""}
+${expectedType ? `EXPECTED TYPE: ${expectedType}` : ""}
+
+CANDIDATES:
+${candidateList}
+
+CONFIDENCE CALIBRATION (be accurate, not overconfident):
+- 0.95-1.0: Exact match, unambiguous
+- 0.85-0.94: Strong match with clear context support
+- 0.70-0.84: Good match but some ambiguity possible
+- 0.50-0.69: Moderate match, significant uncertainty
+- Below 0.50: Weak match, likely incorrect
+
+Respond with JSON only:
+{
+  "selectedIndex": <1-${candidates.length} or 0 for none>,
+  "confidence": 0.0-1.0,
+  "reasoning": "Brief explanation"
+}`;
+
+    const disambiguateResult = await generateText({
+      model: openai.chat("gpt-4o-mini"),
+      prompt: disambiguatePrompt,
+      temperature: 0.1,
+    });
+
+    const disambiguateMatch = disambiguateResult.text.match(/\{[\s\S]*\}/);
+    if (disambiguateMatch) {
+      const parsed = JSON.parse(disambiguateMatch[0]);
+      const selectedIdx = (parsed.selectedIndex || 0) - 1;
+
+      if (selectedIdx >= 0 && selectedIdx < candidates.length) {
+        return {
+          found: true,
+          wikidataId: candidates[selectedIdx].id,
+          canonicalName: candidates[selectedIdx].label,
+          description: candidates[selectedIdx].description,
+          confidence: parsed.confidence || 0.5,
+          method: candidates.length === 1 ? "single_match" : "llm_disambiguation",
+        };
+      }
+    }
+
+    // Fallback - LLM failed, use low confidence
+    return {
+      found: true,
+      wikidataId: candidates[0].id,
+      canonicalName: candidates[0].label,
+      description: candidates[0].description,
+      confidence: 0.35, // Low confidence for fallback
+      method: "fallback_first",
+    };
+  } catch (error) {
+    console.error("[linkEntityToWikidata] Error:", error);
+    return { found: false, confidence: 0, method: "error" };
+  }
+}
+
+/**
+ * Link multiple entities to Wikidata in batch
+ */
+async function linkEntitiesToWikidata(
+  people: ExtractedPerson[],
+  companies: ExtractedCompany[]
+): Promise<{
+  people: ExtractedPerson[];
+  companies: ExtractedCompany[];
+}> {
+  // Link people
+  const linkedPeople = await Promise.all(
+    people.map(async (person) => {
+      const context = [person.role, person.company].filter(Boolean).join(" at ");
+      const linkResult = await linkEntityToWikidata(person.name, context, "person");
+
+      return {
+        ...person,
+        wikidataId: linkResult.wikidataId,
+        canonicalName: linkResult.canonicalName,
+        wikidataDescription: linkResult.description,
+        linkingConfidence: linkResult.confidence,
+        linkingMethod: linkResult.method,
+      };
+    })
+  );
+
+  // Link companies
+  const linkedCompanies = await Promise.all(
+    companies.map(async (company) => {
+      const context = [company.type, company.industry].filter(Boolean).join(" ");
+      const linkResult = await linkEntityToWikidata(company.name, context, "company");
+
+      return {
+        ...company,
+        wikidataId: linkResult.wikidataId,
+        canonicalName: linkResult.canonicalName,
+        wikidataDescription: linkResult.description,
+        linkingConfidence: linkResult.confidence,
+        linkingMethod: linkResult.method,
+      };
+    })
+  );
+
+  return { people: linkedPeople, companies: linkedCompanies };
+}
+
+// ============================================================================
 // CORE LOGIC: Entity extraction
 // ============================================================================
 
@@ -160,6 +345,12 @@ interface ExtractedPerson {
   company?: string;
   confidence: string;
   context?: string;
+  // Wikidata linking (from LLM entity linker)
+  wikidataId?: string;
+  canonicalName?: string;
+  wikidataDescription?: string;
+  linkingConfidence?: number;
+  linkingMethod?: string;
 }
 
 interface ExtractedCompany {
@@ -168,12 +359,19 @@ interface ExtractedCompany {
   industry?: string;
   fundingStage?: string;
   confidence: string;
+  // Wikidata linking (from LLM entity linker)
+  wikidataId?: string;
+  canonicalName?: string;
+  wikidataDescription?: string;
+  linkingConfidence?: number;
+  linkingMethod?: string;
 }
 
 async function extractEntitiesCore(
   articleUrl: string | undefined,
   articleText: string | undefined,
-  focusOn: "people" | "companies" | "both"
+  focusOn: "people" | "companies" | "both",
+  linkToWikidata: boolean = false
 ): Promise<{
   success: boolean;
   error?: string;
@@ -283,14 +481,26 @@ Return ONLY valid JSON.`;
 
     const extracted = JSON.parse(jsonMatch[0]);
 
+    let people = extracted.people || [];
+    let companies = extracted.companies || [];
+
+    // Optionally link entities to Wikidata
+    if (linkToWikidata && (people.length > 0 || companies.length > 0)) {
+      const linked = await linkEntitiesToWikidata(people, companies);
+      people = linked.people;
+      companies = linked.companies;
+    }
+
     return {
       success: true,
       articleUrl,
-      people: extracted.people || [],
-      companies: extracted.companies || [],
-      totalPeople: (extracted.people || []).length,
-      totalCompanies: (extracted.companies || []).length,
-      note: "Entities extracted using AI text analysis. No facial recognition used.",
+      people,
+      companies,
+      totalPeople: people.length,
+      totalCompanies: companies.length,
+      note: linkToWikidata
+        ? "Entities extracted and linked to Wikidata using AI. No facial recognition used."
+        : "Entities extracted using AI text analysis. No facial recognition used.",
     };
   } catch (error) {
     console.error("[extractEntities] Extraction error:", error);
@@ -409,14 +619,16 @@ Use this tool when you need to:
 - Build a list of people and their roles from press coverage
 
 This tool uses AI-based Named Entity Recognition - NO facial recognition.
-Returns structured data about people (name, role, company) and companies.`,
+Returns structured data about people (name, role, company) and companies.
+Optionally links entities to Wikidata for canonical identification.`,
   args: z.object({
     articleUrl: z.string().optional().describe("URL of the article to analyze"),
     articleText: z.string().optional().describe("Raw text of the article if URL not available"),
     focusOn: z.enum(["people", "companies", "both"]).default("both").describe("What entities to extract"),
+    linkToWikidata: z.boolean().default(false).describe("Whether to link entities to Wikidata for canonical IDs"),
   }),
   handler: async (ctx, args) => {
-    return extractEntitiesCore(args.articleUrl, args.articleText, args.focusOn);
+    return extractEntitiesCore(args.articleUrl, args.articleText, args.focusOn, args.linkToWikidata);
   },
 });
 
@@ -453,9 +665,10 @@ export const researchFoundersFromArticle = createTool({
 
 This is a complete workflow that:
 1. Extracts all people and companies from the article
-2. Identifies likely founders/executives by role
-3. Enriches their profiles with LinkedIn, Twitter, Crunchbase
-4. Returns a comprehensive research package
+2. Links entities to Wikidata for canonical identification
+3. Identifies likely founders/executives by role
+4. Enriches their profiles with LinkedIn, Twitter, Crunchbase
+5. Returns a comprehensive research package
 
 Use for: founder research, competitive intelligence, investor research.
 All data from public sources - NO facial recognition or biometric data.`,
@@ -463,12 +676,13 @@ All data from public sources - NO facial recognition or biometric data.`,
     articleUrl: z.string().describe("URL of the news article to analyze"),
     focusRoles: z.array(z.string()).default(["founder", "ceo", "cto", "president", "partner", "managing director"]).describe("Roles to focus on"),
     maxPeople: z.number().default(5).describe("Maximum number of people to enrich"),
+    linkToWikidata: z.boolean().default(true).describe("Whether to link entities to Wikidata"),
   }),
   handler: async (ctx, args) => {
-    const { articleUrl, focusRoles, maxPeople } = args;
+    const { articleUrl, focusRoles, maxPeople, linkToWikidata } = args;
 
-    // Step 1: Extract entities from article
-    const extractionResult = await extractEntitiesCore(articleUrl, undefined, "both");
+    // Step 1: Extract entities from article (with Wikidata linking)
+    const extractionResult = await extractEntitiesCore(articleUrl, undefined, "both", linkToWikidata);
 
     if (!extractionResult.success) {
       return {
@@ -535,6 +749,7 @@ export const extractEntitiesInternal = internalAction({
     articleUrl: v.optional(v.string()),
     articleText: v.optional(v.string()),
     focusOn: v.optional(v.union(v.literal("people"), v.literal("companies"), v.literal("both"))),
+    linkToWikidata: v.optional(v.boolean()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -545,6 +760,11 @@ export const extractEntitiesInternal = internalAction({
       company: v.optional(v.string()),
       confidence: v.string(),
       context: v.optional(v.string()),
+      wikidataId: v.optional(v.string()),
+      canonicalName: v.optional(v.string()),
+      wikidataDescription: v.optional(v.string()),
+      linkingConfidence: v.optional(v.number()),
+      linkingMethod: v.optional(v.string()),
     })),
     companies: v.array(v.object({
       name: v.string(),
@@ -552,19 +772,53 @@ export const extractEntitiesInternal = internalAction({
       industry: v.optional(v.string()),
       fundingStage: v.optional(v.string()),
       confidence: v.string(),
+      wikidataId: v.optional(v.string()),
+      canonicalName: v.optional(v.string()),
+      wikidataDescription: v.optional(v.string()),
+      linkingConfidence: v.optional(v.number()),
+      linkingMethod: v.optional(v.string()),
     })),
   }),
   handler: async (ctx, args) => {
     const result = await extractEntitiesCore(
       args.articleUrl,
       args.articleText,
-      args.focusOn || "both"
+      args.focusOn || "both",
+      args.linkToWikidata || false
     );
+
+    // Sanitize null values to undefined for Convex validation
+    const sanitizePerson = (p: any) => ({
+      name: p.name,
+      role: p.role ?? undefined,
+      company: p.company ?? undefined,
+      confidence: p.confidence,
+      context: p.context ?? undefined,
+      wikidataId: p.wikidataId ?? undefined,
+      canonicalName: p.canonicalName ?? undefined,
+      wikidataDescription: p.wikidataDescription ?? undefined,
+      linkingConfidence: p.linkingConfidence ?? undefined,
+      linkingMethod: p.linkingMethod ?? undefined,
+    });
+
+    const sanitizeCompany = (c: any) => ({
+      name: c.name,
+      type: c.type ?? undefined,
+      industry: c.industry ?? undefined,
+      fundingStage: c.fundingStage ?? undefined,
+      confidence: c.confidence,
+      wikidataId: c.wikidataId ?? undefined,
+      canonicalName: c.canonicalName ?? undefined,
+      wikidataDescription: c.wikidataDescription ?? undefined,
+      linkingConfidence: c.linkingConfidence ?? undefined,
+      linkingMethod: c.linkingMethod ?? undefined,
+    });
+
     return {
       success: result.success,
       error: result.error,
-      people: result.people,
-      companies: result.companies,
+      people: result.people.map(sanitizePerson),
+      companies: result.companies.map(sanitizeCompany),
     };
   },
 });
@@ -992,7 +1246,8 @@ This combines:
 1. Reverse image search - find where the image appears online
 2. Image context analysis - extract visible text, logos, event details
 3. Entity extraction - identify people mentioned on pages where image appears
-4. Profile enrichment - find LinkedIn, Twitter, news about identified people
+4. Wikidata linking - link entities to canonical knowledge base IDs
+5. Profile enrichment - find LinkedIn, Twitter, news about identified people
 
 Use for: identifying speakers at events, researching executives from photos,
 finding background on people in news images.
@@ -1001,9 +1256,10 @@ ETHICAL: Uses image matching + text analysis only. NO facial recognition.`,
   args: z.object({
     imageUrl: z.string().describe("Public URL of the image to research"),
     maxPagesToAnalyze: z.number().default(3).describe("Max pages to analyze for entities"),
+    linkToWikidata: z.boolean().default(true).describe("Whether to link entities to Wikidata"),
   }),
   handler: async (ctx, args) => {
-    const { imageUrl, maxPagesToAnalyze } = args;
+    const { imageUrl, maxPagesToAnalyze, linkToWikidata } = args;
     const allPeople: ExtractedPerson[] = [];
     const allCompanies: ExtractedCompany[] = [];
     const pagesSources: string[] = [];
@@ -1021,7 +1277,7 @@ ETHICAL: Uses image matching + text analysis only. NO facial recognition.`,
       if (!page.url) continue;
 
       try {
-        const entityResult = await extractEntitiesCore(page.url, undefined, "both");
+        const entityResult = await extractEntitiesCore(page.url, undefined, "both", linkToWikidata);
         if (entityResult.success) {
           allPeople.push(...entityResult.people);
           allCompanies.push(...entityResult.companies);
@@ -1039,7 +1295,7 @@ ETHICAL: Uses image matching + text analysis only. NO facial recognition.`,
         for (const result of searchResults) {
           if (result.url && !pagesSources.includes(result.url)) {
             try {
-              const entityResult = await extractEntitiesCore(result.url, undefined, "people");
+              const entityResult = await extractEntitiesCore(result.url, undefined, "people", linkToWikidata);
               if (entityResult.success && entityResult.people.length > 0) {
                 allPeople.push(...entityResult.people);
                 pagesSources.push(result.url);

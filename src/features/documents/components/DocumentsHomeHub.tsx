@@ -221,7 +221,10 @@ export function DocumentsHomeHub({
   const documents = useQuery(api.domains.documents.documents.getSidebarWithPreviews);
 
   const loggedInUser = useQuery(api.domains.auth.auth.loggedInUser);
-  const spreadsheets = useQuery(api.domains.integrations.spreadsheets.listSheets, { limit: 10 });
+  const spreadsheets = useQuery(
+    api.domains.integrations.spreadsheets.listSheets,
+    loggedInUser ? { limit: 10 } : "skip"
+  ) ?? [];
 
   // Ensure onboarding seed on first visit to DocumentsHomeHub
 

@@ -27,7 +27,8 @@ export type MainView =
     | 'document-recommendations'
     | 'agent-marketplace'
     | 'github-explorer'
-    | 'pr-suggestions';
+    | 'pr-suggestions'
+    | 'linkedin-posts';
 
 interface UseMainLayoutRoutingReturn {
     currentView: MainView;

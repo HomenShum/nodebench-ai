@@ -8,7 +8,7 @@
  * 2. Format for LinkedIn (professional tone, 2000 char limit)
  * 3. Post to LinkedIn via the linkedinPosting action
  *
- * Cost: $0.00 (uses mimo-v2-flash-free for all LLM calls)
+ * Cost: $0.00 (uses devstral-2-free for all LLM calls)
  */
 
 import { v } from "convex/values";
@@ -286,14 +286,20 @@ export const postDailyDigestToLinkedIn = internalAction({
     model: v.optional(v.string()),
     dryRun: v.optional(v.boolean()),
     hoursBack: v.optional(v.number()),
+    didYouKnowUrls: v.optional(v.array(v.string())),
+    didYouKnowTonePreset: v.optional(
+      v.union(v.literal("homer_bot_clone"), v.literal("casual_concise"), v.literal("professional"))
+    ),
+    forcePost: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const persona = args.persona || "GENERAL";
-    const model = args.model || "mimo-v2-flash-free"; // Free model
+    const model = args.model || "devstral-2-free"; // Free model
     const dryRun = args.dryRun ?? false;
     const hoursBack = args.hoursBack ?? 168; // Default to 7 days for better content availability
+    const forcePost = args.forcePost ?? false;
 
-    console.log(`[dailyLinkedInPost] Starting daily LinkedIn post workflow, persona=${persona}, model=${model}, dryRun=${dryRun}, hoursBack=${hoursBack}`);
+    console.log(`[dailyLinkedInPost] Starting daily LinkedIn post workflow, persona=${persona}, model=${model}, dryRun=${dryRun}, hoursBack=${hoursBack}, forcePost=${forcePost}`);
 
     // Step 1: Generate digest with fact-checks
     let digestResult;
@@ -324,7 +330,24 @@ export const postDailyDigestToLinkedIn = internalAction({
     console.log(`[dailyLinkedInPost] Digest generated with ${digestResult.factCheckCount} fact-checks`);
 
     // Step 2: Format for LinkedIn
-    const linkedInContent = formatDigestForLinkedIn(digestResult.digest);
+    let linkedInContent = formatDigestForLinkedIn(digestResult.digest);
+    const didYouKnowUrls =
+      Array.isArray(args.didYouKnowUrls) && args.didYouKnowUrls.length > 0
+        ? args.didYouKnowUrls
+            .filter((u) => typeof u === "string")
+            .map((u) => u.trim())
+            .filter(Boolean)
+            .slice(0, 2)
+        : collectDidYouKnowUrlsFromDigest(digestResult.digest, 2);
+    const didYouKnowWorkflowId = `linkedin_dyk_${digestResult.digest.dateString}_${persona}_${Date.now()}`;
+    const didYouKnow = await maybePrependDidYouKnowToLinkedInContent({
+      ctx,
+      workflowId: didYouKnowWorkflowId,
+      urls: didYouKnowUrls,
+      baseContent: linkedInContent,
+      tonePreset: args.didYouKnowTonePreset ?? "casual_concise",
+    });
+    linkedInContent = didYouKnow.content;
     console.log(`[dailyLinkedInPost] LinkedIn content formatted (${linkedInContent.length} chars)`);
 
     // Step 3: Post to LinkedIn (unless dry run)
@@ -336,7 +359,34 @@ export const postDailyDigestToLinkedIn = internalAction({
         dryRun: true,
         content: linkedInContent,
         factCheckCount: digestResult.factCheckCount,
+        didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
       };
+    }
+
+    if (!forcePost) {
+      const match = await ctx.runQuery(
+        internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
+        {
+          dateString: digestResult.digest.dateString,
+          persona,
+          postType: "daily_digest",
+          content: linkedInContent,
+        },
+      );
+      if (match.anyForType) {
+        console.warn(
+          `[dailyLinkedInPost] Skipping post (already archived today), persona=${persona}, date=${digestResult.digest.dateString}`,
+        );
+        return {
+          success: true,
+          posted: false,
+          skipped: true,
+          reason: match.exactMatchId ? "duplicate_content" : "already_posted_today",
+          content: linkedInContent,
+          factCheckCount: digestResult.factCheckCount,
+          didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
+        };
+      }
     }
 
     let postResult;
@@ -371,8 +421,11 @@ export const postDailyDigestToLinkedIn = internalAction({
       dateString: digestResult.digest.dateString,
       persona,
       postId: postResult.postUrn,
+      postUrl: postResult.postUrl,
       content: linkedInContent,
       factCheckCount: digestResult.factCheckCount,
+      postType: "daily_digest",
+      metadata: didYouKnow.didYouKnowMetadata ? { didYouKnow: didYouKnow.didYouKnowMetadata } : undefined,
     });
 
     console.log(`[dailyLinkedInPost] Successfully posted to LinkedIn, postUrl=${postResult.postUrl}`);
@@ -384,7 +437,142 @@ export const postDailyDigestToLinkedIn = internalAction({
       postUrl: postResult.postUrl,
       content: linkedInContent,
       factCheckCount: digestResult.factCheckCount,
+      didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
       usage: digestResult.usage,
+    };
+  },
+});
+
+/**
+ * Post a standalone "Did you know" update to LinkedIn.
+ * Intended for ad-hoc experiments or when digest/feed has no items.
+ */
+export const postDidYouKnowToLinkedIn = internalAction({
+  args: {
+    persona: v.optional(v.string()),
+    dryRun: v.optional(v.boolean()),
+    forcePost: v.optional(v.boolean()),
+    dateString: v.optional(v.string()), // YYYY-MM-DD (UTC)
+    urls: v.array(v.string()),
+    tonePreset: v.optional(
+      v.union(v.literal("homer_bot_clone"), v.literal("casual_concise"), v.literal("professional"))
+    ),
+  },
+  handler: async (ctx, args) => {
+    const persona = args.persona || "GENERAL";
+    const dryRun = args.dryRun ?? false;
+    const forcePost = args.forcePost ?? false;
+    const dateString = typeof args.dateString === "string" && args.dateString.trim().length > 0
+      ? args.dateString.trim()
+      : new Date().toISOString().split("T")[0];
+
+    const urls = (Array.isArray(args.urls) ? args.urls : [])
+      .filter((u) => typeof u === "string")
+      .map((u) => u.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+
+    if (urls.length === 0) {
+      return { success: false, posted: false, error: "No urls provided" };
+    }
+
+    const workflowId = `linkedin_dyk_${dateString}_${persona}_adhoc_${Date.now()}`;
+    const didYouKnowRun = await ctx.runAction(
+      internal.domains.narrative.didYouKnow.generateAndJudgeDidYouKnowFromUrls,
+      {
+        workflowId,
+        urls,
+        tonePreset: args.tonePreset ?? "homer_bot_clone",
+        preferLinkup: true,
+      }
+    );
+
+    if (!didYouKnowRun.judge?.passed) {
+      return {
+        success: false,
+        posted: false,
+        error: "DidYouKnow judge failed",
+        didYouKnow: {
+          workflowId,
+          artifactId: String(didYouKnowRun.didYouKnowArtifactId),
+          modelUsed: didYouKnowRun.modelUsed,
+          output: didYouKnowRun.output,
+          judge: didYouKnowRun.judge,
+        },
+      };
+    }
+
+    const content = truncateForLinkedIn(
+      sanitizeForLinkedIn(String(didYouKnowRun.output.messageText || "")),
+      2900
+    );
+
+    const didYouKnowMetadata = {
+      passed: true,
+      checks: didYouKnowRun.judge.checks,
+      llmJudge: didYouKnowRun.judge.llmJudge,
+      artifactId: String(didYouKnowRun.didYouKnowArtifactId),
+      modelUsed: didYouKnowRun.modelUsed,
+      sourcesUsed: didYouKnowRun.output.sourcesUsed,
+      judgeExplanation: didYouKnowRun.judge.explanation,
+      judgeReasons: didYouKnowRun.judge.reasons,
+      tonePreset: args.tonePreset ?? "homer_bot_clone",
+      workflowId,
+    };
+
+    if (dryRun) {
+      return {
+        success: true,
+        posted: false,
+        dryRun: true,
+        content,
+        didYouKnow: didYouKnowMetadata,
+      };
+    }
+
+    if (!forcePost) {
+      const match = await ctx.runQuery(
+        internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
+        { dateString, persona, postType: "did_you_know", content }
+      );
+      if (match.anyForType) {
+        return {
+          success: true,
+          posted: false,
+          skipped: true,
+          reason: match.exactMatchId ? "duplicate_content" : "already_posted_today",
+          content,
+          didYouKnow: didYouKnowMetadata,
+        };
+      }
+    }
+
+    const postResult = await ctx.runAction(
+      internal.domains.social.linkedinPosting.createTextPost,
+      { text: content }
+    );
+    if (!postResult.success) {
+      return { success: false, posted: false, error: postResult.error || "LinkedIn post failed", content };
+    }
+
+    await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+      dateString,
+      persona,
+      postId: postResult.postUrn,
+      postUrl: postResult.postUrl,
+      content,
+      factCheckCount: 0,
+      postType: "did_you_know",
+      metadata: { didYouKnow: didYouKnowMetadata },
+    });
+
+    return {
+      success: true,
+      posted: true,
+      postId: postResult.postUrn,
+      postUrl: postResult.postUrl,
+      content,
+      didYouKnow: didYouKnowMetadata,
     };
   },
 });
@@ -399,12 +587,14 @@ export const testLinkedInWorkflow = internalAction({
   args: {
     persona: v.optional(v.string()),
     model: v.optional(v.string()),
+    didYouKnowUrls: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     return await ctx.runAction(internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn, {
       persona: args.persona,
       model: args.model,
       dryRun: true,
+      didYouKnowUrls: args.didYouKnowUrls,
     });
   },
 });
@@ -432,7 +622,11 @@ function formatFundingForLinkedIn(
 
   for (const funding of fundingRounds.slice(0, 5)) {
     // Format round type nicely
-    const roundLabel = funding.roundType.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const roundTypeRaw = typeof funding.roundType === "string" ? funding.roundType.trim() : "";
+    const roundLabel =
+      !roundTypeRaw || roundTypeRaw.toLowerCase() === "unknown"
+        ? "Undisclosed"
+        : roundTypeRaw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
     // Main entry with rank
     parts.push(`${funding.rank}. ${funding.companyName}`);
@@ -494,13 +688,15 @@ export const postDailyFundingToLinkedIn = internalAction({
   args: {
     hoursBack: v.optional(v.number()),
     dryRun: v.optional(v.boolean()),
+    forcePost: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const hoursBack = args.hoursBack || 24;
     const dryRun = args.dryRun ?? false;
+    const forcePost = args.forcePost ?? false;
     const dateString = new Date().toISOString().split("T")[0];
 
-    console.log(`[dailyFundingPost] Starting funding post, hoursBack=${hoursBack}, dryRun=${dryRun}`);
+    console.log(`[dailyFundingPost] Starting funding post, hoursBack=${hoursBack}, dryRun=${dryRun}, forcePost=${forcePost}`);
 
     // 1. Fetch funding rounds
     let fundingRounds: NonNullable<AgentDigestOutput["fundingRounds"]> = [];
@@ -568,6 +764,29 @@ export const postDailyFundingToLinkedIn = internalAction({
       };
     }
 
+    if (!forcePost) {
+      const match = await ctx.runQuery(
+        internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
+        {
+          dateString,
+          persona: "FUNDING",
+          postType: "funding_tracker",
+          content: linkedInContent,
+        },
+      );
+      if (match.anyForType) {
+        console.warn(`[dailyFundingPost] Skipping post (already archived today), date=${dateString}`);
+        return {
+          success: true,
+          posted: false,
+          skipped: true,
+          reason: match.exactMatchId ? "duplicate_content" : "already_posted_today",
+          content: linkedInContent,
+          fundingCount: fundingRounds.length,
+        };
+      }
+    }
+
     let postResult;
     try {
       postResult = await ctx.runAction(
@@ -596,6 +815,18 @@ export const postDailyFundingToLinkedIn = internalAction({
     }
 
     console.log(`[dailyFundingPost] Successfully posted funding to LinkedIn, postUrl=${postResult.postUrl}`);
+
+    // Archive the post
+    const today = new Date().toISOString().split("T")[0];
+    await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+      dateString: today,
+      persona: "FUNDING",
+      postId: postResult.postUrn,
+      postUrl: postResult.postUrl,
+      content: linkedInContent,
+      factCheckCount: 0,
+      postType: "funding_tracker",
+    });
 
     return {
       success: true,
@@ -996,12 +1227,18 @@ export const postMultiPersonaDigest = internalAction({
     model: v.optional(v.string()),
     dryRun: v.optional(v.boolean()),
     delayBetweenPostsMs: v.optional(v.number()),
+    didYouKnowUrls: v.optional(v.array(v.string())),
+    didYouKnowTonePreset: v.optional(
+      v.union(v.literal("homer_bot_clone"), v.literal("casual_concise"), v.literal("professional"))
+    ),
+    forcePost: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const requestedPersonas = (args.personas || ["GENERAL"]) as PersonaId[];
-    const model = args.model || "mimo-v2-flash-free";
+    const model = args.model || "devstral-2-free";
     const dryRun = args.dryRun ?? false;
     const delayMs = args.delayBetweenPostsMs || 5000; // 5 second delay between posts
+    const forcePost = args.forcePost ?? false;
 
     console.log(`[multiPersonaDigest] Starting multi-persona posting for: ${requestedPersonas.join(", ")}`);
 
@@ -1011,6 +1248,7 @@ export const postMultiPersonaDigest = internalAction({
       postUrl?: string;
       error?: string;
       content?: string;
+      didYouKnow?: any;
     }> = [];
 
     // Generate digest once (reuse for all personas)
@@ -1038,6 +1276,28 @@ export const postMultiPersonaDigest = internalAction({
       };
     }
 
+    const dateString = digestResult.digest.dateString;
+
+    // Generate a single didYouKnow preface shared across personas (judge-verified).
+    const didYouKnowUrls =
+      Array.isArray(args.didYouKnowUrls) && args.didYouKnowUrls.length > 0
+        ? args.didYouKnowUrls
+            .filter((u) => typeof u === "string")
+            .map((u) => u.trim())
+            .filter(Boolean)
+            .slice(0, 2)
+        : collectDidYouKnowUrlsFromDigest(digestResult.digest, 2);
+    const didYouKnowWorkflowId = `linkedin_dyk_${digestResult.digest.dateString}_multi_${Date.now()}`;
+    const didYouKnowPreface = await maybePrependDidYouKnowToLinkedInContent({
+      ctx,
+      workflowId: didYouKnowWorkflowId,
+      urls: didYouKnowUrls,
+      baseContent: "",
+      tonePreset: args.didYouKnowTonePreset ?? "casual_concise",
+    });
+    const didYouKnowText =
+      didYouKnowPreface.didYouKnowMetadata ? didYouKnowPreface.content.trim() : "";
+
     // Post for each persona
     for (let i = 0; i < requestedPersonas.length; i++) {
       const personaId = requestedPersonas[i];
@@ -1053,7 +1313,10 @@ export const postMultiPersonaDigest = internalAction({
       }
 
       // Format content for this persona
-      const linkedInContent = formatDigestForPersona(digestResult.digest, personaId);
+      let linkedInContent = formatDigestForPersona(digestResult.digest, personaId);
+      if (didYouKnowText) {
+        linkedInContent = truncateForLinkedIn(`${didYouKnowText}\n\n${linkedInContent}`, 2900);
+      }
 
       console.log(`[multiPersonaDigest] Formatted content for ${personaId} (${linkedInContent.length} chars)`);
 
@@ -1063,8 +1326,31 @@ export const postMultiPersonaDigest = internalAction({
           persona: personaId,
           success: true,
           content: linkedInContent,
+          didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
         });
         continue;
+      }
+
+      if (!forcePost) {
+        const match = await ctx.runQuery(
+          internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
+          {
+            dateString,
+            persona: personaId,
+            postType: "daily_digest",
+            content: linkedInContent,
+          },
+        );
+        if (match.anyForType) {
+          console.warn(`[multiPersonaDigest] Skipping post (already archived today), persona=${personaId}, date=${dateString}`);
+          results.push({
+            persona: personaId,
+            success: true,
+            content: linkedInContent,
+            didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
+          });
+          continue;
+        }
       }
 
       // Post to LinkedIn
@@ -1076,11 +1362,25 @@ export const postMultiPersonaDigest = internalAction({
 
         if (postResult.success) {
           console.log(`[multiPersonaDigest] Posted ${personaId} to LinkedIn: ${postResult.postUrl}`);
+
+          // Archive the post
+          await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+            dateString,
+            persona: personaId,
+            postId: postResult.postUrn,
+            postUrl: postResult.postUrl,
+            content: linkedInContent,
+            factCheckCount: 0,
+            postType: "daily_digest",
+            metadata: didYouKnowPreface.didYouKnowMetadata ? { didYouKnow: didYouKnowPreface.didYouKnowMetadata } : undefined,
+          });
+
           results.push({
             persona: personaId,
             success: true,
             postUrl: postResult.postUrl,
             content: linkedInContent,
+            didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
           });
         } else {
           results.push({
@@ -1224,6 +1524,101 @@ function sanitizeForLinkedIn(text: string): string {
     .replace(/[^\x20-\x7E\n\u00C0-\u024F\u1E00-\u1EFF\[\]]/g, '') // Keep only safe chars + brackets
     .replace(/ +/g, ' ') // Collapse spaces
     .trim();
+}
+
+function truncateForLinkedIn(text: string, maxChars = 2900): string {
+  const raw = (text || "").trim();
+  if (raw.length <= maxChars) return raw;
+  return raw.slice(0, Math.max(0, maxChars - 3)).trimEnd() + "...";
+}
+
+function truncateAtSentenceBoundary(text: string, maxChars: number): string {
+  const raw = (text || "").trim();
+  if (raw.length <= maxChars) return raw;
+
+  const head = raw.slice(0, maxChars);
+  const lastStop = Math.max(head.lastIndexOf("."), head.lastIndexOf("!"), head.lastIndexOf("?"));
+  if (lastStop >= 60) return head.slice(0, lastStop + 1).trimEnd();
+
+  return head.trimEnd() + "...";
+}
+
+function collectDidYouKnowUrlsFromDigest(digest: AgentDigestOutput, maxUrls = 2): string[] {
+  const candidates: string[] = [];
+  if (digest.leadStory?.url) candidates.push(digest.leadStory.url);
+  for (const s of digest.signals ?? []) {
+    if (s?.url) candidates.push(s.url);
+  }
+  for (const f of digest.factCheckFindings ?? []) {
+    if (f?.sourceUrl) candidates.push(f.sourceUrl);
+  }
+  const cleaned = candidates
+    .map((u) => (typeof u === "string" ? u.trim() : ""))
+    .filter((u) => u.length > 0);
+  return [...new Set(cleaned)].slice(0, maxUrls);
+}
+
+async function maybePrependDidYouKnowToLinkedInContent(args: {
+  ctx: any;
+  workflowId: string;
+  urls: string[];
+  baseContent: string;
+  tonePreset: "homer_bot_clone" | "casual_concise" | "professional";
+}): Promise<{
+  content: string;
+  didYouKnowMetadata?: any;
+}> {
+  const urls = args.urls.slice(0, 2);
+  if (urls.length === 0) return { content: args.baseContent };
+
+  try {
+    const prepared = await args.ctx.runAction(
+      internal.domains.narrative.didYouKnowSources.fetchSourcesForDidYouKnow,
+      { urls, workflowId: args.workflowId, preferLinkup: true, maxUrls: 2 }
+    );
+
+    const didYouKnow = await args.ctx.runAction(internal.domains.narrative.didYouKnow.generateDidYouKnow, {
+      workflowId: args.workflowId,
+      sources: prepared.map((s: any) => ({
+        url: s.url,
+        title: s.title,
+        publishedAtIso: s.publishedAtIso,
+        excerpt: s.excerpt,
+      })),
+      tonePreset: args.tonePreset,
+      maxTokens: 520,
+      temperature: 0.5,
+    });
+
+    const judge = await args.ctx.runAction(internal.domains.narrative.didYouKnow.judgeDidYouKnow, {
+      workflowId: args.workflowId,
+      didYouKnowArtifactId: didYouKnow.artifactId,
+      output: didYouKnow.output,
+    });
+
+    if (!judge.passed) return { content: args.baseContent };
+
+    const preface = truncateAtSentenceBoundary(sanitizeForLinkedIn(didYouKnow.output.messageText), 420).trim();
+    if (!preface) return { content: args.baseContent };
+
+    const combined = truncateForLinkedIn(`${preface}\n\n${args.baseContent}`, 2900);
+	    return {
+	      content: combined,
+	      didYouKnowMetadata: {
+	        passed: true,
+	        checks: judge.checks,
+	        llmJudge: judge.llmJudge,
+	        artifactId: String(didYouKnow.artifactId),
+	        modelUsed: didYouKnow.modelUsed,
+	        sourcesUsed: didYouKnow.output.sourcesUsed,
+	        judgeExplanation: judge.explanation,
+	        judgeReasons: judge.reasons,
+	      },
+	    };
+  } catch (e: any) {
+    console.warn("[dailyLinkedInPost] didYouKnow generation failed (non-fatal):", e?.message || e);
+    return { content: args.baseContent };
+  }
 }
 
 function formatDDTierBadge(tier: DDResult["tier"]): string {
@@ -1876,6 +2271,7 @@ export const postStartupFundingBrief = internalAction({
     skipDeduplication: v.optional(v.boolean()), // Bypass dedup check
     deduplicationDays: v.optional(v.number()), // Lookback window for dedup
     useSemanticDedup: v.optional(v.boolean()), // NEW: Use 2-stage LLM-as-judge dedup
+    forcePost: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const dryRun = args.dryRun ?? false;
@@ -1883,6 +2279,7 @@ export const postStartupFundingBrief = internalAction({
     const maxProfiles = args.maxProfiles ?? 10; // Increased default from 5 to 10
     const enableEnrichment = args.enableEnrichment ?? true;
     const skipDeduplication = args.skipDeduplication ?? false;
+    const forcePost = args.forcePost ?? false;
     // Default: 21 days catches leaked→confirmed gap (SEC Form D = 15 days + announcement delay)
     // Research: https://techcrunch.com/2019/03/28/how-to-delay-your-form-ds/
     const deduplicationDays = args.deduplicationDays ?? 21;
@@ -1904,6 +2301,7 @@ export const postStartupFundingBrief = internalAction({
     console.log(`  - sectorCategories=${sectorCategories?.join(",") ?? "all"}`);
     console.log(`  - dedup=${!skipDeduplication}, dedup window=${deduplicationDays} days`);
     console.log(`  - useSemanticDedup=${useSemanticDedup} (2-stage LLM-as-judge)`);
+    console.log(`  - forcePost=${forcePost}`);
 
     // Step 1: Fetch funding events from the database
     let fundingEvents: any[] = [];
@@ -2041,6 +2439,7 @@ export const postStartupFundingBrief = internalAction({
     // Step 2: Enrich with entity context data + AI enrichment
     const fundingProfiles: FundingProfile[] = [];
     const skippedDuplicates: string[] = [];
+    const skippedInvalid: string[] = [];
     const progressions: { company: string; previousUrl: string; previousRound: string }[] = [];
     // NEW: Track embeddings and verdicts for recording
     const postMetadata: Map<string, { embedding?: number[]; verdict?: string; diffSummary?: string }> = new Map();
@@ -2190,14 +2589,22 @@ export const postStartupFundingBrief = internalAction({
       };
 
       // Step 3: AI enrichment if needed and enabled
+      const nameLooksGeneric = (name: string) => {
+        const n = (name || "").trim().toLowerCase();
+        return n.length < 3 || n.includes("unknown") || n === "company";
+      };
+      const needsNameFix = nameLooksGeneric(profile.companyName);
+      const needsMissingFields =
+        profile.founders === "N/A" || profile.product === "N/A" || profile.sector === "N/A";
+
       console.log(`[startupFundingBrief] Profile for ${event.companyName}:`, {
         founders: profile.founders,
         product: profile.product,
         sector: profile.sector,
         enableEnrichment,
-        needsEnrichment: profile.founders === "N/A" || profile.product === "N/A" || profile.sector === "N/A",
+        needsEnrichment: needsMissingFields || needsNameFix,
       });
-      if (enableEnrichment && (profile.founders === "N/A" || profile.product === "N/A" || profile.sector === "N/A")) {
+      if (enableEnrichment && (needsMissingFields || needsNameFix)) {
         console.log(`[startupFundingBrief] Enriching ${event.companyName} via AI...`);
         const enriched = await enrichCompanyProfile(
           ctx,
@@ -2206,6 +2613,12 @@ export const postStartupFundingBrief = internalAction({
           profile
         );
         profile = { ...profile, ...enriched } as FundingProfile;
+      }
+
+      if (nameLooksGeneric(profile.companyName)) {
+        console.warn(`[startupFundingBrief] Skipping profile with invalid companyName: "${profile.companyName}"`);
+        skippedInvalid.push(profile.companyName);
+        continue;
       }
 
       fundingProfiles.push(profile);
@@ -2420,10 +2833,29 @@ export const postStartupFundingBrief = internalAction({
     }
 
     // Post each part to LinkedIn with delay between posts
-    const postUrls: string[] = [];
+    const postUrlsByPart: Array<string | null> = new Array(linkedInPosts.length).fill(null);
+    const skippedParts: number[] = [];
     const errors: string[] = [];
 
     for (let i = 0; i < linkedInPosts.length; i++) {
+      if (!forcePost) {
+        const match = await ctx.runQuery(
+          internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
+          {
+            dateString,
+            persona: "FUNDING",
+            postType: "funding_brief",
+            content: linkedInPosts[i],
+            part: i + 1,
+          },
+        );
+        if (match.exactMatchId) {
+          console.warn(`[startupFundingBrief] Skipping part ${i + 1} (duplicate archived content)`);
+          skippedParts.push(i + 1);
+          continue;
+        }
+      }
+
       // Add 30 second delay between posts (LinkedIn rate limit)
       if (i > 0) {
         console.log(`[startupFundingBrief] Waiting 30s before posting part ${i + 1}...`);
@@ -2437,7 +2869,7 @@ export const postStartupFundingBrief = internalAction({
         );
 
         if (postResult.success && postResult.postUrl) {
-          postUrls.push(postResult.postUrl);
+          postUrlsByPart[i] = postResult.postUrl;
           console.log(`[startupFundingBrief] Posted part ${i + 1}/${linkedInPosts.length}: ${postResult.postUrl}`);
         } else {
           errors.push(`Part ${i + 1}: ${postResult.error || "Unknown error"}`);
@@ -2450,8 +2882,26 @@ export const postStartupFundingBrief = internalAction({
       }
     }
 
-    const allPosted = postUrls.length === linkedInPosts.length;
-    console.log(`[startupFundingBrief] Posted ${postUrls.length}/${linkedInPosts.length} parts`);
+    const postUrls = postUrlsByPart.filter((u): u is string => typeof u === "string" && u.length > 0);
+    const allPosted = postUrlsByPart.every((u) => typeof u === "string" && u.length > 0);
+    console.log(`[startupFundingBrief] Posted ${postUrls.length}/${linkedInPosts.length} parts (skipped=${skippedParts.length})`);
+
+    // Archive each posted part
+    for (let i = 0; i < linkedInPosts.length; i++) {
+      const url = postUrlsByPart[i];
+      if (url) {
+        await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+          dateString,
+          persona: "FUNDING",
+          postId: url.split("/").pop() || url,
+          postUrl: url,
+          content: linkedInPosts[i],
+          factCheckCount: 0,
+          postType: "funding_brief",
+          metadata: { part: i + 1, totalParts: linkedInPosts.length },
+        });
+      }
+    }
 
     // Step 5: Record posted companies for deduplication tracking
     if (postUrls.length > 0) {
@@ -2513,6 +2963,8 @@ export const postStartupFundingBrief = internalAction({
       content: totalContent,
       profileCount: fundingProfiles.length,
       skippedDuplicates: skippedDuplicates.length > 0 ? skippedDuplicates : undefined,
+      skippedInvalid: skippedInvalid.length > 0 ? skippedInvalid : undefined,
+      skippedParts: skippedParts.length > 0 ? skippedParts : undefined,
       progressions: progressions.length > 0 ? progressions : undefined,
       errors: errors.length > 0 ? errors : undefined,
     };

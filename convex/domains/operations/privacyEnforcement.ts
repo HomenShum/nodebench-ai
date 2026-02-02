@@ -155,26 +155,68 @@ export const TABLE_DATA_CLASS_MAP: Record<string, DataClass> = {
   sourceQualityLog: "operational_logs",
   sloMeasurements: "operational_logs",
   modelPerformanceMetrics: "operational_logs",
+  retentionAggregations: "operational_logs",
 
   // Audit logs
   alertHistory: "audit_logs",
   restatementDecisionLog: "audit_logs",
   validationReports: "audit_logs",
   calibrationDeployments: "audit_logs",
+  groundTruthAuditLog: "audit_logs",
+  deletionRequests: "audit_logs",
+  deletionTombstones: "audit_logs",
+  archivedRecords: "audit_logs",
+  narrativeSearchLog: "audit_logs",
 
   // Ground truth
   groundTruthVersions: "ground_truth_labels",
-  groundTruthSnapshots: "ground_truth_labels",
 
   // Financial data
   financialFundamentals: "financial_fundamentals",
+  groundTruthFinancials: "financial_fundamentals",
   sourceArtifacts: "derived_text",
+  evidenceArtifacts: "audit_logs",
 
   // Model outputs
   dcfModels: "model_outputs",
   financialModelEvaluations: "model_outputs",
   modelReproPacks: "model_outputs",
+  narrativeThreads: "model_outputs",
+  narrativeEvents: "model_outputs",
+  narrativePosts: "model_outputs",
+  narrativeReplies: "model_outputs",
+  temporalFacts: "model_outputs",
+  narrativeDisputeChains: "model_outputs",
+  narrativeCorrelations: "model_outputs",
 };
+
+type TtlTableConfig = {
+  timestampField: string;
+  index?: string;
+};
+
+const TTL_TABLE_CONFIG: Record<string, TtlTableConfig> = {
+  inconclusiveEventLog: { timestampField: "occurredAt", index: "by_occurred_at" },
+  sourceQualityLog: { timestampField: "classifiedAt", index: "by_classified_at" },
+  sloMeasurements: { timestampField: "recordedAt", index: "by_recorded" },
+  modelPerformanceMetrics: { timestampField: "recordedAt", index: "by_recorded_at" },
+  alertHistory: { timestampField: "triggeredAt", index: "by_triggered" },
+  restatementDecisionLog: { timestampField: "decidedAt", index: "by_decided_at" },
+  calibrationDeployments: { timestampField: "deployedAt", index: "by_deployed_at" },
+  validationReports: { timestampField: "generatedAt", index: "by_generated_at" },
+  narrativeSearchLog: { timestampField: "searchedAt", index: "by_searched_at" },
+  evidenceArtifacts: { timestampField: "createdAt", index: "by_created_at" },
+  narrativeEvents: { timestampField: "createdAt" },
+};
+
+function fnv1a32Hex(str: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
 
 /* ------------------------------------------------------------------ */
 /* DELETION WORKFLOW                                                   */
@@ -356,6 +398,13 @@ export const processDeletionRequest = internalAction({
     if (request.scope === "user_data") {
       // Delete all data for a user
       const userTables = [
+        "mcpServers",
+        "agentRuns",
+        "narrativeThreads",
+        "narrativePosts",
+        "narrativeReplies",
+        "evidenceArtifacts",
+        "narrativeSearchLog",
         "groundTruthVersions",
         "validationFindings",
         "calibrationProposals",
@@ -388,11 +437,78 @@ export const processDeletionRequest = internalAction({
           tablesAffected.push(table);
         }
       }
+    } else if (request.scope === "entity_data") {
+      // Delete data associated with a single entity key (best-effort).
+      const entityKey = request.subject;
+      const entityTables = [
+        { table: "groundTruthVersions", field: "entityKey" },
+        { table: "groundTruthFinancials", field: "ticker" },
+      ];
+
+      for (const { table, field } of entityTables) {
+        const docs = await (ctx.db.query(table as any) as any)
+          .filter((q: any) => q.eq(q.field(field), entityKey))
+          .collect();
+        for (const d of docs) {
+          try {
+            await ctx.runMutation(
+              internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
+              { table, recordId: String(d._id), deletionRequestId: args.requestId }
+            );
+            recordsDeleted++;
+          } catch (error) {
+            failedDeletions.push({
+              table,
+              recordId: String(d._id),
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+        if (docs.length > 0) tablesAffected.push(table);
+      }
+
+      // Narrative threads where entityKeys contains the entityKey.
+      const threads = await ctx.db.query("narrativeThreads").collect();
+      const matchingThreads = threads.filter((t) => Array.isArray(t.entityKeys) && t.entityKeys.includes(entityKey));
+      for (const t of matchingThreads) {
+        try {
+          await ctx.runMutation(
+            internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
+            { table: "narrativeThreads", recordId: String(t._id), deletionRequestId: args.requestId }
+          );
+          recordsDeleted++;
+        } catch (error) {
+          failedDeletions.push({
+            table: "narrativeThreads",
+            recordId: String(t._id),
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      if (matchingThreads.length > 0) tablesAffected.push("narrativeThreads");
+
     } else if (request.scope === "specific_records" && request.recordIds) {
-      // Delete specific records
-      for (const recordId of request.recordIds) {
-        // Would need to parse table from recordId
-        // For now, simplified
+      // Delete specific records, encoded as "table:recordId"
+      for (const ref of request.recordIds) {
+        const [table, recordId] = String(ref).split(":", 2);
+        if (!table || !recordId) {
+          failedDeletions.push({ table: "unknown", recordId: String(ref), error: "invalid_record_ref_format" });
+          continue;
+        }
+        try {
+          await ctx.runMutation(
+            internal.domains.operations.privacyEnforcement.deleteRecordWithTombstone,
+            { table, recordId, deletionRequestId: args.requestId }
+          );
+          recordsDeleted++;
+          if (!tablesAffected.includes(table)) tablesAffected.push(table);
+        } catch (error) {
+          failedDeletions.push({
+            table,
+            recordId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       }
     }
 
@@ -471,9 +587,28 @@ export const getExpiredRecords = query({
   },
   returns: v.array(v.string()),
   handler: async (ctx, args) => {
-    // Simplified: would query based on table-specific timestamp field
-    // For now, return empty array
-    return [];
+    const cfg = TTL_TABLE_CONFIG[args.table];
+    if (!cfg) return [];
+
+    const tableName = args.table as any;
+    const limit = 500;
+
+    try {
+      if (cfg.index) {
+        const docs = await (ctx.db.query(tableName) as any)
+          .withIndex(cfg.index, (q: any) => q.lt(cfg.timestampField, args.expiresAt))
+          .take(limit);
+        return (docs as any[]).map((d) => String(d._id));
+      }
+
+      const docs = await (ctx.db.query(tableName) as any)
+        .filter((q: any) => q.lt(q.field(cfg.timestampField), args.expiresAt))
+        .take(limit);
+      return (docs as any[]).map((d) => String(d._id));
+    } catch (err) {
+      console.warn("[privacyEnforcement] getExpiredRecords failed:", args.table, err);
+      return [];
+    }
   },
 });
 
@@ -484,8 +619,11 @@ export const deleteRecord = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Simplified: would delete from specific table
-    // In production, use ctx.db.delete() with proper ID parsing
+    const id = args.recordId as unknown as Id<any>;
+    const existing = await ctx.db.get(id);
+    if (existing) {
+      await ctx.db.delete(id);
+    }
     return null;
   },
 });
@@ -497,7 +635,23 @@ export const aggregateAndDelete = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Simplified: would aggregate metrics then delete raw records
+    const now = Date.now();
+    const dataClass = TABLE_DATA_CLASS_MAP[args.table] ?? "operational_logs";
+    await ctx.db.insert("retentionAggregations", {
+      table: args.table,
+      dataClass,
+      expiresAt: now,
+      aggregatedAt: now,
+      recordsCount: args.recordIds.length,
+    });
+
+    for (const recordId of args.recordIds) {
+      const id = recordId as unknown as Id<any>;
+      const existing = await ctx.db.get(id);
+      if (existing) {
+        await ctx.db.delete(id);
+      }
+    }
     return null;
   },
 });
@@ -509,7 +663,28 @@ export const archiveRecords = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Simplified: would move records to cold storage
+    const now = Date.now();
+    const dataClass = TABLE_DATA_CLASS_MAP[args.table] ?? "audit_logs";
+
+    for (const recordId of args.recordIds) {
+      const id = recordId as unknown as Id<any>;
+      const existing = await ctx.db.get(id);
+      if (!existing) continue;
+
+      const content = JSON.stringify(existing);
+      const contentHash = `fnv1a32_${fnv1a32Hex(content)}`;
+
+      await ctx.db.insert("archivedRecords", {
+        table: args.table,
+        recordId,
+        dataClass,
+        archivedAt: now,
+        contentHash,
+        data: existing,
+      });
+
+      await ctx.db.delete(id);
+    }
     return null;
   },
 });
@@ -559,8 +734,96 @@ export const getUserRecords = query({
   },
   returns: v.array(v.string()),
   handler: async (ctx, args) => {
-    // Simplified: would query user-linkable records
-    return [];
+    const table = args.table;
+    const userId = args.userId;
+    const limit = 2000;
+
+    try {
+      if (table === "mcpServers") {
+        const docs = await ctx.db
+          .query("mcpServers")
+          .withIndex("by_user", (q) => q.eq("userId", userId as any))
+          .take(limit);
+        return docs.map((d) => String(d._id));
+      }
+
+      if (table === "agentRuns") {
+        const docs = await ctx.db
+          .query("agentRuns")
+          .withIndex("by_user", (q) => q.eq("userId", userId as any))
+          .take(limit);
+        return docs.map((d) => String(d._id));
+      }
+
+      if (table === "narrativeThreads") {
+        const docs = await ctx.db
+          .query("narrativeThreads")
+          .withIndex("by_user", (q) => q.eq("userId", userId as any))
+          .take(limit);
+        return docs.map((d) => String(d._id));
+      }
+
+      if (table === "narrativePosts") {
+        const docs = await ctx.db.query("narrativePosts").collect();
+        return docs
+          .filter((p) => p.authorType === "human" && p.authorId === userId)
+          .slice(0, limit)
+          .map((d) => String(d._id));
+      }
+
+      if (table === "narrativeReplies") {
+        const docs = await ctx.db.query("narrativeReplies").collect();
+        return docs
+          .filter((r) => r.authorType === "human" && r.authorId === userId)
+          .slice(0, limit)
+          .map((d) => String(d._id));
+      }
+
+      if (table === "groundTruthVersions") {
+        const docs = await ctx.db
+          .query("groundTruthVersions")
+          .withIndex("by_author", (q) => q.eq("authorId", userId as any).eq("status", "approved"))
+          .take(limit);
+        return docs.map((d) => String(d._id));
+      }
+
+      if (table === "validationFindings") {
+        const docs = await ctx.db.query("validationFindings").collect();
+        return docs
+          .filter((f: any) => f.createdBy === userId || f.updatedBy === userId)
+          .slice(0, limit)
+          .map((d: any) => String(d._id));
+      }
+
+      if (table === "calibrationProposals") {
+        const docs = await ctx.db.query("calibrationProposals").collect();
+        return docs
+          .filter((p: any) => p.proposedBy === userId)
+          .slice(0, limit)
+          .map((d: any) => String(d._id));
+      }
+
+      if (table === "evidenceArtifacts") {
+        const docs = await ctx.db.query("evidenceArtifacts").collect();
+        return docs
+          .filter((a: any) => a.retrievalTrace?.agentName === userId)
+          .slice(0, limit)
+          .map((d: any) => String(d._id));
+      }
+
+      if (table === "narrativeSearchLog") {
+        const docs = await ctx.db
+          .query("narrativeSearchLog")
+          .withIndex("by_user", (q) => q.eq("userId", userId as any))
+          .take(limit);
+        return docs.map((d) => String(d._id));
+      }
+
+      return [];
+    } catch (err) {
+      console.warn("[privacyEnforcement] getUserRecords failed:", args.table, err);
+      return [];
+    }
   },
 });
 
@@ -580,10 +843,62 @@ export const deleteRecordWithTombstone = internalMutation({
       deletedAt: Date.now(),
     });
 
-    // Delete the record (simplified)
-    // In production: ctx.db.delete(parseId(args.recordId))
+    const id = args.recordId as unknown as Id<any>;
+    const existing = await ctx.db.get(id);
+    if (existing) {
+      await ctx.db.delete(id);
+    }
 
     return null;
+  },
+});
+
+/**
+ * Process pending deletion requests (cron-friendly)
+ */
+export const processPendingDeletionRequests = internalAction({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  returns: v.object({
+    processed: v.number(),
+    succeeded: v.number(),
+    failed: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 10;
+    const pending = await ctx.db
+      .query("deletionRequests")
+      .withIndex("by_status", (q) => q.eq("status", "pending"))
+      .order("asc")
+      .take(limit);
+
+    let processed = 0;
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const req of pending) {
+      processed++;
+      try {
+        const result = await ctx.runAction(
+          internal.domains.operations.privacyEnforcement.processDeletionRequest,
+          { requestId: req._id }
+        );
+        if (result.success) succeeded++;
+        else failed++;
+      } catch (err) {
+        failed++;
+        console.warn("[privacyEnforcement] Failed processing deletion request:", req._id, err);
+        try {
+          await ctx.runMutation(
+            internal.domains.operations.privacyEnforcement.updateDeletionRequestStatus,
+            { requestId: req._id, status: "failed" }
+          );
+        } catch {}
+      }
+    }
+
+    return { processed, succeeded, failed };
   },
 });
 

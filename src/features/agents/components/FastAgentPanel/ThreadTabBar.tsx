@@ -142,26 +142,30 @@ const ThreadTab = memo(function ThreadTab({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
-        "hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500/50",
+        "group flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
+        "hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500/40",
         isActive
-          ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm"
-          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-        isSwarmActive && "ring-1 ring-blue-500/30"
+          ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-color)]"
+          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent",
+        isSwarmActive && "ring-1 ring-blue-500/40 bg-blue-50/50"
       )}
     >
       {/* Icon */}
       {hasSwarm ? (
-        <Zap className={cn(
-          "w-3 h-3 flex-shrink-0",
-          isSwarmActive ? "text-blue-500" : "text-[var(--text-muted)]"
-        )} />
+        <div className={cn(
+          "w-5 h-5 rounded-md flex items-center justify-center",
+          isSwarmActive ? "bg-blue-100 text-blue-600" : "bg-stone-100 text-stone-400"
+        )}>
+          <Zap className="w-3 h-3" />
+        </div>
       ) : (
-        <MessageSquare className="w-3 h-3 flex-shrink-0 text-[var(--text-muted)]" />
+        <div className="w-5 h-5 rounded-md bg-stone-100 flex items-center justify-center">
+          <MessageSquare className="w-3 h-3 text-stone-400" />
+        </div>
       )}
 
       {/* Title */}
-      <span className="truncate max-w-[100px]">
+      <span className="truncate max-w-[100px] font-semibold">
         {thread.title || "Untitled"}
       </span>
 
@@ -176,7 +180,7 @@ const ThreadTab = memo(function ThreadTab({
 
       {/* Keyboard shortcut hint */}
       {index < 9 && (
-        <span className="hidden group-hover:inline text-[9px] text-[var(--text-muted)] ml-1">
+        <span className="hidden group-hover:inline text-[9px] text-[var(--text-muted)] ml-0.5 opacity-60">
           ⌘{index + 1}
         </span>
       )}
@@ -277,14 +281,14 @@ export function ThreadTabBar({
         type="button"
         onClick={onNewThread}
         className={cn(
-          "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0",
-          "hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-          "focus:outline-none focus:ring-2 focus:ring-blue-500/50",
-          !activeThreadId && "bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+          "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
+          "hover:bg-emerald-50 text-stone-600 hover:text-emerald-700",
+          "focus:outline-none focus:ring-2 focus:ring-emerald-500/40",
+          !activeThreadId && "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
         )}
         title="New chat (⌘1)"
       >
-        <Plus className="w-3.5 h-3.5" />
+        <Plus className="w-4 h-4" />
         <span className="hidden sm:inline">New</span>
       </button>
 
@@ -295,16 +299,16 @@ export function ThreadTabBar({
             type="button"
             onClick={() => setShowSwarmMenu(!showSwarmMenu)}
             className={cn(
-              "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors flex-shrink-0",
-              "hover:bg-blue-500/10 text-blue-600 hover:text-blue-700",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500/50",
-              showSwarmMenu && "bg-blue-500/10"
+              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
+              "hover:bg-blue-50 text-blue-600 hover:text-blue-700",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500/40",
+              showSwarmMenu && "bg-blue-50 border border-blue-200/50"
             )}
             title="Spawn parallel agents"
           >
-            <Zap className="w-3.5 h-3.5" />
+            <Zap className="w-4 h-4" />
             <span className="hidden sm:inline">Swarm</span>
-            <ChevronDown className={cn("w-3 h-3 transition-transform", showSwarmMenu && "rotate-180")} />
+            <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showSwarmMenu && "rotate-180")} />
           </button>
 
           {/* Swarm Menu Dropdown */}

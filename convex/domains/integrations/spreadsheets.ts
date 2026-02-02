@@ -80,7 +80,9 @@ export const listSheets = query({
   },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
-    const userId = await getSafeUserId(ctx);
+    // Return empty array for unauthenticated users (guest mode)
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
     const limit = Math.max(1, Math.min(args.limit ?? 25, 100));
 
     const sheets = await ctx.db

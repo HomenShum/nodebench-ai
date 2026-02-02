@@ -219,9 +219,12 @@ export function FastAgentThreadList({
 
         {/* Empty State */}
         {Object.values(groupedThreads).every(g => g.length === 0) && (
-          <div className="flex flex-col items-center justify-center h-32 text-[var(--text-muted)] text-xs">
-            <MessageSquare className="w-6 h-6 mb-2 opacity-20" />
-            <p>No conversations found</p>
+          <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)] text-xs px-4">
+            <div className="w-12 h-12 bg-[var(--bg-primary)] rounded-xl flex items-center justify-center mb-3 border border-[var(--border-color)]">
+              <MessageSquare className="w-5 h-5 opacity-40" />
+            </div>
+            <p className="font-medium text-[var(--text-secondary)] mb-1">No conversations yet</p>
+            <p className="text-[10px] text-center opacity-70">Start a new chat to begin</p>
           </div>
         )}
 

@@ -46,9 +46,8 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
       <div className="text-2xl font-bold mb-1">{value}</div>
       {subtitle && <div className="text-xs opacity-60">{subtitle}</div>}
       {trend && (
-        <div className={`flex items-center gap-1 text-xs mt-2 ${
-          trend.direction === 'up' ? 'text-green-600' : 'text-red-600'
-        }`}>
+        <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' : 'text-red-600'
+          }`}>
           <TrendingUp size={12} className={trend.direction === 'down' ? 'rotate-180' : ''} />
           <span>{Math.abs(trend.value)}%</span>
         </div>
@@ -152,7 +151,7 @@ export default function RecommendationAnalyticsDashboard() {
   const isLoading = acceptanceData === undefined || rejectionReasons === undefined;
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] p-6">
+    <div className="min-h-screen bg-canvas-warm p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -22,6 +22,7 @@ import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { usePanelResize } from "../hooks/usePanelResize";
 import { useMainLayoutRouting } from "../hooks/useMainLayoutRouting";
 import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
+import { ViewSkeleton } from "./skeletons";
 
 const PublicDocuments = lazy(() =>
   import("@/features/documents/views/PublicDocuments").then((mod) => ({
@@ -151,12 +152,13 @@ const PRSuggestions = lazy(() =>
     default: mod.PRSuggestions,
   })),
 );
-
-const viewFallback = (
-  <div className="h-full w-full flex items-center justify-center text-sm text-stone-500">
-    Loading view...
-  </div>
+const LinkedInPostArchiveView = lazy(() =>
+  import("@/features/social/views/LinkedInPostArchiveView").then((mod) => ({
+    default: mod.LinkedInPostArchiveView,
+  })),
 );
+
+const viewFallback = <ViewSkeleton variant="default" />;
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -214,6 +216,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   }, [signIn]);
 
   const [isGridMode, setIsGridMode] = useState(false);
+  // Task selection state for DocumentsHomeHub
+  const [selectedTaskId, setSelectedTaskId] = useState<Id<"tasks"> | null>(null);
+  const [selectedTaskSource, setSelectedTaskSource] = useState<"today" | "upcoming" | "week" | "other" | null>(null);
+  
+  const handleSelectTask = useCallback((id: Id<"tasks">, source: "today" | "upcoming" | "week" | "other") => {
+    setSelectedTaskId(id);
+    setSelectedTaskSource(source);
+  }, []);
+  
+  const clearTaskSelection = useCallback(() => {
+    setSelectedTaskId(null);
+    setSelectedTaskSource(null);
+  }, []);
   // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   // Multi-document selection for Fast Agent
@@ -432,9 +447,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                                                       ? 'Industry Updates'
                                                       : currentView === 'entity'
                                                         ? `Entity: ${entityName || 'Profile'}`
-                                                        : selectedDocumentId
-                                                          ? 'My Documents'
-                                                          : 'My Workspace'}
+                                                        : currentView === 'linkedin-posts'
+                                                          ? 'LinkedIn Posts'
+                                                          : selectedDocumentId
+                                                            ? 'My Documents'
+                                                            : 'My Workspace'}
               </h1>
             </div>
 
@@ -639,57 +656,63 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <PublicActivityView />
                 </Suspense>
               ) : currentView === 'analytics-hitl' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <HITLAnalyticsDashboard />
                 </div>
               ) : currentView === 'analytics-components' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <ComponentMetricsDashboard />
                 </div>
               ) : currentView === 'analytics-recommendations' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <RecommendationFeedbackDashboard />
                 </div>
               ) : currentView === 'cost-dashboard' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <CostDashboard />
                   </Suspense>
                 </div>
               ) : currentView === 'industry-updates' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <IndustryUpdatesPanel />
                   </Suspense>
                 </div>
               ) : currentView === 'for-you-feed' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <ForYouFeed />
                   </Suspense>
                 </div>
               ) : currentView === 'document-recommendations' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <DocumentRecommendations />
                   </Suspense>
                 </div>
               ) : currentView === 'agent-marketplace' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <AgentMarketplace />
                   </Suspense>
                 </div>
               ) : currentView === 'github-explorer' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <GitHubExplorer />
                   </Suspense>
                 </div>
               ) : currentView === 'pr-suggestions' ? (
-                <div className="h-full overflow-auto bg-[#faf9f6]">
+                <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <PRSuggestions />
+                  </Suspense>
+                </div>
+              ) : currentView === 'linkedin-posts' ? (
+                <div className="h-full overflow-auto bg-canvas-warm">
+                  <Suspense fallback={viewFallback}>
+                    <LinkedInPostArchiveView />
                   </Suspense>
                 </div>
               ) : currentView === 'entity' && entityName ? (

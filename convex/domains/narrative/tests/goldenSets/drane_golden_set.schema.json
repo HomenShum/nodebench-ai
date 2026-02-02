@@ -1,0 +1,556 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nodebench.ai/schemas/drane_golden_set.schema.json",
+  "title": "DRANE Golden Set Suite",
+  "type": "object",
+  "required": ["suiteId", "version", "defaults", "cases"],
+  "additionalProperties": false,
+  "properties": {
+    "suiteId": {
+      "type": "string",
+      "description": "Stable suite identifier, e.g., drane_golden_set_v1"
+    },
+    "version": {
+      "type": "string",
+      "description": "Schema consumer version for your QA runner, e.g., 1.0.0"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string"
+    },
+    "governance": { "$ref": "#/$defs/SuiteGovernance" },
+    "defaults": { "$ref": "#/$defs/SuiteDefaults" },
+    "templates": {
+      "type": "object",
+      "description": "Reusable expectation templates referenced by cases. Keys are templateIds.",
+      "additionalProperties": { "$ref": "#/$defs/ExpectationTemplate" }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/GoldenCase" }
+    }
+  },
+  "$defs": {
+    "SuiteGovernance": {
+      "type": "object",
+      "description": "Lightweight dataset governance record for audit readiness.",
+      "additionalProperties": false,
+      "required": ["owners", "adjudicationPolicyVersion"],
+      "properties": {
+        "owners": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "adjudicationPolicyVersion": { "type": "string" },
+        "targetKappaOverall": { "type": "number", "minimum": 0, "maximum": 1 },
+        "targetKappaHighRisk": { "type": "number", "minimum": 0, "maximum": 1 },
+        "refreshCadenceDays": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "SuiteDefaults": {
+      "type": "object",
+      "required": ["run", "assertions"],
+      "additionalProperties": false,
+      "properties": {
+        "run": { "$ref": "#/$defs/RunConfig" },
+        "assertions": { "$ref": "#/$defs/GlobalAssertions" }
+      }
+    },
+    "RunConfig": {
+      "type": "object",
+      "required": ["weekNumber", "pipelineMode", "scout", "analyst", "publisher"],
+      "additionalProperties": false,
+      "properties": {
+        "weekNumber": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-W[0-9]{2}$",
+          "description": "ISO week bucket used by DRANE pipeline, e.g., 2026-W04"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Optional fixed userId for deterministic suites. If omitted, runner supplies."
+        },
+        "pipelineMode": {
+          "type": "string",
+          "enum": ["deterministic", "record_replay", "live"],
+          "description": "deterministic recommended for golden set; record_replay for nightly replay; live for canary."
+        },
+        "toolReplayMode": {
+          "type": "string",
+          "enum": ["off", "record", "replay"],
+          "default": "off"
+        },
+        "codeVersion": {
+          "type": "string",
+          "description": "Optional code build/version hash persisted into trace/checkpoints for audit."
+        },
+        "scout": { "$ref": "#/$defs/ScoutConfig" },
+        "analyst": { "$ref": "#/$defs/AnalystConfig" },
+        "publisher": { "$ref": "#/$defs/PublisherConfig" }
+      }
+    },
+    "ScoutConfig": {
+      "type": "object",
+      "required": ["injectedNewsItems"],
+      "additionalProperties": false,
+      "properties": {
+        "targetEntityKeys": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Entity keys the pipeline runs on; optional if runner infers from injected news."
+        },
+        "injectedNewsItems": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/InjectedNewsItem" },
+          "description": "Deterministic short-circuit for web search. Used by scoutAgent injected mode."
+        },
+        "recencyDays": { "type": "integer", "minimum": 0, "default": 7 },
+        "maxItemsPerEntity": { "type": "integer", "minimum": 1, "default": 15 },
+        "searchMode": {
+          "type": "string",
+          "enum": ["fast", "balanced", "comprehensive"],
+          "default": "fast"
+        }
+      }
+    },
+    "AnalystConfig": {
+      "type": "object",
+      "required": ["useHeuristicOnly"],
+      "additionalProperties": false,
+      "properties": {
+        "useHeuristicOnly": {
+          "type": "boolean",
+          "description": "When true, bypass LLM generateText and use deterministic heuristic shift detection."
+        },
+        "heuristicProfile": {
+          "type": "string",
+          "description": "Optional: named heuristic profile (if you have multiple)."
+        }
+      }
+    },
+    "PublisherConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enableDedup": { "type": "boolean", "default": true },
+        "dedupPolicyId": {
+          "type": "string",
+          "description": "Optional: selects deterministic dedup policy (no LLM judge)."
+        },
+        "minCitationCoverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.8
+        }
+      }
+    },
+    "InjectedNewsItem": {
+      "type": "object",
+      "required": ["headline", "url", "publishedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "headline": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "canonicalUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Optional: if your pipeline normalizes canonicalUrl."
+        },
+        "publishedAt": { "type": "integer", "description": "Unix ms timestamp" },
+        "occurredAt": {
+          "type": "integer",
+          "description": "Unix ms timestamp (optional). If omitted, runner/pipeline may set occurredAt=publishedAt."
+        },
+        "snippet": { "type": "string" },
+        "sourceName": { "type": "string" },
+        "entityKeys": { "type": "array", "items": { "type": "string" } },
+        "topicTags": { "type": "array", "items": { "type": "string" } },
+        "relevanceScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "forceWeekNumber": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-W[0-9]{2}$",
+          "description": "Optional override to pin week bucketing deterministically."
+        }
+      }
+    },
+    "ExpectationTemplate": {
+      "type": "object",
+      "description": "Reusable expectations; referenced by cases via appliesTemplates.",
+      "additionalProperties": false,
+      "properties": {
+        "expected": { "$ref": "#/$defs/ExpectedPersistedOutputs" },
+        "assertions": { "$ref": "#/$defs/CaseAssertions" }
+      }
+    },
+    "GoldenCase": {
+      "type": "object",
+      "required": ["caseId", "name", "run", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "caseId": {
+          "type": "string",
+          "description": "Stable ID (use fnv-like in your repo if desired)"
+        },
+        "name": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "notes": { "type": "string" },
+        "appliesTemplates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Template IDs in suite.templates to merge in (later templates override earlier)."
+        },
+        "run": {
+          "description": "Case-local overrides; merged on top of suite.defaults.run",
+          "allOf": [{ "$ref": "#/$defs/RunConfig" }]
+        },
+        "expected": { "$ref": "#/$defs/ExpectedPersistedOutputs" },
+        "seed": { "$ref": "#/$defs/SeedSpec" },
+        "assertions": {
+          "description": "Case-local assertion overrides; merged on top of suite.defaults.assertions",
+          "allOf": [{ "$ref": "#/$defs/CaseAssertions" }]
+        }
+      }
+    },
+    "SeedSpec": {
+      "type": "object",
+      "description": "Deterministic preconditions for the case (e.g., seeded thread or KG claims).",
+      "additionalProperties": false,
+      "properties": {
+        "existingThread": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["threadId", "name", "thesis", "entityKeys", "createdAt"],
+          "properties": {
+            "threadId": { "type": "string" },
+            "name": { "type": "string" },
+            "thesis": { "type": "string" },
+            "entityKeys": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "createdAt": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "knowledgeGraph": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceType", "sourceId", "name", "createdAt", "claims"],
+          "properties": {
+            "sourceType": { "type": "string", "enum": ["entity", "theme", "artifact", "session"] },
+            "sourceId": { "type": "string" },
+            "name": { "type": "string" },
+            "createdAt": { "type": "integer", "minimum": 0 },
+            "claims": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["subject", "predicate", "object", "claimText", "isHighConfidence", "sourceDocIds"],
+                "properties": {
+                  "subject": { "type": "string" },
+                  "predicate": { "type": "string" },
+                  "object": { "type": "string" },
+                  "claimText": { "type": "string" },
+                  "isHighConfidence": { "type": "boolean" },
+                  "sourceDocIds": { "type": "array", "items": { "type": "string" } },
+                  "sourceSnippets": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "edges": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["fromIndex", "toIndex", "edgeType", "isStrong"],
+                "properties": {
+                  "fromIndex": { "type": "integer", "minimum": 0 },
+                  "toIndex": { "type": "integer", "minimum": 0 },
+                  "edgeType": {
+                    "type": "string",
+                    "enum": ["supports", "contradicts", "mentions", "causes", "relatedTo", "partOf", "precedes"]
+                  },
+                  "isStrong": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ExpectedPersistedOutputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "threads": { "$ref": "#/$defs/ExpectedCollection" },
+        "events": { "$ref": "#/$defs/ExpectedCollection" },
+        "posts": { "$ref": "#/$defs/ExpectedCollection" },
+        "evidenceArtifacts": { "$ref": "#/$defs/ExpectedCollection" },
+        "searchLogs": { "$ref": "#/$defs/ExpectedCollection" },
+        "workflowTrace": {
+          "type": "object",
+          "description": "Assertions about persisted workflow trace/checkpoint surface keyed by workflowId.",
+          "additionalProperties": false,
+          "properties": {
+            "requireWorkflowId": { "type": "boolean", "default": true },
+            "requireConfigHash": { "type": "boolean", "default": true },
+            "requireCodeVersion": { "type": "boolean", "default": false },
+            "requireReplayDigest": { "type": "boolean", "default": true },
+            "expectReplayMode": {
+              "type": "string",
+              "enum": ["deterministic", "record_replay", "live"]
+            }
+          }
+        }
+      }
+    },
+    "ExpectedCollection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "count": { "$ref": "#/$defs/CountExpectation" },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ExpectedItem" },
+          "description": "Optional item-level expectations. Keep this sparse for authoring efficiency."
+        }
+      }
+    },
+    "CountExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eq": { "type": "integer", "minimum": 0 },
+        "gte": { "type": "integer", "minimum": 0 },
+        "lte": { "type": "integer", "minimum": 0 }
+      },
+      "oneOf": [
+        { "required": ["eq"] },
+        { "required": ["gte"] },
+        { "required": ["lte"] },
+        { "required": ["gte", "lte"] }
+      ]
+    },
+    "ExpectedItem": {
+      "type": "object",
+      "required": ["where", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "where": {
+          "description": "How to locate the persisted item(s). Runner should filter within workflowId scope first, then apply this predicate.",
+          "$ref": "#/$defs/Predicate"
+        },
+        "expect": {
+          "description": "Field expectations using matchers. Intended to be partial (only assert what matters).",
+          "$ref": "#/$defs/FieldExpectations"
+        }
+      }
+    },
+    "Predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["byField", "byComputedId", "byTextContains", "byIndex"] },
+        "index": { "type": "integer", "minimum": 0, "description": "Index into an ordered list (e.g., dedup decisions)." },
+        "field": { "type": "string", "description": "e.g., headline, canonicalUrl, threadId, eventId" },
+        "op": { "type": "string", "enum": ["eq", "in", "contains", "regex"] },
+        "value": {},
+        "values": { "type": "array", "items": {} },
+        "computedId": { "$ref": "#/$defs/ComputedIdSpec" },
+        "textFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["headline", "summary"]
+        },
+        "textContains": { "type": "string" }
+      },
+      "oneOf": [
+        {
+          "properties": { "type": { "const": "byField" } },
+          "required": ["type", "field", "op"],
+          "additionalProperties": false
+        },
+        {
+          "properties": { "type": { "const": "byComputedId" } },
+          "required": ["type", "computedId"],
+          "additionalProperties": false
+        },
+        {
+          "properties": { "type": { "const": "byTextContains" } },
+          "required": ["type", "textContains"],
+          "additionalProperties": false
+        },
+        {
+          "properties": { "type": { "const": "byIndex" } },
+          "required": ["type", "index"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ComputedIdSpec": {
+      "type": "object",
+      "description": "Author-friendly way to avoid hardcoding stable IDs. Runner computes expected ID.",
+      "additionalProperties": false,
+      "required": ["algo", "prefix", "inputs"],
+      "properties": {
+        "algo": { "type": "string", "enum": ["fnv1a32Hex", "sha256Hex"] },
+        "prefix": { "type": "string", "description": "e.g., ne_, nt_, ea_, websrc_" },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ComputedInput" },
+          "minItems": 1
+        },
+        "joinWith": { "type": "string", "default": "|" }
+      }
+    },
+    "ComputedInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["injectedNewsItem", "persistedItem", "literal"],
+          "description": "Where to pull input tokens from."
+        },
+        "path": {
+          "type": "string",
+          "description": "JSONPath-like string, e.g., $.url or $.occurredAt. For persistedItem, runner uses the candidate item."
+        },
+        "value": { "description": "Literal value if source=literal." }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "literal" } } },
+          "then": { "required": ["value"] }
+        },
+        {
+          "if": { "properties": { "source": { "const": "injectedNewsItem" } } },
+          "then": { "required": ["path"] }
+        },
+        {
+          "if": { "properties": { "source": { "const": "persistedItem" } } },
+          "then": { "required": ["path"] }
+        }
+      ]
+    },
+    "FieldExpectations": {
+      "type": "object",
+      "description": "Map of fieldName -> matcher. Keep sparse: only assert what matters.",
+      "additionalProperties": { "$ref": "#/$defs/Matcher" }
+    },
+    "Matcher": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eq": {},
+        "in": { "type": "array", "items": {} },
+        "contains": { "type": "string" },
+        "regex": { "type": "string" },
+        "gte": { "type": "number" },
+        "lte": { "type": "number" },
+        "between": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "exists": { "type": "boolean" },
+        "len": { "$ref": "#/$defs/CountExpectation" },
+        "allOf": { "type": "array", "items": { "$ref": "#/$defs/Matcher" } },
+        "anyOf": { "type": "array", "items": { "$ref": "#/$defs/Matcher" } }
+      },
+      "oneOf": [
+        { "required": ["eq"] },
+        { "required": ["in"] },
+        { "required": ["contains"] },
+        { "required": ["regex"] },
+        { "required": ["gte"] },
+        { "required": ["lte"] },
+        { "required": ["between"] },
+        { "required": ["exists"] },
+        { "required": ["len"] },
+        { "required": ["allOf"] },
+        { "required": ["anyOf"] }
+      ]
+    },
+    "GlobalAssertions": {
+      "type": "object",
+      "required": ["metrics"],
+      "additionalProperties": false,
+      "properties": {
+        "metrics": { "$ref": "#/$defs/MetricsAssertions" },
+        "dedup": { "$ref": "#/$defs/DedupAssertions" },
+        "claims": { "$ref": "#/$defs/ClaimAssertions" }
+      }
+    },
+    "CaseAssertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "metrics": { "$ref": "#/$defs/MetricsAssertions" },
+        "dedup": { "$ref": "#/$defs/DedupAssertions" },
+        "claims": { "$ref": "#/$defs/ClaimAssertions" }
+      }
+    },
+    "MetricsAssertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "citationCoverageMin": { "type": "number", "minimum": 0, "maximum": 1 },
+        "claimCoverageMin": { "type": "number", "minimum": 0, "maximum": 1 },
+        "unsupportedClaimRateMax": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hasSearchLogs": { "type": "boolean" }
+      }
+    },
+    "DedupAssertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requireStableEventIds": { "type": "boolean", "default": true },
+        "requireDeterministicDedupDecisions": { "type": "boolean", "default": true },
+        "expectedDecisions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/DedupDecisionExpectation" }
+        }
+      }
+    },
+    "DedupDecisionExpectation": {
+      "type": "object",
+      "required": ["where", "decision"],
+      "additionalProperties": false,
+      "properties": {
+        "where": { "$ref": "#/$defs/Predicate" },
+        "decision": {
+          "type": "object",
+          "required": ["action", "stage"],
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "type": "string",
+              "enum": ["create", "skip", "link_update", "revise_thesis", "spawn_thread", "needs_review"]
+            },
+            "stage": {
+              "type": "string",
+              "enum": ["no_match", "canonical_url", "content_hash", "near_duplicate", "materiality_check", "manual_override"]
+            },
+            "linkedToEventId": {
+              "type": "string",
+              "description": "If action=link_update, expected prior eventId."
+            }
+          }
+        }
+      }
+    },
+    "ClaimAssertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requireEvidenceBinding": { "type": "boolean", "default": true },
+        "minEvidenceArtifactsPerClaim": { "type": "integer", "minimum": 0, "default": 1 },
+        "maxUnsupportedClaims": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

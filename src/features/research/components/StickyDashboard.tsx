@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart, CheckCircle2, Circle, Loader2 } from "lucide-react";
@@ -141,8 +141,10 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
   const agentCount = data.agentCount;
 
   // Build evidence map for tooltip display
-  const evidenceMap = new Map(
-    evidenceCtx.getEvidenceList().map((ev) => [ev.id, ev])
+  const evidenceList = evidenceCtx.getEvidenceList();
+  const evidenceMap = useMemo(
+    () => new Map(evidenceList.map((ev) => [ev.id, ev])),
+    [evidenceList]
   );
 
   // Calculate top market share for the donut center
@@ -288,7 +290,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
             const displayContext = stat.context ?? statHint;
             const displayValue = formatKeyStatValue(stat.label, stat.value);
             return (
-              <div key={i} className="flex flex-col">
+              <div key={stat.label} className="flex flex-col">
                 <span
                   className="text-[8px] text-stone-400 uppercase tracking-wider mb-0.5"
                   title={statHint ?? undefined}
@@ -383,6 +385,9 @@ const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
   );
 };
 
+// Pre-computed stable opacity values to avoid Math.random() on every render
+const PULSE_OPACITIES = [0.85, 0.45, 0.72, 0.33, 0.91, 0.58, 0.27, 0.69, 0.42, 0.78, 0.55, 0.36];
+
 const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
   const activeStep = workflowSteps.find(s => s.status === 'in_progress');
   const completedCount = workflowSteps.filter(s => s.status === 'completed').length;
@@ -392,7 +397,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
     <div className="mt-8 pt-6 border-t border-stone-200">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="px-1.5 py-1 bg-emerald-900 text-[#faf9f6] text-[9px] font-bold uppercase tracking-widest">
+          <div className="px-1.5 py-1 bg-emerald-900 text-canvas-warm text-[9px] font-bold uppercase tracking-widest">
             Agent Workflow
           </div>
           <div className="text-[10px] font-mono text-stone-500 uppercase tracking-wider">
@@ -408,8 +413,8 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
       </div>
 
       <div className="space-y-3">
-        {workflowSteps.slice(0, 3).map((step, i) => (
-          <div key={i} className="flex items-center gap-3 group">
+        {workflowSteps.slice(0, 3).map((step) => (
+          <div key={step.name} className="flex items-center gap-3 group">
             <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${step.status === 'completed' ? 'bg-emerald-900 border-emerald-900' :
               step.status === 'in_progress' ? 'border-emerald-900 animate-pulse' :
                 'border-stone-200'
@@ -442,7 +447,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
             key={i}
             className={`w-1.5 h-1.5 bg-emerald-900 rounded-none transition-opacity duration-1000`}
             style={{
-              opacity: activeStep ? Math.random() * 0.8 + 0.2 : 0.05,
+              opacity: activeStep ? PULSE_OPACITIES[i] : 0.05,
               animationDelay: `${i * 0.1}s`
             }}
           />

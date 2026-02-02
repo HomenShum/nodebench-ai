@@ -44,21 +44,102 @@ export function parseAndValidateBrief(jsonString: string): {
   validation: ValidationResult;
   parseError?: string;
 } {
-  // Try to parse JSON
-  let payload: unknown;
-  try {
-    payload = JSON.parse(jsonString);
-  } catch (e) {
+  const raw = typeof jsonString === "string" ? jsonString.trim() : "";
+
+  const tryParse = (s: string): { ok: true; value: unknown } | { ok: false; error: string } => {
+    try {
+      return { ok: true, value: JSON.parse(s) as unknown };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  };
+
+  const extractLikelyJsonObject = (s: string): string | null => {
+    const start = s.indexOf("{");
+    if (start < 0) return null;
+    const end = s.lastIndexOf("}");
+    if (end > start) return s.slice(start, end + 1);
+    return null;
+  };
+
+  const repairTruncatedJson = (s: string): string | null => {
+    const start = s.indexOf("{");
+    if (start < 0) return null;
+    const t = s.slice(start);
+
+    let inString = false;
+    let escape = false;
+    let brace = 0;
+    let bracket = 0;
+    let lastBalancedPos = -1;
+
+    for (let i = 0; i < t.length; i++) {
+      const ch = t[i];
+      if (inString) {
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (ch === "\\") {
+          escape = true;
+          continue;
+        }
+        if (ch === "\"") {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (ch === "\"") {
+        inString = true;
+        continue;
+      }
+      if (ch === "{") brace++;
+      else if (ch === "}") brace = Math.max(0, brace - 1);
+      else if (ch === "[") bracket++;
+      else if (ch === "]") bracket = Math.max(0, bracket - 1);
+
+      if (!inString && brace === 0 && bracket === 0) lastBalancedPos = i + 1;
+    }
+
+    if (lastBalancedPos > 0) return t.slice(0, lastBalancedPos);
+
+    // If it never balanced, attempt a minimal close-out (works for common truncation-at-end failures).
+    let repaired = t;
+    if (inString) repaired += "\"";
+    if (bracket > 0) repaired += "]".repeat(bracket);
+    if (brace > 0) repaired += "}".repeat(brace);
+    return repaired;
+  };
+
+  // Try parse JSON as-is.
+  let parsed = tryParse(raw);
+
+  // Common failure: model returns extra text; try extract { ... }.
+  if (!parsed.ok) {
+    const extracted = extractLikelyJsonObject(raw);
+    if (extracted) parsed = tryParse(extracted);
+  }
+
+  // Common failure: output truncated; try close braces/brackets.
+  if (!parsed.ok && /Unexpected end of JSON input/i.test(parsed.error)) {
+    const repaired = repairTruncatedJson(raw);
+    if (repaired) parsed = tryParse(repaired);
+  }
+
+  if (!parsed.ok) {
     return {
       payload: null,
       validation: {
         valid: false,
-        errors: [`JSON parse error: ${e instanceof Error ? e.message : String(e)}`],
+        errors: [`JSON parse error: ${parsed.error}`],
         warnings: []
       },
-      parseError: e instanceof Error ? e.message : String(e)
+      parseError: parsed.error
     };
   }
+
+  const payload = parsed.value;
 
   // Validate the parsed payload
   const validation = validateBriefPayload(payload);

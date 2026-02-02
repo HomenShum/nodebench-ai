@@ -5,47 +5,48 @@
  * Shows cache hit rates, batch job savings, and trends over time.
  */
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { DollarSign, TrendingDown, Zap, Clock, Database, Users } from "lucide-react";
+import { CostDashboardSkeleton } from "./skeletons";
 
 export function CostDashboard() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
 
-  const now = Date.now();
-  const startTime =
-    timeRange === "24h" ? now - 24 * 60 * 60 * 1000 :
-    timeRange === "7d" ? now - 7 * 24 * 60 * 60 * 1000 :
-    now - 30 * 24 * 60 * 60 * 1000;
+  // Memoize time calculations to prevent infinite re-renders
+  const { startTime, endTime } = useMemo(() => {
+    const now = Date.now();
+    const start =
+      timeRange === "24h" ? now - 24 * 60 * 60 * 1000 :
+      timeRange === "7d" ? now - 7 * 24 * 60 * 60 * 1000 :
+      now - 30 * 24 * 60 * 60 * 1000;
+    return { startTime: start, endTime: now };
+  }, [timeRange]);
 
   // Fetch metrics
   const metrics = useQuery(api.domains.observability.traces.getAggregatedMetrics, {
     startTime,
-    endTime: now,
+    endTime,
   });
 
   const costByModel = useQuery(api.domains.observability.traces.getCostByModel, {
     startTime,
-    endTime: now,
+    endTime,
   });
 
   const costByUser = useQuery(api.domains.observability.traces.getCostByUser, {
     startTime,
-    endTime: now,
+    endTime,
   });
 
   const cacheStats = useQuery(api.domains.observability.traces.getCacheHitRate, {
     startTime,
-    endTime: now,
+    endTime,
   });
 
   if (!metrics || !costByModel || !costByUser || !cacheStats) {
-    return (
-      <div className="p-8 text-center text-[var(--text-secondary)]">
-        Loading cost metrics...
-      </div>
-    );
+    return <CostDashboardSkeleton />;
   }
 
   return (

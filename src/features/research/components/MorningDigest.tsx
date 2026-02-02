@@ -722,7 +722,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   ];
 
   return (
-    <div className="relative rounded-2xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] via-[#faf9f6] to-stone-100/50 dark:from-stone-900 dark:via-stone-900 dark:to-stone-800/50 backdrop-blur-xl shadow-xl shadow-stone-900/5 dark:shadow-black/30 overflow-hidden">
+    <div className="relative rounded-2xl border border-stone-200 bg-gradient-to-br from-canvas-warm via-canvas-warm to-stone-100/50 backdrop-blur-xl shadow-xl shadow-stone-900/5 overflow-hidden">
       {/* Elegant gradient accent bar - warm black/amber */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-stone-800 via-amber-700 to-stone-600 opacity-90" />
 
@@ -738,14 +738,14 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-600 dark:text-stone-400">Executive Synthesis</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-stone-600">Executive Synthesis</p>
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
                 <Activity className="w-2.5 h-2.5 text-amber-600 animate-pulse" />
                 <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">LIVE</span>
               </span>
             </div>
-            <p className="text-2xl font-serif font-bold text-stone-900 dark:text-stone-100 leading-tight tracking-tight">
-              Good morning, <span className="text-stone-700 dark:text-amber-200">{userName}</span>
+            <p className="text-2xl font-serif font-bold text-stone-900 leading-tight tracking-tight">
+              Good morning, <span className="text-stone-700">{userName}</span>
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <Clock className="w-3 h-3 text-stone-400" />
@@ -760,20 +760,20 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 <div
                   key={stat.id}
                   className={`group relative flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 hover:scale-105 cursor-default ${stat.sentiment === 'bullish'
-                      ? 'bg-gradient-to-r from-stone-100 to-amber-50 dark:from-stone-800 dark:to-amber-900/20 border border-amber-300/50 dark:border-amber-600/30 hover:border-amber-400'
-                      : stat.sentiment === 'bearish'
-                        ? 'bg-gradient-to-r from-stone-100 to-rose-50 dark:from-stone-800 dark:to-rose-900/20 border border-rose-300/50 dark:border-rose-600/30 hover:border-rose-400'
-                        : 'bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 hover:border-stone-400'
+                    ? 'bg-gradient-to-r from-stone-100 to-amber-50 border border-amber-300/50 hover:border-amber-400'
+                    : stat.sentiment === 'bearish'
+                      ? 'bg-gradient-to-r from-stone-100 to-rose-50 border border-rose-300/50 hover:border-rose-400'
+                      : 'bg-stone-100/50 border border-stone-200 hover:border-stone-400'
                     }`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-amber-700 dark:text-amber-400'
-                      : stat.sentiment === 'bearish' ? 'text-rose-700 dark:text-rose-400'
-                        : 'text-stone-800 dark:text-stone-200'
+                  <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-amber-700'
+                    : stat.sentiment === 'bearish' ? 'text-rose-700'
+                      : 'text-stone-800'
                     }`}>
                     {stat.value}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 dark:text-stone-400">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
                     {stat.label}
                   </span>
                 </div>
@@ -804,7 +804,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       {isExpanded && (
         <div className="px-6 pb-6 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
           {/* Executive Summary - Premium glassmorphism card */}
-          <div className="relative mt-4 rounded-2xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] to-stone-100/50 dark:from-stone-900 dark:to-stone-800/50 p-5 shadow-lg shadow-stone-900/5 dark:shadow-black/20 overflow-hidden">
+          <div className="relative mt-4 rounded-2xl border border-stone-200 bg-gradient-to-br from-canvas-warm to-stone-100/50 p-5 shadow-lg shadow-stone-900/5 overflow-hidden">
             {/* Decorative gradient orb - warm beige/amber */}
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-stone-300/20 dark:from-amber-900/20 dark:to-stone-700/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -815,7 +815,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <BarChart3 className="w-4 h-4 text-stone-700 dark:text-stone-300" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">AI Intelligence Brief</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600">AI Intelligence Brief</span>
                     <p className="text-[9px] text-stone-500 dark:text-stone-500 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
                   </div>
                 </div>
@@ -824,7 +824,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <span className="text-[9px] font-medium text-stone-600 dark:text-stone-400">Verified</span>
                 </div>
               </div>
-              <div className="text-[15px] font-serif text-stone-800 dark:text-stone-200 leading-relaxed tracking-[-0.01em]">
+              <div className="text-[15px] font-serif text-stone-800 leading-relaxed tracking-[-0.01em]">
                 <InteractiveSpanParser
                   text={fullSummary}
                   citations={citationLibrary}
@@ -842,17 +842,17 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {densityStats.slice(0, 4).map((stat, idx) => (
               <div
                 key={stat.label}
-                className="group relative rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 hover:bg-gradient-to-br hover:from-[#faf9f6] hover:to-stone-100/50 dark:hover:from-stone-900 dark:hover:to-stone-800/50 px-4 py-3 transition-all duration-300 hover:shadow-lg hover:shadow-stone-900/5 hover:scale-[1.02] hover:border-stone-400/50 dark:hover:border-stone-600 cursor-default"
+                className="group relative rounded-xl border border-stone-200 bg-canvas-warm hover:bg-gradient-to-br hover:from-canvas-warm hover:to-stone-100/50 px-4 py-3 transition-all duration-300 hover:shadow-lg hover:shadow-stone-900/5 hover:scale-[1.02] hover:border-stone-400/50 cursor-default"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold text-stone-800 dark:text-stone-100 leading-none">{stat.value}</span>
+                  <span className="text-2xl font-bold text-stone-800 leading-none">{stat.value}</span>
                   {stat.value > 0 && (
-                    <ArrowUpRight className="w-3 h-3 text-amber-600 dark:text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowUpRight className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
-                <div className="mt-1.5 text-[10px] font-semibold text-stone-600 dark:text-stone-400 uppercase tracking-widest">{stat.label}</div>
-                <div className="mt-0.5 text-[9px] text-stone-500 dark:text-stone-500">{stat.hint}</div>
+                <div className="mt-1.5 text-[10px] font-semibold text-stone-600 uppercase tracking-widest">{stat.label}</div>
+                <div className="mt-0.5 text-[9px] text-stone-500">{stat.hint}</div>
               </div>
             ))}
           </div>
@@ -862,40 +862,40 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {/* Left: Signals + Sources */}
             <div className="space-y-4">
               {/* Top Signals - Premium card */}
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-stone-200 bg-canvas-warm p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700/30">
-                      <Zap className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                    <div className="p-1.5 rounded-lg bg-amber-100/50 border border-amber-200/50">
+                      <Zap className="w-3.5 h-3.5 text-amber-700" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Top Signals</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600">Top Signals</span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500">{signalHighlights.length} items</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">{signalHighlights.length} items</span>
                 </div>
                 <div className="space-y-2">
                   {signalHighlights.slice(0, 3).map((item, idx) => (
                     <div
                       key={`${item.label}-${idx}`}
-                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-stone-200 dark:hover:border-stone-700 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 transition-all duration-200"
+                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-stone-200 hover:bg-stone-100/50 transition-all duration-200"
                     >
                       <button
                         type="button"
                         onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
                         className="flex items-start gap-3 flex-1 text-left"
                       >
-                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
-                            : item.label === 'Risk' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
-                              : 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
+                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-stone-200/50 text-stone-700 border border-stone-300/50'
+                          : item.label === 'Risk' ? 'bg-rose-100/50 text-rose-700 border border-rose-200/50'
+                            : 'bg-amber-100/50 text-amber-700 border border-amber-200/50'
                           }`}>
                           {item.label}
                         </span>
-                        <span className="text-sm text-stone-700 dark:text-stone-300 leading-snug line-clamp-2 group-hover:text-stone-900 dark:group-hover:text-stone-100 transition-colors">{item.text}</span>
+                        <span className="text-sm text-stone-700 leading-snug line-clamp-2 group-hover:text-stone-900 transition-colors">{item.text}</span>
                       </button>
                       {item.linkedEntity && (
                         <button
                           type="button"
                           onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                          className="shrink-0 px-2 py-1 text-[9px] font-mono font-medium text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 bg-stone-100 dark:bg-stone-800 rounded-md border border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 transition-all"
+                          className="shrink-0 px-2 py-1 text-[9px] font-mono font-medium text-stone-500 hover:text-stone-800 bg-stone-100 rounded-md border border-stone-200 hover:border-stone-400 transition-all"
                           title={`Open entity: ${item.linkedEntity}`}
                         >
                           {item.linkedEntity}
@@ -907,13 +907,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </div>
 
               {/* Sources - Enhanced with visual bars */}
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-stone-200 bg-canvas-warm p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-stone-200/50 dark:bg-stone-700/50 border border-stone-300/50 dark:border-stone-600/50">
-                      <Globe2 className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+                    <div className="p-1.5 rounded-lg bg-stone-200/50 border border-stone-300/50">
+                      <Globe2 className="w-3.5 h-3.5 text-stone-600" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Sources</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600">Sources</span>
                   </div>
                   <span className="text-[10px] text-stone-500">{totalSourceCount} items</span>
                 </div>
@@ -921,19 +921,19 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   {topSources.slice(0, 6).map((source, idx) => (
                     <div
                       key={source.name}
-                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100/50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 transition-all duration-200"
+                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-100/50 border border-stone-200 hover:border-stone-400 transition-all duration-200"
                     >
                       {/* Visual bar indicator - warm amber */}
                       <div
                         className="absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-stone-600 to-amber-600 rounded-b-lg transition-all duration-300"
                         style={{ width: `${(source.count / maxSourceCount) * 100}%` }}
                       />
-                      <span className="text-[11px] font-medium text-stone-700 dark:text-stone-300">{source.name}</span>
-                      <span className="text-[10px] font-bold text-stone-800 dark:text-stone-200">{source.count}</span>
+                      <span className="text-[11px] font-medium text-stone-700">{source.name}</span>
+                      <span className="text-[10px] font-bold text-stone-800">{source.count}</span>
                     </div>
                   ))}
                   {topSources.length > 6 && (
-                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-stone-100/30 dark:bg-stone-800/30 text-[10px] text-stone-500">
+                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-stone-100/30 text-[10px] text-stone-500">
                       +{topSources.length - 6} more
                     </span>
                   )}
@@ -944,13 +944,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {/* Right: Tags + Entities + Actions */}
             <div className="space-y-4">
               {/* Tags - Enhanced with hover effects */}
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-stone-200 bg-canvas-warm p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-stone-200/50 dark:bg-stone-700/50 border border-stone-300/50 dark:border-stone-600/50">
-                      <TrendingUp className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+                    <div className="p-1.5 rounded-lg bg-stone-200/50 border border-stone-300/50">
+                      <TrendingUp className="w-3.5 h-3.5 text-stone-600" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Trending</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600">Trending</span>
                   </div>
                   <span className="text-[10px] text-stone-500">{digestItems.length} signals</span>
                 </div>
@@ -960,22 +960,22 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={tag.tag}
                       type="button"
                       onClick={() => onItemClick?.({ text: `Track #${tag.tag} and summarize the latest movement.`, relevance: 'medium', linkedEntity: tag.tag })}
-                      className="group px-3 py-1.5 text-[11px] font-medium border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 hover:border-stone-400 dark:hover:border-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-all duration-200"
+                      className="group px-3 py-1.5 text-[11px] font-medium border border-stone-200 bg-canvas-warm text-stone-700 hover:text-stone-900 hover:border-stone-400 hover:bg-stone-100 rounded-lg transition-all duration-200"
                     >
-                      <span className="text-amber-700 dark:text-amber-400">#</span>{tag.tag}
-                      <span className="ml-1.5 text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-400">({tag.count})</span>
+                      <span className="text-amber-700">#</span>{tag.tag}
+                      <span className="ml-1.5 text-stone-500 group-hover:text-stone-600">({tag.count})</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Entities - Enhanced with better visual treatment */}
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-stone-200 bg-canvas-warm p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-lg bg-stone-200/50 dark:bg-stone-700/50 border border-stone-300/50 dark:border-stone-600/50">
-                    <Building2 className="w-3.5 h-3.5 text-stone-600 dark:text-stone-400" />
+                  <div className="p-1.5 rounded-lg bg-stone-200/50 border border-stone-300/50">
+                    <Building2 className="w-3.5 h-3.5 text-stone-600" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Key Entities</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600">Key Entities</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topEntities.slice(0, 6).map((entity, idx) => (
@@ -983,7 +983,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={entity}
                       type="button"
                       onClick={() => onEntityClick?.(entity, "company")}
-                      className="group px-3 py-1.5 text-[11px] font-semibold border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] to-stone-100/50 dark:from-stone-900 dark:to-stone-800/50 text-stone-700 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-stone-100 rounded-lg transition-all duration-200 hover:shadow-sm"
+                      className="group px-3 py-1.5 text-[11px] font-semibold border border-stone-200 bg-gradient-to-br from-canvas-warm to-stone-100/50 text-stone-700 hover:border-stone-400 hover:text-stone-900 rounded-lg transition-all duration-200 hover:shadow-sm"
                     >
                       {entity}
                       <ArrowUpRight className="inline-block ml-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -993,12 +993,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </div>
 
               {/* Agent Shortcuts - Premium CTA buttons */}
-              <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-gradient-to-br from-[#faf9f6] to-amber-50/30 dark:from-stone-900 dark:to-amber-900/10 p-4 shadow-sm">
+              <div className="rounded-xl border border-stone-200 bg-gradient-to-br from-canvas-warm to-amber-50/30 p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-lg bg-stone-800/10 dark:bg-stone-200/10 border border-stone-300/50 dark:border-stone-600/50">
-                    <Zap className="w-3.5 h-3.5 text-stone-700 dark:text-stone-300" />
+                  <div className="p-1.5 rounded-lg bg-stone-800/10 border border-stone-300/50">
+                    <Zap className="w-3.5 h-3.5 text-stone-700" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600 dark:text-stone-400">Quick Actions</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-stone-600">Quick Actions</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {agentLaunchpad.slice(0, 3).map((item, idx) => (
@@ -1006,7 +1006,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={item.label}
                       type="button"
                       onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
-                      className="group flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold border border-stone-300 dark:border-stone-600 bg-gradient-to-r from-stone-100 to-amber-50/50 dark:from-stone-800 dark:to-amber-900/20 text-stone-700 dark:text-stone-300 hover:from-stone-200 hover:to-amber-100/50 dark:hover:from-stone-700 dark:hover:to-amber-800/30 hover:border-stone-400 dark:hover:border-stone-500 rounded-lg transition-all duration-200"
+                      className="group flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold border border-stone-300 bg-gradient-to-r from-stone-100 to-amber-50/50 text-stone-700 hover:from-stone-200 hover:to-amber-100/50 hover:border-stone-400 rounded-lg transition-all duration-200"
                     >
                       <Sparkles className="w-3 h-3" />
                       {item.label.replace('Deep agent: ', '')}
@@ -1019,13 +1019,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
           {/* Sample Data Banner - Enhanced */}
           {isUsingSampleData && digestSections.length > 0 && (
-            <div className="p-4 bg-gradient-to-r from-stone-100 to-amber-50/50 dark:from-stone-800 dark:to-amber-900/20 border border-stone-200 dark:border-stone-700 rounded-xl flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-stone-200/50 dark:bg-stone-700/50">
-                <Sparkles className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+            <div className="p-4 bg-gradient-to-r from-stone-100 to-amber-50/50 border border-stone-200 rounded-xl flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-stone-200/50">
+                <Sparkles className="w-4 h-4 text-stone-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">Sample Intelligence Feed</p>
-                <p className="text-xs text-stone-500 dark:text-stone-500 mt-0.5">Connect data sources or track hashtags to see real-time signals.</p>
+                <p className="text-sm font-semibold text-stone-700">Sample Intelligence Feed</p>
+                <p className="text-xs text-stone-500 mt-0.5">Connect data sources or track hashtags to see real-time signals.</p>
               </div>
             </div>
           )}
@@ -1035,25 +1035,25 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {digestSections.map((section, sectionIdx) => (
               <div
                 key={section.id}
-                className="group rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 hover:shadow-lg hover:shadow-stone-900/5 dark:hover:shadow-black/20 transition-all duration-300 overflow-hidden"
+                className="group rounded-xl border border-stone-200 bg-canvas-warm hover:shadow-lg hover:shadow-stone-900/5 transition-all duration-300 overflow-hidden"
                 style={{ animationDelay: `${sectionIdx * 100}ms` }}
               >
                 {/* Section Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-stone-200/50 dark:border-stone-700/50 bg-gradient-to-r from-transparent via-stone-100/30 dark:via-stone-800/30 to-transparent">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-stone-200/50 bg-gradient-to-r from-transparent via-stone-100/30 to-transparent">
                   <div className="flex items-center gap-4">
-                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 ${section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
-                        : section.sentiment === 'bearish' ? 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-700/30'
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 border border-stone-200 dark:border-stone-700'
+                    <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-300 ${section.sentiment === 'bullish' ? 'bg-amber-100/50 text-amber-700 border border-amber-200/50'
+                      : section.sentiment === 'bearish' ? 'bg-rose-100/50 text-rose-700 border border-rose-200/50'
+                        : 'bg-stone-100 text-stone-600 border border-stone-200'
                       }`}>
                       {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
-                      <p className="text-base font-serif font-bold text-stone-800 dark:text-stone-200">{section.title}</p>
+                      <p className="text-base font-serif font-bold text-stone-800">{section.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-widest">{section.items.length} signals</span>
                         {section.sentiment !== 'neutral' && (
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
-                              : 'bg-rose-100/50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'
+                          <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-amber-100/50 text-amber-700'
+                            : 'bg-rose-100/50 text-rose-700'
                             }`}>
                             {section.sentiment}
                           </span>
@@ -1064,7 +1064,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
-                    className="p-2.5 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-700/50 transition-all duration-200"
+                    className="p-2.5 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-200/50 transition-all duration-200"
                   >
                     {expandedSections.has(section.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
@@ -1072,21 +1072,21 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
                 {/* Section Items */}
                 {expandedSections.has(section.id) && (
-                  <div className="divide-y divide-stone-200/50 dark:divide-stone-700/50">
+                  <div className="divide-y divide-stone-200/50">
                     {section.items.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
-                        className="group/item px-5 py-4 flex items-start justify-between gap-4 hover:bg-stone-100/50 dark:hover:bg-stone-800/50 transition-all duration-200"
+                        className="group/item px-5 py-4 flex items-start justify-between gap-4 hover:bg-stone-100/50 transition-all duration-200"
                       >
                         <div
                           onClick={() => onItemClick?.(item)}
                           className="flex items-start gap-3 flex-1 cursor-pointer"
                         >
-                          <span className={`mt-2 h-2 w-2 rounded-full transition-all duration-300 ${item.relevance === 'high' ? 'bg-stone-700 dark:bg-stone-300 shadow-sm shadow-stone-500/50'
-                              : item.relevance === 'medium' ? 'bg-amber-600 dark:bg-amber-400 shadow-sm shadow-amber-500/50'
-                                : 'bg-stone-400 dark:bg-stone-600'
+                          <span className={`mt-2 h-2 w-2 rounded-full transition-all duration-300 ${item.relevance === 'high' ? 'bg-stone-700 shadow-sm shadow-stone-500/50'
+                            : item.relevance === 'medium' ? 'bg-amber-600 shadow-sm shadow-amber-500/50'
+                              : 'bg-stone-400'
                             } group-hover/item:scale-125`} />
-                          <div className="text-sm font-medium text-stone-700 dark:text-stone-300 leading-relaxed group-hover/item:text-stone-900 dark:group-hover/item:text-stone-100 transition-colors">
+                          <div className="text-sm font-medium text-stone-700 leading-relaxed group-hover/item:text-stone-900 transition-colors">
                             <CrossLinkedText
                               text={item.text}
                               entities={entityLibrary.entities}
@@ -1100,7 +1100,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                             <button
                               type="button"
                               onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                              className="inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold font-mono text-stone-500 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 uppercase tracking-tight hover:text-stone-800 dark:hover:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500 transition-all"
+                              className="inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold font-mono text-stone-500 bg-stone-100 border border-stone-200 uppercase tracking-tight hover:text-stone-800 hover:border-stone-400 transition-all"
                               title={`Open entity: ${item.linkedEntity}`}
                             >
                               {item.linkedEntity}
@@ -1109,14 +1109,14 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           <button
                             type="button"
                             onClick={() => onItemClick?.(item)}
-                            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-700/50 transition-all"
+                            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-200/50 transition-all"
                             title="Open signal"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide ${item.relevance === 'high' ? 'bg-stone-200/50 dark:bg-stone-700/50 text-stone-700 dark:text-stone-300 border border-stone-300/50 dark:border-stone-600/50'
-                              : item.relevance === 'medium' ? 'bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-700/30'
-                                : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border border-stone-200 dark:border-stone-700'
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide ${item.relevance === 'high' ? 'bg-stone-200/50 text-stone-700 border border-stone-300/50'
+                            : item.relevance === 'medium' ? 'bg-amber-100/50 text-amber-700 border border-amber-200/50'
+                              : 'bg-stone-100 text-stone-500 border border-stone-200'
                             }`}>
                             {item.relevance === 'high' ? 'Priority' : item.relevance === 'medium' ? 'Watch' : 'FYI'}
                           </span>
@@ -1134,7 +1134,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Give me a quick brief for this morning", relevance: 'high', linkedEntity: 'morning brief' })}
-              className="group relative flex items-center justify-center gap-3 rounded-xl border border-stone-300 dark:border-stone-600 bg-gradient-to-r from-stone-800 to-stone-900 dark:from-stone-700 dark:to-stone-800 px-5 py-4 text-sm font-bold text-[#faf9f6] hover:from-stone-700 hover:to-stone-800 dark:hover:from-stone-600 dark:hover:to-stone-700 hover:shadow-lg hover:shadow-stone-900/20 transition-all duration-300 active:scale-[0.98] overflow-hidden"
+              className="group relative flex items-center justify-center gap-3 rounded-xl border border-stone-300 bg-gradient-to-r from-stone-800 to-stone-900 px-5 py-4 text-sm font-bold text-[#faf9f6] hover:from-stone-700 hover:to-stone-800 hover:shadow-lg hover:shadow-stone-900/20 transition-all duration-300 active:scale-[0.98] overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <Sparkles className="w-5 h-5" />
@@ -1143,7 +1143,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Prepare the full market report for me", relevance: 'medium', linkedEntity: 'market report' })}
-              className="group relative flex items-center justify-center gap-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-[#faf9f6] dark:bg-stone-900 px-5 py-4 text-sm font-bold text-stone-700 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 hover:shadow-lg hover:shadow-stone-900/5 transition-all duration-300 active:scale-[0.98] overflow-hidden"
+              className="group relative flex items-center justify-center gap-3 rounded-xl border border-stone-200 bg-canvas-warm px-5 py-4 text-sm font-bold text-stone-700 hover:border-stone-400 hover:bg-stone-100 hover:shadow-lg hover:shadow-stone-900/5 transition-all duration-300 active:scale-[0.98] overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-stone-400/0 via-stone-400/10 to-stone-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <Newspaper className="w-5 h-5" />

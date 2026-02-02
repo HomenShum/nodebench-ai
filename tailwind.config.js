@@ -50,6 +50,13 @@ module.exports = {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
+        canvas: {
+          warm: "#faf9f6",
+        },
+        brand: {
+          dark: "#163628",
+          purple: "#8b5cf6",
+        },
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
@@ -97,6 +104,18 @@ module.exports = {
           '0%': { backgroundPosition: '0% 0%' },
           '100%': { backgroundPosition: '200% 0%' },
         },
+        'spin-slow': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        'pulse-subtle': {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.02)' },
+        },
+        'skeleton-shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       animation: {
         shimmer: 'shimmer 2s ease-in-out infinite',
@@ -108,6 +127,9 @@ module.exports = {
         'typewriter-blink': 'typewriter-blink 1s step-end infinite',
         'scale-in': 'scale-in 0.2s ease-out forwards',
         'border-flow': 'border-flow 3s linear infinite',
+        'spin-slow': 'spin-slow 20s linear infinite',
+        'pulse-subtle': 'pulse-subtle 4s ease-in-out infinite',
+        'skeleton-shimmer': 'skeleton-shimmer 1.5s ease-in-out infinite',
       },
     },
   },

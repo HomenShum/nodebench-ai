@@ -213,7 +213,27 @@ export function buildResearchStreamViewModel(args: {
     };
   };
 
+  const didYouKnow = brief.didYouKnow;
+  const didYouKnowSection: ScrollySection | null =
+    didYouKnow && didYouKnow.passed && typeof didYouKnow.messageText === "string" && didYouKnow.messageText.trim().length > 0
+      ? {
+          id: "did-you-know",
+          meta: { date: "Did you know", title: "Did you know" },
+          content: {
+            body: [didYouKnow.messageText.trim()],
+            deepDives: [],
+          },
+          dashboard: {
+            phaseLabel: "Did you know",
+            kpis: [],
+            marketSentiment: clamp(Math.round((brief.meta.confidence ?? 55)), 0, 100),
+            activeRegion: "Global",
+          },
+        }
+      : null;
+
   const sections: ScrollySection[] = [
+    ...(didYouKnowSection ? [didYouKnowSection] : []),
     {
       id: "act-1-setup",
       meta: { date: "Today's Briefing", title: brief.actI.title },

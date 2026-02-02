@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { screen, cleanup, fireEvent } from '@testing-library/react';
+import { renderWithRouter } from './testUtils';
 
 vi.mock('convex/react', async () => {
   const actual: any = await vi.importActual('convex/react');
@@ -32,15 +33,17 @@ describe('CalendarHomeHub pills + hash sync', () => {
   });
 
   it('defaults to Calendar active (hash #calendar)', () => {
-    render(<CalendarHomeHub onDocumentSelect={() => {}} />);
+    renderWithRouter(<CalendarHomeHub onDocumentSelect={() => {}} />);
     const cal = screen.getByRole('tab', { name: 'Calendar' });
     expect(cal.getAttribute('aria-selected')).toBe('true');
   });
 
-  it('clicking Agents sets hash to #agents', () => {
-    render(<CalendarHomeHub onDocumentSelect={() => {}} />);
+  it('clicking Agents dispatches navigate:agents', () => {
+    const spy = vi.spyOn(window, 'dispatchEvent');
+    renderWithRouter(<CalendarHomeHub onDocumentSelect={() => {}} />);
     const agents = screen.getByRole('tab', { name: 'Agents' });
     fireEvent.click(agents);
-    expect(window.location.hash).toBe('#agents');
+    expect(spy.mock.calls.some((c) => (c[0] as Event).type === 'navigate:agents')).toBe(true);
+    spy.mockRestore();
   });
 });

@@ -6,6 +6,7 @@
 
 import { v } from "convex/values";
 import { internalMutation } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import { Doc } from "../../_generated/dataModel";
 
 function stripReservedKeys(value: unknown): unknown {
@@ -166,6 +167,31 @@ export const setExecutiveBrief = internalMutation({
       },
       updatedAt: now,
     });
+
+    // Trigger narrative integration hook for high-priority brief features
+    const features = Array.isArray(memory.features) ? (memory.features as any[]) : [];
+    const narrativeFeatures = features
+      .filter((f: any) => f && typeof f === "object")
+      .map((f: any) => ({
+        headline: String(f.headline || f.title || f.id || ""),
+        summary: String(f.summary || f.description || ""),
+        priority: typeof f.priority === "number" ? f.priority : 5,
+        status: String(f.status || "pending"),
+        sourceUrls: Array.isArray(f.sourceUrls) ? f.sourceUrls : [],
+        type: String(f.type || "research"),
+      }));
+
+    if (narrativeFeatures.length > 0) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.domains.narrative.integrations.hooks.onBriefGenerated,
+        {
+          briefId: args.memoryId,
+          features: narrativeFeatures,
+          generatedAt: args.generatedAt,
+        }
+      );
+    }
   },
 });
 

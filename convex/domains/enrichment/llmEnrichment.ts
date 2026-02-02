@@ -61,7 +61,7 @@ Be specific with sectors. Avoid defaulting to "Technology" if a more specific ca
       const { generateObject } = await import("ai");
       const { getLanguageModelSafe } = await import("../agents/mcp_tools/models/modelResolver");
 
-      const model = getLanguageModelSafe("mimo-v2-flash-free");
+      const model = getLanguageModelSafe("devstral-2-free");
 
       const schema = {
         type: "object",

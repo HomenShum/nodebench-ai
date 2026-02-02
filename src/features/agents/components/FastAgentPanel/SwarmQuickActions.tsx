@@ -103,38 +103,38 @@ const QuickActionCard = memo(function QuickActionCard({
   return (
     <div
       className={cn(
-        "group relative rounded-xl border transition-all duration-200 cursor-pointer overflow-hidden",
+        "group relative rounded-xl border transition-all duration-150 cursor-pointer overflow-hidden will-change-transform",
         preset.bgColor,
-        isExpanded && "ring-2 ring-offset-2 ring-offset-[var(--bg-primary)]"
+        isExpanded ? "ring-2 ring-offset-1 ring-blue-500/40" : "hover:translate-y-[-2px] hover:shadow-md"
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
       {/* Card Header */}
-      <div className="p-4">
+      <div className="p-3.5">
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+              "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.03] will-change-transform",
               preset.bgColor.replace("hover:", "")
             )}
           >
             <Icon className={cn("w-5 h-5", preset.color)} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+            <h3 className="text-[13px] font-bold text-[var(--text-primary)] flex items-center gap-2">
               {preset.name}
-              <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)]">
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)]">
                 {preset.agents.length} agents
               </span>
             </h3>
-            <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+            <p className="text-[11px] text-[var(--text-secondary)] mt-1 line-clamp-2 leading-relaxed">
               {preset.description}
             </p>
           </div>
           {!isExpanded && (
             <ArrowRight
               className={cn(
-                "w-4 h-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0",
+                "w-4 h-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0",
                 preset.color
               )}
             />
@@ -144,14 +144,14 @@ const QuickActionCard = memo(function QuickActionCard({
 
       {/* Expanded Input Area */}
       {isExpanded && (
-        <div className="px-4 pb-4 pt-0">
+        <div className="px-3.5 pb-3.5 pt-1">
           <div className="relative">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={preset.placeholder}
-              className="w-full px-3 py-2.5 pr-10 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
               autoFocus
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -172,9 +172,9 @@ const QuickActionCard = memo(function QuickActionCard({
               }}
               disabled={!query.trim()}
               className={cn(
-                "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md transition-colors",
+                "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200",
                 query.trim()
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 shadow-sm"
                   : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
               )}
             >
@@ -187,7 +187,7 @@ const QuickActionCard = memo(function QuickActionCard({
               e.stopPropagation();
               setIsExpanded(false);
             }}
-            className="mt-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            className="mt-2 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium transition-colors"
           >
             Cancel
           </button>
@@ -211,40 +211,38 @@ export function SwarmQuickActions({
   className,
 }: SwarmQuickActionsProps) {
   return (
-    <div className={cn("p-4", className)}>
+    <div className={cn("px-4 pb-4", className)}>
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-[var(--text-primary)] flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-[var(--bg-primary)]" />
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm">
+          <Sparkles className="w-4.5 h-4.5 text-white" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+          <h2 className="text-sm font-bold text-[var(--text-primary)]">
             Parallel Research
           </h2>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-[11px] text-[var(--text-muted)]">
             Run multiple AI agents simultaneously
           </p>
         </div>
       </div>
 
       {/* Quick Action Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {SWARM_PRESETS.map((preset) => (
           <QuickActionCard key={preset.id} preset={preset} onSpawn={onSpawn} />
         ))}
       </div>
 
       {/* Tip */}
-      <div className="mt-4 px-3 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]">
-        <p className="text-[11px] text-[var(--text-muted)]">
-          <span className="font-medium text-[var(--text-secondary)]">Pro tip:</span>{" "}
-          Type{" "}
-          <code className="px-1 py-0.5 bg-[var(--bg-primary)] rounded text-[10px]">
-            /spawn
-          </code>{" "}
-          in the chat to customize which agents to use
-        </p>
-      </div>
+      <p className="mt-4 text-[11px] text-[var(--text-muted)] text-center">
+        <span className="font-semibold text-[var(--text-secondary)]">Pro tip:</span>{" "}
+        Type{" "}
+        <code className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded-md text-[10px] font-mono border border-[var(--border-color)]">
+          /spawn
+        </code>{" "}
+        in the chat to customize which agents to use
+      </p>
     </div>
   );
 }

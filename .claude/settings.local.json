@@ -208,7 +208,15 @@
       "Bash(npx vue-tsc:*)",
       "Bash(cross-env ANALYZE=true npm run build:*)",
       "Bash(set ANALYZE=true)",
-      "Bash(npx vite build:*)"
+      "Bash(npx vite build:*)",
+      "Bash(set LIVE_TEST=1)",
+      "Bash(npx cross-env:*)",
+      "Bash(LIVE_TEST=1 npm run test:run:*)",
+      "Bash(python:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $d ===\")",
+      "Bash(npx vitest run)",
+      "Bash(npx vite:*)"
     ],
     "deny": [],
     "ask": []

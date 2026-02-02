@@ -181,8 +181,45 @@ All tables deployed with 12 indexes for optimal query performance.
 
 ## Changelog
 
-- Full release notes: `src/features/research/data/CHANGELOG.md`
+- Full release notes: [CHANGELOG.md](./CHANGELOG.md)
 - In-app: Research Hub → Changelog
+
+### v0.4.0 (February 1, 2026)
+
+**DRANE: Deep Research Agentic Narrative Engine**
+- Newsroom agent pipeline (Scout > Historian > Analyst > Publisher) with temporal knowledge graph
+- Golden sets and deterministic QA framework with CI gate
+- Did You Know: LLM-judged fact generation with `publishedAtIso` enforcement
+
+**Entity Linking & Verification**
+- Wikidata-based entity resolution with LLM judge disambiguation
+- Multi-source fact-checking pipeline (VERIFIED through CONTRADICTED verdicts)
+- Contradiction detection, ground truth registries, and full audit trail
+
+**Bug Loop (Ralph-Style Back Pressure)**
+- Client error capture with deduped bug cards and transparent signature derivation
+- Occurrence artifacts stored in `sourceArtifacts` with SHA-256 dedup
+- Ralph investigation (LLM triage plan) with human-in-the-loop columns
+- Vault export (`npm run bugloop:export:vault`) for external filesystem context preservation
+
+**LinkedIn Archive Lifecycle**
+- Archive-level and pre-post idempotency to prevent duplicate posts
+- Audit, cleanup, legacy edits, and test row purge tooling (all with dry-run)
+
+**Self Maintenance**
+- Nightly autonomous invariant audits (LinkedIn, Did You Know, Daily Brief, bug loop)
+- Boolean-gated reports with optional LLM explanation, persisted to checkpoints
+
+**UI Polish**
+- Skeleton loaders, design system primitives (Button, Card, Toast, EmptyState)
+- FastAgentPanel thread tabs, swarm quick actions, animation polish
+- NarrativeRoadmap timeline, NarrativeFeed, LinkedInPostArchiveView
+- Sidebar redesign, routing updates, Cinematic Home and Entity Profile views
+
+**Documentation**
+- AGENTS.md: operational runbooks, verification coverage map, 10 Claude Code power-user tips
+- UI_POLISH_ROADMAP.md: phased improvement plan benchmarked against Linear, Notion, Arc
+- CHANGELOG.md: standalone changelog file
 
 ### v0.3.6 (January 20, 2026)
 

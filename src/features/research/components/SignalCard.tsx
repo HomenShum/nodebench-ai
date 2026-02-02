@@ -174,9 +174,14 @@ interface SignalListProps {
 export function SignalList({ signals, onSignalClick, className = "" }: SignalListProps) {
   if (!signals || signals.length === 0) {
     return (
-      <div className="text-center py-8 text-[color:var(--text-secondary)]">
-        <Lightbulb className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">No signals available yet.</p>
+      <div className="text-center py-12 text-[color:var(--text-secondary)]">
+        <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <Lightbulb className="w-7 h-7 text-amber-500" />
+        </div>
+        <h3 className="text-base font-semibold text-[color:var(--text-primary)] mb-1">No signals yet</h3>
+        <p className="text-sm text-[color:var(--text-secondary)] max-w-xs mx-auto">
+          Signals will appear here as new market insights are detected.
+        </p>
       </div>
     );
   }

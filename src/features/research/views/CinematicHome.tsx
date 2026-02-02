@@ -55,7 +55,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
     };
 
     return (
-        <div className="min-h-full bg-[#faf9f6] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+        <div className="min-h-full bg-canvas-warm flex flex-col items-center justify-center p-8 relative overflow-hidden">
 
             {/* Background Atmosphere */}
             <div className="absolute inset-0 pointer-events-none">
@@ -166,29 +166,15 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
             <div className="relative mb-16 group cursor-pointer" onClick={() => onEnterHub()}>
                 {/* Container for the orb - fixed size */}
                 <div className="w-80 h-80 relative flex items-center justify-center">
-                    {/* Rotating outer rings only */}
-                    <motion.div
-                        animate={{
-                            rotate: [0, 360],
-                        }}
-                        transition={{
-                            duration: 20,
-                            repeat: Infinity,
-                            ease: "linear"
-                        }}
-                        className="absolute inset-0"
-                    >
+                    {/* Rotating outer rings only - CSS animation for better performance */}
+                    <div className="absolute inset-0 animate-spin-slow will-change-transform">
                         {/* Subtle Outer Rings */}
                         <div className="absolute inset-0 rounded-full border border-stone-200/60 scale-110" />
                         <div className="absolute inset-0 rounded-full border border-stone-200/30 scale-125" />
-                    </motion.div>
+                    </div>
 
-                    {/* Pulsing Core - Static, does NOT rotate */}
-                    <motion.div
-                        animate={{ scale: [1, 1.02, 1] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-64 h-64 rounded-full bg-white shadow-[0_0_80px_rgba(0,0,0,0.05)] border border-stone-100 flex items-center justify-center relative overflow-hidden"
-                    >
+                    {/* Pulsing Core - CSS animation for smoother performance */}
+                    <div className="w-64 h-64 rounded-full bg-white shadow-[0_0_80px_rgba(0,0,0,0.05)] border border-stone-100 flex items-center justify-center relative overflow-hidden animate-pulse-subtle">
                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-50/50 via-white to-indigo-50/50 opacity-40" />
 
                         {/* Inner Glowing Content - Static */}
@@ -204,13 +190,13 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                             className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
                         />
-                    </motion.div>
+                    </div>
                 </div>
 
             </div>
 
             {/* 2. PERSONALIZED STATS HORIZON */}
-            <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
+            <div className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
                 <StatusBox
                     icon={<FileText className="w-4 h-4" />}
                     label="Documents This Week"
@@ -242,7 +228,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
             </div>
 
             {/* 3. DISCOVERY CARDS */}
-            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
 
                 {/* RESEARCH HUB CARD */}
                 <DiscoveryCard
@@ -291,22 +277,20 @@ function StatusBox({ icon, label, value, suffix, color = "text-emerald-950" }: {
     color?: string
 }) {
     return (
-        <div className="flex flex-col items-center text-center group">
-            <motion.div
-                key={value}
-                initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 0.5 }}
-                className={`p-2 bg-stone-100/50 rounded-lg mb-3 border border-stone-200/20 ${color}`}
-            >
+        <motion.div 
+            whileHover={{ y: -2 }}
+            transition={{ type: "tween", duration: 0.15 }}
+            className="flex flex-col items-center text-center group p-4 rounded-xl bg-white/60 backdrop-blur-sm border border-stone-200/50 shadow-sm hover:shadow-md transition-shadow will-change-transform"
+        >
+            <div className={`p-2.5 bg-gradient-to-br from-stone-50 to-stone-100 rounded-xl mb-3 border border-stone-200/30 ${color}`}>
                 {icon}
-            </motion.div>
-            <div className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em] mb-1">{label}</div>
-            <div className="flex items-baseline gap-1.5 overflow-hidden">
-                <NumberFlow value={value} className={`text-3xl font-serif font-bold ${color}`} />
-                <span className="text-[10px] font-serif italic text-stone-400">{suffix}</span>
             </div>
-        </div>
+            <div className="text-[9px] font-bold text-stone-400 uppercase tracking-[0.15em] mb-2">{label}</div>
+            <div className="flex items-baseline gap-1.5 overflow-hidden">
+                <NumberFlow value={value} className={`text-2xl md:text-3xl font-serif font-bold ${color}`} />
+                <span className="text-[10px] font-medium text-stone-400">{suffix}</span>
+            </div>
+        </motion.div>
     );
 }
 
@@ -328,21 +312,22 @@ function QuickActionButton({
 
     return (
         <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "tween", duration: 0.12 }}
             onClick={onClick}
             title={label}
-            className={`relative flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium ${isPrimary
-                ? "bg-emerald-900 text-white border-emerald-900 hover:bg-emerald-800 hover:shadow-lg"
+            className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all duration-200 text-[13px] font-semibold ${isPrimary
+                ? "bg-gradient-to-r from-emerald-700 to-emerald-800 text-white border-emerald-700 hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg shadow-emerald-900/20"
                 : isSecondary
-                    ? "px-3 bg-transparent border-stone-200 text-stone-600 hover:bg-white/70 hover:text-emerald-950"
-                    : "bg-white/80 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
+                    ? "px-3 bg-white/60 backdrop-blur-sm border-stone-200/80 text-stone-600 hover:bg-white hover:text-stone-900 hover:border-stone-300 shadow-sm"
+                    : "bg-white/90 backdrop-blur-md border-stone-200 text-stone-700 hover:bg-white hover:shadow-md hover:text-emerald-950"
                 }`}
         >
             {icon}
             <span className={isSecondary ? "hidden" : ""}>{label}</span>
             {badge !== undefined && badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm">
                     {badge > 9 ? '9+' : badge}
                 </span>
             )}
@@ -360,14 +345,17 @@ function StartHereButton({
     onClick: () => void,
 }) {
     return (
-        <button
+        <motion.button
             type="button"
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "tween", duration: 0.1 }}
             onClick={onClick}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-stone-200 bg-white/60 backdrop-blur-md text-xs font-semibold text-stone-700 hover:bg-white hover:text-emerald-950 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-stone-200/80 bg-white/70 backdrop-blur-md text-[12px] font-semibold text-stone-600 hover:bg-white hover:text-emerald-800 hover:border-emerald-200 hover:shadow-sm transition-all duration-200 group"
         >
-            {icon}
+            <span className="text-stone-400 group-hover:text-emerald-600 transition-colors">{icon}</span>
             <span className="whitespace-nowrap">{label}</span>
-        </button>
+        </motion.button>
     );
 }
 
@@ -385,10 +373,10 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
         <div
             onClick={onClick}
             className={`
-        group relative p-10 cursor-pointer overflow-hidden border transition-all duration-500
+        group relative p-8 md:p-10 cursor-pointer overflow-hidden border rounded-2xl transition-all duration-500
         ${isDark
-                    ? 'bg-gray-900 border-gray-800 text-white hover:bg-black'
-                    : 'bg-white border-stone-200 text-stone-900 hover:bg-[#faf9f6]'
+                    ? 'bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:from-black hover:to-gray-900 shadow-lg hover:shadow-xl'
+                    : 'bg-white/80 backdrop-blur-sm border-stone-200/60 text-stone-900 hover:bg-white hover:border-stone-300 shadow-sm hover:shadow-lg'
                 }
       `}
         >
@@ -398,8 +386,8 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
       `} />
 
             <div className="relative z-10 flex flex-col h-full">
-                <div className={`w-10 h-10 mb-6 flex items-center justify-center rounded-none border
-          ${isDark ? 'bg-white/5 border-white/10 text-emerald-400' : 'bg-black/5 border-black/10 text-indigo-600'}
+                <div className={`w-11 h-11 mb-6 flex items-center justify-center rounded-xl border
+          ${isDark ? 'bg-white/10 border-white/10 text-emerald-400' : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100 text-indigo-600'}
         `}>
                     {icon}
                 </div>

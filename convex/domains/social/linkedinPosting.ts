@@ -53,6 +53,26 @@ interface LinkedInImageUploadResult {
   error?: string;
 }
 
+interface LinkedInDeleteResult {
+  success: boolean;
+  postUrn: string;
+  error?: string;
+}
+
+interface LinkedInUpdateResult {
+  success: boolean;
+  postUrn: string;
+  error?: string;
+}
+
+interface LinkedInFetchPostResult {
+  success: boolean;
+  postUrn: string;
+  status?: number;
+  post?: any;
+  error?: string;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Internal Actions - LinkedIn API Calls
 // ═══════════════════════════════════════════════════════════════════════════
@@ -282,6 +302,33 @@ function getLinkedInHeaders(accessToken: string): Record<string, string> {
   };
 }
 
+function cleanLinkedInText(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")           // Normalize Windows line endings
+    .replace(/\r/g, "\n")             // Normalize old Mac line endings
+    .replace(/\|/g, "-")              // Pipe breaks LinkedIn posts
+    .replace(/[\u2500-\u257F]/g, "-") // Box drawing characters
+    .replace(/[\u2018\u2019\u0060\u00B4\u2032\u2035]/g, "'")  // Quote variants to regular
+    .replace(/[\u201C\u201D\u00AB\u00BB\u2033\u2036]/g, '"')  // Double quote variants
+    .replace(/[\u2013\u2014\u2015\u2212]/g, "-")  // Dash variants to regular
+    .replace(/[\u2026]/g, "...")      // Ellipsis to dots
+    .replace(/[\u00A0\u2007\u202F\u2060]/g, " ")  // Special spaces
+    .replace(/[\u200B-\u200F\u2028-\u202E\uFEFF]/g, "") // Zero-width and direction chars
+    .replace(/[\uFF08\u0028\(]/g, "[")  // Parentheses to brackets
+    .replace(/[\uFF09\u0029\)]/g, "]")
+    .replace(/[\uFF3B]/g, "[")        // Fullwidth left bracket
+    .replace(/[\uFF3D]/g, "]")        // Fullwidth right bracket
+    .replace(/[\u2039\u203A]/g, "'")  // Single angle quotes
+    .replace(/[\u2329\u232A\u27E8\u27E9]/g, "") // Angle brackets - remove
+    .replace(/[\u0000-\u0009\u000B-\u001F\u007F-\u009F]/g, "") // Control chars EXCEPT newline (\u000A)
+    .replace(/[^\x20-\x7E\n\u00C0-\u024F\u1E00-\u1EFF#@$%&*[\]{}:;.,!?'"\/\\+=<>~^-]/g, " ") // Keep safe chars (no parens)
+    .replace(/ +/g, " ")              // Collapse multiple spaces
+    .replace(/-{3,}/g, "---")         // Collapse multiple dashes to 3
+    .replace(/\n{3,}/g, "\n\n")       // Max 2 consecutive newlines
+    .trim()
+    .substring(0, 3000);  // LinkedIn max is 3000 chars
+}
+
 async function fetchLinkedInUserInfo(accessToken: string): Promise<LinkedInUserInfo | null> {
   const response = await fetch(`${LINKEDIN_API_BASE}/v2/userinfo`, {
     headers: getLinkedInHeaders(accessToken),
@@ -389,6 +436,221 @@ async function postToLinkedIn(
     postUrl,
   };
 }
+
+async function partialUpdatePostCommentary(accessToken: string, postUrn: string, text: string): Promise<LinkedInUpdateResult> {
+  const encoded = encodeURIComponent(postUrn);
+  const cleanText = cleanLinkedInText(text);
+
+  const response = await fetch(`${LINKEDIN_API_BASE}/rest/posts/${encoded}`, {
+    method: "POST",
+    headers: {
+      ...getLinkedInHeaders(accessToken),
+      "X-RestLi-Method": "PARTIAL_UPDATE",
+    },
+    body: JSON.stringify({
+      patch: {
+        $set: {
+          commentary: cleanText,
+        },
+      },
+    }),
+  });
+
+  if (response.status === 204 || response.status === 200) {
+    return { success: true, postUrn };
+  }
+
+  const errorText = await response.text().catch(() => response.statusText);
+  return { success: false, postUrn, error: `${response.status} ${errorText}` };
+}
+
+async function deletePostFromLinkedIn(accessToken: string, postUrn: string): Promise<LinkedInDeleteResult> {
+  const encoded = encodeURIComponent(postUrn);
+  const response = await fetch(`${LINKEDIN_API_BASE}/rest/posts/${encoded}`, {
+    method: "DELETE",
+    headers: getLinkedInHeaders(accessToken),
+  });
+
+  if (response.status === 204 || response.status === 200) {
+    return { success: true, postUrn };
+  }
+
+  const errorText = await response.text().catch(() => response.statusText);
+  return { success: false, postUrn, error: `${response.status} ${errorText}` };
+}
+
+async function fetchPostFromLinkedIn(accessToken: string, postUrn: string): Promise<LinkedInFetchPostResult> {
+  const encoded = encodeURIComponent(postUrn);
+  const response = await fetch(`${LINKEDIN_API_BASE}/rest/posts/${encoded}`, {
+    method: "GET",
+    headers: getLinkedInHeaders(accessToken),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => response.statusText);
+    return { success: false, postUrn, status: response.status, error: `${response.status} ${errorText}` };
+  }
+
+  const body = await response.json().catch(() => ({}));
+  return { success: true, postUrn, status: response.status, post: body };
+}
+
+export const deletePosts = internalAction({
+  args: {
+    postUrns: v.array(v.string()),
+    dryRun: v.optional(v.boolean()),
+    maxDeletes: v.optional(v.number()),
+  },
+  returns: v.object({
+    attempted: v.number(),
+    succeeded: v.number(),
+    failed: v.number(),
+    results: v.array(v.object({
+      success: v.boolean(),
+      postUrn: v.string(),
+      error: v.optional(v.string()),
+    })),
+  }),
+  handler: async (ctx, args) => {
+    const dryRun = args.dryRun ?? true;
+    const maxDeletes = Math.min(Math.max(args.maxDeletes ?? 250, 1), 1000);
+
+    // Use system-level access token (deletes are dangerous and should be automated only for system posting).
+    const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+    if (!accessToken) {
+      return {
+        attempted: 0,
+        succeeded: 0,
+        failed: 0,
+        results: [{ success: false, postUrn: "missing_token", error: "LINKEDIN_ACCESS_TOKEN is not set" }],
+      };
+    }
+
+    const input: string[] = Array.isArray(args.postUrns)
+      ? (args.postUrns as unknown[]).map((u) => String(u).trim()).filter((u) => u.length > 0)
+      : [];
+    const uniq: string[] = [...new Set<string>(input)].slice(0, maxDeletes);
+
+    const results: LinkedInDeleteResult[] = [];
+    for (const urn of uniq) {
+      if (dryRun) {
+        results.push({ success: true, postUrn: urn });
+        continue;
+      }
+
+      // Small delay to reduce chances of rate-limiting spikes.
+      if (results.length > 0) {
+        await new Promise((r) => setTimeout(r, 350));
+      }
+
+      try {
+        results.push(await deletePostFromLinkedIn(accessToken, urn));
+      } catch (e: any) {
+        results.push({ success: false, postUrn: urn, error: e?.message || String(e) });
+      }
+    }
+
+    const succeeded = results.filter((r) => r.success).length;
+    const failed = results.length - succeeded;
+    return {
+      attempted: results.length,
+      succeeded,
+      failed,
+      results,
+    };
+  },
+});
+
+export const fetchPosts = internalAction({
+  args: {
+    postUrns: v.array(v.string()),
+    maxFetch: v.optional(v.number()),
+    delayMs: v.optional(v.number()),
+  },
+  returns: v.object({
+    attempted: v.number(),
+    succeeded: v.number(),
+    failed: v.number(),
+    results: v.array(v.object({
+      success: v.boolean(),
+      postUrn: v.string(),
+      status: v.optional(v.number()),
+      post: v.optional(v.any()),
+      error: v.optional(v.string()),
+    })),
+  }),
+  handler: async (ctx, args) => {
+    const maxFetch = Math.min(Math.max(args.maxFetch ?? 25, 1), 200);
+    const delayMs = Math.min(Math.max(args.delayMs ?? 250, 0), 2000);
+
+    const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+    if (!accessToken) {
+      return {
+        attempted: 0,
+        succeeded: 0,
+        failed: 0,
+        results: [{ success: false, postUrn: "missing_token", error: "LINKEDIN_ACCESS_TOKEN is not set" }],
+      };
+    }
+
+    const input: string[] = Array.isArray(args.postUrns)
+      ? (args.postUrns as unknown[]).map((u) => String(u).trim()).filter((u) => u.length > 0)
+      : [];
+    const uniq: string[] = [...new Set<string>(input)].slice(0, maxFetch);
+
+    const results: LinkedInFetchPostResult[] = [];
+    for (const urn of uniq) {
+      if (results.length > 0 && delayMs > 0) {
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+      try {
+        results.push(await fetchPostFromLinkedIn(accessToken, urn));
+      } catch (e: any) {
+        results.push({ success: false, postUrn: urn, error: e?.message || String(e) });
+      }
+    }
+
+    const succeeded = results.filter((r) => r.success).length;
+    const failed = results.length - succeeded;
+    return {
+      attempted: results.length,
+      succeeded,
+      failed,
+      results: results.map((r) => ({ success: r.success, postUrn: r.postUrn, status: r.status, post: r.post, error: r.error })),
+    };
+  },
+});
+
+export const updatePostText = internalAction({
+  args: {
+    postUrn: v.string(),
+    text: v.string(),
+    dryRun: v.optional(v.boolean()),
+  },
+  returns: v.object({
+    success: v.boolean(),
+    postUrn: v.string(),
+    error: v.optional(v.string()),
+  }),
+  handler: async (ctx, args): Promise<LinkedInUpdateResult> => {
+    const dryRun = args.dryRun ?? true;
+
+    const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+    if (!accessToken) {
+      return { success: false, postUrn: args.postUrn, error: "LINKEDIN_ACCESS_TOKEN is not set" };
+    }
+
+    if (dryRun) {
+      return { success: true, postUrn: args.postUrn };
+    }
+
+    try {
+      return await partialUpdatePostCommentary(accessToken, args.postUrn, args.text);
+    } catch (e: any) {
+      return { success: false, postUrn: args.postUrn, error: e?.message || String(e) };
+    }
+  },
+});
 
 async function uploadImageToLinkedIn(
   accessToken: string,

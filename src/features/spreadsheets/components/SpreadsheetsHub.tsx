@@ -2,7 +2,8 @@ import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { FileSpreadsheet } from "lucide-react";
+import { FileSpreadsheet, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function SpreadsheetsHub({
   onOpenSheet,
@@ -12,7 +13,7 @@ export function SpreadsheetsHub({
   const sheets = useQuery(api.domains.integrations.spreadsheets.listSheets, { limit: 50 });
 
   return (
-    <div className="h-full overflow-auto bg-[#faf9f6] p-6">
+    <div className="h-full overflow-auto bg-canvas-warm p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-2 mb-4">
           <FileSpreadsheet className="h-5 w-5 text-emerald-700" />
@@ -20,9 +21,28 @@ export function SpreadsheetsHub({
         </div>
 
         {!sheets ? (
-          <div className="text-sm text-stone-500">Loading…</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-stone-200 bg-white p-4">
+                <div className="h-4 bg-stone-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-stone-100 rounded w-1/2" />
+              </div>
+            ))}
+          </div>
         ) : sheets.length === 0 ? (
-          <div className="text-sm text-stone-500">No spreadsheets yet.</div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16"
+          >
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FileSpreadsheet className="w-8 h-8 text-emerald-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-stone-800 mb-2">No spreadsheets yet</h3>
+            <p className="text-sm text-stone-500 max-w-sm mx-auto mb-6">
+              Create your first spreadsheet to start organizing and analyzing data.
+            </p>
+          </motion.div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {sheets.map((s: any) => (

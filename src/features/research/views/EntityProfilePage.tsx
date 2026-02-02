@@ -200,7 +200,7 @@ const StatCard: React.FC<{
   subValue?: string;
   icon?: React.ReactNode;
 }> = ({ label, value, subValue, icon }) => (
-  <div className="rounded-lg border border-stone-100 bg-[#faf9f6] p-4">
+  <div className="rounded-lg border border-stone-100 bg-canvas-warm p-4">
     <div className="flex items-center gap-2 mb-1">
       {icon && <span className="text-stone-400">{icon}</span>}
       <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
@@ -304,7 +304,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
   const freshnessInfo = getFreshnessLabel();
 
   return (
-    <div className="min-h-screen bg-[#faf9f6]">
+    <div className="min-h-screen bg-canvas-warm">
       {/* Header */}
       <header className="bg-white border-b border-stone-200 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -369,13 +369,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                     </span>
                     {crm?.dataQuality && (
                       <span
-                        className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                          crm.dataQuality === "verified"
+                        className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${crm.dataQuality === "verified"
                             ? "bg-green-100 text-green-700"
                             : crm.dataQuality === "partial"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
-                        }`}
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                          }`}
                       >
                         {crm.dataQuality}
                       </span>
@@ -523,13 +522,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       <div className="pl-4">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-bold text-stone-500">{event.date}</span>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                            event.significance === "high"
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${event.significance === "high"
                               ? "bg-emerald-100 text-emerald-700"
                               : event.significance === "medium"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
-                          }`}>
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                            }`}>
                             {event.category}
                           </span>
                         </div>
@@ -608,22 +606,20 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                     {adaptiveProfile.relationships.slice(0, 8).map((rel: any, idx: number) => (
                       <div
                         key={idx}
-                        className="flex items-start gap-3 p-3 rounded-lg border border-stone-100 bg-[#faf9f6]"
+                        className="flex items-start gap-3 p-3 rounded-lg border border-stone-100 bg-canvas-warm"
                       >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          rel.strength === "strong"
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${rel.strength === "strong"
                             ? "bg-emerald-100"
                             : rel.strength === "moderate"
-                            ? "bg-blue-100"
-                            : "bg-stone-100"
-                        }`}>
-                          <Users className={`w-5 h-5 ${
-                            rel.strength === "strong"
+                              ? "bg-blue-100"
+                              : "bg-stone-100"
+                          }`}>
+                          <Users className={`w-5 h-5 ${rel.strength === "strong"
                               ? "text-emerald-500"
                               : rel.strength === "moderate"
-                              ? "text-blue-500"
-                              : "text-stone-500"
-                          }`} />
+                                ? "text-blue-500"
+                                : "text-stone-500"
+                            }`} />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-[color:var(--text-primary)]">{rel.entityName}</p>
@@ -782,7 +778,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                         (person: { name: string; title: string }, idx: number) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-3 p-3 rounded-lg border border-stone-100 bg-[#faf9f6]"
+                            className="flex items-center gap-3 p-3 rounded-lg border border-stone-100 bg-canvas-warm"
                           >
                             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
                               <User className="w-5 h-5 text-indigo-500" />
@@ -876,13 +872,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <span
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-                        crm.fdaApprovalStatus.toLowerCase().includes("approved")
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium ${crm.fdaApprovalStatus.toLowerCase().includes("approved")
                           ? "bg-green-100 text-green-700"
                           : crm.fdaApprovalStatus.toLowerCase().includes("pending")
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
-                      }`}
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                        }`}
                     >
                       {crm.fdaApprovalStatus}
                     </span>
@@ -905,7 +900,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {Object.entries(personaHooks).map(([persona, hook]: [string, any]) => (
                     <div
                       key={persona}
-                      className="p-3 rounded-lg border border-stone-100 bg-[#faf9f6]"
+                      className="p-3 rounded-lg border border-stone-100 bg-canvas-warm"
                     >
                       <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">
                         {persona.replace(/_/g, " ")}
@@ -932,7 +927,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start gap-3 p-3 rounded-lg border border-stone-100 bg-[#faf9f6] hover:bg-white transition-colors group"
+                      className="flex items-start gap-3 p-3 rounded-lg border border-stone-100 bg-canvas-warm hover:bg-white transition-colors group"
                     >
                       <ExternalLink className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0 group-hover:text-emerald-500" />
                       <div className="flex-1 min-w-0">
@@ -947,13 +942,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       </div>
                       {source.credibility && (
                         <span
-                          className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase flex-shrink-0 ${
-                            source.credibility === "high"
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase flex-shrink-0 ${source.credibility === "high"
                               ? "bg-green-100 text-green-700"
                               : source.credibility === "medium"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
-                          }`}
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                            }`}
                         >
                           {source.credibility}
                         </span>

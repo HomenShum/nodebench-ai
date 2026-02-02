@@ -1669,6 +1669,25 @@ const linkedinMaPosts = defineTable({
   .index("by_dealType", ["dealType", "postedAt"]);
 
 /* ------------------------------------------------------------------ */
+/* LinkedIn Post Archive - Unified archive of ALL posted content      */
+/* ------------------------------------------------------------------ */
+const linkedinPostArchive = defineTable({
+  dateString: v.string(),
+  persona: v.string(),
+  postType: v.string(),
+  content: v.string(),
+  postId: v.optional(v.string()),
+  postUrl: v.optional(v.string()),
+  factCheckCount: v.optional(v.number()),
+  metadata: v.optional(v.any()),
+  postedAt: v.number(),
+})
+  .index("by_date", ["dateString"])
+  .index("by_type", ["postType", "postedAt"])
+  .index("by_date_persona", ["dateString", "persona"])
+  .index("by_postedAt", ["postedAt"]);
+
+/* ------------------------------------------------------------------ */
 /* API KEYS - Per-user API keys for providers                        */
 /* ------------------------------------------------------------------ */
 const userApiKeys = defineTable({
@@ -2818,6 +2837,30 @@ const verificationAuditLog = defineTable({
   .index("by_created", ["createdAt"]);
 
 /* ------------------------------------------------------------------ */
+/* VERIFICATION ACTIONS - Simple action logging for verification       */
+/* Used by narrative/feed/agent verification integrations              */
+/* ------------------------------------------------------------------ */
+const verificationActions = defineTable({
+  auditId: v.string(),
+  action: v.string(),                        // "claim_verified", "claim_rejected", "source_checked", etc.
+  targetType: v.string(),                    // "claim", "post", "fact", "source"
+  targetId: v.string(),
+  claim: v.optional(v.string()),
+  sourceUrls: v.array(v.string()),
+  verdict: v.string(),
+  confidence: v.number(),
+  reasoning: v.string(),
+  sourceTiers: v.optional(v.array(v.string())),
+  performedBy: v.string(),
+  performedAt: v.number(),
+  metadata: v.optional(v.any()),
+})
+  .index("by_target", ["targetType", "targetId"])
+  .index("by_action", ["action", "performedAt"])
+  .index("by_performer", ["performedBy", "performedAt"])
+  .index("by_verdict", ["verdict", "performedAt"]);
+
+/* ------------------------------------------------------------------ */
 /* SCHEDULED REPORTS - Automated PDF report generation                 */
 /* ------------------------------------------------------------------ */
 const scheduledReports = defineTable({
@@ -2905,6 +2948,7 @@ export default defineSchema({
   linkedinClinicalPosts,
   linkedinResearchPosts,
   linkedinMaPosts,
+  linkedinPostArchive,
   userApiKeys,
   dailyUsage,
   subscriptions,
@@ -2929,6 +2973,106 @@ export default defineSchema({
   evaluationRuns,
   evaluation_scenarios,
   digestCache,
+
+  /* ------------------------------------------------------------------ */
+  /* ENTITY PROFILES - Cached Wikidata entity resolutions               */
+  /* Canonical entity identification for deduplication and linking      */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Cached entity profiles from Wikidata
+   * Used for canonical identification of people and companies
+   */
+  entityProfiles: defineTable({
+    // Wikidata identification
+    wikidataId: v.string(),                    // Q-format ID (e.g., "Q312" for Apple)
+    entityType: v.union(
+      v.literal("person"),
+      v.literal("company"),
+      v.literal("organization"),
+      v.literal("location"),
+      v.literal("other")
+    ),
+
+    // Canonical names
+    canonicalName: v.string(),                 // Official name from Wikidata
+    description: v.optional(v.string()),       // Wikidata description
+    aliases: v.optional(v.array(v.string())),  // Alternative names
+
+    // Additional metadata for people
+    personInfo: v.optional(v.object({
+      linkedInUrl: v.optional(v.string()),
+      twitterHandle: v.optional(v.string()),
+      crunchbaseUrl: v.optional(v.string()),
+      currentCompany: v.optional(v.string()),
+      currentRole: v.optional(v.string()),
+    })),
+
+    // Additional metadata for companies
+    companyInfo: v.optional(v.object({
+      sector: v.optional(v.string()),
+      industry: v.optional(v.string()),
+      foundedYear: v.optional(v.number()),
+      headquarters: v.optional(v.string()),
+      stockTicker: v.optional(v.string()),
+      linkedInUrl: v.optional(v.string()),
+      crunchbaseUrl: v.optional(v.string()),
+    })),
+
+    // Timestamps
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastVerifiedAt: v.optional(v.number()),    // When Wikidata was last checked
+
+    // Linking stats
+    mentionCount: v.optional(v.number()),      // How many times this entity was linked
+    lastMentionedAt: v.optional(v.number()),   // When last linked
+  })
+    .index("by_wikidataId", ["wikidataId"])
+    .index("by_type", ["entityType", "canonicalName"])
+    .index("by_name", ["canonicalName"])
+    .searchIndex("search_name", {
+      searchField: "canonicalName",
+      filterFields: ["entityType"],
+    }),
+
+  /**
+   * Entity mentions - tracks where entities appear across content
+   * Links entities to posts, feed items, and other content
+   */
+  entityMentions: defineTable({
+    entityId: v.id("entityProfiles"),          // Reference to cached entity
+    wikidataId: v.string(),                    // Denormalized for quick queries
+
+    // Source reference
+    sourceType: v.union(
+      v.literal("linkedinFundingPost"),
+      v.literal("feedItem"),
+      v.literal("narrativeEvent"),
+      v.literal("narrativePost"),
+      v.literal("document")
+    ),
+    sourceId: v.string(),                      // ID of the source document
+
+    // Mention details
+    mentionType: v.union(
+      v.literal("primary"),                    // Main subject
+      v.literal("secondary"),                  // Supporting mention
+      v.literal("investor"),                   // Investor in funding context
+      v.literal("partner"),                    // Partnership mention
+      v.literal("competitor")                  // Competitive mention
+    ),
+    extractedName: v.string(),                 // Original name as extracted
+    context: v.optional(v.string()),           // Surrounding text context
+    confidence: v.number(),                    // Linking confidence 0-1
+
+    // Timestamps
+    createdAt: v.number(),
+  })
+    .index("by_entity", ["entityId", "createdAt"])
+    .index("by_wikidataId", ["wikidataId", "createdAt"])
+    .index("by_source", ["sourceType", "sourceId"])
+    .index("by_mentionType", ["mentionType", "createdAt"]),
 
   /* ------------------------------------------------------------------ */
   /* AGENT SWARMS - Parallel SubAgent Orchestration                     */
@@ -9702,6 +9846,11 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   verificationAuditLog,
 
+  /* ------------------------------------------------------------------ */
+  /* VERIFICATION ACTIONS - Simple action logging for integrations      */
+  /* ------------------------------------------------------------------ */
+  verificationActions,
+
   /* ================================================================== */
   /* SLO (SERVICE LEVEL OBJECTIVES) FRAMEWORK                            */
   /* ================================================================== */
@@ -10033,7 +10182,8 @@ export default defineSchema({
   })
     .index("by_report_id", ["reportId"])
     .index("by_model", ["modelCardId", "validationDate"])
-    .index("by_validator", ["validatedBy", "validationDate"]),
+    .index("by_validator", ["validatedBy", "validationDate"])
+    .index("by_generated_at", ["generatedAt"]),
 
   /* ================================================================== */
   /* PRIVACY & RETENTION ENFORCEMENT (GDPR)                              */
@@ -10088,6 +10238,35 @@ export default defineSchema({
   })
     .index("by_table", ["table", "deletedAt"])
     .index("by_request", ["deletionRequestId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* ARCHIVED RECORDS - Soft archive for TTL policies                    */
+  /* ------------------------------------------------------------------ */
+  // Used by privacyEnforcement.archiveRecords to retain an immutable copy of
+  // expired records before deletion (cold storage within Convex).
+  archivedRecords: defineTable({
+    table: v.string(),
+    recordId: v.string(),
+    dataClass: v.string(),
+    archivedAt: v.number(),
+    contentHash: v.string(),
+    data: v.any(),
+  })
+    .index("by_table", ["table", "archivedAt"])
+    .index("by_record", ["table", "recordId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* RETENTION AGGREGATIONS - Minimal aggregates before deleting logs    */
+  /* ------------------------------------------------------------------ */
+  retentionAggregations: defineTable({
+    table: v.string(),
+    dataClass: v.string(),
+    expiresAt: v.number(),
+    aggregatedAt: v.number(),
+    recordsCount: v.number(),
+  })
+    .index("by_table", ["table", "aggregatedAt"])
+    .index("by_data_class", ["dataClass", "aggregatedAt"]),
 
   /* ================================================================== */
   /* TASK MANAGER (SESSIONS / TRACES / SPANS)                            */
@@ -10230,6 +10409,7 @@ export default defineSchema({
 
     // Metadata
     createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
   })
     .index("by_date", ["date"])
     .index("by_date_type", ["date", "reportType"])
@@ -10805,4 +10985,568 @@ export default defineSchema({
   })
     .index("by_update", ["updateId"])
     .index("by_status", ["status", "createdAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NARRATIVE OPERATING SYSTEM TABLES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Narrative Threads - Story arcs that evolve over time
+   */
+  narrativeThreads: defineTable({
+    threadId: v.string(),
+    name: v.string(),
+    slug: v.string(),
+    thesis: v.string(),
+    counterThesis: v.optional(v.string()),
+    entityKeys: v.array(v.string()),
+    topicTags: v.array(v.string()),
+    currentPhase: v.union(
+      v.literal("emerging"),
+      v.literal("escalating"),
+      v.literal("climax"),
+      v.literal("resolution"),
+      v.literal("dormant")
+    ),
+    firstEventAt: v.number(),
+    latestEventAt: v.number(),
+    eventCount: v.number(),
+    plotTwistCount: v.number(),
+    quality: v.object({
+      hasMultipleSources: v.boolean(),
+      hasRecentActivity: v.boolean(),
+      hasVerifiedClaims: v.boolean(),
+      hasCounterNarrative: v.boolean(),
+    }),
+    userId: v.id("users"),
+    isPublic: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId", "latestEventAt"])
+    .index("by_slug", ["slug"])
+    .index("by_public", ["isPublic", "latestEventAt"])
+    .index("by_phase", ["currentPhase", "latestEventAt"])
+    .index("by_createdAt", ["createdAt"]),
+
+  /**
+   * Narrative Posts - Individual contributions to a thread
+   */
+  narrativePosts: defineTable({
+    postId: v.string(),
+    threadId: v.id("narrativeThreads"),
+    parentPostId: v.optional(v.id("narrativePosts")),
+    postType: v.union(
+      v.literal("delta_update"),
+      v.literal("thesis_revision"),
+      v.literal("evidence_addition"),
+      v.literal("counterpoint"),
+      v.literal("question"),
+      v.literal("correction")
+    ),
+    title: v.optional(v.string()),
+    content: v.string(),
+    changeSummary: v.optional(v.array(v.string())),
+    citations: v.array(v.object({
+      citationKey: v.string(),
+      artifactId: v.id("sourceArtifacts"),
+      chunkId: v.optional(v.id("artifactChunks")),
+      quote: v.optional(v.string()),
+      publishedAt: v.optional(v.number()),
+    })),
+    supersedes: v.optional(v.id("narrativePosts")),
+    supersededBy: v.optional(v.id("narrativePosts")),
+    authorType: v.union(v.literal("agent"), v.literal("human")),
+    authorId: v.string(),
+    authorConfidence: v.optional(v.number()),
+    isVerified: v.boolean(),
+    hasContradictions: v.boolean(),
+    requiresAdjudication: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_thread", ["threadId", "createdAt"])
+    .index("by_parent", ["parentPostId", "createdAt"])
+    .index("by_type", ["postType", "createdAt"])
+    .index("by_adjudication", ["requiresAdjudication", "createdAt"]),
+
+  /**
+   * Narrative Replies - Thread commentary and evidence additions (Phase 7)
+   * Supports: evidence additions, questions, corrections, endorsements
+   */
+  narrativeReplies: defineTable({
+    replyId: v.string(),
+    postId: v.id("narrativePosts"),
+    parentReplyId: v.optional(v.id("narrativeReplies")),
+    replyType: v.union(
+      v.literal("evidence"),        // New source or counterpoint
+      v.literal("question"),        // Clarifying question
+      v.literal("correction"),      // Error fix
+      v.literal("support"),         // Endorsement
+      v.literal("challenge")        // Dispute
+    ),
+    content: v.string(),
+    // Evidence linking
+    evidenceArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+    citationIds: v.optional(v.array(v.string())),
+    // Source tracking (for harvested comments)
+    sourceType: v.optional(v.union(
+      v.literal("internal"),        // Created in app
+      v.literal("hackernews"),      // Harvested from HN
+      v.literal("reddit"),          // Harvested from Reddit
+      v.literal("twitter"),         // Harvested from X/Twitter
+      v.literal("other")            // Other external source
+    )),
+    sourceUrl: v.optional(v.string()),
+    sourceAuthor: v.optional(v.string()),
+    sourceTimestamp: v.optional(v.number()),
+    // Author info
+    authorType: v.union(v.literal("agent"), v.literal("human"), v.literal("harvested")),
+    authorId: v.string(),
+    // Quality signals
+    sentiment: v.optional(v.union(
+      v.literal("positive"),
+      v.literal("negative"),
+      v.literal("neutral"),
+      v.literal("mixed")
+    )),
+    relevanceScore: v.optional(v.number()),
+    isHighSignal: v.boolean(),
+    // Moderation
+    isVerified: v.boolean(),
+    isFlagged: v.boolean(),
+    flagReason: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_post", ["postId", "createdAt"])
+    .index("by_parent", ["parentReplyId", "createdAt"])
+    .index("by_type", ["replyType", "createdAt"])
+    .index("by_source", ["sourceType", "createdAt"])
+    .index("by_high_signal", ["isHighSignal", "createdAt"]),
+
+  /**
+   * Narrative Events - Timestamped occurrences in a thread
+   * Phase 6: Added dedup fields for audit-grade hardening
+   */
+  narrativeEvents: defineTable({
+    eventId: v.string(),
+    eventIdVersion: v.optional(v.string()),
+    eventIdDerivation: v.optional(v.any()),
+    threadId: v.id("narrativeThreads"),
+    headline: v.string(),
+    summary: v.string(),
+    significance: v.union(
+      v.literal("minor"),
+      v.literal("moderate"),
+      v.literal("major"),
+      v.literal("plot_twist")
+    ),
+    occurredAt: v.number(),
+    discoveredAt: v.number(),
+    weekNumber: v.string(),
+    sourceUrls: v.array(v.string()),
+    sourceNames: v.array(v.string()),
+    citationIds: v.array(v.string()),
+    // Optional evidence pointers for verification/citation popovers
+    artifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+    claimIds: v.optional(v.array(v.string())),
+    // Dedup identity (Phase 6)
+    contentHash: v.optional(v.string()),
+    canonicalUrl: v.optional(v.string()),
+    // Update linking (Phase 6)
+    supersedesEventId: v.optional(v.id("narrativeEvents")),
+    changeSummary: v.optional(v.string()),
+    // Claim structure (Phase 6)
+    claimSet: v.optional(v.array(v.object({
+      claim: v.string(),
+      kind: v.optional(v.union(
+        v.literal("verifiable"),
+        v.literal("interpretation"),
+        v.literal("prediction")
+      )),
+      confidence: v.number(),
+      uncertainty: v.optional(v.number()),
+      evidenceArtifactIds: v.array(v.string()),
+    }))),
+    // Agent metadata
+    discoveredByAgent: v.string(),
+    agentConfidence: v.number(),
+    // Quality flags
+    isVerified: v.boolean(),
+    hasContradictions: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_thread", ["threadId", "occurredAt"])
+    .index("by_week", ["weekNumber", "occurredAt"])
+    .index("by_discovery", ["discoveredAt"])
+    .index("by_significance", ["significance", "occurredAt"])
+    .index("by_content_hash", ["contentHash"])
+    .index("by_supersedes", ["supersedesEventId"])
+    .searchIndex("search_headline", {
+      searchField: "headline",
+      filterFields: ["threadId"],
+    }),
+
+  /**
+   * Evidence Artifacts - Immutable evidence snapshots for audit trail
+   * Used for citation and claim-evidence binding (Phase 5/6).
+   */
+  evidenceArtifacts: defineTable({
+    artifactId: v.string(),
+    artifactVersion: v.string(),
+    urlNormalizationVersion: v.string(),
+    contentHashVersion: v.string(),
+    url: v.string(),
+    canonicalUrl: v.string(),
+    publisher: v.string(),
+    publishedAt: v.optional(v.number()),
+    fetchedAt: v.number(),
+    contentHash: v.string(),
+    extractedQuotes: v.array(v.object({
+      text: v.string(),
+      context: v.optional(v.string()),
+    })),
+    entities: v.array(v.string()),
+    topics: v.array(v.string()),
+    credibilityTier: v.string(),
+    retrievalTrace: v.object({
+      searchQuery: v.optional(v.string()),
+      agentName: v.string(),
+      toolName: v.string(),
+    }),
+    supersedesArtifactId: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_artifact_id", ["artifactId"])
+    .index("by_content_hash", ["contentHash"])
+    .index("by_canonical_url", ["canonicalUrl", "createdAt"])
+    .index("by_created_at", ["createdAt"]),
+
+  /**
+   * Narrative Search Log - Audit trail of all searches performed
+   */
+  narrativeSearchLog: defineTable({
+    searchId: v.string(),
+    query: v.string(),
+    searchType: v.union(
+      v.literal("web_news"),
+      v.literal("historical"),
+      v.literal("entity_context"),
+      v.literal("verification")
+    ),
+    resultCount: v.number(),
+    resultUrls: v.array(v.string()),
+    resultSnippets: v.optional(v.array(v.string())),
+    searchedAt: v.number(),
+    weekNumber: v.string(),
+    narrativeThreadId: v.optional(v.id("narrativeThreads")),
+    narrativeEventIds: v.optional(v.array(v.id("narrativeEvents"))),
+    agentName: v.string(),
+    workflowId: v.optional(v.string()),
+    userId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_workflow", ["workflowId", "searchedAt"])
+    .index("by_thread", ["narrativeThreadId", "searchedAt"])
+    .index("by_week", ["weekNumber", "searchedAt"])
+    .index("by_searched_at", ["searchedAt"])
+    .index("by_user", ["userId", "searchedAt"]),
+
+  /**
+   * Temporal Facts - Versioned facts with supersession chains
+   * Bi-temporal: validFrom/validTo (real world) + observedAt/recordedAt (system)
+   */
+  temporalFacts: defineTable({
+    factId: v.string(),
+    threadId: v.id("narrativeThreads"),
+    claimText: v.string(),
+    subject: v.string(),
+    predicate: v.string(),
+    object: v.string(),
+    // Valid time: when the fact was true in the real world
+    validFrom: v.number(),
+    validTo: v.optional(v.number()),
+    // Transaction time: when we learned/stored it (bi-temporal)
+    observedAt: v.optional(v.number()),   // When agent retrieved evidence
+    recordedAt: v.optional(v.number()),   // When DB committed
+    confidence: v.number(),
+    supersedes: v.optional(v.string()),
+    supersededBy: v.optional(v.string()),
+    sourceEventIds: v.array(v.id("narrativeEvents")),
+    weekNumber: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_thread", ["threadId", "validFrom"])
+    .index("by_subject", ["subject", "predicate", "validFrom"])
+    .index("by_observed", ["observedAt"]),
+
+  /**
+   * Narrative Dispute Chains - Tracks contested claims
+   */
+  narrativeDisputeChains: defineTable({
+    disputeId: v.string(),
+    targetType: v.union(
+      v.literal("post"),
+      v.literal("event"),
+      v.literal("fact"),
+      v.literal("claim")
+    ),
+    targetId: v.string(),
+    disputeType: v.union(
+      v.literal("factual_error"),
+      v.literal("outdated"),
+      v.literal("missing_context"),
+      v.literal("alternative_interpretation")
+    ),
+    originalClaim: v.string(),
+    challengeClaim: v.string(),
+    evidenceForChallenge: v.array(v.id("sourceArtifacts")),
+    status: v.union(
+      v.literal("open"),
+      v.literal("under_review"),
+      v.literal("resolved_original"),
+      v.literal("resolved_challenge"),
+      v.literal("merged")
+    ),
+    resolution: v.optional(v.string()),
+    resolvedBy: v.optional(v.string()),
+    resolvedAt: v.optional(v.number()),
+    raisedBy: v.string(),
+    raisedAt: v.number(),
+  })
+    .index("by_target", ["targetType", "targetId"])
+    .index("by_status", ["status", "raisedAt"]),
+
+  /**
+   * Narrative Correlations - Cross-entity relationship tracking
+   * Phase 6: Added correlationBasis and reviewStatus for audit-grade hardening
+   */
+  narrativeCorrelations: defineTable({
+    correlationId: v.string(),
+    primaryEventId: v.id("narrativeEvents"),
+    primaryThreadId: v.id("narrativeThreads"),
+    relatedEventIds: v.array(v.id("narrativeEvents")),
+    relatedThreadIds: v.array(v.id("narrativeThreads")),
+    correlationType: v.union(
+      v.literal("causal"),
+      v.literal("temporal"),
+      v.literal("entity_overlap"),
+      v.literal("topic_similarity")
+    ),
+    strength: v.number(),
+    description: v.string(),
+    discoveredByAgent: v.string(),
+    // Proof standard (Phase 6)
+    correlationBasis: v.union(
+      v.literal("shared_entity"),
+      v.literal("shared_investor"),
+      v.literal("explicit_reference"),
+      v.literal("time_proximity"),
+      v.literal("topic_similarity"),
+      v.literal("llm_inference")
+    ),
+    // Evidence binding (Phase 6)
+    evidenceEventIds: v.array(v.id("narrativeEvents")),
+    evidenceCitationIds: v.optional(v.array(v.string())),
+    // Review status (Phase 6)
+    reviewStatus: v.union(
+      v.literal("auto_approved"),
+      v.literal("needs_review"),
+      v.literal("human_verified"),
+      v.literal("human_rejected")
+    ),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.number()),
+    weekNumber: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_primary_event", ["primaryEventId"])
+    .index("by_primary_thread", ["primaryThreadId"])
+    .index("by_week", ["weekNumber", "createdAt"])
+    .index("by_review_status", ["reviewStatus", "createdAt"])
+    .index("by_basis", ["correlationBasis", "reviewStatus"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // P0 QUALITY CONTROL TABLES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Content Rights Policies - Per-source ToS compliance
+   */
+  contentRightsPolicies: defineTable({
+    domain: v.string(),
+    sourceId: v.optional(v.id("sourceArtifacts")),
+    policyType: v.union(
+      v.literal("platform_default"),
+      v.literal("source_specific"),
+      v.literal("manual_override")
+    ),
+    storageMode: v.union(
+      v.literal("full_text"),
+      v.literal("excerpt_only"),
+      v.literal("hash_metadata"),
+      v.literal("link_only")
+    ),
+    maxExcerptChars: v.optional(v.number()),
+    storageTTLDays: v.optional(v.number()),
+    renderingMode: v.union(
+      v.literal("direct_quote"),
+      v.literal("paraphrase"),
+      v.literal("summary_only"),
+      v.literal("link_only")
+    ),
+    aiUsageMode: v.union(
+      v.literal("full"),
+      v.literal("inference_only"),
+      v.literal("citation_only"),
+      v.literal("prohibited")
+    ),
+    attributionRequired: v.boolean(),
+    attributionTemplate: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_domain", ["domain"])
+    .index("by_source", ["sourceId"]),
+
+  /**
+   * Claim Classifications - Fact/inference/sentiment separation
+   */
+  claimClassifications: defineTable({
+    postId: v.id("narrativePosts"),
+    sentenceIndex: v.number(),
+    sentenceText: v.string(),
+    claimType: v.union(
+      v.literal("fact_claim"),
+      v.literal("inference"),
+      v.literal("sentiment"),
+      v.literal("meta")
+    ),
+    confidence: v.number(),
+    isVerified: v.boolean(),
+    linkedFactIds: v.optional(v.array(v.id("temporalFacts"))),
+    linkedArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+    verificationNote: v.optional(v.string()),
+    classifiedAt: v.number(),
+    classifiedBy: v.string(),
+  })
+    .index("by_post", ["postId", "sentenceIndex"])
+    .index("by_type", ["claimType", "isVerified"])
+    .index("by_unverified", ["isVerified", "claimType"]),
+
+  /**
+   * Truth State - Contested fact display semantics
+   */
+  truthState: defineTable({
+    factId: v.id("temporalFacts"),
+    threadId: v.id("narrativeThreads"),
+    status: v.union(
+      v.literal("canonical"),
+      v.literal("contested"),
+      v.literal("superseded"),
+      v.literal("retracted")
+    ),
+    showInDefault: v.boolean(),
+    requiresContext: v.boolean(),
+    contextNote: v.optional(v.string()),
+    resolutionNote: v.optional(v.string()),
+    activeDisputeIds: v.array(v.id("narrativeDisputeChains")),
+    lastStateChange: v.number(),
+    stateChangedBy: v.string(),
+  })
+    .index("by_fact", ["factId"])
+    .index("by_thread", ["threadId", "status"])
+    .index("by_contested", ["status", "threadId"]),
+
+  /**
+   * Author Trust - Trust scoring for abuse resistance
+   */
+  authorTrust: defineTable({
+    authorType: v.union(v.literal("agent"), v.literal("human")),
+    authorId: v.string(),
+    tier: v.union(
+      v.literal("verified"),
+      v.literal("established"),
+      v.literal("new"),
+      v.literal("quarantined"),
+      v.literal("banned")
+    ),
+    trustScore: v.number(),
+    totalContributions: v.number(),
+    verifiedContributions: v.number(),
+    flaggedContributions: v.number(),
+    lastActivityAt: v.number(),
+    tierChangedAt: v.number(),
+    tierChangedBy: v.string(),
+    tierChangeReason: v.optional(v.string()),
+  })
+    .index("by_author", ["authorType", "authorId"])
+    .index("by_tier", ["tier", "trustScore"]),
+
+  /**
+   * Content Quarantine - Pending review content
+   */
+  contentQuarantine: defineTable({
+    contentType: v.union(
+      v.literal("post"),
+      v.literal("event"),
+      v.literal("fact"),
+      v.literal("comment")
+    ),
+    contentId: v.string(),
+    authorId: v.string(),
+    reason: v.string(),
+    detectedPatterns: v.array(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("expired")
+    ),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.number()),
+    reviewNote: v.optional(v.string()),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_status", ["status", "createdAt"])
+    .index("by_content", ["contentType", "contentId"])
+    .index("by_author", ["authorId", "createdAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GROUND TRUTH & VERIFICATION AUDIT TABLES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Ground Truth Facts - Verified facts from authoritative sources
+   */
+  groundTruthFacts: defineTable({
+    factId: v.string(),
+    subject: v.string(),
+    subjectIdentifiers: v.object({
+      cik: v.optional(v.string()),
+      ticker: v.optional(v.string()),
+      lei: v.optional(v.string()),
+      doi: v.optional(v.string()),
+      nctId: v.optional(v.string()),
+      patentNumber: v.optional(v.string()),
+    }),
+    category: v.string(),
+    claim: v.string(),
+    quantitativeValue: v.optional(v.number()),
+    quantitativeUnit: v.optional(v.string()),
+    effectiveDate: v.number(),
+    expirationDate: v.optional(v.number()),
+    sourceUrl: v.string(),
+    sourceTier: v.string(),
+    verificationMethod: v.string(),
+    verifiedAt: v.number(),
+    verifiedBy: v.string(),
+    supersededBy: v.optional(v.string()),
+    auditNotes: v.optional(v.string()),
+  })
+    .index("by_subject", ["subject", "effectiveDate"])
+    .index("by_category", ["category", "effectiveDate"])
+    .index("by_source", ["sourceUrl"])
+    .index("by_active", ["subject", "expirationDate"]),
 });

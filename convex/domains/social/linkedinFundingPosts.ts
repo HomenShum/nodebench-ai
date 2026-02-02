@@ -13,8 +13,10 @@ import {
   mutation,
   internalQuery,
   internalMutation,
+  internalAction,
 } from "../../_generated/server";
-import type { Doc } from "../../_generated/dataModel";
+import { internal } from "../../_generated/api";
+import type { Doc, Id } from "../../_generated/dataModel";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Helper Functions
@@ -291,13 +293,16 @@ export const recordPostedCompany = internalMutation({
       v.literal("next-round")
     )),
     fundingEventId: v.optional(v.id("fundingEvents")),
+    // Entity linking - Wikidata ID for canonical identification
+    entityId: v.optional(v.string()),
+    entityLinkConfidence: v.optional(v.number()),
   },
   returns: v.id("linkedinFundingPosts"),
   handler: async (ctx, args) => {
     const normalized = normalizeCompanyName(args.companyName);
     const sectorCategory = categorizeSector(args.sector);
 
-    return await ctx.db.insert("linkedinFundingPosts", {
+    const postId = await ctx.db.insert("linkedinFundingPosts", {
       companyNameNormalized: normalized,
       companyName: args.companyName,
       roundType: args.roundType,
@@ -313,7 +318,24 @@ export const recordPostedCompany = internalMutation({
       progressionType: args.progressionType ?? "new",
       postedAt: Date.now(),
       fundingEventId: args.fundingEventId,
+      entityId: args.entityId,
     });
+
+    // Trigger narrative integration hook (async, non-blocking)
+    await ctx.scheduler.runAfter(
+      0,
+      internal.domains.narrative.integrations.hooks.onFundingPostCreated,
+      {
+        postId,
+        companyName: args.companyName,
+        fundingAmount: args.amountRaw,
+        fundingRound: args.roundType,
+        linkedinUrl: args.postUrl,
+        publishedAt: Date.now(),
+      }
+    );
+
+    return postId;
   },
 });
 
@@ -337,7 +359,8 @@ export const batchRecordPostedCompanies = internalMutation({
   },
   returns: v.array(v.id("linkedinFundingPosts")),
   handler: async (ctx, args) => {
-    const ids: any[] = [];
+    const ids: Id<"linkedinFundingPosts">[] = [];
+    const now = Date.now();
 
     for (const company of args.companies) {
       const normalized = normalizeCompanyName(company.companyName);
@@ -356,11 +379,25 @@ export const batchRecordPostedCompanies = internalMutation({
         postPart: company.postPart,
         totalParts: company.totalParts,
         progressionType: "new",
-        postedAt: Date.now(),
+        postedAt: now,
         fundingEventId: company.fundingEventId,
       });
 
       ids.push(id);
+
+      // Trigger narrative integration hook (async, non-blocking)
+      await ctx.scheduler.runAfter(
+        0,
+        internal.domains.narrative.integrations.hooks.onFundingPostCreated,
+        {
+          postId: id,
+          companyName: company.companyName,
+          fundingAmount: company.amountRaw,
+          fundingRound: company.roundType,
+          linkedinUrl: company.postUrl,
+          publishedAt: now,
+        }
+      );
     }
 
     return ids;
@@ -499,5 +536,219 @@ export const deleteIncorrectPost = internalMutation({
         postUrl: post.postUrl,
       },
     };
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Entity Linking Integration
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Record a posted company with entity linking.
+ * Links the company to Wikidata for canonical identification, then records the post.
+ *
+ * Uses LLM-calibrated confidence without heuristic adjustments.
+ * Optionally validates entity links using LLM judge for higher accuracy.
+ */
+export const recordPostedCompanyWithEntityLink = internalAction({
+  args: {
+    companyName: v.string(),
+    roundType: v.string(),
+    amountRaw: v.string(),
+    amountUsd: v.optional(v.number()),
+    sector: v.optional(v.string()),
+    postUrn: v.string(),
+    postUrl: v.string(),
+    postPart: v.optional(v.number()),
+    totalParts: v.optional(v.number()),
+    previousPostId: v.optional(v.id("linkedinFundingPosts")),
+    progressionType: v.optional(v.union(
+      v.literal("new"),
+      v.literal("update"),
+      v.literal("next-round")
+    )),
+    fundingEventId: v.optional(v.id("fundingEvents")),
+    enableValidation: v.optional(v.boolean()), // Enable LLM judge validation
+    minConfidence: v.optional(v.number()), // Minimum confidence to store entity link
+  },
+  returns: v.object({
+    postId: v.id("linkedinFundingPosts"),
+    entityLinkResult: v.object({
+      found: v.boolean(),
+      wikidataId: v.optional(v.string()),
+      canonicalName: v.optional(v.string()),
+      entityType: v.optional(v.string()),
+      confidence: v.number(),
+      validated: v.optional(v.boolean()),
+      validationReasoning: v.optional(v.string()),
+    }),
+  }),
+  handler: async (ctx, args) => {
+    const { enableValidation = false, minConfidence = 0.5 } = args;
+
+    // Step 1: Link the company to Wikidata (uses LLM-calibrated confidence)
+    const context = `${args.companyName} raised ${args.amountRaw} in ${args.roundType} funding`;
+    const entityLinkResult = await ctx.runAction(
+      internal.domains.enrichment.entityLinkingService.linkEntity,
+      {
+        name: args.companyName,
+        context,
+        expectedType: "company",
+        sourceType: "linkedinFundingPost",
+        sourceId: args.postUrn,
+        mentionType: "primary",
+      }
+    );
+
+    // Step 2: Optional validation using LLM judge
+    let validated: boolean | undefined;
+    let validationReasoning: string | undefined;
+
+    if (enableValidation && entityLinkResult.found && entityLinkResult.wikidataId) {
+      try {
+        const validation = await ctx.runAction(
+          internal.domains.enrichment.entityLinkingJudge.validateEntityLink,
+          {
+            query: args.companyName,
+            context,
+            linkedWikidataId: entityLinkResult.wikidataId,
+            linkedName: entityLinkResult.canonicalName || args.companyName,
+            linkedDescription: entityLinkResult.description,
+            originalConfidence: entityLinkResult.confidence,
+          }
+        );
+        validated = validation.isCorrect;
+        validationReasoning = validation.reasoning;
+
+        // If validation fails with high confidence, don't store the entity link
+        if (!validation.isCorrect && validation.judgeConfidence > 0.7) {
+          console.log(`[linkedinFundingPosts] Entity validation failed for ${args.companyName}: ${validation.reasoning}`);
+          entityLinkResult.found = false;
+          entityLinkResult.wikidataId = undefined;
+        }
+      } catch (error) {
+        console.warn(`[linkedinFundingPosts] Validation error for ${args.companyName}:`, error);
+      }
+    }
+
+    // Step 3: Apply confidence threshold
+    const finalEntityId = entityLinkResult.found && entityLinkResult.confidence >= minConfidence
+      ? entityLinkResult.wikidataId
+      : undefined;
+
+    // Step 4: Record the post with entity ID
+    const postId = await ctx.runMutation(
+      internal.domains.social.linkedinFundingPosts.recordPostedCompany,
+      {
+        companyName: args.companyName,
+        roundType: args.roundType,
+        amountRaw: args.amountRaw,
+        amountUsd: args.amountUsd,
+        sector: args.sector,
+        postUrn: args.postUrn,
+        postUrl: args.postUrl,
+        postPart: args.postPart,
+        totalParts: args.totalParts,
+        previousPostId: args.previousPostId,
+        progressionType: args.progressionType,
+        fundingEventId: args.fundingEventId,
+        entityId: finalEntityId,
+        entityLinkConfidence: entityLinkResult.confidence,
+      }
+    );
+
+    return {
+      postId,
+      entityLinkResult: {
+        found: entityLinkResult.found,
+        wikidataId: finalEntityId,
+        canonicalName: entityLinkResult.canonicalName,
+        entityType: entityLinkResult.entityType,
+        confidence: entityLinkResult.confidence,
+        validated,
+        validationReasoning,
+      },
+    };
+  },
+});
+
+/**
+ * Batch record multiple posted companies with entity linking.
+ */
+export const batchRecordPostedCompaniesWithEntityLink = internalAction({
+  args: {
+    companies: v.array(v.object({
+      companyName: v.string(),
+      roundType: v.string(),
+      amountRaw: v.string(),
+      amountUsd: v.optional(v.number()),
+      sector: v.optional(v.string()),
+      postUrn: v.string(),
+      postUrl: v.string(),
+      postPart: v.optional(v.number()),
+      totalParts: v.optional(v.number()),
+      fundingEventId: v.optional(v.id("fundingEvents")),
+    })),
+  },
+  returns: v.array(v.object({
+    postId: v.id("linkedinFundingPosts"),
+    companyName: v.string(),
+    wikidataId: v.optional(v.string()),
+    canonicalName: v.optional(v.string()),
+    confidence: v.number(),
+  })),
+  handler: async (ctx, args) => {
+    const results: Array<{
+      postId: Id<"linkedinFundingPosts">;
+      companyName: string;
+      wikidataId?: string;
+      canonicalName?: string;
+      confidence: number;
+    }> = [];
+
+    for (const company of args.companies) {
+      // Link entity
+      const context = `${company.companyName} raised ${company.amountRaw} in ${company.roundType} funding`;
+      const entityResult = await ctx.runAction(
+        internal.domains.enrichment.entityLinkingService.linkEntity,
+        {
+          name: company.companyName,
+          context,
+          expectedType: "company",
+          sourceType: "linkedinFundingPost",
+          sourceId: company.postUrn,
+          mentionType: "primary",
+        }
+      );
+
+      // Record post
+      const postId = await ctx.runMutation(
+        internal.domains.social.linkedinFundingPosts.recordPostedCompany,
+        {
+          companyName: company.companyName,
+          roundType: company.roundType,
+          amountRaw: company.amountRaw,
+          amountUsd: company.amountUsd,
+          sector: company.sector,
+          postUrn: company.postUrn,
+          postUrl: company.postUrl,
+          postPart: company.postPart,
+          totalParts: company.totalParts,
+          fundingEventId: company.fundingEventId,
+          entityId: entityResult.wikidataId,
+          entityLinkConfidence: entityResult.confidence,
+        }
+      );
+
+      results.push({
+        postId,
+        companyName: company.companyName,
+        wikidataId: entityResult.wikidataId,
+        canonicalName: entityResult.canonicalName,
+        confidence: entityResult.confidence,
+      });
+    }
+
+    return results;
   },
 });

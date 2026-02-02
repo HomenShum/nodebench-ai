@@ -27,11 +27,21 @@ import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/feature
 import type { ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { cn } from "@/lib/utils";
 
-// Loading fallback for lazy-loaded sections
+// Loading fallback for lazy-loaded sections - shimmer skeleton
 const SectionLoading = () => (
-  <div className="flex items-center justify-center py-10 text-sm text-stone-400">
-    <div className="w-5 h-5 border-2 border-stone-200 border-t-emerald-600 rounded-full animate-spin mr-3" />
-    Loading...
+  <div className="py-6 space-y-4 animate-pulse">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-stone-200/60 rounded-lg" />
+      <div className="space-y-2 flex-1">
+        <div className="h-4 bg-stone-200/60 rounded w-1/3" />
+        <div className="h-3 bg-stone-100 rounded w-1/2" />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <div className="h-3 bg-stone-100 rounded w-full" />
+      <div className="h-3 bg-stone-100 rounded w-5/6" />
+      <div className="h-3 bg-stone-100 rounded w-4/6" />
+    </div>
   </div>
 );
 
@@ -458,9 +468,9 @@ function ResearchHubContent(props: ResearchHubProps) {
   }, [openWithContext, dossierContextBase]);
 
   return (
-    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-[#faf9f6] overflow-hidden`}>
+    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-canvas-warm overflow-hidden`}>
       {!embedded && (
-        <header className="h-20 bg-[#faf9f6]/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-stone-200 shadow-sm">
+        <header className="h-20 bg-canvas-warm/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-stone-200 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
               <span className="text-2xl font-serif">N</span>
@@ -527,7 +537,7 @@ function ResearchHubContent(props: ResearchHubProps) {
       )}
 
       {/* UNIFIED SCROLL CONTAINER */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#faf9f6]">
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-canvas-warm">
         {embedded && onGoHome && (
           <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-200 pb-3">

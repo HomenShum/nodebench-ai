@@ -28,8 +28,10 @@ import {
   Zap,
   Github,
   GitPullRequest,
+  Linkedin,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
+import { SidebarButton } from "./ui";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -67,7 +69,8 @@ interface CleanSidebarProps {
     | 'document-recommendations'
     | 'agent-marketplace'
     | 'github-explorer'
-    | 'pr-suggestions';
+    | 'pr-suggestions'
+    | 'linkedin-posts';
   /** Callback when view changes */
   onViewChange?: (view:
     | 'documents'
@@ -90,7 +93,8 @@ interface CleanSidebarProps {
     | 'document-recommendations'
     | 'agent-marketplace'
     | 'github-explorer'
-    | 'pr-suggestions') => void;
+    | 'pr-suggestions'
+    | 'linkedin-posts') => void;
 }
 
 export function CleanSidebar({
@@ -189,132 +193,90 @@ export function CleanSidebar({
       </div>
 
       {/* Dashboard Links */}
-      <div className="px-3 mt-4 mb-2">
-        <div className="px-3 mb-2 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+      <div className="px-3 mt-6 mb-2">
+        <div className="px-3 mb-3 text-[10px] font-bold text-stone-400/80 uppercase tracking-[0.12em]">
           Dashboards
         </div>
-        <div className="space-y-1">
-          <button
-            type="button"
+        <div className="space-y-0.5">
+          <SidebarButton
+            icon={<DollarSign />}
+            label="Cost Dashboard"
             onClick={() => onViewChange?.('cost-dashboard')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'cost-dashboard'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <DollarSign className={`w-4 h-4 ${
-              currentView === 'cost-dashboard' ? 'text-green-600' : 'text-stone-400'
-            }`} />
-            <span>Cost Dashboard</span>
-          </button>
-          <button
-            type="button"
+            isActive={currentView === 'cost-dashboard'}
+            activeColor="emerald"
+          />
+          <SidebarButton
+            icon={<TrendingUp />}
+            label="Industry Updates"
             onClick={() => onViewChange?.('industry-updates')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'industry-updates'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <TrendingUp className={`w-4 h-4 ${
-              currentView === 'industry-updates' ? 'text-blue-600' : 'text-stone-400'
-            }`} />
-            <span>Industry Updates</span>
-          </button>
+            isActive={currentView === 'industry-updates'}
+            activeColor="blue"
+          />
         </div>
       </div>
 
       {/* X Algorithm Features */}
-      <div className="px-3 mt-4 mb-2">
-        <div className="px-3 mb-2 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+      <div className="px-3 mt-6 mb-2">
+        <div className="px-3 mb-3 text-[10px] font-bold text-stone-400/80 uppercase tracking-[0.12em]">
           Discovery
         </div>
-        <div className="space-y-1">
-          <button
-            type="button"
+        <div className="space-y-0.5">
+          <SidebarButton
+            icon={<Sparkles />}
+            label="For You"
             onClick={() => onViewChange?.('for-you-feed')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'for-you-feed'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <Sparkles className={`w-4 h-4 ${
-              currentView === 'for-you-feed' ? 'text-purple-600' : 'text-stone-400'
-            }`} />
-            <span>For You</span>
-          </button>
-          <button
-            type="button"
+            isActive={currentView === 'for-you-feed'}
+            activeColor="purple"
+          />
+          <SidebarButton
+            icon={<BookOpen />}
+            label="Recommendations"
             onClick={() => onViewChange?.('document-recommendations')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'document-recommendations'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <BookOpen className={`w-4 h-4 ${
-              currentView === 'document-recommendations' ? 'text-indigo-600' : 'text-stone-400'
-            }`} />
-            <span>Recommendations</span>
-          </button>
-          <button
-            type="button"
+            isActive={currentView === 'document-recommendations'}
+            activeColor="indigo"
+          />
+          <SidebarButton
+            icon={<Zap />}
+            label="Agent Marketplace"
             onClick={() => onViewChange?.('agent-marketplace')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'agent-marketplace'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <Zap className={`w-4 h-4 ${
-              currentView === 'agent-marketplace' ? 'text-yellow-600' : 'text-stone-400'
-            }`} />
-            <span>Agent Marketplace</span>
-          </button>
-          <button
-            type="button"
+            isActive={currentView === 'agent-marketplace'}
+            activeColor="amber"
+          />
+          <SidebarButton
+            icon={<Github />}
+            label="GitHub Explorer"
             onClick={() => onViewChange?.('github-explorer')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'github-explorer'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <Github className={`w-4 h-4 ${
-              currentView === 'github-explorer' ? 'text-stone-900' : 'text-stone-400'
-            }`} />
-            <span>GitHub Explorer</span>
-          </button>
-          <button
-            type="button"
+            isActive={currentView === 'github-explorer'}
+            activeColor="emerald"
+          />
+          <SidebarButton
+            icon={<GitPullRequest />}
+            label="PR Suggestions"
             onClick={() => onViewChange?.('pr-suggestions')}
-            className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors w-full text-left ${
-              currentView === 'pr-suggestions'
-                ? 'bg-stone-100 text-stone-900'
-                : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
-            }`}
-          >
-            <GitPullRequest className={`w-4 h-4 ${
-              currentView === 'pr-suggestions' ? 'text-green-600' : 'text-stone-400'
-            }`} />
-            <span>PR Suggestions</span>
-          </button>
+            isActive={currentView === 'pr-suggestions'}
+            activeColor="emerald"
+          />
+          <SidebarButton
+            icon={<Linkedin />}
+            label="LinkedIn Posts"
+            onClick={() => onViewChange?.('linkedin-posts')}
+            isActive={currentView === 'linkedin-posts'}
+            activeColor="blue"
+          />
         </div>
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-stone-200 mx-5 my-2" />
+      <div className="h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent mx-4 my-4" />
 
       {/* Context Area: File Explorer */}
       <div className="flex-1 overflow-y-auto">
         {/* Context Header */}
         <div className="px-5 mb-3 flex items-center justify-between">
-          <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-stone-400/80 uppercase tracking-[0.12em]">
             File Explorer
           </span>
-          <FolderOpen className="w-3.5 h-3.5 text-stone-400" />
+          <FolderOpen className="w-3.5 h-3.5 text-stone-300" />
         </div>
 
         {/* Recent Documents */}

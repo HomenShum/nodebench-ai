@@ -193,6 +193,8 @@ export const createGraph = internalMutation({
     ),
     sourceId: v.string(),
     userId: v.id("users"),
+    /** Override timestamps for deterministic evaluation/replay. */
+    createdAtOverride: v.optional(v.number()),
     claims: v.array(v.object({
       subject: v.string(),
       predicate: v.string(),
@@ -218,7 +220,7 @@ export const createGraph = internalMutation({
     })),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
+    const now = args.createdAtOverride ?? Date.now();
 
     // Check if graph already exists for this source
     const existing = await ctx.db

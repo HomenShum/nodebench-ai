@@ -1,0 +1,17 @@
+{
+  "vaultVersion": "v1",
+  "root": "vault",
+  "usersDir": "users",
+  "masterDir": "master",
+  "naming": {
+    "noteFile": "kebab-case",
+    "allowSpaces": false
+  },
+  "requiredFrontmatterKeys": [
+    "noteId",
+    "title",
+    "createdAtIso",
+    "updatedAtIso",
+    "sources"
+  ]
+}

@@ -195,6 +195,14 @@ crons.daily(
   {}
 );
 
+// Self maintenance: audit invariants and persist a boolean-gated report
+crons.daily(
+  "self maintenance",
+  { hourUTC: 5, minuteUTC: 10 },
+  internal.domains.operations.selfMaintenance.runNightlySelfMaintenanceCron,
+  {}
+);
+
 // Cleanup stale locks hourly (locks stuck in "running" > 1 hour)
 crons.interval(
   "cleanup stale global locks",
@@ -307,7 +315,7 @@ crons.daily(
   "post daily digest to LinkedIn",
   { hourUTC: 6, minuteUTC: 15 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
-  { persona: "GENERAL", model: "mimo-v2-flash-free" }
+  { persona: "GENERAL", model: "devstral-2-free" }
 );
 
 // Post daily funding tracker to LinkedIn at 12:00 PM UTC (separate from main digest)
@@ -325,7 +333,7 @@ crons.daily(
   "post VC deal flow memo to LinkedIn",
   { hourUTC: 9, minuteUTC: 0 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
-  { persona: "VC_INVESTOR", model: "mimo-v2-flash-free" }
+  { persona: "VC_INVESTOR", model: "devstral-2-free" }
 );
 
 // Post Tech Radar to LinkedIn at 3:00 PM UTC
@@ -334,7 +342,7 @@ crons.daily(
   "post tech radar to LinkedIn",
   { hourUTC: 15, minuteUTC: 0 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
-  { persona: "TECH_BUILDER", model: "mimo-v2-flash-free" }
+  { persona: "TECH_BUILDER", model: "devstral-2-free" }
 );
 
 // Post Startup Funding Brief to LinkedIn at 10:00 AM UTC
@@ -573,12 +581,84 @@ crons.interval(
   {}
 );
 
+// ============================================================================
+// OPERATIONS - SLO Collection + Burn-Rate Alerting
+// ============================================================================
+
+// Collect SLO measurements and evaluate burn-rate/compliance alerts.
+// Runs frequently to support multi-window alerting (e.g., 1h/5m windows).
+crons.interval(
+  "collect SLO measurements and evaluate alerts",
+  { minutes: 5 },
+  internal.domains.operations.sloCollector.collectAndEvaluateAlerts,
+  {}
+);
+
+// ============================================================================
+// OPERATIONS - Privacy / Retention / DSAR
+// ============================================================================
+
+// Enforce data-class retention policies (TTL) daily.
+crons.daily(
+  "privacy retention TTL deletion",
+  { hourUTC: 2, minuteUTC: 45 },
+  internal.domains.operations.privacyEnforcement.runTtlDeletion,
+  {}
+);
+
+// Process pending GDPR deletion requests hourly.
+crons.interval(
+  "process pending deletion requests",
+  { hours: 1 },
+  internal.domains.operations.privacyEnforcement.processPendingDeletionRequests,
+  { limit: 10 }
+);
+
 // Cleanup old autonomous model usage weekly (keep 7 days)
 crons.weekly(
   "cleanup autonomous model usage",
   { dayOfWeek: "sunday", hourUTC: 5, minuteUTC: 15 },
   internal.domains.models.autonomousModelResolver.cleanupOldUsageRecords,
   {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NARRATIVE DOMAIN - Defensibility Guards (Phase 8)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Expire old quarantine entries daily
+// Marks pending entries past their expiry date as expired
+crons.daily(
+  "expire quarantine entries",
+  { hourUTC: 1, minuteUTC: 30 },
+  internal.domains.narrative.cronHandlers.expireQuarantineEntries,
+  {}
+);
+
+// Enforce content TTL daily
+// Deletes content past its TTL based on content rights policies
+crons.daily(
+  "enforce content TTL",
+  { hourUTC: 2, minuteUTC: 0 },
+  internal.domains.narrative.cronHandlers.enforceContentTTL,
+  {}
+);
+
+// Cleanup old search logs weekly (90-day retention)
+crons.weekly(
+  "cleanup narrative search logs",
+  { dayOfWeek: "sunday", hourUTC: 3, minuteUTC: 15 },
+  internal.domains.narrative.cronHandlers.cleanupOldSearchLogs,
+  {}
+);
+
+// Process high-scoring feed items into narrative events daily
+// Runs after the weekly pipeline to catch any high-signal content
+crons.daily(
+  "process feed items to narrative",
+  { hourUTC: 7, minuteUTC: 0 },
+  internal.domains.narrative.integrations.hooks.processFeedItemsToNarrative,
+  { lookbackDays: 1, minPhoenixScore: 75 }
 );
 
 // ═══════════════════════════════════════════════════════════════════════════

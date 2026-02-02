@@ -700,20 +700,23 @@ export function FastAgentInputBar({
             <button
               type="button"
               onClick={() => setShowModelSelector(!showModelSelector)}
-              className="flex items-center gap-1.5 px-2 py-1 text-[11px] hover:bg-[var(--bg-secondary)] rounded transition-colors"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-[var(--bg-secondary)] rounded-lg transition-all duration-200 border border-transparent hover:border-[var(--border-color)]"
             >
-              <span className="text-[var(--text-secondary)] flex items-center gap-1.5">
+              <span className="text-[var(--text-secondary)] flex items-center gap-1.5 font-medium">
                 {MODEL_UI_INFO[selectedModel as ApprovedModel]?.isFree && <Gift className="w-3 h-3 text-violet-500" />}
                 {MODEL_UI_INFO[selectedModel as ApprovedModel]?.name ?? 'Gemini 3 Flash'}
               </span>
-              <ChevronUp className={cn("w-3 h-3 text-[var(--text-muted)] transition-transform", showModelSelector ? "rotate-180" : "")} />
+              <ChevronUp className={cn("w-3 h-3 text-[var(--text-muted)] transition-transform duration-200", showModelSelector ? "rotate-180" : "")} />
             </button>
 
             {/* Model Dropdown */}
             {showModelSelector && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
-                <div className="absolute bottom-full left-0 mb-1 w-56 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-lg z-20 py-1 max-h-72 overflow-y-auto">
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto">
+                  <div className="px-3 py-2 border-b border-[var(--border-color)]">
+                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Select Model</span>
+                  </div>
                   {APPROVED_MODEL_LIST.map((model) => (
                     <button
                       type="button"
@@ -723,18 +726,18 @@ export function FastAgentInputBar({
                         setShowModelSelector(false);
                       }}
                       className={cn(
-                        "w-full px-3 py-2 text-left hover:bg-[var(--bg-secondary)] transition-colors",
-                        selectedModel === model.id && "bg-[var(--bg-secondary)]"
+                        "w-full px-3 py-2.5 text-left hover:bg-[var(--bg-secondary)] transition-all duration-150",
+                        selectedModel === model.id && "bg-[var(--bg-secondary)] border-l-2 border-l-emerald-500"
                       )}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={cn("text-xs flex items-center gap-1.5", selectedModel === model.id ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>
+                        <span className={cn("text-[12px] flex items-center gap-1.5", selectedModel === model.id ? "font-semibold text-[var(--text-primary)]" : "font-medium text-[var(--text-secondary)]")}>
                           {model.isFree && <Gift className="w-3 h-3 text-violet-500" />}
                           {model.name}
                         </span>
-                        <span className="text-[10px] text-[var(--text-muted)]">{model.contextWindow}</span>
+                        <span className="text-[10px] text-[var(--text-muted)] font-medium">{model.contextWindow}</span>
                       </div>
-                      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                      <div className="text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
                         {model.description}
                       </div>
                     </button>
@@ -921,15 +924,15 @@ export function FastAgentInputBar({
         )}
 
         {/* Input Area */}
-        <div className="p-3 flex items-end gap-2">
+        <div className="p-3 flex items-end gap-1.5">
           {/* Attachment Button */}
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isStreaming}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
             title="Attach file"
           >
-            <Paperclip className="w-5 h-5" />
+            <Paperclip className="w-4.5 h-4.5" />
           </button>
 
           {/* Audio/Video Recording */}
@@ -937,19 +940,19 @@ export function FastAgentInputBar({
             type="button"
             onClick={() => startRecording("audio")}
             disabled={isStreaming || isRecording}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
             title="Record audio"
           >
-            <Mic className="w-5 h-5" />
+            <Mic className="w-4.5 h-4.5" />
           </button>
           <button
             type="button"
             onClick={() => startRecording("video")}
             disabled={isStreaming || isRecording}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
             title="Record video"
           >
-            <Video className="w-5 h-5" />
+            <Video className="w-4.5 h-4.5" />
           </button>
           <input
             ref={fileInputRef}
@@ -987,7 +990,7 @@ export function FastAgentInputBar({
           {isStreaming ? (
             <button
               onClick={onStop}
-              className="p-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] rounded-lg transition-colors"
+              className="p-2.5 bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-800 rounded-xl transition-all duration-200"
               title="Stop generating"
             >
               <StopCircle className="w-5 h-5" />
@@ -997,9 +1000,9 @@ export function FastAgentInputBar({
               onClick={handleSend}
               disabled={!canSend}
               className={cn(
-                "p-2 rounded-lg transition-all duration-200",
+                "p-2.5 rounded-xl transition-all duration-200",
                 canSend
-                  ? "bg-[var(--accent-primary)] text-white hover:opacity-90 shadow-sm hover:shadow"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md hover:shadow-lg shadow-emerald-600/20"
                   : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
               )}
               title="Send message"

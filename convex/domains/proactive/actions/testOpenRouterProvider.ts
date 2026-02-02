@@ -104,7 +104,7 @@ export const testMimoFree = internalAction({
 
       return {
         success: true,
-        model: "mimo-v2-flash-free",
+        model: "devstral-2-free",
         duration,
         cost: "$0.00",
         draft,
