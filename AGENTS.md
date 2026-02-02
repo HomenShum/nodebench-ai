@@ -334,11 +334,26 @@ Rule: boolean gates decide pass or fail. Optional LLM explanations are allowed b
 - Scheduled enforcement: `domains/operations/privacyEnforcement:*`
 - Safety: dry-run where supported, never delete without audit trail
 
-### MCP server plane (Render)
+### MCP server plane (Render) — Core Agent
 - Health: `curl https://nodebench-mcp-core-agent.onrender.com/health` (must return `{"status":"ok"}`)
 - Tools list: `tools/list` JSON-RPC 2.0 call returns 7 tools (3 planning + 4 memory)
 - Smoke test: `tools/call` with `createPlan` and verify `planId` returned
 - Auth: Token required when `MCP_HTTP_TOKEN` is set; 401 on missing/wrong token
+
+### MCP Gateway plane (Render) — 53 tools, 5 domains
+- Health: `curl https://nodebench-mcp-gateway.onrender.com/health` (must return `{"status":"ok","tools":53}`)
+- Tools list: `tools/list` returns 53 tools across research, narrative, verification, knowledge, documents
+- Auth model:
+  - Read-only public tools (21): no auth required, work for all callers
+  - Read-only user-scoped tools (10): return `[]`/`null` without auth (graceful degradation)
+  - Document write tools (20): route to internal MCP endpoints via `MCP_SERVICE_USER_ID` env var
+  - `runNewsroomPipeline`: returns structured error in guest mode (requires user auth)
+- Smoke tests:
+  - `getPublicThreads` — returns thread array (no auth needed)
+  - `getForYouFeed` — returns feed items (no auth needed)
+  - `createDocument` — creates doc via internal endpoint (requires `MCP_SERVICE_USER_ID`)
+  - `listDocuments` — lists user docs via internal endpoint
+- Env vars required: `CONVEX_URL`, `CONVEX_ADMIN_KEY`, `MCP_SERVICE_USER_ID`, `MCP_HTTP_TOKEN` (optional)
 
 ### File vault plane (Obsidian + Git)
 - Init: `npm run vault:init`
@@ -413,7 +428,7 @@ Four MCP servers, each deployed as a separate Render web service:
 | `nodebench-mcp-core-agent` | Node.js (TypeScript) | createPlan, updatePlanStep, getPlan, writeAgentMemory, readAgentMemory, listAgentMemory, deleteAgentMemory | 4001 |
 | `nodebench-mcp-openbb` | Python (FastAPI) | Financial market data, SEC filings, funding events | 8001 |
 | `nodebench-mcp-research` | Python (FastAPI) | Multi-source fusion search, iterative research with reflection | 8002 |
-| `nodebench-mcp-gateway` | Node.js (TypeScript) | 51 tools: research (8), narrative (10), verification (7), knowledge (8), documents (18) — full Convex proxy | 4002 |
+| `nodebench-mcp-gateway` | Node.js (TypeScript) | 53 tools: research (8), narrative (10), verification (7), knowledge (8), documents (20) — full Convex proxy | 4002 |
 
 All servers speak JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime.
 
@@ -449,10 +464,12 @@ The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions 
 - `getKnowledgeGraph` / `getKnowledgeGraphClaims` — Graph and claim extraction
 - `getSourceRegistry` — Source reliability and freshness
 
-**Documents & Files (18 tools)**
+**Documents & Files (20 tools)** — all route to internal MCP endpoints with `MCP_SERVICE_USER_ID`
 - `createDocument` / `createDocumentWithContent` / `getDocument` / `updateDocument` — Document CRUD
 - `archiveDocument` / `restoreDocument` — Soft delete and restore
 - `searchDocuments` / `listDocuments` — Title search and listing
+- `exportDocumentToMarkdown` — ProseMirror JSON → Markdown export
+- `duplicateDocument` — Clone document with content/icon/type
 - `createFolder` / `listFolders` / `getFolderWithDocuments` — Folder management
 - `addDocumentToFolder` / `removeDocumentFromFolder` — Folder organization
 - `createSpreadsheet` / `listSpreadsheets` — Spreadsheet CRUD
@@ -466,7 +483,7 @@ The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions 
 # Connect the repo in Render Dashboard > Blueprints > New Blueprint Instance.
 # Set secrets (sync: false vars) in the Render dashboard:
 #   MCP_HTTP_TOKEN, CONVEX_BASE_URL, CONVEX_ADMIN_KEY, MCP_SECRET
-#   OPENBB_API_KEY, CONVEX_URL
+#   OPENBB_API_KEY, CONVEX_URL, MCP_SERVICE_USER_ID (gateway only)
 ```
 
 ### Local dev (Docker Compose)
@@ -550,6 +567,62 @@ The scripts test:
 - Health endpoints for all 4 servers
 - JSON-RPC `tools/list` for core-agent and gateway
 - Root endpoints for OpenBB and Research servers
+
+## LinkedIn Posting Targets (Personal vs Organization Page)
+
+All automated cron-triggered posts now route to a **LinkedIn Organization Page** instead of the personal profile. Personal profile remains available for manual/agent-initiated posts.
+
+### Architecture
+
+Two posting targets:
+- `personal` — User's personal LinkedIn profile (via `LINKEDIN_ACCESS_TOKEN` + `urn:li:person:{id}`)
+- `organization` — Company page (via `LINKEDIN_ORG_ACCESS_TOKEN` + `urn:li:organization:{LINKEDIN_ORG_ID}`)
+
+Routing is handled by `createTargetedTextPost` internal action in `domains/social/linkedinPosting.ts`. It reads `LINKEDIN_DEFAULT_TARGET` env var as fallback when no explicit target is passed.
+
+### Required Convex environment variables
+
+| Variable | Purpose |
+|----------|---------|
+| `LINKEDIN_ORG_ACCESS_TOKEN` | OAuth token with `w_organization_social` scope for the Company Page |
+| `LINKEDIN_ORG_ID` | Numeric organization ID (constructs `urn:li:organization:{id}`) |
+| `LINKEDIN_DEFAULT_TARGET` | Set to `organization` for crons to default to org page |
+| `LINKEDIN_ACCESS_TOKEN` | Existing personal profile token (unchanged) |
+
+### Posting rules
+
+| Context | Default target | Override |
+|---------|---------------|----------|
+| Cron-triggered posts (daily digest, funding, FDA, research, clinical, M&A) | `organization` | Hardcoded in workflow |
+| Manual triggers (`linkedinTrigger.ts`) | `organization` | Pass `target: "personal"` to override |
+| Agent tool (`postToLinkedIn`) | `personal` | Pass `target: "organization"` to override |
+| Archive maintenance / corrections | `organization` | — |
+
+### Rollback
+
+Set `LINKEDIN_DEFAULT_TARGET=personal` in Convex dashboard to instantly revert all crons to personal posting without code changes.
+
+### Verification
+
+Test org posting:
+
+```powershell
+npx convex run workflows/linkedinTrigger:postTechnicalReport '{"content":"Org test post","dryRun":true,"target":"organization"}'
+```
+
+Live test:
+
+```powershell
+npx convex run workflows/linkedinTrigger:postTechnicalReport '{"content":"NodeBench AI - Organization page test.","target":"organization"}'
+```
+
+Check archive for target field:
+
+```powershell
+npx convex run --push "domains/social/linkedinArchiveQueries:getArchivedPosts" "{limit:10,dedupe:true}"
+```
+
+New archive rows include `target: "personal" | "organization"`. Existing rows without a target are implicitly `"personal"`.
 
 ## What to watch for next
 

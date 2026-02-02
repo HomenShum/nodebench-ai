@@ -214,10 +214,22 @@ export const narrativeTools: McpTool[] = [
       required: ["topic"],
     },
     handler: async (args) => {
-      return await convexAction(
-        "domains/narrative/newsroom/workflow:runNewsroomPipeline",
-        { topic: args.topic, depth: args.depth ?? "standard" }
-      );
+      try {
+        return await convexAction(
+          "domains/narrative/newsroom/workflow:runNewsroomPipeline",
+          { topic: args.topic, depth: args.depth ?? "standard" }
+        );
+      } catch (err: any) {
+        // This action requires authenticated user context which admin-key
+        // HTTP calls don't provide. Return a structured error instead of crashing.
+        if (err?.message?.includes("Unauthorized") || err?.message?.includes("auth")) {
+          return {
+            error: "authentication_required",
+            message: "runNewsroomPipeline requires user authentication and cannot be run via MCP gateway in guest mode.",
+          };
+        }
+        throw err;
+      }
     },
   },
 ];

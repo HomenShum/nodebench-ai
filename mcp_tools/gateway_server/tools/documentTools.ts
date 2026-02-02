@@ -1,10 +1,15 @@
 /**
  * Document, folder, spreadsheet, and file tools for external agents.
- * Proxies Convex queries and mutations from the documents domain.
+ *
+ * Routes to internal MCP-safe Convex endpoints that accept explicit userId,
+ * bypassing getAuthUserId() which returns null for admin-key HTTP calls.
  */
 
-import { convexQuery, convexMutation } from "../convexClient.js";
+import { convexQuery, convexMutation, getServiceUserId } from "../convexClient.js";
 import type { McpTool } from "./researchTools.js";
+
+// Internal endpoint prefix for document MCP functions
+const MCP = "domains/documents/mcpDocumentEndpoints";
 
 export const documentTools: McpTool[] = [
   // ── Document CRUD ─────────────────────────────────────────────
@@ -24,7 +29,8 @@ export const documentTools: McpTool[] = [
       required: ["title"],
     },
     handler: async (args) => {
-      return await convexMutation("domains/documents/documents:create", {
+      return await convexMutation(`${MCP}:mcpCreateDocument`, {
+        userId: getServiceUserId(),
         title: args.title,
         parentId: args.parentId,
       });
@@ -50,14 +56,12 @@ export const documentTools: McpTool[] = [
       required: ["title", "content"],
     },
     handler: async (args) => {
-      return await convexMutation(
-        "domains/documents/documents:createWithContent",
-        {
-          title: args.title,
-          content: args.content,
-          parentId: args.parentId,
-        }
-      );
+      return await convexMutation(`${MCP}:mcpCreateDocument`, {
+        userId: getServiceUserId(),
+        title: args.title,
+        content: args.content,
+        parentId: args.parentId,
+      });
     },
   },
   {
@@ -75,7 +79,7 @@ export const documentTools: McpTool[] = [
       required: ["documentId"],
     },
     handler: async (args) => {
-      return await convexQuery("domains/documents/documents:getById", {
+      return await convexQuery(`${MCP}:mcpGetDocument`, {
         documentId: args.documentId,
       });
     },
@@ -100,16 +104,16 @@ export const documentTools: McpTool[] = [
       required: ["id"],
     },
     handler: async (args) => {
-      const payload: Record<string, unknown> = { id: args.id };
+      const payload: Record<string, unknown> = {
+        userId: getServiceUserId(),
+        id: args.id,
+      };
       if (args.title !== undefined) payload.title = args.title;
       if (args.content !== undefined) payload.content = args.content;
       if (args.icon !== undefined) payload.icon = args.icon;
       if (args.isPublic !== undefined) payload.isPublic = args.isPublic;
       if (args.isFavorite !== undefined) payload.isFavorite = args.isFavorite;
-      return await convexMutation(
-        "domains/documents/documents:update",
-        payload
-      );
+      return await convexMutation(`${MCP}:mcpUpdateDocument`, payload);
     },
   },
   {
@@ -124,7 +128,8 @@ export const documentTools: McpTool[] = [
       required: ["id"],
     },
     handler: async (args) => {
-      return await convexMutation("domains/documents/documents:archive", {
+      return await convexMutation(`${MCP}:mcpArchiveDocument`, {
+        userId: getServiceUserId(),
         id: args.id,
       });
     },
@@ -140,7 +145,8 @@ export const documentTools: McpTool[] = [
       required: ["id"],
     },
     handler: async (args) => {
-      return await convexMutation("domains/documents/documents:restore", {
+      return await convexMutation(`${MCP}:mcpRestoreDocument`, {
+        userId: getServiceUserId(),
         id: args.id,
       });
     },
@@ -156,7 +162,8 @@ export const documentTools: McpTool[] = [
       required: ["query"],
     },
     handler: async (args) => {
-      return await convexQuery("domains/documents/documents:getSearch", {
+      return await convexQuery(`${MCP}:mcpSearchDocuments`, {
+        userId: getServiceUserId(),
         query: args.query,
       });
     },
@@ -167,13 +174,53 @@ export const documentTools: McpTool[] = [
       "List all user documents sorted by last modified (most recent first, up to 200).",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        limit: { type: "number", description: "Max results (default 100)" },
+      },
     },
-    handler: async () => {
-      return await convexQuery(
-        "domains/documents/documents:getSidebar",
-        {}
-      );
+    handler: async (args) => {
+      return await convexQuery(`${MCP}:mcpListDocuments`, {
+        userId: getServiceUserId(),
+        limit: args.limit,
+      });
+    },
+  },
+  {
+    name: "exportDocumentToMarkdown",
+    description:
+      "Export a document to Markdown format. Returns { title, markdown }.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        documentId: { type: "string", description: "Convex document ID" },
+      },
+      required: ["documentId"],
+    },
+    handler: async (args) => {
+      return await convexQuery(`${MCP}:mcpExportToMarkdown`, {
+        userId: getServiceUserId(),
+        documentId: args.documentId,
+      });
+    },
+  },
+  {
+    name: "duplicateDocument",
+    description:
+      "Duplicate a document. Clones content, icon, type. Resets visibility and favorite.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        documentId: { type: "string", description: "Convex document ID to clone" },
+        title: { type: "string", description: "Override title (default: original + ' (Copy)')" },
+      },
+      required: ["documentId"],
+    },
+    handler: async (args) => {
+      return await convexMutation(`${MCP}:mcpDuplicateDocument`, {
+        userId: getServiceUserId(),
+        documentId: args.documentId,
+        title: args.title,
+      });
     },
   },
 
@@ -193,7 +240,8 @@ export const documentTools: McpTool[] = [
       required: ["name", "color"],
     },
     handler: async (args) => {
-      return await convexMutation("domains/documents/folders:createFolder", {
+      return await convexMutation(`${MCP}:mcpCreateFolder`, {
+        userId: getServiceUserId(),
         name: args.name,
         color: args.color,
       });
@@ -207,10 +255,9 @@ export const documentTools: McpTool[] = [
       properties: {},
     },
     handler: async () => {
-      return await convexQuery(
-        "domains/documents/folders:getUserFolders",
-        {}
-      );
+      return await convexQuery(`${MCP}:mcpListFolders`, {
+        userId: getServiceUserId(),
+      });
     },
   },
   {
@@ -224,10 +271,10 @@ export const documentTools: McpTool[] = [
       required: ["folderId"],
     },
     handler: async (args) => {
-      return await convexQuery(
-        "domains/documents/folders:getFolderWithDocuments",
-        { folderId: args.folderId }
-      );
+      return await convexQuery(`${MCP}:mcpGetFolderWithDocuments`, {
+        userId: getServiceUserId(),
+        folderId: args.folderId,
+      });
     },
   },
   {
@@ -242,10 +289,11 @@ export const documentTools: McpTool[] = [
       required: ["documentId", "folderId"],
     },
     handler: async (args) => {
-      return await convexMutation(
-        "domains/documents/folders:addDocumentToFolder",
-        { documentId: args.documentId, folderId: args.folderId }
-      );
+      return await convexMutation(`${MCP}:mcpAddDocumentToFolder`, {
+        userId: getServiceUserId(),
+        documentId: args.documentId,
+        folderId: args.folderId,
+      });
     },
   },
   {
@@ -260,10 +308,11 @@ export const documentTools: McpTool[] = [
       required: ["documentId", "folderId"],
     },
     handler: async (args) => {
-      return await convexMutation(
-        "domains/documents/folders:removeDocumentFromFolder",
-        { documentId: args.documentId, folderId: args.folderId }
-      );
+      return await convexMutation(`${MCP}:mcpRemoveDocumentFromFolder`, {
+        userId: getServiceUserId(),
+        documentId: args.documentId,
+        folderId: args.folderId,
+      });
     },
   },
 
@@ -279,10 +328,10 @@ export const documentTools: McpTool[] = [
       required: ["name"],
     },
     handler: async (args) => {
-      return await convexMutation(
-        "domains/integrations/spreadsheets:createSheet",
-        { name: args.name }
-      );
+      return await convexMutation(`${MCP}:mcpCreateSpreadsheet`, {
+        userId: getServiceUserId(),
+        name: args.name,
+      });
     },
   },
   {
@@ -295,10 +344,10 @@ export const documentTools: McpTool[] = [
       },
     },
     handler: async (args) => {
-      return await convexQuery(
-        "domains/integrations/spreadsheets:listSheets",
-        { limit: args.limit }
-      );
+      return await convexQuery(`${MCP}:mcpListSpreadsheets`, {
+        userId: getServiceUserId(),
+        limit: args.limit,
+      });
     },
   },
   {
@@ -317,22 +366,19 @@ export const documentTools: McpTool[] = [
       required: ["sheetId", "startRow", "endRow", "startCol", "endCol"],
     },
     handler: async (args) => {
-      return await convexQuery(
-        "domains/integrations/spreadsheets:getRange",
-        {
-          sheetId: args.sheetId,
-          startRow: args.startRow,
-          endRow: args.endRow,
-          startCol: args.startCol,
-          endCol: args.endCol,
-        }
-      );
+      return await convexQuery(`${MCP}:mcpGetSpreadsheetRange`, {
+        sheetId: args.sheetId,
+        startRow: args.startRow,
+        endRow: args.endRow,
+        startCol: args.startCol,
+        endCol: args.endCol,
+      });
     },
   },
   {
     name: "applySpreadsheetOperations",
     description:
-      'Apply batch cell operations to a spreadsheet. Operations: setCell ({op:"setCell", row, col, value, type?}), clearCell ({op:"clearCell", row, col}), setRange ({op:"setRange", startRow, endRow, startCol, endCol, values?[][]}).',
+      'Apply batch cell operations to a spreadsheet. Operations: setCell ({op:"setCell", row, col, value, type?}), clearCell ({op:"clearCell", row, col}).',
     inputSchema: {
       type: "object",
       properties: {
@@ -345,20 +391,12 @@ export const documentTools: McpTool[] = [
             properties: {
               op: {
                 type: "string",
-                enum: ["setCell", "clearCell", "setRange"],
+                enum: ["setCell", "clearCell"],
               },
               row: { type: "number" },
               col: { type: "number" },
               value: { type: "string" },
               type: { type: "string" },
-              startRow: { type: "number" },
-              endRow: { type: "number" },
-              startCol: { type: "number" },
-              endCol: { type: "number" },
-              values: {
-                type: "array",
-                items: { type: "array", items: { type: "string" } },
-              },
             },
             required: ["op"],
           },
@@ -367,10 +405,11 @@ export const documentTools: McpTool[] = [
       required: ["sheetId", "operations"],
     },
     handler: async (args) => {
-      return await convexMutation(
-        "domains/integrations/spreadsheets:applyOperations",
-        { sheetId: args.sheetId, operations: args.operations }
-      );
+      return await convexMutation(`${MCP}:mcpApplySpreadsheetOperations`, {
+        userId: getServiceUserId(),
+        sheetId: args.sheetId,
+        operations: args.operations,
+      });
     },
   },
 
@@ -390,7 +429,8 @@ export const documentTools: McpTool[] = [
       },
     },
     handler: async (args) => {
-      return await convexQuery("domains/documents/files:getUserFiles", {
+      return await convexQuery(`${MCP}:mcpListFiles`, {
+        userId: getServiceUserId(),
         fileType: args.fileType,
         limit: args.limit,
       });
