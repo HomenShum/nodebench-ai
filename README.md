@@ -216,8 +216,13 @@ All tables deployed with 12 indexes for optimal query performance.
 - NarrativeRoadmap timeline, NarrativeFeed, LinkedInPostArchiveView
 - Sidebar redesign, routing updates, Cinematic Home and Entity Profile views
 
+**MCP Server Deployment (Render)**
+- `render.yaml` blueprint deploys 3 MCP services: core-agent (TS), openbb (Python), research (Python)
+- JSON-RPC 2.0 protocol with `/health` endpoints and token auth
+- External agents (Claude Desktop, Cursor, custom) connect via HTTP transport
+
 **Documentation**
-- AGENTS.md: operational runbooks, verification coverage map, 10 Claude Code power-user tips
+- AGENTS.md: operational runbooks, Render deployment, verification coverage map, 10 Claude Code power-user tips
 - UI_POLISH_ROADMAP.md: phased improvement plan benchmarked against Linear, Notion, Arc
 - CHANGELOG.md: standalone changelog file
 

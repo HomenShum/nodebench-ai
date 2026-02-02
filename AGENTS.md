@@ -334,6 +334,12 @@ Rule: boolean gates decide pass or fail. Optional LLM explanations are allowed b
 - Scheduled enforcement: `domains/operations/privacyEnforcement:*`
 - Safety: dry-run where supported, never delete without audit trail
 
+### MCP server plane (Render)
+- Health: `curl https://nodebench-mcp-core-agent.onrender.com/health` (must return `{"status":"ok"}`)
+- Tools list: `tools/list` JSON-RPC 2.0 call returns 7 tools (3 planning + 4 memory)
+- Smoke test: `tools/call` with `createPlan` and verify `planId` returned
+- Auth: Token required when `MCP_HTTP_TOKEN` is set; 401 on missing/wrong token
+
 ### File vault plane (Obsidian + Git)
 - Init: `npm run vault:init`
 - Health check: `npm run vault:health` (writes `.tmp/vault_health_report.json`, boolean exit code)
@@ -392,6 +398,87 @@ Export bug cards to the file vault (external filesystem context preservation):
 
 ```powershell
 npm run bugloop:export:vault
+```
+
+## MCP Server Deployment (Render)
+
+NodeBench AI exposes MCP tools as HTTP services for external agents to consume.
+
+### Architecture
+
+Three MCP servers, each deployed as a separate Render web service:
+
+| Service | Runtime | Tools | Default Port |
+|---------|---------|-------|-------------|
+| `nodebench-mcp-core-agent` | Node.js (TypeScript) | createPlan, updatePlanStep, getPlan, writeAgentMemory, readAgentMemory, listAgentMemory, deleteAgentMemory | 4001 |
+| `nodebench-mcp-openbb` | Python (FastAPI) | Financial market data, SEC filings, funding events | 8001 |
+| `nodebench-mcp-research` | Python (FastAPI) | Multi-source fusion search, iterative research with reflection | 8002 |
+
+All servers speak JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime.
+
+### Blueprint deploy
+
+```powershell
+# render.yaml at repo root defines all 3 services.
+# Connect the repo in Render Dashboard > Blueprints > New Blueprint Instance.
+# Set secrets (sync: false vars) in the Render dashboard:
+#   MCP_HTTP_TOKEN, CONVEX_BASE_URL, CONVEX_ADMIN_KEY, MCP_SECRET
+#   OPENBB_API_KEY, CONVEX_URL
+```
+
+### Local dev (Docker Compose)
+
+```powershell
+cd python-mcp-servers && docker compose up --build
+```
+
+Core agent (TypeScript) standalone:
+
+```powershell
+cd mcp_tools/core_agent_server && npm install && npm run start:http
+```
+
+### External agent connection
+
+Any MCP-compatible agent (Claude Desktop, Cursor, custom) can connect:
+
+```jsonc
+// claude_desktop_config.json or equivalent
+{
+  "mcpServers": {
+    "nodebench": {
+      "url": "https://nodebench-mcp-core-agent.onrender.com",
+      "transport": "http",
+      "headers": {
+        "x-mcp-token": "<YOUR_TOKEN>"
+      }
+    }
+  }
+}
+```
+
+JSON-RPC 2.0 protocol:
+
+```bash
+# List tools
+curl -X POST https://nodebench-mcp-core-agent.onrender.com \
+  -H "Content-Type: application/json" \
+  -H "x-mcp-token: $MCP_HTTP_TOKEN" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# Call a tool
+curl -X POST https://nodebench-mcp-core-agent.onrender.com \
+  -H "Content-Type: application/json" \
+  -H "x-mcp-token: $MCP_HTTP_TOKEN" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"createPlan","arguments":{"goal":"Research NVIDIA","steps":[{"step":"Find SEC filings","status":"pending"}]}}}'
+```
+
+### Health checks
+
+```bash
+curl https://nodebench-mcp-core-agent.onrender.com/health
+curl https://nodebench-mcp-openbb.onrender.com/health
+curl https://nodebench-mcp-research.onrender.com/health
 ```
 
 ## What to watch for next

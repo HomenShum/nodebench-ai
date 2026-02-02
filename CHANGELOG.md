@@ -83,6 +83,15 @@ Major release: DRANE narrative engine, entity linking, verification pipeline, Ra
 - **Entity extraction tools**: Structured entity output for ethical founder/executive research
 - **Image research tools**: Reverse image search and OCR
 
+### MCP Server Deployment (Render)
+
+- **render.yaml**: Blueprint defining 3 MCP web services (core-agent, openbb, research)
+- **Core agent Dockerfile**: Node.js 20 + tsx for TypeScript MCP server
+- **JSON-RPC 2.0 protocol**: `initialize`, `tools/list`, `tools/call` methods
+- **Health checks**: `/health` endpoint on all services
+- **Auth**: Optional bearer token via `MCP_HTTP_TOKEN` / `x-mcp-token` header
+- **External agent support**: Claude Desktop, Cursor, and custom MCP clients can connect to deployed URLs
+
 ### Scripts and Tooling
 
 - **Vault**: `npm run vault:init`, `npm run vault:health`, `npm run vault:merge` for Obsidian + Git file vault
@@ -92,7 +101,7 @@ Major release: DRANE narrative engine, entity linking, verification pipeline, Ra
 
 ### Documentation
 
-- **AGENTS.md**: Complete agent workflow guide with operational runbooks, verification coverage map, and 10 Claude Code power-user tips
+- **AGENTS.md**: Complete agent workflow guide with operational runbooks, Render deployment docs, verification coverage map, and 10 Claude Code power-user tips
 - **UI_POLISH_ROADMAP.md**: Phased UI improvement plan benchmarked against Linear, Notion, Perplexity, Arc
 - **.github/pull_request_template.md**: PR audit checklist with newsroom/DRANE validation steps
 

@@ -9,6 +9,7 @@
     "dev": "tsx server.ts",
     "dev:http": "tsx httpServer.ts",
     "start": "node dist/index.js",
+    "start:http": "tsx httpServer.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "lint": "eslint .",
