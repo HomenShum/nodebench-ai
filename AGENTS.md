@@ -406,20 +406,53 @@ NodeBench AI exposes MCP tools as HTTP services for external agents to consume.
 
 ### Architecture
 
-Three MCP servers, each deployed as a separate Render web service:
+Four MCP servers, each deployed as a separate Render web service:
 
 | Service | Runtime | Tools | Default Port |
 |---------|---------|-------|-------------|
 | `nodebench-mcp-core-agent` | Node.js (TypeScript) | createPlan, updatePlanStep, getPlan, writeAgentMemory, readAgentMemory, listAgentMemory, deleteAgentMemory | 4001 |
 | `nodebench-mcp-openbb` | Python (FastAPI) | Financial market data, SEC filings, funding events | 8001 |
 | `nodebench-mcp-research` | Python (FastAPI) | Multi-source fusion search, iterative research with reflection | 8002 |
+| `nodebench-mcp-gateway` | Node.js (TypeScript) | 33 tools: research (8), narrative (10), verification (7), knowledge (8) — full Convex proxy | 4002 |
 
 All servers speak JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime.
+
+### Gateway tool catalog
+
+The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions for external agents:
+
+**Research & Intelligence (8 tools)**
+- `getForYouFeed` — Personalized feed with verification-tagged items
+- `getLatestDashboard` — Dashboard metrics (deal flow, coverage, costs)
+- `getTrendingRepos` / `getFastestGrowingRepos` — GitHub intelligence
+- `getLatestPublicDossier` — Company/industry competitive dossier
+- `getDealFlow` — Funding events and investment signals
+- `getEntityInsights` — Deep entity analysis with persona hooks (banker, VC, CTO, founder)
+- `getSignalTimeseries` — Time-series signal data
+
+**DRANE Narrative Engine (10 tools)**
+- `getPublicThreads` / `getThread` / `searchThreads` / `getThreadsByEntity` — Thread discovery
+- `getThreadsWithEvents` / `getThreadStats` — Thread overviews
+- `getThreadPosts` — Analyst notes and thesis updates
+- `getOpenDisputes` / `getContradictoryPosts` — Contradiction detection
+- `runNewsroomPipeline` — Trigger Scout > Historian > Analyst > Publisher pipeline
+
+**Verification Pipeline (7 tools)**
+- `getVerificationSummary` — Trust scores by verdict (VERIFIED through INSUFFICIENT)
+- `getVerificationsForFact` / `getFactById` / `getFactsByRun` — Fact-checking
+- `getArtifactsWithHealth` — Source health status
+- `getCalibrationStats` / `getSloMetricsSummary` — Pipeline performance
+
+**Knowledge Graph (8 tools)**
+- `searchEntityContexts` / `getEntityContext` / `getEntityContextByName` — Entity lookup
+- `listEntityContexts` / `getEntityContextStats` — Knowledge base browsing
+- `getKnowledgeGraph` / `getKnowledgeGraphClaims` — Graph and claim extraction
+- `getSourceRegistry` — Source reliability and freshness
 
 ### Blueprint deploy
 
 ```powershell
-# render.yaml at repo root defines all 3 services.
+# render.yaml at repo root defines all 4 services.
 # Connect the repo in Render Dashboard > Blueprints > New Blueprint Instance.
 # Set secrets (sync: false vars) in the Render dashboard:
 #   MCP_HTTP_TOKEN, CONVEX_BASE_URL, CONVEX_ADMIN_KEY, MCP_SECRET
@@ -438,6 +471,12 @@ Core agent (TypeScript) standalone:
 cd mcp_tools/core_agent_server && npm install && npm run start:http
 ```
 
+Gateway (TypeScript) standalone:
+
+```powershell
+cd mcp_tools/gateway_server && npm install && npm run start:http
+```
+
 ### External agent connection
 
 Any MCP-compatible agent (Claude Desktop, Cursor, custom) can connect:
@@ -446,12 +485,15 @@ Any MCP-compatible agent (Claude Desktop, Cursor, custom) can connect:
 // claude_desktop_config.json or equivalent
 {
   "mcpServers": {
-    "nodebench": {
+    "nodebench-planning": {
       "url": "https://nodebench-mcp-core-agent.onrender.com",
       "transport": "http",
-      "headers": {
-        "x-mcp-token": "<YOUR_TOKEN>"
-      }
+      "headers": { "x-mcp-token": "<YOUR_TOKEN>" }
+    },
+    "nodebench-gateway": {
+      "url": "https://nodebench-mcp-gateway.onrender.com",
+      "transport": "http",
+      "headers": { "x-mcp-token": "<YOUR_TOKEN>" }
     }
   }
 }
@@ -479,6 +521,7 @@ curl -X POST https://nodebench-mcp-core-agent.onrender.com \
 curl https://nodebench-mcp-core-agent.onrender.com/health
 curl https://nodebench-mcp-openbb.onrender.com/health
 curl https://nodebench-mcp-research.onrender.com/health
+curl https://nodebench-mcp-gateway.onrender.com/health
 ```
 
 ### Verification scripts
@@ -494,8 +537,8 @@ After deploying to Render, run the verification script to test all endpoints:
 ```
 
 The scripts test:
-- Health endpoints for all 3 servers
-- JSON-RPC `tools/list` for core-agent
+- Health endpoints for all 4 servers
+- JSON-RPC `tools/list` for core-agent and gateway
 - Root endpoints for OpenBB and Research servers
 
 ## What to watch for next

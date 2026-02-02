@@ -69,3 +69,26 @@ services:
         value: production
       - key: ALLOWED_ORIGINS
         value: "*"
+
+  # ── Gateway MCP Server (TypeScript) ───────────────────────────
+  # Full Convex proxy: research, narrative, verification, knowledge tools.
+  # 33 tools across 4 domains for external agent consumption.
+  - type: web
+    name: nodebench-mcp-gateway
+    runtime: docker
+    dockerfilePath: mcp_tools/gateway_server/Dockerfile
+    dockerContext: mcp_tools/gateway_server
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: MCP_HTTP_HOST
+        value: "0.0.0.0"
+      - key: MCP_HTTP_TOKEN
+        sync: false
+      - key: CONVEX_URL
+        sync: false
+      - key: CONVEX_ADMIN_KEY
+        sync: false

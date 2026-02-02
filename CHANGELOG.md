@@ -85,8 +85,13 @@ Major release: DRANE narrative engine, entity linking, verification pipeline, Ra
 
 ### MCP Server Deployment (Render)
 
-- **render.yaml**: Blueprint defining 3 MCP web services (core-agent, openbb, research)
+- **render.yaml**: Blueprint defining 4 MCP web services (core-agent, openbb, research, gateway)
 - **Core agent Dockerfile**: Node.js 20 + tsx for TypeScript MCP server
+- **Gateway MCP server**: New `nodebench-mcp-gateway` service proxying 33 Convex tools across 4 domains (research, narrative, verification, knowledge) to external agents
+  - Research: getForYouFeed, getEntityInsights, getDealFlow, getTrendingRepos, getLatestDashboard, getLatestPublicDossier, getFastestGrowingRepos, getSignalTimeseries
+  - Narrative: getPublicThreads, searchThreads, getThreadsByEntity, getThreadsWithEvents, getThreadPosts, getOpenDisputes, getContradictoryPosts, runNewsroomPipeline
+  - Verification: getVerificationSummary, getVerificationsForFact, getFactById, getCalibrationStats, getSloMetricsSummary, getArtifactsWithHealth
+  - Knowledge: searchEntityContexts, getEntityContext, listEntityContexts, getKnowledgeGraph, getKnowledgeGraphClaims, getSourceRegistry
 - **JSON-RPC 2.0 protocol**: `initialize`, `tools/list`, `tools/call` methods
 - **Health checks**: `/health` endpoint on all services
 - **Auth**: Optional bearer token via `MCP_HTTP_TOKEN` / `x-mcp-token` header
