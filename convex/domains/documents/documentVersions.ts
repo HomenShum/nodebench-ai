@@ -126,3 +126,46 @@ export const restore = mutation({
   },
 });
 
+// Compare two snapshots (returns full content for client-side diffing)
+export const compareVersions = query({
+  args: {
+    snapshotId1: v.id("documentSnapshots"),
+    snapshotId2: v.id("documentSnapshots"),
+  },
+  handler: async (ctx, { snapshotId1, snapshotId2 }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const s1 = await ctx.db.get(snapshotId1) as Doc<"documentSnapshots"> | null;
+    const s2 = await ctx.db.get(snapshotId2) as Doc<"documentSnapshots"> | null;
+    if (!s1 || !s2) throw new Error("Snapshot not found");
+
+    if ((s1 as any).documentId !== (s2 as any).documentId) {
+      throw new Error("Snapshots belong to different documents");
+    }
+
+    const doc = await ctx.db.get((s1 as any).documentId) as Doc<"documents"> | null;
+    if (!doc) throw new Error("Document not found");
+    if (!doc.isPublic && doc.createdBy !== userId) throw new Error("Unauthorized");
+
+    return {
+      version1: {
+        id: s1._id,
+        version: (s1 as any).version as number,
+        createdAt: (s1 as any).createdAt as number,
+        content: String((s1 as any).content ?? ""),
+        note: (s1 as any).triggerReason as string | undefined,
+        size: (s1 as any).contentSize as number | undefined,
+      },
+      version2: {
+        id: s2._id,
+        version: (s2 as any).version as number,
+        createdAt: (s2 as any).createdAt as number,
+        content: String((s2 as any).content ?? ""),
+        note: (s2 as any).triggerReason as string | undefined,
+        size: (s2 as any).contentSize as number | undefined,
+      },
+    };
+  },
+});
+

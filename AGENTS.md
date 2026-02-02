@@ -413,7 +413,7 @@ Four MCP servers, each deployed as a separate Render web service:
 | `nodebench-mcp-core-agent` | Node.js (TypeScript) | createPlan, updatePlanStep, getPlan, writeAgentMemory, readAgentMemory, listAgentMemory, deleteAgentMemory | 4001 |
 | `nodebench-mcp-openbb` | Python (FastAPI) | Financial market data, SEC filings, funding events | 8001 |
 | `nodebench-mcp-research` | Python (FastAPI) | Multi-source fusion search, iterative research with reflection | 8002 |
-| `nodebench-mcp-gateway` | Node.js (TypeScript) | 33 tools: research (8), narrative (10), verification (7), knowledge (8) — full Convex proxy | 4002 |
+| `nodebench-mcp-gateway` | Node.js (TypeScript) | 51 tools: research (8), narrative (10), verification (7), knowledge (8), documents (18) — full Convex proxy | 4002 |
 
 All servers speak JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime.
 
@@ -448,6 +448,16 @@ The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions 
 - `listEntityContexts` / `getEntityContextStats` — Knowledge base browsing
 - `getKnowledgeGraph` / `getKnowledgeGraphClaims` — Graph and claim extraction
 - `getSourceRegistry` — Source reliability and freshness
+
+**Documents & Files (18 tools)**
+- `createDocument` / `createDocumentWithContent` / `getDocument` / `updateDocument` — Document CRUD
+- `archiveDocument` / `restoreDocument` — Soft delete and restore
+- `searchDocuments` / `listDocuments` — Title search and listing
+- `createFolder` / `listFolders` / `getFolderWithDocuments` — Folder management
+- `addDocumentToFolder` / `removeDocumentFromFolder` — Folder organization
+- `createSpreadsheet` / `listSpreadsheets` — Spreadsheet CRUD
+- `getSpreadsheetRange` / `applySpreadsheetOperations` — Cell-level spreadsheet operations
+- `listFiles` — File listing with type filtering
 
 ### Blueprint deploy
 

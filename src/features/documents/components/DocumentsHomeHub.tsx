@@ -514,6 +514,10 @@ export function DocumentsHomeHub({
 
   const toggleFavorite = useMutation(api.domains.documents.documents.toggleFavorite);
 
+  const bulkArchiveMutation = useMutation(api.domains.documents.batchOperations.bulkArchive);
+  const bulkToggleFavoriteMutation = useMutation(api.domains.documents.batchOperations.bulkToggleFavorite);
+  const duplicateDocumentMutation = useMutation(api.domains.documents.documents.duplicateDocument);
+
   const seedOnboarding = useMutation(api.domains.auth.onboarding.seedOnboardingContent);
 
   // These are Convex actions, not mutations
@@ -1050,23 +1054,24 @@ export function DocumentsHomeHub({
 
   const handleBulkToggleFavorite = useCallback(async () => {
     const ids = Array.from(selectedDocIds) as Array<Id<"documents">>;
-
     if (ids.length === 0) return;
-
-    await Promise.all(ids.map((id) => toggleFavorite({ id }).catch(() => { })));
-
+    await bulkToggleFavoriteMutation({ documentIds: ids });
     clearSelection();
-  }, [selectedDocIds, toggleFavorite, clearSelection]);
+  }, [selectedDocIds, bulkToggleFavoriteMutation, clearSelection]);
 
   const handleBulkArchive = useCallback(async () => {
     const ids = Array.from(selectedDocIds) as Array<Id<"documents">>;
-
     if (ids.length === 0) return;
-
-    await Promise.all(ids.map((id) => archiveDocument({ id }).catch(() => { })));
-
+    await bulkArchiveMutation({ documentIds: ids });
     clearSelection();
-  }, [selectedDocIds, archiveDocument, clearSelection]);
+  }, [selectedDocIds, bulkArchiveMutation, clearSelection]);
+
+  const handleDuplicateDocument = useCallback(
+    async (docId: Id<"documents">) => {
+      await duplicateDocumentMutation({ documentId: docId });
+    },
+    [duplicateDocumentMutation]
+  );
 
   // Keyboard shortcuts useEffect moved below after orderedDocuments declaration
 

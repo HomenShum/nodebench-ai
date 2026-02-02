@@ -483,6 +483,43 @@ export const createWithContent = mutation({
   },
 });
 
+// Duplicate an existing document (clone content, reset metadata)
+export const duplicateDocument = mutation({
+  args: {
+    documentId: v.id("documents"),
+    title: v.optional(v.string()),
+  },
+  returns: v.id("documents"),
+  handler: async (ctx, { documentId, title }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const original = (await ctx.db.get(documentId)) as Doc<"documents"> | null;
+    if (!original) throw new Error("Document not found");
+    if (original.createdBy !== userId) throw new Error("Unauthorized");
+
+    const now = Date.now();
+    const newTitle = title || `${original.title} (Copy)`;
+
+    const newDocId = await ctx.db.insert("documents", {
+      title: newTitle,
+      parentId: original.parentId,
+      isPublic: false,
+      createdBy: userId,
+      lastEditedBy: userId,
+      content: original.content,
+      summary: original.summary,
+      icon: original.icon,
+      isArchived: false,
+      isFavorite: false,
+      lastModified: now,
+      documentType: (original as any).documentType,
+    } as any);
+
+    return newDocId as Id<"documents">;
+  },
+});
+
 /**
  * Create a new dossier document (documentType: "dossier", dossierType: "primary").
  * Stores TipTap/ProseMirror JSON as a string in `content`.
@@ -1141,6 +1178,55 @@ export const getSearch = query({
         q.search("title", args.query).eq("createdBy", userId).eq("isArchived", false)
       )
       .take(50);
+  },
+});
+
+// Full-text search across both title and content
+export const searchDocumentsFull = query({
+  args: {
+    query: v.string(),
+    userId: v.optional(v.union(v.id("users"), v.string())),
+  },
+  handler: async (ctx, args) => {
+    const userId = args.userId || (await getAuthUserId(ctx));
+    if (!userId) return [];
+
+    const titleResults = await ctx.db
+      .query("documents")
+      .withSearchIndex("search_title", (q) =>
+        q
+          .search("title", args.query)
+          .eq("createdBy", userId as Id<"users">)
+          .eq("isArchived", false)
+      )
+      .take(25);
+
+    const contentResults = await ctx.db
+      .query("documents")
+      .withSearchIndex("search_content", (q) =>
+        q
+          .search("content", args.query)
+          .eq("createdBy", userId as Id<"users">)
+          .eq("isArchived", false)
+      )
+      .take(25);
+
+    // Deduplicate: title matches first
+    const seen = new Set<string>();
+    const merged: Array<Doc<"documents"> & { _matchType: "title" | "content" }> = [];
+
+    for (const doc of titleResults) {
+      seen.add(doc._id);
+      merged.push({ ...doc, _matchType: "title" as const });
+    }
+    for (const doc of contentResults) {
+      if (!seen.has(doc._id)) {
+        seen.add(doc._id);
+        merged.push({ ...doc, _matchType: "content" as const });
+      }
+    }
+
+    return merged.slice(0, 50);
   },
 });
 

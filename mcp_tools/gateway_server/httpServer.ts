@@ -16,12 +16,14 @@ import { researchTools } from "./tools/researchTools.js";
 import { narrativeTools } from "./tools/narrativeTools.js";
 import { verificationTools } from "./tools/verificationTools.js";
 import { knowledgeTools } from "./tools/knowledgeTools.js";
+import { documentTools } from "./tools/documentTools.js";
 
 const allTools = [
   ...researchTools,
   ...narrativeTools,
   ...verificationTools,
   ...knowledgeTools,
+  ...documentTools,
 ];
 
 const HOST = process.env.MCP_HTTP_HOST || "0.0.0.0";
@@ -61,7 +63,7 @@ const server = http.createServer(async (req, res) => {
       status: "ok",
       service: "nodebench-mcp-gateway",
       tools: allTools.length,
-      categories: ["research", "narrative", "verification", "knowledge"],
+      categories: ["research", "narrative", "verification", "knowledge", "documents"],
     });
     return;
   }

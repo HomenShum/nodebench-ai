@@ -6,6 +6,32 @@ For in-app release notes, see Research Hub > Changelog.
 
 ---
 
+## v0.4.1 (February 2, 2026)
+
+Document system enhancements: MCP gateway document tools, batch operations, full-text content search, Markdown export, document duplication, and version comparison.
+
+### MCP Gateway: Document Tools (18 new tools)
+
+- **Document CRUD**: createDocument, createDocumentWithContent, getDocument, updateDocument, archiveDocument, restoreDocument, searchDocuments, listDocuments
+- **Folder management**: createFolder, listFolders, getFolderWithDocuments, addDocumentToFolder, removeDocumentFromFolder
+- **Spreadsheet operations**: createSpreadsheet, listSpreadsheets, getSpreadsheetRange, applySpreadsheetOperations
+- **File listing**: listFiles with type filtering
+
+### Document Backend Features
+
+- **Batch operations**: `bulkArchive`, `bulkRestore`, `bulkToggleFavorite`, `bulkMoveToFolder`, `bulkDelete` mutations replace per-doc loops with single Convex calls
+- **Content search**: New `search_content` index on documents table enables full-text search across document content (not just titles); `searchDocumentsFull` query deduplicates title + content matches
+- **Markdown export**: `exportToMarkdown` query serializes ProseMirror/BlockNote JSON to GitHub-flavored Markdown (headings, lists, checklists, code blocks, tables, inline formatting)
+- **Document duplication**: `duplicateDocument` mutation clones content, icon, and document type; resets visibility and favorites
+- **Version comparison**: `compareVersions` query returns two snapshot contents for client-side diffing
+
+### UI Integration
+
+- Bulk archive and favorite now use single batch mutations instead of Promise.all loops
+- `handleDuplicateDocument` callback wired to duplicate mutation
+
+---
+
 ## v0.4.0 (February 1, 2026)
 
 Major release: DRANE narrative engine, entity linking, verification pipeline, Ralph-style bug loop with vault persistence, LinkedIn archive lifecycle tooling, UI polish layer, and comprehensive operational self-maintenance.

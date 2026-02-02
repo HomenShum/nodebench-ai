@@ -170,6 +170,10 @@ const documents = defineTable({
   .searchIndex("search_title", {
     searchField: "title",
     filterFields: ["isPublic", "createdBy", "isArchived"],
+  })
+  .searchIndex("search_content", {
+    searchField: "content",
+    filterFields: ["createdBy", "isArchived"],
   });
 
 /* ------------------------------------------------------------------ */
