@@ -603,6 +603,60 @@ curl https://nodebench-mcp-unified.onrender.com/health
 # Returns: {"status":"ok","service":"nodebench-mcp-unified","tools":76,"categories":["research","narrative","verification","knowledge","documents","planning","memory","search","financial"]}
 ```
 
+### Render deployment checklist
+
+1. **Render Dashboard** → **Blueprints** → **New Blueprint Instance**
+2. Connect repo `HomenShum/nodebench-ai`, branch `main`
+3. Render reads `render.yaml` and creates `nodebench-mcp-unified` (Starter, $7/mo)
+4. Set the 3 secrets (`sync: false` vars) in the Render UI:
+
+| Key | Where to find |
+|-----|---------------|
+| `CONVEX_URL` | Convex Dashboard → Settings → Deployment URL (e.g. `https://xxx.convex.cloud`) |
+| `MCP_SECRET` | Must match `MCP_SECRET` env var in Convex Dashboard → Settings → Environment Variables |
+| `MCP_HTTP_TOKEN` | Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+
+5. Click **Deploy Blueprint**
+6. Wait for Docker build + health check pass
+7. Verify:
+
+```bash
+# Health check (no auth needed)
+curl https://nodebench-mcp-unified.onrender.com/health
+
+# Auth rejection (no token → 401)
+curl -X POST https://nodebench-mcp-unified.onrender.com \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# Tools list (with token → 200)
+curl -X POST https://nodebench-mcp-unified.onrender.com \
+  -H "Content-Type: application/json" \
+  -H "x-mcp-token: $MCP_HTTP_TOKEN" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+**Convex-side env vars** (set in Convex Dashboard → Settings → Environment Variables):
+
+| Key | Purpose |
+|-----|---------|
+| `MCP_SECRET` | Shared secret — must match Render service |
+| `MCP_SERVICE_USER_ID` | Convex user ID for server-side injection on document/authenticated tools |
+
+**Dockerfile details**: `node:20-slim`, `tsx` runtime (no build step), `PORT=10000` default (Render overrides at runtime), `curl` installed for health checks.
+
+### What shipped in the unified service (commit history)
+
+| Commit | Description |
+|--------|-------------|
+| `62eb0ca` | Initial MCP gateway with 33 tools (research, narrative, verification, knowledge) |
+| `0e298ab` | Add document tools (20 tools), batch ops, content search, Markdown export |
+| `77a97a8` | Route document tools through internal endpoints for admin-key auth |
+| `36acf80` | Replace admin-key auth with Convex-side dispatcher (no admin key exposed) |
+| `da6e093` | Merge 4 services into 1 unified service ($28/mo → $7/mo), add planning/memory/search/financial tools |
+| `7d3fb40` | MCP protocol compliance fixes (content array format, crypto symbols, rate limits, protocol version) |
+| `fa3595c` | LinkedIn content pipeline, Dockerfile port fix, 6-phase verification docs |
+
 ## LinkedIn Posting Targets (Personal vs Organization Page)
 
 All automated cron-triggered posts now route to a **LinkedIn Organization Page** instead of the personal profile. Personal profile remains available for manual/agent-initiated posts.
