@@ -1,80 +1,10 @@
 services:
-  # ── Core Agent MCP Server (TypeScript) ──────────────────────────
-  # Planning + Memory tools exposed via JSON-RPC 2.0 over HTTP.
-  # External agents connect to this as an MCP server.
+  # ── Unified MCP Server (TypeScript) ─────────────────────────────
+  # All MCP tools in a single service: research, narrative, verification,
+  # knowledge, documents, planning, memory, search, financial.
+  # 76 tools across 9 domains for external agent consumption.
   - type: web
-    name: nodebench-mcp-core-agent
-    runtime: docker
-    dockerfilePath: mcp_tools/core_agent_server/Dockerfile
-    dockerContext: mcp_tools/core_agent_server
-    plan: starter
-    region: oregon
-    healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: "10000"
-      - key: MCP_HTTP_HOST
-        value: "0.0.0.0"
-      - key: MCP_HTTP_TOKEN
-        sync: false
-      - key: CONVEX_BASE_URL
-        sync: false
-      - key: CONVEX_ADMIN_KEY
-        sync: false
-      - key: MCP_SECRET
-        sync: false
-
-  # ── OpenBB Financial Data MCP Server (Python) ──────────────────
-  # Financial market data, SEC filings, funding events.
-  - type: web
-    name: nodebench-mcp-openbb
-    runtime: docker
-    dockerfilePath: python-mcp-servers/openbb/Dockerfile
-    dockerContext: python-mcp-servers/openbb
-    plan: starter
-    region: oregon
-    healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: "10000"
-      - key: OPENBB_API_KEY
-        sync: false
-      - key: LOG_LEVEL
-        value: INFO
-      - key: ENVIRONMENT
-        value: production
-      - key: ALLOWED_ORIGINS
-        value: "*"
-
-  # ── Research MCP Server (Python) ────────────────────────────────
-  # Multi-source fusion search, iterative research with reflection.
-  - type: web
-    name: nodebench-mcp-research
-    runtime: docker
-    dockerfilePath: python-mcp-servers/research/Dockerfile
-    dockerContext: python-mcp-servers/research
-    plan: starter
-    region: oregon
-    healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: "10000"
-      - key: CONVEX_URL
-        sync: false
-      - key: MCP_SECRET
-        sync: false
-      - key: LOG_LEVEL
-        value: INFO
-      - key: ENVIRONMENT
-        value: production
-      - key: ALLOWED_ORIGINS
-        value: "*"
-
-  # ── Gateway MCP Server (TypeScript) ───────────────────────────
-  # Full Convex proxy: research, narrative, verification, knowledge, document tools.
-  # 53 tools across 5 domains for external agent consumption.
-  - type: web
-    name: nodebench-mcp-gateway
+    name: nodebench-mcp-unified
     runtime: docker
     dockerfilePath: mcp_tools/gateway_server/Dockerfile
     dockerContext: mcp_tools/gateway_server

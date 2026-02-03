@@ -300,6 +300,71 @@ const ALLOWLIST: Record<string, AllowlistEntry> = {
     type: "query",
     injectUserId: true,
   },
+
+  // ── GROUP D: Agent Planning ─────────────────────────────────────────────────
+
+  createPlan: {
+    ref: internal.domains.mcp.mcpPlans.createPlan,
+    type: "mutation",
+  },
+  getPlan: {
+    ref: internal.domains.mcp.mcpPlans.getPlan,
+    type: "query",
+  },
+  updatePlan: {
+    ref: internal.domains.mcp.mcpPlans.updatePlan,
+    type: "mutation",
+  },
+  listPlans: {
+    ref: internal.domains.mcp.mcpPlans.listPlans,
+    type: "query",
+  },
+  deletePlan: {
+    ref: internal.domains.mcp.mcpPlans.deletePlan,
+    type: "mutation",
+  },
+
+  // ── GROUP E: Agent Memory ───────────────────────────────────────────────────
+
+  writeMemory: {
+    ref: internal.domains.mcp.mcpMemory.writeMemory,
+    type: "mutation",
+  },
+  readMemory: {
+    ref: internal.domains.mcp.mcpMemory.readMemory,
+    type: "query",
+  },
+  listMemory: {
+    ref: internal.domains.mcp.mcpMemory.listMemory,
+    type: "query",
+  },
+  deleteMemory: {
+    ref: internal.domains.mcp.mcpMemory.deleteMemory,
+    type: "mutation",
+  },
+  getMemoryById: {
+    ref: internal.domains.mcp.mcpMemory.getMemoryById,
+    type: "query",
+  },
+  deleteMemoryById: {
+    ref: internal.domains.mcp.mcpMemory.deleteMemoryById,
+    type: "mutation",
+  },
+
+  // ── GROUP F: Search / Research ──────────────────────────────────────────────
+
+  quickSearch: {
+    ref: api.domains.search.fusion.actions.quickSearch,
+    type: "action",
+  },
+  fusionSearch: {
+    ref: api.domains.search.fusion.actions.fusionSearch,
+    type: "action",
+  },
+  getMigrationStats: {
+    ref: api.domains.agents.mcp_tools.models.migration.getMigrationStats,
+    type: "query",
+  },
 };
 
 // ── Dispatcher httpAction ──────────────────────────────────────────────────

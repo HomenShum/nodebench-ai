@@ -17,14 +17,25 @@ import { narrativeTools } from "./tools/narrativeTools.js";
 import { verificationTools } from "./tools/verificationTools.js";
 import { knowledgeTools } from "./tools/knowledgeTools.js";
 import { documentTools } from "./tools/documentTools.js";
+import { planningTools } from "./tools/planningTools.js";
+import { memoryTools } from "./tools/memoryTools.js";
+import { searchTools } from "./tools/searchTools.js";
+import { financialTools } from "./tools/financialTools.js";
+import { createMetaTools } from "./tools/metaTools.js";
 
-const allTools = [
+const domainTools = [
   ...researchTools,
   ...narrativeTools,
   ...verificationTools,
   ...knowledgeTools,
   ...documentTools,
+  ...planningTools,
+  ...memoryTools,
+  ...searchTools,
+  ...financialTools,
 ];
+
+const allTools = [...domainTools, ...createMetaTools(domainTools)];
 
 const HOST = process.env.MCP_HTTP_HOST || "0.0.0.0";
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4002;
@@ -61,9 +72,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
     respond(res, 200, {
       status: "ok",
-      service: "nodebench-mcp-gateway",
+      service: "nodebench-mcp-unified",
       tools: allTools.length,
-      categories: ["research", "narrative", "verification", "knowledge", "documents"],
+      categories: ["research", "narrative", "verification", "knowledge", "documents", "planning", "memory", "search", "financial"],
     });
     return;
   }
@@ -124,7 +135,7 @@ const server = http.createServer(async (req, res) => {
             protocolVersion: "2025-03-26",
             capabilities: { tools: {}, resources: {} },
             serverInfo: {
-              name: "nodebench-mcp-gateway",
+              name: "nodebench-mcp-unified",
               version: "1.0.0",
             },
           },
@@ -195,6 +206,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.error(
-    `nodebench-mcp-gateway listening on http://${HOST}:${PORT} (${allTools.length} tools)`
+    `nodebench-mcp-unified listening on http://${HOST}:${PORT} (${allTools.length} tools)`
   );
 });

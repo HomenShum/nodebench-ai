@@ -317,6 +317,36 @@ Rule: boolean gates decide pass or fail. Optional LLM explanations are allowed b
 - Post generation: `workflows/dailyLinkedInPost:testLinkedInWorkflow` (dry-run)
 - Archive invariants: `domains/social/linkedinArchiveAudit:runArchiveAudit` (must be clean before deletes)
 - Cleanup tooling: `domains/social/linkedinArchiveCleanup:*` (dry-run first)
+- **Engagement quality gate** (deterministic, pre-post): see below
+
+### LinkedIn Engagement Quality Gate
+
+Automated org page posts currently read like machine-generated reports. 67 posts yielded 1 genuine human comment. The gate below is a set of boolean checks that run BEFORE posting to LinkedIn. Posts that fail are flagged for rewrite or held.
+
+**Anti-patterns (boolean FAIL if detected)**:
+- `noReportHeader`: First 2 lines must NOT be a title card ("Daily Intelligence Brief", "VC DEAL FLOW MEMO", etc.). LinkedIn shows ~2 lines before fold — waste them on a header and nobody clicks "see more"
+- `hasHook`: First sentence must be a concrete claim, surprising stat, or contrarian take — not a label
+- `noWallOfText`: No more than 3 consecutive structured blocks (bullet lists, `═══` headers). Break with a 1-sentence human observation between sections
+- `hasQuestion`: Post must contain at least one genuine question to the audience (not rhetorical). Questions drive comments
+- `noGenericHashtags`: Must NOT use `#AI`, `#TechIntelligence`, `#DailyBrief` alone — these attract bots. Use specific hashtags tied to the content (`#Medtronic`, `#FDAApproval`, `#SeriesB`)
+- `underCharLimit`: Max 1500 chars for org page daily posts (not 2900). Shorter posts get higher engagement on LinkedIn
+- `hasOpinion`: Post must contain at least one first-person interpretive statement ("This signals...", "The real story here is...", "Watch for..."). Pure information delivery gets no engagement
+
+**Soft checks (logged, not blocking)**:
+- `mentionsPeople`: Tags or names specific people/companies who might respond
+- `hasCallToAction`: Ends with a specific ask ("What's your read on this?", "Anyone seeing this in their portfolio?")
+- `variesFormat`: Post format differs from the last 3 posts in archive (avoid predictability)
+
+**Engagement feedback loop** (post-hoc, runs on cron):
+- `fetchPostComments` scans org page posts 48h after posting
+- Comments classified: genuine human / bot-engagement / promotional spam / no comments
+- Posts with genuine comments: their format, hook, and structure are logged as "winning patterns"
+- Posts with 0 engagement after 48h: flagged for format review
+- Weekly engagement digest: ratio of genuine comments to total posts, trend over time
+
+**Implementation**: Add these checks as a `validatePostEngagement` function in `linkedinPosting.ts` that runs before `createTargetedTextPost`. Failed checks return `{ passed: false, failures: string[] }` and the post is held for rewrite rather than silently posted.
+
+**Personal profile posts** (agent-initiated) are exempt from this gate — they are written by the user or agent with personal voice already.
 
 ### Daily Brief plane
 - Generate: `domains/research/executiveBrief:generateExecutiveBriefForMemoryInternal`
@@ -334,30 +364,31 @@ Rule: boolean gates decide pass or fail. Optional LLM explanations are allowed b
 - Scheduled enforcement: `domains/operations/privacyEnforcement:*`
 - Safety: dry-run where supported, never delete without audit trail
 
-### MCP server plane (Render) — Core Agent
-- Health: `curl https://nodebench-mcp-core-agent.onrender.com/health` (must return `{"status":"ok"}`)
-- Tools list: `tools/list` JSON-RPC 2.0 call returns 7 tools (3 planning + 4 memory)
-- Smoke test: `tools/call` with `createPlan` and verify `planId` returned
-- Auth: Token required when `MCP_HTTP_TOKEN` is set; 401 on missing/wrong token
-
-### MCP Gateway plane (Render) — 53 tools, 5 domains
-- Health: `curl https://nodebench-mcp-gateway.onrender.com/health` (must return `{"status":"ok","tools":53}`)
-- Tools list: `tools/list` returns 53 tools across research, narrative, verification, knowledge, documents
+### MCP Unified Server plane (Render) — 76 tools, 9 domains
+- Health: `curl https://nodebench-mcp-unified.onrender.com/health` (must return `{"status":"ok","tools":76}`)
+- Tools list: `tools/list` returns 76 tools across research, narrative, verification, knowledge, documents, planning, memory, search, financial + findTools meta-tool
 - Architecture: Convex-side dispatcher at `/api/mcpGateway`
   - Gateway calls single endpoint with `x-mcp-secret` header (no admin key)
   - Convex httpAction validates secret, resolves function from static allowlist, injects userId server-side
   - Admin key never exposed to gateway service
+  - Financial tools call public APIs directly (Stooq, Yahoo Finance, World Bank) — no Convex dispatch
 - Auth model (dispatcher allowlist groups):
   - Group A (25 public queries): no userId needed, dispatched directly
   - Group B (8 internal MCP variants): userId injected server-side via `MCP_SERVICE_USER_ID` Convex env var
   - Group C (20 document internal endpoints): userId injected server-side
+  - Group D (5 agent planning): key-based lookup, no userId needed
+  - Group E (6 agent memory): key-based lookup, no userId needed
+  - Group F (3 search/research): public actions dispatched directly
   - `runNewsroomPipeline`: returns structured error in guest mode (requires user auth)
 - Smoke tests:
   - `curl -X POST <url>/api/mcpGateway -d '{"fn":"getForYouFeed"}' -H "Content-Type: application/json"` — 401 (no secret)
   - Same with `x-mcp-secret` header — returns feed items
   - `{"fn":"mcpCreateDocument","args":{"title":"Test"}}` — creates doc (userId injected server-side)
+  - `{"fn":"createPlan","args":{"plan":{"id":"test","goal":"Test","steps":[],"createdAt":"...","updatedAt":"..."}}}` — creates plan
   - `{"fn":"doesNotExist"}` — 400 with helpful error
-- Env vars required (gateway Render service): `CONVEX_URL`, `MCP_SECRET`, `MCP_HTTP_TOKEN` (optional)
+  - `equity_price_quote` with `symbol: "AAPL"` — returns price data (direct HTTP, no dispatcher)
+  - `findTools` with `query: "stock price"` — returns matching financial tools
+- Env vars required (Render service): `CONVEX_URL`, `MCP_SECRET`, `MCP_HTTP_TOKEN` (optional)
 - Env vars required (Convex dashboard): `MCP_SERVICE_USER_ID`, `MCP_SECRET`
 
 ### File vault plane (Obsidian + Git)
@@ -426,20 +457,19 @@ NodeBench AI exposes MCP tools as HTTP services for external agents to consume.
 
 ### Architecture
 
-Four MCP servers, each deployed as a separate Render web service:
+Single unified MCP server deployed on Render ($7/mo starter plan):
 
 | Service | Runtime | Tools | Default Port |
 |---------|---------|-------|-------------|
-| `nodebench-mcp-core-agent` | Node.js (TypeScript) | createPlan, updatePlanStep, getPlan, writeAgentMemory, readAgentMemory, listAgentMemory, deleteAgentMemory | 4001 |
-| `nodebench-mcp-openbb` | Python (FastAPI) | Financial market data, SEC filings, funding events | 8001 |
-| `nodebench-mcp-research` | Python (FastAPI) | Multi-source fusion search, iterative research with reflection | 8002 |
-| `nodebench-mcp-gateway` | Node.js (TypeScript) | 53 tools: research (8), narrative (10), verification (7), knowledge (8), documents (20) — full Convex proxy | 4002 |
+| `nodebench-mcp-unified` | Node.js (TypeScript) | 76 tools across 9 domains + findTools meta-tool | 10000 |
 
-All servers speak JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime.
+**Domains**: research (8), narrative (10), verification (7), knowledge (8), documents (20), planning (3), memory (4), search (3), financial (9), meta (1 — findTools)
 
-### Gateway tool catalog
+The server speaks JSON-RPC 2.0 over HTTP POST. Render injects `PORT` at runtime. All Convex-backed tools route through a single dispatcher at `/api/mcpGateway`. Financial tools call public APIs directly (Stooq, Yahoo Finance, World Bank).
 
-The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions for external agents:
+### Tool catalog
+
+The unified server (`nodebench-mcp-unified`) exposes 76 tools across 9 domains:
 
 **Research & Intelligence (8 tools)**
 - `getForYouFeed` — Personalized feed with verification-tagged items
@@ -481,30 +511,47 @@ The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions 
 - `getSpreadsheetRange` / `applySpreadsheetOperations` — Cell-level spreadsheet operations
 - `listFiles` — File listing with type filtering
 
+**Agent Planning (3 tools)** — via Convex dispatcher
+- `createPlan` — Create a task plan with steps (pending/in_progress/completed)
+- `updatePlanStep` — Update status or notes of a specific plan step
+- `getPlan` — Retrieve a task plan by ID
+
+**Agent Memory (4 tools)** — via Convex dispatcher
+- `writeAgentMemory` — Store key-value memory with optional metadata
+- `readAgentMemory` — Read memory entries by key
+- `listAgentMemory` — List memory entries with optional text search
+- `deleteAgentMemory` — Delete a memory entry by key
+
+**Search & Research (3 tools)** — via Convex dispatcher
+- `quickSearch` — Fast multi-source search
+- `fusionSearch` — Advanced fusion search with mode selection
+- `getMigrationStats` — Model migration statistics
+
+**Financial Data (9 tools)** — direct HTTP to public APIs (Stooq, Yahoo Finance, World Bank)
+- `equity_price_quote` — Real-time stock quote (Stooq → Yahoo fallback)
+- `equity_price_historical` — Historical OHLCV data
+- `equity_fundamental_overview` — Company fundamentals from Yahoo Finance
+- `crypto_price_quote` — Cryptocurrency price quote
+- `crypto_price_historical` — Historical crypto OHLCV data
+- `economy_gdp` — GDP data by country (World Bank)
+- `economy_inflation` — Inflation data by country (World Bank)
+- `news_company` — Company-specific financial news
+- `news_world` — Global financial news headlines
+
+**Meta (1 tool)**
+- `findTools` — Search available tools by keyword or capability description. Returns matching tool names and descriptions. Use this to discover which tools are available for a task.
+
 ### Blueprint deploy
 
 ```powershell
-# render.yaml at repo root defines all 4 services.
+# render.yaml at repo root defines the unified service.
 # Connect the repo in Render Dashboard > Blueprints > New Blueprint Instance.
 # Set secrets (sync: false vars) in the Render dashboard:
-#   MCP_HTTP_TOKEN, CONVEX_BASE_URL, CONVEX_ADMIN_KEY (core-agent only), MCP_SECRET
-#   OPENBB_API_KEY, CONVEX_URL
+#   MCP_HTTP_TOKEN, CONVEX_URL, MCP_SECRET
 # Convex dashboard env vars: MCP_SERVICE_USER_ID, MCP_SECRET
 ```
 
-### Local dev (Docker Compose)
-
-```powershell
-cd python-mcp-servers && docker compose up --build
-```
-
-Core agent (TypeScript) standalone:
-
-```powershell
-cd mcp_tools/core_agent_server && npm install && npm run start:http
-```
-
-Gateway (TypeScript) standalone:
+### Local dev
 
 ```powershell
 cd mcp_tools/gateway_server && npm install && npm run start:http
@@ -518,13 +565,8 @@ Any MCP-compatible agent (Claude Desktop, Cursor, custom) can connect:
 // claude_desktop_config.json or equivalent
 {
   "mcpServers": {
-    "nodebench-planning": {
-      "url": "https://nodebench-mcp-core-agent.onrender.com",
-      "transport": "http",
-      "headers": { "x-mcp-token": "<YOUR_TOKEN>" }
-    },
-    "nodebench-gateway": {
-      "url": "https://nodebench-mcp-gateway.onrender.com",
+    "nodebench": {
+      "url": "https://nodebench-mcp-unified.onrender.com",
       "transport": "http",
       "headers": { "x-mcp-token": "<YOUR_TOKEN>" }
     }
@@ -535,44 +577,31 @@ Any MCP-compatible agent (Claude Desktop, Cursor, custom) can connect:
 JSON-RPC 2.0 protocol:
 
 ```bash
-# List tools
-curl -X POST https://nodebench-mcp-core-agent.onrender.com \
+# List all 76 tools
+curl -X POST https://nodebench-mcp-unified.onrender.com \
   -H "Content-Type: application/json" \
   -H "x-mcp-token: $MCP_HTTP_TOKEN" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 
-# Call a tool
-curl -X POST https://nodebench-mcp-core-agent.onrender.com \
+# Discover tools by keyword
+curl -X POST https://nodebench-mcp-unified.onrender.com \
   -H "Content-Type: application/json" \
   -H "x-mcp-token: $MCP_HTTP_TOKEN" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"createPlan","arguments":{"goal":"Research NVIDIA","steps":[{"step":"Find SEC filings","status":"pending"}]}}}'
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"findTools","arguments":{"query":"stock price"}}}'
+
+# Call a tool
+curl -X POST https://nodebench-mcp-unified.onrender.com \
+  -H "Content-Type: application/json" \
+  -H "x-mcp-token: $MCP_HTTP_TOKEN" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"createPlan","arguments":{"goal":"Research NVIDIA","steps":[{"step":"Find SEC filings","status":"pending"}]}}}'
 ```
 
-### Health checks
+### Health check
 
 ```bash
-curl https://nodebench-mcp-core-agent.onrender.com/health
-curl https://nodebench-mcp-openbb.onrender.com/health
-curl https://nodebench-mcp-research.onrender.com/health
-curl https://nodebench-mcp-gateway.onrender.com/health
+curl https://nodebench-mcp-unified.onrender.com/health
+# Returns: {"status":"ok","service":"nodebench-mcp-unified","tools":76,"categories":["research","narrative","verification","knowledge","documents","planning","memory","search","financial"]}
 ```
-
-### Verification scripts
-
-After deploying to Render, run the verification script to test all endpoints:
-
-```powershell
-# PowerShell (Windows)
-.\scripts\verify-mcp-deployment.ps1 -Token $env:MCP_HTTP_TOKEN
-
-# Bash (Unix/Linux/macOS)
-./scripts/verify-mcp-deployment.sh $MCP_HTTP_TOKEN
-```
-
-The scripts test:
-- Health endpoints for all 4 servers
-- JSON-RPC `tools/list` for core-agent and gateway
-- Root endpoints for OpenBB and Research servers
 
 ## LinkedIn Posting Targets (Personal vs Organization Page)
 
@@ -590,7 +619,7 @@ Routing is handled by `createTargetedTextPost` internal action in `domains/socia
 
 | Variable | Purpose |
 |----------|---------|
-| `LINKEDIN_ORG_ACCESS_TOKEN` | OAuth token with `w_organization_social` scope for the Company Page |
+| `LINKEDIN_ORG_ACCESS_TOKEN` | OAuth token with `w_organization_social` + `r_organization_social` scopes for the Company Page |
 | `LINKEDIN_ORG_ID` | Numeric organization ID (constructs `urn:li:organization:{id}`) |
 | `LINKEDIN_DEFAULT_TARGET` | Set to `organization` for crons to default to org page |
 | `LINKEDIN_ACCESS_TOKEN` | Existing personal profile token (unchanged) |
@@ -603,6 +632,29 @@ Routing is handled by `createTargetedTextPost` internal action in `domains/socia
 | Manual triggers (`linkedinTrigger.ts`) | `organization` | Pass `target: "personal"` to override |
 | Agent tool (`postToLinkedIn`) | `personal` | Pass `target: "organization"` to override |
 | Archive maintenance / corrections | `organization` | — |
+
+### Posting frequency (org page)
+
+Current: 8+ posts/day. Recommended: **2-3 posts/day max**.
+
+LinkedIn's algorithm penalizes accounts that post too frequently — each post competes with your other posts for follower impressions. Consolidate: instead of separate daily_digest + funding_brief + fda_update + research + clinical + ma posts, batch the day's intelligence into 1-2 high-quality posts with the strongest hooks, plus 1 specialized deep-dive (FDA or funding) if the day's data warrants it. Skip days with weak signals entirely.
+
+### Content principles for engagement
+
+What gets engagement on LinkedIn (from analyzing 67 posts, 1 genuine comment):
+1. **Hook in line 1** — A surprising stat, contrarian take, or specific claim. Not a title card
+2. **Opinion, not just information** — "Here's what I think this means" beats "Here are the facts"
+3. **Questions** — Ask the audience something specific. "Anyone seeing this trend in their portfolio?"
+4. **Short** — 800-1200 chars outperforms 2500+ chars on LinkedIn. Leave them wanting more
+5. **Specific hashtags** — `#Medtronic #FDAApproval` beats `#AI #TechIntelligence`
+6. **Vary format** — Same structure every day = predictable = ignorable
+
+What kills engagement:
+- Report headers as first line
+- Walls of structured text with `═══` dividers
+- Generic hashtags that attract bots
+- No question, no opinion, no personality
+- Posting 8x/day (signal dilution)
 
 ### Rollback
 
@@ -629,6 +681,85 @@ npx convex run --push "domains/social/linkedinArchiveQueries:getArchivedPosts" "
 ```
 
 New archive rows include `target: "personal" | "organization"`. Existing rows without a target are implicitly `"personal"`.
+
+### Comment fetching (API limitation)
+
+`r_member_social` is a **closed LinkedIn permission** — not available for new applications. This means:
+- **Personal post comments/reactions CANNOT be fetched via API** — must be viewed manually on linkedin.com
+- **Organization post comments CAN be fetched** via `r_organization_social` scope on the org token
+- `fetchPostComments` in `linkedinPosting.ts` defaults to org token for this reason
+- Org token requires both `w_organization_social` (post) and `r_organization_social` (read comments)
+
+## LinkedIn Content Pipeline
+
+All content flows through a queue-based pipeline before posting to the org page:
+
+```
+Content Sources → linkedinContentQueue → Judge → Schedule → Post → Archive
+```
+
+### Pipeline stages
+
+1. **Enqueue** — Content enters `linkedinContentQueue` table via:
+   - `backfillPersonalToQueue`: Loads 67 personal archive posts (one-time)
+   - Fresh cron-generated content (daily digests, funding, FDA, etc.)
+   - Manual additions
+   - 3-layer dedup: content hash → queue check → org archive check
+
+2. **Judge** (cron: every 30 min, `batchJudgePending`)
+   - **Engagement gate** (existing 7 boolean checks): noReportHeader, hasHook, noWallOfText, hasQuestion, noGenericHashtags, underCharLimit, hasOpinion
+   - **LLM judge** (3 boolean criteria): hookQuality, opinionDepth, questionAuthenticity
+   - Verdict: `approve` (all pass) | `needs_rewrite` (1-2 fail) | `reject` (all fail or 3+ gate failures)
+   - Model: devstral-2-free ($0.00/M via OpenRouter)
+
+3. **Schedule** (cron: hourly, `scheduleNextApprovedPost`)
+   - 3 time slots for org page:
+     - `org_morning`: 8 AM UTC, Mon-Fri
+     - `org_midday`: 1 PM UTC, Mon/Wed/Fri
+     - `org_afternoon`: 4 PM UTC, Tue/Thu
+   - Priority-based: manual (90+) > fresh (60-80) > backfill (40-60)
+
+4. **Post** (cron: hourly, `processQueuedPost`)
+   - Posts due items via `createTargetedTextPost` (engagement gate skipped — already judged)
+   - Logs to `linkedinPostArchive` with `queueId` in metadata
+
+### Status flow
+
+```
+pending → judging → approved → scheduled → posted
+                  → needs_rewrite (fixable)
+                  → rejected (permanently weak)
+                                            → failed (posting error)
+```
+
+### Monitoring
+
+```powershell
+# Queue stats (counts by status/source/target)
+npx convex run domains/social/linkedinContentQueue:getQueueStats
+
+# List items by status
+npx convex run domains/social/linkedinContentQueue:listQueueItems '{"status":"pending","limit":10}'
+npx convex run domains/social/linkedinContentQueue:listQueueItems '{"status":"approved","limit":10}'
+npx convex run domains/social/linkedinContentQueue:listQueueItems '{"status":"scheduled","limit":10}'
+
+# Backfill personal posts (dry run first)
+npx convex run domains/social/linkedinScheduleGrid:backfillPersonalToQueue '{"limit":67,"dryRun":true}'
+npx convex run domains/social/linkedinScheduleGrid:backfillPersonalToQueue '{"limit":67,"dryRun":false}'
+
+# Manual judge trigger
+npx convex run domains/social/linkedinQualityJudge:batchJudgePending '{"limit":5}'
+
+# Manual schedule trigger
+npx convex run domains/social/linkedinScheduleGrid:scheduleNextApprovedPost '{"target":"organization"}'
+```
+
+### Key files
+
+- `convex/domains/social/linkedinContentQueue.ts` — Queue CRUD, dedup, stats
+- `convex/domains/social/linkedinQualityJudge.ts` — LLM judge + batch processor
+- `convex/domains/social/linkedinScheduleGrid.ts` — Time slots, scheduling, backfill
+- `convex/domains/social/linkedinPosting.ts` — Queue processor (`processQueuedPost`)
 
 ## What to watch for next
 
