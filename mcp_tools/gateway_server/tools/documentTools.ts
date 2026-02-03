@@ -1,11 +1,11 @@
 /**
  * Document, folder, spreadsheet, and file tools for external agents.
  *
- * Routes to internal MCP-safe Convex endpoints that accept explicit userId,
- * bypassing getAuthUserId() which returns null for admin-key HTTP calls.
+ * Routes to internal MCP-safe Convex endpoints. The Convex-side dispatcher
+ * injects userId automatically — handlers do NOT pass userId.
  */
 
-import { convexQuery, convexMutation, getServiceUserId } from "../convexClient.js";
+import { convexQuery, convexMutation } from "../convexClient.js";
 import type { McpTool } from "./researchTools.js";
 
 // Internal endpoint prefix for document MCP functions
@@ -30,7 +30,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpCreateDocument`, {
-        userId: getServiceUserId(),
         title: args.title,
         parentId: args.parentId,
       });
@@ -57,7 +56,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpCreateDocument`, {
-        userId: getServiceUserId(),
         title: args.title,
         content: args.content,
         parentId: args.parentId,
@@ -105,7 +103,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       const payload: Record<string, unknown> = {
-        userId: getServiceUserId(),
         id: args.id,
       };
       if (args.title !== undefined) payload.title = args.title;
@@ -129,7 +126,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpArchiveDocument`, {
-        userId: getServiceUserId(),
         id: args.id,
       });
     },
@@ -146,7 +142,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpRestoreDocument`, {
-        userId: getServiceUserId(),
         id: args.id,
       });
     },
@@ -163,7 +158,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexQuery(`${MCP}:mcpSearchDocuments`, {
-        userId: getServiceUserId(),
         query: args.query,
       });
     },
@@ -180,7 +174,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexQuery(`${MCP}:mcpListDocuments`, {
-        userId: getServiceUserId(),
         limit: args.limit,
       });
     },
@@ -198,7 +191,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexQuery(`${MCP}:mcpExportToMarkdown`, {
-        userId: getServiceUserId(),
         documentId: args.documentId,
       });
     },
@@ -217,7 +209,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpDuplicateDocument`, {
-        userId: getServiceUserId(),
         documentId: args.documentId,
         title: args.title,
       });
@@ -241,7 +232,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpCreateFolder`, {
-        userId: getServiceUserId(),
         name: args.name,
         color: args.color,
       });
@@ -255,9 +245,7 @@ export const documentTools: McpTool[] = [
       properties: {},
     },
     handler: async () => {
-      return await convexQuery(`${MCP}:mcpListFolders`, {
-        userId: getServiceUserId(),
-      });
+      return await convexQuery(`${MCP}:mcpListFolders`, {});
     },
   },
   {
@@ -272,7 +260,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexQuery(`${MCP}:mcpGetFolderWithDocuments`, {
-        userId: getServiceUserId(),
         folderId: args.folderId,
       });
     },
@@ -290,7 +277,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpAddDocumentToFolder`, {
-        userId: getServiceUserId(),
         documentId: args.documentId,
         folderId: args.folderId,
       });
@@ -309,7 +295,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpRemoveDocumentFromFolder`, {
-        userId: getServiceUserId(),
         documentId: args.documentId,
         folderId: args.folderId,
       });
@@ -329,7 +314,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpCreateSpreadsheet`, {
-        userId: getServiceUserId(),
         name: args.name,
       });
     },
@@ -345,7 +329,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexQuery(`${MCP}:mcpListSpreadsheets`, {
-        userId: getServiceUserId(),
         limit: args.limit,
       });
     },
@@ -406,7 +389,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexMutation(`${MCP}:mcpApplySpreadsheetOperations`, {
-        userId: getServiceUserId(),
         sheetId: args.sheetId,
         operations: args.operations,
       });
@@ -430,7 +412,6 @@ export const documentTools: McpTool[] = [
     },
     handler: async (args) => {
       return await convexQuery(`${MCP}:mcpListFiles`, {
-        userId: getServiceUserId(),
         fileType: args.fileType,
         limit: args.limit,
       });

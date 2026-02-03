@@ -7,8 +7,8 @@
  *
  * Requires:
  *   CONVEX_URL        – Convex deployment URL (e.g. https://xxx.convex.cloud)
- *   CONVEX_ADMIN_KEY  – Convex admin key for authenticated calls
- *   MCP_HTTP_TOKEN    – (optional) Bearer token for auth
+ *   MCP_SECRET        – Shared secret for Convex-side dispatcher auth
+ *   MCP_HTTP_TOKEN    – (optional) Bearer token for MCP client auth
  */
 
 import http from "http";

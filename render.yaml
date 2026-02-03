@@ -90,7 +90,5 @@ services:
         sync: false
       - key: CONVEX_URL
         sync: false
-      - key: CONVEX_ADMIN_KEY
-        sync: false
-      - key: MCP_SERVICE_USER_ID
+      - key: MCP_SECRET
         sync: false

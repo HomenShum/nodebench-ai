@@ -21,6 +21,10 @@ import {
   getMemoryByIdHttp,
   listMemoryHttp,
 } from "./domains/mcp/mcpMemoryHttp";
+import {
+  mcpGatewayHandler,
+  mcpGatewayCorsHandler,
+} from "./domains/mcp/mcpGatewayDispatcher";
 
 const http = httpRouter();
 
@@ -257,6 +261,11 @@ http.route({ path: "/api/mcpMemory", method: "GET", handler: listMemoryHttp });
 // Memory (item routes)
 http.route({ pathPrefix: "/api/mcpMemory/", method: "GET", handler: getMemoryByIdHttp });
 http.route({ pathPrefix: "/api/mcpMemory/", method: "DELETE", handler: deleteMemoryByIdHttp });
+
+// MCP Gateway dispatcher — single endpoint for all 53 gateway tools
+// Auth: x-mcp-secret must match process.env.MCP_SECRET
+http.route({ path: "/api/mcpGateway", method: "POST", handler: mcpGatewayHandler });
+http.route({ path: "/api/mcpGateway", method: "OPTIONS", handler: mcpGatewayCorsHandler });
 
 http.route({
   path: "/api/stream/:runId",

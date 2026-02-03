@@ -343,17 +343,22 @@ Rule: boolean gates decide pass or fail. Optional LLM explanations are allowed b
 ### MCP Gateway plane (Render) — 53 tools, 5 domains
 - Health: `curl https://nodebench-mcp-gateway.onrender.com/health` (must return `{"status":"ok","tools":53}`)
 - Tools list: `tools/list` returns 53 tools across research, narrative, verification, knowledge, documents
-- Auth model:
-  - Read-only public tools (21): no auth required, work for all callers
-  - Read-only user-scoped tools (10): return `[]`/`null` without auth (graceful degradation)
-  - Document write tools (20): route to internal MCP endpoints via `MCP_SERVICE_USER_ID` env var
+- Architecture: Convex-side dispatcher at `/api/mcpGateway`
+  - Gateway calls single endpoint with `x-mcp-secret` header (no admin key)
+  - Convex httpAction validates secret, resolves function from static allowlist, injects userId server-side
+  - Admin key never exposed to gateway service
+- Auth model (dispatcher allowlist groups):
+  - Group A (25 public queries): no userId needed, dispatched directly
+  - Group B (8 internal MCP variants): userId injected server-side via `MCP_SERVICE_USER_ID` Convex env var
+  - Group C (20 document internal endpoints): userId injected server-side
   - `runNewsroomPipeline`: returns structured error in guest mode (requires user auth)
 - Smoke tests:
-  - `getPublicThreads` — returns thread array (no auth needed)
-  - `getForYouFeed` — returns feed items (no auth needed)
-  - `createDocument` — creates doc via internal endpoint (requires `MCP_SERVICE_USER_ID`)
-  - `listDocuments` — lists user docs via internal endpoint
-- Env vars required: `CONVEX_URL`, `CONVEX_ADMIN_KEY`, `MCP_SERVICE_USER_ID`, `MCP_HTTP_TOKEN` (optional)
+  - `curl -X POST <url>/api/mcpGateway -d '{"fn":"getForYouFeed"}' -H "Content-Type: application/json"` — 401 (no secret)
+  - Same with `x-mcp-secret` header — returns feed items
+  - `{"fn":"mcpCreateDocument","args":{"title":"Test"}}` — creates doc (userId injected server-side)
+  - `{"fn":"doesNotExist"}` — 400 with helpful error
+- Env vars required (gateway Render service): `CONVEX_URL`, `MCP_SECRET`, `MCP_HTTP_TOKEN` (optional)
+- Env vars required (Convex dashboard): `MCP_SERVICE_USER_ID`, `MCP_SECRET`
 
 ### File vault plane (Obsidian + Git)
 - Init: `npm run vault:init`
@@ -464,7 +469,7 @@ The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions 
 - `getKnowledgeGraph` / `getKnowledgeGraphClaims` — Graph and claim extraction
 - `getSourceRegistry` — Source reliability and freshness
 
-**Documents & Files (20 tools)** — all route to internal MCP endpoints with `MCP_SERVICE_USER_ID`
+**Documents & Files (20 tools)** — all route to internal MCP endpoints, userId injected by Convex-side dispatcher
 - `createDocument` / `createDocumentWithContent` / `getDocument` / `updateDocument` — Document CRUD
 - `archiveDocument` / `restoreDocument` — Soft delete and restore
 - `searchDocuments` / `listDocuments` — Title search and listing
@@ -482,8 +487,9 @@ The gateway server (`nodebench-mcp-gateway`) proxies Convex queries and actions 
 # render.yaml at repo root defines all 4 services.
 # Connect the repo in Render Dashboard > Blueprints > New Blueprint Instance.
 # Set secrets (sync: false vars) in the Render dashboard:
-#   MCP_HTTP_TOKEN, CONVEX_BASE_URL, CONVEX_ADMIN_KEY, MCP_SECRET
-#   OPENBB_API_KEY, CONVEX_URL, MCP_SERVICE_USER_ID (gateway only)
+#   MCP_HTTP_TOKEN, CONVEX_BASE_URL, CONVEX_ADMIN_KEY (core-agent only), MCP_SECRET
+#   OPENBB_API_KEY, CONVEX_URL
+# Convex dashboard env vars: MCP_SERVICE_USER_ID, MCP_SECRET
 ```
 
 ### Local dev (Docker Compose)
