@@ -557,27 +557,144 @@ The unified server (`nodebench-mcp-unified`) exposes 76 tools across 9 domains:
 cd mcp_tools/gateway_server && npm install && npm run start:http
 ```
 
-### External agent connection
+### External agent connection (remote — Render)
 
-Any MCP-compatible agent (Claude Desktop, Cursor, custom) can connect:
+Any MCP-compatible agent can connect to the deployed Render service:
+
+**Cursor** (`.cursor/mcp.json` project-level, or `~/.cursor/mcp.json` global):
 
 ```jsonc
-// claude_desktop_config.json or equivalent
 {
   "mcpServers": {
     "nodebench": {
       "url": "https://nodebench-mcp-unified.onrender.com",
       "transport": "http",
-      "headers": { "x-mcp-token": "<YOUR_TOKEN>" }
+      "headers": { "x-mcp-token": "<MCP_HTTP_TOKEN>" }
     }
   }
 }
 ```
 
-JSON-RPC 2.0 protocol:
+**Claude Desktop** (`%APPDATA%\Claude\claude_desktop_config.json` on Windows, `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench": {
+      "url": "https://nodebench-mcp-unified.onrender.com",
+      "transport": "http",
+      "headers": { "x-mcp-token": "<MCP_HTTP_TOKEN>" }
+    }
+  }
+}
+```
+
+**Claude Code** (`~/.claude/settings.json`):
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench": {
+      "url": "https://nodebench-mcp-unified.onrender.com",
+      "transport": "http",
+      "headers": { "x-mcp-token": "<MCP_HTTP_TOKEN>" }
+    }
+  }
+}
+```
+
+**Windsurf / Cline / Continue** — same JSON format, drop into respective config.
+
+**OpenAI Agents SDK** (Python):
+
+```python
+from agents import Agent
+from agents.mcp import MCPServerHTTP
+
+mcp = MCPServerHTTP(
+    url="https://nodebench-mcp-unified.onrender.com",
+    headers={"x-mcp-token": "<MCP_HTTP_TOKEN>"}
+)
+agent = Agent(name="Research Agent", mcp_servers=[mcp])
+```
+
+**Raw HTTP** (any language):
+
+```python
+import requests
+headers = {"Content-Type": "application/json", "x-mcp-token": "<MCP_HTTP_TOKEN>"}
+# List tools
+requests.post("https://nodebench-mcp-unified.onrender.com",
+    json={"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, headers=headers)
+# Call a tool
+requests.post("https://nodebench-mcp-unified.onrender.com",
+    json={"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+          "params": {"name": "equity_price_quote", "arguments": {"symbol": "AAPL"}}},
+    headers=headers)
+```
+
+### Local MCP server (development)
+
+Run the MCP server locally against your Convex dev deployment. No Render needed.
+
+**1. Set environment variables** (create `mcp_tools/gateway_server/.env` or export):
 
 ```bash
-# List all 76 tools
+CONVEX_URL=https://formal-shepherd-851.convex.site   # .convex.site, NOT .convex.cloud
+MCP_SECRET=<your-mcp-secret>                          # must match Convex env var
+MCP_HTTP_TOKEN=<any-token-for-local-auth>              # optional, skip for local dev
+PORT=4002                                              # default if not set
+```
+
+**2. Start the server:**
+
+```powershell
+cd mcp_tools/gateway_server && npm install && npm run start:http
+# Listening on http://0.0.0.0:4002 (73 tools)
+```
+
+**3. Connect agents to local server:**
+
+**Cursor** (`.cursor/mcp.json`):
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench-local": {
+      "url": "http://localhost:4002",
+      "transport": "http"
+    }
+  }
+}
+```
+
+**Claude Desktop / Claude Code:**
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench-local": {
+      "url": "http://localhost:4002",
+      "transport": "http"
+    }
+  }
+}
+```
+
+No `x-mcp-token` header needed if `MCP_HTTP_TOKEN` env var is unset (auth is skipped).
+
+**4. Verify locally:**
+
+```bash
+curl http://localhost:4002/health
+curl -X POST http://localhost:4002 -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+### JSON-RPC 2.0 protocol examples
+
+```bash
+# List all tools
 curl -X POST https://nodebench-mcp-unified.onrender.com \
   -H "Content-Type: application/json" \
   -H "x-mcp-token: $MCP_HTTP_TOKEN" \
