@@ -53,6 +53,9 @@ async function fetchStooqQuote(
   const res = await fetch(url, { signal: timeoutSignal() });
   if (!res.ok) throw new Error(`Stooq HTTP ${res.status}`);
   const text = await res.text();
+  if (text.includes("Exceeded the daily hits limit")) {
+    throw new Error("Stooq daily rate limit exceeded");
+  }
   const parsed = parseStooqCsv(text);
   return {
     symbol: parsed["Symbol"] ?? symbol.toUpperCase(),
@@ -288,14 +291,60 @@ async function equityFundamentalOverviewHandler(args: {
   }
 }
 
-/** Normalise a crypto symbol: "BTC" → "BTC-USD", "BTC-USD" → "BTC-USD". */
-function normaliseCryptoSymbol(symbol: string): string {
+/** Normalise crypto for Stooq: "BTC" → "BTC.V", "ETH" → "ETH.V". */
+function cryptoStooqSymbol(symbol: string): string {
+  const base = symbol.replace(/-USD$/i, "").toUpperCase();
+  return `${base}.V`;
+}
+
+/** Normalise crypto for Yahoo: "BTC" → "BTC-USD". */
+function cryptoYahooSymbol(symbol: string): string {
   return symbol.includes("-") ? symbol.toUpperCase() : `${symbol.toUpperCase()}-USD`;
 }
 
 async function cryptoPriceQuoteHandler(args: { symbol: string }): Promise<unknown> {
-  const mapped = normaliseCryptoSymbol(args.symbol);
-  return equityPriceQuoteHandler({ symbol: mapped });
+  const { symbol } = args;
+  try {
+    // Try Stooq first with .V suffix
+    try {
+      const sq = await fetchStooqQuote(cryptoStooqSymbol(symbol));
+      if (sq.close && sq.close !== "N/D") {
+        return {
+          symbol: symbol.toUpperCase(),
+          price: Number(sq.close),
+          currency: "USD",
+          marketCap: null,
+          dayHigh: sq.high ? Number(sq.high) : null,
+          dayLow: sq.low ? Number(sq.low) : null,
+          open: sq.open ? Number(sq.open) : null,
+          volume: sq.volume ? Number(sq.volume) : null,
+          source: "stooq",
+          fetchedAt: nowIso(),
+        };
+      }
+    } catch {
+      // fall through to Yahoo
+    }
+    // Fallback: Yahoo Finance with -USD suffix
+    const yq = await fetchYahooQuote(cryptoYahooSymbol(symbol));
+    if (yq) {
+      return {
+        symbol: yq.symbol ?? symbol.toUpperCase(),
+        price: yq.regularMarketPrice ?? null,
+        currency: yq.currency ?? "USD",
+        marketCap: yq.marketCap ?? null,
+        dayHigh: yq.regularMarketDayHigh ?? null,
+        dayLow: yq.regularMarketDayLow ?? null,
+        open: yq.regularMarketOpen ?? null,
+        volume: yq.regularMarketVolume ?? null,
+        source: "yahoo",
+        fetchedAt: nowIso(),
+      };
+    }
+    return { symbol: symbol.toUpperCase(), error: "No data available from any source", fetchedAt: nowIso() };
+  } catch (err: any) {
+    return { symbol: symbol.toUpperCase(), error: err?.message ?? String(err), fetchedAt: nowIso() };
+  }
 }
 
 async function cryptoPriceHistoricalHandler(args: {
@@ -303,8 +352,12 @@ async function cryptoPriceHistoricalHandler(args: {
   start_date?: string;
   end_date?: string;
 }): Promise<unknown> {
-  const mapped = normaliseCryptoSymbol(args.symbol);
-  return equityPriceHistoricalHandler({ symbol: mapped, start_date: args.start_date, end_date: args.end_date });
+  // Stooq historical with .V suffix for crypto
+  return equityPriceHistoricalHandler({
+    symbol: cryptoStooqSymbol(args.symbol),
+    start_date: args.start_date,
+    end_date: args.end_date,
+  });
 }
 
 async function economyGdpHandler(args: { country?: string }): Promise<unknown> {

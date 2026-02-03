@@ -132,7 +132,7 @@ const server = http.createServer(async (req, res) => {
           jsonrpc: "2.0",
           id,
           result: {
-            protocolVersion: "2025-03-26",
+            protocolVersion: "2025-11-25",
             capabilities: { tools: {}, resources: {} },
             serverInfo: {
               name: "nodebench-mcp-unified",
@@ -165,11 +165,11 @@ const server = http.createServer(async (req, res) => {
         const args = params?.arguments ?? {};
         const tool = allTools.find((t) => t.name === toolName);
         if (!tool) {
-          respond(res, 404, {
+          respond(res, 200, {
             jsonrpc: "2.0",
             id,
             error: {
-              code: -32601,
+              code: -32602,
               message: `Tool not found: ${toolName}`,
             },
           });
@@ -178,18 +178,30 @@ const server = http.createServer(async (req, res) => {
 
         try {
           const result = await tool.handler(args);
-          respond(res, 200, { jsonrpc: "2.0", id, result });
-        } catch (err: any) {
-          respond(res, 500, {
+          respond(res, 200, {
             jsonrpc: "2.0",
             id,
-            error: { code: -32000, message: err?.message || "Internal error" },
+            result: {
+              content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+              isError: false,
+            },
+          });
+        } catch (err: any) {
+          // Tool execution errors are returned as results with isError, NOT as JSON-RPC errors.
+          // JSON-RPC errors are reserved for protocol-level failures.
+          respond(res, 200, {
+            jsonrpc: "2.0",
+            id,
+            result: {
+              content: [{ type: "text", text: err?.message || "Internal error" }],
+              isError: true,
+            },
           });
         }
         return;
       }
 
-      respond(res, 404, {
+      respond(res, 200, {
         jsonrpc: "2.0",
         id,
         error: { code: -32601, message: `Method not found: ${method}` },

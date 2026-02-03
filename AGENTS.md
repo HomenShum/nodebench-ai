@@ -775,6 +775,86 @@ Recommended checks:
 
 ---
 
+## 6-Phase Iterative Deep-Dive Verification Process
+
+Standard verification workflow for any non-trivial implementation. Run this before declaring any integration, migration, or protocol-level change "done."
+
+### Phase 1: Context Gathering (Parallel Subagent Deep Dive)
+
+Launch parallel subagents to research reference materials:
+- **SDK/Protocol research**: Latest spec versions, blogs, announcements, GitHub repos, official SDKs
+- **Implementation deep dive**: Audit current codebase for patterns, inconsistencies, unused code
+- **Dispatcher/backend audit**: Verify function signatures, allowlists, argument shapes match
+- **External API research**: Check if third-party APIs still work, find known breaking changes
+
+Goal: Build a comprehensive picture of "what production looks like" vs "what we have."
+
+### Phase 2: Gap Analysis
+
+Compare Phase 1 findings against current implementation. Categorize gaps:
+- **CRITICAL**: Protocol violations, broken responses, security issues
+- **HIGH**: API incompatibilities, silent failures, wrong data formats
+- **MEDIUM**: Outdated versions, missing features, suboptimal patterns
+- **LOW**: Missing error handling for edge cases, cosmetic issues
+
+Output: Numbered gap list with severity, root cause, and fix strategy.
+
+### Phase 3: Implementation
+
+Apply fixes following production patterns exactly. Rules:
+- Fix CRITICAL and HIGH gaps first
+- Each fix is a discrete, testable change
+- Follow the reference pattern found in Phase 1 — don't invent new patterns
+- Document why each change was made (comments in code where non-obvious)
+
+### Phase 4: Testing & Validation (CRITICAL — Multi-Layer)
+
+Layer 1: **Static analysis** — TypeScript `tsc --noEmit`, Convex typecheck
+Layer 2: **Unit tests** — Run existing test suites, add targeted tests for fixes
+Layer 3: **Integration tests** — End-to-end flow through dispatcher/handler chain
+Layer 4: **Manual verification** — Spot-check critical paths with curl or direct invocation
+Layer 5: **Live end-to-end** — Deploy to staging, hit real endpoints, verify real responses
+
+All layers must pass before proceeding to Phase 5.
+
+### Phase 5: Self-Closed-Loop Verification (Parallel Subagents)
+
+Launch parallel verification subagents, each checking a different dimension:
+- **Spec compliance**: Does every response match the protocol spec exactly?
+- **Functional correctness**: Do tools return correct data for known inputs?
+- **Argument compatibility**: Do all handler→backend function pairs have matching shapes?
+
+Each subagent produces a PASS/FAIL checklist. Any FAIL loops back to Phase 3.
+
+### Phase 6: Document Learnings
+
+Update AGENTS.md (this file) with:
+- Edge cases discovered during verification
+- Key learnings that prevent future regressions
+- Updated verification coverage map entries
+
+---
+
+### Edge Cases & Learnings (from MCP Unified Server verification)
+
+**MCP Protocol**:
+- `tools/call` responses MUST use `result.content` array with `{type: "text", text: "..."}` items and `isError: boolean`. Tool execution errors return `isError: true` at HTTP 200 — NOT JSON-RPC error objects. JSON-RPC errors are reserved for protocol-level failures only.
+- All valid JSON-RPC responses (including `error` responses like method-not-found) should return HTTP 200. Non-200 is only for transport-level failures (parse errors, malformed HTTP).
+- Protocol version matters. Clients may reject outdated versions. Keep `protocolVersion` in `initialize` response current (currently `2025-11-25`).
+
+**Financial APIs**:
+- **Stooq**: Crypto symbols use `.V` suffix (`BTC.V`, `ETH.V`), NOT `-USD`. Has undocumented daily rate limit — response body contains "Exceeded the daily hits limit" when hit. CSV format, no auth required.
+- **Yahoo Finance v7**: Effectively broken since ~2025 — returns 401 without crumb/cookie auth. Use as fallback only, expect failures. `equity_fundamental_overview` has no alternative source — documented limitation.
+- **World Bank API v2**: Stable, no auth, correct indicators: `NY.GDP.MKTP.CD` (GDP), `FP.CPI.TOTL.ZG` (inflation). Response is `[metadata, data]` array — always index `[1]` for actual data.
+
+**Dispatcher Pattern**:
+- All 9 gateway tool handler → Convex function pairs verified compatible by argument shape analysis
+- Planning/memory tools use key-based lookup (no userId injection needed)
+- Search tools are public actions (no userId injection needed)
+- Document tools require userId injection via `MCP_SERVICE_USER_ID` env var
+
+---
+
 ## Agent Protocol (Peter Style)
 - Role: Specialized builder agent. Peter is the Architect.
 - Objective: Close-the-loop verification cycle. Iterate until green.
