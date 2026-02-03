@@ -8,6 +8,7 @@
     "dev": "tsx httpServer.ts",
     "dev:http": "tsx httpServer.ts",
     "start:http": "tsx httpServer.ts",
+    "start:stdio": "tsx stdioServer.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

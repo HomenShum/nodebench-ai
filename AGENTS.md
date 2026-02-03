@@ -633,9 +633,68 @@ requests.post("https://nodebench-mcp-unified.onrender.com",
     headers=headers)
 ```
 
-### Local MCP server (development)
+### Local MCP server — stdio transport (recommended for local dev)
 
-Run the MCP server locally against your Convex dev deployment. No Render needed.
+Spawned as a local process by the MCP client. No HTTP server, no port, no auth token needed. The client manages the process lifecycle.
+
+**Cursor** (`.cursor/mcp.json`):
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["tsx", "mcp_tools/gateway_server/stdioServer.ts"],
+      "env": {
+        "CONVEX_URL": "https://formal-shepherd-851.convex.site",
+        "MCP_SECRET": "<your-mcp-secret>"
+      }
+    }
+  }
+}
+```
+
+**Claude Desktop** (`claude_desktop_config.json`):
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["tsx", "mcp_tools/gateway_server/stdioServer.ts"],
+      "env": {
+        "CONVEX_URL": "https://formal-shepherd-851.convex.site",
+        "MCP_SECRET": "<your-mcp-secret>"
+      }
+    }
+  }
+}
+```
+
+**Claude Code** (`~/.claude/settings.json`):
+
+```jsonc
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["tsx", "mcp_tools/gateway_server/stdioServer.ts"],
+      "env": {
+        "CONVEX_URL": "https://formal-shepherd-851.convex.site",
+        "MCP_SECRET": "<your-mcp-secret>"
+      }
+    }
+  }
+}
+```
+
+**How it works**: The MCP client spawns `npx tsx stdioServer.ts` as a child process, communicates over stdin/stdout using JSON-RPC 2.0. The `StdioServerTransport` from `@modelcontextprotocol/sdk` handles the protocol. All 73 tools are registered. Convex-backed tools call the dispatcher at `CONVEX_URL/api/mcpGateway`. Financial tools call public APIs directly.
+
+**npm script**: `cd mcp_tools/gateway_server && npm run start:stdio`
+
+### Local MCP server — HTTP transport (alternative)
+
+Run the HTTP server locally if you prefer the HTTP transport or need to test the same protocol used in production.
 
 **1. Set environment variables** (create `mcp_tools/gateway_server/.env` or export):
 
@@ -653,22 +712,7 @@ cd mcp_tools/gateway_server && npm install && npm run start:http
 # Listening on http://0.0.0.0:4002 (73 tools)
 ```
 
-**3. Connect agents to local server:**
-
-**Cursor** (`.cursor/mcp.json`):
-
-```jsonc
-{
-  "mcpServers": {
-    "nodebench-local": {
-      "url": "http://localhost:4002",
-      "transport": "http"
-    }
-  }
-}
-```
-
-**Claude Desktop / Claude Code:**
+**3. Connect agents to local HTTP server:**
 
 ```jsonc
 {
@@ -931,6 +975,45 @@ npx convex run domains/social/linkedinScheduleGrid:scheduleNextApprovedPost '{"t
 - `convex/domains/social/linkedinQualityJudge.ts` — LLM judge + batch processor
 - `convex/domains/social/linkedinScheduleGrid.ts` — Time slots, scheduling, backfill
 - `convex/domains/social/linkedinPosting.ts` — Queue processor (`processQueuedPost`)
+
+### Founder voice & writing style guide
+
+All thought leadership and non-data posts MUST match the founder's natural writing style. Do NOT generate corporate or "LinkedIn influencer" tone.
+
+**Voice rules**:
+- Lowercase default. No title case, no all-caps emphasis unless it's a single word for effect
+- Conversational openers: "hey so", "hey did you know", "so we just" — never "Most teams..." or "Here's what..."
+- No arrow bullets (→), no numbered lists with bold headers, no formatted frameworks
+- Reads like you're talking to one person, not presenting to an audience
+- Run-on sentences are fine. Periods between thoughts, not semicolons
+- First person casual: "we built", "i think", "we call it" — never "One should consider"
+- Include real numbers and proof points from the actual system ("the judge rejected 80% of backfill posts")
+- End with a casual question, not a polished CTA. "still shipping and praying?" not "What's your take on this emerging paradigm?"
+- No hashtags unless the post type specifically requires them (funding/fda data posts only)
+
+**What to avoid**:
+- Corporate buzzword framing: "leverage", "paradigm", "synergy", "at scale"
+- Listicle formatting with bold sub-headers and arrow points
+- Opening with a dramatic one-liner followed by a line break (the "LinkedIn hook" pattern)
+- Emoji usage
+- Signing off with "Thoughts?" or "Agree?"
+
+**Reference post** (approved, matches voice):
+```
+hey so we just built something at cafecorner that i think more teams should be doing
+
+we call it the AI flywheel. basically two loops that feed each other.
+
+loop 1 is verification. every time we ship something we run a 6-phase process:
+deep dive context gathering, gap analysis against what production actually looks
+like, implement the fix, test it across 5 layers (static, unit, integration,
+manual, live e2e), then run parallel verification checks before documenting
+every edge case we found.
+
+...
+
+still shipping and praying or have you closed the loop?
+```
 
 ## What to watch for next
 
