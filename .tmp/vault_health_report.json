@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "checkedAtIso": "2026-02-02T05:50:14.282Z",
+  "errors": [],
+  "warnings": [],
+  "stats": {
+    "notesScanned": 0,
+    "brokenWikilinks": 0,
+    "missingFrontmatter": 0,
+    "namingViolations": 0,
+    "duplicateNoteIds": 0
+  }
+}

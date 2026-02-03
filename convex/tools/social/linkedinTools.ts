@@ -1,6 +1,6 @@
 import { createTool } from "@convex-dev/agent";
 import { z } from "zod";
-import { api } from "../../_generated/api";
+import { api, internal } from "../../_generated/api";
 
 /**
  * Post to LinkedIn
@@ -8,17 +8,40 @@ import { api } from "../../_generated/api";
  * User: "Share on LinkedIn: ..."
  */
 export const postToLinkedIn = createTool({
-  description: "Create a post on LinkedIn. Requires the user to have connected their LinkedIn account. Use this when the user asks to post, share, or publish content to LinkedIn.",
+  description: "Create a post on LinkedIn. Can target the user's personal profile or the organization company page. Defaults to personal profile for agent-initiated posts. Use target 'organization' for automated/brand content.",
   args: z.object({
     text: z.string().describe("The text content of the post (max 3000 characters)"),
     imageUrl: z.string().optional().describe("Optional URL of an image to include in the post"),
     altText: z.string().optional().describe("Alt text for the image (for accessibility)"),
+    target: z.enum(["personal", "organization"]).optional().describe("Where to post: 'personal' for user's profile (default), 'organization' for the company page"),
   }),
   handler: async (ctx, args): Promise<string> => {
-    console.log(`[postToLinkedIn] Creating post with ${args.text.length} chars`);
+    const target = args.target ?? "personal";
+    console.log(`[postToLinkedIn] Creating ${target} post with ${args.text.length} chars`);
 
     try {
-      // Check if user has LinkedIn connected
+      // Organization page posting - uses env vars, no user auth needed
+      if (target === "organization") {
+        const result = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
+          text: args.text,
+          target: "organization",
+        });
+
+        if (!result.success) {
+          return `Failed to create organization LinkedIn post: ${result.error}`;
+        }
+
+        let response = `Successfully posted to organization page!`;
+        if (result.postUrl) {
+          response += `\n\nView the post: ${result.postUrl}`;
+        }
+        if (result.postUrn) {
+          response += `\nPost URN: ${result.postUrn}`;
+        }
+        return response;
+      }
+
+      // Personal profile posting - requires user auth
       const account = await ctx.runQuery(api.domains.social.linkedinAccounts.getLinkedInAccount, {});
 
       if (!account) {
@@ -40,7 +63,7 @@ Required environment variables (set in Convex dashboard):
         return `LinkedIn access token has expired. Please reconnect your LinkedIn account in Settings > Integrations.`;
       }
 
-      // Create the post
+      // Create the post on personal profile
       let result;
       if (args.imageUrl) {
         result = await ctx.runAction(api.domains.social.linkedinPosting.createImagePost, {
@@ -58,7 +81,7 @@ Required environment variables (set in Convex dashboard):
         return `Failed to create LinkedIn post: ${result.error}`;
       }
 
-      let response = `Successfully posted to LinkedIn!`;
+      let response = `Successfully posted to your personal LinkedIn!`;
       if (result.postUrl) {
         response += `\n\nView your post: ${result.postUrl}`;
       }

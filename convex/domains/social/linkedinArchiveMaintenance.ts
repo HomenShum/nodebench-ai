@@ -85,7 +85,7 @@ export const postCleanupAnnouncement = internalAction({
     let postId: string | undefined;
     let postUrl: string | undefined;
     if (!dryRun) {
-      const res = await ctx.runAction(api.domains.social.linkedinPosting.createTextPost, { text });
+      const res = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, { text, target: "organization" as const });
       if (!res.success) {
         return { dryRun, posted: false, error: res.error ?? "LinkedIn post failed", dateString, persona, tag: CLEANUP_ANNOUNCEMENT_TAG };
       }

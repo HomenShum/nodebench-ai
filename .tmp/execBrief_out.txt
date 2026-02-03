@@ -1,0 +1,975 @@
+﻿{
+  "brief": {
+    "actI": {
+      "latestItemAt": "2026-01-29T23:33:00.000Z",
+      "sourcesCount": 1,
+      "synthesis": "Coverage spans 22 items across 1 sources. The mix indicates where attention and publishing velocity are concentrated right now.",
+      "title": "Act I: Setup — Coverage & Freshness",
+      "topSources": [
+        {
+          "count": 22,
+          "source": "GitHub"
+        }
+      ],
+      "totalItems": 22
+    },
+    "actII": {
+      "signals": [
+        {
+          "evidence": [
+            {
+              "id": "ev-fe35bbf34043",
+              "publishedAt": "2026-01-29T22:12:02.000Z",
+              "relevance": "After subtracting the sale of credits and digital assets, Tesla booked just $2.28 billion in \"bedrock,\" repeatable earnings.",
+              "score": 89,
+              "source": "Fortune Venture",
+              "sourceDomain": "fortune.com",
+              "title": "Remove Tesla&#8217;s non-repeatable profits, and the stock has never been more expensive—now boasting a &#8216;core&#8217; PE of 632",
+              "url": "https://fortune.com/2026/01/29/tesla-stock-price-pe-earnings/"
+            }
+          ],
+          "headline": "Remove Tesla&#8217;s non-repeatable profits, and the stock has never been more expensive—now boasting a &#8216;core&#821",
+          "id": "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1",
+          "synthesis": "After subtracting the sale of credits and digital assets, Tesla booked just $2.28 billion in \"bedrock,\" repeatable earnings."
+        },
+        {
+          "evidence": [
+            {
+              "id": "ev-c9a93bb305c3",
+              "publishedAt": "2026-01-29T22:45:54.000Z",
+              "rank": 28,
+              "relevance": "Zach Reitano, CEO of RO, says demand for the company’s pill has far exceeded expectations. He tells Romaine Bostick and Katie Greifeld on “The Close” that the oral medication is more approachable and affordable, noting t",
+              "runId": "feed-2026-01-29-885c73d7",
+              "score": 88,
+              "source": "Bloomberg Markets",
+              "sourceDomain": "bloomberg.com",
+              "title": "RO CEO on The Rise of GLP-1 Drugs",
+              "url": "https://www.bloomberg.com/news/videos/2026-01-29/ro-ceo-on-the-rise-of-glp-1-drugs-video"
+            }
+          ],
+          "headline": "RO CEO on The Rise of GLP-1 Drugs",
+          "id": "sig-ro-ceo-on-the-rise-of-glp-1-drugs-2",
+          "synthesis": "Zach Reitano, CEO of RO, says demand for the company’s pill has far exceeded expectations. He tells Romaine Bostick and Katie Greifeld on “The Close” that the oral medication is more approachable and affordable, noting the price has dropped from about $1,300 eight months ago to a starting price of $"
+        },
+        {
+          "evidence": [
+            {
+              "id": "ev-8668b7bdcacf",
+              "publishedAt": "2026-01-29T22:40:22.000Z",
+              "rank": 35,
+              "relevance": "US equity-index futures fell at the open as Apple Inc. warned about margins and doubts grew over whether heavy investment in artificial intelligence will deliver sufficient returns.",
+              "runId": "feed-2026-01-29-885c73d7",
+              "score": 88,
+              "source": "Bloomberg Markets",
+              "sourceDomain": "bloomberg.com",
+              "title": "US Stock Futures Fall on Apple Warning, Gold Up: Markets Wrap",
+              "url": "https://www.bloomberg.com/news/articles/2026-01-29/stock-market-today-dow-s-p-live-updates"
+            }
+          ],
+          "headline": "US Stock Futures Fall on Apple Warning, Gold Up: Markets Wrap",
+          "id": "sig-us-stock-futures-fall-on-apple-warning-gold-up-m-3",
+          "synthesis": "US equity-index futures fell at the open as Apple Inc. warned about margins and doubts grew over whether heavy investment in artificial intelligence will deliver sufficient returns."
+        }
+      ],
+      "synthesis": "The feed clusters around a handful of high-signal stories. The signals below are selected for breadth of impact and evidence strength, not just raw engagement.",
+      "title": "Act II: Rising Action — Signals"
+    },
+    "actIII": {
+      "actions": [
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-top-signal-i-wouldn-t-dare-take-these--1",
+          "label": "Summarize top signal: ‘I wouldn’t dare take these drugs . . . I just sell them’:",
+          "linkedSignalIds": [
+            "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+          ],
+          "priority": 1,
+          "status": "completed"
+        },
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-top-signal-counterpoint-s-sun-on-what--2",
+          "label": "Summarize top signal: Counterpoint's Sun on What's Driving Tech Now",
+          "linkedSignalIds": [
+            "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+          ],
+          "priority": 2,
+          "status": "completed"
+        },
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-top-signal-copper-spikes-to-record-in--3",
+          "label": "Summarize top signal: Copper Spikes to Record in London as Base Metals Extend Bu",
+          "linkedSignalIds": [
+            "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+          ],
+          "priority": 3,
+          "status": "completed"
+        },
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-top-signal-meta-8217-s-stock-surges-on-4",
+          "label": "Summarize top signal: Meta&#8217;s stock surges on strong earnings, revenue and ",
+          "linkedSignalIds": [
+            "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+          ],
+          "priority": 4,
+          "status": "completed"
+        }
+      ],
+      "synthesis": "The follow-ups below convert today’s signals into concrete investigations. Prioritize the items with highest leverage on near-term decisions.",
+      "title": "Act III: Deep Dives — Actions"
+    },
+    "dashboard": {
+      "sourceBreakdown": {
+        "ArXiv": 0,
+        "Ars Technica": 0,
+        "BioPharma Dive": 0,
+        "Dev.to": 0,
+        "FierceBiotech": 0,
+        "GitHub": 22,
+        "HackerNews": 0,
+        "Reddit": 0,
+        "TechCrunch": 0,
+        "TechCrunch Startups": 0,
+        "TechCrunch Venture": 0,
+        "VentureBeat Deals": 0,
+        "Wired": 0,
+        "YCombinator": 0
+      },
+      "trendingTags": [
+        "Trending",
+        "Python",
+        "TypeScript",
+        "Swift",
+        "Rust"
+      ],
+      "vizArtifact": {
+        "data": [
+          {
+            "count": 22,
+            "source": "GitHub"
+          }
+        ],
+        "intent": "category_compare",
+        "rationale": "Source volume provides a quick read on where attention is concentrated today.",
+        "spec": {
+          "encoding": {
+            "color": {
+              "field": "source",
+              "legend": null
+            },
+            "tooltip": [
+              {
+                "field": "source",
+                "type": "nominal"
+              },
+              {
+                "field": "count",
+                "type": "quantitative"
+              }
+            ],
+            "x": {
+              "axis": {
+                "title": "Items"
+              },
+              "field": "count",
+              "type": "quantitative"
+            },
+            "y": {
+              "axis": {
+                "title": null
+              },
+              "field": "source",
+              "sort": "-x",
+              "type": "nominal"
+            }
+          },
+          "height": 160,
+          "mark": "bar",
+          "width": "container"
+        }
+      }
+    },
+    "didYouKnow": {
+      "artifactId": "pn7xmfbwg1gxxs8ykskngrg9r5806daf",
+      "checks": {
+        "allFactsHaveCitations": true,
+        "hasFactPerSource": true,
+        "hasPrediction": true,
+        "noEmDash": true,
+        "nonGenericFacts": true,
+        "performanceClaimsAttributed": true,
+        "predictionsHaveCitations": true
+      },
+      "llmJudge": {
+        "artifactId": "pn7xygtxr4q4267drnmf9c0zsx807jn5",
+        "modelUsed": "tngtech/deepseek-r1t-chimera:free",
+        "passed": true
+      },
+      "messageText": "hey did you know that apparently (per the source), Kimi K2.5 can self-direct an agent swarm with up to 100 sub-agents across 1,500 tool calls, reducing execution time by up to 4.5x compared to single-agent setups Also: Gemini 3 Flash introduced Agentic Vision which converts image understanding from static processing to an agentic process If that's the case, interpretation: the massive-scale vision-text joint pre-training in Kimi K2.5 appears to eliminate trade-offs between vision and text capabilities Prediction: In the next 3-6 months, we might see more vendors ship similar agentic multimodal capabilities, but it's uncertain how quickly this becomes a default workflow.",
+      "passed": true,
+      "sourcesUsed": [
+        {
+          "citationId": "websrc_15116167",
+          "title": "Kimi K2.5: Visual Agentic Intelligence | Technical Report",
+          "url": "https://www.kimi.com/blog/kimi-k2-5.html"
+        },
+        {
+          "citationId": "websrc_062f79f6",
+          "title": "Introducing Agentic Vision in Gemini 3 Flash",
+          "url": "https://blog.google/innovation-and-ai/technology/developers-tools/agentic-vision-gemini-3-flash/"
+        }
+      ]
+    },
+    "meta": {
+      "confidence": 55,
+      "date": "2026-01-29",
+      "hasEvidence": true,
+      "headline": "The Morning Dossier — Executive Brief",
+      "summary": "Today’s intelligence brief distills the most salient signals into evidence-backed narratives and actionable follow-ups.",
+      "version": 1
+    }
+  },
+  "cached": false,
+  "ok": true,
+  "record": {
+    "brief": {
+      "actI": {
+        "latestItemAt": "2026-01-29T23:33:00.000Z",
+        "sourcesCount": 1,
+        "synthesis": "Coverage spans 22 items across 1 sources. The mix indicates where attention and publishing velocity are concentrated right now.",
+        "title": "Act I: Setup — Coverage & Freshness",
+        "topSources": [
+          {
+            "count": 22,
+            "source": "GitHub"
+          }
+        ],
+        "totalItems": 22
+      },
+      "actII": {
+        "signals": [
+          {
+            "evidence": [
+              {
+                "id": "ev-fe35bbf34043",
+                "publishedAt": "2026-01-29T22:12:02.000Z",
+                "relevance": "After subtracting the sale of credits and digital assets, Tesla booked just $2.28 billion in \"bedrock,\" repeatable earnings.",
+                "score": 89,
+                "source": "Fortune Venture",
+                "sourceDomain": "fortune.com",
+                "title": "Remove Tesla&#8217;s non-repeatable profits, and the stock has never been more expensive—now boasting a &#8216;core&#8217; PE of 632",
+                "url": "https://fortune.com/2026/01/29/tesla-stock-price-pe-earnings/"
+              }
+            ],
+            "headline": "Remove Tesla&#8217;s non-repeatable profits, and the stock has never been more expensive—now boasting a &#8216;core&#821",
+            "id": "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1",
+            "synthesis": "After subtracting the sale of credits and digital assets, Tesla booked just $2.28 billion in \"bedrock,\" repeatable earnings."
+          },
+          {
+            "evidence": [
+              {
+                "id": "ev-c9a93bb305c3",
+                "publishedAt": "2026-01-29T22:45:54.000Z",
+                "rank": 28,
+                "relevance": "Zach Reitano, CEO of RO, says demand for the company’s pill has far exceeded expectations. He tells Romaine Bostick and Katie Greifeld on “The Close” that the oral medication is more approachable and affordable, noting t",
+                "runId": "feed-2026-01-29-885c73d7",
+                "score": 88,
+                "source": "Bloomberg Markets",
+                "sourceDomain": "bloomberg.com",
+                "title": "RO CEO on The Rise of GLP-1 Drugs",
+                "url": "https://www.bloomberg.com/news/videos/2026-01-29/ro-ceo-on-the-rise-of-glp-1-drugs-video"
+              }
+            ],
+            "headline": "RO CEO on The Rise of GLP-1 Drugs",
+            "id": "sig-ro-ceo-on-the-rise-of-glp-1-drugs-2",
+            "synthesis": "Zach Reitano, CEO of RO, says demand for the company’s pill has far exceeded expectations. He tells Romaine Bostick and Katie Greifeld on “The Close” that the oral medication is more approachable and affordable, noting the price has dropped from about $1,300 eight months ago to a starting price of $"
+          },
+          {
+            "evidence": [
+              {
+                "id": "ev-8668b7bdcacf",
+                "publishedAt": "2026-01-29T22:40:22.000Z",
+                "rank": 35,
+                "relevance": "US equity-index futures fell at the open as Apple Inc. warned about margins and doubts grew over whether heavy investment in artificial intelligence will deliver sufficient returns.",
+                "runId": "feed-2026-01-29-885c73d7",
+                "score": 88,
+                "source": "Bloomberg Markets",
+                "sourceDomain": "bloomberg.com",
+                "title": "US Stock Futures Fall on Apple Warning, Gold Up: Markets Wrap",
+                "url": "https://www.bloomberg.com/news/articles/2026-01-29/stock-market-today-dow-s-p-live-updates"
+              }
+            ],
+            "headline": "US Stock Futures Fall on Apple Warning, Gold Up: Markets Wrap",
+            "id": "sig-us-stock-futures-fall-on-apple-warning-gold-up-m-3",
+            "synthesis": "US equity-index futures fell at the open as Apple Inc. warned about margins and doubts grew over whether heavy investment in artificial intelligence will deliver sufficient returns."
+          }
+        ],
+        "synthesis": "The feed clusters around a handful of high-signal stories. The signals below are selected for breadth of impact and evidence strength, not just raw engagement.",
+        "title": "Act II: Rising Action — Signals"
+      },
+      "actIII": {
+        "actions": [
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-top-signal-i-wouldn-t-dare-take-these--1",
+            "label": "Summarize top signal: ‘I wouldn’t dare take these drugs . . . I just sell them’:",
+            "linkedSignalIds": [
+              "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+            ],
+            "priority": 1,
+            "status": "completed"
+          },
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-top-signal-counterpoint-s-sun-on-what--2",
+            "label": "Summarize top signal: Counterpoint's Sun on What's Driving Tech Now",
+            "linkedSignalIds": [
+              "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+            ],
+            "priority": 2,
+            "status": "completed"
+          },
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-top-signal-copper-spikes-to-record-in--3",
+            "label": "Summarize top signal: Copper Spikes to Record in London as Base Metals Extend Bu",
+            "linkedSignalIds": [
+              "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+            ],
+            "priority": 3,
+            "status": "completed"
+          },
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-top-signal-meta-8217-s-stock-surges-on-4",
+            "label": "Summarize top signal: Meta&#8217;s stock surges on strong earnings, revenue and ",
+            "linkedSignalIds": [
+              "sig-remove-tesla-8217-s-non-repeatable-profits-and-t-1"
+            ],
+            "priority": 4,
+            "status": "completed"
+          }
+        ],
+        "synthesis": "The follow-ups below convert today’s signals into concrete investigations. Prioritize the items with highest leverage on near-term decisions.",
+        "title": "Act III: Deep Dives — Actions"
+      },
+      "dashboard": {
+        "sourceBreakdown": {
+          "ArXiv": 0,
+          "Ars Technica": 0,
+          "BioPharma Dive": 0,
+          "Dev.to": 0,
+          "FierceBiotech": 0,
+          "GitHub": 22,
+          "HackerNews": 0,
+          "Reddit": 0,
+          "TechCrunch": 0,
+          "TechCrunch Startups": 0,
+          "TechCrunch Venture": 0,
+          "VentureBeat Deals": 0,
+          "Wired": 0,
+          "YCombinator": 0
+        },
+        "trendingTags": [
+          "Trending",
+          "Python",
+          "TypeScript",
+          "Swift",
+          "Rust"
+        ],
+        "vizArtifact": {
+          "data": [
+            {
+              "count": 22,
+              "source": "GitHub"
+            }
+          ],
+          "intent": "category_compare",
+          "rationale": "Source volume provides a quick read on where attention is concentrated today.",
+          "spec": {
+            "encoding": {
+              "color": {
+                "field": "source",
+                "legend": null
+              },
+              "tooltip": [
+                {
+                  "field": "source",
+                  "type": "nominal"
+                },
+                {
+                  "field": "count",
+                  "type": "quantitative"
+                }
+              ],
+              "x": {
+                "axis": {
+                  "title": "Items"
+                },
+                "field": "count",
+                "type": "quantitative"
+              },
+              "y": {
+                "axis": {
+                  "title": null
+                },
+                "field": "source",
+                "sort": "-x",
+                "type": "nominal"
+              }
+            },
+            "height": 160,
+            "mark": "bar",
+            "width": "container"
+          }
+        }
+      },
+      "didYouKnow": {
+        "artifactId": "pn7xmfbwg1gxxs8ykskngrg9r5806daf",
+        "checks": {
+          "allFactsHaveCitations": true,
+          "hasFactPerSource": true,
+          "hasPrediction": true,
+          "noEmDash": true,
+          "nonGenericFacts": true,
+          "performanceClaimsAttributed": true,
+          "predictionsHaveCitations": true
+        },
+        "llmJudge": {
+          "artifactId": "pn7xygtxr4q4267drnmf9c0zsx807jn5",
+          "modelUsed": "tngtech/deepseek-r1t-chimera:free",
+          "passed": true
+        },
+        "messageText": "hey did you know that apparently (per the source), Kimi K2.5 can self-direct an agent swarm with up to 100 sub-agents across 1,500 tool calls, reducing execution time by up to 4.5x compared to single-agent setups Also: Gemini 3 Flash introduced Agentic Vision which converts image understanding from static processing to an agentic process If that's the case, interpretation: the massive-scale vision-text joint pre-training in Kimi K2.5 appears to eliminate trade-offs between vision and text capabilities Prediction: In the next 3-6 months, we might see more vendors ship similar agentic multimodal capabilities, but it's uncertain how quickly this becomes a default workflow.",
+        "passed": true,
+        "sourcesUsed": [
+          {
+            "citationId": "websrc_15116167",
+            "title": "Kimi K2.5: Visual Agentic Intelligence | Technical Report",
+            "url": "https://www.kimi.com/blog/kimi-k2-5.html"
+          },
+          {
+            "citationId": "websrc_062f79f6",
+            "title": "Introducing Agentic Vision in Gemini 3 Flash",
+            "url": "https://blog.google/innovation-and-ai/technology/developers-tools/agentic-vision-gemini-3-flash/"
+          }
+        ]
+      },
+      "meta": {
+        "confidence": 55,
+        "date": "2026-01-29",
+        "hasEvidence": true,
+        "headline": "The Morning Dossier — Executive Brief",
+        "summary": "Today’s intelligence brief distills the most salient signals into evidence-backed narratives and actionable follow-ups.",
+        "version": 1
+      }
+    },
+    "errors": [
+      "JSON parse error: Unexpected end of JSON input"
+    ],
+    "evidence": [
+      {
+        "id": "ev-60d508ecbffb",
+        "publishedAt": "2026-01-29T23:33:00.000Z",
+        "rank": 1,
+        "relevance": "Elon Musk, the world&#x2019;s richest individual, could bring two of his biggest holdings closer together.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 52,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "As SpaceX prepares for its IPO, Elon Musk&#x2019;s empire could get even more intertwined",
+        "url": "https://www.marketwatch.com/story/as-spacex-prepares-for-its-ipo-elon-musks-empire-could-get-even-more-intertwined-84a75ed1?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-08930186d429",
+        "publishedAt": "2026-01-29T23:33:00.000Z",
+        "rank": 2,
+        "relevance": "In this weekly documentary, Bloomberg Originals explores how the world got to this strange place of oversupply&nbsp;and&nbsp;what it means for the future.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 71,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Why Is There So Much Oil?",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-29/video-why-is-there-suddenly-so-much-oil"
+      },
+      {
+        "id": "ev-2565ec345ab9",
+        "publishedAt": "2026-01-29T23:32:31.000Z",
+        "rank": 3,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 65,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "HEDJ: European Large-Cap Equity Exposure With A Currency Hedge",
+        "url": "https://seekingalpha.com/article/4864127-hedj-european-large-cap-equity-exposure-with-a-currency-hedge?source=feed_all_articles"
+      },
+      {
+        "id": "ev-19ab5882931b",
+        "publishedAt": "2026-01-29T23:29:54.000Z",
+        "rank": 4,
+        "relevance": "Apple Inc. has acquired Q.ai, a startup that develops artificial intelligence software for wearables. The Financial Times reported that the transaction is worth nearly $2 billion. Israel-based Q.ai, officially Q (Cue) Lt",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 65,
+        "source": "SiliconAngle",
+        "sourceDomain": "siliconangle.com",
+        "title": "Apple acquires AI startup Q.ai for reported $2B",
+        "url": "https://siliconangle.com/2026/01/29/apple-acquires-ai-startup-q-ai-reported-2b/"
+      },
+      {
+        "id": "ev-05a7e67ee1f9",
+        "publishedAt": "2026-01-29T23:28:50.000Z",
+        "rank": 5,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 69,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Why This Micron Rally Holds",
+        "url": "https://seekingalpha.com/article/4864123-why-this-micron-rally-holds?source=feed_all_articles"
+      },
+      {
+        "id": "ev-6c0ca3e92fb5",
+        "publishedAt": "2026-01-29T23:27:49.000Z",
+        "rank": 6,
+        "relevance": "A WIRED analysis of nearly 1,400 Friday showtimes of Melania found only two with no tickets available. Both are before 3 pm.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 49,
+        "source": "Wired",
+        "sourceDomain": "wired.com",
+        "title": "We Found Two Theaters With Sold-Out ‘Melania’ Opening Day Screenings",
+        "url": "https://www.wired.com/story/we-found-2-theaters-with-sold-out-melania-opening-day-screenings/"
+      },
+      {
+        "id": "ev-6a08373ef582",
+        "publishedAt": "2026-01-29T23:20:00.000Z",
+        "rank": 7,
+        "relevance": "The storage maker&#x2019;s revenue guidance was almost 60% higher than the Wall Street consensus and profit guidance was more than double that analysts had expected.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 54,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "Sandisk&#x2019;s eye-popping earnings forecast helps justify 1,400% stock surge",
+        "url": "https://www.marketwatch.com/story/sandisks-eye-popping-earnings-forecast-helps-justify-1-400-stock-surge-a25fd452?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-1ea504692301",
+        "publishedAt": "2026-01-29T23:19:30.000Z",
+        "rank": 8,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 41,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Royal Caribbean Cruises Has Gifted Investors A Great Trip",
+        "url": "https://seekingalpha.com/article/4864122-royal-caribbean-cruises-has-gifted-investors-a-great-trip?source=feed_all_articles"
+      },
+      {
+        "id": "ev-c15aa94b7722",
+        "publishedAt": "2026-01-29T23:17:06.000Z",
+        "rank": 9,
+        "relevance": "Insurance platform company Ethos Technologies Inc. saw its shares close down more than 11% on its first day of trading after the company made its debut on the Nasdaq this morning. The company priced its initial public of",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 66,
+        "source": "SiliconAngle",
+        "sourceDomain": "siliconangle.com",
+        "title": "Ethos shares slide 11% after life insurance platform debuts on Nasdaq",
+        "url": "https://siliconangle.com/2026/01/29/ethos-shares-slide-11-life-insurance-platform-debuts-nasdaq/"
+      },
+      {
+        "id": "ev-3923229b9745",
+        "publishedAt": "2026-01-29T23:16:53.000Z",
+        "rank": 10,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 59,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Fresenius Medical Care: Low Confidence On Growth Acceleration Limits Upside",
+        "url": "https://seekingalpha.com/article/4864121-fresenius-medical-care-low-confidence-on-growth-acceleration-limits-upside?source=feed_all_articles"
+      },
+      {
+        "id": "ev-b9979f09ff28",
+        "publishedAt": "2026-01-29T23:16:19.000Z",
+        "rank": 11,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 51,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "REIT Shorts Are Losing Their Lunch Money",
+        "url": "https://seekingalpha.com/article/4864120-reit-shorts-are-losing-their-lunch-money?source=feed_all_articles"
+      },
+      {
+        "id": "ev-a20343e66284",
+        "publishedAt": "2026-01-29T23:15:50.000Z",
+        "rank": 12,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 44,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Apple Q1: Don't Buy These Earnings, Limited Upside",
+        "url": "https://seekingalpha.com/article/4864131-apple-q1-dont-buy-these-earnings-limited-upside?source=feed_all_articles"
+      },
+      {
+        "id": "ev-039bfb935ff7",
+        "publishedAt": "2026-01-29T23:13:28.000Z",
+        "rank": 13,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 64,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "The Siam Cement Public Company Limited 2025 Q4 - Results - Earnings Call Presentation",
+        "url": "https://seekingalpha.com/article/4864141-the-siam-cement-public-company-limited-2025-q4-results-earnings-call-presentation?source=feed_all_articles"
+      },
+      {
+        "id": "ev-409fc98a2f1b",
+        "publishedAt": "2026-01-29T23:12:05.000Z",
+        "rank": 14,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 64,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Frasers Centrepoint Trust 2026 Q1 - Results - Earnings Call Presentation",
+        "url": "https://seekingalpha.com/article/4864140-frasers-centrepoint-trust-2026-q1-results-earnings-call-presentation?source=feed_all_articles"
+      },
+      {
+        "id": "ev-0291ac7b88ae",
+        "publishedAt": "2026-01-29T23:10:49.000Z",
+        "rank": 15,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 53,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Aya Gold & Silver Inc. (AYA:CA) Presents at TD Cowen 17th Annual Global Mining Conference - Slideshow",
+        "url": "https://seekingalpha.com/article/4864139-aya-gold-and-silver-inc-aya-ca-presents-at-td-cowen-17th-annual-global-mining-conference?source=feed_all_articles"
+      },
+      {
+        "id": "ev-c441ced0902e",
+        "publishedAt": "2026-01-29T23:09:17.000Z",
+        "rank": 16,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 44,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "NewtekOne, Inc. 2025 Q4 - Results - Earnings Call Presentation",
+        "url": "https://seekingalpha.com/article/4864138-newtekone-inc-2025-q4-results-earnings-call-presentation?source=feed_all_articles"
+      },
+      {
+        "id": "ev-d2b4d53f2f87",
+        "publishedAt": "2026-01-29T23:06:34.000Z",
+        "rank": 17,
+        "relevance": "Trending on Hacker News with 3 points and 0 comments.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 3,
+        "source": "YCombinator",
+        "sourceDomain": "softwarefordays.com",
+        "title": "What the Success of Coding Agents Teaches Us about AI Systems in General",
+        "url": "https://softwarefordays.com/post/software-is-mostly-all-you-need/"
+      },
+      {
+        "id": "ev-cf89604eef33",
+        "publishedAt": "2026-01-29T23:04:53.000Z",
+        "rank": 18,
+        "relevance": "Jerome Schneider, head of short-term portfolio management and funding at PIMCO, says the Fed faces new challenges as economic growth picks up. He tells Romaine Bostick and Katie Greifeld on “The Close” that PIMCO still e",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 64,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "PIMCO's Jerome Schneider: See One More Rate Cut This Year",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-29/pimco-s-schneider-see-one-more-rate-cut-this-year-video"
+      },
+      {
+        "id": "ev-152b847c908a",
+        "publishedAt": "2026-01-29T23:01:13.000Z",
+        "rank": 19,
+        "relevance": "It's surprising that Team USA is leaving two of its country's leading scorers at home. But the squad that nearly won the 4 Nations Face-Off has seen a boost in offense.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 74,
+        "source": "Forbes Business",
+        "sourceDomain": "forbes.com",
+        "title": "2026 U.S. Winter Olympics Hockey Roster: Why The NHL’s Top American Scorers Missed The Cut",
+        "url": "https://www.forbes.com/sites/carolschram/2026/01/29/2026-us-winter-olympics-hockey-roster-why-the-nhls-top-american-scorers-missed-the-cut/"
+      },
+      {
+        "id": "ev-fb92daa14670",
+        "publishedAt": "2026-01-29T23:00:00.000Z",
+        "rank": 20,
+        "relevance": "Global investors’ exit from Indonesian stocks sparked by MSCI Inc.’s investability warning is far from done, according to fund managers, raising the specter of a sustained market derating.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 82,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Worst Yet to Come After Wild Day for Indonesia Stocks, Funds Say",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-29/worst-yet-to-come-after-wild-day-for-indonesia-stocks-funds-say"
+      },
+      {
+        "id": "ev-366dde4c5c5a",
+        "publishedAt": "2026-01-29T23:00:00.000Z",
+        "rank": 21,
+        "relevance": "The fastest-selling game console of all time may not be enough to shelter Nintendo Co.’s stock from growing investor fears about skyrocketing memory prices.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 65,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Nintendo Switch 2’s Strength Threatened by Memory ‘Horror Show’",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-29/nintendo-switch-2-s-strength-threatened-by-memory-horror-show"
+      },
+      {
+        "id": "ev-d7e4a3bd1908",
+        "publishedAt": "2026-01-29T22:57:50.000Z",
+        "rank": 22,
+        "relevance": "State Senator Doron Clark discusses on &quot;Forbes Newsroom&quot; what is happening in Minneapolis after two people in the span of a few weeks were fatally shot by federal agents.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 60,
+        "source": "Forbes Business",
+        "sourceDomain": "forbes.com",
+        "title": "Tom Homan Promised Safer Minneapolis Operation— But We Aren't Seeing Change From ICE Yet: State Sen",
+        "url": "https://www.forbes.com/sites/forbestv/2026/01/29/tom-homan-promised-safer-minneapolis-operation--but-we-arent-seeing-change-from-ice-yet-state-sen/"
+      },
+      {
+        "id": "ev-c7e529d0b731",
+        "publishedAt": "2026-01-29T22:55:17.000Z",
+        "rank": 23,
+        "relevance": "In &quot;Bridgerton&quot; Season 4, Benedict’s love interest Sophie Baek has a tragic backstory tied to her family history. She’s referred to as a “ward,&quot; but what does that really mean?",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 80,
+        "source": "Forbes Business",
+        "sourceDomain": "forbes.com",
+        "title": "What Does ‘Ward’ Mean In ‘Bridgerton’? Sophie’s Family History Explained",
+        "url": "https://www.forbes.com/sites/monicamercuri/2026/01/29/what-does-ward-mean-in-bridgerton-sophies-family-history-explained/"
+      },
+      {
+        "id": "ev-3bded59e8b5f",
+        "publishedAt": "2026-01-29T22:54:38.000Z",
+        "rank": 24,
+        "relevance": "Jonathan Diorio, head of U.S. Wealth Business and Head of Alternatives at BlackRock, discusses the firm’s private-markets separately managed account with Romaine Bostick and Katie Greifeld. He says clients are seeking gr",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 65,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "BlackRock’s Diorio: Clients Want More Access to Private Markets",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-29/diorio-clients-want-more-access-to-private-markets-video"
+      },
+      {
+        "id": "ev-97d1d1719077",
+        "publishedAt": "2026-01-29T22:49:43.000Z",
+        "rank": 25,
+        "relevance": "Apple reported record earnings, almost entirely because of its iPhone and Services businesses.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 53,
+        "source": "Inc.com",
+        "sourceDomain": "inc.com",
+        "title": "While Everyone Else Tries to Replace the iPhone, Apple Just Had Its Best Quarter Ever",
+        "url": "https://www.inc.com/jason-aten/while-everyone-else-tries-to-replace-the-iphone-apple-just-had-its-best-quarter-ever/91294881"
+      },
+      {
+        "id": "ev-e7090b2ffce6",
+        "publishedAt": "2026-01-29T22:47:42.000Z",
+        "rank": 26,
+        "relevance": "This merger would bring the Grok chatbot, Starlink satellites, and SpaceX rockets together under one corporation.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 62,
+        "source": "TechCrunch",
+        "sourceDomain": "techcrunch.com",
+        "title": "Elon Musk&#8217;s SpaceX, Tesla, and xAI in talks to merge, according to reports",
+        "url": "https://techcrunch.com/2026/01/29/elon-musk-spacex-tesla-xai-merger-talks-ipo-reuters/"
+      },
+      {
+        "id": "ev-557068de640f",
+        "publishedAt": "2026-01-29T22:46:59.000Z",
+        "rank": 27,
+        "relevance": "RBC Capital Markets Global Autos Lead Equity Analyst Tom Narayan joins Bloomberg Businessweek Daily to discuss Tesla's latest earnings results, including plans to retire the Model S and Model X. Narayan says that Tesla's",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 66,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "RBC's Narayan: Mathematically, Tesla Not An Auto Company",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-29/rbc-s-narayan-mathematically-tesla-not-an-auto-company-video"
+      },
+      {
+        "id": "ev-c9a93bb305c3",
+        "publishedAt": "2026-01-29T22:45:54.000Z",
+        "rank": 28,
+        "relevance": "Zach Reitano, CEO of RO, says demand for the company’s pill has far exceeded expectations. He tells Romaine Bostick and Katie Greifeld on “The Close” that the oral medication is more approachable and affordable, noting t",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 88,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "RO CEO on The Rise of GLP-1 Drugs",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-29/ro-ceo-on-the-rise-of-glp-1-drugs-video"
+      },
+      {
+        "id": "ev-2547a614fc2e",
+        "publishedAt": "2026-01-29T22:45:54.000Z",
+        "rank": 29,
+        "relevance": "On &quot;Forbes Newsroom,&quot; Emerson College Polling senior director Matt Taglia discussed a recent poll about the Michigan Senate Democratic primary election.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 79,
+        "source": "Forbes Business",
+        "sourceDomain": "forbes.com",
+        "title": "Good News For Democrats In Battleground Michigan: New Poll",
+        "url": "https://www.forbes.com/sites/forbestv/2026/01/29/good-news-for-democrats-in-battleground-michigan-new-poll/"
+      },
+      {
+        "id": "ev-f525cc34af27",
+        "publishedAt": "2026-01-29T22:45:34.000Z",
+        "rank": 30,
+        "relevance": "The 2026 Sundance Festival featured a diverse mix of women’s perspectives in filmmaking from genre, style, and production, with spotlighted directors across notable films like 'When A Witness Recants,' directed by prolif",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 65,
+        "source": "Forbes Business",
+        "sourceDomain": "forbes.com",
+        "title": "5 Women-Led Sundance Films Everyone’s Talking About, Featuring Brittney Griner, Charli XCX And Danielle Brooks",
+        "url": "https://www.forbes.com/sites/dominiquefluker/2026/01/29/5-women-led-sundance-films-everyones-talking-about-featuring-brittney-griner-charli-xcx-and-danielle-brooks/"
+      },
+      {
+        "id": "ev-343ea15462d4",
+        "publishedAt": "2026-01-29T22:43:39.000Z",
+        "rank": 31,
+        "relevance": "His &amp;amp; Hers is stupid even by Netflix standards.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 79,
+        "source": "Forbes Business",
+        "sourceDomain": "forbes.com",
+        "title": "‘His & Hers’ Review: Netflix’s Murder Mystery Is A Major Letdown",
+        "url": "https://www.forbes.com/sites/erikkain/2026/01/29/his-and-hers-netflix-series-review/"
+      },
+      {
+        "id": "ev-29ade564ccb0",
+        "publishedAt": "2026-01-29T22:42:56.000Z",
+        "rank": 32,
+        "relevance": "Wall Street’s booming year will not be enough to stave off a financial crisis that Mayor Zohran Mamdani says is worse than the Great Recession nearly two decades ago.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 85,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Wall Street Bonanza Won’t Save NYC’s Finances, Mamdani Warns",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-29/wall-street-bonanza-won-t-save-nyc-s-finances-mamdani-warns"
+      },
+      {
+        "id": "ev-63cba571d84e",
+        "publishedAt": "2026-01-29T22:42:05.000Z",
+        "rank": 33,
+        "relevance": "Meet the White House’s newest mascot: Coalie. He’s a cute lump of coal that the administration hopes will sell its perverse energy agenda, says Bloomberg Opinion columnist Mark Gongloff. (Source: Bloomberg)",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 61,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Dirty Energy’s Cute But Deadly Rebrand",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-29/opinion-dirty-energy-s-cute-but-deadly-rebrand-video"
+      },
+      {
+        "id": "ev-b520c1223d33",
+        "publishedAt": "2026-01-29T22:41:00.000Z",
+        "rank": 34,
+        "relevance": "The volatility seen across asset classes on Thursday may give investors a hint at what&#x2019;s to come and leave them with fewer places to hide.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 52,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "Stocks, gold and copper see big swings that show investors have few places to hide",
+        "url": "https://www.marketwatch.com/story/stocks-gold-and-copper-see-big-swings-that-show-investors-have-few-places-to-hide-01fc60b9?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-8668b7bdcacf",
+        "publishedAt": "2026-01-29T22:40:22.000Z",
+        "rank": 35,
+        "relevance": "US equity-index futures fell at the open as Apple Inc. warned about margins and doubts grew over whether heavy investment in artificial intelligence will deliver sufficient returns.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 88,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "US Stock Futures Fall on Apple Warning, Gold Up: Markets Wrap",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-29/stock-market-today-dow-s-p-live-updates"
+      },
+      {
+        "id": "ev-e28567e7ca50",
+        "publishedAt": "2026-01-29T22:38:00.000Z",
+        "rank": 36,
+        "relevance": "A look at the best and worst S&amp;P 500 stocks this year shows how tech investors have piled into semiconductor plays and bailed on software.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 59,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "Software stocks suffer steep selloff, widening the gap with hot chip stocks",
+        "url": "https://www.marketwatch.com/story/software-stocks-suffer-worst-day-in-10-months-widening-the-gap-with-hot-chip-stocks-3ad0fb5f?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-053c07c45ae2",
+        "publishedAt": "2026-01-29T22:35:55.000Z",
+        "rank": 37,
+        "relevance": "Shares in both Sandisk Corp. and Western Digital Corp. rosein late trading today after both impressed with better-than-expected quarterly results, benefiting from rising storage demand as cloud and artificial intelligenc",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 81,
+        "source": "SiliconAngle",
+        "sourceDomain": "siliconangle.com",
+        "title": "Sandisk, Western Digital beat expectations as cloud and AI data center storage demand accelerates",
+        "url": "https://siliconangle.com/2026/01/29/sandisk-western-digital-beat-expectations-cloud-ai-data-center-storage-demand-accelerates/"
+      },
+      {
+        "id": "ev-9b9bd8ce0c24",
+        "publishedAt": "2026-01-29T22:33:55.000Z",
+        "rank": 38,
+        "relevance": "Comprehensive cross-platform coverage of the U.S. market close on Bloomberg Television, Bloomberg Radio, and YouTube with Romaine Bostick, Katie Greifeld, Carol Massar and Tim Stenovec. (Source: Bloomberg)",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 63,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Nasdaq Falls on Big Tech Weakness | Closing Bell",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-29/nasdaq-falls-on-big-tech-weakness-closing-bell-video"
+      },
+      {
+        "id": "ev-afbb6b3de3e0",
+        "publishedAt": "2026-01-29T22:32:24.000Z",
+        "rank": 39,
+        "relevance": "Strong holiday season and boost from China lead to surge in growth",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 75,
+        "source": "Financial Times",
+        "sourceDomain": "ft.com",
+        "title": "Apple posts record $144bn in revenue after blockbuster iPhone sales",
+        "url": "https://www.ft.com/content/53f1033e-a479-4365-a13c-2e4ec2631402"
+      },
+      {
+        "id": "ev-c72bd02e0f09",
+        "publishedAt": "2026-01-29T22:26:00.000Z",
+        "rank": 40,
+        "relevance": "Expecting a bigger tax refund? There&#x2019;s no money back until you get through tax filing.",
+        "runId": "feed-2026-01-29-885c73d7",
+        "score": 50,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "4 tips to file your taxes like a pro &#x2014; and get your refund faster",
+        "url": "https://www.marketwatch.com/story/4-tips-to-file-your-taxes-like-a-pro-and-get-your-refund-faster-b20070aa?mod=mw_rss_topstories"
+      }
+    ],
+    "provenance": {
+      "retrievalRuns": [
+        {
+          "datasetHash": "dbd13830035575c1",
+          "executedAt": "2026-01-30T00:51:08.047Z",
+          "query": "{\"from\":\"2026-01-29T00:00:00.000Z\",\"to\":\"2026-01-29T23:59:59.999Z\",\"limit\":80}",
+          "runId": "feed-2026-01-29-885c73d7",
+          "tool": "feed.getRecent",
+          "topK": 40
+        }
+      ]
+    },
+    "status": "invalid"
+  },
+  "validation": {
+    "errors": [
+      "JSON parse error: Unexpected end of JSON input"
+    ],
+    "valid": false,
+    "warnings": []
+  }
+}

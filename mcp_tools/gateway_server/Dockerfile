@@ -14,10 +14,10 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Render injects PORT env var at runtime
-ENV PORT=4002
+# Render injects PORT=10000 at runtime; default to 10000 for parity
+ENV PORT=10000
 
-EXPOSE 4002
+EXPOSE 10000
 
 # Run HTTP server via tsx (no build step needed)
 CMD ["npx", "tsx", "httpServer.ts"]

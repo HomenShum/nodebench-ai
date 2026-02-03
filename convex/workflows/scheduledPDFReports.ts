@@ -1035,12 +1035,13 @@ export const distributeReport = internalAction({
           }
           case "linkedin": {
             // Post summary to LinkedIn
-            await ctx.runAction(internal.domains.social.linkedinPosting.createTextPost, {
+            await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
               text: `New ${args.reportType} funding report available!\n\n` +
                 `${args.quarterLabel}\n` +
                 `${args.dealCount} deals | ${formatCurrency(args.totalAmountUsd)} raised\n\n` +
                 (args.insights ? `Key Insight:\n${args.insights.slice(0, 500)}...\n\n` : "") +
                 `#VentureCapital #StartupFunding #FundingReport #NodeBenchAI`,
+              target: "organization" as const,
             });
             console.log(`[scheduledPDFReports] Report summary posted to LinkedIn`);
             break;

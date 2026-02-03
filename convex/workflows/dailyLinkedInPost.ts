@@ -392,8 +392,8 @@ export const postDailyDigestToLinkedIn = internalAction({
     let postResult;
     try {
       postResult = await ctx.runAction(
-        internal.domains.social.linkedinPosting.createTextPost,
-        { text: linkedInContent }
+        internal.domains.social.linkedinPosting.createTargetedTextPost,
+        { text: linkedInContent, target: "organization" as const }
       );
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -426,6 +426,7 @@ export const postDailyDigestToLinkedIn = internalAction({
       factCheckCount: digestResult.factCheckCount,
       postType: "daily_digest",
       metadata: didYouKnow.didYouKnowMetadata ? { didYouKnow: didYouKnow.didYouKnowMetadata } : undefined,
+      target: "organization",
     });
 
     console.log(`[dailyLinkedInPost] Successfully posted to LinkedIn, postUrl=${postResult.postUrl}`);
@@ -548,8 +549,8 @@ export const postDidYouKnowToLinkedIn = internalAction({
     }
 
     const postResult = await ctx.runAction(
-      internal.domains.social.linkedinPosting.createTextPost,
-      { text: content }
+      internal.domains.social.linkedinPosting.createTargetedTextPost,
+      { text: content, target: "organization" as const }
     );
     if (!postResult.success) {
       return { success: false, posted: false, error: postResult.error || "LinkedIn post failed", content };
@@ -564,6 +565,7 @@ export const postDidYouKnowToLinkedIn = internalAction({
       factCheckCount: 0,
       postType: "did_you_know",
       metadata: { didYouKnow: didYouKnowMetadata },
+      target: "organization",
     });
 
     return {
@@ -790,8 +792,8 @@ export const postDailyFundingToLinkedIn = internalAction({
     let postResult;
     try {
       postResult = await ctx.runAction(
-        internal.domains.social.linkedinPosting.createTextPost,
-        { text: linkedInContent }
+        internal.domains.social.linkedinPosting.createTargetedTextPost,
+        { text: linkedInContent, target: "organization" as const }
       );
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -826,6 +828,7 @@ export const postDailyFundingToLinkedIn = internalAction({
       content: linkedInContent,
       factCheckCount: 0,
       postType: "funding_tracker",
+      target: "organization",
     });
 
     return {
@@ -1356,7 +1359,7 @@ export const postMultiPersonaDigest = internalAction({
       // Post to LinkedIn
       try {
         const postResult = await ctx.runAction(
-          internal.domains.social.linkedinPosting.createTextPost,
+          internal.domains.social.linkedinPosting.createTargetedTextPost,
           { text: linkedInContent }
         );
 
@@ -1373,6 +1376,7 @@ export const postMultiPersonaDigest = internalAction({
             factCheckCount: 0,
             postType: "daily_digest",
             metadata: didYouKnowPreface.didYouKnowMetadata ? { didYouKnow: didYouKnowPreface.didYouKnowMetadata } : undefined,
+            target: "organization",
           });
 
           results.push({
@@ -2864,8 +2868,8 @@ export const postStartupFundingBrief = internalAction({
 
       try {
         const postResult = await ctx.runAction(
-          internal.domains.social.linkedinPosting.createTextPost,
-          { text: linkedInPosts[i] }
+          internal.domains.social.linkedinPosting.createTargetedTextPost,
+          { text: linkedInPosts[i], target: "organization" as const }
         );
 
         if (postResult.success && postResult.postUrl) {
@@ -2899,6 +2903,7 @@ export const postStartupFundingBrief = internalAction({
           factCheckCount: 0,
           postType: "funding_brief",
           metadata: { part: i + 1, totalParts: linkedInPosts.length },
+          target: "organization",
         });
       }
     }

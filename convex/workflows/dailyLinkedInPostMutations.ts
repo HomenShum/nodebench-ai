@@ -64,6 +64,7 @@ export const logLinkedInPost = internalMutation({
     factCheckCount: v.number(),
     postType: v.optional(v.string()),
     metadata: v.optional(v.any()),
+    target: v.optional(v.union(v.literal("personal"), v.literal("organization"))),
   },
   handler: async (ctx, args) => {
     console.log(`[dailyLinkedInPost] Post logged: ${args.dateString}, persona=${args.persona}, postId=${args.postId}, facts=${args.factCheckCount}`);
@@ -109,6 +110,7 @@ export const logLinkedInPost = internalMutation({
       factCheckCount: args.factCheckCount,
       metadata: args.metadata,
       postedAt: Date.now(),
+      target: args.target ?? "organization",
     });
 
     // Optionally update the digestCache to mark as sent to LinkedIn
@@ -438,5 +440,107 @@ export const backfillArchive = internalMutation({
 
     console.log(`[backfill] Inserted ${inserted} archive entries`);
     return { inserted, message: `Backfilled ${inserted} posts` };
+  },
+});
+
+/**
+ * Backfill target field on existing archive records.
+ * Sets target="personal" on all rows where target is undefined.
+ */
+export const backfillTargetField = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db
+      .query("linkedinPostArchive")
+      .collect();
+    let patched = 0;
+    for (const doc of all) {
+      if (!doc.target) {
+        await ctx.db.patch(doc._id, { target: "personal" });
+        patched++;
+      }
+    }
+    console.log(`[backfillTargetField] Patched ${patched}/${all.length} archive entries with target="personal"`);
+    return { patched, total: all.length };
+  },
+});
+
+/**
+ * Log a post that was held by the engagement quality gate.
+ */
+export const logHeldPost = internalMutation({
+  args: {
+    dateString: v.string(),
+    persona: v.string(),
+    postType: v.string(),
+    content: v.string(),
+    target: v.string(),
+    failures: v.array(v.string()),
+    softWarnings: v.array(v.string()),
+    metadata: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const id = await ctx.db.insert("linkedinHeldPosts", {
+      dateString: args.dateString,
+      persona: args.persona,
+      postType: args.postType,
+      content: args.content,
+      target: args.target,
+      failures: args.failures,
+      softWarnings: args.softWarnings,
+      heldAt: Date.now(),
+      status: "held",
+      metadata: args.metadata,
+    });
+    console.log(`[logHeldPost] Held post ${id}: ${args.failures.length} failures, ${args.softWarnings.length} warnings`);
+    return { id, failures: args.failures.length };
+  },
+});
+
+/**
+ * List held posts (for review).
+ */
+export const listHeldPosts = internalQuery({
+  args: {
+    status: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 20;
+    let query = ctx.db
+      .query("linkedinHeldPosts")
+      .withIndex("by_status")
+      .order("desc");
+
+    const all = await query.take(limit);
+    if (args.status) {
+      return all.filter(p => p.status === args.status);
+    }
+    return all;
+  },
+});
+
+/**
+ * Get all personal archive posts for backfill into content queue.
+ * Returns posts where target is undefined (pre-migration) or "personal".
+ */
+export const getPersonalArchivePosts = internalQuery({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 500;
+
+    // Fetch all archive posts and filter for personal ones
+    // Pre-migration posts have target=undefined, post-migration personal have target="personal"
+    const allPosts = await ctx.db
+      .query("linkedinPostArchive")
+      .withIndex("by_postedAt")
+      .order("desc")
+      .take(limit);
+
+    return allPosts.filter(
+      (p) => p.target === undefined || p.target === "personal",
+    );
   },
 });

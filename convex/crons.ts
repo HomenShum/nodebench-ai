@@ -394,6 +394,34 @@ crons.weekly(
   { lookbackDays: 7, testMode: false }
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LINKEDIN CONTENT QUEUE - Judge, schedule, and post from backlog
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Judge pending queue items every 30 minutes (uses FREE models: devstral-2-free)
+crons.interval(
+  "judge pending LinkedIn queue",
+  { minutes: 30 },
+  internal.domains.social.linkedinQualityJudge.batchJudgePending,
+  { limit: 5 }
+);
+
+// Schedule approved posts into time slots every hour
+crons.interval(
+  "schedule approved LinkedIn posts",
+  { hours: 1 },
+  internal.domains.social.linkedinScheduleGrid.scheduleNextApprovedPost,
+  { target: "organization" }
+);
+
+// Post scheduled items when they're due (hourly)
+crons.interval(
+  "process LinkedIn queue",
+  { hours: 1 },
+  internal.domains.social.linkedinPosting.processQueuedPost,
+  {}
+);
+
 // Advance Daily Brief domain memory tasks every 15 minutes
 crons.interval(
   "advance daily brief tasks",

@@ -406,8 +406,9 @@ COMPETITIVE INTELLIGENCE: [text]`;
         }
 
         console.log(`[FDAUpdates] Posting ${i + 1}/${posts.length} (${posts[i].length} chars)...`);
-        const result = await ctx.runAction(api.domains.social.linkedinPosting.createTextPost, {
+        const result = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
           text: posts[i],
+          target: "organization" as const,
         });
 
         console.log(`[FDAUpdates] Post ${i + 1}/${posts.length} result:`, { success: result.success, error: result.error });
@@ -482,6 +483,7 @@ COMPETITIVE INTELLIGENCE: [text]`;
           factCheckCount: 0,
           postType: "fda",
           metadata: { part: i + 1, totalParts: posts.length },
+          target: "organization",
         });
       } catch (e) {
         console.warn(`[FDAUpdates] Failed to archive post ${i + 1}:`, e);
@@ -1022,9 +1024,9 @@ export const postAcademicResearch = internalAction({
 
     // Step 3: Post to LinkedIn
     try {
-      const result = await ctx.runAction(api.domains.social.linkedinApi.postToLinkedIn, {
-        content: postContent,
-        visibility: "PUBLIC",
+      const result = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
+        text: postContent,
+        target: "organization" as const,
       });
 
       // Step 4: Record posts for timeline tracking
@@ -1065,6 +1067,7 @@ export const postAcademicResearch = internalAction({
           content: postContent,
           factCheckCount: 0,
           postType: "research",
+          target: "organization",
         });
       } catch (e) {
         console.warn("[AcademicResearch] Failed to archive post:", e);
@@ -1222,9 +1225,9 @@ export const postClinicalTrialMilestones = internalAction({
 
     // Step 3: Post to LinkedIn
     try {
-      const result = await ctx.runAction(api.domains.social.linkedinApi.postToLinkedIn, {
-        content: postContent,
-        visibility: "PUBLIC",
+      const result = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
+        text: postContent,
+        target: "organization" as const,
       });
 
       // Step 4: Record posts for timeline tracking
@@ -1272,6 +1275,7 @@ export const postClinicalTrialMilestones = internalAction({
           content: postContent,
           factCheckCount: 0,
           postType: "clinical",
+          target: "organization",
         });
       } catch (e) {
         console.warn("[ClinicalTrials] Failed to archive post:", e);
@@ -1448,9 +1452,9 @@ export const postMAActivity = internalAction({
 
     // Step 3: Post to LinkedIn
     try {
-      const result = await ctx.runAction(api.domains.social.linkedinApi.postToLinkedIn, {
-        content: postContent,
-        visibility: "PUBLIC",
+      const result = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
+        text: postContent,
+        target: "organization" as const,
       });
 
       // Step 4: Record posts for timeline tracking
@@ -1496,6 +1500,7 @@ export const postMAActivity = internalAction({
           content: postContent,
           factCheckCount: 0,
           postType: "ma",
+          target: "organization",
         });
       } catch (e) {
         console.warn("[MAActivity] Failed to archive post:", e);

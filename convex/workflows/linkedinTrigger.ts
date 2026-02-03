@@ -85,6 +85,7 @@ export const postTechnicalReport = action({
   args: {
     content: v.string(),
     dryRun: v.optional(v.boolean()),
+    target: v.optional(v.union(v.literal("personal"), v.literal("organization"))),
   },
   returns: v.object({
     success: v.boolean(),
@@ -93,6 +94,7 @@ export const postTechnicalReport = action({
     error: v.optional(v.string()),
     dryRun: v.optional(v.boolean()),
     content: v.optional(v.string()),
+    target: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     if (args.dryRun) {
@@ -104,8 +106,9 @@ export const postTechnicalReport = action({
       };
     }
 
-    return await ctx.runAction(internal.domains.social.linkedinPosting.createTextPost, {
+    return await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
       text: args.content,
+      target: args.target ?? "organization",
     });
   },
 });
@@ -142,6 +145,7 @@ export const postWeeklySourceSummary = action({
   args: {
     dryRun: v.optional(v.boolean()),
     daysBack: v.optional(v.number()), // Default 7
+    target: v.optional(v.union(v.literal("personal"), v.literal("organization"))),
   },
   returns: v.object({
     success: v.boolean(),
@@ -150,6 +154,7 @@ export const postWeeklySourceSummary = action({
     content: v.optional(v.string()),
     error: v.optional(v.string()),
     dryRun: v.optional(v.boolean()),
+    target: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     // Generate the summary content
@@ -174,8 +179,9 @@ export const postWeeklySourceSummary = action({
     }
 
     // Post to LinkedIn
-    return await ctx.runAction(internal.domains.social.linkedinPosting.createTextPost, {
+    return await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
       text: result.content,
+      target: args.target ?? "organization",
     });
   },
 });
@@ -198,6 +204,7 @@ export const postEnhancedWeeklySummary = action({
   args: {
     dryRun: v.optional(v.boolean()),
     daysBack: v.optional(v.number()), // Default 7
+    target: v.optional(v.union(v.literal("personal"), v.literal("organization"))),
   },
   returns: v.object({
     success: v.boolean(),
@@ -206,6 +213,7 @@ export const postEnhancedWeeklySummary = action({
     content: v.optional(v.string()),
     error: v.optional(v.string()),
     dryRun: v.optional(v.boolean()),
+    target: v.optional(v.string()),
   }),
   handler: async (ctx, args) => {
     // Generate the enhanced summary content
@@ -230,8 +238,9 @@ export const postEnhancedWeeklySummary = action({
     }
 
     // Post to LinkedIn
-    return await ctx.runAction(internal.domains.social.linkedinPosting.createTextPost, {
+    return await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, {
       text: result.content,
+      target: args.target ?? "organization",
     });
   },
 });

@@ -1685,11 +1685,86 @@ const linkedinPostArchive = defineTable({
   factCheckCount: v.optional(v.number()),
   metadata: v.optional(v.any()),
   postedAt: v.number(),
+  target: v.optional(v.union(v.literal("personal"), v.literal("organization"))),
 })
   .index("by_date", ["dateString"])
   .index("by_type", ["postType", "postedAt"])
   .index("by_date_persona", ["dateString", "persona"])
-  .index("by_postedAt", ["postedAt"]);
+  .index("by_postedAt", ["postedAt"])
+  .index("by_target_postedAt", ["target", "postedAt"]);
+
+/* ------------------------------------------------------------------ */
+/* LinkedIn Held Posts - Posts blocked by engagement quality gate     */
+/* ------------------------------------------------------------------ */
+const linkedinHeldPosts = defineTable({
+  dateString: v.string(),
+  persona: v.string(),
+  postType: v.string(),
+  content: v.string(),
+  target: v.string(),
+  failures: v.array(v.string()),
+  softWarnings: v.array(v.string()),
+  heldAt: v.number(),
+  status: v.union(v.literal("held"), v.literal("rewritten"), v.literal("force_posted"), v.literal("discarded")),
+  resolvedAt: v.optional(v.number()),
+  rewrittenContent: v.optional(v.string()),
+  metadata: v.optional(v.any()),
+})
+  .index("by_status", ["status", "heldAt"])
+  .index("by_date", ["dateString", "heldAt"]);
+
+/* ------------------------------------------------------------------ */
+/* LinkedIn Content Queue - Central backlog for ALL content           */
+/* Posts flow: pending → judging → approved → scheduled → posted      */
+/* ------------------------------------------------------------------ */
+const linkedinContentQueue = defineTable({
+  content: v.string(),
+  contentHash: v.string(),
+  postType: v.string(),
+  persona: v.string(),
+  target: v.union(v.literal("personal"), v.literal("organization")),
+  scheduledSlot: v.optional(v.string()),
+  scheduledFor: v.optional(v.number()),
+  priority: v.number(),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("judging"),
+    v.literal("approved"),
+    v.literal("needs_rewrite"),
+    v.literal("rejected"),
+    v.literal("scheduled"),
+    v.literal("posted"),
+    v.literal("failed"),
+  ),
+  engagementGateResult: v.optional(v.object({
+    passed: v.boolean(),
+    failures: v.array(v.string()),
+    softWarnings: v.array(v.string()),
+  })),
+  llmJudgeResult: v.optional(v.object({
+    model: v.string(),
+    verdict: v.union(v.literal("approve"), v.literal("needs_rewrite"), v.literal("reject")),
+    hookQuality: v.boolean(),
+    opinionDepth: v.boolean(),
+    questionAuthenticity: v.boolean(),
+    reasoning: v.string(),
+    judgedAt: v.number(),
+  })),
+  source: v.union(v.literal("backfill"), v.literal("fresh"), v.literal("manual")),
+  sourcePostId: v.optional(v.string()),
+  metadata: v.optional(v.any()),
+  createdAt: v.number(),
+  updatedAt: v.number(),
+  postedAt: v.optional(v.number()),
+  postedPostId: v.optional(v.string()),
+  postedPostUrl: v.optional(v.string()),
+})
+  .index("by_status", ["status", "createdAt"])
+  .index("by_content_hash", ["contentHash"])
+  .index("by_scheduled_slot", ["scheduledSlot", "scheduledFor"])
+  .index("by_priority", ["status", "priority"])
+  .index("by_source", ["source", "createdAt"])
+  .index("by_target_status", ["target", "status", "priority"]);
 
 /* ------------------------------------------------------------------ */
 /* API KEYS - Per-user API keys for providers                        */
@@ -2953,6 +3028,8 @@ export default defineSchema({
   linkedinResearchPosts,
   linkedinMaPosts,
   linkedinPostArchive,
+  linkedinHeldPosts,
+  linkedinContentQueue,
   userApiKeys,
   dailyUsage,
   subscriptions,

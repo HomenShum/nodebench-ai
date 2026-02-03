@@ -437,7 +437,7 @@ export const runUnknownCompanyFixes = internalAction({
           applied.push({ postUrn: p.postUrn, action: "edit_post", success: Boolean((result as any)?.success), error: (result as any)?.error });
         } else {
           const text = p.afterText;
-          const res = await ctx.runAction(api.domains.social.linkedinPosting.createTextPost, { text });
+          const res = await ctx.runAction(internal.domains.social.linkedinPosting.createTargetedTextPost, { text, target: "organization" as const });
           if (!(res as any).success) {
             applied.push({ postUrn: p.postUrn, action: "post_correction", success: false, error: String((res as any).error ?? "post_failed") });
             continue;

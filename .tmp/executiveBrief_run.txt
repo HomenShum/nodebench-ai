@@ -1,0 +1,1013 @@
+﻿{
+  "brief": {
+    "actI": {
+      "latestItemAt": "2026-01-30T02:45:54.000Z",
+      "sourcesCount": 1,
+      "synthesis": "Coverage spans 20 items across 1 sources. The mix indicates where attention and publishing velocity are concentrated right now.",
+      "title": "Act I: Setup — Coverage & Freshness",
+      "topSources": [
+        {
+          "count": 20,
+          "source": "GitHub"
+        }
+      ],
+      "totalItems": 20
+    },
+    "actII": {
+      "signals": [
+        {
+          "evidence": [
+            {
+              "id": "ev-ffb83b5f0571",
+              "publishedAt": "2026-01-30T01:04:59.000Z",
+              "relevance": "Looking for help with today's New York Times Wordle? Here are some expert hints, clues and commentary to help you solve today's Wordle and sharpen your guessing game.",
+              "score": 89,
+              "source": "Forbes Business",
+              "sourceDomain": "forbes.com",
+              "title": "Today’s Wordle #1686 Hints And Answer For Friday, January 30",
+              "url": "https://www.forbes.com/sites/erikkain/2026/01/29/nyt-wordle-friday/"
+            }
+          ],
+          "headline": "Today’s Wordle #1686 Hints And Answer For Friday, January 30",
+          "id": "sig-today-s-wordle-1686-hints-and-answer-for-friday--1",
+          "synthesis": "Looking for help with today's New York Times Wordle? Here are some expert hints, clues and commentary to help you solve today's Wordle and sharpen your guessing game."
+        },
+        {
+          "evidence": [
+            {
+              "id": "ev-f3fa6b2b456c",
+              "publishedAt": "2026-01-30T00:28:23.000Z",
+              "relevance": "FanGraphs' prospect ranking gives an Elly De La Cruz comp to a 17-year-old prospect in the Phillies system.",
+              "score": 88,
+              "source": "Forbes Business",
+              "sourceDomain": "forbes.com",
+              "title": "Mystery Phillies Prospect Gets Comped To Elly De La Cruz",
+              "url": "https://www.forbes.com/sites/anthonystitt/2026/01/29/phillies-prospect-gets-comped-to-elly-de-la-cruz/"
+            }
+          ],
+          "headline": "Mystery Phillies Prospect Gets Comped To Elly De La Cruz",
+          "id": "sig-mystery-phillies-prospect-gets-comped-to-elly-de-2",
+          "synthesis": "FanGraphs' prospect ranking gives an Elly De La Cruz comp to a 17-year-old prospect in the Phillies system."
+        },
+        {
+          "evidence": [
+            {
+              "id": "ev-65eda524b361",
+              "publishedAt": "2026-01-30T02:33:40.000Z",
+              "rank": 8,
+              "relevance": "SpaceX is said to be considering a potential merger with Tesla or xAI, as Elon Musk weighs how to consolidate his empire. Bloomberg Tech's Ed Ludlow discusses what's at stake on \"Bloomberg: The Asia Trade.\" (Source: Bloo",
+              "runId": "feed-2026-01-30-b3a1e08f",
+              "score": 87,
+              "source": "Bloomberg Markets",
+              "sourceDomain": "bloomberg.com",
+              "title": "Musk's SpaceX Said to Weigh Tie-Up With Tesla or xAI",
+              "url": "https://www.bloomberg.com/news/videos/2026-01-30/musk-s-spacex-said-to-weigh-tie-up-with-tesla-or-xai-video"
+            }
+          ],
+          "headline": "Musk's SpaceX Said to Weigh Tie-Up With Tesla or xAI",
+          "id": "sig-musk-s-spacex-said-to-weigh-tie-up-with-tesla-or-3",
+          "synthesis": "SpaceX is said to be considering a potential merger with Tesla or xAI, as Elon Musk weighs how to consolidate his empire. Bloomberg Tech's Ed Ludlow discusses what's at stake on \"Bloomberg: The Asia Trade.\" (Source: Bloomberg)"
+        }
+      ],
+      "synthesis": "The feed clusters around a handful of high-signal stories. The signals below are selected for breadth of impact and evidence strength, not just raw engagement.",
+      "title": "Act II: Rising Action — Signals"
+    },
+    "actIII": {
+      "actions": [
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-research-paper-trump-s-addiction-initi-1",
+          "label": "Summarize research paper: Trump’s addiction initiative brings bold rhetoric but ",
+          "linkedSignalIds": [
+            "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+          ],
+          "priority": 1,
+          "status": "proposed"
+        },
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-research-paper-trump-s-addiction-initi-2",
+          "label": "Summarize research paper: Trump’s addiction initiative brings bold rhetoric but ",
+          "linkedSignalIds": [
+            "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+          ],
+          "priority": 2,
+          "status": "proposed"
+        },
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-top-signal-today-s-wordle-1686-hints-a-3",
+          "label": "Summarize top signal: Today’s Wordle #1686 Hints And Answer For Friday, January ",
+          "linkedSignalIds": [
+            "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+          ],
+          "priority": 3,
+          "status": "proposed"
+        },
+        {
+          "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+          "id": "act-summarize-top-signal-mystery-phillies-prospect-g-4",
+          "label": "Summarize top signal: Mystery Phillies Prospect Gets Comped To Elly De La Cruz",
+          "linkedSignalIds": [
+            "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+          ],
+          "priority": 4,
+          "status": "proposed"
+        }
+      ],
+      "synthesis": "The follow-ups below convert today’s signals into concrete investigations. Prioritize the items with highest leverage on near-term decisions.",
+      "title": "Act III: Deep Dives — Actions"
+    },
+    "dashboard": {
+      "sourceBreakdown": {
+        "ArXiv": 0,
+        "Ars Technica": 0,
+        "BioPharma Dive": 0,
+        "Dev.to": 0,
+        "FierceBiotech": 0,
+        "GitHub": 20,
+        "HackerNews": 0,
+        "Reddit": 0,
+        "TechCrunch": 0,
+        "TechCrunch Startups": 0,
+        "TechCrunch Venture": 0,
+        "VentureBeat Deals": 0,
+        "Wired": 0,
+        "YCombinator": 0
+      },
+      "trendingTags": [
+        "Trending",
+        "Python",
+        "TypeScript",
+        "Shell",
+        "Swift"
+      ],
+      "vizArtifact": {
+        "data": [
+          {
+            "count": 20,
+            "source": "GitHub"
+          }
+        ],
+        "intent": "category_compare",
+        "rationale": "Source volume provides a quick read on where attention is concentrated today.",
+        "spec": {
+          "encoding": {
+            "color": {
+              "field": "source",
+              "legend": null
+            },
+            "tooltip": [
+              {
+                "field": "source",
+                "type": "nominal"
+              },
+              {
+                "field": "count",
+                "type": "quantitative"
+              }
+            ],
+            "x": {
+              "axis": {
+                "title": "Items"
+              },
+              "field": "count",
+              "type": "quantitative"
+            },
+            "y": {
+              "axis": {
+                "title": null
+              },
+              "field": "source",
+              "sort": "-x",
+              "type": "nominal"
+            }
+          },
+          "height": 160,
+          "mark": "bar",
+          "width": "container"
+        }
+      }
+    },
+    "didYouKnow": {
+      "artifactId": "pn7vtdg9pyj9dnjbm1ktpvf1dd807m1s",
+      "checks": {
+        "allFactsHaveCitations": true,
+        "hasFactPerSource": true,
+        "hasPrediction": true,
+        "noEmDash": true,
+        "nonGenericFacts": true,
+        "performanceClaimsAttributed": true,
+        "predictionsHaveCitations": true
+      },
+      "judgeExplanation": "deterministicPassed=true | llmJudgePassed=true | reasons=All facts are supported by citations and each source is referenced by at least one fact.; Predictions are clearly marked as forward-looking and include citations.; No em/en dashes are present in the output.; No invented facts beyond the provided excerpts are detected.",
+      "judgeReasons": [
+        "All facts are supported by citations and each source is referenced by at least one fact.",
+        "Predictions are clearly marked as forward-looking and include citations.",
+        "No em/en dashes are present in the output.",
+        "No invented facts beyond the provided excerpts are detected."
+      ],
+      "llmJudge": {
+        "artifactId": "pn7wybymr8365jjb0g4wxs91918074ec",
+        "modelUsed": "mistralai/devstral-2512",
+        "passed": true
+      },
+      "messageText": "hey did you know that apparently (per the source), Kimi K2.5 can self-direct an agent swarm with up to 100 sub-agents and execute parallel workflows across up to 1,500 tool calls, reducing execution time by up to 4.5x compared to a single-agent setup. Also: Gemini 3 Flash introduced Agentic Vision, which converts image understanding from a static act into an agentic process. Prediction: In the next 3-6 months, we might see more vendors ship similar agentic multimodal capabilities, but it's uncertain how quickly this becomes a default workflow.",
+      "passed": true,
+      "sourcesUsed": [
+        {
+          "citationId": "websrc_15116167",
+          "title": "Kimi K2.5: Visual Agentic Intelligence | Technical Report",
+          "url": "https://www.kimi.com/blog/kimi-k2-5.html"
+        },
+        {
+          "citationId": "websrc_062f79f6",
+          "publishedAtIso": "2026-01-27T00:00:00.000Z",
+          "title": "Introducing Agentic Vision in Gemini 3 Flash",
+          "url": "https://blog.google/innovation-and-ai/technology/developers-tools/agentic-vision-gemini-3-flash/"
+        }
+      ]
+    },
+    "meta": {
+      "confidence": 55,
+      "date": "2026-01-30",
+      "hasEvidence": true,
+      "headline": "The Morning Dossier — Executive Brief",
+      "summary": "Today’s intelligence brief distills the most salient signals into evidence-backed narratives and actionable follow-ups.",
+      "version": 1
+    }
+  },
+  "cached": false,
+  "ok": true,
+  "record": {
+    "brief": {
+      "actI": {
+        "latestItemAt": "2026-01-30T02:45:54.000Z",
+        "sourcesCount": 1,
+        "synthesis": "Coverage spans 20 items across 1 sources. The mix indicates where attention and publishing velocity are concentrated right now.",
+        "title": "Act I: Setup — Coverage & Freshness",
+        "topSources": [
+          {
+            "count": 20,
+            "source": "GitHub"
+          }
+        ],
+        "totalItems": 20
+      },
+      "actII": {
+        "signals": [
+          {
+            "evidence": [
+              {
+                "id": "ev-ffb83b5f0571",
+                "publishedAt": "2026-01-30T01:04:59.000Z",
+                "relevance": "Looking for help with today's New York Times Wordle? Here are some expert hints, clues and commentary to help you solve today's Wordle and sharpen your guessing game.",
+                "score": 89,
+                "source": "Forbes Business",
+                "sourceDomain": "forbes.com",
+                "title": "Today’s Wordle #1686 Hints And Answer For Friday, January 30",
+                "url": "https://www.forbes.com/sites/erikkain/2026/01/29/nyt-wordle-friday/"
+              }
+            ],
+            "headline": "Today’s Wordle #1686 Hints And Answer For Friday, January 30",
+            "id": "sig-today-s-wordle-1686-hints-and-answer-for-friday--1",
+            "synthesis": "Looking for help with today's New York Times Wordle? Here are some expert hints, clues and commentary to help you solve today's Wordle and sharpen your guessing game."
+          },
+          {
+            "evidence": [
+              {
+                "id": "ev-f3fa6b2b456c",
+                "publishedAt": "2026-01-30T00:28:23.000Z",
+                "relevance": "FanGraphs' prospect ranking gives an Elly De La Cruz comp to a 17-year-old prospect in the Phillies system.",
+                "score": 88,
+                "source": "Forbes Business",
+                "sourceDomain": "forbes.com",
+                "title": "Mystery Phillies Prospect Gets Comped To Elly De La Cruz",
+                "url": "https://www.forbes.com/sites/anthonystitt/2026/01/29/phillies-prospect-gets-comped-to-elly-de-la-cruz/"
+              }
+            ],
+            "headline": "Mystery Phillies Prospect Gets Comped To Elly De La Cruz",
+            "id": "sig-mystery-phillies-prospect-gets-comped-to-elly-de-2",
+            "synthesis": "FanGraphs' prospect ranking gives an Elly De La Cruz comp to a 17-year-old prospect in the Phillies system."
+          },
+          {
+            "evidence": [
+              {
+                "id": "ev-65eda524b361",
+                "publishedAt": "2026-01-30T02:33:40.000Z",
+                "rank": 8,
+                "relevance": "SpaceX is said to be considering a potential merger with Tesla or xAI, as Elon Musk weighs how to consolidate his empire. Bloomberg Tech's Ed Ludlow discusses what's at stake on \"Bloomberg: The Asia Trade.\" (Source: Bloo",
+                "runId": "feed-2026-01-30-b3a1e08f",
+                "score": 87,
+                "source": "Bloomberg Markets",
+                "sourceDomain": "bloomberg.com",
+                "title": "Musk's SpaceX Said to Weigh Tie-Up With Tesla or xAI",
+                "url": "https://www.bloomberg.com/news/videos/2026-01-30/musk-s-spacex-said-to-weigh-tie-up-with-tesla-or-xai-video"
+              }
+            ],
+            "headline": "Musk's SpaceX Said to Weigh Tie-Up With Tesla or xAI",
+            "id": "sig-musk-s-spacex-said-to-weigh-tie-up-with-tesla-or-3",
+            "synthesis": "SpaceX is said to be considering a potential merger with Tesla or xAI, as Elon Musk weighs how to consolidate his empire. Bloomberg Tech's Ed Ludlow discusses what's at stake on \"Bloomberg: The Asia Trade.\" (Source: Bloomberg)"
+          }
+        ],
+        "synthesis": "The feed clusters around a handful of high-signal stories. The signals below are selected for breadth of impact and evidence strength, not just raw engagement.",
+        "title": "Act II: Rising Action — Signals"
+      },
+      "actIII": {
+        "actions": [
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-research-paper-trump-s-addiction-initi-1",
+            "label": "Summarize research paper: Trump’s addiction initiative brings bold rhetoric but ",
+            "linkedSignalIds": [
+              "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+            ],
+            "priority": 1,
+            "status": "proposed"
+          },
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-research-paper-trump-s-addiction-initi-2",
+            "label": "Summarize research paper: Trump’s addiction initiative brings bold rhetoric but ",
+            "linkedSignalIds": [
+              "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+            ],
+            "priority": 2,
+            "status": "proposed"
+          },
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-top-signal-today-s-wordle-1686-hints-a-3",
+            "label": "Summarize top signal: Today’s Wordle #1686 Hints And Answer For Friday, January ",
+            "linkedSignalIds": [
+              "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+            ],
+            "priority": 3,
+            "status": "proposed"
+          },
+          {
+            "content": "Investigate this item and summarize implications, risks, and suggested next actions in plain prose.",
+            "id": "act-summarize-top-signal-mystery-phillies-prospect-g-4",
+            "label": "Summarize top signal: Mystery Phillies Prospect Gets Comped To Elly De La Cruz",
+            "linkedSignalIds": [
+              "sig-today-s-wordle-1686-hints-and-answer-for-friday--1"
+            ],
+            "priority": 4,
+            "status": "proposed"
+          }
+        ],
+        "synthesis": "The follow-ups below convert today’s signals into concrete investigations. Prioritize the items with highest leverage on near-term decisions.",
+        "title": "Act III: Deep Dives — Actions"
+      },
+      "dashboard": {
+        "sourceBreakdown": {
+          "ArXiv": 0,
+          "Ars Technica": 0,
+          "BioPharma Dive": 0,
+          "Dev.to": 0,
+          "FierceBiotech": 0,
+          "GitHub": 20,
+          "HackerNews": 0,
+          "Reddit": 0,
+          "TechCrunch": 0,
+          "TechCrunch Startups": 0,
+          "TechCrunch Venture": 0,
+          "VentureBeat Deals": 0,
+          "Wired": 0,
+          "YCombinator": 0
+        },
+        "trendingTags": [
+          "Trending",
+          "Python",
+          "TypeScript",
+          "Shell",
+          "Swift"
+        ],
+        "vizArtifact": {
+          "data": [
+            {
+              "count": 20,
+              "source": "GitHub"
+            }
+          ],
+          "intent": "category_compare",
+          "rationale": "Source volume provides a quick read on where attention is concentrated today.",
+          "spec": {
+            "encoding": {
+              "color": {
+                "field": "source",
+                "legend": null
+              },
+              "tooltip": [
+                {
+                  "field": "source",
+                  "type": "nominal"
+                },
+                {
+                  "field": "count",
+                  "type": "quantitative"
+                }
+              ],
+              "x": {
+                "axis": {
+                  "title": "Items"
+                },
+                "field": "count",
+                "type": "quantitative"
+              },
+              "y": {
+                "axis": {
+                  "title": null
+                },
+                "field": "source",
+                "sort": "-x",
+                "type": "nominal"
+              }
+            },
+            "height": 160,
+            "mark": "bar",
+            "width": "container"
+          }
+        }
+      },
+      "didYouKnow": {
+        "artifactId": "pn7vtdg9pyj9dnjbm1ktpvf1dd807m1s",
+        "checks": {
+          "allFactsHaveCitations": true,
+          "hasFactPerSource": true,
+          "hasPrediction": true,
+          "noEmDash": true,
+          "nonGenericFacts": true,
+          "performanceClaimsAttributed": true,
+          "predictionsHaveCitations": true
+        },
+        "judgeExplanation": "deterministicPassed=true | llmJudgePassed=true | reasons=All facts are supported by citations and each source is referenced by at least one fact.; Predictions are clearly marked as forward-looking and include citations.; No em/en dashes are present in the output.; No invented facts beyond the provided excerpts are detected.",
+        "judgeReasons": [
+          "All facts are supported by citations and each source is referenced by at least one fact.",
+          "Predictions are clearly marked as forward-looking and include citations.",
+          "No em/en dashes are present in the output.",
+          "No invented facts beyond the provided excerpts are detected."
+        ],
+        "llmJudge": {
+          "artifactId": "pn7wybymr8365jjb0g4wxs91918074ec",
+          "modelUsed": "mistralai/devstral-2512",
+          "passed": true
+        },
+        "messageText": "hey did you know that apparently (per the source), Kimi K2.5 can self-direct an agent swarm with up to 100 sub-agents and execute parallel workflows across up to 1,500 tool calls, reducing execution time by up to 4.5x compared to a single-agent setup. Also: Gemini 3 Flash introduced Agentic Vision, which converts image understanding from a static act into an agentic process. Prediction: In the next 3-6 months, we might see more vendors ship similar agentic multimodal capabilities, but it's uncertain how quickly this becomes a default workflow.",
+        "passed": true,
+        "sourcesUsed": [
+          {
+            "citationId": "websrc_15116167",
+            "title": "Kimi K2.5: Visual Agentic Intelligence | Technical Report",
+            "url": "https://www.kimi.com/blog/kimi-k2-5.html"
+          },
+          {
+            "citationId": "websrc_062f79f6",
+            "publishedAtIso": "2026-01-27T00:00:00.000Z",
+            "title": "Introducing Agentic Vision in Gemini 3 Flash",
+            "url": "https://blog.google/innovation-and-ai/technology/developers-tools/agentic-vision-gemini-3-flash/"
+          }
+        ]
+      },
+      "meta": {
+        "confidence": 55,
+        "date": "2026-01-30",
+        "hasEvidence": true,
+        "headline": "The Morning Dossier — Executive Brief",
+        "summary": "Today’s intelligence brief distills the most salient signals into evidence-backed narratives and actionable follow-ups.",
+        "version": 1
+      }
+    },
+    "errors": [
+      "meta: Required object missing",
+      "actI.title: Required",
+      "actI.totalItems: Required number",
+      "actI.sourcesCount: Required number",
+      "actII.title: Required",
+      "actII.synthesis: Expected string, got undefined",
+      "actIII.title: Required",
+      "actIII.synthesis: Expected string, got undefined",
+      "actIII.actions[0].label: Required string field missing or invalid",
+      "actIII.actions[1].label: Required string field missing or invalid",
+      "actIII.actions[2].label: Required string field missing or invalid",
+      "actIII.actions[3].label: Required string field missing or invalid",
+      "actIII.actions[4].label: Required string field missing or invalid",
+      "actIII.actions[5].label: Required string field missing or invalid"
+    ],
+    "evidence": [
+      {
+        "id": "ev-4b6f0d1b16be",
+        "publishedAt": "2026-01-30T02:45:54.000Z",
+        "rank": 1,
+        "relevance": "A Nifty gauge of defense stocks is up over 8% this week.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 65,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "India’s Defense Stocks Are Back in the Spotlight on EU Trade Pact",
+        "url": "https://www.bloomberg.com/news/newsletters/2026-01-30/defense-stocks-in-spotlight-on-india-eu-trade-deal-labor-code-pangs-for-firms"
+      },
+      {
+        "id": "ev-e2bafa118ba9",
+        "publishedAt": "2026-01-30T02:42:58.000Z",
+        "rank": 2,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 61,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Coca-Cola: Pricing Power Replaces Volume Growth",
+        "url": "https://seekingalpha.com/article/4864197-coca-cola-pricing-power-replaces-volume-growth?source=feed_all_articles"
+      },
+      {
+        "id": "ev-49ee3f2149d1",
+        "publishedAt": "2026-01-30T02:42:20.000Z",
+        "rank": 3,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 66,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "KLA Corporation (KLAC) Q2 2026 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864180-kla-corporation-klac-q2-2026-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-d987579dd358",
+        "publishedAt": "2026-01-30T02:38:27.000Z",
+        "rank": 4,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 54,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Logitech: Inexpensive After Good Q3, But Better Sector Picks Exist",
+        "url": "https://seekingalpha.com/article/4864193-logitech-stock-inexpensive-after-good-q3-but-better-sector-picks-exist?source=feed_all_articles"
+      },
+      {
+        "id": "ev-86d701a13655",
+        "publishedAt": "2026-01-30T02:37:28.000Z",
+        "rank": 5,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 45,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Camping World Holdings: Is It A Buy With Shares Up 40% YTD?",
+        "url": "https://seekingalpha.com/article/4864192-camping-world-holdings-is-it-a-buy-with-shares-up-40-percent-ytd?source=feed_all_articles"
+      },
+      {
+        "id": "ev-81851460d57e",
+        "publishedAt": "2026-01-30T02:34:00.000Z",
+        "rank": 6,
+        "relevance": "President Donald Trump filed a $10 billion lawsuit Thursday against the Internal Revenue Service and the Treasury Department &#x2014; with the potential for U.S. taxpayers to pay for it.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 67,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "Trump sues IRS, Treasury for $10 billion over leak of his tax returns",
+        "url": "https://www.marketwatch.com/story/trump-sues-irs-treasury-for-10-billion-over-leak-of-his-tax-returns-761f27db?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-00dd4a28884f",
+        "publishedAt": "2026-01-30T02:33:46.000Z",
+        "rank": 7,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 64,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Lloyds Banking Group: Earnings Continue To Impress, But The Market Has Caught Up (Rating Downgrade)",
+        "url": "https://seekingalpha.com/article/4864191-lloyds-banking-group-earnings-continue-to-impress-market-has-caught-up?source=feed_all_articles"
+      },
+      {
+        "id": "ev-65eda524b361",
+        "publishedAt": "2026-01-30T02:33:40.000Z",
+        "rank": 8,
+        "relevance": "SpaceX is said to be considering a potential merger with Tesla or xAI, as Elon Musk weighs how to consolidate his empire. Bloomberg Tech's Ed Ludlow discusses what's at stake on \"Bloomberg: The Asia Trade.\" (Source: Bloo",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 87,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Musk's SpaceX Said to Weigh Tie-Up With Tesla or xAI",
+        "url": "https://www.bloomberg.com/news/videos/2026-01-30/musk-s-spacex-said-to-weigh-tie-up-with-tesla-or-xai-video"
+      },
+      {
+        "id": "ev-8de0a9d3edd8",
+        "publishedAt": "2026-01-30T02:32:20.000Z",
+        "rank": 9,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 66,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Visa Inc. (V) Q1 2026 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864179-visa-inc-v-q1-2026-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-40486683c376",
+        "publishedAt": "2026-01-30T02:30:46.000Z",
+        "rank": 10,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 47,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Keppel DC REIT 2025 Q4 - Results - Earnings Call Presentation",
+        "url": "https://seekingalpha.com/article/4864208-keppel-dc-reit-2025-q4-results-earnings-call-presentation?source=feed_all_articles"
+      },
+      {
+        "id": "ev-265188a29331",
+        "publishedAt": "2026-01-30T02:30:00.000Z",
+        "rank": 11,
+        "relevance": "&#x201c;My monthly expenses are around $6,000. That includes rent.&#x201d;",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 58,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "&#x2018;I don&#x2019;t own a house&#x2019;: I&#x2019;m 50 with $2 million and I&#x2019;m scared about losing my job. Can I retire early?",
+        "url": "https://www.marketwatch.com/story/i-dont-own-a-house-im-50-with-2-million-and-im-scared-about-losing-my-job-can-i-retire-early-bff8a8c3?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-c2bf11f893fa",
+        "publishedAt": "2026-01-30T02:30:00.000Z",
+        "rank": 12,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 63,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Merion Road Q4 2025 Letter",
+        "url": "https://seekingalpha.com/article/4864206-merion-road-q4-2025-letter?source=feed_all_articles"
+      },
+      {
+        "id": "ev-0792f5ae8186",
+        "publishedAt": "2026-01-30T02:26:33.000Z",
+        "rank": 13,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 57,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Monster Beverage: Energy Drink Leader And Financial Fortress, But Valuation Reflects It",
+        "url": "https://seekingalpha.com/article/4864189-monster-beverage-energy-drink-leader-and-financial-fortress-but-valuation-reflects-it?source=feed_all_articles"
+      },
+      {
+        "id": "ev-b84617afd85d",
+        "publishedAt": "2026-01-30T02:25:46.000Z",
+        "rank": 14,
+        "relevance": "Bitcoin slumped to fresh two-month lows in early Asia trade as sentiment continues to sour around the largest cryptocurrency and investors pull money out of exchange-traded funds for the token.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 66,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Bitcoin Slumps to Two-Month Low as US Funds Shed Billions",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/bitcoin-btc-slumps-to-two-month-low-as-us-funds-shed-billions"
+      },
+      {
+        "id": "ev-708334bd46c4",
+        "publishedAt": "2026-01-30T02:20:19.000Z",
+        "rank": 15,
+        "relevance": "Iman Rachman, chief executive officer of the Indonesia Stock Exchange, said he will step down following a two-day market rout sparked by MSCI Inc.’s warning of a possible downgrade.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 74,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Indonesia Stock Exchange CEO Resigns After Market Rout",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/indonesia-stock-exchange-ceo-resigns-after-market-rout"
+      },
+      {
+        "id": "ev-22186cfa1daa",
+        "publishedAt": "2026-01-30T02:17:31.000Z",
+        "rank": 16,
+        "relevance": "Asian investors are pouring record amounts into gold exchange-traded funds, leading some to question whether the rally in bullion is getting close to topping out.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 60,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Gold’s Record Inflows From Asian ETFs Seen by Some as Warning",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/gold-s-record-inflows-from-asian-etfs-seen-by-some-as-warning"
+      },
+      {
+        "id": "ev-07ca16c58e5b",
+        "publishedAt": "2026-01-30T02:16:21.000Z",
+        "rank": 17,
+        "relevance": "Consolidation is on the mind of the world’s richest man, Elon Musk, who is reportedly mulling the idea of merging his artificial intelligence startup xAI Corp., the social media platform X and his space rocket company Sp",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 60,
+        "source": "SiliconAngle",
+        "sourceDomain": "siliconangle.com",
+        "title": "Elon Musk reportedly considering merger between SpaceX and xAI, or maybe even Tesla",
+        "url": "https://siliconangle.com/2026/01/29/elon-musk-reportedly-considering-merger-spacex-xai-maybe-even-tesla/"
+      },
+      {
+        "id": "ev-7f2d41680a87",
+        "publishedAt": "2026-01-30T02:15:00.000Z",
+        "rank": 18,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 69,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Curreen Capital Q4 2025 Letter",
+        "url": "https://seekingalpha.com/article/4864205-curreen-capital-q4-2025-letter?source=feed_all_articles"
+      },
+      {
+        "id": "ev-85a39d78adad",
+        "publishedAt": "2026-01-30T02:09:41.000Z",
+        "rank": 19,
+        "relevance": "The dollar advanced along with Treasury yields after US President Donald Trump was said to be preparing to nominate Kevin Warsh to be the next Federal Reserve chair.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 71,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Dollar, US Yields Rise as Trump to Nominate Warsh for Fed Chair",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/treasury-yields-rise-on-expectations-warsh-will-be-fed-chair"
+      },
+      {
+        "id": "ev-ce41d57666a4",
+        "publishedAt": "2026-01-30T02:07:01.000Z",
+        "rank": 20,
+        "relevance": "US president says he will announce nominee to replace Jay Powell on Friday morning",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 80,
+        "source": "Financial Times",
+        "sourceDomain": "ft.com",
+        "title": "Warsh favourite for Fed chair as Trump prepares to name his pick",
+        "url": "https://www.ft.com/content/e227d99a-3144-465a-8108-209fb7d433cb"
+      },
+      {
+        "id": "ev-b7f46817e2f6",
+        "publishedAt": "2026-01-30T02:03:00.000Z",
+        "rank": 21,
+        "relevance": "President Donald Trump said he&#x2019;ll announce his nominee to chair the Federal Reserve on Friday morning &#x2014; and prediction markets have turned sharply toward a former Fed governor for the post.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 50,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "Trump says he&#x2019;ll announce his Fed pick Friday morning. Here&#x2019;s who&#x2019;s in the lead, according to prediction markets.",
+        "url": "https://www.marketwatch.com/story/trump-says-hell-announce-his-fed-pick-next-week-heres-whos-in-the-lead-according-to-prediction-markets-ba80c732?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-ba23187bcf40",
+        "publishedAt": "2026-01-30T02:01:48.000Z",
+        "rank": 22,
+        "relevance": "President Donald Trump warned the UK and Canada against striking fresh business deals with China, after their leaders visited Beijing this month in an effort to deepen ties with the world’s second-largest economy.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 64,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "Trump Warns UK on ‘Dangerous’ China Moves After Xi-Starmer Talks",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/trump-warns-uk-on-dangerous-china-moves-after-xi-starmer-talks"
+      },
+      {
+        "id": "ev-b1d16e59c029",
+        "publishedAt": "2026-01-30T01:58:00.000Z",
+        "rank": 23,
+        "relevance": "&#x201c;My home is paid for and has an estimated value of $700,000.&#x201d;",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 42,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "&#x2018;I&#x2019;m worried about cash flow&#x2019;: I&#x2019;m 71 with a $2.7 million IRA and $470K in stocks. Why can&#x2019;t I relax?",
+        "url": "https://www.marketwatch.com/story/im-worried-about-cash-flow-im-71-with-a-2-7-million-ira-and-470k-in-stocks-why-cant-i-relax-9caaec66?mod=mw_rss_topstories"
+      },
+      {
+        "id": "ev-0d2ab82c05da",
+        "publishedAt": "2026-01-30T01:57:24.000Z",
+        "rank": 24,
+        "relevance": "Tim Cook proved his masterful ability to navigate tricky supply chains and deliver strong results. It's not clear that will help Apple in the AI competition.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 60,
+        "source": "Fortune Venture",
+        "sourceDomain": "fortune.com",
+        "title": "Apple&#8217;s blowout Q1 results were a reminder of what makes the company so impressive—and why it&#8217;s floundering in AI",
+        "url": "https://fortune.com/2026/01/29/apple-blowout-q1-earnings-results-tim-cook-iphone-ai-questions/"
+      },
+      {
+        "id": "ev-870cb6037a84",
+        "publishedAt": "2026-01-30T01:37:08.000Z",
+        "rank": 25,
+        "relevance": "New World Development Co.’s shares and bonds surged after people familiar with the matter said Blackstone Inc. is in advanced talks to become the single largest shareholder of the Hong Kong developer.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 87,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "New World Shares, Bonds Jump as Blackstone in Talks for Stake",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/new-world-shares-jump-as-blackstone-is-said-to-be-in-stake-talks"
+      },
+      {
+        "id": "ev-779531d9d304",
+        "publishedAt": "2026-01-30T01:33:13.000Z",
+        "rank": 26,
+        "relevance": "The profitable life-insurance platform was one of the first major tech companies to test the 2026 public markets.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 45,
+        "source": "TechCrunch",
+        "sourceDomain": "techcrunch.com",
+        "title": "How Sequoia-backed Ethos reached the public market while rivals fell short",
+        "url": "https://techcrunch.com/2026/01/29/how-sequoia-backed-ethos-reached-the-public-market-while-rivals-fell-short/"
+      },
+      {
+        "id": "ev-779531d9d304",
+        "publishedAt": "2026-01-30T01:33:13.000Z",
+        "rank": 27,
+        "relevance": "The profitable life-insurance platform was one of the first major tech companies to test the 2026 public markets.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 46,
+        "source": "TechCrunch",
+        "sourceDomain": "techcrunch.com",
+        "title": "How Sequoia-backed Ethos reached the public market while rivals fell short",
+        "url": "https://techcrunch.com/2026/01/29/how-sequoia-backed-ethos-reached-the-public-market-while-rivals-fell-short/"
+      },
+      {
+        "id": "ev-6cfc0e733789",
+        "publishedAt": "2026-01-30T01:31:03.000Z",
+        "rank": 28,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 69,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "VNV Global AB (publ) 2025 Q4 - Results - Earnings Call Presentation",
+        "url": "https://seekingalpha.com/article/4864190-vnv-global-ab-publ-2025-q4-results-earnings-call-presentation?source=feed_all_articles"
+      },
+      {
+        "id": "ev-efce95fedf40",
+        "publishedAt": "2026-01-30T01:25:54.000Z",
+        "rank": 29,
+        "relevance": "The London Metal Exchange suffered a one-hour delay to the start of trading on Friday due to technical issues, a glitch that follows days of heightened volatility and record prices.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 85,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "LME Trading Glitch Caps Wild Week for Global Metals Traders",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/london-metal-exchange-is-said-to-delay-market-opening"
+      },
+      {
+        "id": "ev-efce95fedf40",
+        "publishedAt": "2026-01-30T01:25:54.000Z",
+        "rank": 30,
+        "relevance": "The London Metal Exchange has delayed the start of trading on Friday due to technical issues, according to a notice to brokers seen by Bloomberg.",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 71,
+        "source": "Bloomberg Markets",
+        "sourceDomain": "bloomberg.com",
+        "title": "London Metal Exchange Is Said to Delay Market Opening",
+        "url": "https://www.bloomberg.com/news/articles/2026-01-30/london-metal-exchange-is-said-to-delay-market-opening"
+      },
+      {
+        "id": "ev-bf28f394494a",
+        "publishedAt": "2026-01-30T01:24:12.000Z",
+        "rank": 31,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 52,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Coveo Solutions Inc. 2026 Q3 - Results - Earnings Call Presentation",
+        "url": "https://seekingalpha.com/article/4864187-coveo-solutions-inc-2026-q3-results-earnings-call-presentation?source=feed_all_articles"
+      },
+      {
+        "id": "ev-547602e5b803",
+        "publishedAt": "2026-01-30T01:23:15.000Z",
+        "rank": 32,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 69,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Roche Holding AG (RHHBY) Q4 2025 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4863906-roche-holding-ag-rhhby-q4-2025-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-0f085989291d",
+        "publishedAt": "2026-01-30T01:23:13.000Z",
+        "rank": 33,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 49,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Dolby Laboratories, Inc. (DLB) Q1 2026 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864173-dolby-laboratories-inc-dlb-q1-2026-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-89a9e526e727",
+        "publishedAt": "2026-01-30T01:23:11.000Z",
+        "rank": 34,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 51,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "LPL Financial Holdings Inc. (LPLA) Q4 2025 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864186-lpl-financial-holdings-inc-lpla-q4-2025-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-a3cff772ca2a",
+        "publishedAt": "2026-01-30T01:23:09.000Z",
+        "rank": 35,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 49,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "DXC Technology Company (DXC) Q3 2026 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864175-dxc-technology-company-dxc-q3-2026-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-e1506567d8d5",
+        "publishedAt": "2026-01-30T01:23:06.000Z",
+        "rank": 36,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 64,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Fluence Corporation Limited (EMFGF) Q4 2025 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864178-fluence-corporation-limited-emfgf-q4-2025-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-9f1ae0d08471",
+        "publishedAt": "2026-01-30T01:23:02.000Z",
+        "rank": 37,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 62,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Sibanye Stillwater Limited (SBSW) Discusses Group Strategy Update and Emphasis on Safety Priorities Transcript",
+        "url": "https://seekingalpha.com/article/4863896-sibanye-stillwater-limited-sbsw-discusses-group-strategy-update-and-emphasis-on-safety?source=feed_all_articles"
+      },
+      {
+        "id": "ev-6b0b1b6d192b",
+        "publishedAt": "2026-01-30T01:23:01.000Z",
+        "rank": 38,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 50,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "ResMed Inc. (RMD) Q2 2026 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864165-resmed-inc-rmd-q2-2026-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-2367d4f39621",
+        "publishedAt": "2026-01-30T01:22:58.000Z",
+        "rank": 39,
+        "relevance": "Article from Seeking Alpha",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 64,
+        "source": "Seeking Alpha",
+        "sourceDomain": "seekingalpha.com",
+        "title": "Five Point Holdings, LLC (FPH) Q4 2025 Earnings Call Transcript",
+        "url": "https://seekingalpha.com/article/4864169-five-point-holdings-llc-fph-q4-2025-earnings-call-transcript?source=feed_all_articles"
+      },
+      {
+        "id": "ev-5b87d8e241d2",
+        "publishedAt": "2026-01-30T01:17:00.000Z",
+        "rank": 40,
+        "relevance": "Canada may face 50% tariff on aircraft, Trump says, while also ordering tariffs against countries selling oil to Cuba",
+        "runId": "feed-2026-01-30-b3a1e08f",
+        "score": 46,
+        "source": "MarketWatch",
+        "sourceDomain": "marketwatch.com",
+        "title": "Trump throws down new tariff threats toward Canada and Mexico",
+        "url": "https://www.marketwatch.com/story/trump-throws-down-new-tariff-threats-toward-canada-and-mexico-e7200ceb?mod=mw_rss_topstories"
+      }
+    ],
+    "provenance": {
+      "retrievalRuns": [
+        {
+          "datasetHash": "a04ce90deb983a54",
+          "executedAt": "2026-01-30T02:59:36.704Z",
+          "query": "{\"from\":\"2026-01-30T00:00:00.000Z\",\"to\":\"2026-01-30T23:59:59.999Z\",\"limit\":80}",
+          "runId": "feed-2026-01-30-b3a1e08f",
+          "tool": "feed.getRecent",
+          "topK": 40
+        }
+      ]
+    },
+    "status": "invalid"
+  },
+  "validation": {
+    "errors": [
+      "meta: Required object missing",
+      "actI.title: Required",
+      "actI.totalItems: Required number",
+      "actI.sourcesCount: Required number",
+      "actII.title: Required",
+      "actII.synthesis: Expected string, got undefined",
+      "actIII.title: Required",
+      "actIII.synthesis: Expected string, got undefined",
+      "actIII.actions[0].label: Required string field missing or invalid",
+      "actIII.actions[1].label: Required string field missing or invalid",
+      "actIII.actions[2].label: Required string field missing or invalid",
+      "actIII.actions[3].label: Required string field missing or invalid",
+      "actIII.actions[4].label: Required string field missing or invalid",
+      "actIII.actions[5].label: Required string field missing or invalid"
+    ],
+    "valid": false,
+    "warnings": []
+  }
+}

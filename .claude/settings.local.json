@@ -216,7 +216,9 @@
       "Bash(for:*)",
       "Bash(do echo \"=== $d ===\")",
       "Bash(npx vitest run)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "WebFetch(domain:www.linkedin.com)",
+      "Bash(git status:*)"
     ],
     "deny": [],
     "ask": []

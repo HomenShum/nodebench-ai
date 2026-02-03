@@ -853,6 +853,26 @@ Update AGENTS.md (this file) with:
 - Search tools are public actions (no userId injection needed)
 - Document tools require userId injection via `MCP_SERVICE_USER_ID` env var
 
+### Edge Cases & Learnings (from LinkedIn Content Pipeline verification)
+
+**Convex Runtime Constraints**:
+- `"use node"` files can ONLY export actions (`internalAction`, `action`). Mutations and queries must live in separate non-node files. Violating this causes silent deployment failures.
+- Index predicates MUST use `.withIndex("name", (q) => q.eq("field", value))` — NOT `.withIndex("name").filter(...)`. The latter compiles but bypasses the index, causing full table scans.
+- Pure helper functions (no Convex context) CAN be imported across `"use node"` boundaries. Only exports that use `ctx` are restricted.
+- `crypto` module is unavailable in Convex runtime (non-node files). Use pure JS hashes like cyrb53 for content deduplication instead of SHA-256.
+
+**Content Pipeline Design**:
+- Archive dedup uses `.take(500)` lookback — posts beyond 500 could theoretically slip through as duplicates. Acceptable trade-off: archive grows slowly (2-3 posts/day) and 500 covers ~6 months of history.
+- `getScheduledDueNow` collects all scheduled items then filters in JS (no `<=` index predicate available in Convex). Acceptable at current scale (<100 scheduled items).
+- Concurrent `enqueueContent` calls could race past the hash uniqueness check. Low risk at 2-3 posts/day cadence, and the `by_content_hash` index provides a second layer of protection on read.
+- `Date.setUTCDate()` correctly handles month boundary overflow (e.g., Jan 31 + 1 = Feb 1). No manual month arithmetic needed.
+
+**LLM Judge Pattern**:
+- FREE-FIRST model strategy: `devstral-2-free` ($0.00/M via OpenRouter) handles quality judging. Fallback chain via `getLanguageModelSafe()`.
+- JSON parsing with `responseText.match(/\{[\s\S]*\}/)` is adequate for single-object responses. For multi-object or nested JSON, use a stricter parser.
+- On LLM failure or parse error, revert queue item to `pending` status so it retries on next cron run. Never leave items stuck in `judging` state.
+- Backfill posts (old-style report format) have high rejection rates (~80%). Expected behavior — these were written before the engagement gate criteria existed.
+
 ---
 
 ## Agent Protocol (Peter Style)
