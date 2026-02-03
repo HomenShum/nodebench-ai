@@ -612,7 +612,7 @@ curl https://nodebench-mcp-unified.onrender.com/health
 
 | Key | Where to find |
 |-----|---------------|
-| `CONVEX_URL` | Convex Dashboard → Settings → Deployment URL (e.g. `https://xxx.convex.cloud`) |
+| `CONVEX_URL` | Convex HTTP actions URL — use `.convex.site` NOT `.convex.cloud` (e.g. `https://xxx.convex.site`). The `.convex.cloud` domain is for client SDK only and returns 404 for HTTP routes. |
 | `MCP_SECRET` | Must match `MCP_SECRET` env var in Convex Dashboard → Settings → Environment Variables |
 | `MCP_HTTP_TOKEN` | Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
 
@@ -901,6 +901,11 @@ Update AGENTS.md (this file) with:
 - **Yahoo Finance v7**: Effectively broken since ~2025 — returns 401 without crumb/cookie auth. Use as fallback only, expect failures. `equity_fundamental_overview` has no alternative source — documented limitation.
 - **World Bank API v2**: Stable, no auth, correct indicators: `NY.GDP.MKTP.CD` (GDP), `FP.CPI.TOTL.ZG` (inflation). Response is `[metadata, data]` array — always index `[1]` for actual data.
 
+**Convex HTTP Routing**:
+- HTTP action routes (defined via `httpRouter`) are served on `.convex.site`, NOT `.convex.cloud`. The `.convex.cloud` domain only handles client SDK queries/mutations and returns 404 for all HTTP routes.
+- `CONVEX_URL` env var on external services (Render) must use `https://xxx.convex.site` for HTTP action endpoints like `/api/mcpGateway`.
+- OPTIONS preflight works on both domains (Convex default CORS), but POST/GET only work on `.convex.site`.
+
 **Dispatcher Pattern**:
 - All 9 gateway tool handler → Convex function pairs verified compatible by argument shape analysis
 - Planning/memory tools use key-based lookup (no userId injection needed)
@@ -926,6 +931,115 @@ Update AGENTS.md (this file) with:
 - JSON parsing with `responseText.match(/\{[\s\S]*\}/)` is adequate for single-object responses. For multi-object or nested JSON, use a stricter parser.
 - On LLM failure or parse error, revert queue item to `pending` status so it retries on next cron run. Never leave items stuck in `judging` state.
 - Backfill posts (old-style report format) have high rejection rates (~80%). Expected behavior — these were written before the engagement gate criteria existed.
+
+---
+
+## Eval-Driven Development Loop
+
+Continuous improvement cycle for agent workflows, tool quality, and prompt effectiveness. Changes only ship if evals improve — never on gut feel alone.
+
+### Step 1: Run Eval Batch
+
+Send a batch of test cases through the target workflow. Each test case defines:
+- **Input**: The user prompt, context, and any seeded state
+- **Intent**: What the agent is supposed to accomplish (ground truth goal)
+- **Expected behavior**: Tool calls made, action steps taken, final output shape
+
+### Step 2: Capture Full Session Telemetry
+
+For every eval run, collect the complete agent execution trace:
+- Tool calls (name, arguments, return values)
+- Action steps and intermediate reasoning
+- Model responses at each turn
+- Latency, token usage, error counts
+- Final output vs expected output
+
+### Step 3: LLM-as-Judge Analysis Batch
+
+Send the full telemetry (input + intent + output + trace) to an analysis batch where an LLM judge scores each run:
+- **Goal alignment**: Did the output match the stated intent?
+- **Tool efficiency**: Were the right tools called in the right order? Any redundant or missing calls?
+- **Output quality**: Accuracy, completeness, formatting
+- **Failure modes**: Where did it go wrong and why?
+- **Suggestions**: Concrete improvements — prompt rewording, new tool additions, parameter changes, guard rails
+
+### Step 4: Retrieve Analysis Results
+
+Collect judge verdicts and aggregate:
+- Pass/fail rate per test case
+- Recurring failure patterns across the batch
+- Ranked improvement suggestions by expected impact
+
+### Step 5: Fix, Optimize, Enhance
+
+Apply changes based on judge feedback:
+- **Fix**: Correct broken tool implementations, wrong defaults, missing error handling
+- **Optimize**: Reduce unnecessary tool calls, improve prompt specificity, tighten output schemas
+- **Enhance**: Add new tools for gaps the judge identified, expand intent coverage
+- **Variations**: Test multiple approaches to the same fix (prompt A vs prompt B, tool X vs tool Y)
+
+### Step 6: Re-run Evals — Deploy Only If Better
+
+Run the same eval batch against the modified workflow. Compare scores:
+- If eval scores improved → deploy the change
+- If eval scores regressed or stayed flat → revert and try a different approach
+- Track eval history over time to detect drift
+
+**Rule: No change ships without an eval improvement. The eval batch is the gatekeeper, not human intuition.**
+
+---
+
+## How the Two Loops Compose: The AI Flywheel (Verification × Eval)
+
+The **6-Phase Verification** and **Eval-Driven Development Loop** are not separate processes — they're nested loops that reinforce each other.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  OUTER LOOP: Eval-Driven Development                           │
+│                                                                 │
+│  Eval Batch ──→ Telemetry ──→ LLM Judge ──→ Suggestions        │
+│       │                                          │              │
+│       │         ┌───────────────────────────┐    │              │
+│       │         │ INNER LOOP: 6-Phase       │    │              │
+│       │         │                           │    │              │
+│       ▼         │  P1 Context Gather        │    │              │
+│   Regression    │  P2 Gap Analysis    ◄─────┼────┘              │
+│   detected or   │  P3 Implementation       │  Judge suggestions │
+│   new intent    │  P4 Test & Validate ─────┼──► feeds back as   │
+│   added         │  P5 Self-Closed Verify   │    new eval cases  │
+│       │         │  P6 Document Learnings ──┼──► updates edge    │
+│       │         │                           │    case registry   │
+│       │         └───────────────────────────┘                   │
+│       │                      │                                  │
+│       ▼                      ▼                                  │
+│  Re-run Eval Batch ──→ Score improved? ──→ Deploy              │
+│                          │                                      │
+│                          NO → revert, try different approach    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Inner loop → Outer loop (Verification feeds Evals)
+
+| 6-Phase output | Feeds into Eval Loop as |
+|---|---|
+| Phase 4 test cases (static, unit, integration, E2E) | New eval batch test cases with known-good expected outputs |
+| Phase 5 subagent PASS/FAIL checklists | Eval scoring rubrics — each checklist item becomes a boolean eval criterion |
+| Phase 6 edge cases & learnings | New adversarial eval cases targeting discovered failure modes |
+
+### Outer loop → Inner loop (Evals trigger Verification)
+
+| Eval Loop output | Triggers 6-Phase as |
+|---|---|
+| Judge finds tool calling inefficiency | Phase 2 gap analysis scoped to that tool's implementation |
+| Eval scores regress after deploy | Full Phase 1-6 cycle on the regression — treat as a production incident |
+| Judge suggests new tool or prompt change | Phase 3 implementation following existing patterns, validated through Phase 4-5 |
+| Recurring failure pattern across batch | Phase 1 deep dive into root cause (maybe upstream API changed, maybe schema drifted) |
+
+### When to use which
+
+- **Building or changing a feature** → Run the 6-Phase inner loop. You're asking: *"Is this implementation correct?"*
+- **Measuring system quality over time** → Run the Eval outer loop. You're asking: *"Is the system getting better?"*
+- **Both, always** → Every 6-Phase run produces artifacts (test cases, edge cases, checklists) that expand the eval suite. Every eval regression triggers a 6-Phase investigation. They are not optional alternatives — they compound.
 
 ---
 
