@@ -36,8 +36,11 @@ function hashContent(content: string): string {
  * Calculate priority based on source and post type.
  * Higher = posts first.
  */
-function calculatePriority(source: string, postType: string): number {
+function calculatePriority(source: string, postType: string, persona?: string): number {
   if (source === "manual") return 95;
+
+  // Founder personal posts — high priority but below manual
+  if (persona === "FOUNDER") return 85;
 
   if (source === "fresh") {
     if (postType === "daily_digest") return 80;
@@ -108,7 +111,7 @@ export const enqueueContent = internalMutation({
       };
     }
 
-    const priority = args.priority ?? calculatePriority(args.source, args.postType);
+    const priority = args.priority ?? calculatePriority(args.source, args.postType, args.persona);
 
     const queueId = await ctx.db.insert("linkedinContentQueue", {
       content: args.content,
@@ -353,6 +356,60 @@ export const listQueueItems = query({
 
     return await ctx.db
       .query("linkedinContentQueue")
+      .order("desc")
+      .take(limit);
+  },
+});
+
+/**
+ * Get items that need rewriting (failed pre-post verification).
+ */
+export const getNeedsRewriteItems = internalQuery({
+  args: { persona: v.optional(v.string()), limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 10;
+    const items = await ctx.db
+      .query("linkedinContentQueue")
+      .withIndex("by_status", (q) => q.eq("status", "needs_rewrite"))
+      .order("desc")
+      .take(limit);
+
+    if (args.persona) {
+      return items.filter((i) => i.persona === args.persona);
+    }
+    return items;
+  },
+});
+
+/**
+ * Check if a post with a given postType has already been generated for a date.
+ * Used for idempotency — prevents generating the same post type twice in one day.
+ */
+export const hasPostTypeForDate = internalQuery({
+  args: { postType: v.string(), dateString: v.string() },
+  handler: async (ctx, args) => {
+    const recent = await ctx.db
+      .query("linkedinContentQueue")
+      .order("desc")
+      .take(200);
+    return recent.some(
+      (item) =>
+        item.postType === args.postType &&
+        item.metadata?.digestDate === args.dateString,
+    );
+  },
+});
+
+/**
+ * List scheduled queue items for pre-post verification variety check.
+ */
+export const listScheduledForVerification = internalQuery({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const limit = args.limit || 20;
+    return await ctx.db
+      .query("linkedinContentQueue")
+      .withIndex("by_status", (q) => q.eq("status", "scheduled"))
       .order("desc")
       .take(limit);
   },

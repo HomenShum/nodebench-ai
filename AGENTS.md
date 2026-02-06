@@ -1814,10 +1814,74 @@ Use `generate_parallel_agents_md` to produce a standalone, framework-agnostic pa
 
 The AI Flywheel closed loop: **detect -> scaffold -> verify (6-step flywheel) -> fix -> document**
 
+### Claude Code Native Parallel Path
+
+For Claude Code users, parallel subagents are already built-in via the `Task` tool. NodeBench MCP adds coordination on top of that:
+
+1. **COORDINATOR (main session):** Break work into independent tasks
+2. **SPAWN:** Each `Task` tool call creates a subagent. Include in its prompt:
+   - `claim_agent_task({ taskKey: "task_name" })` — lock the task
+   - `assign_agent_role({ role: "implementer" })` — specialize
+   - Do the work
+   - `release_agent_task({ taskKey: "task_name", progressNote: "..." })` — handoff
+3. **MONITOR:** Main session calls `get_parallel_status()` to see all subagent activity
+4. **GATE:** Main session runs `run_quality_gate` on the aggregate result
+
+Use the `claude-code-parallel` MCP prompt for step-by-step guidance.
+
+### When to use parallel tools vs not
+
+**USE parallel tools when:**
+- Running 2+ agent sessions (Claude Code subagents, worktrees, separate terminals)
+- Need to prevent two agents from working on the same thing
+- Want oracle-based testing to split failures into independent work items
+- Bootstrapping parallel infrastructure for an external project
+
+**DO NOT USE when:**
+- Single agent working sequentially — standard verification/eval tools are sufficient
+- Task is simple enough for one agent end-to-end
+- Not in a multi-agent or multi-session context
+
+`findTools` now contextually filters parallel tools: they only appear when the query includes parallel/agent/team keywords, or when explicitly requesting `category: "parallel_agents"`.
+
 ### Impact
 
 - 10 new tools in `parallel_agents` category (8 core + 2 bootstrap)
-- 1 new methodology: `getMethodology("parallel_agent_teams")` with `bootstrapForExternalRepos` workflow
-- 3 new MCP prompts: `parallel-agent-team`, `oracle-test-harness`, `bootstrap-parallel-agents`
+- 1 new methodology: `getMethodology("parallel_agent_teams")` with `claudeCodeNativePath` and `impactPerStep`
+- 4 new MCP prompts: `parallel-agent-team`, `oracle-test-harness`, `bootstrap-parallel-agents`, `claude-code-parallel`
 - 4 new DB tables: `agent_tasks`, `agent_roles`, `context_budget_log`, `oracle_comparisons`
-- Version 1.6.0 (72 tools total)
+- Comparative benchmark Scenario 9: parallel agent coordination (from real Claude Code usage)
+- Version 2.0.0 (72 tools total)
+
+**→ Quick Refs:** `parallelAgentTools.ts` (10 tools), `claude-code-parallel` prompt in `index.ts`, `parallel_agent_teams` methodology in `metaTools.ts`
+
+## Impact-Driven Methodology
+
+Every NodeBench MCP tool call, methodology step, and workflow path must answer: **"What concrete thing did this produce?"**
+
+This principle applies to:
+- **Tool recommendations:** `findTools` only surfaces tools relevant to the current query context
+- **Methodology steps:** Each step in `getMethodology` now includes expected concrete output
+- **Parallel tools:** Only recommended when the user is actually doing multi-agent work
+- **Documentation:** Every section ties back to measurable outcomes
+
+### Comparative Benchmark (9 Real Scenarios)
+
+`comparativeBench.test.ts` validates impact across 9 real production prompts:
+
+| Metric | Bare Agent | MCP Agent |
+|--------|-----------|-----------|
+| Issues detected | 0 | 13 (4 HIGH, 8 MEDIUM, 1 LOW) |
+| Recon findings | 0 | 21 |
+| Risk assessments | 0 | 9 |
+| Test layers | 9 (1x) | 27 (3x) |
+| Integration failures caught | 0 | 4 |
+| Regression eval cases | 9 | 22 |
+| Quality gate rules | 0 | 52 |
+| Gate violations blocked | 0 | 4 |
+| Knowledge entries | 0 | 9 |
+| Blind spots prevented | 0 | 26 |
+
+Scenario 9 specifically tests parallel agent coordination — "I launched 3 Claude Code subagents... they keep overwriting each other's changes" — demonstrating that task locking, progress files, and context budget tracking prevent real coordination failures.
+
+**→ Quick Refs:** `comparativeBench.test.ts` (9 scenarios, 20 tests), `AI_FLYWHEEL.md` (impact table), `metaTools.ts` (`impactPerStep` in parallel_agent_teams)

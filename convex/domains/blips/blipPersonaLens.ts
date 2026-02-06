@@ -259,7 +259,7 @@ async function generateFramingHook(
     const { generateText } = await import("ai");
     const { getLanguageModelSafe } = await import("../agents/mcp_tools/models/modelResolver");
 
-    const model = await getLanguageModelSafe("devstral-2-free");
+    const model = await getLanguageModelSafe("qwen3-coder-free");
     if (!model) {
       return generateHeuristicFrame(persona, blip);
     }

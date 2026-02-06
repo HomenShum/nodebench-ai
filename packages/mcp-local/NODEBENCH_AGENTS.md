@@ -21,7 +21,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Restart Claude Code. 56 tools available immediately.
+Restart Claude Code. 89 tools available immediately.
 
 **→ Quick Refs:** After setup, run `getMethodology("overview")` | First task? See [Verification Cycle](#verification-cycle-workflow) | New to codebase? See [Environment Setup](#environment-setup)
 
@@ -173,6 +173,25 @@ Run capability benchmark:
 NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test
 ```
 
+GAIA capability benchmark (file-backed lane: PDF / XLSX / CSV):
+- This lane measures the impact of deterministic local parsing tools on GAIA tasks with attachments.
+- Fixture includes ground-truth answers and MUST remain under `.cache/gaia` (gitignored).
+- Attachments are copied into `.cache/gaia/data/<file_path>` for offline deterministic runs after the first download.
+
+Generate file-backed scoring fixture + download attachments (local only, gated):
+```bash
+npm run mcp:dataset:gaia:capability:files:refresh
+```
+
+Run file-backed capability benchmark:
+```bash
+NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:files:test
+```
+
+Modes:
+- Recommended (more stable): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag`
+- More realistic (higher variance): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (optional `NODEBENCH_GAIA_CAPABILITY_FORCE_WEB_SEARCH=1`)
+
 Run all public lanes:
 ```bash
 npm run mcp:dataset:bench:all
@@ -199,6 +218,10 @@ Implementation files:
 - `packages/mcp-local/src/__tests__/fixtures/generateGaiaCapabilityFixture.py`
 - `.cache/gaia/gaia_capability_2023_all_validation.sample.json`
 - `packages/mcp-local/src/__tests__/gaiaCapabilityEval.test.ts`
+- `packages/mcp-local/src/__tests__/fixtures/generateGaiaCapabilityFilesFixture.py`
+- `.cache/gaia/gaia_capability_files_2023_all_validation.sample.json`
+- `.cache/gaia/data/...` (local GAIA attachments; do not commit)
+- `packages/mcp-local/src/__tests__/gaiaCapabilityFilesEval.test.ts`
 
 Required tool chain per dataset task:
 - `run_recon`
@@ -223,6 +246,7 @@ Use `getMethodology("overview")` to see all available workflows.
 | Category | Tools | When to Use |
 |----------|-------|-------------|
 | **Web** | `web_search`, `fetch_url` | Research, reading docs, market validation |
+| **Local Files** | `read_pdf_text`, `read_xlsx_file`, `read_csv_file` | Deterministic parsing of local attachments (GAIA file-backed lane) |
 | **GitHub** | `search_github`, `analyze_repo` | Finding libraries, studying implementations |
 | **Verification** | `start_cycle`, `log_phase`, `complete_cycle` | Tracking the flywheel process |
 | **Eval** | `start_eval_run`, `log_test_result` | Test case management |
@@ -232,6 +256,9 @@ Use `getMethodology("overview")` to see all available workflows.
 | **Bootstrap** | `discover_infrastructure`, `triple_verify`, `self_implement` | Self-setup, triple verification |
 | **Autonomous** | `assess_risk`, `decide_re_update`, `run_self_maintenance` | Risk-aware execution, self-maintenance |
 | **Parallel Agents** | `claim_agent_task`, `release_agent_task`, `list_agent_tasks`, `assign_agent_role`, `get_agent_role`, `log_context_budget`, `run_oracle_comparison`, `get_parallel_status` | Multi-agent coordination, task locking, role specialization, oracle testing |
+| **LLM** | `call_llm`, `extract_structured_data`, `benchmark_models` | LLM calling, structured extraction, model comparison |
+| **Security** | `scan_dependencies`, `run_code_analysis` | Dependency auditing, static code analysis |
+| **Platform** | `query_daily_brief`, `query_funding_entities`, `query_research_queue`, `publish_to_queue` | Convex platform bridge: intelligence, funding, research, publishing |
 | **Meta** | `findTools`, `getMethodology` | Discover tools, get workflow guides |
 
 **→ Quick Refs:** Find tools by keyword: `findTools({ query: "verification" })` | Get workflow guide: `getMethodology({ topic: "..." })` | See [Methodology Topics](#methodology-topics) for all topics

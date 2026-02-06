@@ -3,7 +3,7 @@
  *
  * Provides deep reasoning capabilities at ultra-low cost:
  * - GLM 4.7 Flash ($0.07/M) for reasoning with native OpenRouter API
- * - Devstral-2-free ($0.00) for structuring output
+ * - qwen3-coder-free ($0.00) for structuring output
  *
  * Total cost: $0.07/M (98% savings vs claude-sonnet-4 $3.00/M)
  *
@@ -141,7 +141,7 @@ export const getReasoning = internalAction({
       const { openrouter } = await import("@openrouter/ai-sdk-provider");
       const { z } = await import("zod");
 
-      const devstralModel = openrouter("mistralai/devstral-2512:free");
+      const devstralModel = openrouter("qwen/qwen3-coder:free");
 
       // Auto-detect structure based on content
       const schema = z.object({
@@ -238,7 +238,7 @@ Provide a detailed decomposition with reasoning for each decision.`;
     const { openrouter } = await import("@openrouter/ai-sdk-provider");
     const { z } = await import("zod");
 
-    const devstralModel = openrouter("mistralai/devstral-2512:free");
+    const devstralModel = openrouter("qwen/qwen3-coder:free");
 
     const schema = z.object({
       branches: z.array(z.object({
@@ -317,7 +317,7 @@ Provide thorough analysis with clear reasoning for each conclusion.`;
     const { openrouter } = await import("@openrouter/ai-sdk-provider");
     const { z } = await import("zod");
 
-    const devstralModel = openrouter("mistralai/devstral-2512:free");
+    const devstralModel = openrouter("qwen/qwen3-coder:free");
 
     const schema = z.object({
       keyFactors: z.array(z.string()).describe("Key factors identified"),

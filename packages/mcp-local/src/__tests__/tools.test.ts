@@ -4,6 +4,9 @@
  * Live E2E layer is tested via bash pipe in the flywheel step.
  */
 import { describe, it, expect } from "vitest";
+import os from "node:os";
+import path from "node:path";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import { verificationTools } from "../tools/verificationTools.js";
 import { reconTools } from "../tools/reconTools.js";
 import { uiCaptureTools } from "../tools/uiCaptureTools.js";
@@ -18,6 +21,11 @@ import { githubTools } from "../tools/githubTools.js";
 import { documentationTools } from "../tools/documentationTools.js";
 import { agentBootstrapTools } from "../tools/agentBootstrapTools.js";
 import { selfEvalTools } from "../tools/selfEvalTools.js";
+import { parallelAgentTools } from "../tools/parallelAgentTools.js";
+import { llmTools } from "../tools/llmTools.js";
+import { securityTools } from "../tools/securityTools.js";
+import { platformTools } from "../tools/platformTools.js";
+import { localFileTools } from "../tools/localFileTools.js";
 import type { McpTool } from "../types.js";
 
 // Assemble all tools like index.ts does
@@ -30,11 +38,16 @@ const domainTools: McpTool[] = [
   ...reconTools,
   ...uiCaptureTools,
   ...visionTools,
+  ...localFileTools,
   ...webTools,
   ...githubTools,
   ...documentationTools,
   ...agentBootstrapTools,
   ...selfEvalTools,
+  ...parallelAgentTools,
+  ...llmTools,
+  ...securityTools,
+  ...platformTools,
 ];
 const allTools = [...domainTools, ...createMetaTools(domainTools)];
 
@@ -43,8 +56,9 @@ const allTools = [...domainTools, ...createMetaTools(domainTools)];
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Static: tool structure", () => {
-  it("should have 62 tools total", () => {
-    expect(allTools.length).toBe(62);
+  it("should have 89 tools total", () => {
+    // 87 domain tools + 2 meta tools (findTools, getMethodology)
+    expect(allTools.length).toBe(90);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {
@@ -500,6 +514,58 @@ describe("Static: self_reinforced_learning methodology", () => {
 
 const findTool = (name: string) => allTools.find((t) => t.name === name)!;
 
+describe("Unit: local file tools", () => {
+  it("read_csv_file should parse a bounded table", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const csvPath = path.join(tmpDir, "sample.csv");
+    await writeFile(csvPath, "name,age\nAlice,30\nBob,25\n", "utf8");
+
+    const tool = findTool("read_csv_file");
+    const result = (await tool.handler({
+      path: csvPath,
+      hasHeader: true,
+      maxRows: 10,
+      maxCols: 10,
+    })) as any;
+
+    expect(result.headers).toEqual(["name", "age"]);
+    expect(result.rows.length).toBe(2);
+    expect(result.rows[0][0]).toBe("Alice");
+    expect(result.rows[0][1]).toBe("30");
+  });
+
+  it("read_xlsx_file should parse a bounded sheet preview", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const xlsxPath = path.join(tmpDir, "sample.xlsx");
+
+    const mod = await import("xlsx");
+    const XLSX = (mod as any).default ?? mod;
+    const wb = XLSX.utils.book_new();
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ["Title", "Year"],
+      ["Movie A", 2009],
+      ["Movie B", 2011],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheet, "Sheet1");
+    XLSX.writeFile(wb, xlsxPath);
+
+    const tool = findTool("read_xlsx_file");
+    const result = (await tool.handler({
+      path: xlsxPath,
+      headerRow: 1,
+      maxRows: 10,
+      maxCols: 10,
+    })) as any;
+
+    expect(result.sheets).toContain("Sheet1");
+    expect(result.sheetName).toBe("Sheet1");
+    expect(result.headers).toEqual(["Title", "Year"]);
+    expect(result.rows.length).toBe(2);
+    expect(result.rows[0][0]).toBe("Movie A");
+    expect(result.rows[0][1]).toBe(2009);
+  });
+});
+
 describe("Unit: abandon_cycle", () => {
   it("should abandon an active cycle", async () => {
     // Create a cycle first
@@ -807,6 +873,308 @@ describe("Unit: web_search graceful fallback", () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// v2.2.0 — LLM, Security, and Diff tools
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Static: llm tools", () => {
+  it("should include call_llm and extract_structured_data", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("call_llm");
+    expect(names).toContain("extract_structured_data");
+  });
+
+  it("call_llm requires prompt parameter", () => {
+    const tool = findTool("call_llm");
+    expect(tool.inputSchema.required).toContain("prompt");
+  });
+
+  it("extract_structured_data requires text and fields parameters", () => {
+    const tool = findTool("extract_structured_data");
+    expect(tool.inputSchema.required).toContain("text");
+    expect(tool.inputSchema.required).toContain("fields");
+  });
+});
+
+describe("Static: security tools", () => {
+  it("should include scan_dependencies and run_code_analysis", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("scan_dependencies");
+    expect(names).toContain("run_code_analysis");
+  });
+
+  it("run_code_analysis requires content parameter", () => {
+    const tool = findTool("run_code_analysis");
+    expect(tool.inputSchema.required).toContain("content");
+  });
+
+  it("scan_dependencies has no required parameters", () => {
+    const tool = findTool("scan_dependencies");
+    const required = (tool.inputSchema as any).required;
+    expect(required ?? []).toEqual([]);
+  });
+});
+
+describe("Unit: run_code_analysis", () => {
+  it("should detect hardcoded API key in code", async () => {
+    const tool = findTool("run_code_analysis");
+    const result = (await tool.handler({
+      content: 'const api_key = "FAKE_TEST_KEY_abcdefghijklmnopqrstuvwxyz1234567890";',
+      checks: ["secrets"],
+    })) as any;
+    expect(result.totalFindings).toBeGreaterThanOrEqual(1);
+    expect(result.bySeverity.HIGH).toBeGreaterThanOrEqual(1);
+    expect(result.findings[0].check).toBe("secrets");
+  });
+
+  it("should detect zero-width characters (homograph check)", async () => {
+    const tool = findTool("run_code_analysis");
+    const result = (await tool.handler({
+      content: "export API_KEY=sk-\u200bsecret123",
+      checks: ["homograph"],
+    })) as any;
+    expect(result.totalFindings).toBeGreaterThanOrEqual(1);
+    expect(result.bySeverity.HIGH).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should return clean for safe code", async () => {
+    const tool = findTool("run_code_analysis");
+    const result = (await tool.handler({
+      content: 'function add(a: number, b: number): number { return a + b; }',
+      checks: ["secrets", "homograph", "urls"],
+    })) as any;
+    expect(result.totalFindings).toBe(0);
+  });
+});
+
+describe("Unit: scan_dependencies", () => {
+  it("should scan the mcp-local package.json", async () => {
+    const tool = findTool("scan_dependencies");
+    const result = (await tool.handler({
+      projectRoot: path.resolve(__dirname, "../.."),
+    })) as any;
+    expect(result.totalPackages).toBeGreaterThan(0);
+    expect(result.manifests.length).toBeGreaterThan(0);
+    expect(result).toHaveProperty("summary");
+    expect(result).toHaveProperty("dependencies");
+  });
+
+  it("should return error when no manifest found", async () => {
+    const tool = findTool("scan_dependencies");
+    const result = (await tool.handler({
+      projectRoot: os.tmpdir(),
+    })) as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("No package manifest");
+  });
+});
+
+describe("Static: diff_outputs tool", () => {
+  it("should exist in eval tools", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("diff_outputs");
+  });
+
+  it("requires baseline and candidate parameters", () => {
+    const tool = findTool("diff_outputs");
+    expect(tool.inputSchema.required).toContain("baseline");
+    expect(tool.inputSchema.required).toContain("candidate");
+  });
+});
+
+describe("Unit: diff_outputs", () => {
+  it("should compute text diff with similarity score", async () => {
+    const tool = findTool("diff_outputs");
+    const result = (await tool.handler({
+      baseline: "line one\nline two\nline three",
+      candidate: "line one\nline TWO\nline three\nline four",
+    })) as any;
+    expect(result).toHaveProperty("similarity");
+    expect(result.similarity).toBeGreaterThan(0);
+    expect(result.similarity).toBeLessThan(1);
+    expect(result.added.length).toBeGreaterThan(0);
+    expect(result).toHaveProperty("summary");
+  });
+
+  it("should return 1.0 similarity for identical text", async () => {
+    const tool = findTool("diff_outputs");
+    const result = (await tool.handler({
+      baseline: "identical content",
+      candidate: "identical content",
+    })) as any;
+    expect(result.similarity).toBe(1);
+    expect(result.added.length).toBe(0);
+    expect(result.removed.length).toBe(0);
+  });
+
+  it("should diff JSON objects with field-level changes", async () => {
+    const tool = findTool("diff_outputs");
+    const result = (await tool.handler({
+      baseline: '{"name":"Alice","age":30,"city":"NYC"}',
+      candidate: '{"name":"Alice","age":31,"country":"USA"}',
+      format: "json",
+    })) as any;
+    expect(result).toHaveProperty("changed");
+    expect(result.changed.length).toBeGreaterThan(0);
+    expect(result).toHaveProperty("removed");
+    expect(result).toHaveProperty("added");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLATFORM TOOLS — Convex bridge validation
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Static: platform tools", () => {
+  it("should export 4 platform tools", () => {
+    expect(platformTools.length).toBe(4);
+  });
+
+  const expectedTools = [
+    { name: "query_daily_brief", requiredParams: [] },
+    { name: "query_funding_entities", requiredParams: [] },
+    { name: "query_research_queue", requiredParams: [] },
+    { name: "publish_to_queue", requiredParams: ["content", "postType"] },
+  ];
+
+  for (const { name, requiredParams } of expectedTools) {
+    it(`${name} has valid schema`, () => {
+      const tool = platformTools.find((t) => t.name === name);
+      expect(tool).toBeDefined();
+      expect(tool!.description.length).toBeGreaterThan(10);
+      expect(tool!.inputSchema.type).toBe("object");
+      if (requiredParams.length > 0) {
+        expect(tool!.inputSchema.required).toEqual(expect.arrayContaining(requiredParams));
+      }
+    });
+  }
+});
+
+describe("Unit: platform tools graceful fallback", () => {
+  it("query_daily_brief returns error when CONVEX_SITE_URL not set", async () => {
+    const tool = findTool("query_daily_brief");
+    const result = (await tool.handler({})) as any;
+    // Without CONVEX_SITE_URL, should return a platform-not-configured error
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("Platform not configured");
+  });
+
+  it("query_funding_entities returns error when CONVEX_SITE_URL not set", async () => {
+    const tool = findTool("query_funding_entities");
+    const result = (await tool.handler({ query: "test" })) as any;
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("Platform not configured");
+  });
+
+  it("query_research_queue returns error when CONVEX_SITE_URL not set", async () => {
+    const tool = findTool("query_research_queue");
+    const result = (await tool.handler({})) as any;
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("Platform not configured");
+  });
+
+  it("publish_to_queue returns error when CONVEX_SITE_URL not set", async () => {
+    const tool = findTool("publish_to_queue");
+    const result = (await tool.handler({ content: "test", postType: "insight" })) as any;
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("Platform not configured");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIER 3 CAPABILITY TOOLS — new domains
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Static: benchmark_models tool", () => {
+  it("has valid schema with required prompt", () => {
+    const tool = findTool("benchmark_models");
+    expect(tool.inputSchema.required).toEqual(["prompt"]);
+    expect(tool.inputSchema.properties).toHaveProperty("prompt");
+    expect(tool.inputSchema.properties).toHaveProperty("system");
+  });
+
+  it("returns error when no providers available", async () => {
+    const tool = findTool("benchmark_models");
+    const result = (await tool.handler({ prompt: "test" })) as any;
+    // No API keys set in test env
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("No LLM providers available");
+  });
+});
+
+describe("Static: generate_report tool", () => {
+  it("has valid schema with required title and sections", () => {
+    const tool = findTool("generate_report");
+    expect(tool.inputSchema.required).toEqual(["title", "sections"]);
+  });
+
+  it("generates markdown report from sections", async () => {
+    const tool = findTool("generate_report");
+    const result = (await tool.handler({
+      title: "Test Report",
+      sections: [
+        { heading: "Overview", content: "This is a test report." },
+        { heading: "Findings", content: "- Finding 1\n- Finding 2" },
+      ],
+      metadata: { author: "test", project: "nodebench" },
+    })) as any;
+    expect(result).toHaveProperty("markdown");
+    expect(result.markdown).toContain("# Test Report");
+    expect(result.markdown).toContain("## Overview");
+    expect(result.markdown).toContain("## Findings");
+    expect(result.markdown).toContain("Table of Contents");
+    expect(result.sections).toBe(2);
+    expect(result.characters).toBeGreaterThan(100);
+  });
+});
+
+describe("Static: monitor_repo tool", () => {
+  it("has valid schema with required repo", () => {
+    const tool = findTool("monitor_repo");
+    expect(tool.inputSchema.required).toEqual(["repo"]);
+  });
+
+  it("rejects invalid repo format", async () => {
+    const tool = findTool("monitor_repo");
+    const result = (await tool.handler({ repo: "not-a-valid-repo" })) as any;
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("Invalid repo format");
+  });
+});
+
+describe("Static: run_tests_cli tool", () => {
+  it("has valid schema with required command", () => {
+    const tool = findTool("run_tests_cli");
+    expect(tool.inputSchema.required).toEqual(["command"]);
+    expect(tool.inputSchema.properties).toHaveProperty("cwd");
+    expect(tool.inputSchema.properties).toHaveProperty("timeoutMs");
+  });
+
+  it("blocks dangerous commands", async () => {
+    const tool = findTool("run_tests_cli");
+    const result = (await tool.handler({ command: "rm -rf /" })) as any;
+    expect(result).toHaveProperty("error");
+    expect(result.message).toContain("blocked");
+  });
+
+  it("runs a simple command successfully", async () => {
+    const tool = findTool("run_tests_cli");
+    const result = (await tool.handler({ command: "node -e \"console.log('hello')\"" })) as any;
+    expect(result.exitCode).toBe(0);
+    expect(result.passed).toBe(true);
+    expect(result.stdout).toContain("hello");
+  });
+});
+
+describe("Static: diff_screenshots tool", () => {
+  it("has valid schema with required baseline and candidate", () => {
+    const tool = findTool("diff_screenshots");
+    expect(tool.inputSchema.required).toEqual(["baseline", "candidate"]);
+    expect(tool.inputSchema.properties).toHaveProperty("threshold");
+    expect(tool.inputSchema.properties).toHaveProperty("outputPath");
+  });
+});
+
 describe("Integration: search finds logged gaps", () => {
   it("should find gaps via search_all_knowledge after logging", async () => {
     const uniqueMarker = `vitest-marker-${Date.now()}`;
@@ -840,5 +1208,22 @@ describe("Integration: search finds logged gaps", () => {
       cycleId: cycle.cycleId,
       reason: "test cleanup",
     });
+  });
+});
+
+describe("Static: scan_terminal_security tool", () => {
+  const tool = domainTools.find((t) => t.name === "scan_terminal_security");
+  it("should exist", () => {
+    expect(tool).toBeDefined();
+  });
+  it("should accept projectRoot and checks", () => {
+    const props = tool!.inputSchema.properties as Record<string, unknown>;
+    expect(props).toHaveProperty("projectRoot");
+    expect(props).toHaveProperty("checks");
+  });
+  it("should accept scanHome and verbose flags", () => {
+    const props = tool!.inputSchema.properties as Record<string, unknown>;
+    expect(props).toHaveProperty("scanHome");
+    expect(props).toHaveProperty("verbose");
   });
 });

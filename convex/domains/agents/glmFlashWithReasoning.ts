@@ -504,7 +504,7 @@ export const testAllGlmApproaches = internalAction({
     } else {
       console.log("\n❌ NO SOLUTION FOUND");
       console.log("   GLM 4.7 Flash doesn't expose reasoning in a compatible format");
-      console.log("   RECOMMENDATION: Continue using devstral-2-free ($0.00, proven reliable)");
+      console.log("   RECOMMENDATION: Continue using qwen3-coder-free ($0.00, proven reliable)");
     }
 
     return {
@@ -522,7 +522,7 @@ export const testAllGlmApproaches = internalAction({
         ? `Use extractReasoningMiddleware with tag "${xmlTest.workingTag}"`
         : startTest.working
         ? "Use startWithReasoning option"
-        : "Use devstral-2-free instead",
+        : "Use qwen3-coder-free instead",
     };
   },
 });

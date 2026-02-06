@@ -978,6 +978,48 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
       bootstrap_external_repos:
         "When connected to another project that lacks parallel agent capabilities, use bootstrap_parallel_agents to auto-detect gaps and scaffold infrastructure. The tool scans 7 categories (task coordination, roles, oracle, context budget, progress files, AGENTS.md parallel section, git worktrees) and generates ready-to-use files. Follow the AI Flywheel closed loop: detect → scaffold → verify → fix → document.",
     },
+    claudeCodeNativePath: {
+      title: "Claude Code Native Parallel Subagents",
+      description:
+        "If you are using Claude Code (Anthropic's CLI), you already have parallel subagent support via the Task tool. NodeBench MCP adds coordination, tracking, and impact measurement on top of Claude Code's native parallelism.",
+      howItWorks: [
+        "1. The main Claude Code session is the COORDINATOR — it breaks work into independent tasks",
+        "2. Each Task tool call spawns a SUBAGENT — a separate Claude instance with its own context",
+        "3. Each subagent has access to the same NodeBench MCP tools (shared SQLite database)",
+        "4. Subagents use claim_agent_task/release_agent_task to coordinate without conflicts",
+        "5. The coordinator uses get_parallel_status to monitor progress across all subagents",
+      ],
+      exampleWorkflow: [
+        "COORDINATOR: Break work into 3 independent tasks",
+        "COORDINATOR: For each task, spawn a Task tool subagent with prompt:",
+        '  "You have access to NodeBench MCP. First call claim_agent_task({ taskKey: \'fix_auth\' }), then do the work, then call release_agent_task with a progress note."',
+        "COORDINATOR: Call get_parallel_status to see all subagent progress",
+        "COORDINATOR: When all subagents complete, aggregate results and run quality gate",
+      ],
+      impact: "Prevents duplicate work across subagents, captures per-task learnings, enables oracle-based validation, tracks context budget per subagent",
+    },
+    whenToUseParallelTools: {
+      description: "Parallel agent tools are NOT always needed. Use them ONLY when the situation calls for coordination.",
+      useWhen: [
+        "You are running 2+ agent sessions (Claude Code subagents, worktrees, or separate terminals)",
+        "You need to prevent two agents from working on the same thing",
+        "You want oracle-based testing to split failures into independent work items",
+        "You are bootstrapping parallel agent infrastructure for an external project",
+      ],
+      doNotUseWhen: [
+        "You are a single agent working sequentially — standard verification/eval tools are sufficient",
+        "The task is simple enough for one agent to handle end-to-end",
+        "You are not in a multi-agent or multi-session context",
+      ],
+    },
+    impactPerStep: {
+      orient: "IMPACT: Prevents wasted time re-doing work another agent already started or completed",
+      assign_role: "IMPACT: Specialization enables parallelism — agents don't step on each other's toes",
+      claim_task: "IMPACT: Zero duplicate work — each task is owned by exactly one agent",
+      monitor_budget: "IMPACT: Prevents context window exhaustion that forces expensive session restarts",
+      oracle_validate: "IMPACT: Catches regressions by comparing against known-good reference — each failure is an independent debuggable work item",
+      release_handoff: "IMPACT: Progress notes ensure the next agent (or next session) doesn't restart from scratch",
+    },
     bootstrapForExternalRepos: {
       description:
         "When nodebench-mcp detects that a target project repo does not have parallel agent infrastructure, it can automatically bootstrap it using the AI Flywheel closed loop.",
@@ -1168,6 +1210,9 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "bootstrap",
               "self_eval",
               "parallel_agents",
+              "llm",
+              "security",
+              "platform",
               "meta",
             ],
             description: "Filter by tool category (optional)",
@@ -1196,6 +1241,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "complete_eval_run",
             "compare_eval_runs",
             "list_eval_runs",
+            "diff_outputs",
           ],
           quality_gate: [
             "run_quality_gate",
@@ -1232,6 +1278,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "discover_vision_env",
             "analyze_screenshot",
             "manipulate_screenshot",
+            "diff_screenshots",
           ],
           web: [
             "web_search",
@@ -1240,11 +1287,13 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
           github: [
             "search_github",
             "analyze_repo",
+            "monitor_repo",
           ],
           documentation: [
             "update_agents_md",
             "research_job_market",
             "setup_local_env",
+            "generate_report",
           ],
           bootstrap: [
             "discover_infrastructure",
@@ -1257,6 +1306,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "run_self_maintenance",
             "scaffold_directory",
             "run_autonomous_loop",
+            "run_tests_cli",
           ],
           self_eval: [
             "log_tool_call",
@@ -1278,6 +1328,20 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "bootstrap_parallel_agents",
             "generate_parallel_agents_md",
           ],
+          llm: [
+            "call_llm",
+            "extract_structured_data",
+            "benchmark_models",
+          ],
+          security: [
+            "scan_dependencies",
+            "run_code_analysis", "scan_terminal_security"],
+          platform: [
+            "query_daily_brief",
+            "query_funding_entities",
+            "query_research_queue",
+            "publish_to_queue",
+          ],
           meta: ["findTools", "getMethodology"],
         };
 
@@ -1292,6 +1356,43 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
           return query.split(/\s+/).some((word: string) => text.includes(word));
         });
 
+        // Contextual recommendations: surface parallel tools only when relevant
+        const parallelKeywords = ["parallel", "agent", "team", "multi-agent", "subagent", "concurrent", "worktree", "oracle", "lock", "coordinate", "role"];
+        const queryHintsParallel = parallelKeywords.some((kw) => query.includes(kw));
+        const parallelToolNames = new Set(categoryMap.parallel_agents);
+
+        // Add contextual hint about parallel tools
+        const contextHints: string[] = [];
+        if (!queryHintsParallel && !category) {
+          // Don't surface parallel tools unless the query is about parallel/agent work
+          const filtered = matches.filter((t) => !parallelToolNames.has(t.name));
+          if (filtered.length < matches.length) {
+            contextHints.push(
+              "Parallel agent tools are available but not shown (query didn't indicate multi-agent work). " +
+              "Use findTools({ category: 'parallel_agents' }) or include 'parallel'/'agent'/'team' in your query to discover them."
+            );
+          }
+          return {
+            query,
+            count: filtered.length,
+            tools: filtered.map((t) => ({
+              name: t.name,
+              description: t.description,
+            })),
+            contextHints,
+            tip: "Use category filter or specific keywords to narrow results. Call getMethodology('overview') for all available methodologies.",
+          };
+        }
+
+        // When parallel tools ARE relevant, add Claude Code guidance
+        if (queryHintsParallel || category === "parallel_agents") {
+          contextHints.push(
+            "Claude Code users: Use the Task tool to spawn parallel subagents, each with access to NodeBench MCP. " +
+            "Each subagent calls claim_agent_task to lock work, assign_agent_role for specialization, and release_agent_task when done. " +
+            "Call getMethodology('parallel_agent_teams') for the full workflow."
+          );
+        }
+
         return {
           query,
           count: matches.length,
@@ -1299,6 +1400,8 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             name: t.name,
             description: t.description,
           })),
+          contextHints,
+          tip: "Use category filter or specific keywords to narrow results. Call getMethodology('overview') for all available methodologies.",
         };
       },
     },

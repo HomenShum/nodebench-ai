@@ -4538,7 +4538,7 @@ export const sendMessageInternal = internalAction({
 
     // Eval reliability: prefer free OpenRouter model first to avoid transient provider quota / throttling.
     if (args.userId && process.env.OPENROUTER_API_KEY) {
-      activeModel = normalizeModelInput("openrouter/xiaomi/mimo-v2-flash:free");
+      activeModel = normalizeModelInput("openrouter/qwen/qwen3-coder:free");
       console.log("[sendMessageInternal] Eval mode: using free model:", activeModel);
     }
 
@@ -4686,7 +4686,7 @@ export const sendMessageInternal = internalAction({
     const attemptedModels: ApprovedModel[] = [];
     const openRouterFreeFallback =
       process.env.OPENROUTER_API_KEY
-        ? normalizeModelInput("openrouter/xiaomi/mimo-v2-flash:free")
+        ? normalizeModelInput("openrouter/qwen/qwen3-coder:free")
         : null;
     let retries = 0;
     const maxRetries = 2;
@@ -4770,7 +4770,7 @@ export const sendMessageInternal = internalAction({
 
       const openRouterFreeFallback =
         process.env.OPENROUTER_API_KEY
-          ? normalizeModelInput("openrouter/xiaomi/mimo-v2-flash:free")
+          ? normalizeModelInput("openrouter/qwen/qwen3-coder:free")
           : null;
       const fallback = openRouterFreeFallback ?? getFallbackModelForRateLimit(activeModel);
       if (fallback && fallback !== activeModel) {

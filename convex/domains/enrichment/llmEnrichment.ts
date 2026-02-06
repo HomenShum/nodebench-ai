@@ -61,7 +61,7 @@ Be specific with sectors. Avoid defaulting to "Technology" if a more specific ca
       const { generateObject } = await import("ai");
       const { getLanguageModelSafe } = await import("../agents/mcp_tools/models/modelResolver");
 
-      const model = getLanguageModelSafe("devstral-2-free");
+      const model = getLanguageModelSafe("qwen3-coder-free");
 
       const schema = {
         type: "object",

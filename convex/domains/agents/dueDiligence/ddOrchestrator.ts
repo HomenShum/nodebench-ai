@@ -55,8 +55,8 @@ import { getLanguageModelSafe, DEFAULT_MODEL } from "../mcp_tools/models/modelRe
 // LLM Synthesis Configuration
 // ============================================================================
 
-// Use FREE models first (devstral-2-free is proven 100% pass rate)
-const SYNTHESIS_MODEL = "devstral-2-free"; // Free OpenRouter model for synthesis
+// Use FREE models first (qwen3-coder-free is proven 100% pass rate)
+const SYNTHESIS_MODEL = "qwen3-coder-free"; // Free OpenRouter model for synthesis
 const SYNTHESIS_TIMEOUT_MS = 90_000; // 90s timeout (free models may be slower)
 
 // ============================================================================

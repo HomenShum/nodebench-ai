@@ -1,6 +1,6 @@
 // convex/tools/knowledge/distiller.ts
 // Small-model extraction of facts/claims with citations
-// Uses FREE-FIRST strategy: devstral-2-free → gemini-3-flash → claude-haiku-4.5
+// Uses FREE-FIRST strategy: qwen3-coder-free → gemini-3-flash → claude-haiku-4.5
 
 import { v } from "convex/values";
 import { action, internalQuery } from "../../_generated/server";

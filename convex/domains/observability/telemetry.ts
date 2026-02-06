@@ -39,7 +39,7 @@ export interface TraceMetadata {
 export interface SpanAttributes {
   // LLM attributes (OpenTelemetry semantic conventions)
   "llm.provider"?: string; // anthropic, openai, google
-  "llm.model"?: string; // claude-sonnet-4-5, gpt-4, gemini-2.5
+  "llm.model"?: string; // claude-opus-4.6, gpt-5.2, gemini-3-flash
   "llm.temperature"?: number;
   "llm.max_tokens"?: number;
   "llm.top_p"?: number;

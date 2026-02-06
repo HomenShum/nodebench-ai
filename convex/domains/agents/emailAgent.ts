@@ -206,7 +206,7 @@ export const analyzeEmail = internalAction({
     const startTime = Date.now();
 
     // Use FREE model by default for autonomous email processing
-    const modelId = (args.model || "devstral-2-free") as ApprovedModel;
+    const modelId = (args.model || "qwen3-coder-free") as ApprovedModel;
     const languageModel = getLanguageModelSafe(normalizeModelInput(modelId));
 
     // Build prompt
@@ -317,7 +317,7 @@ export const groupEmailsForReport = internalAction({
     console.log(`[emailAgent.groupEmailsForReport] Grouping ${threads.length} threads...`);
 
     // Use FREE model by default for autonomous email processing
-    const modelId = (args.model || "devstral-2-free") as ApprovedModel;
+    const modelId = (args.model || "qwen3-coder-free") as ApprovedModel;
     const languageModel = getLanguageModelSafe(normalizeModelInput(modelId));
 
     // Format emails for prompt
@@ -773,12 +773,12 @@ export const testEmailAnalysis = action({
       subject: args.subject,
       from: args.from,
       bodySnippet: args.bodySnippet,
-      model: args.model || "devstral-2-free",
+      model: args.model || "qwen3-coder-free",
     });
 
     return {
       success: true,
-      model: args.model || "devstral-2-free",
+      model: args.model || "qwen3-coder-free",
       analysis,
     };
   },

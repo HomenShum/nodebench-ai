@@ -40,30 +40,117 @@ import { documentationTools } from "./tools/documentationTools.js";
 import { agentBootstrapTools } from "./tools/agentBootstrapTools.js";
 import { selfEvalTools } from "./tools/selfEvalTools.js";
 import { parallelAgentTools } from "./tools/parallelAgentTools.js";
+import { llmTools } from "./tools/llmTools.js";
+import { securityTools } from "./tools/securityTools.js";
+import { platformTools } from "./tools/platformTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
+import { localFileTools } from "./tools/localFileTools.js";
 import type { McpTool } from "./types.js";
+
+// ── CLI argument parsing ──────────────────────────────────────────────
+const cliArgs = process.argv.slice(2);
+
+const TOOLSET_MAP: Record<string, McpTool[]> = {
+  verification: verificationTools,
+  eval: evalTools,
+  quality_gate: qualityGateTools,
+  learning: learningTools,
+  flywheel: flywheelTools,
+  recon: reconTools,
+  ui_capture: uiCaptureTools,
+  vision: visionTools,
+  local_file: localFileTools,
+  web: webTools,
+  github: githubTools,
+  docs: documentationTools,
+  bootstrap: agentBootstrapTools,
+  self_eval: selfEvalTools,
+  parallel: parallelAgentTools,
+  llm: llmTools,
+  security: securityTools,
+  platform: platformTools,
+};
+
+const PRESETS: Record<string, string[]> = {
+  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform"],
+  lite: ["verification", "eval", "quality_gate", "learning", "recon", "security"],
+  full: Object.keys(TOOLSET_MAP),
+};
+
+function parseToolsets(): McpTool[] {
+  if (cliArgs.includes("--help")) {
+    const lines = [
+      "nodebench-mcp v2.5.0 — Development Methodology MCP Server",
+      "",
+      "Usage: nodebench-mcp [options]",
+      "",
+      "Options:",
+      "  --toolsets <list>   Comma-separated toolsets to enable (default: all)",
+      "  --exclude <list>    Comma-separated toolsets to exclude",
+      "  --preset <name>     Use a preset: core, lite, or full",
+      "  --help              Show this help and exit",
+      "",
+      "Available toolsets:",
+      ...Object.entries(TOOLSET_MAP).map(([k, v]) => `  ${k.padEnd(16)} ${v.length} tools`),
+      "",
+      "Presets:",
+      ...Object.entries(PRESETS).map(([k, v]) => `  ${k.padEnd(16)} ${v.join(", ")}`),
+      "",
+      "Examples:",
+      "  npx nodebench-mcp --preset core",
+      "  npx nodebench-mcp --toolsets verification,eval,recon",
+      "  npx nodebench-mcp --exclude vision,ui_capture,parallel",
+      "",
+      "Pro tip: Use findTools and getMethodology at runtime for dynamic tool discovery.",
+      "See: https://www.anthropic.com/engineering/code-execution-with-mcp",
+    ];
+    console.error(lines.join("\n"));
+    process.exit(0);
+  }
+
+  const presetIdx = cliArgs.indexOf("--preset");
+  if (presetIdx !== -1 && cliArgs[presetIdx + 1]) {
+    const presetName = cliArgs[presetIdx + 1];
+    const presetKeys = PRESETS[presetName];
+    if (!presetKeys) {
+      console.error(`Unknown preset: ${presetName}. Available: ${Object.keys(PRESETS).join(", ")}`);
+      process.exit(1);
+    }
+    return presetKeys.flatMap((k) => TOOLSET_MAP[k] ?? []);
+  }
+
+  const tsIdx = cliArgs.indexOf("--toolsets");
+  if (tsIdx !== -1 && cliArgs[tsIdx + 1]) {
+    const requested = cliArgs[tsIdx + 1].split(",").map((s) => s.trim());
+    const invalid = requested.filter((k) => !TOOLSET_MAP[k]);
+    if (invalid.length) {
+      console.error(`Unknown toolsets: ${invalid.join(", ")}. Available: ${Object.keys(TOOLSET_MAP).join(", ")}`);
+      process.exit(1);
+    }
+    return requested.flatMap((k) => TOOLSET_MAP[k]);
+  }
+
+  const exIdx = cliArgs.indexOf("--exclude");
+  if (exIdx !== -1 && cliArgs[exIdx + 1]) {
+    const excluded = new Set(cliArgs[exIdx + 1].split(",").map((s) => s.trim()));
+    const invalid = [...excluded].filter((k) => !TOOLSET_MAP[k]);
+    if (invalid.length) {
+      console.error(`Unknown toolsets: ${invalid.join(", ")}. Available: ${Object.keys(TOOLSET_MAP).join(", ")}`);
+      process.exit(1);
+    }
+    return Object.entries(TOOLSET_MAP)
+      .filter(([k]) => !excluded.has(k))
+      .flatMap(([, v]) => v);
+  }
+
+  return Object.values(TOOLSET_MAP).flat();
+}
 
 // Initialize DB (creates ~/.nodebench/ and schema on first run)
 getDb();
 
-// Assemble tools
-const domainTools: McpTool[] = [
-  ...verificationTools,
-  ...evalTools,
-  ...qualityGateTools,
-  ...learningTools,
-  ...flywheelTools,
-  ...reconTools,
-  ...uiCaptureTools,
-  ...visionTools,
-  ...webTools,
-  ...githubTools,
-  ...documentationTools,
-  ...agentBootstrapTools,
-  ...selfEvalTools,
-  ...parallelAgentTools,
-];
-
+// Assemble tools (filtered by --toolsets / --exclude / --preset if provided)
+const domainTools: McpTool[] = parseToolsets();
 const allTools = [...domainTools, ...createMetaTools(domainTools)];
 
 // Build a lookup map for fast tool dispatch
@@ -89,7 +176,17 @@ const PROMPTS = [
         role: "user" as const,
         content: {
           type: "text" as const,
-          text: `You are connected to NodeBench Development Methodology MCP — a tool suite for rigorous software development.
+          text: `You are connected to NodeBench MCP — tools that make you catch the bugs you'd normally ship.
+
+WHAT THIS DOES:
+In benchmarks across 9 real production prompts, agents with NodeBench MCP caught 13 issues (4 HIGH severity)
+that bare agents shipped to production. 26 blind spots prevented. Knowledge compounds — by task 9,
+the agent finds 2+ prior findings before writing a single line of code.
+
+HOW IT WORKS:
+Every task follows a pipeline: Research → Risk → Implement → Test (3 layers) → Eval → Gate → Learn → Ship.
+Each step produces a concrete artifact (an issue found, a regression guarded, a pattern banked) that
+compounds into future tasks.
 
 FIRST TIME? Run these 3 steps:
 1. Call bootstrap_project to register your project (tech stack, architecture, conventions)
@@ -97,18 +194,20 @@ FIRST TIME? Run these 3 steps:
 3. Call search_all_knowledge("your current task") before starting any work
 
 RETURNING? Your project context and all past learnings are persisted. Start with:
-1. Call get_project_context to refresh your project awareness
-2. Call search_all_knowledge with your current task
-3. Follow the methodology tools as you work — they'll guide you step by step
+1. Call search_all_knowledge with your current task
+2. Follow the methodology tools as you work — they'll guide you step by step
 
 KEY TOOLS:
+- search_all_knowledge — Search prior findings before starting (avoid repeating past mistakes)
+- run_mandatory_flywheel — 6-step minimum verification before declaring work done
 - getMethodology — Step-by-step guides for verification, eval, flywheel, recon
 - findTools — Discover tools by keyword or category
-- search_all_knowledge — Search learnings + recon findings + resolved gaps
-- bootstrap_project — Register/update project context
-- run_mandatory_flywheel — Required 6-step verification for any non-trivial change
+- assess_risk — Assess risk before acting (HIGH = needs confirmation)
 
-The knowledge base grows automatically as you work. Every verification cycle, eval run, and resolved gap contributes back.`,
+PARALLEL AGENTS? If using Claude Code subagents or multiple terminals:
+- claim_agent_task / release_agent_task — Lock tasks to prevent duplicate work
+- get_parallel_status — See what all agents are doing
+- Use the "claude-code-parallel" prompt for step-by-step guidance`,
         },
       },
     ],
@@ -333,6 +432,98 @@ After all oracle tests pass:
     ],
   },
   {
+    name: "claude-code-parallel",
+    description:
+      "Guide for using NodeBench MCP with Claude Code's native Task tool to run parallel subagents. Each subagent gets its own context window and can coordinate via shared NodeBench MCP tools (claim_agent_task, assign_agent_role, run_oracle_comparison). Use this when you want multiple Claude Code subagents working on independent tasks without duplicate effort.",
+    arguments: [
+      {
+        name: "taskDescription",
+        description:
+          "The overall task to split across parallel subagents (e.g. 'Fix auth, add tests, update docs')",
+        required: true,
+      },
+      {
+        name: "subagentCount",
+        description:
+          "Number of parallel subagents to coordinate (default: 3)",
+        required: false,
+      },
+    ],
+    messages: (args: Record<string, string>) => {
+      const count = parseInt(args.subagentCount || "3", 10);
+      return [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `You are coordinating ${count} parallel Claude Code subagents for: ${args.taskDescription}
+
+## How This Works
+
+Claude Code's Task tool spawns subagents — each is an independent Claude instance with its own
+context window. NodeBench MCP tools coordinate them via a shared SQLite database.
+
+**Your role: COORDINATOR.** You break work into independent tasks and spawn subagents.
+**Subagent role: WORKER.** Each claims a task, does work, releases with a progress note.
+
+## Step-by-Step
+
+### 1. PLAN — Break work into ${count} independent tasks
+Identify ${count} pieces of work that can run in parallel without dependencies.
+Each task should be independently completable and testable.
+
+### 2. SPAWN — Launch subagents with coordination instructions
+For each task, use the Task tool:
+
+\`\`\`
+Task tool call:
+  prompt: "You have access to NodeBench MCP. Do the following:
+    1. Call claim_agent_task({ taskKey: '<task_key>', description: '<what to do>' })
+    2. Call assign_agent_role({ role: 'implementer', focusArea: '<area>' })
+    3. Do the work
+    4. Call log_context_budget({ eventType: 'checkpoint', tokensUsed: <estimate> })
+    5. Call release_agent_task({ taskKey: '<task_key>', status: 'completed', progressNote: '<summary>' })
+    6. Call record_learning({ key: '<key>', content: '<what you learned>', category: 'pattern' })"
+\`\`\`
+
+### 3. MONITOR — Check progress
+After spawning all subagents:
+  call get_parallel_status({ includeHistory: true })
+  call list_agent_tasks({ status: "all" })
+
+### 4. VALIDATE — Run oracle comparisons if applicable
+If subagents produced outputs that should match a reference:
+  call run_oracle_comparison for each output
+
+### 5. GATE — Quality check the aggregate result
+  call run_quality_gate with rules covering all ${count} tasks
+  call run_mandatory_flywheel to verify the combined change
+
+## Concrete IMPACT of This Workflow
+
+| What NodeBench Adds             | Without It (bare subagents)           |
+|---------------------------------|---------------------------------------|
+| Task locks prevent duplicate work | Two subagents might fix the same bug |
+| Role specialization             | All subagents do everything           |
+| Context budget tracking         | Subagent runs out of context silently |
+| Oracle comparisons              | No reference-based validation         |
+| Progress notes for handoff      | Next session starts from scratch      |
+| Learnings persisted             | Knowledge lost when subagent exits    |
+| Quality gate on aggregate       | No validation that pieces fit together |
+
+## Anti-Patterns
+- DO NOT spawn subagents for work that has dependencies (sequential steps)
+- DO NOT skip claim_agent_task — without it, two subagents may duplicate effort
+- DO NOT dump large outputs into subagent context — use log_context_budget to track
+- DO NOT forget release_agent_task — orphaned claims block future sessions
+
+For the full parallel agent methodology: call getMethodology("parallel_agent_teams")`,
+          },
+        },
+      ];
+    },
+  },
+  {
     name: "bootstrap-parallel-agents",
     description:
       "Detect and scaffold parallel agent infrastructure for any project. Scans a target repo for 7 categories of parallel agent capabilities (task locking, roles, oracle testing, context budget, progress files, AGENTS.md, worktrees) and bootstraps what's missing. Uses the AI Flywheel closed loop: detect → scaffold → verify → fix → document.",
@@ -429,7 +620,7 @@ For the full methodology: call getMethodology("parallel_agent_teams")`,
 ];
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.0.0" },
+  { name: "nodebench-mcp-methodology", version: "2.4.0" },
   { capabilities: { tools: {}, prompts: {} } }
 );
 
@@ -543,4 +734,7 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-console.error(`nodebench-mcp-methodology ready (${allTools.length} tools, ${PROMPTS.length} prompts, SQLite at ~/.nodebench/)`);
+const toolsetInfo = cliArgs.includes("--toolsets") || cliArgs.includes("--exclude") || cliArgs.includes("--preset")
+  ? ` [gated: ${domainTools.length} domain + 2 meta]`
+  : "";
+console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/)`);

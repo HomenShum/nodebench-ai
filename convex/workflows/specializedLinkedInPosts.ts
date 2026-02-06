@@ -261,7 +261,7 @@ export const postFDAUpdates = internalAction({
       try {
         const { generateText } = await import("ai");
         const { getLanguageModelSafe } = await import("../domains/agents/mcp_tools/models/modelResolver");
-        const model = getLanguageModelSafe("devstral-2-free");
+        const model = getLanguageModelSafe("qwen3-coder-free");
 
       const detailedSummary = fdaUpdates.map(u => {
         const expedited = u.breakthroughDesignation ? " [BREAKTHROUGH DESIGNATION]" : "";

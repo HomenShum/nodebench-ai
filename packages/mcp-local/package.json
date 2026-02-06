@@ -1,7 +1,7 @@
 {
   "name": "nodebench-mcp",
-  "version": "1.6.0",
-  "description": "NodeBench MCP server — 72 tools for AI-powered development. Parallel agent teams (task locking, role specialization, oracle testing, context budget) with auto-bootstrap for any repo. Self-reinforced learning, trajectory analysis, web search, GitHub discovery, vision analysis, verification flywheel, autonomous self-maintenance.",
+  "version": "2.5.0",
+  "description": "Make AI agents catch the bugs they normally ship. 90 MCP tools: structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, platform bridge, model benchmarking, visual regression, and report generation. v2.5: +scan_terminal_security — auto-discover and scan dotfiles, CI configs, env files for homograph attacks, ANSI injections, and suspicious URLs. --preset lite (34), core (62), or full (90). Benchmarked: 13 issues caught, 26 blind spots prevented.",
   "type": "module",
   "bin": {
     "nodebench-mcp": "./dist/index.js"
@@ -30,8 +30,10 @@
     "dataset:swebench:refresh": "tsx src/__tests__/fixtures/generateSwebenchVerifiedFixture.ts",
     "dataset:gaia:refresh": "python src/__tests__/fixtures/generateGaiaLevel3Fixture.py",
     "dataset:gaia:capability:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityFixture.py",
+    "dataset:gaia:capability:files:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityFilesFixture.py",
     "verify": "node test-setup.mjs",
     "test:gaia:capability": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityEval.test.ts --reporter=verbose",
+    "test:gaia:capability:files": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityFilesEval.test.ts --reporter=verbose",
     "prepublishOnly": "npm run build && npm run test"
   },
   "keywords": [
@@ -43,7 +45,13 @@
     "github",
     "vision",
     "verification",
-    "sqlite"
+    "sqlite",
+    "quality-gates",
+    "parallel-agents",
+    "toolset-gating",
+    "eval",
+    "qa-automation",
+    "agentic"
   ],
   "repository": {
     "type": "git",
@@ -58,15 +66,19 @@
   "author": "NodeBench",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^11.0.0",
+    "nodebench-ai": "file:../.."
   },
   "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google/genai": "^1.10.0",
+    "cheerio": "^1.0.0",
+    "openai": "^5.8.2",
+    "papaparse": "^5.5.3",
+    "pdf-parse": "^2.4.5",
     "playwright": "^1.57.0",
     "sharp": "^0.34.5",
-    "@google/genai": "^1.10.0",
-    "openai": "^5.8.2",
-    "@anthropic-ai/sdk": "^0.71.2",
-    "cheerio": "^1.0.0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",

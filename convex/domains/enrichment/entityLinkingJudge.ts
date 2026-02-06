@@ -103,7 +103,7 @@ RESPOND WITH JSON ONLY:
 
   try {
     const result = await generateText({
-      model: openai.chat("gpt-4o-mini"),
+      model: openai.chat("gpt-5-nano"),
       prompt,
       temperature: 0.1,
     });

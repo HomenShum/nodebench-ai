@@ -394,7 +394,7 @@ export const runSingleValidation = action({
       const testText = `${testCase.expectedPerson}, ${testCase.expectedRole} of ${testCase.expectedCompanies[0]}, spoke at the company's annual conference.`;
 
       const result = await generateText({
-        model: openai.chat("gpt-4o-mini"),
+        model: openai.chat("gpt-5-nano"),
         prompt: `Extract entities from: "${testText}". Return JSON: {"people": [], "companies": [], "roles": []}`,
         temperature: 0.1,
       });
@@ -530,7 +530,7 @@ export const runAllValidations = action({
         const testText = `${testCase.expectedPerson} is the ${testCase.expectedRole} of ${testCase.expectedCompanies[0]}.`;
 
         const result = await generateText({
-          model: openai.chat("gpt-4o-mini"),
+          model: openai.chat("gpt-5-nano"),
           prompt: `Extract companies from: "${testText}". Return JSON: {"companies": []}`,
           temperature: 0.1,
         });

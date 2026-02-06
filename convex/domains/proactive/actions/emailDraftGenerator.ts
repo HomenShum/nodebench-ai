@@ -194,14 +194,14 @@ Generate a complete email draft that can be sent as-is or lightly edited.`;
   try {
     // Use generateObject with structured output
     // FREE-FIRST STRATEGY: Default to FREE models with official OpenRouter provider
-    // Default: devstral-2-free ($0.00/draft, ~1.6s) - FREE and fast!
+    // Default: qwen3-coder-free ($0.00/draft, ~1.6s) - FREE and fast!
     // Budget alternatives: gemini-3-flash ($0.002/draft), claude-sonnet-4.5 ($0.011/draft)
     const { generateObject } = await import("ai");
     const { openrouter } = await import("@openrouter/ai-sdk-provider");
     const { z } = await import("zod");
 
     // Default to FREE model with official OpenRouter provider
-    const modelName = modelOverride || "mistralai/devstral-2512:free";
+    const modelName = modelOverride || "qwen/qwen3-coder:free";
     const model = openrouter(modelName);
 
     console.log(
