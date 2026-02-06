@@ -397,6 +397,69 @@ Automated org page posts currently read like machine-generated reports. 67 posts
 - Quorum merge: `npm run vault:merge` (writes `vault/master/merge_report.json`)
 - Rules: `vault/SOP.md` (kebab-case, required frontmatter keys, no broken wikilinks)
 
+### MCP local eval harness plane (open-source long-running tasks)
+- Dataset: `gorilla-llm/Berkeley-Function-Calling-Leaderboard`, split `BFCL_v3_multi_turn_long_context`
+- Source URL: `https://huggingface.co/datasets/gorilla-llm/Berkeley-Function-Calling-Leaderboard`
+- Local fixture generator:
+```powershell
+npm run mcp:dataset:refresh
+```
+- Parallel subagent benchmark (task-worker pool):
+```powershell
+$env:NODEBENCH_OPEN_DATASET_TASK_LIMIT=12
+$env:NODEBENCH_OPEN_DATASET_CONCURRENCY=6
+npm run mcp:dataset:test
+```
+- One-shot refresh + benchmark:
+```powershell
+npm run mcp:dataset:bench
+```
+- Second lane dataset: `OpenBMB/ToolBench`, split `data_example/instruction (G1,G2,G3)`
+- Source URL: `https://github.com/OpenBMB/ToolBench`
+- ToolBench fixture generator:
+```powershell
+npm run mcp:dataset:toolbench:refresh
+```
+- ToolBench parallel subagent benchmark:
+```powershell
+$env:NODEBENCH_TOOLBENCH_TASK_LIMIT=6
+$env:NODEBENCH_TOOLBENCH_CONCURRENCY=3
+npm run mcp:dataset:toolbench:test
+```
+- Third lane dataset: `princeton-nlp/SWE-bench_Verified`, split `test`
+- Source URL: `https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified`
+- SWE-bench fixture generator:
+```powershell
+npm run mcp:dataset:swebench:refresh
+```
+- SWE-bench parallel subagent benchmark:
+```powershell
+$env:NODEBENCH_SWEBENCH_TASK_LIMIT=8
+$env:NODEBENCH_SWEBENCH_CONCURRENCY=4
+npm run mcp:dataset:swebench:test
+```
+- Run all lanes (BFCL + ToolBench + SWE-bench):
+```powershell
+npm run mcp:dataset:bench:all
+```
+- Benchmark implementation files:
+  - `packages/mcp-local/src/__tests__/fixtures/generateBfclLongContextFixture.ts`
+  - `packages/mcp-local/src/__tests__/fixtures/bfcl_v3_long_context.sample.json`
+  - `packages/mcp-local/src/__tests__/openDatasetParallelEval.test.ts`
+  - `packages/mcp-local/src/__tests__/fixtures/generateToolbenchInstructionFixture.ts`
+  - `packages/mcp-local/src/__tests__/fixtures/toolbench_instruction.sample.json`
+  - `packages/mcp-local/src/__tests__/openDatasetParallelEvalToolbench.test.ts`
+  - `packages/mcp-local/src/__tests__/fixtures/generateSwebenchVerifiedFixture.ts`
+  - `packages/mcp-local/src/__tests__/fixtures/swebench_verified.sample.json`
+  - `packages/mcp-local/src/__tests__/openDatasetParallelEvalSwebench.test.ts`
+- Assertions enforced by the benchmark:
+  - Every dataset task must complete recon, tool discovery, eval bookkeeping, closed-loop checks, and mandatory flywheel checks
+  - Required tools must be called: `run_recon`, `log_recon_finding`, `findTools`, `getMethodology`, `start_eval_run`, `record_eval_result`, `complete_eval_run`, `run_closed_loop`, `run_mandatory_flywheel`, `search_all_knowledge`
+- Cross references:
+  - `### Mandatory: AI Flywheel testing after any update or change`
+  - `## 6-Phase Iterative Deep-Dive Verification Process`
+  - `## How the Two Loops Compose: The AI Flywheel (Verification × Eval)`
+
 ## Self maintenance (nightly, autonomous)
 
 Purpose: run invariant audits, persist a boolean-gated report, attach an optional LLM explanation.
@@ -1015,6 +1078,83 @@ every edge case we found.
 still shipping and praying or have you closed the loop?
 ```
 
+### Personal profile content strategy
+
+Auto-generated founder-voice posts on the personal profile, 3/week. Org page crons stay untouched.
+
+**Weekly cadence**:
+
+| Day | Category | Target Audience | Signal Source |
+|-----|----------|-----------------|---------------|
+| Monday | `funding_take` | VCs, founders | Top funding round from digest `fundingRounds[]` |
+| Wednesday | `build_log` | Builders, CTOs | Trending repo or tech entity from digest signals |
+| Friday | `industry_signal` | General | Lead story + fact-check findings + predictions |
+
+**How it works**:
+- Sunday 10PM UTC: `weeklyFounderBatch` cron generates all 3 posts using daily intelligence already collected by existing digest/feed systems
+- Posts enqueue to `linkedinContentQueue` with `target: "personal"`, `persona: "FOUNDER"`, `priority: 85`
+- Existing judge cron (every 30min) scores them — same engagement gate + LLM judge criteria
+- Personal schedule cron (every 2h) assigns to evening slots: Mon/Wed/Fri 6PM UTC
+- Existing `processQueuedPost` cron (hourly) posts when due — handles both org and personal targets
+
+**Schedule slots (personal)**:
+- `personal_monday` — Mon 6PM UTC
+- `personal_wednesday` — Wed 6PM UTC
+- `personal_friday` — Fri 6PM UTC
+
+**Manual triggers**:
+```powershell
+# Dry-run (see output without enqueuing)
+npx convex run --prod workflows/founderPostGenerator:generateFounderPost '{"postCategory":"funding_take","dryRun":true,"hoursBack":72}'
+
+# Live enqueue
+npx convex run --prod workflows/founderPostGenerator:generateFounderPost '{"postCategory":"build_log","dryRun":false,"hoursBack":48}'
+
+# Schedule personal posts
+npx convex run --prod domains/social/linkedinScheduleGrid:scheduleNextApprovedPost '{"target":"personal"}'
+
+# Check personal queue items
+npx convex run --prod domains/social/linkedinContentQueue:listQueueItems '{"status":"approved","limit":5}'
+```
+
+**Key file**: `convex/workflows/founderPostGenerator.ts` — `generateFounderPost` + `weeklyFounderBatch`
+
+### Pre-post verification pipeline
+
+Every post goes through 4 verification checks before hitting LinkedIn. Runs inside `processQueuedPost` before the actual API call.
+
+**File**: `convex/domains/social/linkedinPrePostVerification.ts` — `verifyBeforePosting` internalAction
+
+**4 checks (run in order, cheapest first):**
+
+| # | Check | What it catches | How it works | Cost |
+|---|-------|----------------|-------------|------|
+| 1 | **Staleness** | Posts generated 72+ hours ago | Time comparison against `createdAt`. >72h = auto-regenerate, 48-72h = stricter freshness | $0.00 |
+| 2 | **Variety** | Same topic posted within 3 days | Queries `linkedinPostArchive` (last 7 days) + scheduled queue items. LLM entity extraction for lowercase posts. Fails if 2+ entity overlaps in last 3 days | $0.00 |
+| 3 | **Freshness** | Outdated facts (name changes, deal cancellations) | `fusionSearch` (Brave/Serper/Tavily free tier) for each entity + LLM contradiction detection via devstral-2-free | $0.00 |
+| 4 | **Claim verification** | Factually incorrect claims | LLM extracts 1-3 verifiable claims, searches each via `fusionSearch`, LLM judge checks supported/contradicted/not_found | $0.00 |
+
+**Total cost: $0.00/month** — uses fusionSearch FREE-FIRST strategy (~126 searches/month out of 5,500 free) + devstral-2-free LLM.
+
+**Failure handling:**
+- Staleness hard fail or variety/freshness fail → status set to `needs_rewrite` → `regenerateFailedPersonalPosts` picks it up
+- Claim contradiction → status set to `failed` → held for manual review
+- Search/LLM errors → soft warning, non-blocking (post proceeds)
+
+**Auto-regeneration**: `convex/workflows/founderPostGenerator.ts` — `regenerateFailedPersonalPosts` queries `needs_rewrite` items with persona FOUNDER, generates fresh replacements, marks old ones as rejected.
+
+**Manual commands:**
+```bash
+# Test verification on a specific queue item
+npx convex run --prod domains/social/linkedinPrePostVerification:verifyBeforePosting '{"queueId":"...","content":"...","postType":"...","persona":"...","target":"personal","createdAt":1234567890}'
+
+# Trigger regeneration for failed personal posts
+npx convex run --prod workflows/founderPostGenerator:regenerateFailedPersonalPosts '{}'
+
+# Check items needing rewrite
+npx convex run --prod domains/social/linkedinContentQueue:listQueueItems '{"status":"needs_rewrite","limit":10}'
+```
+
 ## What to watch for next
 
 Common follow-on issues:
@@ -1241,6 +1381,288 @@ The **6-Phase Verification** and **Eval-Driven Development Loop** are not separa
 - **Measuring system quality over time** → Run the Eval outer loop. You're asking: *"Is the system getting better?"*
 - **Both, always** → Every 6-Phase run produces artifacts (test cases, edge cases, checklists) that expand the eval suite. Every eval regression triggers a 6-Phase investigation. They are not optional alternatives — they compound.
 
+### Mandatory: AI Flywheel testing after any update or change
+
+For a concise, repo-root reference, see `AI_FLYWHEEL.md`.
+
+After any non-trivial code change, feature addition, or bug fix, the AI Flywheel verification process **must** be run before considering the work done. This is not optional.
+
+**Minimum required steps:**
+1. **Static analysis** — `tsc --noEmit` and `convex dev --once --typecheck=enable` must pass with zero errors
+2. **Happy-path test** — Run the changed functionality with valid inputs and confirm expected output
+3. **Failure-path test** — Test each failure mode the code is supposed to handle (invalid inputs, edge cases, error states)
+4. **Gap analysis** — Review the code for dead code, unused variables, missing integrations, or logic that doesn't match the stated intent
+5. **Fix and re-verify** — If any gap is found, fix it and re-run steps 1-3 from scratch
+6. **Deploy and document** — Deploy the verified fix, document any gaps found and how they were resolved
+
+**Additional required when changing tool-facing behavior (capability regression guard):**
+- Run GAIA capability eval (accuracy: LLM-only vs LLM+tools): `npm run mcp:dataset:gaia:capability:test`
+- Pass condition: tool-augmented accuracy must be >= baseline accuracy on the sampled tasks (see `packages/mcp-local/src/__tests__/gaiaCapabilityEval.test.ts`)
+
+**When to skip:** Only for trivial changes (typo fixes, comment updates, config tweaks) where the blast radius is near zero.
+
+**Why this matters:** The first deployment of the pre-post verification pipeline had a bug where the variety check fetched scheduled queue items but never actually compared entities against them (dead code). This was only caught because the flywheel process was run after the initial "it works" smoke tests. Without it, the bug would have gone to production silently.
+
+### Mandatory: Post-Implementation Audit Checklist
+
+After every implementation — before moving to the next task — answer these 3 questions:
+
+1. **Has the MCP been performing optimally? Any gaps in the MCP?**
+   - Review MCP tool chain usage: Were all relevant tools called? Did any return unexpected results?
+   - Check for orphaned verification cycles (started but never completed/abandoned)
+   - Verify search_all_knowledge returns relevant results for the domain you just worked on
+   - Confirm learnings from this implementation were recorded via record_learning
+
+2. **Are there any gaps in the actual implementation?**
+   - Dead imports, unused variables, unreachable code
+   - Missing integrations (new mutations not wired to crons, new tables missing cross-references to existing governance tables like authorTrust)
+   - Schema additions without corresponding CRUD operations
+   - Hardcoded values that should be configurable (acceptable for v1, but log the gap)
+
+3. **Did everything go through the AGENTS.md AI Flywheel process?**
+   - All 6 mandatory flywheel steps completed (static analysis, happy-path, failure-path, gap analysis, fix & re-verify, deploy & document)
+   - All 5 test layers exercised (static, unit, integration, live_e2e, manual)
+   - Quality gates passed (code_review ≥ 0.8, deploy_readiness ≥ 0.8)
+   - Findings promoted to eval loop via promote_to_eval where applicable
+   - Gaps logged, resolved, and learnings recorded in MCP knowledge base
+
+**This checklist is not optional.** Every implementation must end with these 3 questions answered and documented. If any answer reveals a gap, fix it before proceeding.
+
+---
+
+## Dataset-Driven Eval Bench (SWE-bench Verified)
+
+Real-world evaluation of MCP tool orchestration using open-source software engineering tasks from the SWE-bench Verified dataset (500 human-validated GitHub issues from princeton-nlp).
+
+**→ Quick Refs:** Run dataset bench: `cd packages/mcp-local && npx vitest run src/__tests__/evalDatasetBench.test.ts` | Run tool coverage: `npx vitest run src/__tests__/evalHarness.test.ts` | Dataset: [SWE-bench Verified](https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified) | See [AI Flywheel](#how-the-two-loops-compose-the-ai-flywheel-verification--eval) | See [Eval-Driven Development Loop](#eval-driven-development-loop) | See [6-Phase Verification](#6-phase-iterative-deep-dive-verification-process)
+
+### What it tests
+
+20 real GitHub issues from 8 repositories (django, scikit-learn, sympy, astropy, sphinx, xarray, pylint, matplotlib) across 5 task categories:
+
+| Category | Count | Example |
+|----------|-------|---------|
+| bug_fix | 11 | django HttpResponse memoryview, sympy evalf crash |
+| feature | 5 | Django get_inlines() hook, Sphinx PEP 604 union types |
+| api_change | 2 | xarray dim vs coord naming inconsistency |
+| refactor | 1 | matplotlib cla()/clf() stale references |
+| documentation | 1 | scikit-learn add joblib to show_versions |
+
+Complexity distribution: 6 low, 9 medium, 5 high.
+
+### How it tests — Full Agent Pipeline
+
+Each SWE-bench task runs through the **complete 8-phase MCP tool pipeline**:
+
+```
+Meta → Recon → Risk → Verification → Eval → Quality Gate → Knowledge → Flywheel
+```
+
+| Phase | Tools Used | What it proves |
+|-------|-----------|---------------|
+| 1. Meta | `findTools`, `getMethodology` | Agent discovers the right tools for the task category |
+| 2. Recon | `run_recon`, `log_recon_finding`, `get_recon_summary` | Research pipeline captures root cause analysis |
+| 3. Risk | `assess_risk` | Risk tiering works for different action types |
+| 4. Verification | `start_verification_cycle`, `log_phase_findings`, `log_gap`, `resolve_gap`, `log_test_result`, `get_verification_status` | Full 6-phase verification cycle tracks implementation |
+| 5. Eval | `start_eval_run`, `record_eval_result`, `complete_eval_run` | Eval runs score implementation quality |
+| 6. Quality Gate | `run_quality_gate`, `run_closed_loop` | Deploy readiness gate enforces pass/fail |
+| 7. Knowledge | `record_learning`, `search_all_knowledge` | Learnings persist and are searchable |
+| 8. Flywheel | `run_mandatory_flywheel` | All 6 flywheel steps enforced |
+
+### Cross-task integration tests
+
+Beyond per-task pipelines, 3 cross-task tests prove the flywheel loops connect:
+
+| Test | Tools | What it proves |
+|------|-------|---------------|
+| Eval Comparison | `compare_eval_runs` | Baseline vs candidate → DEPLOY/REVERT/INVESTIGATE |
+| Promote to Eval | `promote_to_eval` | Verification findings → eval test cases |
+| Trigger Investigation | `trigger_investigation` | Eval regression → new verification cycle |
+
+### Running the bench
+
+```bash
+# Full dataset bench (20 tasks, 473 tool calls)
+cd packages/mcp-local && npx vitest run src/__tests__/evalDatasetBench.test.ts --reporter=verbose
+
+# Tool-level coverage (47 tools, 76 calls)
+cd packages/mcp-local && npx vitest run src/__tests__/evalHarness.test.ts --reporter=verbose
+
+# Both together
+cd packages/mcp-local && npx vitest run src/__tests__/evalDatasetBench.test.ts src/__tests__/evalHarness.test.ts --reporter=verbose
+```
+
+### Latest results
+
+```
+SWE-BENCH DATASET BENCH — PROOF OF WORK REPORT
+
+Total Tool Calls:             473
+Unique Tools Exercised:        23
+Success Rate:              473/473 (100%)
+Tasks Completed:               23 (20 SWE-bench + 3 cross-task)
+Pipeline Phases:                8
+
+PER-TASK RESULTS: 20/20 PASS (all categories, all complexities)
+
+TOOL COVERAGE (evalHarness.test.ts):
+47 total tools | 44 tested (94%) | 12 external (API keys) | 0 gaps
+```
+
+### How the eval bench connects to the AI Flywheel
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    AI FLYWHEEL + DATASET BENCH                      │
+│                                                                     │
+│  SWE-bench Tasks ──────────────────────────────────────────────┐   │
+│  (20 real issues)                                               │   │
+│       │                                                         │   │
+│       ▼                                                         │   │
+│  ┌─────────────────────────────────────────────────────────┐   │   │
+│  │ INNER LOOP (per task)                                    │   │   │
+│  │                                                          │   │   │
+│  │  Meta → Recon → Risk → Verification → Eval → Gate       │   │   │
+│  │    │                       │              │              │   │   │
+│  │    │                       │              ▼              │   │   │
+│  │    │                       │         Knowledge           │   │   │
+│  │    │                       │         (learnings)         │   │   │
+│  │    │                       ▼              │              │   │   │
+│  │    │                  Mandatory            │              │   │   │
+│  │    │                  Flywheel ◄───────────┘              │   │   │
+│  │    │                       │                             │   │   │
+│  └────┼───────────────────────┼─────────────────────────────┘   │   │
+│       │                       │                                  │   │
+│       ▼                       ▼                                  │   │
+│  ┌─────────────────────────────────────────────────────────┐   │   │
+│  │ OUTER LOOP (cross-task)                                  │   │   │
+│  │                                                          │   │   │
+│  │  compare_eval_runs ──→ Regression? ──→ trigger_          │   │   │
+│  │                              │          investigation    │   │   │
+│  │                              │               │           │   │   │
+│  │  promote_to_eval ◄───────────┘               │           │   │   │
+│  │  (verification → eval cases)                 │           │   │   │
+│  │                                              │           │   │   │
+│  │  New verification cycle ◄────────────────────┘           │   │   │
+│  └──────────────────────────────────────────────────────────┘   │   │
+│                                                                     │
+│  VERDICT: Pipeline orchestrates end-to-end for ALL task types      │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### Adding new dataset tasks
+
+To add more tasks from SWE-bench or other datasets:
+
+1. Add entries to the `SWE_BENCH_TASKS` array in `evalDatasetBench.test.ts`
+2. Each task needs: `instance_id`, `repo`, `problem_statement`, `category`, `complexity`
+3. The `runFullPipeline()` function handles everything — no per-task code needed
+4. Run the bench and check the report for 100% pass rate
+
+Compatible datasets for future expansion:
+- **SWE-bench Verified** (full 500 tasks) — same format, just add more entries
+- **GAIA** (gated multi-step tool-augmented tasks) — supported via `.cache/gaia` fixtures + `openDatasetParallelEvalGaia.test.ts` (do not commit GAIA content)
+- **MCP-AgentBench** (600 queries across 33 MCP servers) — direct MCP tool evaluation
+- **HumanEval/MBPP** (164/974 code tasks) — eval-driven development pipeline testing
+
+GAIA lane quick commands (gated):
+- Refresh fixture: `npm run mcp:dataset:gaia:refresh` (requires `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN`)
+- Run: `NODEBENCH_GAIA_TASK_LIMIT=8 NODEBENCH_GAIA_CONCURRENCY=4 npm run mcp:dataset:gaia:test`
+- Capability (accuracy) fixture: `npm run mcp:dataset:gaia:capability:refresh` (writes ground truth into `.cache/gaia`, do not commit)
+- Capability (accuracy) run: `NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test`
+- Full suite (public + GAIA): `npm run mcp:dataset:bench:full`
+
+### Test file cross-references
+
+| File | Purpose | Tools Tested | Calls |
+|------|---------|-------------|-------|
+| `evalDatasetBench.test.ts` | Real-world task orchestration | 23 unique | 473 |
+| `evalHarness.test.ts` | Tool-level coverage (every tool) | 48 unique | 83 |
+| `openDatasetParallelEval.test.ts` | BFCL long-context parallel | 10 unique | 80 |
+| `openDatasetParallelEvalGaia.test.ts` | GAIA gated parallel | 10 unique | 80 |
+| `gaiaCapabilityEval.test.ts` | GAIA capability (LLM-only vs tools) | external | varies |
+| `tools.test.ts` | Static + unit + integration | 60 total | varies |
+
+---
+
+## Self-Reinforced Learning Loop (v1.4.0)
+
+The MCP now includes trajectory analysis and self-evaluation tools that enable agents to observe their own tool usage patterns, identify gaps, and improve over time. This creates a closed-loop: **Use → Log → Analyze → Recommend → Apply → Re-analyze**.
+
+**→ Quick Refs:** `selfEvalTools.ts` (4 tools), `tool_call_log` table in `db.ts`, methodology topic `self_reinforced_learning`
+
+### New Tools (4)
+
+| Tool | Purpose |
+|------|---------|
+| `log_tool_call` | Record a tool invocation with timing, status, phase context |
+| `get_trajectory_analysis` | Analyze tool usage patterns, frequencies, error rates, sequential bigrams |
+| `get_self_eval_report` | Cross-reference all data: cycles, evals, gates, gaps, learnings, trajectories → health score |
+| `get_improvement_recommendations` | Surface actionable improvements: unused tools, error patterns, process gaps, quality decline |
+
+### The Self-Reinforced Learning Cycle
+
+```
+┌─────────────────────────────────────────────────────┐
+│               SELF-REINFORCED LEARNING              │
+│                                                     │
+│   Step 1: INSTRUMENT                                │
+│   └→ log_tool_call after each tool invocation       │
+│                                                     │
+│   Step 2: ANALYZE TRAJECTORIES                      │
+│   └→ get_trajectory_analysis (patterns, errors)     │
+│                                                     │
+│   Step 3: SELF-EVALUATE                             │
+│   └→ get_self_eval_report (health score A-F)        │
+│                                                     │
+│   Step 4: GET RECOMMENDATIONS                       │
+│   └→ get_improvement_recommendations                │
+│       (unused tools, process gaps, quality decline)  │
+│                                                     │
+│   Step 5: APPLY & RE-ANALYZE                        │
+│   └→ Fix issues → record_learning → re-run report   │
+│       Compare health scores before/after             │
+│                                                     │
+│   ↺ Loop continuously — system gets smarter          │
+└─────────────────────────────────────────────────────┘
+```
+
+### Health Score Components
+
+The `get_self_eval_report` health score is a weighted composite:
+- **Cycle completion rate** (25%) — Verification cycles completed vs total
+- **Eval pass rate** (25%) — Average pass rate across completed eval runs
+- **Gap resolution rate** (20%) — Resolved gaps vs total open gaps
+- **Quality gate pass rate** (15%) — Quality gates passed vs total
+- **Tool error rate** (15%) — Inverse of tool call error rate
+
+Grades: A (≥90%), B (≥75%), C (≥60%), D (≥40%), F (<40%)
+
+### Recommendation Categories
+
+| Category | Detects |
+|----------|---------|
+| `tools` | Unused tools, error-prone tools (>20% error rate), slow tools (>5s avg) |
+| `process` | Abandoned cycles (>30%), stuck cycles (3+ days), missing flywheel runs |
+| `quality` | Declining eval pass rates, unresolved CRITICAL/HIGH gaps |
+| `knowledge` | Low learning-to-cycle ratio (<1:1), orphan recon sessions (7+ days) |
+
+### How It Connects to the AI Flywheel
+
+The self-reinforced learning loop wraps around the existing AI Flywheel:
+
+```
+Outer: Self-Reinforced Learning
+  └→ Middle: Eval-Driven Development (outer loop)
+       └→ Inner: 6-Phase Verification (inner loop)
+            └→ Tools in action
+                 └→ log_tool_call (instrumentation)
+       └→ get_trajectory_analysis (pattern detection)
+  └→ get_improvement_recommendations (improvement surface)
+```
+
+Trajectory data flows into eval case design. Recommendations trigger new verification cycles. Learnings persist across sessions and inform future tool selection.
+
 ---
 
 ## Agent Protocol (Peter Style)
@@ -1315,3 +1737,87 @@ You speak 3x faster than you type. Prompts automatically get more detailed. (fn 
 
 ### 10. Learn with Claude
 Enable "Explanatory" output style, generate HTML presentations or ASCII diagrams. Claude explains the why behind changes.
+
+---
+
+## Parallel Agent Teams (NodeBench MCP v1.6.0)
+
+Learnings from Anthropic's ["Building a C Compiler with Parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler) (Feb 5, 2026).
+
+### What Anthropic did
+
+16 parallel Claude Opus 4.6 instances built a 100,000-line Rust-based C compiler from scratch. Nearly 2,000 Claude Code sessions, $20,000 in API costs. The compiler can build Linux 6.9 on x86, ARM, and RISC-V.
+
+### Key patterns integrated into NodeBench MCP
+
+| Pattern | Anthropic Implementation | NodeBench MCP Tool |
+|---------|--------------------------|-------------------|
+| Task locking | File-based locks in `current_tasks/` dir | `claim_agent_task` / `release_agent_task` |
+| Role specialization | Separate agents for dedup, perf, docs, quality | `assign_agent_role` (7 predefined roles) |
+| Context pollution prevention | Minimal output, log to files, pre-compute stats | `log_context_budget` |
+| Oracle testing | GCC as known-good compiler oracle | `run_oracle_comparison` |
+| Agent orientation | READMEs and progress files for fresh sessions | `get_parallel_status` |
+| Time blindness | `--fast` 1-10% random sampling of tests | Built into `log_context_budget` best practices |
+
+### Workflow for this repo
+
+When running parallel agents on this codebase:
+
+1. Each agent calls `get_parallel_status` first to orient
+2. Each agent calls `assign_agent_role` with a different role
+3. Before working: `claim_agent_task({ taskKey: "descriptive_name" })`
+4. Track context: `log_context_budget({ eventType: "test_output", tokensUsed: N })`
+5. Validate: `run_oracle_comparison({ testLabel: "...", actualOutput: "...", expectedOutput: "...", oracleSource: "prod" })`
+6. After work: `release_agent_task({ taskKey: "...", status: "completed", progressNote: "..." })`
+
+### Anti-patterns to avoid (from blog)
+
+- Two agents working on the same bug (always claim first)
+- Dumping thousands of lines of test output into context (log to file, print summary)
+- Spending hours stuck on one problem (mark as blocked, move on)
+- Overwriting each other's changes (commit frequently, pull before push)
+- Not maintaining progress files (fresh agents waste time re-orienting)
+
+### Delta debugging pattern
+
+When tests pass individually but fail when combined:
+1. Split the test set in half
+2. Test each half
+3. Narrow down to the minimal failing combination
+4. Assign each failing pair to a different parallel agent
+
+### MCP Prompts available
+
+- `parallel-agent-team` -- Full team setup with role assignment and task breakdown
+- `oracle-test-harness` -- Oracle-based testing setup for any component
+
+### Bootstrap for External Repos
+
+When nodebench-mcp is connected to another project that lacks parallel agent capabilities, it can auto-detect and scaffold everything:
+
+```
+bootstrap_parallel_agents({ projectRoot: "/path/to/their/repo", dryRun: true })
+```
+
+Scans 7 categories using real filesystem access:
+1. Task coordination (lock dirs, claim files)
+2. Role specialization (role configs, AGENTS.md mentions)
+3. Oracle testing (golden files, snapshots)
+4. Context budget tracking
+5. Progress files (PROGRESS.md, STATUS.md, claude-progress.txt)
+6. AGENTS.md parallel section
+7. Git worktrees
+
+If gaps found, run with `dryRun: false` to scaffold `.parallel-agents/` directory with lock dirs, progress.md, roles.json, oracle dirs, and a portable AGENTS.md section.
+
+Use `generate_parallel_agents_md` to produce a standalone, framework-agnostic parallel coordination protocol that works with any AI agent (Claude, GPT, etc.) and any tech stack (TypeScript, Python, Rust).
+
+The AI Flywheel closed loop: **detect -> scaffold -> verify (6-step flywheel) -> fix -> document**
+
+### Impact
+
+- 10 new tools in `parallel_agents` category (8 core + 2 bootstrap)
+- 1 new methodology: `getMethodology("parallel_agent_teams")` with `bootstrapForExternalRepos` workflow
+- 3 new MCP prompts: `parallel-agent-team`, `oracle-test-harness`, `bootstrap-parallel-agents`
+- 4 new DB tables: `agent_tasks`, `agent_roles`, `context_budget_log`, `oracle_comparisons`
+- Version 1.6.0 (72 tools total)

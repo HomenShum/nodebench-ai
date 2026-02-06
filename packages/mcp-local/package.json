@@ -1,0 +1,81 @@
+{
+  "name": "nodebench-mcp",
+  "version": "1.6.0",
+  "description": "NodeBench MCP server — 72 tools for AI-powered development. Parallel agent teams (task locking, role specialization, oracle testing, context budget) with auto-bootstrap for any repo. Self-reinforced learning, trajectory analysis, web search, GitHub discovery, vision analysis, verification flywheel, autonomous self-maintenance.",
+  "type": "module",
+  "bin": {
+    "nodebench-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "NODEBENCH_AGENTS.md",
+    "STYLE_GUIDE.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:open-dataset": "vitest run src/__tests__/openDatasetParallelEval.test.ts",
+    "test:open-dataset:toolbench": "vitest run src/__tests__/openDatasetParallelEvalToolbench.test.ts",
+    "test:open-dataset:swebench": "vitest run src/__tests__/openDatasetParallelEvalSwebench.test.ts",
+    "test:open-dataset:gaia": "vitest run src/__tests__/openDatasetParallelEvalGaia.test.ts",
+    "test:open-dataset:all": "vitest run src/__tests__/openDatasetParallelEval.test.ts src/__tests__/openDatasetParallelEvalToolbench.test.ts src/__tests__/openDatasetParallelEvalSwebench.test.ts",
+    "test:open-dataset:full": "vitest run src/__tests__/openDatasetParallelEval.test.ts src/__tests__/openDatasetParallelEvalToolbench.test.ts src/__tests__/openDatasetParallelEvalSwebench.test.ts src/__tests__/openDatasetParallelEvalGaia.test.ts",
+    "bench:perf:compare": "cross-env NODEBENCH_RUN_PERF_COMPARE=1 vitest run src/__tests__/openDatasetPerfComparison.test.ts --reporter=verbose",
+    "test:watch": "vitest",
+    "dataset:bfcl:refresh": "tsx src/__tests__/fixtures/generateBfclLongContextFixture.ts",
+    "dataset:toolbench:refresh": "tsx src/__tests__/fixtures/generateToolbenchInstructionFixture.ts",
+    "dataset:swebench:refresh": "tsx src/__tests__/fixtures/generateSwebenchVerifiedFixture.ts",
+    "dataset:gaia:refresh": "python src/__tests__/fixtures/generateGaiaLevel3Fixture.py",
+    "dataset:gaia:capability:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityFixture.py",
+    "verify": "node test-setup.mjs",
+    "test:gaia:capability": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityEval.test.ts --reporter=verbose",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "ai-agents",
+    "web-search",
+    "github",
+    "vision",
+    "verification",
+    "sqlite"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nodebench/nodebench-ai.git",
+    "directory": "packages/mcp-local"
+  },
+  "homepage": "https://github.com/nodebench/nodebench-ai/tree/main/packages/mcp-local#readme",
+  "bugs": {
+    "url": "https://github.com/nodebench/nodebench-ai/issues"
+  },
+  "license": "MIT",
+  "author": "NodeBench",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^11.0.0"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.57.0",
+    "sharp": "^0.34.5",
+    "@google/genai": "^1.10.0",
+    "openai": "^5.8.2",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
