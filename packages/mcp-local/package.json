@@ -1,6 +1,6 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.8.2",
+  "version": "2.8.3",
   "description": "Make AI agents catch the bugs they normally ship. 129 MCP tools: progressive discovery with hybrid search, project boilerplate scaffolding, autonomous capability benchmarks (C-compiler pattern), structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, platform bridge, model benchmarking, visual regression, report generation, academic paper writing, deterministic local file parsing (CSV/XLSX/PDF/DOCX/PPTX/ZIP/JSON/JSONL/TXT), Android flicker detection, and Figma flow analysis. v2.8: +3 progressive disclosure tools (discover_tools, get_tool_quick_ref, get_workflow_chain) +2 boilerplate tools (scaffold_nodebench_project, get_boilerplate_status) +3 benchmark tools (start_autonomy_benchmark, log_benchmark_milestone, complete_autonomy_benchmark) +9 local file tools (ZIP/DOCX/PPTX/JSON primitives). Every tool response auto-appends quickRef (what to do next). --preset lite (39), core (87), or full (129). Benchmarked: 13 issues caught, 26 blind spots prevented.",
   "type": "module",
   "bin": {
@@ -61,15 +61,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/nodebench/nodebench-ai.git",
+    "url": "https://github.com/HomenShum/nodebench-ai.git",
     "directory": "packages/mcp-local"
   },
-  "homepage": "https://github.com/nodebench/nodebench-ai/tree/main/packages/mcp-local#readme",
+  "homepage": "https://github.com/HomenShum/nodebench-ai/tree/main/packages/mcp-local#readme",
   "bugs": {
-    "url": "https://github.com/nodebench/nodebench-ai/issues"
+    "url": "https://github.com/HomenShum/nodebench-ai/issues"
   },
   "license": "MIT",
-  "author": "NodeBench",
+  "author": "HomenShum",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "better-sqlite3": "^11.0.0",

@@ -378,7 +378,7 @@ Always included (regardless of gating):
 ## Build from Source
 
 ```bash
-git clone https://github.com/nodebench/nodebench-ai.git
+git clone https://github.com/HomenShum/nodebench-ai.git
 cd nodebench-ai/packages/mcp-local
 npm install && npm run build
 ```
