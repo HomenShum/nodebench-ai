@@ -3,10 +3,7 @@
 
 set -e
 
-echo "Building frontend..."
-npm run build
-
-echo "Deploying Convex functions..."
-npx convex deploy --typecheck=enable
+echo "Deploying Convex functions and building frontend..."
+npx convex deploy --cmd 'npm run build' --typecheck=enable
 
 echo "Build complete!"
