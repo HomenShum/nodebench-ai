@@ -189,8 +189,9 @@ NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 n
 ```
 
 Modes:
-- Recommended (more stable): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag`
-- More realistic (higher variance): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (optional `NODEBENCH_GAIA_CAPABILITY_FORCE_WEB_SEARCH=1`)
+- Recommended (more stable): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag` (single deterministic extract + answer)
+- More realistic (higher variance): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (small tool loop)
+Web lane only: `NODEBENCH_GAIA_CAPABILITY_FORCE_WEB_SEARCH=1` and/or `NODEBENCH_GAIA_CAPABILITY_FORCE_FETCH_URL=1`
 
 Run all public lanes:
 ```bash
@@ -246,7 +247,7 @@ Use `getMethodology("overview")` to see all available workflows.
 | Category | Tools | When to Use |
 |----------|-------|-------------|
 | **Web** | `web_search`, `fetch_url` | Research, reading docs, market validation |
-| **Local Files** | `read_pdf_text`, `read_xlsx_file`, `read_csv_file` | Deterministic parsing of local attachments (GAIA file-backed lane) |
+| **Local Files** | `read_pdf_text`, `pdf_search_text`, `read_xlsx_file`, `xlsx_select_rows`, `xlsx_aggregate`, `read_csv_file`, `csv_select_rows`, `csv_aggregate`, `read_text_file`, `read_json_file`, `json_select`, `read_jsonl_file`, `zip_list_files`, `zip_read_text_file`, `zip_extract_file`, `read_docx_text`, `read_pptx_text` | Deterministic parsing and aggregation of local attachments (GAIA file-backed lane) |
 | **GitHub** | `search_github`, `analyze_repo` | Finding libraries, studying implementations |
 | **Verification** | `start_cycle`, `log_phase`, `complete_cycle` | Tracking the flywheel process |
 | **Eval** | `start_eval_run`, `log_test_result` | Test case management |

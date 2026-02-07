@@ -43,8 +43,15 @@ import { parallelAgentTools } from "./tools/parallelAgentTools.js";
 import { llmTools } from "./tools/llmTools.js";
 import { securityTools } from "./tools/securityTools.js";
 import { platformTools } from "./tools/platformTools.js";
+import { researchWritingTools } from "./tools/researchWritingTools.js";
+import { flickerDetectionTools } from "./tools/flickerDetectionTools.js";
+import { figmaFlowTools } from "./tools/figmaFlowTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
 import { localFileTools } from "./tools/localFileTools.js";
+import { createProgressiveDiscoveryTools } from "./tools/progressiveDiscoveryTools.js";
+import { boilerplateTools } from "./tools/boilerplateTools.js";
+import { cCompilerBenchmarkTools } from "./tools/cCompilerBenchmarkTools.js";
+import { getQuickRef } from "./tools/toolRegistry.js";
 import type { McpTool } from "./types.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────
@@ -69,18 +76,23 @@ const TOOLSET_MAP: Record<string, McpTool[]> = {
   llm: llmTools,
   security: securityTools,
   platform: platformTools,
+  research_writing: researchWritingTools,
+  flicker_detection: flickerDetectionTools,
+  figma_flow: figmaFlowTools,
+  boilerplate: boilerplateTools,
+  benchmark: cCompilerBenchmarkTools,
 };
 
 const PRESETS: Record<string, string[]> = {
-  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform"],
-  lite: ["verification", "eval", "quality_gate", "learning", "recon", "security"],
+  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark"],
+  lite: ["verification", "eval", "quality_gate", "learning", "recon", "security", "boilerplate"],
   full: Object.keys(TOOLSET_MAP),
 };
 
 function parseToolsets(): McpTool[] {
   if (cliArgs.includes("--help")) {
     const lines = [
-      "nodebench-mcp v2.5.0 — Development Methodology MCP Server",
+      "nodebench-mcp v2.8.0 — Development Methodology MCP Server",
       "",
       "Usage: nodebench-mcp [options]",
       "",
@@ -151,7 +163,13 @@ getDb();
 
 // Assemble tools (filtered by --toolsets / --exclude / --preset if provided)
 const domainTools: McpTool[] = parseToolsets();
-const allTools = [...domainTools, ...createMetaTools(domainTools)];
+const metaTools = createMetaTools(domainTools);
+const allToolsWithoutDiscovery = [...domainTools, ...metaTools];
+// Progressive discovery tools need the full tool list for hybrid search
+const discoveryTools = createProgressiveDiscoveryTools(
+  allToolsWithoutDiscovery.map((t) => ({ name: t.name, description: t.description }))
+);
+const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 
 // Build a lookup map for fast tool dispatch
 const toolMap = new Map<string, McpTool>();
@@ -620,7 +638,7 @@ For the full methodology: call getMethodology("parallel_agent_teams")`,
 ];
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.4.0" },
+  { name: "nodebench-mcp-methodology", version: "2.8.0" },
   { capabilities: { tools: {}, prompts: {} } }
 );
 
@@ -673,8 +691,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (tool.rawContent && Array.isArray(result)) {
       return { content: result, isError: false };
     }
+
+    // Auto-append quickRef from registry (progressive disclosure)
+    let enrichedResult = result;
+    if (result && typeof result === "object" && !Array.isArray(result)) {
+      const quickRef = getQuickRef(name);
+      if (quickRef && !(result as any)._quickRef) {
+        enrichedResult = { ...(result as Record<string, unknown>), _quickRef: quickRef };
+      }
+    }
+
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      content: [{ type: "text" as const, text: JSON.stringify(enrichedResult, null, 2) }],
       isError: false,
     };
   } catch (err: any) {

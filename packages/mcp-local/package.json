@@ -1,7 +1,7 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.5.0",
-  "description": "Make AI agents catch the bugs they normally ship. 90 MCP tools: structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, platform bridge, model benchmarking, visual regression, and report generation. v2.5: +scan_terminal_security — auto-discover and scan dotfiles, CI configs, env files for homograph attacks, ANSI injections, and suspicious URLs. --preset lite (34), core (62), or full (90). Benchmarked: 13 issues caught, 26 blind spots prevented.",
+  "version": "2.8.2",
+  "description": "Make AI agents catch the bugs they normally ship. 129 MCP tools: progressive discovery with hybrid search, project boilerplate scaffolding, autonomous capability benchmarks (C-compiler pattern), structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, platform bridge, model benchmarking, visual regression, report generation, academic paper writing, deterministic local file parsing (CSV/XLSX/PDF/DOCX/PPTX/ZIP/JSON/JSONL/TXT), Android flicker detection, and Figma flow analysis. v2.8: +3 progressive disclosure tools (discover_tools, get_tool_quick_ref, get_workflow_chain) +2 boilerplate tools (scaffold_nodebench_project, get_boilerplate_status) +3 benchmark tools (start_autonomy_benchmark, log_benchmark_milestone, complete_autonomy_benchmark) +9 local file tools (ZIP/DOCX/PPTX/JSON primitives). Every tool response auto-appends quickRef (what to do next). --preset lite (39), core (87), or full (129). Benchmarked: 13 issues caught, 26 blind spots prevented.",
   "type": "module",
   "bin": {
     "nodebench-mcp": "./dist/index.js"
@@ -31,9 +31,13 @@
     "dataset:gaia:refresh": "python src/__tests__/fixtures/generateGaiaLevel3Fixture.py",
     "dataset:gaia:capability:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityFixture.py",
     "dataset:gaia:capability:files:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityFilesFixture.py",
+    "dataset:gaia:capability:media:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityMediaFixture.py",
+    "dataset:gaia:capability:audio:refresh": "python src/__tests__/fixtures/generateGaiaCapabilityAudioFixture.py",
     "verify": "node test-setup.mjs",
     "test:gaia:capability": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityEval.test.ts --reporter=verbose",
     "test:gaia:capability:files": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityFilesEval.test.ts --reporter=verbose",
+    "test:gaia:capability:media": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityMediaEval.test.ts --reporter=verbose",
+    "test:gaia:capability:audio": "cross-env NODEBENCH_RUN_GAIA_CAPABILITY=1 vitest run src/__tests__/gaiaCapabilityAudioEval.test.ts --reporter=verbose",
     "prepublishOnly": "npm run build && npm run test"
   },
   "keywords": [
@@ -51,7 +55,9 @@
     "toolset-gating",
     "eval",
     "qa-automation",
-    "agentic"
+    "agentic",
+    "academic-writing",
+    "research-paper"
   ],
   "repository": {
     "type": "git",
@@ -78,6 +84,8 @@
     "pdf-parse": "^2.4.5",
     "playwright": "^1.57.0",
     "sharp": "^0.34.5",
+    "tesseract.js": "^7.0.0",
+    "yauzl": "^2.10.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

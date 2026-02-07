@@ -7,6 +7,7 @@ import { describe, it, expect } from "vitest";
 import os from "node:os";
 import path from "node:path";
 import { mkdtemp, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { verificationTools } from "../tools/verificationTools.js";
 import { reconTools } from "../tools/reconTools.js";
 import { uiCaptureTools } from "../tools/uiCaptureTools.js";
@@ -26,6 +27,13 @@ import { llmTools } from "../tools/llmTools.js";
 import { securityTools } from "../tools/securityTools.js";
 import { platformTools } from "../tools/platformTools.js";
 import { localFileTools } from "../tools/localFileTools.js";
+import { researchWritingTools } from "../tools/researchWritingTools.js";
+import { flickerDetectionTools } from "../tools/flickerDetectionTools.js";
+import { figmaFlowTools } from "../tools/figmaFlowTools.js";
+import { createProgressiveDiscoveryTools } from "../tools/progressiveDiscoveryTools.js";
+import { boilerplateTools } from "../tools/boilerplateTools.js";
+import { cCompilerBenchmarkTools } from "../tools/cCompilerBenchmarkTools.js";
+import { getQuickRef, hybridSearch, TOOL_REGISTRY, SEARCH_MODES } from "../tools/toolRegistry.js";
 import type { McpTool } from "../types.js";
 
 // Assemble all tools like index.ts does
@@ -48,17 +56,27 @@ const domainTools: McpTool[] = [
   ...llmTools,
   ...securityTools,
   ...platformTools,
+  ...researchWritingTools,
+  ...flickerDetectionTools,
+  ...figmaFlowTools,
+  ...boilerplateTools,
+  ...cCompilerBenchmarkTools,
 ];
-const allTools = [...domainTools, ...createMetaTools(domainTools)];
+const metaTools = createMetaTools(domainTools);
+const allToolsWithoutDiscovery = [...domainTools, ...metaTools];
+const discoveryTools = createProgressiveDiscoveryTools(
+  allToolsWithoutDiscovery.map((t) => ({ name: t.name, description: t.description }))
+);
+const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STATIC LAYER — structure validation
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Static: tool structure", () => {
-  it("should have 89 tools total", () => {
-    // 87 domain tools + 2 meta tools (findTools, getMethodology)
-    expect(allTools.length).toBe(90);
+  it("should have 131 tools total", () => {
+    // 126 domain tools + 2 meta tools (findTools, getMethodology) + 3 progressive discovery tools
+    expect(allTools.length).toBe(131);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {
@@ -299,7 +317,7 @@ describe("Static: new methodology topics", () => {
     expect(topics).toContain("agent_bootstrap");
     expect(topics).toContain("autonomous_maintenance");
     expect(topics).toContain("parallel_agent_teams");
-    expect(topics.length).toBe(18); // All topics listed in overview
+    expect(topics.length).toBe(19); // All topics listed in overview
   });
 });
 
@@ -515,6 +533,25 @@ describe("Static: self_reinforced_learning methodology", () => {
 const findTool = (name: string) => allTools.find((t) => t.name === name)!;
 
 describe("Unit: local file tools", () => {
+  const findRepoFile = (relPath: string): string => {
+    let dir = process.cwd();
+    for (let i = 0; i < 10; i++) {
+      const candidate = path.join(dir, relPath);
+      if (existsSync(candidate)) return candidate;
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    throw new Error(`Fixture not found: ${relPath}`);
+  };
+
+  it("tool registry should include quickRefs for all local_file tools", () => {
+    const missing = localFileTools
+      .map((t) => t.name)
+      .filter((name) => !getQuickRef(name));
+    expect(missing).toEqual([]);
+  });
+
   it("read_csv_file should parse a bounded table", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
     const csvPath = path.join(tmpDir, "sample.csv");
@@ -563,6 +600,254 @@ describe("Unit: local file tools", () => {
     expect(result.rows.length).toBe(2);
     expect(result.rows[0][0]).toBe("Movie A");
     expect(result.rows[0][1]).toBe(2009);
+  });
+
+  it("csv_select_rows should filter rows and select columns", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const csvPath = path.join(tmpDir, "sample.csv");
+    await writeFile(csvPath, "name,age\nAlice,30\nBob,25\nCara,40\n", "utf8");
+
+    const tool = findTool("csv_select_rows");
+    const result = (await tool.handler({
+      path: csvPath,
+      hasHeader: true,
+      where: [{ column: "age", op: "gt", value: 25 }],
+      returnColumns: ["name"],
+      limit: 10,
+    })) as any;
+
+    expect(result.headers).toEqual(["name"]);
+    expect(result.rows.length).toBe(2);
+    expect(result.rows[0].row[0]).toBe("Alice");
+    expect(result.rows[1].row[0]).toBe("Cara");
+  });
+
+  it("csv_aggregate should compute min and return bestRow", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const csvPath = path.join(tmpDir, "sample.csv");
+    await writeFile(csvPath, "name,age\nAlice,30\nBob,25\nCara,40\n", "utf8");
+
+    const tool = findTool("csv_aggregate");
+    const result = (await tool.handler({
+      path: csvPath,
+      hasHeader: true,
+      operation: "min",
+      value: { type: "column", column: "age" },
+      returnColumns: ["name", "age"],
+    })) as any;
+
+    expect(result.result).toBe(25);
+    expect(result.bestRow.headers).toEqual(["name", "age"]);
+    expect(result.bestRow.row[0]).toBe("Bob");
+  });
+
+  it("xlsx_select_rows should filter rows and select columns", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const xlsxPath = path.join(tmpDir, "sample.xlsx");
+
+    const mod = await import("xlsx");
+    const XLSX = (mod as any).default ?? mod;
+    const wb = XLSX.utils.book_new();
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ["Title", "Year"],
+      ["Movie A", 2009],
+      ["Movie B", 2011],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheet, "Sheet1");
+    XLSX.writeFile(wb, xlsxPath);
+
+    const tool = findTool("xlsx_select_rows");
+    const result = (await tool.handler({
+      path: xlsxPath,
+      sheetName: "Sheet1",
+      headerRow: 1,
+      where: [{ column: "Year", op: "eq", value: 2009 }],
+      returnColumns: ["Title"],
+      limit: 10,
+    })) as any;
+
+    expect(result.headers).toEqual(["Title"]);
+    expect(result.rows.length).toBe(1);
+    expect(result.rows[0].row[0]).toBe("Movie A");
+  });
+
+  it("xlsx_aggregate should compute min and return bestRow", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const xlsxPath = path.join(tmpDir, "sample.xlsx");
+
+    const mod = await import("xlsx");
+    const XLSX = (mod as any).default ?? mod;
+    const wb = XLSX.utils.book_new();
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ["Title", "Year"],
+      ["Movie A", 2009],
+      ["Movie B", 2011],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheet, "Sheet1");
+    XLSX.writeFile(wb, xlsxPath);
+
+    const tool = findTool("xlsx_aggregate");
+    const result = (await tool.handler({
+      path: xlsxPath,
+      sheetName: "Sheet1",
+      headerRow: 1,
+      operation: "min",
+      value: { type: "column", column: "Year" },
+      returnColumns: ["Title", "Year"],
+    })) as any;
+
+    expect(result.result).toBe(2009);
+    expect(result.bestRow.headers).toEqual(["Title", "Year"]);
+    expect(result.bestRow.row[0]).toBe("Movie A");
+  });
+
+  it("read_pdf_text should extract page text", async () => {
+    const pdfPath = findRepoFile(path.join("test_assets", "Report_2025-12-25.pdf"));
+    const tool = findTool("read_pdf_text");
+    const result = (await tool.handler({
+      path: pdfPath,
+      pageStart: 1,
+      pageEnd: 1,
+      maxChars: 2000,
+    })) as any;
+
+    expect(result.pagesIncluded).toEqual([1]);
+    expect(String(result.text)).toContain("Hello World");
+  });
+
+  it("pdf_search_text should find matches with snippets", async () => {
+    const pdfPath = findRepoFile(path.join("test_assets", "Report_2025-12-25.pdf"));
+    const tool = findTool("pdf_search_text");
+    const result = (await tool.handler({
+      path: pdfPath,
+      query: "Hello",
+      maxMatches: 5,
+    })) as any;
+
+    expect(result.matchCount).toBeGreaterThan(0);
+    expect(result.matches[0].page).toBe(1);
+    expect(String(result.matches[0].snippet)).toContain("Hello");
+  });
+
+  it("read_text_file should return bounded text slices", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const filePath = path.join(tmpDir, "notes.txt");
+    await writeFile(filePath, "Line1\nLine2\nLine3\n", "utf8");
+
+    const tool = findTool("read_text_file");
+    const result = (await tool.handler({
+      path: filePath,
+      startChar: 0,
+      maxChars: 10,
+    })) as any;
+
+    expect(result.truncated).toBe(true);
+    expect(String(result.text)).toContain("Line1");
+  });
+
+  it("read_json_file and json_select should parse and select values", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const filePath = path.join(tmpDir, "data.json");
+    await writeFile(filePath, JSON.stringify({ a: { b: [{ name: "alpha" }, { name: "beta" }] } }), "utf8");
+
+    const readTool = findTool("read_json_file");
+    const readResult = (await readTool.handler({
+      path: filePath,
+      maxDepth: 6,
+      maxItems: 50,
+      maxStringChars: 1000,
+    })) as any;
+    expect(readResult.rootType).toBe("object");
+    expect(readResult.value.a.b.length).toBe(2);
+
+    const selectTool = findTool("json_select");
+    const selectResult = (await selectTool.handler({
+      path: filePath,
+      pointer: "/a/b/1/name",
+      maxDepth: 3,
+      maxItems: 10,
+      maxStringChars: 100,
+    })) as any;
+    expect(selectResult.found).toBe(true);
+    expect(selectResult.value).toBe("beta");
+  });
+
+  it("read_jsonl_file should parse lines and report errors", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const filePath = path.join(tmpDir, "data.jsonl");
+    await writeFile(filePath, '{"ok":1}\nnot-json\n{"ok":2}\n', "utf8");
+
+    const tool = findTool("read_jsonl_file");
+    const result = (await tool.handler({
+      path: filePath,
+      limitLines: 10,
+      parseJson: true,
+      maxDepth: 4,
+      maxItems: 20,
+      maxStringChars: 100,
+    })) as any;
+
+    expect(result.returnedLines).toBe(2);
+    expect(result.errorCount).toBe(1);
+    expect(result.lines[0].value.ok).toBe(1);
+    expect(result.lines[1].value.ok).toBe(2);
+  });
+
+  it("zip_list_files and zip_read_text_file should read entries", async () => {
+    const zipPath = findRepoFile(path.join("test_assets", "zip_fixture.zip"));
+
+    const listTool = findTool("zip_list_files");
+    const listResult = (await listTool.handler({ path: zipPath, maxEntries: 50 })) as any;
+    const names = (listResult.entries ?? []).map((e: any) => e.fileName);
+    expect(names).toContain("hello.txt");
+    expect(names).toContain("folder/data.csv");
+
+    const readTool = findTool("zip_read_text_file");
+    const readResult = (await readTool.handler({
+      path: zipPath,
+      innerPath: "hello.txt",
+      maxChars: 2000,
+    })) as any;
+    expect(String(readResult.text)).toContain("Hello from zip fixture");
+  });
+
+  it("zip_extract_file should safely extract to outputDir", async () => {
+    const zipPath = findRepoFile(path.join("test_assets", "zip_fixture.zip"));
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-zip-"));
+
+    const extractTool = findTool("zip_extract_file");
+    const extracted = (await extractTool.handler({
+      path: zipPath,
+      innerPath: "folder/data.csv",
+      outputDir: tmpDir,
+      overwrite: true,
+    })) as any;
+
+    expect(typeof extracted.extractedPath).toBe("string");
+    expect(existsSync(extracted.extractedPath)).toBe(true);
+
+    const readTool = findTool("read_text_file");
+    const text = (await readTool.handler({ path: extracted.extractedPath, maxChars: 2000 })) as any;
+    expect(String(text.text)).toContain("alpha,1");
+  });
+
+  it("read_docx_text should extract document text", async () => {
+    const docxPath = findRepoFile(path.join("test_assets", "docx_fixture.docx"));
+    const tool = findTool("read_docx_text");
+    const result = (await tool.handler({ path: docxPath, maxChars: 5000 })) as any;
+    expect(String(result.text)).toContain("Hello DOCX");
+    expect(String(result.text)).toContain("Second paragraph");
+  });
+
+  it("read_pptx_text should extract slide text with markers", async () => {
+    const pptxPath = findRepoFile(path.join("test_assets", "pptx_fixture.pptx"));
+    const tool = findTool("read_pptx_text");
+    const result = (await tool.handler({ path: pptxPath, maxChars: 10000 })) as any;
+    expect(result.slideCount).toBe(2);
+    expect(String(result.text)).toContain("[SLIDE 1]");
+    expect(String(result.text)).toContain("Hello PPTX Slide1");
+    expect(String(result.text)).toContain("[SLIDE 2]");
+    expect(String(result.text)).toContain("Slide2 Text");
   });
 });
 
@@ -1211,6 +1496,120 @@ describe("Integration: search finds logged gaps", () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RESEARCH WRITING TOOLS — academic paper polishing
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Static: research writing tools", () => {
+  it("should export 8 research writing tools", () => {
+    expect(researchWritingTools.length).toBe(8);
+  });
+
+  it("should include all 8 research writing tools in allTools", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("polish_academic_text");
+    expect(names).toContain("translate_academic");
+    expect(names).toContain("compress_or_expand_text");
+    expect(names).toContain("remove_ai_signatures");
+    expect(names).toContain("check_paper_logic");
+    expect(names).toContain("generate_academic_caption");
+    expect(names).toContain("analyze_experiment_data");
+    expect(names).toContain("review_paper_as_reviewer");
+  });
+
+  it("polish_academic_text requires text parameter", () => {
+    const tool = findTool("polish_academic_text");
+    expect(tool.inputSchema.required).toContain("text");
+    expect(tool.inputSchema.properties).toHaveProperty("targetVenue");
+    expect(tool.inputSchema.properties).toHaveProperty("language");
+  });
+
+  it("translate_academic requires text, from, and to parameters", () => {
+    const tool = findTool("translate_academic");
+    expect(tool.inputSchema.required).toContain("text");
+    expect(tool.inputSchema.required).toContain("from");
+    expect(tool.inputSchema.required).toContain("to");
+  });
+
+  it("compress_or_expand_text requires text and mode parameters", () => {
+    const tool = findTool("compress_or_expand_text");
+    expect(tool.inputSchema.required).toContain("text");
+    expect(tool.inputSchema.required).toContain("mode");
+    const modeProp = (tool.inputSchema as any).properties.mode;
+    expect(modeProp.enum).toContain("compress");
+    expect(modeProp.enum).toContain("expand");
+  });
+
+  it("remove_ai_signatures requires text parameter", () => {
+    const tool = findTool("remove_ai_signatures");
+    expect(tool.inputSchema.required).toContain("text");
+  });
+
+  it("check_paper_logic requires text parameter", () => {
+    const tool = findTool("check_paper_logic");
+    expect(tool.inputSchema.required).toContain("text");
+    expect(tool.inputSchema.properties).toHaveProperty("checkType");
+  });
+
+  it("generate_academic_caption requires description and figureType", () => {
+    const tool = findTool("generate_academic_caption");
+    expect(tool.inputSchema.required).toContain("description");
+    expect(tool.inputSchema.required).toContain("figureType");
+    const ftProp = (tool.inputSchema as any).properties.figureType;
+    expect(ftProp.enum).toContain("figure");
+    expect(ftProp.enum).toContain("table");
+  });
+
+  it("analyze_experiment_data requires data and goal parameters", () => {
+    const tool = findTool("analyze_experiment_data");
+    expect(tool.inputSchema.required).toContain("data");
+    expect(tool.inputSchema.required).toContain("goal");
+    expect(tool.inputSchema.properties).toHaveProperty("format");
+  });
+
+  it("review_paper_as_reviewer requires text and venue parameters", () => {
+    const tool = findTool("review_paper_as_reviewer");
+    expect(tool.inputSchema.required).toContain("text");
+    expect(tool.inputSchema.required).toContain("venue");
+    const strictProp = (tool.inputSchema as any).properties.strictness;
+    expect(strictProp.enum).toContain("lenient");
+    expect(strictProp.enum).toContain("moderate");
+    expect(strictProp.enum).toContain("harsh");
+  });
+});
+
+describe("Unit: remove_ai_signatures pattern detection", () => {
+  it("should detect AI patterns in text with known signatures", async () => {
+    const tool = findTool("remove_ai_signatures");
+    const result = (await tool.handler({
+      text: "We leverage advanced techniques to delve into the multifaceted landscape of deep learning. Furthermore, it is worth noting that our comprehensive approach utilizes a robust framework.",
+    })) as any;
+    expect(result.patternsFound).toBeGreaterThan(0);
+    expect(result.detectedPatterns.length).toBeGreaterThan(0);
+    expect(result.detectedPatterns.some((p: any) => p.label.includes("leverage"))).toBe(true);
+  });
+
+  it("should return clean verdict for natural text", async () => {
+    const tool = findTool("remove_ai_signatures");
+    const result = (await tool.handler({
+      text: "We train a convolutional network on ImageNet for 90 epochs using SGD with momentum 0.9.",
+    })) as any;
+    expect(result.patternsFound).toBe(0);
+    expect(result.verdict).toContain("No significant AI signatures");
+  });
+});
+
+describe("Static: academic_paper_writing methodology", () => {
+  it("should return academic_paper_writing methodology with 8 steps", async () => {
+    const tool = allTools.find((t) => t.name === "getMethodology")!;
+    const result = (await tool.handler({ topic: "academic_paper_writing" })) as any;
+    expect(result.title).toContain("Academic Paper Writing");
+    expect(result.steps.length).toBe(8);
+    expect(result.steps[0].name).toBe("Polish Draft");
+    expect(result.steps[6].name).toBe("Simulate Review");
+  });
+});
+
 describe("Static: scan_terminal_security tool", () => {
   const tool = domainTools.find((t) => t.name === "scan_terminal_security");
   it("should exist", () => {
@@ -1225,5 +1624,522 @@ describe("Static: scan_terminal_security tool", () => {
     const props = tool!.inputSchema.properties as Record<string, unknown>;
     expect(props).toHaveProperty("scanHome");
     expect(props).toHaveProperty("verbose");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v2.8.0 — Progressive Discovery, Boilerplate, Benchmark tools
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Static: progressive discovery tools", () => {
+  it("should include discover_tools, get_tool_quick_ref, get_workflow_chain", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("discover_tools");
+    expect(names).toContain("get_tool_quick_ref");
+    expect(names).toContain("get_workflow_chain");
+  });
+
+  it("discover_tools requires query parameter", () => {
+    const tool = findTool("discover_tools");
+    expect(tool.inputSchema.required).toContain("query");
+    expect(tool.inputSchema.properties).toHaveProperty("category");
+    expect(tool.inputSchema.properties).toHaveProperty("phase");
+    expect(tool.inputSchema.properties).toHaveProperty("limit");
+  });
+
+  it("get_tool_quick_ref requires toolName parameter", () => {
+    const tool = findTool("get_tool_quick_ref");
+    expect(tool.inputSchema.required).toContain("toolName");
+  });
+
+  it("get_workflow_chain requires chain parameter", () => {
+    const tool = findTool("get_workflow_chain");
+    expect(tool.inputSchema.required).toContain("chain");
+  });
+});
+
+describe("Unit: discover_tools hybrid search", () => {
+  it("should return ranked results for verification query", async () => {
+    const tool = findTool("discover_tools");
+    const result = (await tool.handler({ query: "verify implementation" })) as any;
+    expect(result.resultCount).toBeGreaterThan(0);
+    expect(result.results[0]).toHaveProperty("relevanceScore");
+    expect(result.results[0]).toHaveProperty("quickRef");
+    expect(result.results[0].relevanceScore).toBeGreaterThan(0);
+  });
+
+  it("should filter by category", async () => {
+    const tool = findTool("discover_tools");
+    const result = (await tool.handler({ query: "test", category: "eval" })) as any;
+    for (const r of result.results) {
+      expect(r.category).toBe("eval");
+    }
+  });
+
+  it("should filter by phase", async () => {
+    const tool = findTool("discover_tools");
+    const result = (await tool.handler({ query: "search find", phase: "research" })) as any;
+    for (const r of result.results) {
+      expect(r.phase).toBe("research");
+    }
+  });
+
+  it("should include matching workflow chains", async () => {
+    const tool = findTool("discover_tools");
+    const result = (await tool.handler({ query: "new feature build" })) as any;
+    expect(result.matchingWorkflows.length).toBeGreaterThan(0);
+  });
+
+  it("should return progressive hint", async () => {
+    const tool = findTool("discover_tools");
+    const result = (await tool.handler({ query: "verify" })) as any;
+    expect(result._progressiveHint).toBeTruthy();
+  });
+});
+
+describe("Unit: get_tool_quick_ref", () => {
+  it("should return quick ref for known tool", async () => {
+    const tool = findTool("get_tool_quick_ref");
+    const result = (await tool.handler({ toolName: "start_verification_cycle" })) as any;
+    expect(result.tool).toBe("start_verification_cycle");
+    expect(result.category).toBe("verification");
+    expect(result.quickRef).toHaveProperty("nextAction");
+    expect(result.quickRef).toHaveProperty("nextTools");
+    expect(result.quickRef.nextTools.length).toBeGreaterThan(0);
+  });
+
+  it("should return error for unknown tool with suggestions", async () => {
+    const tool = findTool("get_tool_quick_ref");
+    const result = (await tool.handler({ toolName: "nonexistent_tool_xyz" })) as any;
+    expect(result.error).toBe(true);
+    expect(result).toHaveProperty("didYouMean");
+  });
+
+  it("should include related tool details when requested", async () => {
+    const tool = findTool("get_tool_quick_ref");
+    const result = (await tool.handler({
+      toolName: "run_mandatory_flywheel",
+      includeRelatedDetails: true,
+    })) as any;
+    expect(result).toHaveProperty("relatedToolDetails");
+    expect(Object.keys(result.relatedToolDetails).length).toBeGreaterThan(0);
+  });
+});
+
+describe("Unit: get_workflow_chain", () => {
+  it("should list all available chains", async () => {
+    const tool = findTool("get_workflow_chain");
+    const result = (await tool.handler({ chain: "list" })) as any;
+    expect(result.availableChains.length).toBeGreaterThan(0);
+    const keys = result.availableChains.map((c: any) => c.key);
+    expect(keys).toContain("new_feature");
+    expect(keys).toContain("fix_bug");
+    expect(keys).toContain("c_compiler_benchmark");
+  });
+
+  it("should return enriched chain steps", async () => {
+    const tool = findTool("get_workflow_chain");
+    const result = (await tool.handler({ chain: "new_feature" })) as any;
+    expect(result.name).toBe("Build a New Feature");
+    expect(result.totalSteps).toBeGreaterThan(5);
+    expect(result.steps[0]).toHaveProperty("tool");
+    expect(result.steps[0]).toHaveProperty("action");
+    expect(result.steps[0]).toHaveProperty("quickRef");
+  });
+
+  it("should return error for unknown chain", async () => {
+    const tool = findTool("get_workflow_chain");
+    const result = (await tool.handler({ chain: "nonexistent_chain" as any })) as any;
+    expect(result.error).toBe(true);
+  });
+});
+
+describe("Static: boilerplate tools", () => {
+  it("should include scaffold_nodebench_project and get_boilerplate_status", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("scaffold_nodebench_project");
+    expect(names).toContain("get_boilerplate_status");
+  });
+
+  it("scaffold_nodebench_project requires projectPath, projectName, techStack", () => {
+    const tool = findTool("scaffold_nodebench_project");
+    expect(tool.inputSchema.required).toContain("projectPath");
+    expect(tool.inputSchema.required).toContain("projectName");
+    expect(tool.inputSchema.required).toContain("techStack");
+  });
+
+  it("get_boilerplate_status requires projectPath", () => {
+    const tool = findTool("get_boilerplate_status");
+    expect(tool.inputSchema.required).toContain("projectPath");
+  });
+});
+
+describe("Unit: scaffold_nodebench_project dry run", () => {
+  it("should preview files without creating them", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-scaffold-"));
+    const tool = findTool("scaffold_nodebench_project");
+    const result = (await tool.handler({
+      projectPath: tmpDir,
+      projectName: "test-project",
+      techStack: "TypeScript, Node.js",
+      dryRun: true,
+    })) as any;
+    expect(result.dryRun).toBe(true);
+    expect(result.summary.totalFiles).toBeGreaterThan(5);
+    expect(result.willCreate.length).toBeGreaterThan(0);
+    expect(result.willCreate).toContain("AGENTS.md");
+    expect(result.willCreate).toContain("package.json");
+    expect(result.willCreate).toContain(".mcp.json");
+    expect(result._quickRef).toBeDefined();
+  });
+});
+
+describe("Unit: scaffold_nodebench_project actual creation", () => {
+  it("should create all project files", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-scaffold-"));
+    const tool = findTool("scaffold_nodebench_project");
+    const result = (await tool.handler({
+      projectPath: tmpDir,
+      projectName: "real-project",
+      techStack: "TypeScript, React",
+      dryRun: false,
+      includeParallelAgents: true,
+      includeGithubActions: true,
+    })) as any;
+    expect(result.dryRun).toBe(false);
+    expect(result.summary.created).toBeGreaterThan(5);
+
+    // Verify key files exist
+    const { existsSync } = await import("node:fs");
+    expect(existsSync(path.join(tmpDir, "AGENTS.md"))).toBe(true);
+    expect(existsSync(path.join(tmpDir, "package.json"))).toBe(true);
+    expect(existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+    expect(existsSync(path.join(tmpDir, ".parallel-agents"))).toBe(true);
+    expect(existsSync(path.join(tmpDir, ".github", "workflows"))).toBe(true);
+  });
+});
+
+describe("Unit: get_boilerplate_status", () => {
+  it("should scan an empty directory and find everything missing", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-status-"));
+    const tool = findTool("get_boilerplate_status");
+    const result = (await tool.handler({ projectPath: tmpDir })) as any;
+    expect(result.completionPercentage).toBe(0);
+    expect(result.missing).toBeGreaterThan(0);
+    expect(result.missingFiles).toContain("AGENTS.md");
+    expect(result.recommendations.length).toBeGreaterThan(0);
+  });
+
+  it("should detect existing files after scaffolding", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-status-"));
+    // Scaffold first
+    await findTool("scaffold_nodebench_project").handler({
+      projectPath: tmpDir,
+      projectName: "status-test",
+      techStack: "TypeScript",
+      dryRun: false,
+    });
+    // Then check status
+    const tool = findTool("get_boilerplate_status");
+    const result = (await tool.handler({ projectPath: tmpDir })) as any;
+    expect(result.completionPercentage).toBeGreaterThan(50);
+    expect(result.found).toBeGreaterThan(5);
+  });
+
+  it("should throw for nonexistent path", async () => {
+    const tool = findTool("get_boilerplate_status");
+    await expect(
+      tool.handler({ projectPath: "/nonexistent/path/xyz123" })
+    ).rejects.toThrow("does not exist");
+  });
+});
+
+describe("Static: C-compiler benchmark tools", () => {
+  it("should include all 3 benchmark tools", () => {
+    const names = allTools.map((t) => t.name);
+    expect(names).toContain("start_autonomy_benchmark");
+    expect(names).toContain("log_benchmark_milestone");
+    expect(names).toContain("complete_autonomy_benchmark");
+  });
+
+  it("start_autonomy_benchmark requires challenge parameter", () => {
+    const tool = findTool("start_autonomy_benchmark");
+    expect(tool.inputSchema.required).toContain("challenge");
+    const challengeProp = (tool.inputSchema as any).properties.challenge;
+    expect(challengeProp.enum).toContain("c_compiler");
+    expect(challengeProp.enum).toContain("rest_api");
+    expect(challengeProp.enum).toContain("fullstack_app");
+    expect(challengeProp.enum).toContain("list");
+  });
+
+  it("log_benchmark_milestone requires benchmarkId, milestoneId, verificationPassed", () => {
+    const tool = findTool("log_benchmark_milestone");
+    expect(tool.inputSchema.required).toContain("benchmarkId");
+    expect(tool.inputSchema.required).toContain("milestoneId");
+    expect(tool.inputSchema.required).toContain("verificationPassed");
+  });
+
+  it("complete_autonomy_benchmark requires benchmarkId and reason", () => {
+    const tool = findTool("complete_autonomy_benchmark");
+    expect(tool.inputSchema.required).toContain("benchmarkId");
+    expect(tool.inputSchema.required).toContain("reason");
+  });
+});
+
+describe("Unit: start_autonomy_benchmark", () => {
+  it("should list all available challenges", async () => {
+    const tool = findTool("start_autonomy_benchmark");
+    const result = (await tool.handler({ challenge: "list" })) as any;
+    expect(result.availableChallenges.length).toBe(5);
+    const keys = result.availableChallenges.map((c: any) => c.key);
+    expect(keys).toContain("c_compiler");
+    expect(keys).toContain("rest_api");
+    expect(keys).toContain("fullstack_app");
+    expect(keys).toContain("cli_tool");
+    expect(keys).toContain("data_pipeline");
+  });
+
+  it("should start a cli_tool benchmark", async () => {
+    const tool = findTool("start_autonomy_benchmark");
+    const result = (await tool.handler({
+      challenge: "cli_tool",
+      notes: "test benchmark",
+    })) as any;
+    expect(result.benchmarkId).toBeTruthy();
+    expect(result.challenge).toBe("cli_tool");
+    expect(result.difficulty).toBe("easy");
+    expect(result.totalPoints).toBe(100);
+    expect(result.milestones.length).toBe(8);
+    expect(result._quickRef).toBeDefined();
+  });
+
+  it("should throw for unknown challenge", async () => {
+    const tool = findTool("start_autonomy_benchmark");
+    await expect(
+      tool.handler({ challenge: "nonexistent_challenge" })
+    ).rejects.toThrow("Unknown challenge");
+  });
+});
+
+describe("Integration: full benchmark lifecycle", () => {
+  it("start → log milestone → complete", async () => {
+    // 1. Start benchmark
+    const benchmark = (await findTool("start_autonomy_benchmark").handler({
+      challenge: "cli_tool",
+      notes: "integration test",
+    })) as any;
+    expect(benchmark.benchmarkId).toBeTruthy();
+
+    // 2. Log a milestone
+    const milestone = (await findTool("log_benchmark_milestone").handler({
+      benchmarkId: benchmark.benchmarkId,
+      milestoneId: "project_setup",
+      verificationPassed: true,
+      toolsUsed: ["run_closed_loop", "bootstrap_project"],
+      notes: "Project initialized",
+    })) as any;
+    expect(milestone.points).toBe(15);
+    expect(milestone.progress.earnedPoints).toBe(15);
+    expect(milestone.progress.milestonesCompleted).toBe(1);
+
+    // 3. Log another milestone (failed)
+    const milestone2 = (await findTool("log_benchmark_milestone").handler({
+      benchmarkId: benchmark.benchmarkId,
+      milestoneId: "arg_parsing",
+      verificationPassed: false,
+      notes: "Arg parsing failed tests",
+    })) as any;
+    expect(milestone2.points).toBe(0);
+    expect(milestone2.progress.earnedPoints).toBe(15); // unchanged
+
+    // 4. Complete benchmark
+    const completed = (await findTool("complete_autonomy_benchmark").handler({
+      benchmarkId: benchmark.benchmarkId,
+      reason: "stuck",
+      notes: "Integration test complete",
+    })) as any;
+    expect(completed.score.earnedPoints).toBe(15);
+    expect(completed.score.percentage).toBe(15);
+    expect(completed.score.grade).toContain("F");
+    expect(completed.milestones.completed).toBe(1);
+    expect(completed.milestones.failed).toBe(1);
+    expect(completed.milestones.pending).toBe(6);
+    expect(completed.analysis.strengths).toContain("Project Setup");
+    expect(completed._quickRef).toBeDefined();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+// Multi-modal search engine quality tests
+// ═══════════════════════════════════════════════════════════════════════
+
+const toolDescs = allTools.map((t) => ({ name: t.name, description: t.description }));
+
+describe("Search engine: registry coverage", () => {
+  it("should have a registry entry for every tool (129/129)", () => {
+    const missing = allTools.filter((t) => !TOOL_REGISTRY.has(t.name));
+    expect(missing.map((t) => t.name)).toEqual([]);
+    expect(TOOL_REGISTRY.size).toBe(allTools.length);
+  });
+
+  it("should expose all 6 search modes", () => {
+    expect(SEARCH_MODES).toEqual(["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact"]);
+  });
+
+  it("should have quickRef for every registered tool", () => {
+    for (const tool of allTools) {
+      const qr = getQuickRef(tool.name);
+      expect(qr, `Missing quickRef for ${tool.name}`).not.toBeNull();
+      expect(qr!.nextAction.length).toBeGreaterThan(10);
+      expect(qr!.nextTools.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("Search engine: hybrid mode (default)", () => {
+  it("should find benchmark tools when searching 'benchmark'", () => {
+    const results = hybridSearch("benchmark", toolDescs, { limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names).toContain("start_autonomy_benchmark");
+    expect(names).toContain("complete_autonomy_benchmark");
+    expect(names).toContain("benchmark_models");
+    expect(names).toContain("log_benchmark_milestone");
+  });
+
+  it("should find scaffold tools when searching 'scaffold'", () => {
+    const results = hybridSearch("scaffold", toolDescs, { limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names).toContain("scaffold_directory");
+    expect(names).toContain("scaffold_nodebench_project");
+  });
+
+  it("should rank exact name matches highest", () => {
+    const results = hybridSearch("web_search", toolDescs, { limit: 5 });
+    expect(results[0].name).toBe("web_search");
+  });
+
+  it("should filter by category", () => {
+    const results = hybridSearch("test", toolDescs, { category: "eval", limit: 10 });
+    for (const r of results) {
+      expect(r.category).toBe("eval");
+    }
+  });
+
+  it("should filter by phase", () => {
+    const results = hybridSearch("verify", toolDescs, { phase: "verify", limit: 10 });
+    for (const r of results) {
+      expect(r.phase).toBe("verify");
+    }
+  });
+
+  it("should include matchReasons when explain=true", () => {
+    const results = hybridSearch("verify", toolDescs, { limit: 3, explain: true });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].matchReasons.length).toBeGreaterThan(0);
+    expect(results[0].matchReasons[0]).toMatch(/keyword|prefix|fuzzy|semantic|ngram|bigram|regex|domain/);
+  });
+
+  it("should return empty matchReasons when explain=false", () => {
+    const results = hybridSearch("verify", toolDescs, { limit: 3, explain: false });
+    expect(results[0].matchReasons).toEqual([]);
+  });
+});
+
+describe("Search engine: fuzzy mode (typo tolerance)", () => {
+  it("should find 'verify' tools when searching 'verifiy' (typo)", () => {
+    const results = hybridSearch("verifiy", toolDescs, { mode: "fuzzy", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names.some((n) => n.includes("verif"))).toBe(true);
+  });
+
+  it("should find 'benchmark' tools when searching 'benchmrk' (typo)", () => {
+    const results = hybridSearch("benchmrk", toolDescs, { mode: "fuzzy", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names.some((n) => n.includes("benchmark"))).toBe(true);
+  });
+
+  it("should find 'scaffold' when searching 'scafold' (typo)", () => {
+    const results = hybridSearch("scafold", toolDescs, { mode: "fuzzy", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names.some((n) => n.includes("scaffold"))).toBe(true);
+  });
+});
+
+describe("Search engine: regex mode", () => {
+  it("should match tools by regex pattern on name", () => {
+    const results = hybridSearch("^capture_.*screenshot$", toolDescs, { mode: "regex", limit: 10 });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].name).toBe("capture_ui_screenshot");
+  });
+
+  it("should match tools by regex on tags", () => {
+    const results = hybridSearch("c-compiler", toolDescs, { mode: "regex", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names).toContain("start_autonomy_benchmark");
+  });
+
+  it("should handle invalid regex gracefully", () => {
+    const results = hybridSearch("[invalid(", toolDescs, { mode: "regex", limit: 10 });
+    expect(results).toEqual([]);
+  });
+});
+
+describe("Search engine: prefix mode", () => {
+  it("should find all 'run_' prefixed tools", () => {
+    const results = hybridSearch("run_", toolDescs, { mode: "prefix", limit: 20 });
+    for (const r of results) {
+      expect(r.name.startsWith("run_")).toBe(true);
+    }
+    expect(results.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("should find 'cap' → capture_* tools", () => {
+    const results = hybridSearch("cap", toolDescs, { mode: "prefix", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names).toContain("capture_ui_screenshot");
+    expect(names).toContain("capture_responsive_suite");
+  });
+});
+
+describe("Search engine: semantic mode (synonym expansion)", () => {
+  it("should expand 'check' to find 'verify' tools", () => {
+    const results = hybridSearch("check", toolDescs, { mode: "semantic", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names.some((n) => n.includes("verif") || n.includes("gate") || n.includes("quality"))).toBe(true);
+  });
+
+  it("should expand 'fix' to find 'resolve' tools", () => {
+    const results = hybridSearch("fix", toolDescs, { mode: "semantic", limit: 10 });
+    const names = results.map((r) => r.name);
+    expect(names).toContain("resolve_gap");
+  });
+
+  it("should expand 'deploy' to find 'ship' phase tools", () => {
+    const results = hybridSearch("deploy", toolDescs, { mode: "semantic", limit: 15 });
+    const names = results.map((r) => r.name);
+    expect(names.some((n) => n.includes("mandatory_flywheel") || n.includes("quality_gate"))).toBe(true);
+  });
+});
+
+describe("Search engine: exact mode", () => {
+  it("should return only exact name match", () => {
+    const results = hybridSearch("web_search", toolDescs, { mode: "exact", limit: 5 });
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0].name).toBe("web_search");
+    expect(results[0].score).toBeGreaterThanOrEqual(100);
+  });
+});
+
+describe("Search engine: bigram phrase matching", () => {
+  it("should match 'quality gate' as a phrase", () => {
+    const results = hybridSearch("quality gate", toolDescs, { limit: 5 });
+    const names = results.map((r) => r.name);
+    expect(names).toContain("run_quality_gate");
+  });
+
+  it("should match 'parallel agents' as a phrase", () => {
+    const results = hybridSearch("parallel agents", toolDescs, { limit: 5 });
+    const names = results.map((r) => r.name);
+    expect(names.some((n) => n.includes("parallel") || n.includes("agent"))).toBe(true);
   });
 });

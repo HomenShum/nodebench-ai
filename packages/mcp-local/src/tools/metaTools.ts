@@ -1100,6 +1100,89 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
     composesWith:
       "Feeds into the AI Flywheel outer loop. Trajectory analysis informs eval case design. Recommendations trigger verification cycles. Learnings persist across sessions.",
   },
+  academic_paper_writing: {
+    title: "Academic Paper Writing — AI-Assisted Research Polishing",
+    description:
+      "Comprehensive academic writing workflow adapted from battle-tested prompts used at MSRA, Bytedance Seed, and top Chinese universities. Covers polishing, translation, compression, de-AI-ification, logic checking, caption generation, experiment analysis, and reviewer simulation. All tools use LLM provider fallback (Gemini → OpenAI → Anthropic).",
+    steps: [
+      {
+        step: 1,
+        name: "Polish Draft",
+        description:
+          "Deep-polish the draft for top-venue quality. Fix grammar, enforce formal academic tone, remove contractions and AI vocabulary. Preserve LaTeX, citations, and math.",
+        tools: ["polish_academic_text"],
+        action:
+          'Call polish_academic_text({ text: "...", targetVenue: "NeurIPS", language: "en" }). Review the modification log in the response.',
+      },
+      {
+        step: 2,
+        name: "Remove AI Signatures",
+        description:
+          "Detect and rewrite AI-generated writing patterns (leverage, delve, tapestry, mechanical connectors). Two-phase: regex pattern match + LLM rewrite.",
+        tools: ["remove_ai_signatures"],
+        action:
+          "Call remove_ai_signatures({ text: '...' }). Review detectedPatterns list and the rewritten text.",
+      },
+      {
+        step: 3,
+        name: "Check Logic",
+        description:
+          "High-threshold logic review: contradictions, undefined terms, terminology inconsistency, Chinglish. Only flags issues that genuinely block comprehension.",
+        tools: ["check_paper_logic"],
+        action:
+          'Call check_paper_logic({ text: "...", checkType: "all" }). Fix any critical or high severity issues before proceeding.',
+      },
+      {
+        step: 4,
+        name: "Adjust Length",
+        description:
+          "Precisely compress or expand sections to meet page limits. Compression removes filler, expansion adds logical depth.",
+        tools: ["compress_or_expand_text"],
+        action:
+          'Call compress_or_expand_text({ text: "...", mode: "compress", targetDelta: 50 }). Check word count change in response.',
+      },
+      {
+        step: 5,
+        name: "Generate Captions",
+        description:
+          "Create publication-ready figure and table captions following venue conventions. Both short and detailed versions.",
+        tools: ["generate_academic_caption"],
+        action:
+          'Call generate_academic_caption({ description: "Comparison of model accuracy across 5 datasets", figureType: "table" }). Use the short version in the paper, detailed version in appendix.',
+      },
+      {
+        step: 6,
+        name: "Analyze Experiments",
+        description:
+          "Generate analysis paragraphs from experiment data. Strict: all conclusions grounded in provided data, no fabrication.",
+        tools: ["analyze_experiment_data"],
+        action:
+          'Call analyze_experiment_data({ data: "<csv or json>", goal: "our method outperforms baselines", format: "latex" }).',
+      },
+      {
+        step: 7,
+        name: "Simulate Review",
+        description:
+          "Get a harsh peer review before submission. Identifies critical weaknesses and provides strategic revision advice.",
+        tools: ["review_paper_as_reviewer"],
+        action:
+          'Call review_paper_as_reviewer({ text: "...", venue: "ICML 2026", strictness: "harsh" }). Address all critical weaknesses before submission.',
+      },
+      {
+        step: 8,
+        name: "Translate (if bilingual)",
+        description:
+          "Translate sections between Chinese and English preserving LaTeX, citations, and terminology consistency.",
+        tools: ["translate_academic"],
+        action:
+          'Call translate_academic({ text: "...", from: "zh", to: "en", domain: "computer vision" }). Use the terminology dictionary for consistency across sections.',
+      },
+    ],
+    composesWith:
+      "Use after the 6-Phase Verification cycle completes a research implementation. Feed reviewer feedback into log_gap for tracking. Record writing patterns with record_learning.",
+    sourceReference:
+      "https://github.com/Leey21/awesome-ai-research-writing — 4000+ stars, MSRA/Bytedance/PKU",
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1145,6 +1228,8 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "Parallel Agent Teams — task locking, role specialization, context budget management, oracle testing. Based on Anthropic's 'Building a C Compiler with Parallel Claudes' (Feb 2026)",
           self_reinforced_learning:
             "Self-Reinforced Learning — auto-instrumented trajectory analysis, self-evaluation reports, improvement recommendations, stale run cleanup, recon synthesis, closed-loop optimization",
+          academic_paper_writing:
+            "Academic Paper Writing — AI-assisted polishing, translation, de-AI-ification, logic checking, captions, experiment analysis, reviewer simulation. Based on awesome-ai-research-writing (4000+ stars, MSRA/Bytedance/PKU)",
         },
       },
       {
@@ -1213,6 +1298,10 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "llm",
               "security",
               "platform",
+              "research_writing",
+              "boilerplate",
+              "benchmark",
+              "progressive_discovery",
               "meta",
             ],
             description: "Filter by tool category (optional)",
@@ -1342,6 +1431,30 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "query_research_queue",
             "publish_to_queue",
           ],
+          research_writing: [
+            "polish_academic_text",
+            "translate_academic",
+            "compress_or_expand_text",
+            "remove_ai_signatures",
+            "check_paper_logic",
+            "generate_academic_caption",
+            "analyze_experiment_data",
+            "review_paper_as_reviewer",
+          ],
+          boilerplate: [
+            "scaffold_nodebench_project",
+            "get_boilerplate_status",
+          ],
+          benchmark: [
+            "start_autonomy_benchmark",
+            "log_benchmark_milestone",
+            "complete_autonomy_benchmark",
+          ],
+          progressive_discovery: [
+            "discover_tools",
+            "get_tool_quick_ref",
+            "get_workflow_chain",
+          ],
           meta: ["findTools", "getMethodology"],
         };
 
@@ -1408,7 +1521,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
     {
       name: "getMethodology",
       description:
-        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, overview. Call with topic "overview" to see all available methodologies.',
+        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, overview. Call with topic "overview" to see all available methodologies.',
       inputSchema: {
         type: "object",
         properties: {
@@ -1433,6 +1546,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "autonomous_maintenance",
               "parallel_agent_teams",
               "self_reinforced_learning",
+              "academic_paper_writing",
               "overview",
             ],
             description: "Which methodology to explain",

@@ -39,7 +39,7 @@ Every additional tool call produces a concrete artifact — an issue found, a ri
 
 **QA engineer** — Transitioned a manual QA workflow website into an AI agent-driven app for a pet care messaging platform. Uses NodeBench's quality gates, verification cycles, and eval runs to ensure the AI agent handles edge cases that manual QA caught but bare AI agents miss.
 
-Both found different subsets of the 90 tools useful — which is why v2.5 ships with `--preset` gating to load only what you need.
+Both found different subsets of the 129 tools useful — which is why v2.8 ships with `--preset` gating to load only what you need.
 
 ---
 
@@ -77,10 +77,10 @@ Tasks 1-3 start with zero prior knowledge. By task 9, the agent finds 2+ relevan
 ### Install (30 seconds)
 
 ```bash
-# Claude Code CLI — all 90 tools
+# Claude Code CLI — all 129 tools
 claude mcp add nodebench -- npx -y nodebench-mcp
 
-# Or start lean — 34 tools, ~60% less token overhead
+# Or start lean — 39 tools, ~70% less token overhead
 claude mcp add nodebench -- npx -y nodebench-mcp --preset lite
 ```
 
@@ -116,6 +116,33 @@ Or add to `~/.claude/settings.json` or `.claude.json`:
 export GEMINI_API_KEY="your-key"        # Web search + vision (recommended)
 export GITHUB_TOKEN="your-token"        # GitHub (higher rate limits)
 ```
+
+### Capability benchmarking (GAIA, gated)
+
+NodeBench MCP treats tools as "Access". To measure real capability lift, we benchmark baseline (LLM-only) vs tool-augmented accuracy on GAIA (gated).
+
+Notes:
+- GAIA fixtures and attachments are written under `.cache/gaia` (gitignored). Do not commit GAIA content.
+- Fixture generation requires `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN`.
+
+Web lane (web_search + fetch_url):
+```bash
+npm run mcp:dataset:gaia:capability:refresh
+NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test
+```
+
+File-backed lane (PDF / XLSX / CSV / DOCX / PPTX / JSON / JSONL / TXT / ZIP via `local_file` tools):
+```bash
+npm run mcp:dataset:gaia:capability:files:refresh
+NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:files:test
+```
+
+Modes:
+- Stable: `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag`
+- More realistic: `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent`
+
+Notes:
+- ZIP attachments require `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (multi-step extract -> parse).
 
 ---
 
@@ -157,6 +184,77 @@ export GITHUB_TOKEN="your-token"        # GitHub (higher rate limits)
 
 ---
 
+## Progressive Discovery (v2.8.1)
+
+129 tools is a lot. The progressive disclosure system helps agents find exactly what they need:
+
+### Multi-modal search engine
+
+```
+> discover_tools("verify my implementation")
+```
+
+The `discover_tools` search engine scores tools using **9 parallel strategies**:
+
+| Strategy | What it does | Example |
+|---|---|---|
+| Keyword | Exact/partial word matching on name, tags, description | "benchmark" → `benchmark_models` |
+| Fuzzy | Levenshtein distance — tolerates typos | "verifiy" → `start_verification_cycle` |
+| N-gram | Trigram similarity for partial words | "screen" → `capture_ui_screenshot` |
+| Prefix | Matches tool name starts | "cap" → `capture_*` tools |
+| Semantic | Synonym expansion (30 word families) | "check" also finds "verify", "validate" |
+| TF-IDF | Rare tags score higher than common ones | "c-compiler" scores higher than "test" |
+| Regex | Pattern matching | `"^run_.*loop$"` → `run_closed_loop` |
+| Bigram | Phrase matching | "quality gate" matched as unit |
+| Domain boost | Related categories boosted together | verification + quality_gate cluster |
+
+**6 search modes**: `hybrid` (default, all strategies), `fuzzy`, `regex`, `prefix`, `semantic`, `exact`
+
+Pass `explain: true` to see exactly which strategies contributed to each score.
+
+### Quick refs — what to do next
+
+Every tool response auto-appends a `_quickRef` with:
+- **nextAction**: What to do immediately after this tool
+- **nextTools**: Recommended follow-up tools
+- **methodology**: Which methodology guide to consult
+- **tip**: Practical usage advice
+
+Call `get_tool_quick_ref("tool_name")` for any tool's guidance.
+
+### Workflow chains — step-by-step recipes
+
+11 pre-built chains for common workflows:
+
+| Chain | Steps | Use case |
+|---|---|---|
+| `new_feature` | 12 | End-to-end feature development |
+| `fix_bug` | 6 | Structured debugging |
+| `ui_change` | 7 | Frontend with visual verification |
+| `parallel_project` | 7 | Multi-agent coordination |
+| `research_phase` | 8 | Context gathering |
+| `academic_paper` | 7 | Paper writing pipeline |
+| `c_compiler_benchmark` | 10 | Autonomous capability test |
+| `security_audit` | 9 | Comprehensive security assessment |
+| `code_review` | 8 | Structured code review |
+| `deployment` | 8 | Ship with full verification |
+| `migration` | 10 | SDK/framework upgrade |
+
+Call `get_workflow_chain("new_feature")` to get the step-by-step sequence.
+
+### Boilerplate template
+
+Start new projects with everything pre-configured:
+
+```bash
+gh repo create my-project --template HomenShum/nodebench-boilerplate --clone
+cd my-project && npm install
+```
+
+Or use the scaffold tool: `scaffold_nodebench_project` creates AGENTS.md, .mcp.json, package.json, CI, Docker, and parallel agent infra.
+
+---
+
 ## The Methodology Pipeline
 
 NodeBench MCP isn't just a bag of tools — it's a pipeline. Each step feeds the next:
@@ -171,7 +269,7 @@ Research → Risk → Implement → Test (3 layers) → Eval → Gate → Learn 
 **Outer loop** (over time): Eval-driven development ensures improvement.
 **Together**: The AI Flywheel — every verification produces eval artifacts, every regression triggers verification.
 
-Ask the agent: `Use getMethodology("overview")` to see all 18 methodology topics.
+Ask the agent: `Use getMethodology("overview")` to see all 19 methodology topics.
 
 ---
 
@@ -200,20 +298,20 @@ Based on Anthropic's ["Building a C Compiler with Parallel Claudes"](https://www
 
 ---
 
-## Toolset Gating (v2.4)
+## Toolset Gating (v2.8)
 
-90 tools means ~22K tokens of schema per API call. If you only need core methodology, gate the toolset:
+129 tools means tens of thousands of tokens of schema per API call. If you only need core methodology, gate the toolset:
 
 ### Presets
 
 ```bash
-# Lite — 34 tools (verification, eval, gates, learning, recon, security)
+# Lite — 39 tools (verification, eval, gates, learning, recon, security, boilerplate + meta + discovery)
 claude mcp add nodebench -- npx -y nodebench-mcp --preset lite
 
-# Core — 62 tools (adds flywheel, bootstrap, self-eval, llm, platform)
+# Core — 87 tools (adds flywheel, bootstrap, self-eval, llm, platform, research_writing, flicker_detection, figma_flow, benchmark + meta + discovery)
 claude mcp add nodebench -- npx -y nodebench-mcp --preset core
 
-# Full — all 90 tools (default)
+# Full — all 129 tools (default)
 claude mcp add nodebench -- npx -y nodebench-mcp
 ```
 
@@ -261,12 +359,19 @@ npx nodebench-mcp --help
 | web | 2 | Web search, URL fetch |
 | github | 3 | Repo search, analysis, monitoring |
 | docs | 4 | Documentation generation, reports |
-| local_file | 3 | CSV, XLSX, PDF parsing |
+| local_file | 17 | Deterministic parsing (CSV/XLSX/PDF/DOCX/PPTX/ZIP/JSON/JSONL/TXT) |
 | llm | 3 | LLM calling, extraction, benchmarking |
 | security | 3 | Dependency scanning, code analysis, terminal security scanning |
 | platform | 4 | Convex bridge: briefs, funding, research, publish |
+| research_writing | 8 | Academic paper polishing, translation, de-AI, logic check, captions, experiment analysis, reviewer simulation |
+| flicker_detection | 5 | Android flicker detection + SSIM tooling |
+| figma_flow | 4 | Figma flow analysis + rendering |
+| boilerplate | 2 | Scaffold NodeBench projects + status |
+| benchmark | 3 | Autonomous benchmark lifecycle (C-compiler pattern) |
 
-`findTools` and `getMethodology` are always available regardless of gating — agents can discover tools on demand.
+Always included (regardless of gating):
+- Meta: `findTools`, `getMethodology`
+- Discovery: `discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`
 
 ---
 
