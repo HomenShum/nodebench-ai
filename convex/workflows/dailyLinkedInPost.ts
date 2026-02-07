@@ -8,7 +8,7 @@
  * 2. Format for LinkedIn (professional tone, 2000 char limit)
  * 3. Post to LinkedIn via the linkedinPosting action
  *
- * Cost: $0.00 (uses devstral-2-free for all LLM calls)
+ * Cost: $0.00 (uses best available free model for all LLM calls)
  */
 
 import { v } from "convex/values";
@@ -45,45 +45,55 @@ function formatDigestForLinkedIn(
     minLength?: number;
   } = {}
 ): string {
-  const maxLength = options.maxLength || 2900; // LinkedIn allows 3000, use 2900 for safety
-  const minLength = options.minLength || 1500; // Target minimum for engagement
+  const maxLength = options.maxLength || 2900; // LinkedIn hard limit is 3000, use 2900 for safety
+  const minLength = options.minLength || 2000; // Target minimum for depth
   const dateString = digest.dateString;
+
+  // Helper: format a publish date from ISO string
+  const fmtDate = (iso?: string): string => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      const mon = d.toLocaleString("en-US", { month: "short" });
+      return ` (Published: ${mon} ${d.getDate()}, ${d.getFullYear()})`;
+    } catch { return ""; }
+  };
 
   const parts: string[] = [];
 
-  // Clean header without emojis - more detailed
-  parts.push(`NodeBench AI Daily Intelligence Brief`);
-  parts.push(`Date: ${dateString}`);
-  parts.push(`Curated insights from across the tech ecosystem`);
-  parts.push("");
-
-  // Lead story (Act I) - Expanded structure
-  if (digest.leadStory) {
-    parts.push(`TODAY'S KEY SIGNAL:`);
-    parts.push(digest.leadStory.title);
-    if (digest.leadStory.url) {
-      parts.push(`Source: ${digest.leadStory.url}`);
-    }
-    if (digest.leadStory.whyItMatters) {
-      parts.push(`Why it matters: ${digest.leadStory.whyItMatters}`);
-    }
-    // Add additional context if available
-    if ((digest.leadStory as any).summary) {
-      parts.push(`Context: ${(digest.leadStory as any).summary}`);
-    }
+  // Hook opening - use lead story insight, not a report header
+  if (digest.leadStory?.whyItMatters) {
+    parts.push(digest.leadStory.whyItMatters);
     parts.push("");
+    if ((digest.leadStory as any).summary) {
+      parts.push((digest.leadStory as any).summary);
+      parts.push("");
+    }
   } else if (digest.narrativeThesis) {
-    parts.push(`TODAY'S THESIS:`);
     parts.push(digest.narrativeThesis);
     parts.push("");
   }
 
-  // Key Signals (Act II) - Expanded with more details
+  // Brief header with date
+  parts.push(`NodeBench AI Daily Intelligence Brief`);
+  parts.push(`Date: ${dateString}`);
+  parts.push("");
+
+  // Lead story as key signal
+  if (digest.leadStory) {
+    parts.push(`TODAY'S KEY SIGNAL:`);
+    parts.push(digest.leadStory.title);
+    if (digest.leadStory.url) {
+      parts.push(`${digest.leadStory.url}${fmtDate((digest.leadStory as any).publishedAt)}`);
+    }
+    parts.push("");
+  }
+
+  // Key Signals with publish dates
   if (digest.signals && digest.signals.length > 0) {
     parts.push(`KEY SIGNALS:`);
     parts.push("");
-    // Show up to 6 signals for more content
-    for (let i = 0; i < Math.min(digest.signals.length, 6); i++) {
+    for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
       const signal = digest.signals[i];
       parts.push(`${i + 1}. ${signal.title}`);
       if (signal.summary) {
@@ -93,7 +103,7 @@ function formatDigestForLinkedIn(
         parts.push(`   Key data: ${signal.hardNumbers}`);
       }
       if (signal.url) {
-        parts.push(`   Read more: ${signal.url}`);
+        parts.push(`   ${signal.url}${fmtDate((signal as any).publishedAt)}`);
       }
       parts.push("");
     }
@@ -181,36 +191,31 @@ function formatDigestForLinkedIn(
     content = parts.join("\n");
   }
 
-  // Footer with # format (LinkedIn-friendly) - Expanded
+  // Engagement question before footer
+  if (!content.includes("?")) {
+    parts.push("What signal are you tracking most closely this week?");
+    parts.push("");
+  }
+
+  // Footer with # format (LinkedIn-friendly)
   if (!content.includes("---")) {
     parts.push("---");
-    parts.push("");
-    parts.push("Powered by NodeBench AI - Autonomous Intelligence Platform");
-    parts.push("Zero-human-input continuous intelligence for investors and builders");
-    parts.push("");
-    parts.push("#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI #Startups #VentureCapital");
+    parts.push("Powered by NodeBench AI");
+    parts.push("#AI #TechIntelligence #DailyBrief #NodeBenchAI #Startups");
     content = parts.join("\n");
   }
 
-  // Final length check - expand if still too short
-  if (content.length < minLength) {
-    const paddingParts: string[] = [];
-    paddingParts.push("");
-    paddingParts.push("---");
-    paddingParts.push("");
-    paddingParts.push("ABOUT THIS BRIEF:");
-    paddingParts.push("This intelligence brief is generated autonomously by NodeBench AI's multi-agent system. Our platform ingests signals from across the tech ecosystem, fact-checks claims using multiple sources, and surfaces actionable insights for investors, founders, and technology leaders.");
-    paddingParts.push("");
-    paddingParts.push("Follow for daily intelligence briefs delivered at 6:15 AM UTC.");
-    paddingParts.push("");
-    paddingParts.push("#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI #Startups #VentureCapital #FundingNews");
-
-    // Replace existing footer with expanded one
+  // Final length check - expand if still too short by adding more signal detail
+  if (content.length < minLength && digest.signals && digest.signals.length > 0) {
+    const extraParts: string[] = [];
+    extraParts.push("MARKET CONTEXT:");
+    extraParts.push("This intelligence spans AI/ML, startup funding, and tech infrastructure. Our agents continuously monitor HackerNews, ArXiv, Reddit, and premium feeds to surface impactful signals.");
+    extraParts.push("");
     const footerStart = content.indexOf("---");
     if (footerStart > -1) {
-      content = content.substring(0, footerStart) + paddingParts.join("\n");
+      content = content.substring(0, footerStart) + extraParts.join("\n") + "\n" + content.substring(footerStart);
     } else {
-      content = content + paddingParts.join("\n");
+      content = content + "\n" + extraParts.join("\n");
     }
   }
 
@@ -294,7 +299,7 @@ export const postDailyDigestToLinkedIn = internalAction({
   },
   handler: async (ctx, args) => {
     const persona = args.persona || "GENERAL";
-    const model = args.model || "devstral-2-free"; // Free model
+    const model = args.model || "qwen3-coder-free"; // Dynamic: best verified free model (Feb 2026)
     const dryRun = args.dryRun ?? false;
     const hoursBack = args.hoursBack ?? 168; // Default to 7 days for better content availability
     const forcePost = args.forcePost ?? false;
@@ -894,18 +899,32 @@ function formatDigestForPersona(
   options: { maxLength?: number; minLength?: number } = {}
 ): string {
   const maxLength = options.maxLength || 2900;
-  const minLength = options.minLength || 1500; // Target minimum for engagement
+  const minLength = options.minLength || 2000; // Target minimum for depth
   const dateString = digest.dateString;
   const parts: string[] = [];
+
+  // Helper: format a publish date from ISO string
+  const fmtDate = (iso?: string): string => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      const mon = d.toLocaleString("en-US", { month: "short" });
+      return ` (Published: ${mon} ${d.getDate()}, ${d.getFullYear()})`;
+    } catch { return ""; }
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // VC_INVESTOR: Deal Memo Style - Investment thesis, market dynamics, exit paths
   // Format: Like a mini investment memo with clear thesis and company deep-dives
   // ═══════════════════════════════════════════════════════════════════════════
   if (personaId === "VC_INVESTOR") {
-    parts.push(`VC DEAL FLOW MEMO`);
-    parts.push(`${dateString} - NodeBench AI`);
-    parts.push(`Autonomous deal sourcing and market intelligence`);
+    // Hook opening - use lead story investment angle
+    if (digest.leadStory?.whyItMatters) {
+      parts.push(digest.leadStory.whyItMatters);
+      parts.push("");
+    }
+    parts.push(`NodeBench AI VC Deal Flow Intelligence`);
+    parts.push(`Date: ${dateString}`);
     parts.push("");
 
     // Investment Thesis of the Day
@@ -920,7 +939,7 @@ function formatDigestForPersona(
         parts.push(`Analysis: ${(digest.leadStory as any).summary}`);
       }
       if (digest.leadStory.url) {
-        parts.push(`Primary Source: ${digest.leadStory.url}`);
+        parts.push(`Source: ${digest.leadStory.url}${fmtDate((digest.leadStory as any).publishedAt)}`);
       }
       parts.push("");
     }
@@ -960,7 +979,7 @@ function formatDigestForPersona(
           parts.push(`   Data: ${signal.hardNumbers}`);
         }
         if (signal.url) {
-          parts.push(`   Link: ${signal.url}`);
+          parts.push(`   ${signal.url}${fmtDate((signal as any).publishedAt)}`);
         }
         parts.push("");
       }
@@ -1005,9 +1024,13 @@ function formatDigestForPersona(
   // Format: Like a technical newsletter with code implications and stack decisions
   // ═══════════════════════════════════════════════════════════════════════════
   else if (personaId === "TECH_BUILDER") {
-    parts.push(`TECH RADAR`);
-    parts.push(`Engineering Intelligence - ${dateString}`);
-    parts.push(`Autonomous signal detection for builders and architects`);
+    // Hook opening - use lead story engineering angle
+    if (digest.leadStory?.whyItMatters) {
+      parts.push(digest.leadStory.whyItMatters);
+      parts.push("");
+    }
+    parts.push(`NodeBench AI Engineering Intelligence`);
+    parts.push(`Date: ${dateString}`);
     parts.push("");
 
     // Architecture Alert - Lead with technical implications
@@ -1024,26 +1047,26 @@ function formatDigestForPersona(
         parts.push((digest.leadStory as any).summary);
       }
       if (digest.leadStory.url) {
-        parts.push(`Source: ${digest.leadStory.url}`);
+        parts.push(`${digest.leadStory.url}${fmtDate((digest.leadStory as any).publishedAt)}`);
       }
       parts.push("");
     }
 
-    // Tech Stack Signals - Detailed with metrics - expanded
+    // Tech Stack Signals - Detailed with metrics
     if (digest.signals && digest.signals.length > 0) {
-      parts.push(`STACK SIGNALS:`);
+      parts.push(`KEY SIGNALS:`);
       parts.push("");
-      for (let i = 0; i < Math.min(digest.signals.length, 6); i++) {
+      for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
         const signal = digest.signals[i];
-        parts.push(`[${i + 1}] ${signal.title}`);
+        parts.push(`${i + 1}. ${signal.title}`);
         if (signal.summary) {
-          parts.push(`    ${signal.summary}`);
+          parts.push(`   ${signal.summary}`);
         }
         if (signal.hardNumbers) {
-          parts.push(`    Metrics: ${signal.hardNumbers}`);
+          parts.push(`   Metrics: ${signal.hardNumbers}`);
         }
         if (signal.url) {
-          parts.push(`    Read: ${signal.url}`);
+          parts.push(`   ${signal.url}${fmtDate((signal as any).publishedAt)}`);
         }
         parts.push("");
       }
@@ -1238,7 +1261,7 @@ export const postMultiPersonaDigest = internalAction({
   },
   handler: async (ctx, args) => {
     const requestedPersonas = (args.personas || ["GENERAL"]) as PersonaId[];
-    const model = args.model || "devstral-2-free";
+    const model = args.model || "qwen3-coder-free";
     const dryRun = args.dryRun ?? false;
     const delayMs = args.delayBetweenPostsMs || 5000; // 5 second delay between posts
     const forcePost = args.forcePost ?? false;
@@ -2194,7 +2217,7 @@ RULES:
         "X-Title": "NodeBench AI Funding Brief",
       },
       body: JSON.stringify({
-        model: "xiaomi/mimo-v2-flash:free", // Fast free model - excellent for research
+        model: "qwen/qwen3-coder:free", // Best available free model (Feb 2026)
         messages: [{ role: "user", content: extractionPrompt }],
         max_tokens: 1000,
       }),

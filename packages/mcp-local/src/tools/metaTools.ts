@@ -978,6 +978,48 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
       bootstrap_external_repos:
         "When connected to another project that lacks parallel agent capabilities, use bootstrap_parallel_agents to auto-detect gaps and scaffold infrastructure. The tool scans 7 categories (task coordination, roles, oracle, context budget, progress files, AGENTS.md parallel section, git worktrees) and generates ready-to-use files. Follow the AI Flywheel closed loop: detect → scaffold → verify → fix → document.",
     },
+    claudeCodeNativePath: {
+      title: "Claude Code Native Parallel Subagents",
+      description:
+        "If you are using Claude Code (Anthropic's CLI), you already have parallel subagent support via the Task tool. NodeBench MCP adds coordination, tracking, and impact measurement on top of Claude Code's native parallelism.",
+      howItWorks: [
+        "1. The main Claude Code session is the COORDINATOR — it breaks work into independent tasks",
+        "2. Each Task tool call spawns a SUBAGENT — a separate Claude instance with its own context",
+        "3. Each subagent has access to the same NodeBench MCP tools (shared SQLite database)",
+        "4. Subagents use claim_agent_task/release_agent_task to coordinate without conflicts",
+        "5. The coordinator uses get_parallel_status to monitor progress across all subagents",
+      ],
+      exampleWorkflow: [
+        "COORDINATOR: Break work into 3 independent tasks",
+        "COORDINATOR: For each task, spawn a Task tool subagent with prompt:",
+        '  "You have access to NodeBench MCP. First call claim_agent_task({ taskKey: \'fix_auth\' }), then do the work, then call release_agent_task with a progress note."',
+        "COORDINATOR: Call get_parallel_status to see all subagent progress",
+        "COORDINATOR: When all subagents complete, aggregate results and run quality gate",
+      ],
+      impact: "Prevents duplicate work across subagents, captures per-task learnings, enables oracle-based validation, tracks context budget per subagent",
+    },
+    whenToUseParallelTools: {
+      description: "Parallel agent tools are NOT always needed. Use them ONLY when the situation calls for coordination.",
+      useWhen: [
+        "You are running 2+ agent sessions (Claude Code subagents, worktrees, or separate terminals)",
+        "You need to prevent two agents from working on the same thing",
+        "You want oracle-based testing to split failures into independent work items",
+        "You are bootstrapping parallel agent infrastructure for an external project",
+      ],
+      doNotUseWhen: [
+        "You are a single agent working sequentially — standard verification/eval tools are sufficient",
+        "The task is simple enough for one agent to handle end-to-end",
+        "You are not in a multi-agent or multi-session context",
+      ],
+    },
+    impactPerStep: {
+      orient: "IMPACT: Prevents wasted time re-doing work another agent already started or completed",
+      assign_role: "IMPACT: Specialization enables parallelism — agents don't step on each other's toes",
+      claim_task: "IMPACT: Zero duplicate work — each task is owned by exactly one agent",
+      monitor_budget: "IMPACT: Prevents context window exhaustion that forces expensive session restarts",
+      oracle_validate: "IMPACT: Catches regressions by comparing against known-good reference — each failure is an independent debuggable work item",
+      release_handoff: "IMPACT: Progress notes ensure the next agent (or next session) doesn't restart from scratch",
+    },
     bootstrapForExternalRepos: {
       description:
         "When nodebench-mcp detects that a target project repo does not have parallel agent infrastructure, it can automatically bootstrap it using the AI Flywheel closed loop.",
@@ -1058,6 +1100,328 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
     composesWith:
       "Feeds into the AI Flywheel outer loop. Trajectory analysis informs eval case design. Recommendations trigger verification cycles. Learnings persist across sessions.",
   },
+  academic_paper_writing: {
+    title: "Academic Paper Writing — AI-Assisted Research Polishing",
+    description:
+      "Comprehensive academic writing workflow adapted from battle-tested prompts used at MSRA, Bytedance Seed, and top Chinese universities. Covers polishing, translation, compression, de-AI-ification, logic checking, caption generation, experiment analysis, and reviewer simulation. All tools use LLM provider fallback (Gemini → OpenAI → Anthropic).",
+    steps: [
+      {
+        step: 1,
+        name: "Polish Draft",
+        description:
+          "Deep-polish the draft for top-venue quality. Fix grammar, enforce formal academic tone, remove contractions and AI vocabulary. Preserve LaTeX, citations, and math.",
+        tools: ["polish_academic_text"],
+        action:
+          'Call polish_academic_text({ text: "...", targetVenue: "NeurIPS", language: "en" }). Review the modification log in the response.',
+      },
+      {
+        step: 2,
+        name: "Remove AI Signatures",
+        description:
+          "Detect and rewrite AI-generated writing patterns (leverage, delve, tapestry, mechanical connectors). Two-phase: regex pattern match + LLM rewrite.",
+        tools: ["remove_ai_signatures"],
+        action:
+          "Call remove_ai_signatures({ text: '...' }). Review detectedPatterns list and the rewritten text.",
+      },
+      {
+        step: 3,
+        name: "Check Logic",
+        description:
+          "High-threshold logic review: contradictions, undefined terms, terminology inconsistency, Chinglish. Only flags issues that genuinely block comprehension.",
+        tools: ["check_paper_logic"],
+        action:
+          'Call check_paper_logic({ text: "...", checkType: "all" }). Fix any critical or high severity issues before proceeding.',
+      },
+      {
+        step: 4,
+        name: "Adjust Length",
+        description:
+          "Precisely compress or expand sections to meet page limits. Compression removes filler, expansion adds logical depth.",
+        tools: ["compress_or_expand_text"],
+        action:
+          'Call compress_or_expand_text({ text: "...", mode: "compress", targetDelta: 50 }). Check word count change in response.',
+      },
+      {
+        step: 5,
+        name: "Generate Captions",
+        description:
+          "Create publication-ready figure and table captions following venue conventions. Both short and detailed versions.",
+        tools: ["generate_academic_caption"],
+        action:
+          'Call generate_academic_caption({ description: "Comparison of model accuracy across 5 datasets", figureType: "table" }). Use the short version in the paper, detailed version in appendix.',
+      },
+      {
+        step: 6,
+        name: "Analyze Experiments",
+        description:
+          "Generate analysis paragraphs from experiment data. Strict: all conclusions grounded in provided data, no fabrication.",
+        tools: ["analyze_experiment_data"],
+        action:
+          'Call analyze_experiment_data({ data: "<csv or json>", goal: "our method outperforms baselines", format: "latex" }).',
+      },
+      {
+        step: 7,
+        name: "Simulate Review",
+        description:
+          "Get a harsh peer review before submission. Identifies critical weaknesses and provides strategic revision advice.",
+        tools: ["review_paper_as_reviewer"],
+        action:
+          'Call review_paper_as_reviewer({ text: "...", venue: "ICML 2026", strictness: "harsh" }). Address all critical weaknesses before submission.',
+      },
+      {
+        step: 8,
+        name: "Translate (if bilingual)",
+        description:
+          "Translate sections between Chinese and English preserving LaTeX, citations, and terminology consistency.",
+        tools: ["translate_academic"],
+        action:
+          'Call translate_academic({ text: "...", from: "zh", to: "en", domain: "computer vision" }). Use the terminology dictionary for consistency across sections.',
+      },
+    ],
+    composesWith:
+      "Use after the 6-Phase Verification cycle completes a research implementation. Feed reviewer feedback into log_gap for tracking. Record writing patterns with record_learning.",
+    sourceReference:
+      "https://github.com/Leey21/awesome-ai-research-writing — 4000+ stars, MSRA/Bytedance/PKU",
+  },
+  agent_evaluation: {
+    title: "Agent Evaluation — Test, Observe, Improve",
+    description:
+      "Systematic methodology for ensuring agents using NodeBench MCP perform as well or better than agents without it. Combines contract compliance scoring, trajectory analysis, eval benchmarks, and self-reinforced learning into a closed loop: run agent → score → identify gaps → fix prompt/contract → re-score. The key insight: agent quality is measurable using the same eval infrastructure NodeBench provides for code quality.",
+    steps: [
+      {
+        step: 1,
+        name: "Instrument the Agent Session",
+        description:
+          "Ensure every tool call is logged. NodeBench auto-instruments calls, but verify with log_tool_call if using external orchestrators. Group related calls under a sessionId.",
+        tools: ["log_tool_call"],
+        action:
+          "Verify tool call logging is active. If using Claude Code, Windsurf, or Cursor — calls are auto-logged. For custom orchestrators, call log_tool_call({ sessionId, toolName, resultStatus }) after each tool invocation.",
+      },
+      {
+        step: 2,
+        name: "Score Contract Compliance",
+        description:
+          "Run the 6-dimension contract compliance checker. Scores: front-door protocol (25pts), self-setup (10pts), pre-implementation gates (15pts), parallel coordination (10pts), ship gates (30pts), tool efficiency (10pts). Total: 100pts.",
+        tools: ["check_contract_compliance"],
+        action:
+          "Call check_contract_compliance({ sessionId }) after the agent task completes. Review violations and per-dimension scores. Target: Grade B (80+) for production agents.",
+      },
+      {
+        step: 3,
+        name: "Analyze Trajectory Patterns",
+        description:
+          "Identify tool usage patterns: which tools are used most, sequential bigrams (tool A → tool B), error rates, phase distribution. Patterns reveal whether the agent is using the methodology effectively.",
+        tools: ["get_trajectory_analysis"],
+        action:
+          "Call get_trajectory_analysis({ sessionId }). Look for: (1) front-door tools appearing first, (2) low error rates, (3) ship-gate tools appearing last, (4) no redundant consecutive calls.",
+      },
+      {
+        step: 4,
+        name: "Run Eval Benchmarks",
+        description:
+          "Create eval test cases for specific agent behaviors. Test: does the agent search before coding? Does it recover from missing tools? Does it run all ship gates? Compare with/without the agent-contract prompt.",
+        tools: ["start_eval_run", "record_eval_result", "complete_eval_run"],
+        action:
+          'Create eval cases: { input: "Fix a bug in auth module", intent: "Agent should search_all_knowledge first, then verify, then ship with gates" }. Record actual behavior. Compare pass rates.',
+      },
+      {
+        step: 5,
+        name: "Compare Before/After",
+        description:
+          "After changing the agent contract, prompt, or toolset — re-run eval and compare. Never ship a contract change without eval improvement.",
+        tools: ["compare_eval_runs"],
+        action:
+          "Call compare_eval_runs({ baselineRunId, candidateRunId }). Only ship if the candidate shows improvement. If regression, investigate with trigger_investigation.",
+      },
+      {
+        step: 6,
+        name: "Self-Reinforce",
+        description:
+          "Cross-reference all data to generate improvement recommendations. Bank learnings. Clean stale data. The system gets smarter about agent patterns over time.",
+        tools: ["get_self_eval_report", "get_improvement_recommendations", "record_learning"],
+        action:
+          "Call get_self_eval_report for the health dashboard. Call get_improvement_recommendations for actionable fixes. Record every agent evaluation insight as a learning.",
+      },
+    ],
+    scoringDimensions: {
+      front_door: "25pts — Did the agent call search_all_knowledge + getMethodology + discover_tools BEFORE implementation?",
+      self_setup: "10pts — Did the agent resolve missing capabilities (errors → setup tools → retry)?",
+      pre_implementation: "15pts — Did the agent run recon + risk assessment before changes?",
+      parallel_coordination: "10pts — If parallel work, did the agent claim/release tasks with roles and budget tracking?",
+      ship_gates: "30pts — Did the agent run tests + eval + quality gate + mandatory flywheel + record learning before declaring done?",
+      tool_efficiency: "10pts — Low error rate, no redundant calls, good tool variety?",
+    },
+    gradeScale: {
+      A: "90-100 — Exemplary: agent follows the full contract consistently",
+      B: "80-89 — Good: minor gaps but fundamentally sound process",
+      C: "70-79 — Acceptable: some dimensions need attention",
+      D: "55-69 — Needs Improvement: significant contract violations",
+      F: "0-54 — Non-Compliant: agent is not following the methodology",
+    },
+    whatToMeasure: {
+      contract_compliance_score: "0-100 from check_contract_compliance — the primary metric",
+      health_score: "From get_self_eval_report — broader system health across all artifacts",
+      eval_pass_rate: "From complete_eval_run — percentage of agent behavior test cases passing",
+      tool_error_rate: "From get_trajectory_analysis — percentage of tool calls that fail",
+      knowledge_growth: "From search_all_knowledge — are learnings accumulating and being reused?",
+      violation_trend: "From get_gate_history — are contract violations decreasing over time?",
+    },
+    hostFewerToolsArchitecture: {
+      principle: "Give the agent 4 front-door meta-tools. All 129+ tools are discoverable on demand.",
+      frontDoor: [
+        "search_all_knowledge — Check what's known before doing anything",
+        "getMethodology — Load the right process for the task",
+        "discover_tools — Find the best tools for the job (multi-modal search with explain=true)",
+        "get_workflow_chain — Get step-by-step tool sequence for the workflow",
+      ],
+      selfExtension: "If a capability is missing, the agent escalates: discover_tools → scaffold/bootstrap → smoke-test → proceed. The agent-contract prompt encodes this as a non-negotiable rule.",
+      benefits: [
+        "Small surface area (4 host tools) for easier safety and auditing",
+        "Composable growth via discoverable tool inventory",
+        "Better tool choice via multi-modal search + quickRef guidance",
+        "Measurable via contract compliance scoring",
+      ],
+    },
+    composesWith:
+      "Run after every agent session. Feeds into the self-reinforced learning loop. Contract compliance scores become eval test cases. Violations trigger verification investigations.",
+  },
+  controlled_evaluation: {
+    title: "Controlled Evaluation — Prove NodeBench MCP Makes Agents Better",
+    description:
+      "A rigorous evaluation framework based on Anthropic's agent eval methodology. Uses fixed task banks, ablation experiments (bare vs lite vs full), multi-trial statistics, and dual-axis scoring (outcome quality + process quality) to prove that NodeBench MCP improves agent performance with statistical confidence. References: Anthropic 'Demystifying evals for AI agents', 'Quantifying infrastructure noise in agentic coding evals', Accenture MCP-Bench, ModelScope MCPBench.",
+    steps: [
+      {
+        step: 1,
+        name: "Define 'Better' (Two Axes)",
+        description:
+          "Outcome quality: task success rate, regression rate, time-to-fix, bug escape rate. Process quality: structured recon, risk assessment, 3-layer tests, regression guards, quality gates, banked learnings. Both axes must improve for NodeBench to prove its value.",
+        tools: ["create_task_bank", "get_gate_preset"],
+        action:
+          "Define measurable criteria for each axis. Load agent_comparison gate preset for the 10 boolean rules. Outcome = what users care about. Process = what NodeBench is meant to improve.",
+      },
+      {
+        step: 2,
+        name: "Build a Fixed Task Bank",
+        description:
+          "Create 30-200 real tasks (bugfixes, refactors, integrations, UI). Each task specifies: initial state, success criteria (deterministic), forbidden behaviors, time/token budget. This is the evaluation foundation.",
+        tools: ["create_task_bank"],
+        action:
+          'Use get_workflow_chain("task_bank_setup") for the starter kit. Each task needs: taskId, category, difficulty, prompt, successCriteria[], forbiddenBehaviors[], timeBudgetMinutes. Categories: bugfix/refactor/integration/ui/security/performance/migration.',
+      },
+      {
+        step: 3,
+        name: "Run Ablations (Isolate MCP Value)",
+        description:
+          "For each task, run 5 conditions: (1) bare agent (no MCP), (2) NodeBench lite preset, (3) NodeBench full, (4) full but cold knowledge base, (5) full but quality gates disabled. Same model, same time budget, same infra. This isolates what each MCP component contributes.",
+        tools: ["grade_agent_run"],
+        action:
+          "Run grade_agent_run with condition='bare', then 'lite', then 'full', then 'cold_kb', then 'no_gates' for the same taskId. Compare scores across conditions. The delta between bare and full is NodeBench's measured value.",
+      },
+      {
+        step: 4,
+        name: "Multi-Trial Statistics",
+        description:
+          "Run N trials per task (3-10) because agents are stochastic. Report: mean success, variance, best-of-N, average-of-N. Both matter — average-of-N for reliability, best-of-N for capability ceiling.",
+        tools: ["grade_agent_run", "start_eval_run"],
+        action:
+          "Run grade_agent_run with trialNumber=1..N for each condition. The ablationComparison field in the response auto-aggregates mean scores across trials. Target: p<0.05 significance for bare vs full difference.",
+      },
+      {
+        step: 5,
+        name: "Mix Grader Types",
+        description:
+          "Deterministic graders: tests, lint, type-check, invariants, required-tool-call checks. Model graders: rubric scoring for code clarity, pairwise comparisons. Human spot-checks: sample 5-10% of runs. All three prevent Goodharting.",
+        tools: ["run_quality_gate", "record_eval_result"],
+        action:
+          "Use run_quality_gate with agent_comparison preset for deterministic checks. Use record_eval_result with judgeNotes for model grading. Flag 5-10% of runs for human review with notes field.",
+      },
+      {
+        step: 6,
+        name: "Control Infrastructure Noise",
+        description:
+          "Agentic coding evals are sensitive to CPU/RAM/time limits — enough to swing results by percentage points. Pin deps, fix resource limits, record infra failures separately from model failures, track infra error rate as first-class metric.",
+        tools: ["log_tool_call", "record_learning"],
+        action:
+          "Log infra errors with resultStatus='error' and phase='infra' to separate from model errors. Track infra_error_rate separately. Use containers with pinned deps for reproducibility.",
+      },
+      {
+        step: 7,
+        name: "Benchmark Tool Discovery (MCP-Specific)",
+        description:
+          "Since NodeBench adds a large tool layer, explicitly test: can the agent find the right tool? Can it call it correctly? Does it over-call tools and burn budget? Use tool-use scorecards alongside repo-based tasks.",
+        tools: ["discover_tools", "get_trajectory_analysis", "check_contract_compliance"],
+        action:
+          "Run get_trajectory_analysis to measure: unique tools used, error rate, tool variety vs task type. Check contract_compliance front-door score. Compare tool discovery accuracy between bare (no discover_tools) and full (with discover_tools).",
+      },
+      {
+        step: 8,
+        name: "Production Observability",
+        description:
+          "Capture full traces (prompts, tool calls, outputs, diffs, test results, gate decisions, knowledge read/writes). Emit structured telemetry events. Build dashboards: pass rate by category, token/latency distributions, infra error rate, gate violation frequency, post-merge incidents.",
+        tools: ["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_gate_history"],
+        action:
+          "Telemetry schema: recon_finding{severity,category}, risk_assessment{tier,rationale}, test_result{layer,pass,duration}, eval_case_added{count}, quality_gate{rule_id,pass}, knowledge_write{topic,confidence}. Track all via log_tool_call phases.",
+      },
+      {
+        step: 9,
+        name: "Promotion Strategy",
+        description:
+          "Treat NodeBench MCP like a model change: regression suite must stay ~100% pass, capability suite should trend upward, enforce budget envelope. Canary on 5-10% of tasks, compare incident rate vs control, expand only if it wins on BOTH outcome metrics AND cost.",
+        tools: ["compare_eval_runs", "run_quality_gate", "record_learning"],
+        action:
+          "Gate releases on: (1) regression suite pass, (2) capability suite improvement, (3) budget within envelope, (4) no critical security vulnerabilities. Canary → verify → expand.",
+      },
+    ],
+    ablationMatrix: {
+      bare: "No NodeBench MCP — agent uses only host IDE tools. Baseline for comparison.",
+      lite: "NodeBench lite preset (39 tools) — core methodology without flywheel/parallel.",
+      full: "NodeBench full preset (134 tools) — everything including parallel, vision, web.",
+      cold_kb: "NodeBench full but empty knowledge base — tests whether accumulated learnings matter.",
+      no_gates: "NodeBench full but quality gates disabled — tests whether gates prevent regressions.",
+    },
+    scoringAxes: {
+      outcome: {
+        weight: "50pts",
+        components: [
+          "Criteria pass rate (40pts) — deterministic success checks from task bank",
+          "Budget compliance (10pts) — within time and token budget",
+          "Forbidden behavior penalty (-5 per violation, max -10)",
+        ],
+      },
+      process: {
+        weight: "50pts",
+        components: [
+          "Front-door protocol (12pts) — searched before coding, first call was discovery",
+          "Recon + risk (10pts) — ran recon and assessed risk before changes",
+          "Tests + gates (18pts) — ran tests, quality gate, mandatory flywheel, recorded learnings",
+          "Efficiency (10pts) — low error rate, good tool variety",
+        ],
+      },
+    },
+    graderTypes: {
+      deterministic: "Tests, lint, type-check, invariants, required-tool-call checks. Fast + objective. 80% of grading.",
+      model: "Rubric scoring for code clarity, adherence to instructions, change risk. Pairwise comparisons (NodeBench vs bare). 15% of grading.",
+      human: "Sample 5-10% of runs. Review diffs + traces. Prevents Goodharting on automated metrics. 5% of grading.",
+    },
+    infraControls: [
+      "Run in containers with pinned deps (same Node.js, same packages)",
+      "Fixed CPU/RAM per task with consistent enforcement",
+      "Record infra failures separately from model failures",
+      "Track infra_error_rate as first-class metric alongside model metrics",
+      "Use deterministic seeds where possible (temperature=0 for reproducibility)",
+    ],
+    references: {
+      anthropic_evals: "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+      infra_noise: "https://www.anthropic.com/engineering/infrastructure-noise",
+      mcp_bench: "https://github.com/Accenture/mcp-bench",
+      mcpbench: "https://github.com/modelscope/MCPBench",
+      mcp_sec_bench: "https://arxiv.org/pdf/2508.13220",
+      long_running: "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+      parallel_agents: "https://www.anthropic.com/engineering/building-c-compiler",
+    },
+    composesWith:
+      "Build on agent_evaluation for contract scoring. Use the verification methodology for per-task correctness. Feed results into self_reinforced_learning loop. Use parallel_agent_teams methodology for evaluating multi-agent handoffs.",
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1103,6 +1467,12 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "Parallel Agent Teams — task locking, role specialization, context budget management, oracle testing. Based on Anthropic's 'Building a C Compiler with Parallel Claudes' (Feb 2026)",
           self_reinforced_learning:
             "Self-Reinforced Learning — auto-instrumented trajectory analysis, self-evaluation reports, improvement recommendations, stale run cleanup, recon synthesis, closed-loop optimization",
+          academic_paper_writing:
+            "Academic Paper Writing — AI-assisted polishing, translation, de-AI-ification, logic checking, captions, experiment analysis, reviewer simulation. Based on awesome-ai-research-writing (4000+ stars, MSRA/Bytedance/PKU)",
+          agent_evaluation:
+            "Agent Evaluation — contract compliance scoring (6 dimensions, 100pts), trajectory analysis, eval benchmarks, host-fewer-tools architecture, self-reinforced improvement loop",
+          controlled_evaluation:
+            "Controlled Evaluation — fixed task banks, ablation experiments (bare/lite/full/cold_kb/no_gates), dual-axis scoring (outcome 50pts + process 50pts), multi-trial statistics, grader types, infra noise controls, promotion strategy. Based on Anthropic eval methodology.",
         },
       },
       {
@@ -1168,6 +1538,13 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "bootstrap",
               "self_eval",
               "parallel_agents",
+              "llm",
+              "security",
+              "platform",
+              "research_writing",
+              "boilerplate",
+              "benchmark",
+              "progressive_discovery",
               "meta",
             ],
             description: "Filter by tool category (optional)",
@@ -1196,6 +1573,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "complete_eval_run",
             "compare_eval_runs",
             "list_eval_runs",
+            "diff_outputs",
           ],
           quality_gate: [
             "run_quality_gate",
@@ -1232,6 +1610,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "discover_vision_env",
             "analyze_screenshot",
             "manipulate_screenshot",
+            "diff_screenshots",
           ],
           web: [
             "web_search",
@@ -1240,11 +1619,13 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
           github: [
             "search_github",
             "analyze_repo",
+            "monitor_repo",
           ],
           documentation: [
             "update_agents_md",
             "research_job_market",
             "setup_local_env",
+            "generate_report",
           ],
           bootstrap: [
             "discover_infrastructure",
@@ -1257,6 +1638,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "run_self_maintenance",
             "scaffold_directory",
             "run_autonomous_loop",
+            "run_tests_cli",
           ],
           self_eval: [
             "log_tool_call",
@@ -1265,6 +1647,9 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "get_improvement_recommendations",
             "cleanup_stale_runs",
             "synthesize_recon_to_learnings",
+            "check_contract_compliance",
+            "create_task_bank",
+            "grade_agent_run",
           ],
           parallel_agents: [
             "claim_agent_task",
@@ -1277,6 +1662,44 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "get_parallel_status",
             "bootstrap_parallel_agents",
             "generate_parallel_agents_md",
+          ],
+          llm: [
+            "call_llm",
+            "extract_structured_data",
+            "benchmark_models",
+          ],
+          security: [
+            "scan_dependencies",
+            "run_code_analysis", "scan_terminal_security"],
+          platform: [
+            "query_daily_brief",
+            "query_funding_entities",
+            "query_research_queue",
+            "publish_to_queue",
+          ],
+          research_writing: [
+            "polish_academic_text",
+            "translate_academic",
+            "compress_or_expand_text",
+            "remove_ai_signatures",
+            "check_paper_logic",
+            "generate_academic_caption",
+            "analyze_experiment_data",
+            "review_paper_as_reviewer",
+          ],
+          boilerplate: [
+            "scaffold_nodebench_project",
+            "get_boilerplate_status",
+          ],
+          benchmark: [
+            "start_autonomy_benchmark",
+            "log_benchmark_milestone",
+            "complete_autonomy_benchmark",
+          ],
+          progressive_discovery: [
+            "discover_tools",
+            "get_tool_quick_ref",
+            "get_workflow_chain",
           ],
           meta: ["findTools", "getMethodology"],
         };
@@ -1292,6 +1715,43 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
           return query.split(/\s+/).some((word: string) => text.includes(word));
         });
 
+        // Contextual recommendations: surface parallel tools only when relevant
+        const parallelKeywords = ["parallel", "agent", "team", "multi-agent", "subagent", "concurrent", "worktree", "oracle", "lock", "coordinate", "role"];
+        const queryHintsParallel = parallelKeywords.some((kw) => query.includes(kw));
+        const parallelToolNames = new Set(categoryMap.parallel_agents);
+
+        // Add contextual hint about parallel tools
+        const contextHints: string[] = [];
+        if (!queryHintsParallel && !category) {
+          // Don't surface parallel tools unless the query is about parallel/agent work
+          const filtered = matches.filter((t) => !parallelToolNames.has(t.name));
+          if (filtered.length < matches.length) {
+            contextHints.push(
+              "Parallel agent tools are available but not shown (query didn't indicate multi-agent work). " +
+              "Use findTools({ category: 'parallel_agents' }) or include 'parallel'/'agent'/'team' in your query to discover them."
+            );
+          }
+          return {
+            query,
+            count: filtered.length,
+            tools: filtered.map((t) => ({
+              name: t.name,
+              description: t.description,
+            })),
+            contextHints,
+            tip: "Use category filter or specific keywords to narrow results. Call getMethodology('overview') for all available methodologies.",
+          };
+        }
+
+        // When parallel tools ARE relevant, add Claude Code guidance
+        if (queryHintsParallel || category === "parallel_agents") {
+          contextHints.push(
+            "Claude Code users: Use the Task tool to spawn parallel subagents, each with access to NodeBench MCP. " +
+            "Each subagent calls claim_agent_task to lock work, assign_agent_role for specialization, and release_agent_task when done. " +
+            "Call getMethodology('parallel_agent_teams') for the full workflow."
+          );
+        }
+
         return {
           query,
           count: matches.length,
@@ -1299,13 +1759,15 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             name: t.name,
             description: t.description,
           })),
+          contextHints,
+          tip: "Use category filter or specific keywords to narrow results. Call getMethodology('overview') for all available methodologies.",
         };
       },
     },
     {
       name: "getMethodology",
       description:
-        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, overview. Call with topic "overview" to see all available methodologies.',
+        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, controlled_evaluation, overview. Call with topic "overview" to see all available methodologies.',
       inputSchema: {
         type: "object",
         properties: {
@@ -1330,6 +1792,9 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "autonomous_maintenance",
               "parallel_agent_teams",
               "self_reinforced_learning",
+              "academic_paper_writing",
+              "agent_evaluation",
+              "controlled_evaluation",
               "overview",
             ],
             description: "Which methodology to explain",

@@ -49,10 +49,10 @@ export const debugGlmFlash = internalAction({
       }
 
       console.log("\n" + "=".repeat(80));
-      console.log("📋 Test 2: Comparing with devstral-2-free (known working)");
+      console.log("📋 Test 2: Comparing with qwen3-coder-free (known working)");
       console.log("-".repeat(80));
 
-      const workingModel = getLanguageModelSafe("devstral-2-free");
+      const workingModel = getLanguageModelSafe("qwen3-coder-free");
       const startTime2 = Date.now();
 
       const result2 = await generateText({
@@ -72,11 +72,11 @@ export const debugGlmFlash = internalAction({
       console.log("📊 COMPARISON SUMMARY");
       console.log("=".repeat(80));
       console.log(`glm-4.7-flash:     ${result.text.length} chars in ${(duration / 1000).toFixed(2)}s`);
-      console.log(`devstral-2-free:   ${result2.text.length} chars in ${(duration2 / 1000).toFixed(2)}s`);
+      console.log(`qwen3-coder-free:   ${result2.text.length} chars in ${(duration2 / 1000).toFixed(2)}s`);
 
       if (result.text.length === 0 && result2.text.length > 0) {
         console.log("\n⚠️ DIAGNOSIS: glm-4.7-flash has a specific issue");
-        console.log("RECOMMENDATION: Use devstral-2-free or deepseek-v3.2 instead");
+        console.log("RECOMMENDATION: Use qwen3-coder-free or deepseek-v3.2 instead");
       }
 
       return {
@@ -163,7 +163,7 @@ export const testAlternativeModels = internalAction({
     console.log("=".repeat(80));
 
     const modelsToTest = [
-      { name: "devstral-2-free", cost: "$0.00", description: "FREE model (proven)" },
+      { name: "qwen3-coder-free", cost: "$0.00", description: "FREE model (proven)" },
       { name: "glm-4.7-flash", cost: "$0.07/M", description: "Ultra-cheap OpenRouter" },
       { name: "qwen3-235b", cost: "$0.18/M", description: "Cheap alternative" },
       { name: "deepseek-v3.2", cost: "$0.25/M", description: "Budget quality" },

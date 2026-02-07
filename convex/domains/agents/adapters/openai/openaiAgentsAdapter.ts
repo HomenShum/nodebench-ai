@@ -28,7 +28,7 @@ export interface OpenAIAgentsConfig {
   name: string;
   /** Agent instructions */
   instructions: string;
-  /** Model to use (default: gpt-4o) */
+  /** Model to use (default: gpt-5.2) */
   model?: string;
   /** Tools available to the agent */
   tools?: Array<ReturnType<typeof tool>>;

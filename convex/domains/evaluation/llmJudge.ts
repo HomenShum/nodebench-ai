@@ -30,7 +30,7 @@ import { getLanguageModelSafe } from "../agents/mcp_tools/models";
 /**
  * Get the best available judge model based on API key availability.
  * FREE-FIRST STRATEGY with cost-optimized fallbacks:
- * 1. devstral-2-free: $0.00/M (FREE via OpenRouter)
+ * 1. qwen3-coder-free: $0.00/M (FREE via OpenRouter)
  * 2. glm-4.7-flash: $0.07/M (ultra-cheap via OpenRouter)
  * 3. gemini-3-flash: $0.50/M (if Google key available)
  * 4. claude-haiku-4.5: $1.00/M (last resort)
@@ -38,7 +38,7 @@ import { getLanguageModelSafe } from "../agents/mcp_tools/models";
 function getDefaultJudgeModel(): string {
   // Try FREE model first (OpenRouter)
   if (process.env.OPENROUTER_API_KEY) {
-    return "devstral-2-free"; // FREE, 70s avg latency
+    return "qwen3-coder-free"; // FREE, 70s avg latency
   }
 
   // If OpenRouter available, use ultra-cheap GLM

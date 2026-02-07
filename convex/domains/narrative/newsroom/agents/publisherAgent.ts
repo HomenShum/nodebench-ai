@@ -56,7 +56,7 @@ export interface PublisherConfig {
 }
 
 const DEFAULT_CONFIG: Required<PublisherConfig> = {
-  model: "gpt-4o-mini",
+  model: "gpt-5-nano",
   generateSummaries: true,
   autoVerifyThreshold: 0.85,
   deterministicMode: false,

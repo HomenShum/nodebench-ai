@@ -1,0 +1,109 @@
+{
+  "dataset": "OpenBMB/ToolBench",
+  "split": "data_example/instruction (G1,G2,G3)",
+  "sourceUrls": {
+    "G1": "https://raw.githubusercontent.com/OpenBMB/ToolBench/master/data_example/instruction/G1_query.json",
+    "G2": "https://raw.githubusercontent.com/OpenBMB/ToolBench/master/data_example/instruction/G2_query.json",
+    "G3": "https://raw.githubusercontent.com/OpenBMB/ToolBench/master/data_example/instruction/G3_query.json"
+  },
+  "generatedAt": "2026-02-05T22:38:31.562Z",
+  "selection": {
+    "requestedLimit": 10,
+    "minApiCount": 6,
+    "minQueryLength": 180,
+    "totalRecords": 10,
+    "candidateRecords": 6
+  },
+  "tasks": [
+    {
+      "id": "G3_2",
+      "title": "ToolBench G3 query 2",
+      "prompt": "I'm a food enthusiast and I want to explore different cuisines. Can you suggest some popular cocktails and their recipes that pair well with different types of cuisine? Also, find some interesting news articles about the culinary world. Additionally, provide me with the current threshold securities list for NVIDIA's stock.",
+      "group": "G3",
+      "apiCount": 11,
+      "relevantApiCount": 4,
+      "requiredParameterCount": 13,
+      "optionalParameterCount": 9,
+      "apiCategories": [
+        "Finance",
+        "Food",
+        "Data",
+        "Sports"
+      ],
+      "complexityScore": 188
+    },
+    {
+      "id": "G3_1",
+      "title": "ToolBench G3 query 1",
+      "prompt": "I'm planning a surprise birthday party for my best friend. Can you help me find a list of popular cocktails to serve at the party? Also, I need some suggestions for cocktail recipes that are easy to make. Additionally, find some interesting news articles related to birthday celebrations.",
+      "group": "G3",
+      "apiCount": 11,
+      "relevantApiCount": 3,
+      "requiredParameterCount": 13,
+      "optionalParameterCount": 9,
+      "apiCategories": [
+        "Finance",
+        "Food",
+        "Data",
+        "Sports"
+      ],
+      "complexityScore": 184
+    },
+    {
+      "id": "G1_5",
+      "title": "ToolBench G1 query 5",
+      "prompt": "I need to track a package sent through Correo Argentino. The tracking code is 'ABC123'. Please create a task to get the history of the package and provide me with the task ID. I will use the task ID to retrieve the result later.",
+      "group": "G1",
+      "apiCount": 10,
+      "relevantApiCount": 2,
+      "requiredParameterCount": 25,
+      "optionalParameterCount": 0,
+      "apiCategories": [
+        "Logistics"
+      ],
+      "complexityScore": 182
+    },
+    {
+      "id": "G2_1",
+      "title": "ToolBench G2 query 1",
+      "prompt": "I'm starting an e-commerce business and I need to integrate a package tracking feature. Can you provide me with the tracking data for the shipment with ID 6045e2f44e1b233199a5e77a? Also, I would like to check the health status of the SQUAKE authentication system.",
+      "group": "G2",
+      "apiCount": 7,
+      "relevantApiCount": 2,
+      "requiredParameterCount": 13,
+      "optionalParameterCount": 0,
+      "apiCategories": [
+        "Logistics"
+      ],
+      "complexityScore": 123
+    },
+    {
+      "id": "G2_2",
+      "title": "ToolBench G2 query 2",
+      "prompt": "I'm planning a trip to Istanbul and I need to know the postal codes for different districts. Can you provide me with the postal codes for the districts in Istanbul with plate number 34? Additionally, I would like to track a package with the task ID 987654321.",
+      "group": "G2",
+      "apiCount": 7,
+      "relevantApiCount": 2,
+      "requiredParameterCount": 13,
+      "optionalParameterCount": 0,
+      "apiCategories": [
+        "Logistics"
+      ],
+      "complexityScore": 123
+    },
+    {
+      "id": "G2_3",
+      "title": "ToolBench G2 query 3",
+      "prompt": "I'm planning a trip to Buenos Aires and I need to know the postal codes for different districts. Can you provide me with the postal codes for the districts in Buenos Aires with plate number 1? Additionally, I would like to track a package with the task ID 987654321.",
+      "group": "G2",
+      "apiCount": 7,
+      "relevantApiCount": 2,
+      "requiredParameterCount": 13,
+      "optionalParameterCount": 0,
+      "apiCategories": [
+        "Logistics"
+      ],
+      "complexityScore": 123
+    }
+  ]
+}

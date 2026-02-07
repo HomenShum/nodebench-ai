@@ -121,7 +121,7 @@ export const checkEntailment = internalAction({
 
     try {
       const result = await generateText({
-        model: openai.chat("gpt-4o-mini"),
+        model: openai.chat("gpt-5-nano"),
         system: ENTAILMENT_SYSTEM_PROMPT,
         prompt: buildEntailmentPrompt(args.claim, args.sourceContent),
         temperature: 0.1,
@@ -256,7 +256,7 @@ export const extractVerifiableFacts = internalAction({
   handler: async (ctx, args) => {
     try {
       const result = await generateText({
-        model: openai.chat("gpt-4o-mini"),
+        model: openai.chat("gpt-5-nano"),
         system: FACT_EXTRACTION_PROMPT,
         prompt: `SOURCE URL: ${args.sourceUrl}\n\nCONTENT:\n${args.content.slice(0, 6000)}`,
         temperature: 0.1,

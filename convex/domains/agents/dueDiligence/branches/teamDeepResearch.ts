@@ -365,7 +365,7 @@ async function extractTeamWithLLM(
     const { generateText } = await import("ai");
     const { getLanguageModelSafe } = await import("../../mcp_tools/models/modelResolver");
 
-    const model = await getLanguageModelSafe("devstral-2-free");
+    const model = await getLanguageModelSafe("qwen3-coder-free");
     if (!model) {
       console.log("[DD-TeamResearch] LLM not available, falling back to regex");
       return extractTeamWithRegex(content, entityName);

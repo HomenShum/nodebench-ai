@@ -31,13 +31,15 @@ export const AUTONOMOUS_MODEL_CONFIG = {
   /** Maximum retries before falling back to paid model */
   maxFreeModelRetries: 3,
 
-  /** Known good baseline OpenRouter models.
-   * Note: many providers retire ":free" slugs over time; prefer stable paid slugs for production reliability. */
+  /** Known good baseline OpenRouter models (verified Feb 5, 2026).
+   * Uses actual ":free" slugs so $0 cost. Updated by freeModelDiscovery scanner. */
   knownFreeModels: [
-    "z-ai/glm-4.7-flash",       // Cheap and reliable for JSON-heavy tasks
-    "mistralai/devstral-2512",  // Strong extraction/summarization
-    "xiaomi/mimo-v2-flash",     // Strong general model (paid slug)
-    "deepseek/deepseek-r1",     // Reasoning fallback (paid slug)
+    "qwen/qwen3-coder:free",                          // 480B MoE, agentic coding, 262K
+    "stepfun/step-3.5-flash:free",                     // 196B MoE, reasoning + tools
+    "openai/gpt-oss-120b:free",                        // OpenAI open-source 120B
+    "arcee-ai/trinity-large-preview:free",             // 400B MoE, agentic
+    "nvidia/nemotron-3-nano-30b-a3b:free",             // 30B A3B, 256K
+    "meta-llama/llama-3.3-70b-instruct:free",          // Meta 70B, proven
   ] as const,
 
   /** Paid model fallback chain (used only if all free models fail) */

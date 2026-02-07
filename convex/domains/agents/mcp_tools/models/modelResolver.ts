@@ -69,63 +69,70 @@ export const APPROVED_MODELS = [
   "gpt-5.2",           // OpenAI flagship (Dec 11, 2025)
   "gpt-5-mini",        // OpenAI efficient reasoning (Aug 7, 2025)
   "gpt-5-nano",        // OpenAI ultra-efficient (Aug 7, 2025)
-  "claude-opus-4.5",   // Anthropic flagship
+  "claude-opus-4.6",   // Anthropic flagship (Feb 5, 2026)
+  "claude-opus-4.5",   // Anthropic previous flagship
   "claude-sonnet-4.5", // Anthropic balanced
-  "claude-haiku-4.5",  // Anthropic fast (DEFAULT)
+  "claude-haiku-4.5",  // Anthropic fast
   "gemini-3-pro",      // Google flagship (Nov 18, 2025)
   "gemini-3-flash",    // Google fast (Dec 17, 2025)
-  // OpenRouter models - LATEST frontier models with tool calling (Jan 2026)
-  "deepseek-r1",       // DeepSeek R1 - reasoning model (Jan 20, 2025) $0.70/M
+  // OpenRouter priced models (Jan 2026)
+  "glm-4.7-flash",     // GLM 4.7 Flash - fast, agentic coding ($0.07/$0.40)
+  "glm-4.7",           // GLM 4.7 - flagship ($0.40/$1.50)
+  "deepseek-r1",       // DeepSeek R1 - reasoning model $0.70/M
   "deepseek-v3.2-speciale", // DeepSeek V3.2 Speciale - agentic variant $0.27/M
   "deepseek-v3.2",     // DeepSeek V3.2 - general purpose $0.25/M
   "qwen3-235b",        // Qwen3 235B - latest Qwen $0.18/M
   "minimax-m2.1",      // MiniMax M2.1 - agentic workflows $0.28/M
   "mistral-large",     // Mistral Large 2411 - function calling $2/M
-  "glm-4.7-flash",     // GLM 4.7 Flash - fast, agentic coding ($0.07/$0.40)
-  "glm-4.7",           // GLM 4.7 - flagship ($0.40/$1.50)
-  // OpenRouter free-tier models (require OPENROUTER_API_KEY; $0 pricing tier - Jan 2026)
-  "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash - 309B MoE, #1 SWE-bench
-  "devstral-2-free", // Mistral Devstral 2 - 123B agentic coding
-  "deepseek-r1-free", // DeepSeek R1 - reasoning model
-  "llama-4-maverick-free", // Meta Llama 4 Maverick - latest flagship
-  "llama-4-scout-free", // Meta Llama 4 Scout - efficient
-  "glm-4.5-air-free", // GLM 4.5 Air - agent-focused
-  "kat-coder-pro-free", // KAT-Coder-Pro V1 - 73.4% SWE-bench
-  "deepseek-chimera-free", // DeepSeek-TNG-R1T2-Chimera - 671B MoE
-  "grok-4-fast-free", // X.AI Grok 4 Fast
+  // OpenRouter free-tier models (verified Feb 5, 2026 via API)
+  "qwen3-coder-free",  // Qwen3 Coder 480B MoE (A3.5B) - 262K, agentic coding
+  "step-3.5-flash-free", // StepFun Step 3.5 Flash 196B MoE (11B) - 256K, reasoning
+  "gpt-oss-120b-free", // OpenAI open-source 120B - 131K, tools
+  "qwen3-next-free",   // Qwen3 Next 80B A3B - 262K, tools
+  "trinity-large-free", // Arcee Trinity Large 400B MoE (13B) - 131K, agentic
+  "nemotron-3-nano-free", // NVIDIA Nemotron 3 Nano 30B A3B - 256K, tools
+  "mistral-small-3.1-free", // Mistral Small 3.1 24B - 128K, tools
+  "llama-3.3-70b-free", // Meta Llama 3.3 70B - 128K, tools
+  "gemma-3-27b-free",  // Google Gemma 3 27B - 131K, tools
+  "gpt-oss-20b-free",  // OpenAI open-source 20B - 131K, tools
+  "trinity-mini-free", // Arcee Trinity Mini MoE - 131K, agentic
+  "nemotron-nano-12b-vl-free", // NVIDIA Nemotron Nano 12B VL - 128K, vision+tools
+  // Still available from Jan 2026
+  "deepseek-r1-free",  // DeepSeek R1 - reasoning model
+  "glm-4.5-air-free",  // GLM 4.5 Air - agent-focused
+  "deepseek-chimera-free", // TNG R1T2 Chimera - 164K
   "venice-dolphin-free", // Venice Dolphin Mistral 24B
-  "nemotron-free", // NVIDIA Nemotron 70B
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
 
-// Default model: devstral-2-free (PROVEN: 100% pass rate, 70s avg, FREE)
-// FREE-FIRST STRATEGY: Try free models first, fall back to paid if needed
-// Proven free models: devstral-2-free (fastest), mimo-v2-flash-free (reliable)
-// Paid fallback chain: gemini-3-flash → claude-haiku-4.5 → gpt-5-nano
-export const DEFAULT_MODEL: ApprovedModel = "devstral-2-free";
+// FREE-FIRST STRATEGY: Use verified free models as default (Feb 2026)
+// qwen3-coder-free: 480B MoE agentic coding, 262K context
+// step-3.5-flash-free: 196B MoE reasoning, 256K context
+// Paid fallback: gemini-3-flash → gpt-5-nano → claude-haiku-4.5
+export const DEFAULT_MODEL: ApprovedModel = "qwen3-coder-free";
 
 // Fallback model when free model fails
 export const FALLBACK_MODEL: ApprovedModel = "gemini-3-flash";
 
 // Model priority order for FREE-FIRST strategy
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
-  // PROVEN FREE (100% pass rate in eval)
-  "devstral-2-free",      // Fastest free: 70s avg
-  "mimo-v2-flash-free",   // Reliable free: 83s avg
-  // OTHER FREE MODELS (try before paid fallback)
-  "deepseek-r1-free",     // DeepSeek R1 reasoning
-  "llama-4-maverick-free", // Meta Llama 4 flagship
-  "llama-4-scout-free",   // Meta Llama 4 efficient
-  "glm-4.5-air-free",     // GLM 4.5 Air agent-focused
-  "deepseek-chimera-free", // DeepSeek Chimera 671B
-  "grok-4-fast-free",     // X.AI Grok 4
-  "venice-dolphin-free",  // Venice Dolphin 24B
-  "nemotron-free",        // NVIDIA Nemotron 70B
+  // TOP FREE (verified available Feb 5, 2026)
+  "qwen3-coder-free",       // 480B MoE, agentic coding
+  "step-3.5-flash-free",    // 196B MoE, reasoning + tools
+  "gpt-oss-120b-free",      // OpenAI open-source 120B
+  "trinity-large-free",     // Arcee 400B MoE, agentic
+  "nemotron-3-nano-free",   // NVIDIA 30B A3B, 256K
+  "qwen3-next-free",        // Qwen3 Next 80B A3B
+  "llama-3.3-70b-free",     // Meta Llama 3.3 70B
+  "glm-4.5-air-free",       // GLM 4.5 Air
+  "deepseek-r1-free",       // DeepSeek R1 reasoning
+  "deepseek-chimera-free",  // TNG Chimera
+  "venice-dolphin-free",    // Venice Dolphin 24B
   // CHEAP PAID (fallback)
-  "gemini-3-flash",       // $0.50/M input, fast
-  "gpt-5-nano",           // $0.10/M input, efficient
-  "claude-haiku-4.5",     // $1.00/M input, reliable
+  "gemini-3-flash",         // $0.50/M input, fast
+  "gpt-5-nano",             // $0.10/M input, efficient
+  "claude-haiku-4.5",       // $1.00/M input, reliable
 ];
 
 /**
@@ -200,6 +207,13 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     sdkId: "gpt-5-nano",
     capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 272_000 },
     pricing: { inputPerMillion: 0.10, outputPerMillion: 0.40 },
+  },
+  "claude-opus-4.6": {
+    alias: "claude-opus-4.6",
+    provider: "anthropic",
+    sdkId: "claude-opus-4-6-20260205",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 1_000_000 },
+    pricing: { inputPerMillion: 5.00, outputPerMillion: 25.00 },
   },
   "claude-opus-4.5": {
     alias: "claude-opus-4.5",
@@ -296,90 +310,119 @@ export const MODEL_SPECS: Record<ApprovedModel, ModelSpec> = {
     pricing: { inputPerMillion: 0.40, outputPerMillion: 1.50 },
   },
   // ═══════════════════════════════════════════════════════════════════════════
-  // OPENROUTER FREE-TIER MODELS - Evaluated Jan 2026
-  // PROVEN WORKING (100% pass rate on core eval suite):
-  //   - mimo-v2-flash-free: 152s avg, reliable
-  //   - devstral-2-free: 70s avg, fastest free model
-  // OTHER FREE MODELS: Available but may have capacity/rate limit issues
+  // OPENROUTER FREE-TIER MODELS - Verified Feb 5, 2026 via API
+  // All models below confirmed available with pricing prompt=0, completion=0
   // ═══════════════════════════════════════════════════════════════════════════
-  "mimo-v2-flash-free": {
-    alias: "mimo-v2-flash-free",
+  "qwen3-coder-free": {
+    alias: "qwen3-coder-free",
     provider: "openrouter",
-    // NOTE: OpenRouter retired the free period for this slug. Keep the alias for backward compatibility.
-    // If you truly need a free default, use devstral-2-free.
-    sdkId: "xiaomi/mimo-v2-flash",  // Paid slug (free tier ended)
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 262_144 },
-    pricing: { inputPerMillion: 0.20, outputPerMillion: 0.60 },
+    sdkId: "qwen/qwen3-coder:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 262_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
-  "devstral-2-free": {
-    alias: "devstral-2-free",
+  "step-3.5-flash-free": {
+    alias: "step-3.5-flash-free",
     provider: "openrouter",
-    // NOTE: OpenRouter retired the free period for this slug. Keep the alias for backward compatibility.
-    sdkId: "mistralai/devstral-2512",  // Paid slug (free tier ended)
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 262_144 },
-    pricing: { inputPerMillion: 0.20, outputPerMillion: 0.60 },
+    sdkId: "stepfun/step-3.5-flash:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 256_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "gpt-oss-120b-free": {
+    alias: "gpt-oss-120b-free",
+    provider: "openrouter",
+    sdkId: "openai/gpt-oss-120b:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "qwen3-next-free": {
+    alias: "qwen3-next-free",
+    provider: "openrouter",
+    sdkId: "qwen/qwen3-next-80b-a3b-instruct:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 262_144 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "trinity-large-free": {
+    alias: "trinity-large-free",
+    provider: "openrouter",
+    sdkId: "arcee-ai/trinity-large-preview:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "nemotron-3-nano-free": {
+    alias: "nemotron-3-nano-free",
+    provider: "openrouter",
+    sdkId: "nvidia/nemotron-3-nano-30b-a3b:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 256_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "mistral-small-3.1-free": {
+    alias: "mistral-small-3.1-free",
+    provider: "openrouter",
+    sdkId: "mistralai/mistral-small-3.1-24b-instruct:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 128_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "llama-3.3-70b-free": {
+    alias: "llama-3.3-70b-free",
+    provider: "openrouter",
+    sdkId: "meta-llama/llama-3.3-70b-instruct:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 128_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "gemma-3-27b-free": {
+    alias: "gemma-3-27b-free",
+    provider: "openrouter",
+    sdkId: "google/gemma-3-27b-it:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "gpt-oss-20b-free": {
+    alias: "gpt-oss-20b-free",
+    provider: "openrouter",
+    sdkId: "openai/gpt-oss-20b:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "trinity-mini-free": {
+    alias: "trinity-mini-free",
+    provider: "openrouter",
+    sdkId: "arcee-ai/trinity-mini:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: true, maxContext: 131_072 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
+  },
+  "nemotron-nano-12b-vl-free": {
+    alias: "nemotron-nano-12b-vl-free",
+    provider: "openrouter",
+    sdkId: "nvidia/nemotron-nano-12b-v2-vl:free",
+    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 128_000 },
+    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
   "deepseek-r1-free": {
     alias: "deepseek-r1-free",
     provider: "openrouter",
-    sdkId: "deepseek/deepseek-r1:free",
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 163_840 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
-  },
-  "llama-4-maverick-free": {
-    alias: "llama-4-maverick-free",
-    provider: "openrouter",
-    sdkId: "meta-llama/llama-4-maverick:free",
-    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
-  },
-  "llama-4-scout-free": {
-    alias: "llama-4-scout-free",
-    provider: "openrouter",
-    sdkId: "meta-llama/llama-4-scout:free",
-    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
+    sdkId: "deepseek/deepseek-r1-0528:free",
+    capabilities: { vision: false, toolUse: false, streaming: true, structuredOutputs: false, maxContext: 163_840 },
     pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
   "glm-4.5-air-free": {
     alias: "glm-4.5-air-free",
     provider: "openrouter",
-    sdkId: "z-ai/glm-4.5-air:free",  // Fixed: z-ai not zhipu
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 128_000 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
-  },
-  "kat-coder-pro-free": {
-    alias: "kat-coder-pro-free",
-    provider: "openrouter",
-    sdkId: "kwaipilot/kat-coder-pro:free",  // Note: deprecating Jan 13, 2026
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 256_000 },  // Fixed: 256K context
+    sdkId: "z-ai/glm-4.5-air:free",
+    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
     pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
   "deepseek-chimera-free": {
     alias: "deepseek-chimera-free",
     provider: "openrouter",
     sdkId: "tngtech/deepseek-r1t2-chimera:free",
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 163_840 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
-  },
-  "grok-4-fast-free": {
-    alias: "grok-4-fast-free",
-    provider: "openrouter",
-    sdkId: "x-ai/grok-4-fast:free",
-    capabilities: { vision: true, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 2_000_000 },  // Fixed: 2M context, multimodal
+    capabilities: { vision: false, toolUse: false, streaming: true, structuredOutputs: false, maxContext: 163_840 },
     pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
   "venice-dolphin-free": {
     alias: "venice-dolphin-free",
     provider: "openrouter",
     sdkId: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 32_768 },
-    pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
-  },
-  "nemotron-free": {
-    alias: "nemotron-free",
-    provider: "openrouter",
-    sdkId: "nvidia/llama-3.1-nemotron-ultra-253b-v1:free",  // Fixed: use Ultra 253B (actually exists)
-    capabilities: { vision: false, toolUse: true, streaming: true, structuredOutputs: false, maxContext: 131_072 },
+    capabilities: { vision: false, toolUse: false, streaming: true, structuredOutputs: false, maxContext: 32_768 },
     pricing: { inputPerMillion: 0.00, outputPerMillion: 0.00 },
   },
 };
@@ -414,51 +457,80 @@ export const LEGACY_ALIASES: Record<string, ApprovedModel> = {
   "gemini-pro": "gemini-3-pro",
   "gemini": "gemini-3-flash",
 
-  // OpenRouter MiMo V2 Flash (free tier ended; keep legacy aliases for compatibility)
-  "xiaomi/mimo-v2-flash:free": "mimo-v2-flash-free",
-  "xiaomi/mimo-v2-flash": "mimo-v2-flash-free",
-  "mimo": "mimo-v2-flash-free",
-  "mimo-v2": "mimo-v2-flash-free",
-  // Devstral 2 (latest)
-  "mistralai/devstral-2:free": "devstral-2-free",
-  "devstral-2": "devstral-2-free",
-  "devstral": "devstral-2-free",
-  // DeepSeek R1 Free
+  // Retired free models → redirect to best available free replacement
+  "mimo-v2-flash-free": "qwen3-coder-free",
+  "xiaomi/mimo-v2-flash:free": "qwen3-coder-free",
+  "xiaomi/mimo-v2-flash": "qwen3-coder-free",
+  "mimo": "qwen3-coder-free",
+  "mimo-v2": "qwen3-coder-free",
+  "devstral-2-free": "qwen3-coder-free",
+  "mistralai/devstral-2:free": "qwen3-coder-free",
+  "devstral-2": "qwen3-coder-free",
+  "devstral": "qwen3-coder-free",
+  "llama-4-maverick-free": "llama-3.3-70b-free",
+  "meta-llama/llama-4-maverick:free": "llama-3.3-70b-free",
+  "llama-4-maverick": "llama-3.3-70b-free",
+  "llama-4": "llama-3.3-70b-free",
+  "llama-4-scout-free": "llama-3.3-70b-free",
+  "meta-llama/llama-4-scout:free": "llama-3.3-70b-free",
+  "llama-4-scout": "llama-3.3-70b-free",
+  "kat-coder-pro-free": "qwen3-coder-free",
+  "kwaipilot/kat-coder-pro:free": "qwen3-coder-free",
+  "kat-coder": "qwen3-coder-free",
+  "kat-coder-pro": "qwen3-coder-free",
+  "grok-4-fast-free": "step-3.5-flash-free",
+  "x-ai/grok-4-fast:free": "step-3.5-flash-free",
+  "grok-4-fast": "step-3.5-flash-free",
+  "grok-4": "step-3.5-flash-free",
+  "grok": "step-3.5-flash-free",
+  "nemotron-free": "nemotron-3-nano-free",
+  "nvidia/llama-3.1-nemotron-70b-instruct:free": "nemotron-3-nano-free",
+  "nemotron": "nemotron-3-nano-free",
+  "nemotron-70b": "nemotron-3-nano-free",
+  // New free model aliases (Feb 2026)
+  "qwen/qwen3-coder:free": "qwen3-coder-free",
+  "qwen3-coder": "qwen3-coder-free",
+  "stepfun/step-3.5-flash:free": "step-3.5-flash-free",
+  "step-3.5-flash": "step-3.5-flash-free",
+  "openai/gpt-oss-120b:free": "gpt-oss-120b-free",
+  "gpt-oss-120b": "gpt-oss-120b-free",
+  "gpt-oss": "gpt-oss-120b-free",
+  "qwen/qwen3-next-80b-a3b-instruct:free": "qwen3-next-free",
+  "qwen3-next": "qwen3-next-free",
+  "arcee-ai/trinity-large-preview:free": "trinity-large-free",
+  "trinity-large": "trinity-large-free",
+  "trinity": "trinity-large-free",
+  "nvidia/nemotron-3-nano-30b-a3b:free": "nemotron-3-nano-free",
+  "nemotron-3-nano": "nemotron-3-nano-free",
+  "mistralai/mistral-small-3.1-24b-instruct:free": "mistral-small-3.1-free",
+  "mistral-small-3.1": "mistral-small-3.1-free",
+  "mistral-small": "mistral-small-3.1-free",
+  "meta-llama/llama-3.3-70b-instruct:free": "llama-3.3-70b-free",
+  "llama-3.3-70b": "llama-3.3-70b-free",
+  "llama-3.3": "llama-3.3-70b-free",
+  "google/gemma-3-27b-it:free": "gemma-3-27b-free",
+  "gemma-3-27b": "gemma-3-27b-free",
+  "gemma": "gemma-3-27b-free",
+  "openai/gpt-oss-20b:free": "gpt-oss-20b-free",
+  "gpt-oss-20b": "gpt-oss-20b-free",
+  "arcee-ai/trinity-mini:free": "trinity-mini-free",
+  "trinity-mini": "trinity-mini-free",
+  "nvidia/nemotron-nano-12b-v2-vl:free": "nemotron-nano-12b-vl-free",
+  "nemotron-nano-12b": "nemotron-nano-12b-vl-free",
+  // Still-available free model aliases
+  "deepseek/deepseek-r1-0528:free": "deepseek-r1-free",
   "deepseek/deepseek-r1:free": "deepseek-r1-free",
   "deepseek-r1": "deepseek-r1-free",
-  // Llama 4 Maverick
-  "meta-llama/llama-4-maverick:free": "llama-4-maverick-free",
-  "llama-4-maverick": "llama-4-maverick-free",
-  "llama-4": "llama-4-maverick-free",
-  // Llama 4 Scout
-  "meta-llama/llama-4-scout:free": "llama-4-scout-free",
-  "llama-4-scout": "llama-4-scout-free",
-  // GLM 4.5 Air
-  "zhipu/glm-4.5-air:free": "glm-4.5-air-free",  // Legacy alias
+  "zhipu/glm-4.5-air:free": "glm-4.5-air-free",
   "z-ai/glm-4.5-air:free": "glm-4.5-air-free",
   "glm-4.5-air": "glm-4.5-air-free",
   "glm": "glm-4.5-air-free",
-  // KAT-Coder-Pro
-  "kwaipilot/kat-coder-pro:free": "kat-coder-pro-free",
-  "kat-coder": "kat-coder-pro-free",
-  "kat-coder-pro": "kat-coder-pro-free",
-  // DeepSeek Chimera
   "tngtech/deepseek-r1t2-chimera:free": "deepseek-chimera-free",
   "deepseek-chimera": "deepseek-chimera-free",
   "chimera": "deepseek-chimera-free",
-  // Grok 4 Fast
-  "x-ai/grok-4-fast:free": "grok-4-fast-free",
-  "grok-4-fast": "grok-4-fast-free",
-  "grok-4": "grok-4-fast-free",
-  "grok": "grok-4-fast-free",
-  // Venice Dolphin (legacy)
   "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": "venice-dolphin-free",
   "venice-dolphin": "venice-dolphin-free",
   "dolphin-mistral": "venice-dolphin-free",
-  // Nemotron (legacy)
-  "nvidia/llama-3.1-nemotron-70b-instruct:free": "nemotron-free",
-  "nemotron": "nemotron-free",
-  "nemotron-70b": "nemotron-free",
 
   // GLM 4.7 family (priced)
   "z-ai/glm-4.7-flash": "glm-4.7-flash",
@@ -862,14 +934,11 @@ export async function executeWithModelFallback<T>(
 }
 
 /**
- * Get the best available free model based on proven performance
- * Returns devstral-2-free as primary (fastest), mimo-v2-flash-free as backup
+ * Get the best available free model based on verified availability (Feb 2026)
+ * Returns qwen3-coder-free as primary (480B MoE, agentic coding)
  */
 export function getBestFreeModel(): ApprovedModel {
-  // Proven models from evaluation (Jan 2026)
-  // devstral-2-free: 100% pass, 70s avg (FASTEST)
-  // mimo-v2-flash-free: 100% pass, 83s avg
-  return "devstral-2-free";
+  return "qwen3-coder-free";
 }
 
 /**

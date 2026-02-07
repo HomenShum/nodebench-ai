@@ -472,7 +472,7 @@ function getAgentFocus(agentName: string): string {
  * - For complex reasoning: Use deepseek-v3.2 ($0.25/M) - 92% cheaper than claude-sonnet
  * - For premium quality: Use gemini-3-flash ($0.50/M) or claude-sonnet-4.5 ($3.00/M)
  *
- * Default if not specified: Uses FREE model (devstral-2-free) via getLanguageModelSafe
+ * Default if not specified: Uses FREE model (qwen3-coder-free) via getLanguageModelSafe
  */
 async function synthesizeResults(
   ctx: any,

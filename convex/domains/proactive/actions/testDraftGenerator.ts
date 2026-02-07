@@ -14,13 +14,13 @@ import { internalAction } from "../../../_generated/server";
 import { v } from "convex/values";
 
 /**
- * Test draft generation with FREE model (devstral-2-free)
+ * Test draft generation with FREE model (qwen3-coder-free)
  */
 export const testWithFreeModel = internalAction({
   args: {},
   handler: async (ctx) => {
     console.log("=".repeat(80));
-    console.log("TEST: Email Draft Generation with devstral-2-free (FREE $0.00/draft)");
+    console.log("TEST: Email Draft Generation with qwen3-coder-free (FREE $0.00/draft)");
     console.log("=".repeat(80));
 
     const mockEmail = {
@@ -49,7 +49,7 @@ John Smith`,
       const { openrouter } = await import("@openrouter/ai-sdk-provider");
       const { z } = await import("zod");
 
-      const model = openrouter("mistralai/devstral-2512:free");
+      const model = openrouter("qwen/qwen3-coder:free");
       const startTime = Date.now();
 
       const prompt = `You are helping draft a professional email response.
@@ -94,7 +94,7 @@ Generate a complete email draft that can be sent as-is or lightly edited.`;
 
       console.log("\n✅ DRAFT GENERATED SUCCESSFULLY");
       console.log(`⏱️  Generation Time: ${(duration / 1000).toFixed(2)}s`);
-      console.log(`📝 Model: devstral-2-free (FREE)`);
+      console.log(`📝 Model: qwen3-coder-free (FREE)`);
       console.log(`💰 Cost: $0.00 per draft`);
       console.log("\n" + "-".repeat(80));
       console.log("SUBJECT:", draft.subject);
@@ -107,7 +107,7 @@ Generate a complete email draft that can be sent as-is or lightly edited.`;
 
       return {
         success: true,
-        model: "devstral-2-free",
+        model: "qwen3-coder-free",
         duration,
         draft,
       };
@@ -287,7 +287,7 @@ Director of Partnerships`,
     };
 
     const modelsToTest = [
-      { name: "devstral-2-free", tier: "FREE", cost: "$0.00" },
+      { name: "qwen3-coder-free", tier: "FREE", cost: "$0.00" },
       { name: "gemini-3-flash", tier: "BUDGET", cost: "~$0.002" },
       { name: "claude-sonnet-4.5", tier: "QUALITY", cost: "~$0.01" },
     ];
@@ -313,9 +313,9 @@ Director of Partnerships`,
 
         // Use official OpenRouter provider for FREE models, otherwise use model resolver
         let model;
-        if (modelInfo.name === "devstral-2-free") {
+        if (modelInfo.name === "qwen3-coder-free") {
           const { openrouter } = await import("@openrouter/ai-sdk-provider");
-          model = openrouter("mistralai/devstral-2512:free");
+          model = openrouter("qwen/qwen3-coder:free");
         } else {
           const { getLanguageModelSafe } = await import(
             "../../agents/mcp_tools/models/modelResolver"

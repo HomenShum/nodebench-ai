@@ -25,6 +25,12 @@ import {
   mcpGatewayHandler,
   mcpGatewayCorsHandler,
 } from "./domains/mcp/mcpGatewayDispatcher";
+import {
+  dailyBriefHttp,
+  fundingSearchHttp,
+  researchQueueHttp,
+  publishToQueueHttp,
+} from "./domains/mcp/mcpBridgeHttp";
 
 const http = httpRouter();
 
@@ -261,6 +267,13 @@ http.route({ path: "/api/mcpMemory", method: "GET", handler: listMemoryHttp });
 // Memory (item routes)
 http.route({ pathPrefix: "/api/mcpMemory/", method: "GET", handler: getMemoryByIdHttp });
 http.route({ pathPrefix: "/api/mcpMemory/", method: "DELETE", handler: deleteMemoryByIdHttp });
+
+// MCP Bridge — platform intelligence endpoints for external MCP servers
+// Auth: x-mcp-secret must match process.env.MCP_SECRET
+http.route({ path: "/api/mcpBridge/daily-brief", method: "GET", handler: dailyBriefHttp });
+http.route({ path: "/api/mcpBridge/funding", method: "GET", handler: fundingSearchHttp });
+http.route({ path: "/api/mcpBridge/research", method: "GET", handler: researchQueueHttp });
+http.route({ path: "/api/mcpBridge/publish", method: "POST", handler: publishToQueueHttp });
 
 // MCP Gateway dispatcher — single endpoint for all 53 gateway tools
 // Auth: x-mcp-secret must match process.env.MCP_SECRET

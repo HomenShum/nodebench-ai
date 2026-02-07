@@ -67,7 +67,7 @@ export const testGlmWithFullResponse = internalAction({
         console.log("   Likely a reasoning model (like deepseek-r1) with different structure");
         console.log("");
         console.log("🔧 RECOMMENDED FIX:");
-        console.log("   Switch to devstral-2-free ($0.00) or deepseek-v3.2 ($0.25/M)");
+        console.log("   Switch to qwen3-coder-free ($0.00) or deepseek-v3.2 ($0.25/M)");
         console.log("   Both models work correctly with standard AI SDK interface");
       }
 
@@ -99,7 +99,7 @@ export const compareReasoningVsStandard = internalAction({
     const models = [
       { name: "glm-4.7-flash", type: "reasoning?", cost: "$0.07/M" },
       { name: "deepseek-r1-free", type: "reasoning", cost: "$0.00" },
-      { name: "devstral-2-free", type: "standard", cost: "$0.00" },
+      { name: "qwen3-coder-free", type: "standard", cost: "$0.00" },
       { name: "deepseek-v3.2", type: "standard", cost: "$0.25/M" },
     ];
 

@@ -89,18 +89,23 @@ export const modelPricing: Record<string, ModelPricing> = {
   "grok-2-vision-1212": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 128000 },
   "grok-2": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 128000 },
 
-  // OpenRouter Free-Tier Models ($0 pricing - auto-discovered Jan 2026)
-  "mimo-v2-flash-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
-  "devstral-2-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
+  // OpenRouter Free-Tier Models ($0 pricing - verified Feb 5, 2026 via API)
+  "qwen3-coder-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262000 },
+  "step-3.5-flash-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 256000 },
+  "gpt-oss-120b-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
+  "qwen3-next-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 262144 },
+  "trinity-large-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131000 },
+  "nemotron-3-nano-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 256000 },
+  "mistral-small-3.1-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
+  "llama-3.3-70b-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
+  "gemma-3-27b-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
+  "gpt-oss-20b-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
+  "trinity-mini-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
+  "nemotron-nano-12b-vl-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
   "deepseek-r1-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 163840 },
-  "llama-4-maverick-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
-  "llama-4-scout-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
-  "glm-4.5-air-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
-  "kat-coder-pro-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
+  "glm-4.5-air-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
   "deepseek-chimera-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 163840 },
-  "grok-4-fast-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 128000 },
   "venice-dolphin-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 32768 },
-  "nemotron-free": { inputPer1M: 0.00, outputPer1M: 0.00, contextWindow: 131072 },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -122,7 +127,7 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     tokensPerDay: 10_000,
     maxTokensPerRequest: 2_000,
     allowedProviders: ["openai", "anthropic", "gemini"],
-    allowedModels: ["gpt-5-nano", "gemini-2.5-flash", "claude-haiku-4.5"],  // Cheapest options
+    allowedModels: ["gpt-5-nano", "gemini-3-flash", "claude-haiku-4.5"],  // Cheapest options
     costLimitPerDay: 0.01,
   },
   free: {
@@ -130,7 +135,7 @@ export const tierLimits: Record<UserTier, TierLimits> = {
     tokensPerDay: 100_000,
     maxTokensPerRequest: 8_000,
     allowedProviders: ["openai", "anthropic", "gemini"],
-    allowedModels: ["gpt-5-mini", "gpt-5-nano", "gemini-2.5-flash", "claude-haiku-4.5"],
+    allowedModels: ["gpt-5-mini", "gpt-5-nano", "gemini-3-flash", "claude-haiku-4.5"],
     costLimitPerDay: 0.50,
   },
   pro: {
@@ -179,14 +184,14 @@ export const llmModelCatalog: ModelCatalog = {
   },
   anthropic: {
     chat: ["claude-haiku-4.5", "claude-sonnet-4.5"],  // Haiku first (default)
-    agent: ["claude-haiku-4.5", "claude-sonnet-4.5", "claude-opus-4.5"],
+    agent: ["claude-haiku-4.5", "claude-sonnet-4.5", "claude-opus-4.6"],
     router: ["claude-haiku-4.5"],
-    judge: ["claude-opus-4.5", "claude-sonnet-4.5"],
-    analysis: ["claude-sonnet-4.5", "claude-opus-4.5"],
-    vision: ["claude-sonnet-4.5", "claude-opus-4.5"],
+    judge: ["claude-opus-4.6", "claude-sonnet-4.5"],
+    analysis: ["claude-sonnet-4.5", "claude-opus-4.6"],
+    vision: ["claude-sonnet-4.5", "claude-opus-4.6"],
     fileSearch: ["claude-haiku-4.5"],
     voice: ["claude-haiku-4.5"],
-    coding: ["claude-sonnet-4.5", "claude-opus-4.5"],
+    coding: ["claude-opus-4.6", "claude-sonnet-4.5"],
   },
   gemini: {
     chat: ["gemini-3-flash", "gemini-3-pro"],
@@ -295,7 +300,7 @@ export function calculateRequestCost(
   const pricing = modelPricing[modelName];
   if (!pricing) {
     console.warn(`[calculateRequestCost] No pricing for model "${modelName}", using estimate`);
-    // Default to gpt-4.1-mini pricing as fallback
+    // Default to gpt-5-nano pricing as fallback
     return (inputTokens * 0.15 + outputTokens * 0.60) / 1_000_000;
   }
 
@@ -483,10 +488,10 @@ export const modelAliases: Record<string, string> = {
   "claude": "claude-sonnet-4.5",
   "claude-4.5": "claude-sonnet-4.5",
   "claude-sonnet": "claude-sonnet-4.5",
-  "claude-opus": "claude-opus-4.5",
+  "claude-opus": "claude-opus-4.6",
   "claude-haiku": "claude-haiku-4.5",
   "sonnet": "claude-sonnet-4.5",
-  "opus": "claude-opus-4.5",
+  "opus": "claude-opus-4.6",
   "haiku": "claude-haiku-4.5",
   "anthropic": "claude-sonnet-4.5",
 
@@ -600,6 +605,7 @@ export const modelFallbackChains: Record<string, string[]> = {
   "gpt-5-mini": ["gpt-5-nano", "claude-haiku-4.5", "gemini-3-flash"],
 
   // Anthropic premium → cheaper Anthropic → cross-provider small model
+  "claude-opus-4.6": ["claude-opus-4.5", "claude-sonnet-4.5", "claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
   "claude-opus-4.5": ["claude-sonnet-4.5", "claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
   "claude-sonnet-4.5": ["claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
 
@@ -629,8 +635,7 @@ export function getModelForContextSize(
   
   // Try larger context models in order of preference (7 approved models only)
   const largeContextModels = [
-    "gemini-2.5-flash",      // 1M context
-    "gemini-2.5-pro",        // 2M context
+    "gemini-3-flash",        // 1M context
     "gemini-3-pro",          // 2M context
     "gpt-5.2",               // 256K context
   ];
@@ -643,9 +648,9 @@ export function getModelForContextSize(
     }
   }
   
-  // Return gemini-2.5-pro as last resort (2M context)
-  console.warn(`[getModelForContextSize] Prompt too large (${validation.tokenEstimate} tokens), using gemini-2.5-pro`);
-  return "gemini-2.5-pro";
+  // Return gemini-3-pro as last resort (2M context)
+  console.warn(`[getModelForContextSize] Prompt too large (${validation.tokenEstimate} tokens), using gemini-3-pro`);
+  return "gemini-3-pro";
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -699,6 +704,7 @@ export const providerFallbackChain: Record<LlmProvider, LlmProvider[]> = {
 export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   // High-tier models
   "gpt-5.2": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
+  "claude-opus-4.6": { openai: "gpt-5.2", anthropic: "claude-opus-4.6", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
   "claude-opus-4.5": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
   "claude-sonnet-4.5": { openai: "gpt-5.2", anthropic: "claude-sonnet-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
   "gemini-3-pro": { openai: "gpt-5.2", anthropic: "claude-opus-4.5", gemini: "gemini-3-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },

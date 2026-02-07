@@ -11,6 +11,10 @@ import {
   slackCommandsHandler,
   slackInteractivityHandler,
 } from "./domains/integrations/slack/slackWebhook";
+import {
+  authorizeHandler as linkedinAuthorizeHandler,
+  callbackHandler as linkedinCallbackHandler,
+} from "./domains/social/linkedinOAuth";
 
 const http = router;
 
@@ -80,6 +84,24 @@ http.route({
   path: "/api/gmail/push",
   method: "POST",
   handler: gmailPushHandler,
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LINKEDIN OAUTH - Token refresh flow
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /linkedin/oauth/authorize - Redirect to LinkedIn auth page
+http.route({
+  path: "/linkedin/oauth/authorize",
+  method: "GET",
+  handler: linkedinAuthorizeHandler,
+});
+
+// GET /linkedin/oauth/callback - Exchange auth code for tokens
+http.route({
+  path: "/linkedin/oauth/callback",
+  method: "GET",
+  handler: linkedinCallbackHandler,
 });
 
 // Only register GitHub webhook routes if a token/secret is configured.

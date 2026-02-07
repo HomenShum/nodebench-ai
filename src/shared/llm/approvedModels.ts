@@ -9,7 +9,8 @@ export const APPROVED_MODELS = [
   "gpt-5.2", // OpenAI flagship
   "gpt-5-mini", // OpenAI efficient reasoning
   "gpt-5-nano", // OpenAI ultra-efficient
-  "claude-opus-4.5", // Anthropic flagship
+  "claude-opus-4.6", // Anthropic flagship (Feb 5, 2026)
+  "claude-opus-4.5", // Anthropic previous flagship
   "claude-sonnet-4.5", // Anthropic balanced
   "claude-haiku-4.5", // Anthropic fast
   "gemini-3-pro", // Google flagship
@@ -23,19 +24,24 @@ export const APPROVED_MODELS = [
   "qwen3-235b", // Qwen3 235B - tool calling
   "minimax-m2.1", // MiniMax M2.1 - agentic workflows
   "mistral-large", // Mistral Large - function calling
-  // OpenRouter free-tier models (auto-discovered Jan 2026)
-  "mimo-v2-flash-free", // Xiaomi MiMo V2 Flash - 256K, reasoning
-  "devstral-2-free", // Mistral Devstral 2 - 256K, agentic coding (123B)
+  // OpenRouter free-tier models (verified Feb 5, 2026 via API)
+  "qwen3-coder-free", // Qwen3 Coder 480B MoE (A3.5B) - 262K, agentic coding
+  "step-3.5-flash-free", // StepFun Step 3.5 Flash 196B MoE (11B) - 256K, reasoning
+  "gpt-oss-120b-free", // OpenAI open-source 120B - 131K, tools
+  "qwen3-next-free", // Qwen3 Next 80B A3B - 262K, tools
+  "trinity-large-free", // Arcee Trinity Large 400B MoE (13B) - 131K, agentic
+  "nemotron-3-nano-free", // NVIDIA Nemotron 3 Nano 30B A3B - 256K, tools
+  "mistral-small-3.1-free", // Mistral Small 3.1 24B - 128K, tools
+  "llama-3.3-70b-free", // Meta Llama 3.3 70B - 128K, tools
+  "gemma-3-27b-free", // Google Gemma 3 27B - 131K, tools
+  "gpt-oss-20b-free", // OpenAI open-source 20B - 131K, tools
+  "trinity-mini-free", // Arcee Trinity Mini MoE - 131K, agentic
+  "nemotron-nano-12b-vl-free", // NVIDIA Nemotron Nano 12B VL - 128K, vision+tools
+  // Still available from Jan 2026
   "deepseek-r1-free", // DeepSeek R1 - reasoning model
-  "llama-4-maverick-free", // Meta Llama 4 Maverick - latest
-  "llama-4-scout-free", // Meta Llama 4 Scout - efficient
   "glm-4.5-air-free", // GLM 4.5 Air - agent-focused
-  "kat-coder-pro-free", // KAT-Coder-Pro V1 - agentic coding
-  "deepseek-chimera-free", // DeepSeek-TNG-R1T2-Chimera - 671B MoE
-  "grok-4-fast-free", // X.AI Grok 4 Fast
-  // Legacy free models (still valid)
+  "deepseek-chimera-free", // TNG R1T2 Chimera - 164K
   "venice-dolphin-free", // Venice Dolphin Mistral 24B
-  "nemotron-free", // NVIDIA Nemotron 70B
 ] as const;
 
 export type ApprovedModel = (typeof APPROVED_MODELS)[number];
@@ -81,11 +87,20 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     contextWindow: "272K",
     icon: "🟢",
   },
+  "claude-opus-4.6": {
+    id: "claude-opus-4.6",
+    name: "Claude Opus 4.6",
+    provider: "anthropic",
+    description: "Latest flagship, agent teams, 1M context",
+    tier: "powerful",
+    contextWindow: "1M",
+    icon: "🟠",
+  },
   "claude-opus-4.5": {
     id: "claude-opus-4.5",
     name: "Claude Opus 4.5",
     provider: "anthropic",
-    description: "Most capable",
+    description: "Previous flagship",
     tier: "powerful",
     contextWindow: "200K",
     icon: "🟠",
@@ -198,23 +213,123 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     contextWindow: "131K",
     icon: "OR",
   },
-  "mimo-v2-flash-free": {
-    id: "mimo-v2-flash-free",
-    name: "MiMo V2 Flash (Free)",
+  "qwen3-coder-free": {
+    id: "qwen3-coder-free",
+    name: "Qwen3 Coder (Free)",
     provider: "openrouter",
-    description: "Xiaomi 309B MoE, #1 open-source on SWE-bench",
+    description: "480B MoE, agentic coding beast",
+    tier: "powerful",
+    contextWindow: "262K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "step-3.5-flash-free": {
+    id: "step-3.5-flash-free",
+    name: "Step 3.5 Flash (Free)",
+    provider: "openrouter",
+    description: "196B MoE, reasoning + tools",
+    tier: "balanced",
+    contextWindow: "256K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "gpt-oss-120b-free": {
+    id: "gpt-oss-120b-free",
+    name: "GPT-OSS 120B (Free)",
+    provider: "openrouter",
+    description: "OpenAI open-source 120B",
+    tier: "powerful",
+    contextWindow: "131K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "qwen3-next-free": {
+    id: "qwen3-next-free",
+    name: "Qwen3 Next 80B (Free)",
+    provider: "openrouter",
+    description: "80B A3B, large context",
+    tier: "balanced",
+    contextWindow: "262K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "trinity-large-free": {
+    id: "trinity-large-free",
+    name: "Trinity Large (Free)",
+    provider: "openrouter",
+    description: "Arcee 400B MoE, agentic coding",
+    tier: "powerful",
+    contextWindow: "131K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "nemotron-3-nano-free": {
+    id: "nemotron-3-nano-free",
+    name: "Nemotron 3 Nano (Free)",
+    provider: "openrouter",
+    description: "NVIDIA 30B A3B, 256K context",
     tier: "fast",
     contextWindow: "256K",
     icon: "🟣",
     isFree: true,
   },
-  "devstral-2-free": {
-    id: "devstral-2-free",
-    name: "Devstral 2 (Free)",
+  "mistral-small-3.1-free": {
+    id: "mistral-small-3.1-free",
+    name: "Mistral Small 3.1 (Free)",
     provider: "openrouter",
-    description: "Mistral 123B, agentic coding specialist",
+    description: "24B, solid tool calling",
+    tier: "fast",
+    contextWindow: "128K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "llama-3.3-70b-free": {
+    id: "llama-3.3-70b-free",
+    name: "Llama 3.3 70B (Free)",
+    provider: "openrouter",
+    description: "Meta proven workhorse",
     tier: "balanced",
-    contextWindow: "256K",
+    contextWindow: "128K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "gemma-3-27b-free": {
+    id: "gemma-3-27b-free",
+    name: "Gemma 3 27B (Free)",
+    provider: "openrouter",
+    description: "Google open-source 27B",
+    tier: "fast",
+    contextWindow: "131K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "gpt-oss-20b-free": {
+    id: "gpt-oss-20b-free",
+    name: "GPT-OSS 20B (Free)",
+    provider: "openrouter",
+    description: "OpenAI small open-source",
+    tier: "fast",
+    contextWindow: "131K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "trinity-mini-free": {
+    id: "trinity-mini-free",
+    name: "Trinity Mini (Free)",
+    provider: "openrouter",
+    description: "Arcee lightweight agentic",
+    tier: "fast",
+    contextWindow: "131K",
+    icon: "🟣",
+    isFree: true,
+  },
+  "nemotron-nano-12b-vl-free": {
+    id: "nemotron-nano-12b-vl-free",
+    name: "Nemotron 12B VL (Free)",
+    provider: "openrouter",
+    description: "NVIDIA 12B, vision + tools",
+    tier: "fast",
+    contextWindow: "128K",
     icon: "🟣",
     isFree: true,
   },
@@ -228,43 +343,13 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     icon: "🟣",
     isFree: true,
   },
-  "llama-4-maverick-free": {
-    id: "llama-4-maverick-free",
-    name: "Llama 4 Maverick (Free)",
-    provider: "openrouter",
-    description: "Meta latest flagship",
-    tier: "powerful",
-    contextWindow: "131K",
-    icon: "🟣",
-    isFree: true,
-  },
-  "llama-4-scout-free": {
-    id: "llama-4-scout-free",
-    name: "Llama 4 Scout (Free)",
-    provider: "openrouter",
-    description: "Meta efficient model",
-    tier: "fast",
-    contextWindow: "131K",
-    icon: "🟣",
-    isFree: true,
-  },
   "glm-4.5-air-free": {
     id: "glm-4.5-air-free",
     name: "GLM 4.5 Air (Free)",
     provider: "openrouter",
     description: "Zhipu agent-focused model",
     tier: "fast",
-    contextWindow: "128K",
-    icon: "🟣",
-    isFree: true,
-  },
-  "kat-coder-pro-free": {
-    id: "kat-coder-pro-free",
-    name: "KAT-Coder-Pro (Free)",
-    provider: "openrouter",
-    description: "KwaiKAT agentic coding, 73.4% SWE-bench",
-    tier: "balanced",
-    contextWindow: "128K",
+    contextWindow: "131K",
     icon: "🟣",
     isFree: true,
   },
@@ -272,19 +357,9 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     id: "deepseek-chimera-free",
     name: "DeepSeek Chimera (Free)",
     provider: "openrouter",
-    description: "671B MoE, strong reasoning",
+    description: "TNG R1T2 Chimera, strong reasoning",
     tier: "powerful",
     contextWindow: "164K",
-    icon: "🟣",
-    isFree: true,
-  },
-  "grok-4-fast-free": {
-    id: "grok-4-fast-free",
-    name: "Grok 4 Fast (Free)",
-    provider: "openrouter",
-    description: "X.AI fast model",
-    tier: "fast",
-    contextWindow: "128K",
     icon: "🟣",
     isFree: true,
   },
@@ -298,36 +373,29 @@ export const MODEL_UI_INFO: Record<ApprovedModel, ModelUIInfo> = {
     icon: "🟣",
     isFree: true,
   },
-  "nemotron-free": {
-    id: "nemotron-free",
-    name: "Nemotron 70B (Free)",
-    provider: "openrouter",
-    description: "NVIDIA instruction-tuned",
-    tier: "balanced",
-    contextWindow: "131K",
-    icon: "🟣",
-    isFree: true,
-  },
 };
 
-// FREE-FIRST STRATEGY: Use proven free models as default
-// devstral-2-free: PROVEN 100% pass rate, 70s avg (fastest free)
-// mimo-v2-flash-free: PROVEN 100% pass rate, 83s avg (reliable backup)
+// FREE-FIRST STRATEGY: Use verified free models as default (Feb 2026)
+// qwen3-coder-free: 480B MoE agentic coding, 262K context
+// step-3.5-flash-free: 196B MoE reasoning, 256K context
 // Paid fallback: gemini-3-flash → gpt-5-nano → claude-haiku-4.5
-export const DEFAULT_MODEL: ApprovedModel = "devstral-2-free";
+export const DEFAULT_MODEL: ApprovedModel = "qwen3-coder-free";
 
 // Fallback when free model fails
 export const FALLBACK_MODEL: ApprovedModel = "gemini-3-flash";
 
 // Model priority order for FREE-FIRST strategy
 export const MODEL_PRIORITY_ORDER: ApprovedModel[] = [
-  // PROVEN FREE (100% pass rate in eval)
-  "devstral-2-free",      // Fastest free: 70s avg
-  "mimo-v2-flash-free",   // Reliable free: 83s avg
+  // TOP FREE (verified available Feb 5, 2026)
+  "qwen3-coder-free",       // 480B MoE, agentic coding
+  "step-3.5-flash-free",    // 196B MoE, reasoning + tools
+  "gpt-oss-120b-free",      // OpenAI open-source 120B
+  "trinity-large-free",     // Arcee 400B MoE, agentic
+  "nemotron-3-nano-free",   // NVIDIA 30B A3B, 256K
   // CHEAP PAID (fallback)
-  "gemini-3-flash",       // $0.50/M input, fast
-  "gpt-5-nano",           // $0.10/M input, efficient
-  "claude-haiku-4.5",     // $1.00/M input, reliable
+  "gemini-3-flash",         // $0.50/M input, fast
+  "gpt-5-nano",             // $0.10/M input, efficient
+  "claude-haiku-4.5",       // $1.00/M input, reliable
 ];
 
 export function isApprovedModel(model: string): model is ApprovedModel {

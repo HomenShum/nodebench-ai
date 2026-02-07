@@ -104,6 +104,10 @@ export const proactiveEvents = defineTable({
   metadata: v.optional(v.any()),          // Source-specific metadata
   expiresAt: v.optional(v.number()),      // Deletion timestamp
 
+  // Agent dispatch routing — connects proactiveEvents → agent heartbeat system
+  dispatchedToAgentId: v.optional(v.string()),  // Agent identity that will process this event
+  dispatchedAt: v.optional(v.number()),         // When event was routed to agent
+
   // Timestamps
   createdAt: v.number(),
   updatedAt: v.number(),
@@ -114,7 +118,8 @@ export const proactiveEvents = defineTable({
   .index("by_contentHash", ["contentHash"])
   .index("by_status", ["processingStatus", "createdAt"])
   .index("by_actor", ["actor.email", "timestamp"])
-  .index("by_expires", ["expiresAt"]);
+  .index("by_expires", ["expiresAt"])
+  .index("by_dispatched", ["dispatchedToAgentId", "dispatchedAt"]);
 
 /* ------------------------------------------------------------------ */
 /* OPPORTUNITIES - Detector output                                    */

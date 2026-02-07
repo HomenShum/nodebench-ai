@@ -249,7 +249,7 @@ async function testEntityExtraction(): Promise<TestResult> {
     const { openai } = await import("@ai-sdk/openai");
 
     const extractionResult = await generateText({
-      model: openai.chat("gpt-4o-mini"),
+      model: openai.chat("gpt-5-nano"),
       prompt: `Extract people and companies from this text as JSON:
 {
   "people": [{"name": "...", "role": "...", "company": "..."}],

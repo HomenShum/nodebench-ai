@@ -2154,7 +2154,7 @@ export const generateDigestWithFactChecks = internalAction({
   },
   handler: async (ctx, args) => {
     const persona = args.persona || "GENERAL";
-    const model = args.model || "devstral-2-free"; // Use free model by default
+    const model = args.model || "qwen3-coder-free"; // Use free model by default
     const hoursBack = args.hoursBack || 24;
 
     console.log(`[digestAgent] Generating digest with fact-checks for persona=${persona}, model=${model}`);

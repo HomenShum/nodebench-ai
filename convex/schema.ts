@@ -1875,6 +1875,72 @@ const mcpToolHistory = defineTable({
   .index("by_user_tool_createdAt", ["userId", "toolId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
+/* MCP TOOL CALL LEDGER - Trusted access audit trail + policy gating    */
+/* ------------------------------------------------------------------ */
+const mcpPolicyConfigs = defineTable({
+  name: v.string(), // singleton key, e.g. "default"
+
+  // If true, policy violations block tool execution. If false, policy is logged only.
+  enforce: v.boolean(),
+
+  // Simple daily budgets. Keys are risk tiers (e.g. "read_only", "external_read", "write_internal").
+  dailyLimitsByTier: v.optional(v.record(v.string(), v.number())),
+
+  // Per-tool daily budgets (toolName -> limit).
+  dailyLimitsByTool: v.optional(v.record(v.string(), v.number())),
+
+  // Explicit tool denylist (toolName -> true). Used for rapid response.
+  blockedTools: v.optional(v.record(v.string(), v.boolean())),
+
+  // Free-form notes for ops rollouts.
+  notes: v.optional(v.string()),
+
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_name", ["name"]);
+
+const mcpToolUsageDaily = defineTable({
+  dateKey: v.string(), // YYYY-MM-DD (UTC)
+  scope: v.union(v.literal("tier"), v.literal("tool")),
+  key: v.string(), // riskTier or toolName depending on scope
+  count: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_date_scope_key", ["dateKey", "scope", "key"])
+  .index("by_date_scope", ["dateKey", "scope"]);
+
+const mcpToolCallLedger = defineTable({
+  toolName: v.string(),
+  toolType: v.string(), // "query" | "mutation" | "action" | "direct" | "unknown"
+  riskTier: v.string(), // "read_only" | "external_read" | "write_internal" | ...
+
+  allowed: v.boolean(),
+  policy: v.optional(v.any()), // evaluation summary (budgets, denylist, enforce, etc.)
+
+  argsHash: v.string(),
+  argsKeys: v.array(v.string()),
+  argsPreview: v.optional(v.string()), // redacted + truncated for UI
+
+  idempotencyKey: v.optional(v.string()),
+  requestMeta: v.optional(v.any()), // upstream request context (gateway request id, etc.)
+
+  startedAt: v.number(),
+  finishedAt: v.optional(v.number()),
+  durationMs: v.optional(v.number()),
+
+  success: v.optional(v.boolean()),
+  errorMessage: v.optional(v.string()),
+
+  resultPreview: v.optional(v.string()), // redacted + truncated for UI
+  resultBytes: v.optional(v.number()),
+})
+  .index("by_startedAt", ["startedAt"])
+  .index("by_tool_startedAt", ["toolName", "startedAt"])
+  .index("by_risk_startedAt", ["riskTier", "startedAt"])
+  .index("by_allowed_startedAt", ["allowed", "startedAt"]);
+
+/* ------------------------------------------------------------------ */
 /* DOCUMENT SNAPSHOTS – periodic snapshots to prevent step accumulation */
 /* ------------------------------------------------------------------ */
 const documentSnapshots = defineTable({
@@ -3014,6 +3080,9 @@ export default defineSchema({
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,
+  mcpPolicyConfigs,
+  mcpToolUsageDaily,
+  mcpToolCallLedger,
   documentSnapshots,
   spreadsheets,
   sheetCells,
@@ -6447,7 +6516,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   freeModels: defineTable({
     // Identity
-    openRouterId: v.string(),                    // e.g., "xiaomi/mimo-v2-flash:free"
+    openRouterId: v.string(),                    // e.g., "qwen/qwen3-coder:free"
     name: v.string(),                            // Human-readable name
     contextLength: v.number(),                   // Max context window
 
@@ -11143,13 +11212,16 @@ export default defineSchema({
     isVerified: v.boolean(),
     hasContradictions: v.boolean(),
     requiresAdjudication: v.boolean(),
+    // Agent posting governance: agent reactions excluded from engagement ranking
+    isAgentReaction: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_thread", ["threadId", "createdAt"])
     .index("by_parent", ["parentPostId", "createdAt"])
     .index("by_type", ["postType", "createdAt"])
-    .index("by_adjudication", ["requiresAdjudication", "createdAt"]),
+    .index("by_adjudication", ["requiresAdjudication", "createdAt"])
+    .index("by_author", ["authorType", "authorId", "createdAt"]),
 
   /**
    * Narrative Replies - Thread commentary and evidence additions (Phase 7)
@@ -11630,4 +11702,114 @@ export default defineSchema({
     .index("by_category", ["category", "effectiveDate"])
     .index("by_source", ["sourceUrl"])
     .index("by_active", ["subject", "expirationDate"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AGENT OS — Perpetual Multi-Agent Runtime
+  // First-class agent identities, communication channels, and heartbeat tracking.
+  // Enables "agents as employees" pattern: always-ready, event-driven, governed.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Agent Identities — first-class agent profiles with persona, permissions, and budget.
+   * Unlike agentRuns (per-invocation execution records), this tracks the agent's
+   * persistent identity, capabilities, and operational constraints across all sessions.
+   */
+  agentIdentities: defineTable({
+    agentId: v.string(),
+    name: v.string(),
+    persona: v.string(),
+    allowedTools: v.array(v.string()),
+    allowedChannels: v.array(v.string()),
+    // Operational constraints
+    heartbeatIntervalMs: v.optional(v.number()),
+    budgetDailyTokens: v.optional(v.number()),
+    budgetDailyCostUsd: v.optional(v.number()),
+    maxConcurrentRuns: v.optional(v.number()),
+    // Trust integration — links to authorTrust for reputation tracking
+    authorTrustTier: v.optional(v.union(
+      v.literal("verified"),
+      v.literal("established"),
+      v.literal("new"),
+      v.literal("quarantined"),
+      v.literal("banned")
+    )),
+    status: v.union(
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("retired")
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_agentId", ["agentId"])
+    .index("by_status", ["status", "updatedAt"])
+    .index("by_name", ["name"]),
+
+  /**
+   * Agent Channels — grouping for teams/rooms.
+   * narrativeThreads are content threads (research outputs);
+   * agentChannels are operational communication channels (coordination).
+   */
+  agentChannels: defineTable({
+    channelId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    memberAgentIds: v.array(v.string()),
+    memberUserIds: v.array(v.string()),
+    channelType: v.union(
+      v.literal("team"),
+      v.literal("broadcast"),
+      v.literal("alert")
+    ),
+    // Feed/ranking config for this channel
+    rankingWeights: v.optional(v.object({
+      recency: v.optional(v.number()),
+      evidenceCoverage: v.optional(v.number()),
+      novelty: v.optional(v.number()),
+      authorTrust: v.optional(v.number()),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_channelId", ["channelId"])
+    .index("by_type", ["channelType", "updatedAt"]),
+
+  /**
+   * Agent Heartbeats — lightweight heartbeat log for perpetual agent runtime.
+   * Tracks each "wake up" event: what triggered it, what work was done, cost.
+   * Not agentRuns (which tracks full LLM invocations); this is the scheduling layer.
+   */
+  agentHeartbeats: defineTable({
+    agentId: v.string(),
+    triggeredBy: v.union(
+      v.literal("schedule"),
+      v.literal("event"),
+      v.literal("manual"),
+      v.literal("sweep")
+    ),
+    triggerEventId: v.optional(v.string()),
+    triggerOpportunityId: v.optional(v.string()),
+    status: v.union(
+      v.literal("started"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("skipped")
+    ),
+    // Work summary
+    workQueueItemsProcessed: v.optional(v.number()),
+    postsCreated: v.optional(v.number()),
+    gapsIdentified: v.optional(v.number()),
+    tokensBurned: v.optional(v.number()),
+    costUsd: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    // Linkage
+    agentRunId: v.optional(v.id("agentRuns")),
+    // Timestamps
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    durationMs: v.optional(v.number()),
+  })
+    .index("by_agent", ["agentId", "startedAt"])
+    .index("by_agent_status", ["agentId", "status"])
+    .index("by_trigger", ["triggeredBy", "startedAt"]),
 });

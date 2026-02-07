@@ -74,7 +74,7 @@ export interface CommentHarvesterConfig {
 }
 
 const DEFAULT_CONFIG: Required<CommentHarvesterConfig> = {
-  model: "gpt-4o-mini",
+  model: "gpt-5-nano",
   maxCommentsPerSource: 50,
   minUpvotesThreshold: 2,
   includeReplies: true,

@@ -93,7 +93,7 @@ export const generateDailyReport = internalAction({
     });
 
     // 4. Generate executive summary using FREE model by default
-    const modelId = (args.model || "devstral-2-free") as ApprovedModel;
+    const modelId = (args.model || "qwen3-coder-free") as ApprovedModel;
     const languageModel = getLanguageModelSafe(normalizeModelInput(modelId));
 
     let executiveSummary: string | undefined;

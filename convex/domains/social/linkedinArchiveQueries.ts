@@ -7,7 +7,7 @@
  */
 
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
 
 function getDedupeKey(post: {
   dateString: string;
@@ -205,5 +205,33 @@ export const getPostsByDate = query({
       metadata: p.metadata,
       postedAt: p.postedAt,
     }));
+  },
+});
+
+/**
+ * Get recent posts for pre-post verification (variety check).
+ * Returns posts from the last N days for topic overlap detection.
+ */
+export const getRecentPostsForVerification = internalQuery({
+  args: { lookbackDays: v.number() },
+  handler: async (ctx, args) => {
+    const cutoff = Date.now() - args.lookbackDays * 24 * 60 * 60 * 1000;
+    const posts = await ctx.db
+      .query("linkedinPostArchive")
+      .withIndex("by_postedAt")
+      .order("desc")
+      .take(50);
+
+    // Filter in code since Convex index predicates don't support gte on ordered queries
+    return posts
+      .filter((p) => p.postedAt >= cutoff)
+      .map((p) => ({
+        _id: p._id,
+        dateString: p.dateString,
+        persona: p.persona,
+        postType: p.postType,
+        content: p.content,
+        postedAt: p.postedAt,
+      }));
   },
 });

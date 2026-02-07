@@ -83,7 +83,7 @@ import { getLanguageModelSafe, DEFAULT_MODEL } from "../mcp_tools/models/modelRe
 // CONFIGURATION
 // ============================================================================
 
-const SYNTHESIS_MODEL = "devstral-2-free";
+const SYNTHESIS_MODEL = "qwen3-coder-free";
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 100;
 const MAX_HANDOFF_BRANCHES = 2; // Max additional branches from handoffs
@@ -1355,7 +1355,7 @@ async function generateExecutiveSummary(
   };
 
   try {
-    // FREE-FIRST: Use devstral-2-free (proven 100% pass rate)
+    // FREE-FIRST: Use qwen3-coder-free (proven 100% pass rate)
     const model = await getLanguageModelSafe(SYNTHESIS_MODEL);
     if (!model) {
       console.log("[DD-Enhanced] LLM unavailable, using template summary");
@@ -1448,7 +1448,7 @@ async function generateInvestmentThesis(
   };
 
   try {
-    // FREE-FIRST: Use devstral-2-free
+    // FREE-FIRST: Use qwen3-coder-free
     const model = await getLanguageModelSafe(SYNTHESIS_MODEL);
     if (!model) {
       return templateThesis();

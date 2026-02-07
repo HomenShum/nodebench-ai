@@ -56,7 +56,7 @@ export interface AnalystConfig {
 }
 
 const DEFAULT_CONFIG: Required<AnalystConfig> = {
-  model: "gpt-4o-mini",
+  model: "gpt-5-nano",
   minConfidence: 0.6,
   maxShifts: 10,
   detectPlotTwists: true,

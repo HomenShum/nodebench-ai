@@ -475,7 +475,7 @@ export const FREE_MODEL_CONFIG = {
 
   /** Known good free models (hardcoded fallback) */
   knownFreeModels: [
-    "xiaomi/mimo-v2-flash:free",
+    "qwen/qwen3-coder:free",
     "google/gemma-2-9b-it:free",
     "meta-llama/llama-3.2-3b-instruct:free",
     "huggingfaceh4/zephyr-7b-beta:free",

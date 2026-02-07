@@ -23,7 +23,7 @@ export const testJudgeModelSelection = internalAction({
 
     // Determine expected model based on available keys
     if (process.env.OPENROUTER_API_KEY) {
-      results.expectedPrimaryModel = "devstral-2-free";
+      results.expectedPrimaryModel = "qwen3-coder-free";
       results.expectedCost = "$0.00/M (FREE)";
     } else if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       results.expectedPrimaryModel = "gemini-3-flash";
@@ -62,7 +62,7 @@ export const testJudgeModelSelection = internalAction({
     }
 
     console.log("\n📈 Fallback Chain:");
-    console.log("1. devstral-2-free ($0.00/M) - FREE via OpenRouter");
+    console.log("1. qwen3-coder-free ($0.00/M) - FREE via OpenRouter");
     console.log("2. glm-4.7-flash ($0.07/M) - Ultra-cheap via OpenRouter");
     console.log("3. gemini-3-flash ($0.50/M) - Budget via Google");
     console.log("4. claude-haiku-4.5 ($1.00/M) - Last resort via Anthropic");
@@ -88,7 +88,7 @@ export const testJudgeWithSimpleEvaluation = internalAction({
       const { getLanguageModelSafe } = await import("../agents/mcp_tools/models");
 
       // Simulate what getDefaultJudgeModel() would return
-      let modelName = "devstral-2-free"; // Default FREE model
+      let modelName = "qwen3-coder-free"; // Default FREE model
       if (!process.env.OPENROUTER_API_KEY && process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
         modelName = "gemini-3-flash";
       } else if (!process.env.OPENROUTER_API_KEY && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) {

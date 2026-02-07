@@ -465,7 +465,7 @@ export const runClaimDecompositionTests = action({
     for (const test of CLAIM_DECOMPOSITION_TESTS) {
       try {
         const result = await generateText({
-          model: openai.chat("gpt-4o-mini"),
+          model: openai.chat("gpt-5-nano"),
           prompt: `Extract all individual factual claims from this text. For each claim, note if it's:
 - A verifiable fact (can be checked against records)
 - An opinion (subjective)

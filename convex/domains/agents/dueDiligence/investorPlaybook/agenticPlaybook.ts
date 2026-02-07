@@ -126,7 +126,7 @@ async function extractClaimsFromQuery(
       .replace("{QUERY}", query)
       .replace("{CONTEXT}", additionalContext || "None provided");
 
-    const model = await getLanguageModelSafe("devstral-2-free");
+    const model = await getLanguageModelSafe("qwen3-coder-free");
 
     const result = await generateText({
       model,

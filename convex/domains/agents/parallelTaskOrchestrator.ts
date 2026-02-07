@@ -265,7 +265,7 @@ Respond with a JSON array of objects:
 Only output the JSON array, no other text.`;
 
   const { text } = await generateText({
-    model: getLanguageModelSafe("devstral-2-free"), // FREE model (100% cost savings vs claude-sonnet-4). glm-4.7-flash had empty response issues.
+    model: getLanguageModelSafe("qwen3-coder-free"), // FREE model (100% cost savings vs claude-sonnet-4). glm-4.7-flash had empty response issues.
     prompt,
     maxOutputTokens: 1000,
   });
@@ -437,9 +437,9 @@ async function verifyBranches(
     });
 
     try {
-      // Cost optimization: devstral-2-free ($0.00/M) FREE model at 100% savings vs claude-sonnet-4 ($3.00/M). glm-4.7-flash had empty response issues.
+      // Cost optimization: qwen3-coder-free ($0.00/M) FREE model at 100% savings vs claude-sonnet-4 ($3.00/M). glm-4.7-flash had empty response issues.
       const { text } = await generateText({
-        model: getLanguageModelSafe("devstral-2-free"),
+        model: getLanguageModelSafe("qwen3-coder-free"),
         prompt: `You are a verification agent. Evaluate this research result for quality and accuracy.
 
 Original Query: "${query}"
@@ -534,9 +534,9 @@ async function crossCheckBranches(
       if (source.taskId === target.taskId) continue;
 
       try {
-        // Cost optimization: devstral-2-free ($0.00/M) FREE model at 100% savings vs claude-sonnet-4 ($3.00/M). glm-4.7-flash had empty response issues.
+        // Cost optimization: qwen3-coder-free ($0.00/M) FREE model at 100% savings vs claude-sonnet-4 ($3.00/M). glm-4.7-flash had empty response issues.
         const { text } = await generateText({
-          model: getLanguageModelSafe("devstral-2-free"),
+          model: getLanguageModelSafe("qwen3-coder-free"),
           prompt: `You are a critique agent. Compare two research results for the same query.
 
 Query: "${query}"

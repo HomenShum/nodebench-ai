@@ -23,6 +23,7 @@ interface SlotDefinition {
   minuteUTC: number;
   daysOfWeek: string[];
   description: string;
+  target: "personal" | "organization";
 }
 
 /**
@@ -36,6 +37,7 @@ const ORG_PAGE_SLOTS: SlotDefinition[] = [
     minuteUTC: 0,
     daysOfWeek: ["monday", "tuesday", "wednesday", "thursday", "friday"],
     description: "Morning slot (8 AM UTC)",
+    target: "organization",
   },
   {
     id: "org_midday",
@@ -43,6 +45,7 @@ const ORG_PAGE_SLOTS: SlotDefinition[] = [
     minuteUTC: 0,
     daysOfWeek: ["monday", "wednesday", "friday"],
     description: "Midday slot (1 PM UTC)",
+    target: "organization",
   },
   {
     id: "org_afternoon",
@@ -50,25 +53,67 @@ const ORG_PAGE_SLOTS: SlotDefinition[] = [
     minuteUTC: 0,
     daysOfWeek: ["tuesday", "thursday"],
     description: "Afternoon slot (4 PM UTC)",
+    target: "organization",
   },
 ];
+
+/**
+ * Personal profile posting slots — 3/week (Mon/Wed/Fri evenings).
+ * Evening time avoids competing with org morning/midday posts in followers' feeds.
+ */
+const PERSONAL_SLOTS: SlotDefinition[] = [
+  {
+    id: "personal_monday",
+    hourUTC: 18,
+    minuteUTC: 0,
+    daysOfWeek: ["monday"],
+    description: "Personal Monday (6 PM UTC)",
+    target: "personal",
+  },
+  {
+    id: "personal_wednesday",
+    hourUTC: 18,
+    minuteUTC: 0,
+    daysOfWeek: ["wednesday"],
+    description: "Personal Wednesday (6 PM UTC)",
+    target: "personal",
+  },
+  {
+    id: "personal_friday",
+    hourUTC: 18,
+    minuteUTC: 0,
+    daysOfWeek: ["friday"],
+    description: "Personal Friday (6 PM UTC)",
+    target: "personal",
+  },
+];
+
+/** All slots combined, filterable by target. */
+const ALL_SLOTS: SlotDefinition[] = [...ORG_PAGE_SLOTS, ...PERSONAL_SLOTS];
 
 /**
  * Find the next available slot from a given date.
  * Searches up to 14 days ahead.
  */
-function getNextAvailableSlot(fromDate: Date): {
+function getNextAvailableSlot(
+  fromDate: Date,
+  target?: "personal" | "organization",
+): {
   slotId: string;
   scheduledFor: number;
   description: string;
 } | null {
+  const slots = target
+    ? ALL_SLOTS.filter((s) => s.target === target)
+    : ORG_PAGE_SLOTS; // backwards-compatible default
+
   for (let daysAhead = 0; daysAhead < 14; daysAhead++) {
     const checkDate = new Date(fromDate);
     checkDate.setUTCDate(checkDate.getUTCDate() + daysAhead);
 
     const dayOfWeek = DAY_NAMES[checkDate.getUTCDay()];
 
-    for (const slot of ORG_PAGE_SLOTS) {
+    for (const slot of slots) {
       if (!slot.daysOfWeek.includes(dayOfWeek)) continue;
 
       const slotDate = new Date(checkDate);
@@ -113,9 +158,9 @@ export const scheduleNextApprovedPost = internalAction({
       return { scheduled: false, reason: "no_approved_posts" };
     }
 
-    // Find next available slot
+    // Find next available slot (filtered by target)
     const now = new Date();
-    let slot = getNextAvailableSlot(now);
+    let slot = getNextAvailableSlot(now, target);
 
     if (!slot) {
       console.log(`[schedule] No available slots in next 14 days`);
@@ -133,7 +178,7 @@ export const scheduleNextApprovedPost = internalAction({
 
       // Try next slot from just after the taken one
       const nextFrom = new Date(slot!.scheduledFor + 1);
-      slot = getNextAvailableSlot(nextFrom);
+      slot = getNextAvailableSlot(nextFrom, target);
 
       if (!slot) {
         console.log(`[schedule] All slots taken in next 14 days`);

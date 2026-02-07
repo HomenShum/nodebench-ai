@@ -147,7 +147,7 @@ export const testEntityExtraction = action({
       const testText = "OpenAI CEO Sam Altman met with Microsoft CEO Satya Nadella to discuss AI safety.";
 
       const result = await generateText({
-        model: openai.chat("gpt-4o-mini"),
+        model: openai.chat("gpt-5-nano"),
         prompt: `Extract people and companies from: "${testText}". Return JSON: {"people": ["name"], "companies": ["name"]}`,
         temperature: 0.1,
       });
@@ -458,7 +458,7 @@ export const runFullE2ETest = action({
       const { openai } = await import("@ai-sdk/openai");
 
       const result = await generateText({
-        model: openai.chat("gpt-4o-mini"),
+        model: openai.chat("gpt-5-nano"),
         prompt: 'Extract entities from: "Tim Cook announced new iPhone at Apple Park". Return JSON: {"people": [], "companies": [], "products": []}',
         temperature: 0.1,
       });

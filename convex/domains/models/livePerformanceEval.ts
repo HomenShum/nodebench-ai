@@ -462,13 +462,16 @@ export const evaluatePinnedFreeFirstModels = internalAction({
     await ctx.runAction(internal.domains.models.freeModelDiscovery.seedPinnedFreeModels, {});
 
     const pinnedOpenRouterIds: string[] = [
-      "google/gemini-2.0-flash-exp:free",
-      "google/gemma-3-27b-it:free",
-      "allenai/molmo-2-8b:free",
-      "deepseek/deepseek-r1:free",
+      "qwen/qwen3-coder:free",
+      "stepfun/step-3.5-flash:free",
+      "openai/gpt-oss-120b:free",
+      "arcee-ai/trinity-large-preview:free",
+      "nvidia/nemotron-3-nano-30b-a3b:free",
       "meta-llama/llama-3.3-70b-instruct:free",
+      "google/gemma-3-27b-it:free",
+      "deepseek/deepseek-r1-0528:free",
       "z-ai/glm-4.5-air:free",
-      "mistralai/devstral-small-2505:free",
+      "nvidia/nemotron-nano-12b-v2-vl:free",
     ];
 
     const resultsByModel: Record<string, { overallScore: number; recommendation: string }> = {};

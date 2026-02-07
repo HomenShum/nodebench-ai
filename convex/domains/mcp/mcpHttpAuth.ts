@@ -25,6 +25,10 @@ export function serverError(message = "Internal Server Error", details?: unknown
   return json(500, { success: false, error: message, details });
 }
 
+export function tooManyRequests(message = "Too Many Requests", details?: unknown): Response {
+  return json(429, { success: false, error: message, details });
+}
+
 export function requireMcpSecret(request: Request): Response | null {
   const expected = process.env.MCP_SECRET;
   if (!expected) {
