@@ -1183,6 +1183,108 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
     sourceReference:
       "https://github.com/Leey21/awesome-ai-research-writing — 4000+ stars, MSRA/Bytedance/PKU",
   },
+  agent_evaluation: {
+    title: "Agent Evaluation — Test, Observe, Improve",
+    description:
+      "Systematic methodology for ensuring agents using NodeBench MCP perform as well or better than agents without it. Combines contract compliance scoring, trajectory analysis, eval benchmarks, and self-reinforced learning into a closed loop: run agent → score → identify gaps → fix prompt/contract → re-score. The key insight: agent quality is measurable using the same eval infrastructure NodeBench provides for code quality.",
+    steps: [
+      {
+        step: 1,
+        name: "Instrument the Agent Session",
+        description:
+          "Ensure every tool call is logged. NodeBench auto-instruments calls, but verify with log_tool_call if using external orchestrators. Group related calls under a sessionId.",
+        tools: ["log_tool_call"],
+        action:
+          "Verify tool call logging is active. If using Claude Code, Windsurf, or Cursor — calls are auto-logged. For custom orchestrators, call log_tool_call({ sessionId, toolName, resultStatus }) after each tool invocation.",
+      },
+      {
+        step: 2,
+        name: "Score Contract Compliance",
+        description:
+          "Run the 6-dimension contract compliance checker. Scores: front-door protocol (25pts), self-setup (10pts), pre-implementation gates (15pts), parallel coordination (10pts), ship gates (30pts), tool efficiency (10pts). Total: 100pts.",
+        tools: ["check_contract_compliance"],
+        action:
+          "Call check_contract_compliance({ sessionId }) after the agent task completes. Review violations and per-dimension scores. Target: Grade B (80+) for production agents.",
+      },
+      {
+        step: 3,
+        name: "Analyze Trajectory Patterns",
+        description:
+          "Identify tool usage patterns: which tools are used most, sequential bigrams (tool A → tool B), error rates, phase distribution. Patterns reveal whether the agent is using the methodology effectively.",
+        tools: ["get_trajectory_analysis"],
+        action:
+          "Call get_trajectory_analysis({ sessionId }). Look for: (1) front-door tools appearing first, (2) low error rates, (3) ship-gate tools appearing last, (4) no redundant consecutive calls.",
+      },
+      {
+        step: 4,
+        name: "Run Eval Benchmarks",
+        description:
+          "Create eval test cases for specific agent behaviors. Test: does the agent search before coding? Does it recover from missing tools? Does it run all ship gates? Compare with/without the agent-contract prompt.",
+        tools: ["start_eval_run", "record_eval_result", "complete_eval_run"],
+        action:
+          'Create eval cases: { input: "Fix a bug in auth module", intent: "Agent should search_all_knowledge first, then verify, then ship with gates" }. Record actual behavior. Compare pass rates.',
+      },
+      {
+        step: 5,
+        name: "Compare Before/After",
+        description:
+          "After changing the agent contract, prompt, or toolset — re-run eval and compare. Never ship a contract change without eval improvement.",
+        tools: ["compare_eval_runs"],
+        action:
+          "Call compare_eval_runs({ baselineRunId, candidateRunId }). Only ship if the candidate shows improvement. If regression, investigate with trigger_investigation.",
+      },
+      {
+        step: 6,
+        name: "Self-Reinforce",
+        description:
+          "Cross-reference all data to generate improvement recommendations. Bank learnings. Clean stale data. The system gets smarter about agent patterns over time.",
+        tools: ["get_self_eval_report", "get_improvement_recommendations", "record_learning"],
+        action:
+          "Call get_self_eval_report for the health dashboard. Call get_improvement_recommendations for actionable fixes. Record every agent evaluation insight as a learning.",
+      },
+    ],
+    scoringDimensions: {
+      front_door: "25pts — Did the agent call search_all_knowledge + getMethodology + discover_tools BEFORE implementation?",
+      self_setup: "10pts — Did the agent resolve missing capabilities (errors → setup tools → retry)?",
+      pre_implementation: "15pts — Did the agent run recon + risk assessment before changes?",
+      parallel_coordination: "10pts — If parallel work, did the agent claim/release tasks with roles and budget tracking?",
+      ship_gates: "30pts — Did the agent run tests + eval + quality gate + mandatory flywheel + record learning before declaring done?",
+      tool_efficiency: "10pts — Low error rate, no redundant calls, good tool variety?",
+    },
+    gradeScale: {
+      A: "90-100 — Exemplary: agent follows the full contract consistently",
+      B: "80-89 — Good: minor gaps but fundamentally sound process",
+      C: "70-79 — Acceptable: some dimensions need attention",
+      D: "55-69 — Needs Improvement: significant contract violations",
+      F: "0-54 — Non-Compliant: agent is not following the methodology",
+    },
+    whatToMeasure: {
+      contract_compliance_score: "0-100 from check_contract_compliance — the primary metric",
+      health_score: "From get_self_eval_report — broader system health across all artifacts",
+      eval_pass_rate: "From complete_eval_run — percentage of agent behavior test cases passing",
+      tool_error_rate: "From get_trajectory_analysis — percentage of tool calls that fail",
+      knowledge_growth: "From search_all_knowledge — are learnings accumulating and being reused?",
+      violation_trend: "From get_gate_history — are contract violations decreasing over time?",
+    },
+    hostFewerToolsArchitecture: {
+      principle: "Give the agent 4 front-door meta-tools. All 129+ tools are discoverable on demand.",
+      frontDoor: [
+        "search_all_knowledge — Check what's known before doing anything",
+        "getMethodology — Load the right process for the task",
+        "discover_tools — Find the best tools for the job (multi-modal search with explain=true)",
+        "get_workflow_chain — Get step-by-step tool sequence for the workflow",
+      ],
+      selfExtension: "If a capability is missing, the agent escalates: discover_tools → scaffold/bootstrap → smoke-test → proceed. The agent-contract prompt encodes this as a non-negotiable rule.",
+      benefits: [
+        "Small surface area (4 host tools) for easier safety and auditing",
+        "Composable growth via discoverable tool inventory",
+        "Better tool choice via multi-modal search + quickRef guidance",
+        "Measurable via contract compliance scoring",
+      ],
+    },
+    composesWith:
+      "Run after every agent session. Feeds into the self-reinforced learning loop. Contract compliance scores become eval test cases. Violations trigger verification investigations.",
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1230,6 +1332,8 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "Self-Reinforced Learning — auto-instrumented trajectory analysis, self-evaluation reports, improvement recommendations, stale run cleanup, recon synthesis, closed-loop optimization",
           academic_paper_writing:
             "Academic Paper Writing — AI-assisted polishing, translation, de-AI-ification, logic checking, captions, experiment analysis, reviewer simulation. Based on awesome-ai-research-writing (4000+ stars, MSRA/Bytedance/PKU)",
+          agent_evaluation:
+            "Agent Evaluation — contract compliance scoring (6 dimensions, 100pts), trajectory analysis, eval benchmarks, host-fewer-tools architecture, self-reinforced improvement loop",
         },
       },
       {
@@ -1404,6 +1508,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "get_improvement_recommendations",
             "cleanup_stale_runs",
             "synthesize_recon_to_learnings",
+            "check_contract_compliance",
           ],
           parallel_agents: [
             "claim_agent_task",
@@ -1521,7 +1626,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
     {
       name: "getMethodology",
       description:
-        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, overview. Call with topic "overview" to see all available methodologies.',
+        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, overview. Call with topic "overview" to see all available methodologies.',
       inputSchema: {
         type: "object",
         properties: {
@@ -1547,6 +1652,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "parallel_agent_teams",
               "self_reinforced_learning",
               "academic_paper_writing",
+              "agent_evaluation",
               "overview",
             ],
             description: "Which methodology to explain",

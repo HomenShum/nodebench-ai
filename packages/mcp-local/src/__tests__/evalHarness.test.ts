@@ -19,6 +19,10 @@ import { learningTools } from "../tools/learningTools.js";
 import { documentationTools } from "../tools/documentationTools.js";
 import { agentBootstrapTools } from "../tools/agentBootstrapTools.js";
 import { selfEvalTools } from "../tools/selfEvalTools.js";
+import { flickerDetectionTools } from "../tools/flickerDetectionTools.js";
+import { figmaFlowTools } from "../tools/figmaFlowTools.js";
+import { boilerplateTools } from "../tools/boilerplateTools.js";
+import { cCompilerBenchmarkTools } from "../tools/cCompilerBenchmarkTools.js";
 import { createMetaTools } from "../tools/metaTools.js";
 import type { McpTool } from "../types.js";
 
@@ -33,6 +37,10 @@ const domainTools: McpTool[] = [
   ...documentationTools,
   ...agentBootstrapTools,
   ...selfEvalTools,
+  ...flickerDetectionTools,
+  ...figmaFlowTools,
+  ...boilerplateTools,
+  ...cCompilerBenchmarkTools,
 ];
 const allTools = [...domainTools, ...createMetaTools(domainTools)];
 
@@ -710,7 +718,7 @@ describe("Scenario: Meta Tool Discovery", () => {
 
     expect(result.title).toContain("Overview");
     const topics = Object.keys(result.steps[0].topics);
-    expect(topics.length).toBe(18);
+    expect(topics.length).toBe(20);
   });
 
   it("Step 4: Get specific methodology", async () => {
@@ -815,6 +823,194 @@ describe("Scenario: Self-Reinforced Learning", () => {
     expect(result).toHaveProperty("newLearnings");
     expect(result).toHaveProperty("preview");
     expect(result.created).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCENARIO 11: Flicker Detection (env-gated — returns "not configured")
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: Flicker Detection Pipeline", () => {
+  it("Step 1: run_flicker_detection returns not-configured when no server", async () => {
+    const result = await callTool("run_flicker_detection", {
+      durationS: 5,
+    }, "flicker-detection") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 2: capture_surface_stats returns not-configured", async () => {
+    const result = await callTool("capture_surface_stats", {}, "flicker-detection") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 3: extract_video_frames returns not-configured", async () => {
+    const result = await callTool("extract_video_frames", {}, "flicker-detection") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 4: compute_ssim_analysis returns not-configured", async () => {
+    const result = await callTool("compute_ssim_analysis", {
+      framePaths: ["/tmp/frame1.jpg", "/tmp/frame2.jpg"],
+    }, "flicker-detection") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 5: generate_flicker_report returns not-configured", async () => {
+    const result = await callTool("generate_flicker_report", {
+      ssimScores: [0.95, 0.93, 0.88, 0.91],
+      threshold: 0.90,
+    }, "flicker-detection") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCENARIO 12: Figma Flow Analysis (env-gated — returns "not configured")
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: Figma Flow Analysis Pipeline", () => {
+  it("Step 1: analyze_figma_flows returns not-configured when no server", async () => {
+    const result = await callTool("analyze_figma_flows", {
+      fileKey: "abc123",
+    }, "figma-flow") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 2: extract_figma_frames returns not-configured", async () => {
+    const result = await callTool("extract_figma_frames", {
+      fileKey: "abc123",
+    }, "figma-flow") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 3: cluster_figma_flows returns not-configured", async () => {
+    const result = await callTool("cluster_figma_flows", {
+      frames: [],
+    }, "figma-flow") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+
+  it("Step 4: render_flow_visualization returns not-configured", async () => {
+    const result = await callTool("render_flow_visualization", {
+      flowGroups: [],
+    }, "figma-flow") as any;
+    expect(result.error).toBe(true);
+    expect(result.message).toContain("not configured");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCENARIO 13: Boilerplate Scaffolding
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: Boilerplate Scaffolding", () => {
+  it("Step 1: scaffold_nodebench_project dry run", async () => {
+    const result = await callTool("scaffold_nodebench_project", {
+      projectPath: "/tmp/eval-harness-scaffold-test",
+      projectName: "eval-test-project",
+      techStack: "TypeScript/Node.js",
+      dryRun: true,
+    }, "boilerplate") as any;
+    expect(result.dryRun).toBe(true);
+    expect(result.summary.totalFiles).toBeGreaterThan(5);
+  });
+
+  it("Step 2: get_boilerplate_status on empty dir", async () => {
+    const result = await callTool("get_boilerplate_status", {
+      projectPath: process.cwd(),
+    }, "boilerplate") as any;
+    expect(typeof result.completionPercentage).toBe("number");
+    expect(result.total).toBeGreaterThan(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCENARIO 14: C-Compiler Benchmark
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: C-Compiler Benchmark", () => {
+  let benchmarkId: string;
+
+  it("Step 1: start_autonomy_benchmark with challenge list", async () => {
+    const result = await callTool("start_autonomy_benchmark", {
+      challenge: "list",
+    }, "benchmark") as any;
+    expect(result.availableChallenges.length).toBe(5);
+  });
+
+  it("Step 2: start_autonomy_benchmark with c_compiler", async () => {
+    const result = await callTool("start_autonomy_benchmark", {
+      challenge: "c_compiler",
+    }, "benchmark") as any;
+    expect(result.totalPoints).toBe(100);
+    expect(result.milestones.length).toBe(10);
+    benchmarkId = result.benchmarkId;
+  });
+
+  it("Step 3: log_benchmark_milestone", async () => {
+    const result = await callTool("log_benchmark_milestone", {
+      benchmarkId,
+      milestoneId: "lexer",
+      verificationPassed: true,
+      notes: "Lexer tokenizes all C keywords correctly",
+    }, "benchmark") as any;
+    expect(result.milestoneId).toBe("lexer");
+    expect(result.points).toBe(15);
+  });
+
+  it("Step 4: complete_autonomy_benchmark", async () => {
+    const result = await callTool("complete_autonomy_benchmark", {
+      benchmarkId,
+      reason: "completed",
+    }, "benchmark") as any;
+    expect(result.score.earnedPoints).toBe(15);
+    expect(result.milestones.completed).toBe(1);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCENARIO 15: Contract Compliance
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: Contract Compliance", () => {
+  it("Step 1: check_contract_compliance with empty session", async () => {
+    const result = await callTool("check_contract_compliance", {
+      sessionId: `evalharness-empty-${Date.now()}`,
+    }, "self_eval") as any;
+    expect(result.score).toBe(0);
+    expect(result.grade).toBe("N/A");
+  });
+
+  it("Step 2: check_contract_compliance scores a compliant session", async () => {
+    // First seed some tool calls
+    const sessionId = `evalharness-compliant-${Date.now()}`;
+    const logTool = allTools.find(t => t.name === "log_tool_call")!;
+    const sequence = [
+      "search_all_knowledge", "getMethodology", "discover_tools",
+      "run_recon", "assess_risk",
+      "run_closed_loop", "log_test_result", "start_eval_run",
+      "run_quality_gate", "run_mandatory_flywheel", "record_learning",
+    ];
+    for (const toolName of sequence) {
+      await logTool.handler({ sessionId, toolName, resultStatus: "success" });
+    }
+
+    const result = await callTool("check_contract_compliance", {
+      sessionId,
+    }, "self_eval") as any;
+    expect(result.score).toBeGreaterThanOrEqual(80);
+    expect(result.grade).toMatch(/^[AB]/);
+    expect(result.dimensions).toBeDefined();
+    expect(result.dimensions.front_door.score).toBeGreaterThanOrEqual(15);
+    expect(result.dimensions.ship_gates.score).toBeGreaterThanOrEqual(20);
   });
 });
 
@@ -930,7 +1126,11 @@ describe("Coverage Report", () => {
       "Recon": ["run_recon", "log_recon_finding", "get_recon_summary", "check_framework_updates", "search_all_knowledge", "bootstrap_project", "get_project_context"],
       "Bootstrap": ["discover_infrastructure", "triple_verify", "self_implement", "generate_self_instructions", "connect_channels"],
       "Autonomous": ["assess_risk", "decide_re_update", "run_self_maintenance", "scaffold_directory", "run_autonomous_loop"],
-      "Self-Eval": ["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings"],
+      "Self-Eval": ["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings", "check_contract_compliance"],
+      "Flicker Detection": ["run_flicker_detection", "capture_surface_stats", "extract_video_frames", "compute_ssim_analysis", "generate_flicker_report"],
+      "Figma Flow": ["analyze_figma_flows", "extract_figma_frames", "cluster_figma_flows", "render_flow_visualization"],
+      "Boilerplate": ["scaffold_nodebench_project", "get_boilerplate_status"],
+      "Benchmark": ["start_autonomy_benchmark", "log_benchmark_milestone", "complete_autonomy_benchmark"],
       "Meta": ["findTools", "getMethodology"],
       "External (skip)": externalDependencyTools,
     };

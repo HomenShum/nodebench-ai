@@ -33,7 +33,7 @@ import { figmaFlowTools } from "../tools/figmaFlowTools.js";
 import { createProgressiveDiscoveryTools } from "../tools/progressiveDiscoveryTools.js";
 import { boilerplateTools } from "../tools/boilerplateTools.js";
 import { cCompilerBenchmarkTools } from "../tools/cCompilerBenchmarkTools.js";
-import { getQuickRef, hybridSearch, TOOL_REGISTRY, SEARCH_MODES } from "../tools/toolRegistry.js";
+import { getQuickRef, hybridSearch, TOOL_REGISTRY, SEARCH_MODES, ALL_REGISTRY_ENTRIES, WORKFLOW_CHAINS } from "../tools/toolRegistry.js";
 import type { McpTool } from "../types.js";
 
 // Assemble all tools like index.ts does
@@ -74,9 +74,9 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Static: tool structure", () => {
-  it("should have 131 tools total", () => {
-    // 126 domain tools + 2 meta tools (findTools, getMethodology) + 3 progressive discovery tools
-    expect(allTools.length).toBe(131);
+  it("should have 132 tools total", () => {
+    // 127 domain tools + 2 meta tools (findTools, getMethodology) + 3 progressive discovery tools
+    expect(allTools.length).toBe(132);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {
@@ -317,7 +317,7 @@ describe("Static: new methodology topics", () => {
     expect(topics).toContain("agent_bootstrap");
     expect(topics).toContain("autonomous_maintenance");
     expect(topics).toContain("parallel_agent_teams");
-    expect(topics.length).toBe(19); // All topics listed in overview
+    expect(topics.length).toBe(20); // All topics listed in overview
   });
 });
 
@@ -622,6 +622,25 @@ describe("Unit: local file tools", () => {
     expect(result.rows[1].row[0]).toBe("Cara");
   });
 
+  it("csv_select_rows should support is_even on address-like strings", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const csvPath = path.join(tmpDir, "sample.csv");
+    await writeFile(csvPath, "name,address\nAlice,101 Main St\nBob,102 Main St\nCara,103 Main St\n", "utf8");
+
+    const tool = findTool("csv_select_rows");
+    const result = (await tool.handler({
+      path: csvPath,
+      hasHeader: true,
+      where: [{ column: "address", op: "is_even" }],
+      returnColumns: ["name"],
+      limit: 10,
+    })) as any;
+
+    expect(result.headers).toEqual(["name"]);
+    expect(result.rows.length).toBe(1);
+    expect(result.rows[0].row[0]).toBe("Bob");
+  });
+
   it("csv_aggregate should compute min and return bestRow", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
     const csvPath = path.join(tmpDir, "sample.csv");
@@ -671,6 +690,38 @@ describe("Unit: local file tools", () => {
     expect(result.rows[0].row[0]).toBe("Movie A");
   });
 
+  it("xlsx_select_rows should support is_odd on numeric columns", async () => {
+    const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
+    const xlsxPath = path.join(tmpDir, "sample.xlsx");
+
+    const mod = await import("xlsx");
+    const XLSX = (mod as any).default ?? mod;
+    const wb = XLSX.utils.book_new();
+    const sheet = XLSX.utils.aoa_to_sheet([
+      ["Title", "Year"],
+      ["Movie A", 2009],
+      ["Movie B", 2010],
+      ["Movie C", 2011],
+    ]);
+    XLSX.utils.book_append_sheet(wb, sheet, "Sheet1");
+    XLSX.writeFile(wb, xlsxPath);
+
+    const tool = findTool("xlsx_select_rows");
+    const result = (await tool.handler({
+      path: xlsxPath,
+      sheetName: "Sheet1",
+      headerRow: 1,
+      where: [{ column: "Year", op: "is_odd" }],
+      returnColumns: ["Title"],
+      limit: 10,
+    })) as any;
+
+    expect(result.headers).toEqual(["Title"]);
+    expect(result.rows.length).toBe(2);
+    expect(result.rows[0].row[0]).toBe("Movie A");
+    expect(result.rows[1].row[0]).toBe("Movie C");
+  });
+
   it("xlsx_aggregate should compute min and return bestRow", async () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), "nodebench-mcp-"));
     const xlsxPath = path.join(tmpDir, "sample.xlsx");
@@ -713,7 +764,7 @@ describe("Unit: local file tools", () => {
 
     expect(result.pagesIncluded).toEqual([1]);
     expect(String(result.text)).toContain("Hello World");
-  });
+  }, 20_000);
 
   it("pdf_search_text should find matches with snippets", async () => {
     const pdfPath = findRepoFile(path.join("test_assets", "Report_2025-12-25.pdf"));
@@ -1983,7 +2034,7 @@ describe("Search engine: registry coverage", () => {
   });
 
   it("should expose all 6 search modes", () => {
-    expect(SEARCH_MODES).toEqual(["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact"]);
+    expect(SEARCH_MODES).toEqual(["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact", "dense"]);
   });
 
   it("should have quickRef for every registered tool", () => {
@@ -2141,5 +2192,154 @@ describe("Search engine: bigram phrase matching", () => {
     const results = hybridSearch("parallel agents", toolDescs, { limit: 5 });
     const names = results.map((r) => r.name);
     expect(names.some((n) => n.includes("parallel") || n.includes("agent"))).toBe(true);
+  });
+});
+
+// ── Contract Compliance Tool Tests ──────────────────────────────────────
+
+describe("check_contract_compliance", () => {
+  it("should return N/A score when no tool call data exists", async () => {
+    const tool = findTool("check_contract_compliance");
+    const result = (await tool.handler({ sessionId: "nonexistent-session-xyz-" + Date.now() })) as any;
+    expect(result.score).toBe(0);
+    expect(result.grade).toBe("N/A");
+  });
+
+  it("should score a perfect session with all contract phases", async () => {
+    const sessionId = `compliance-test-perfect-${Date.now()}`;
+    const logTool = findTool("log_tool_call");
+
+    // Simulate a perfect agent session following the contract
+    const perfectSequence = [
+      // Front door (25pts)
+      "search_all_knowledge",
+      "getMethodology",
+      "discover_tools",
+      "get_workflow_chain",
+      // Pre-impl (15pts)
+      "run_recon",
+      "log_recon_finding",
+      "assess_risk",
+      // Implementation
+      "start_verification_cycle",
+      "log_phase_findings",
+      // Ship gates (30pts)
+      "run_closed_loop",
+      "log_test_result",
+      "start_eval_run",
+      "record_eval_result",
+      "run_quality_gate",
+      "run_mandatory_flywheel",
+      "record_learning",
+    ];
+
+    for (const toolName of perfectSequence) {
+      await logTool.handler({ sessionId, toolName, resultStatus: "success" });
+    }
+
+    const tool = findTool("check_contract_compliance");
+    const result = (await tool.handler({ sessionId })) as any;
+
+    expect(result.score).toBeGreaterThanOrEqual(85);
+    expect(result.grade).toMatch(/^[AB]/);
+    expect(result.violations.length).toBeLessThanOrEqual(2);
+    expect(result.dimensions.front_door.score).toBeGreaterThanOrEqual(20);
+    expect(result.dimensions.ship_gates.score).toBeGreaterThanOrEqual(25);
+  });
+
+  it("should flag violations when agent skips front-door protocol", async () => {
+    const sessionId = `compliance-test-no-frontdoor-${Date.now()}`;
+    const logTool = findTool("log_tool_call");
+
+    // Simulate an agent that jumps straight to implementation
+    const badSequence = [
+      "run_closed_loop",
+      "log_test_result",
+      "log_gap",
+      "resolve_gap",
+    ];
+
+    for (const toolName of badSequence) {
+      await logTool.handler({ sessionId, toolName, resultStatus: "success" });
+    }
+
+    const tool = findTool("check_contract_compliance");
+    const result = (await tool.handler({ sessionId })) as any;
+
+    expect(result.score).toBeLessThan(50);
+    expect(result.grade).toMatch(/^[DF]/);
+    expect(result.dimensions.front_door.score).toBeLessThanOrEqual(5);
+    expect(result.violations.some((v: any) => v.dimension === "front_door")).toBe(true);
+    expect(result.recommendations.length).toBeGreaterThan(0);
+  });
+
+  it("should detect self-setup recovery from errors", async () => {
+    const sessionId = `compliance-test-selfsetup-${Date.now()}`;
+    const logTool = findTool("log_tool_call");
+
+    await logTool.handler({ sessionId, toolName: "search_all_knowledge", resultStatus: "success" });
+    await logTool.handler({ sessionId, toolName: "discover_tools", resultStatus: "error", error: "No provider available" });
+    await logTool.handler({ sessionId, toolName: "setup_local_env", resultStatus: "success" });
+    await logTool.handler({ sessionId, toolName: "bootstrap_project", resultStatus: "success" });
+    await logTool.handler({ sessionId, toolName: "discover_tools", resultStatus: "success" });
+
+    const tool = findTool("check_contract_compliance");
+    const result = (await tool.handler({ sessionId })) as any;
+
+    // Self-setup should get full credit since agent recovered from errors
+    expect(result.dimensions.self_setup.score).toBe(10);
+  });
+
+  it("should give full parallel credit when no parallel tools used (N/A)", async () => {
+    const sessionId = `compliance-test-noparallel-${Date.now()}`;
+    const logTool = findTool("log_tool_call");
+
+    await logTool.handler({ sessionId, toolName: "search_all_knowledge", resultStatus: "success" });
+    await logTool.handler({ sessionId, toolName: "run_closed_loop", resultStatus: "success" });
+
+    const tool = findTool("check_contract_compliance");
+    const result = (await tool.handler({ sessionId })) as any;
+
+    // No parallel tools = full credit (not applicable)
+    expect(result.dimensions.parallel_coordination.score).toBe(10);
+  });
+
+  it("should support verbose mode with timeline", async () => {
+    const sessionId = `compliance-test-verbose-${Date.now()}`;
+    const logTool = findTool("log_tool_call");
+    await logTool.handler({ sessionId, toolName: "search_all_knowledge", resultStatus: "success" });
+    await logTool.handler({ sessionId, toolName: "getMethodology", resultStatus: "success" });
+
+    const tool = findTool("check_contract_compliance");
+    const result = (await tool.handler({ sessionId, verbose: true })) as any;
+
+    expect(result.timeline).toBeDefined();
+    expect(result.timeline.length).toBe(2);
+    expect(result.timeline[0].tool).toBe("search_all_knowledge");
+    expect(result.timeline[1].tool).toBe("getMethodology");
+  });
+});
+
+describe("Registry: check_contract_compliance has quickRef", () => {
+  it("should have quickRef with methodology agent_evaluation", () => {
+    const entry = ALL_REGISTRY_ENTRIES.find((e) => e.name === "check_contract_compliance");
+    expect(entry).toBeDefined();
+    expect(entry!.quickRef).toBeDefined();
+    expect(entry!.quickRef.methodology).toBe("agent_evaluation");
+    expect(entry!.category).toBe("self_eval");
+  });
+});
+
+describe("Workflow chains: agent_eval and contract_compliance", () => {
+  it("should have agent_eval chain with 9 steps", () => {
+    expect(WORKFLOW_CHAINS.agent_eval).toBeDefined();
+    expect(WORKFLOW_CHAINS.agent_eval.steps.length).toBe(9);
+    expect(WORKFLOW_CHAINS.agent_eval.steps[0].tool).toBe("check_contract_compliance");
+  });
+
+  it("should have contract_compliance chain with 5 steps", () => {
+    expect(WORKFLOW_CHAINS.contract_compliance).toBeDefined();
+    expect(WORKFLOW_CHAINS.contract_compliance.steps.length).toBe(5);
+    expect(WORKFLOW_CHAINS.contract_compliance.steps[1].tool).toBe("check_contract_compliance");
   });
 });

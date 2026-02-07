@@ -989,6 +989,18 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "utility",
   },
+  {
+    name: "check_contract_compliance",
+    category: "self_eval",
+    tags: ["contract", "compliance", "audit", "trajectory", "score", "grade", "violations", "front-door", "ship-gates", "agent-eval"],
+    quickRef: {
+      nextAction: "Review compliance score and violations. Address CRITICAL recommendations first. Re-run after fixes to verify improvement.",
+      nextTools: ["get_self_eval_report", "record_learning", "search_all_knowledge"],
+      methodology: "agent_evaluation",
+      tip: "Run after each agent session to measure contract adherence. Track scores over time to verify agent quality is improving.",
+    },
+    phase: "verify",
+  },
 
   // ═══ PARALLEL AGENTS ═══
   {
@@ -1556,7 +1568,7 @@ export interface SearchResult {
   tags: string[];
 }
 
-export type SearchMode = "hybrid" | "fuzzy" | "regex" | "prefix" | "semantic" | "exact";
+export type SearchMode = "hybrid" | "fuzzy" | "regex" | "prefix" | "semantic" | "exact" | "dense";
 
 // ── Synonym / semantic expansion map ──────────────────────────────────────
 const SYNONYM_MAP: Record<string, string[]> = {
@@ -1649,6 +1661,78 @@ function ngramSimilarity(a: string, b: string, n = 3): number {
   for (const g of setA) { if (setB.has(g)) intersection++; }
   const union = setA.size + setB.size - intersection;
   return union === 0 ? 0 : intersection / union;
+}
+
+// ── Dense search: TF-IDF cosine similarity on full text ──────────────────
+
+/** Tokenize text into lowercase words (alpha + underscore only) */
+function tokenize(text: string): string[] {
+  return text.toLowerCase().match(/[a-z_]+/g) ?? [];
+}
+
+/** Build a TF vector: word → frequency */
+function termFreq(tokens: string[]): Map<string, number> {
+  const tf = new Map<string, number>();
+  for (const t of tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
+  // Normalize by max frequency
+  const maxFreq = Math.max(...tf.values(), 1);
+  for (const [k, v] of tf) tf.set(k, v / maxFreq);
+  return tf;
+}
+
+/** Pre-computed document TF-IDF vectors for dense search (lazy init) */
+let _denseVectorsCache: Map<string, Map<string, number>> | null = null;
+let _denseIDFCache: Map<string, number> | null = null;
+
+function buildDenseIndex(): { vectors: Map<string, Map<string, number>>; idf: Map<string, number> } {
+  if (_denseVectorsCache && _denseIDFCache) return { vectors: _denseVectorsCache, idf: _denseIDFCache };
+
+  // Build corpus: each tool's full text (name + tags + description + category)
+  const corpus = new Map<string, string[]>();
+  for (const entry of REGISTRY_ENTRIES) {
+    const tokens = tokenize(`${entry.name} ${entry.tags.join(" ")} ${entry.category} ${entry.quickRef.nextAction}`);
+    corpus.set(entry.name, tokens);
+  }
+
+  // Compute IDF across corpus
+  const docCount = corpus.size;
+  const docFreq = new Map<string, number>();
+  for (const tokens of corpus.values()) {
+    const unique = new Set(tokens);
+    for (const t of unique) docFreq.set(t, (docFreq.get(t) ?? 0) + 1);
+  }
+  const idf = new Map<string, number>();
+  for (const [term, freq] of docFreq) {
+    idf.set(term, Math.log((docCount + 1) / (freq + 1)) + 1); // smoothed IDF
+  }
+
+  // Build TF-IDF vectors per tool
+  const vectors = new Map<string, Map<string, number>>();
+  for (const [name, tokens] of corpus) {
+    const tf = termFreq(tokens);
+    const tfidf = new Map<string, number>();
+    for (const [term, tfVal] of tf) {
+      tfidf.set(term, tfVal * (idf.get(term) ?? 1));
+    }
+    vectors.set(name, tfidf);
+  }
+
+  _denseVectorsCache = vectors;
+  _denseIDFCache = idf;
+  return { vectors, idf };
+}
+
+/** Cosine similarity between two sparse vectors */
+function cosineSimilarity(a: Map<string, number>, b: Map<string, number>): number {
+  let dot = 0, normA = 0, normB = 0;
+  for (const [k, v] of a) {
+    normA += v * v;
+    const bv = b.get(k);
+    if (bv !== undefined) dot += v * bv;
+  }
+  for (const v of b.values()) normB += v * v;
+  if (normA === 0 || normB === 0) return 0;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
 // ── Domain cluster boosting ──────────────────────────────────────────────
@@ -1865,6 +1949,28 @@ export function hybridSearch(
       }
     }
 
+    // ── DENSE: TF-IDF cosine similarity on full text ──
+    if (mode === "dense" || mode === "hybrid") {
+      const { vectors, idf: denseIdf } = buildDenseIndex();
+      const queryTokens = tokenize(queryLower);
+      if (queryTokens.length > 0) {
+        const queryTf = termFreq(queryTokens);
+        const queryVec = new Map<string, number>();
+        for (const [term, tfVal] of queryTf) {
+          queryVec.set(term, tfVal * (denseIdf.get(term) ?? 1));
+        }
+        const docVec = vectors.get(tool.name);
+        if (docVec) {
+          const sim = cosineSimilarity(queryVec, docVec);
+          if (sim > 0.05) {
+            const denseScore = Math.round(sim * 40);
+            score += denseScore;
+            reasons.push(`dense:cosine(sim=${sim.toFixed(3)},+${denseScore})`);
+          }
+        }
+      }
+    }
+
     if (score > 0) {
       toolScores.set(tool.name, { score, reasons });
     }
@@ -1907,7 +2013,7 @@ export function hybridSearch(
 }
 
 /** Available search modes for discover_tools */
-export const SEARCH_MODES: SearchMode[] = ["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact"];
+export const SEARCH_MODES: SearchMode[] = ["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact", "dense"];
 
 // ── Workflow chains ──────────────────────────────────────────────────────
 
@@ -2075,6 +2181,87 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "run_closed_loop", action: "Verify everything compiles and tests pass" },
       { tool: "run_mandatory_flywheel", action: "Final verification" },
       { tool: "record_learning", action: "Persist migration patterns for next time" },
+    ],
+  },
+  coordinator_spawn: {
+    name: "Coordinator → Subagent Spawn",
+    description: "Spawn and coordinate parallel subagents with task locks, roles, and gates",
+    steps: [
+      { tool: "search_all_knowledge", action: "Check prior coordination patterns" },
+      { tool: "get_parallel_status", action: "Check current agent activity" },
+      { tool: "assign_agent_role", action: "Assign specialized role to each subagent" },
+      { tool: "claim_agent_task", action: "Lock task before subagent starts work" },
+      { tool: "log_context_budget", action: "Track context usage per subagent" },
+      { tool: "run_oracle_comparison", action: "Validate subagent output against reference" },
+      { tool: "release_agent_task", action: "Release task with progress note" },
+      { tool: "run_quality_gate", action: "Gate the aggregate result" },
+      { tool: "run_mandatory_flywheel", action: "Final 6-step verification on combined output" },
+      { tool: "record_learning", action: "Bank coordination patterns for future spawns" },
+    ],
+  },
+  self_setup: {
+    name: "Self-Setup / Capability Escalation",
+    description: "Detect and resolve missing capabilities before starting work",
+    steps: [
+      { tool: "discover_tools", action: "Search for needed capability" },
+      { tool: "get_tool_quick_ref", action: "Check if tool exists but needs configuration" },
+      { tool: "scaffold_nodebench_project", action: "Bootstrap repo infra if missing" },
+      { tool: "get_boilerplate_status", action: "Audit what files/config are missing" },
+      { tool: "bootstrap_project", action: "Register project with NodeBench" },
+      { tool: "run_recon", action: "Research how to configure missing providers" },
+      { tool: "run_closed_loop", action: "Smoke-test the capability is working" },
+      { tool: "record_learning", action: "Record setup patterns for next time" },
+    ],
+  },
+  flicker_detection: {
+    name: "Android Flicker Detection",
+    description: "Detect and analyze Android UI flicker using 4-layer pipeline",
+    steps: [
+      { tool: "search_all_knowledge", action: "Check past flicker patterns and known issues" },
+      { tool: "capture_surface_stats", action: "L0: Capture SurfaceFlinger jank metrics" },
+      { tool: "extract_video_frames", action: "L1+L2: Record screen and extract key frames" },
+      { tool: "compute_ssim_analysis", action: "L2: Compute block-based SSIM on frame pairs" },
+      { tool: "run_flicker_detection", action: "Full pipeline: all 4 layers end-to-end" },
+      { tool: "generate_flicker_report", action: "Generate SSIM timeline chart and comparison images" },
+      { tool: "record_learning", action: "Record flicker patterns for future detection" },
+    ],
+  },
+  figma_flow_analysis: {
+    name: "Figma Flow Analysis",
+    description: "Extract, cluster, and visualize Figma design flows",
+    steps: [
+      { tool: "search_all_knowledge", action: "Check past design flow analysis patterns" },
+      { tool: "extract_figma_frames", action: "Phase 1: Depth-3 tree traversal for frames" },
+      { tool: "cluster_figma_flows", action: "Phase 2: Multi-signal priority cascade clustering" },
+      { tool: "render_flow_visualization", action: "Phase 3: Colored bounding box overlay" },
+      { tool: "analyze_figma_flows", action: "Full pipeline: extract → cluster → visualize" },
+      { tool: "record_learning", action: "Record design flow patterns" },
+    ],
+  },
+  agent_eval: {
+    name: "Agent Evaluation Pipeline",
+    description: "Measure, observe, and improve agent performance using NodeBench MCP. Combines contract compliance scoring, trajectory analysis, eval runs, and self-reinforced learning to create a closed loop: run agent → score → identify gaps → fix → re-score.",
+    steps: [
+      { tool: "check_contract_compliance", action: "Score the agent session against the 6-dimension contract (front-door, self-setup, pre-impl, parallel, ship-gates, efficiency)" },
+      { tool: "get_trajectory_analysis", action: "Analyze tool usage patterns — frequency, errors, sequential bigrams, phase distribution" },
+      { tool: "get_self_eval_report", action: "Cross-reference all data: verification cycles, eval runs, quality gates, gaps, learnings" },
+      { tool: "get_improvement_recommendations", action: "Surface actionable fixes based on accumulated data — unused tools, missing gates, knowledge gaps" },
+      { tool: "start_eval_run", action: "Create eval test cases for agent behavior scenarios (contract compliance, tool selection, self-setup recovery)" },
+      { tool: "record_eval_result", action: "Record actual agent behavior against expected contract adherence for each eval case" },
+      { tool: "complete_eval_run", action: "Aggregate scores — pass rate, failure patterns, improvement suggestions" },
+      { tool: "compare_eval_runs", action: "Compare before/after to verify agent performance improved (never ship without eval improvement)" },
+      { tool: "record_learning", action: "Bank agent evaluation patterns and violation signatures for future detection" },
+    ],
+  },
+  contract_compliance: {
+    name: "Contract Compliance Audit",
+    description: "Verify that an agent session followed the NodeBench Agent Contract. Quick check after any agent task completes.",
+    steps: [
+      { tool: "log_tool_call", action: "Ensure all tool calls in the session are logged (auto-instrumented or manual)" },
+      { tool: "check_contract_compliance", action: "Score the session across 6 dimensions (25 front-door + 10 self-setup + 15 pre-impl + 10 parallel + 30 ship-gates + 10 efficiency = 100)" },
+      { tool: "get_gate_history", action: "Check contract_compliance gate trend over time" },
+      { tool: "record_learning", action: "Record violation patterns to prevent repeat offenses" },
+      { tool: "run_quality_gate", action: "Run contract_compliance as a formal quality gate with boolean rules per dimension" },
     ],
   },
 };

@@ -1,6 +1,6 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.8.3",
+  "version": "2.9.0",
   "description": "Make AI agents catch the bugs they normally ship. 129 MCP tools: progressive discovery with hybrid search, project boilerplate scaffolding, autonomous capability benchmarks (C-compiler pattern), structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, platform bridge, model benchmarking, visual regression, report generation, academic paper writing, deterministic local file parsing (CSV/XLSX/PDF/DOCX/PPTX/ZIP/JSON/JSONL/TXT), Android flicker detection, and Figma flow analysis. v2.8: +3 progressive disclosure tools (discover_tools, get_tool_quick_ref, get_workflow_chain) +2 boilerplate tools (scaffold_nodebench_project, get_boilerplate_status) +3 benchmark tools (start_autonomy_benchmark, log_benchmark_milestone, complete_autonomy_benchmark) +9 local file tools (ZIP/DOCX/PPTX/JSON primitives). Every tool response auto-appends quickRef (what to do next). --preset lite (39), core (87), or full (129). Benchmarked: 13 issues caught, 26 blind spots prevented.",
   "type": "module",
   "bin": {
@@ -85,8 +85,8 @@
     "playwright": "^1.57.0",
     "sharp": "^0.34.5",
     "tesseract.js": "^7.0.0",
-    "yauzl": "^2.10.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yauzl": "^2.10.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
