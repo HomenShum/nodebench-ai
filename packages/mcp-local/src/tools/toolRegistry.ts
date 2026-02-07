@@ -1001,6 +1001,30 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "verify",
   },
+  {
+    name: "create_task_bank",
+    category: "self_eval",
+    tags: ["task", "bank", "eval", "ablation", "benchmark", "bugfix", "refactor", "controlled", "experiment", "harness"],
+    quickRef: {
+      nextAction: "Task added. Target 30-200 tasks for statistical significance. Use grade_agent_run to score runs against tasks.",
+      nextTools: ["create_task_bank", "grade_agent_run", "start_eval_run"],
+      methodology: "controlled_evaluation",
+      tip: "Each task should have deterministic success criteria, forbidden behaviors, and a time budget. Categories: bugfix/refactor/integration/ui/security/performance/migration.",
+    },
+    phase: "research",
+  },
+  {
+    name: "grade_agent_run",
+    category: "self_eval",
+    tags: ["grade", "run", "outcome", "process", "ablation", "comparison", "bare", "lite", "full", "score", "agent-eval"],
+    quickRef: {
+      nextAction: "Run graded. Compare with other conditions (bare/lite/full/cold_kb/no_gates) to isolate NodeBench MCP's value.",
+      nextTools: ["grade_agent_run", "compare_eval_runs", "check_contract_compliance"],
+      methodology: "controlled_evaluation",
+      tip: "Run the same task under multiple conditions (ablations) and multiple trials to get statistically meaningful comparisons.",
+    },
+    phase: "verify",
+  },
 
   // ═══ PARALLEL AGENTS ═══
   {
@@ -2262,6 +2286,37 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "get_gate_history", action: "Check contract_compliance gate trend over time" },
       { tool: "record_learning", action: "Record violation patterns to prevent repeat offenses" },
       { tool: "run_quality_gate", action: "Run contract_compliance as a formal quality gate with boolean rules per dimension" },
+    ],
+  },
+  ablation_eval: {
+    name: "Ablation Evaluation (Prove NodeBench MCP Value)",
+    description: "Run controlled experiments comparing agent performance with vs without NodeBench MCP. Based on Anthropic's eval harness methodology. Tests 5 conditions (bare/lite/full/cold_kb/no_gates) across a fixed task bank with multi-trial statistics.",
+    steps: [
+      { tool: "create_task_bank", action: "Step 1: Define tasks with deterministic success criteria, forbidden behaviors, and budgets. Target 30-200 tasks." },
+      { tool: "get_gate_preset", action: "Step 2: Load agent_comparison gate preset — 10 boolean rules covering outcome + process quality" },
+      { tool: "grade_agent_run", action: "Step 3: Run task with condition=bare and grade both outcome (50pts) and process (50pts)" },
+      { tool: "grade_agent_run", action: "Step 4: Run same task with condition=lite and grade" },
+      { tool: "grade_agent_run", action: "Step 5: Run same task with condition=full and grade" },
+      { tool: "grade_agent_run", action: "Step 6: (Optional) Run with condition=cold_kb (no prior knowledge) to test knowledge value" },
+      { tool: "grade_agent_run", action: "Step 7: (Optional) Run with condition=no_gates (gates disabled) to test gate contribution" },
+      { tool: "run_quality_gate", action: "Step 8: Run agent_comparison gate to validate process quality for each condition" },
+      { tool: "compare_eval_runs", action: "Step 9: Compare across conditions — NodeBench must win on outcome AND process to ship" },
+      { tool: "record_learning", action: "Step 10: Bank findings — which tools, gates, and knowledge types contributed most" },
+    ],
+  },
+  task_bank_setup: {
+    name: "Task Bank Setup (50-Task Starter Kit)",
+    description: "Build a statistically meaningful task bank for agent evaluation. Covers 7 categories (bugfix/refactor/integration/ui/security/performance/migration) × 4 difficulty levels with deterministic grading criteria.",
+    steps: [
+      { tool: "search_all_knowledge", action: "Step 1: Search past learnings and recon findings for real bugs/tasks to include" },
+      { tool: "create_task_bank", action: "Step 2: Add 10 bugfix tasks (easy→expert) with test-based success criteria" },
+      { tool: "create_task_bank", action: "Step 3: Add 8 refactor tasks with lint/type/test criteria" },
+      { tool: "create_task_bank", action: "Step 4: Add 8 integration tasks with API/DB/auth criteria" },
+      { tool: "create_task_bank", action: "Step 5: Add 8 UI tasks with responsive/accessible/visual criteria" },
+      { tool: "create_task_bank", action: "Step 6: Add 6 security tasks with vulnerability/secret/injection criteria" },
+      { tool: "create_task_bank", action: "Step 7: Add 5 performance tasks with latency/memory/bundle criteria" },
+      { tool: "create_task_bank", action: "Step 8: Add 5 migration tasks with backward-compat/rollback criteria" },
+      { tool: "record_learning", action: "Step 9: Record task bank design patterns for future expansion" },
     ],
   },
 };

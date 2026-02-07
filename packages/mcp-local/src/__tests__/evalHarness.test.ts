@@ -718,7 +718,7 @@ describe("Scenario: Meta Tool Discovery", () => {
 
     expect(result.title).toContain("Overview");
     const topics = Object.keys(result.steps[0].topics);
-    expect(topics.length).toBe(20);
+    expect(topics.length).toBe(21);
   });
 
   it("Step 4: Get specific methodology", async () => {
@@ -1015,6 +1015,72 @@ describe("Scenario: Contract Compliance", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SCENARIO 16: Controlled Evaluation (Task Bank + Ablation Grading)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: Controlled Evaluation", () => {
+  const taskId = `evalharness-bugfix-${Date.now()}`;
+
+  it("Step 1: create_task_bank creates a task", async () => {
+    const result = await callTool("create_task_bank", {
+      taskId,
+      title: "Fix JWT token expiry bug",
+      category: "bugfix",
+      difficulty: "medium",
+      prompt: "Fix the bug where JWT tokens expire 1 hour early due to timezone offset",
+      successCriteria: ["tests pass", "no lint errors", "token expiry is correct"],
+      forbiddenBehaviors: ["hardcode timezone", "skip tests"],
+      timeBudgetMinutes: 20,
+    }, "self_eval") as any;
+    expect(result.action).toBe("created");
+    expect(result.taskId).toBe(taskId);
+    expect(result.totalTasksInBank).toBeGreaterThanOrEqual(1);
+  });
+
+  it("Step 2: grade_agent_run grades a bare condition", async () => {
+    const result = await callTool("grade_agent_run", {
+      taskId,
+      condition: "bare",
+      outcomeResults: [
+        { criterion: "tests pass", passed: true },
+        { criterion: "no lint errors", passed: true },
+        { criterion: "token expiry is correct", passed: false },
+      ],
+      durationMinutes: 15,
+    }, "self_eval") as any;
+    expect(result.grade).toBeDefined();
+    expect(result.scores.outcome.score).toBeGreaterThan(0);
+    expect(result.scores.process.score).toBe(25); // No session = half credit
+    expect(result.outcomeDetails.passed).toBe(2);
+    expect(result.outcomeDetails.total).toBe(3);
+  });
+
+  it("Step 3: grade_agent_run grades a full condition with session", async () => {
+    const sessionId = `evalharness-full-${Date.now()}`;
+    const logTool = allTools.find(t => t.name === "log_tool_call")!;
+    for (const toolName of ["search_all_knowledge", "assess_risk", "run_closed_loop", "log_test_result", "run_quality_gate", "record_learning"]) {
+      await logTool.handler({ sessionId, toolName, resultStatus: "success" });
+    }
+
+    const result = await callTool("grade_agent_run", {
+      taskId,
+      sessionId,
+      condition: "full",
+      outcomeResults: [
+        { criterion: "tests pass", passed: true },
+        { criterion: "no lint errors", passed: true },
+        { criterion: "token expiry is correct", passed: true },
+      ],
+      durationMinutes: 12,
+    }, "self_eval") as any;
+    expect(result.scores.outcome.score).toBeGreaterThan(40);
+    expect(result.scores.process.score).toBeGreaterThan(20);
+    expect(result.ablationComparison).toBeDefined();
+    expect(result.ablationComparison.length).toBe(2); // bare + full
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // COVERAGE REPORT
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1126,7 +1192,7 @@ describe("Coverage Report", () => {
       "Recon": ["run_recon", "log_recon_finding", "get_recon_summary", "check_framework_updates", "search_all_knowledge", "bootstrap_project", "get_project_context"],
       "Bootstrap": ["discover_infrastructure", "triple_verify", "self_implement", "generate_self_instructions", "connect_channels"],
       "Autonomous": ["assess_risk", "decide_re_update", "run_self_maintenance", "scaffold_directory", "run_autonomous_loop"],
-      "Self-Eval": ["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings", "check_contract_compliance"],
+      "Self-Eval": ["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings", "check_contract_compliance", "create_task_bank", "grade_agent_run"],
       "Flicker Detection": ["run_flicker_detection", "capture_surface_stats", "extract_video_frames", "compute_ssim_analysis", "generate_flicker_report"],
       "Figma Flow": ["analyze_figma_flows", "extract_figma_frames", "cluster_figma_flows", "render_flow_visualization"],
       "Boilerplate": ["scaffold_nodebench_project", "get_boilerplate_status"],

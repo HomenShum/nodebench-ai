@@ -1285,6 +1285,143 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
     composesWith:
       "Run after every agent session. Feeds into the self-reinforced learning loop. Contract compliance scores become eval test cases. Violations trigger verification investigations.",
   },
+  controlled_evaluation: {
+    title: "Controlled Evaluation — Prove NodeBench MCP Makes Agents Better",
+    description:
+      "A rigorous evaluation framework based on Anthropic's agent eval methodology. Uses fixed task banks, ablation experiments (bare vs lite vs full), multi-trial statistics, and dual-axis scoring (outcome quality + process quality) to prove that NodeBench MCP improves agent performance with statistical confidence. References: Anthropic 'Demystifying evals for AI agents', 'Quantifying infrastructure noise in agentic coding evals', Accenture MCP-Bench, ModelScope MCPBench.",
+    steps: [
+      {
+        step: 1,
+        name: "Define 'Better' (Two Axes)",
+        description:
+          "Outcome quality: task success rate, regression rate, time-to-fix, bug escape rate. Process quality: structured recon, risk assessment, 3-layer tests, regression guards, quality gates, banked learnings. Both axes must improve for NodeBench to prove its value.",
+        tools: ["create_task_bank", "get_gate_preset"],
+        action:
+          "Define measurable criteria for each axis. Load agent_comparison gate preset for the 10 boolean rules. Outcome = what users care about. Process = what NodeBench is meant to improve.",
+      },
+      {
+        step: 2,
+        name: "Build a Fixed Task Bank",
+        description:
+          "Create 30-200 real tasks (bugfixes, refactors, integrations, UI). Each task specifies: initial state, success criteria (deterministic), forbidden behaviors, time/token budget. This is the evaluation foundation.",
+        tools: ["create_task_bank"],
+        action:
+          'Use get_workflow_chain("task_bank_setup") for the starter kit. Each task needs: taskId, category, difficulty, prompt, successCriteria[], forbiddenBehaviors[], timeBudgetMinutes. Categories: bugfix/refactor/integration/ui/security/performance/migration.',
+      },
+      {
+        step: 3,
+        name: "Run Ablations (Isolate MCP Value)",
+        description:
+          "For each task, run 5 conditions: (1) bare agent (no MCP), (2) NodeBench lite preset, (3) NodeBench full, (4) full but cold knowledge base, (5) full but quality gates disabled. Same model, same time budget, same infra. This isolates what each MCP component contributes.",
+        tools: ["grade_agent_run"],
+        action:
+          "Run grade_agent_run with condition='bare', then 'lite', then 'full', then 'cold_kb', then 'no_gates' for the same taskId. Compare scores across conditions. The delta between bare and full is NodeBench's measured value.",
+      },
+      {
+        step: 4,
+        name: "Multi-Trial Statistics",
+        description:
+          "Run N trials per task (3-10) because agents are stochastic. Report: mean success, variance, best-of-N, average-of-N. Both matter — average-of-N for reliability, best-of-N for capability ceiling.",
+        tools: ["grade_agent_run", "start_eval_run"],
+        action:
+          "Run grade_agent_run with trialNumber=1..N for each condition. The ablationComparison field in the response auto-aggregates mean scores across trials. Target: p<0.05 significance for bare vs full difference.",
+      },
+      {
+        step: 5,
+        name: "Mix Grader Types",
+        description:
+          "Deterministic graders: tests, lint, type-check, invariants, required-tool-call checks. Model graders: rubric scoring for code clarity, pairwise comparisons. Human spot-checks: sample 5-10% of runs. All three prevent Goodharting.",
+        tools: ["run_quality_gate", "record_eval_result"],
+        action:
+          "Use run_quality_gate with agent_comparison preset for deterministic checks. Use record_eval_result with judgeNotes for model grading. Flag 5-10% of runs for human review with notes field.",
+      },
+      {
+        step: 6,
+        name: "Control Infrastructure Noise",
+        description:
+          "Agentic coding evals are sensitive to CPU/RAM/time limits — enough to swing results by percentage points. Pin deps, fix resource limits, record infra failures separately from model failures, track infra error rate as first-class metric.",
+        tools: ["log_tool_call", "record_learning"],
+        action:
+          "Log infra errors with resultStatus='error' and phase='infra' to separate from model errors. Track infra_error_rate separately. Use containers with pinned deps for reproducibility.",
+      },
+      {
+        step: 7,
+        name: "Benchmark Tool Discovery (MCP-Specific)",
+        description:
+          "Since NodeBench adds a large tool layer, explicitly test: can the agent find the right tool? Can it call it correctly? Does it over-call tools and burn budget? Use tool-use scorecards alongside repo-based tasks.",
+        tools: ["discover_tools", "get_trajectory_analysis", "check_contract_compliance"],
+        action:
+          "Run get_trajectory_analysis to measure: unique tools used, error rate, tool variety vs task type. Check contract_compliance front-door score. Compare tool discovery accuracy between bare (no discover_tools) and full (with discover_tools).",
+      },
+      {
+        step: 8,
+        name: "Production Observability",
+        description:
+          "Capture full traces (prompts, tool calls, outputs, diffs, test results, gate decisions, knowledge read/writes). Emit structured telemetry events. Build dashboards: pass rate by category, token/latency distributions, infra error rate, gate violation frequency, post-merge incidents.",
+        tools: ["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_gate_history"],
+        action:
+          "Telemetry schema: recon_finding{severity,category}, risk_assessment{tier,rationale}, test_result{layer,pass,duration}, eval_case_added{count}, quality_gate{rule_id,pass}, knowledge_write{topic,confidence}. Track all via log_tool_call phases.",
+      },
+      {
+        step: 9,
+        name: "Promotion Strategy",
+        description:
+          "Treat NodeBench MCP like a model change: regression suite must stay ~100% pass, capability suite should trend upward, enforce budget envelope. Canary on 5-10% of tasks, compare incident rate vs control, expand only if it wins on BOTH outcome metrics AND cost.",
+        tools: ["compare_eval_runs", "run_quality_gate", "record_learning"],
+        action:
+          "Gate releases on: (1) regression suite pass, (2) capability suite improvement, (3) budget within envelope, (4) no critical security vulnerabilities. Canary → verify → expand.",
+      },
+    ],
+    ablationMatrix: {
+      bare: "No NodeBench MCP — agent uses only host IDE tools. Baseline for comparison.",
+      lite: "NodeBench lite preset (39 tools) — core methodology without flywheel/parallel.",
+      full: "NodeBench full preset (134 tools) — everything including parallel, vision, web.",
+      cold_kb: "NodeBench full but empty knowledge base — tests whether accumulated learnings matter.",
+      no_gates: "NodeBench full but quality gates disabled — tests whether gates prevent regressions.",
+    },
+    scoringAxes: {
+      outcome: {
+        weight: "50pts",
+        components: [
+          "Criteria pass rate (40pts) — deterministic success checks from task bank",
+          "Budget compliance (10pts) — within time and token budget",
+          "Forbidden behavior penalty (-5 per violation, max -10)",
+        ],
+      },
+      process: {
+        weight: "50pts",
+        components: [
+          "Front-door protocol (12pts) — searched before coding, first call was discovery",
+          "Recon + risk (10pts) — ran recon and assessed risk before changes",
+          "Tests + gates (18pts) — ran tests, quality gate, mandatory flywheel, recorded learnings",
+          "Efficiency (10pts) — low error rate, good tool variety",
+        ],
+      },
+    },
+    graderTypes: {
+      deterministic: "Tests, lint, type-check, invariants, required-tool-call checks. Fast + objective. 80% of grading.",
+      model: "Rubric scoring for code clarity, adherence to instructions, change risk. Pairwise comparisons (NodeBench vs bare). 15% of grading.",
+      human: "Sample 5-10% of runs. Review diffs + traces. Prevents Goodharting on automated metrics. 5% of grading.",
+    },
+    infraControls: [
+      "Run in containers with pinned deps (same Node.js, same packages)",
+      "Fixed CPU/RAM per task with consistent enforcement",
+      "Record infra failures separately from model failures",
+      "Track infra_error_rate as first-class metric alongside model metrics",
+      "Use deterministic seeds where possible (temperature=0 for reproducibility)",
+    ],
+    references: {
+      anthropic_evals: "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+      infra_noise: "https://www.anthropic.com/engineering/infrastructure-noise",
+      mcp_bench: "https://github.com/Accenture/mcp-bench",
+      mcpbench: "https://github.com/modelscope/MCPBench",
+      mcp_sec_bench: "https://arxiv.org/pdf/2508.13220",
+      long_running: "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+      parallel_agents: "https://www.anthropic.com/engineering/building-c-compiler",
+    },
+    composesWith:
+      "Build on agent_evaluation for contract scoring. Use the verification methodology for per-task correctness. Feed results into self_reinforced_learning loop. Use parallel_agent_teams methodology for evaluating multi-agent handoffs.",
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1334,6 +1471,8 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "Academic Paper Writing — AI-assisted polishing, translation, de-AI-ification, logic checking, captions, experiment analysis, reviewer simulation. Based on awesome-ai-research-writing (4000+ stars, MSRA/Bytedance/PKU)",
           agent_evaluation:
             "Agent Evaluation — contract compliance scoring (6 dimensions, 100pts), trajectory analysis, eval benchmarks, host-fewer-tools architecture, self-reinforced improvement loop",
+          controlled_evaluation:
+            "Controlled Evaluation — fixed task banks, ablation experiments (bare/lite/full/cold_kb/no_gates), dual-axis scoring (outcome 50pts + process 50pts), multi-trial statistics, grader types, infra noise controls, promotion strategy. Based on Anthropic eval methodology.",
         },
       },
       {
@@ -1509,6 +1648,8 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
             "cleanup_stale_runs",
             "synthesize_recon_to_learnings",
             "check_contract_compliance",
+            "create_task_bank",
+            "grade_agent_run",
           ],
           parallel_agents: [
             "claim_agent_task",
@@ -1626,7 +1767,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
     {
       name: "getMethodology",
       description:
-        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, overview. Call with topic "overview" to see all available methodologies.',
+        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, controlled_evaluation, overview. Call with topic "overview" to see all available methodologies.',
       inputSchema: {
         type: "object",
         properties: {
@@ -1653,6 +1794,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "self_reinforced_learning",
               "academic_paper_writing",
               "agent_evaluation",
+              "controlled_evaluation",
               "overview",
             ],
             description: "Which methodology to explain",

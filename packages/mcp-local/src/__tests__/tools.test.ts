@@ -74,9 +74,9 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Static: tool structure", () => {
-  it("should have 132 tools total", () => {
-    // 127 domain tools + 2 meta tools (findTools, getMethodology) + 3 progressive discovery tools
-    expect(allTools.length).toBe(132);
+  it("should have 134 tools total", () => {
+    // 129 domain tools + 2 meta tools (findTools, getMethodology) + 3 progressive discovery tools
+    expect(allTools.length).toBe(134);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {
@@ -317,7 +317,7 @@ describe("Static: new methodology topics", () => {
     expect(topics).toContain("agent_bootstrap");
     expect(topics).toContain("autonomous_maintenance");
     expect(topics).toContain("parallel_agent_teams");
-    expect(topics.length).toBe(20); // All topics listed in overview
+    expect(topics.length).toBe(21); // All topics listed in overview
   });
 });
 
@@ -2033,7 +2033,7 @@ describe("Search engine: registry coverage", () => {
     expect(TOOL_REGISTRY.size).toBe(allTools.length);
   });
 
-  it("should expose all 6 search modes", () => {
+  it("should expose all 7 search modes", () => {
     expect(SEARCH_MODES).toEqual(["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact", "dense"]);
   });
 
@@ -2341,5 +2341,131 @@ describe("Workflow chains: agent_eval and contract_compliance", () => {
     expect(WORKFLOW_CHAINS.contract_compliance).toBeDefined();
     expect(WORKFLOW_CHAINS.contract_compliance.steps.length).toBe(5);
     expect(WORKFLOW_CHAINS.contract_compliance.steps[1].tool).toBe("check_contract_compliance");
+  });
+});
+
+// ── Controlled Evaluation Tool Tests ────────────────────────────────────
+
+describe("create_task_bank", () => {
+  it("should create a new task in the bank", async () => {
+    const tool = findTool("create_task_bank");
+    const result = (await tool.handler({
+      taskId: `test-task-${Date.now()}`,
+      title: "Fix login redirect",
+      category: "bugfix",
+      difficulty: "easy",
+      prompt: "Fix the login page redirect loop",
+      successCriteria: ["tests pass", "no redirect loop"],
+      forbiddenBehaviors: ["hardcode URL"],
+      timeBudgetMinutes: 15,
+    })) as any;
+    expect(result.action).toBe("created");
+    expect(result.totalTasksInBank).toBeGreaterThanOrEqual(1);
+    expect(result.successCriteriaCount).toBe(2);
+    expect(result.forbiddenBehaviorCount).toBe(1);
+  });
+
+  it("should update an existing task", async () => {
+    const taskId = `test-task-update-${Date.now()}`;
+    const tool = findTool("create_task_bank");
+    await tool.handler({
+      taskId,
+      title: "Original title",
+      category: "bugfix",
+      difficulty: "easy",
+      prompt: "Original prompt",
+      successCriteria: ["tests pass"],
+    });
+    const result = (await tool.handler({
+      taskId,
+      title: "Updated title",
+      category: "refactor",
+      difficulty: "medium",
+      prompt: "Updated prompt",
+      successCriteria: ["tests pass", "lint clean"],
+    })) as any;
+    expect(result.action).toBe("updated");
+  });
+});
+
+describe("grade_agent_run", () => {
+  it("should grade a bare run with outcome-only scoring", async () => {
+    const tool = findTool("grade_agent_run");
+    const result = (await tool.handler({
+      taskId: `grade-test-bare-${Date.now()}`,
+      condition: "bare",
+      outcomeResults: [
+        { criterion: "tests pass", passed: true },
+        { criterion: "lint clean", passed: true },
+        { criterion: "feature works", passed: true },
+      ],
+    })) as any;
+    expect(result.grade).toBeDefined();
+    expect(result.scores.outcome.score).toBe(50); // 40 criteria + 10 budget
+    expect(result.scores.process.score).toBe(25); // No session = half credit
+    expect(result.scores.combined.score).toBe(75);
+  });
+
+  it("should apply forbidden behavior penalties", async () => {
+    const tool = findTool("grade_agent_run");
+    const result = (await tool.handler({
+      taskId: `grade-test-penalty-${Date.now()}`,
+      condition: "bare",
+      outcomeResults: [
+        { criterion: "tests pass", passed: true },
+      ],
+      forbiddenViolations: ["hardcoded API key", "skipped tests"],
+    })) as any;
+    expect(result.scores.outcome.breakdown.forbiddenPenalty).toBe(-10);
+    expect(result.outcomeDetails.forbiddenViolations.length).toBe(2);
+  });
+
+  it("should produce ablation comparison when multiple conditions exist", async () => {
+    const taskId = `grade-test-ablation-${Date.now()}`;
+    const tool = findTool("grade_agent_run");
+
+    await tool.handler({
+      taskId,
+      condition: "bare",
+      outcomeResults: [{ criterion: "tests pass", passed: false }],
+    });
+    const result = (await tool.handler({
+      taskId,
+      condition: "full",
+      outcomeResults: [{ criterion: "tests pass", passed: true }],
+    })) as any;
+
+    expect(result.ablationComparison).toBeDefined();
+    expect(result.ablationComparison.length).toBe(2);
+    const bare = result.ablationComparison.find((c: any) => c.condition === "bare");
+    const full = result.ablationComparison.find((c: any) => c.condition === "full");
+    expect(full.avgScore).toBeGreaterThan(bare.avgScore);
+  });
+});
+
+describe("Registry: controlled evaluation tools", () => {
+  it("create_task_bank has quickRef with methodology controlled_evaluation", () => {
+    const entry = ALL_REGISTRY_ENTRIES.find((e) => e.name === "create_task_bank");
+    expect(entry).toBeDefined();
+    expect(entry!.quickRef.methodology).toBe("controlled_evaluation");
+  });
+
+  it("grade_agent_run has quickRef with methodology controlled_evaluation", () => {
+    const entry = ALL_REGISTRY_ENTRIES.find((e) => e.name === "grade_agent_run");
+    expect(entry).toBeDefined();
+    expect(entry!.quickRef.methodology).toBe("controlled_evaluation");
+  });
+});
+
+describe("Workflow chains: ablation_eval and task_bank_setup", () => {
+  it("should have ablation_eval chain with 10 steps", () => {
+    expect(WORKFLOW_CHAINS.ablation_eval).toBeDefined();
+    expect(WORKFLOW_CHAINS.ablation_eval.steps.length).toBe(10);
+    expect(WORKFLOW_CHAINS.ablation_eval.steps[0].tool).toBe("create_task_bank");
+  });
+
+  it("should have task_bank_setup chain with 9 steps", () => {
+    expect(WORKFLOW_CHAINS.task_bank_setup).toBeDefined();
+    expect(WORKFLOW_CHAINS.task_bank_setup.steps.length).toBe(9);
   });
 });

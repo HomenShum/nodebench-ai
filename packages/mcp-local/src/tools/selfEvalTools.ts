@@ -1273,4 +1273,364 @@ export const selfEvalTools: McpTool[] = [
       return result;
     },
   },
+
+  // ─── Tool 8: create_task_bank ───────────────────────────────────────
+  {
+    name: "create_task_bank",
+    description:
+      "Create or add to a fixed task bank for controlled agent evaluation. Each task defines: initial state (repo snapshot, config), success criteria (deterministic checks), forbidden behaviors, category (bugfix/refactor/integration/UI), and difficulty. The task bank is the foundation for ablation experiments comparing bare vs NodeBench-augmented agents. Based on Anthropic's eval harness methodology.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: {
+          type: "string",
+          description: "Unique task identifier (e.g. 'bugfix-auth-jwt-001')",
+        },
+        title: {
+          type: "string",
+          description: "Short task description",
+        },
+        category: {
+          type: "string",
+          enum: ["bugfix", "refactor", "integration", "ui", "security", "performance", "migration"],
+          description: "Task category for analysis grouping",
+        },
+        difficulty: {
+          type: "string",
+          enum: ["easy", "medium", "hard", "expert"],
+          description: "Estimated difficulty level",
+        },
+        prompt: {
+          type: "string",
+          description: "The exact prompt given to the agent (what it must accomplish)",
+        },
+        initialState: {
+          type: "string",
+          description: "Description of repo snapshot, config, test env the agent starts with",
+        },
+        successCriteria: {
+          type: "array",
+          items: { type: "string" },
+          description: "Deterministic success checks (e.g. 'tests pass', 'no lint errors', 'API returns 200')",
+        },
+        forbiddenBehaviors: {
+          type: "array",
+          items: { type: "string" },
+          description: "Actions the agent must NOT take (e.g. 'skip tests', 'hardcode secrets', 'delete files')",
+        },
+        expectedTools: {
+          type: "array",
+          items: { type: "string" },
+          description: "Tools a well-behaved agent should use for this task (for process grading)",
+        },
+        timeBudgetMinutes: {
+          type: "number",
+          description: "Maximum allowed time for this task (default: 30)",
+        },
+        tokenBudget: {
+          type: "number",
+          description: "Maximum allowed tokens for this task (optional)",
+        },
+      },
+      required: ["taskId", "title", "category", "difficulty", "prompt", "successCriteria"],
+    },
+    handler: async (args) => {
+      const db = getDb();
+
+      // Ensure table exists
+      db.exec(`CREATE TABLE IF NOT EXISTS eval_task_bank (
+        id TEXT PRIMARY KEY,
+        task_id TEXT UNIQUE NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        difficulty TEXT NOT NULL,
+        prompt TEXT NOT NULL,
+        initial_state TEXT,
+        success_criteria TEXT NOT NULL,
+        forbidden_behaviors TEXT,
+        expected_tools TEXT,
+        time_budget_minutes INTEGER DEFAULT 30,
+        token_budget INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        run_count INTEGER DEFAULT 0,
+        pass_count INTEGER DEFAULT 0
+      )`);
+
+      const existing = db.prepare("SELECT * FROM eval_task_bank WHERE task_id = ?").get(args.taskId) as any;
+      if (existing) {
+        // Update existing task
+        db.prepare(`UPDATE eval_task_bank SET title = ?, category = ?, difficulty = ?, prompt = ?,
+          initial_state = ?, success_criteria = ?, forbidden_behaviors = ?, expected_tools = ?,
+          time_budget_minutes = ?, token_budget = ? WHERE task_id = ?`
+        ).run(
+          args.title, args.category, args.difficulty, args.prompt,
+          args.initialState ?? null, JSON.stringify(args.successCriteria),
+          args.forbiddenBehaviors ? JSON.stringify(args.forbiddenBehaviors) : null,
+          args.expectedTools ? JSON.stringify(args.expectedTools) : null,
+          args.timeBudgetMinutes ?? 30, args.tokenBudget ?? null,
+          args.taskId
+        );
+        return {
+          action: "updated",
+          taskId: args.taskId,
+          message: `Task '${args.taskId}' updated in task bank.`,
+        };
+      }
+
+      // Insert new task
+      db.prepare(`INSERT INTO eval_task_bank (id, task_id, title, category, difficulty, prompt,
+        initial_state, success_criteria, forbidden_behaviors, expected_tools, time_budget_minutes, token_budget)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        genId("etb"), args.taskId, args.title, args.category, args.difficulty, args.prompt,
+        args.initialState ?? null, JSON.stringify(args.successCriteria),
+        args.forbiddenBehaviors ? JSON.stringify(args.forbiddenBehaviors) : null,
+        args.expectedTools ? JSON.stringify(args.expectedTools) : null,
+        args.timeBudgetMinutes ?? 30, args.tokenBudget ?? null
+      );
+
+      const total = (db.prepare("SELECT COUNT(*) as cnt FROM eval_task_bank").get() as any).cnt;
+
+      return {
+        action: "created",
+        taskId: args.taskId,
+        category: args.category,
+        difficulty: args.difficulty,
+        successCriteriaCount: args.successCriteria.length,
+        forbiddenBehaviorCount: args.forbiddenBehaviors?.length ?? 0,
+        totalTasksInBank: total,
+        _quickRef: {
+          nextAction: total < 30
+            ? `Task bank has ${total} tasks. Target 30-200 for statistical significance. Add more with create_task_bank.`
+            : `Task bank has ${total} tasks — ready for ablation experiments. Run grade_agent_run to score agent sessions against tasks.`,
+          nextTools: total < 30 ? ["create_task_bank"] : ["grade_agent_run", "start_eval_run"],
+        },
+      };
+    },
+  },
+
+  // ─── Tool 9: grade_agent_run ────────────────────────────────────────
+  {
+    name: "grade_agent_run",
+    description:
+      "Grade a single agent run on both outcome quality (task success, regressions, time) and process quality (recon, risk, tests, gates, learnings). Combines deterministic grading from the task bank's success criteria with process grading from check_contract_compliance. Supports ablation metadata (condition: bare/lite/full/cold_kb/no_gates) for controlled experiments. Returns a unified score card with both axes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: {
+          type: "string",
+          description: "Task bank ID this run is for",
+        },
+        sessionId: {
+          type: "string",
+          description: "Tool call session ID for process grading",
+        },
+        condition: {
+          type: "string",
+          enum: ["bare", "lite", "full", "cold_kb", "no_gates"],
+          description: "Ablation condition — which agent configuration was used",
+        },
+        trialNumber: {
+          type: "number",
+          description: "Trial number for multi-trial experiments (1-indexed)",
+        },
+        outcomeResults: {
+          type: "array",
+          description: "Results for each success criterion from the task bank",
+          items: {
+            type: "object",
+            properties: {
+              criterion: { type: "string", description: "Which success criterion" },
+              passed: { type: "boolean" },
+              evidence: { type: "string", description: "Evidence/output supporting the result" },
+            },
+            required: ["criterion", "passed"],
+          },
+        },
+        forbiddenViolations: {
+          type: "array",
+          items: { type: "string" },
+          description: "Any forbidden behaviors that were observed",
+        },
+        durationMinutes: {
+          type: "number",
+          description: "How long the run took",
+        },
+        totalToolCalls: {
+          type: "number",
+          description: "Total tool calls made during the run",
+        },
+        totalTokens: {
+          type: "number",
+          description: "Estimated total tokens consumed",
+        },
+        notes: {
+          type: "string",
+          description: "Observations about the run",
+        },
+      },
+      required: ["taskId", "condition", "outcomeResults"],
+    },
+    handler: async (args) => {
+      const db = getDb();
+
+      // Ensure results table exists
+      db.exec(`CREATE TABLE IF NOT EXISTS eval_run_results (
+        id TEXT PRIMARY KEY,
+        task_id TEXT NOT NULL,
+        session_id TEXT,
+        condition TEXT NOT NULL,
+        trial_number INTEGER DEFAULT 1,
+        outcome_score REAL,
+        process_score REAL,
+        combined_score REAL,
+        outcome_results TEXT,
+        forbidden_violations TEXT,
+        duration_minutes REAL,
+        total_tool_calls INTEGER,
+        total_tokens INTEGER,
+        notes TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      )`);
+
+      // Load task from bank (optional — if it exists, validate)
+      db.exec(`CREATE TABLE IF NOT EXISTS eval_task_bank (
+        id TEXT PRIMARY KEY, task_id TEXT UNIQUE NOT NULL, title TEXT NOT NULL,
+        category TEXT NOT NULL, difficulty TEXT NOT NULL, prompt TEXT NOT NULL,
+        initial_state TEXT, success_criteria TEXT NOT NULL, forbidden_behaviors TEXT,
+        expected_tools TEXT, time_budget_minutes INTEGER DEFAULT 30, token_budget INTEGER,
+        created_at TEXT DEFAULT (datetime('now')), run_count INTEGER DEFAULT 0, pass_count INTEGER DEFAULT 0
+      )`);
+
+      const task = db.prepare("SELECT * FROM eval_task_bank WHERE task_id = ?").get(args.taskId) as any;
+
+      // ── Outcome scoring (50pts) ──
+      const outcomes = args.outcomeResults ?? [];
+      const outcomesPassed = outcomes.filter((o: any) => o.passed).length;
+      const outcomesTotal = outcomes.length;
+      const outcomeRate = outcomesTotal > 0 ? outcomesPassed / outcomesTotal : 0;
+      const outcomeScore = Math.round(outcomeRate * 40);
+
+      // Forbidden behavior penalty (up to -10)
+      const violations = args.forbiddenViolations ?? [];
+      const forbiddenPenalty = Math.min(violations.length * 5, 10);
+
+      // Budget compliance (10pts)
+      let budgetScore = 10;
+      if (task) {
+        const timeBudget = task.time_budget_minutes ?? 30;
+        if (args.durationMinutes && args.durationMinutes > timeBudget * 1.5) {
+          budgetScore -= 5; // Over time by 50%+
+        }
+        if (task.token_budget && args.totalTokens && args.totalTokens > task.token_budget * 1.5) {
+          budgetScore -= 5; // Over token budget by 50%+
+        }
+      }
+
+      const totalOutcomeScore = Math.max(outcomeScore + budgetScore - forbiddenPenalty, 0);
+
+      // ── Process scoring (50pts) — reuse check_contract_compliance logic ──
+      let processScore = 0;
+      if (args.sessionId) {
+        // Get tool call data for process scoring
+        try {
+          const rows = db
+            .prepare("SELECT * FROM tool_call_log WHERE session_id = ? ORDER BY created_at ASC")
+            .all(args.sessionId) as any[];
+
+          if (rows.length > 0) {
+            const toolNames = rows.map((r: any) => r.tool_name);
+            const toolSet = new Set(toolNames);
+            const errors = rows.filter((r: any) => r.result_status === "error").length;
+
+            // Front-door (12pts)
+            const FRONT_DOOR = new Set(["search_all_knowledge", "getMethodology", "discover_tools", "get_workflow_chain", "search_learnings", "findTools"]);
+            if (toolNames.some((t: string) => FRONT_DOOR.has(t))) processScore += 8;
+            if (toolNames.findIndex((t: string) => FRONT_DOOR.has(t)) === 0) processScore += 4;
+
+            // Recon + risk (10pts)
+            if (toolSet.has("run_recon") || toolSet.has("search_all_knowledge") || toolSet.has("check_framework_updates")) processScore += 5;
+            if (toolSet.has("assess_risk")) processScore += 5;
+
+            // Tests + gates (18pts)
+            if (toolSet.has("log_test_result") || toolSet.has("run_closed_loop")) processScore += 6;
+            if (toolSet.has("run_quality_gate")) processScore += 4;
+            if (toolSet.has("run_mandatory_flywheel")) processScore += 4;
+            if (toolSet.has("record_learning")) processScore += 4;
+
+            // Efficiency (10pts)
+            const errorRate = rows.length > 0 ? errors / rows.length : 0;
+            if (errorRate <= 0.1) processScore += 5;
+            if (toolSet.size >= 5) processScore += 5;
+          }
+        } catch { /* tool_call_log table may not exist */ }
+      } else {
+        processScore = 25; // No session = half credit (can't grade process)
+      }
+
+      const totalProcessScore = Math.min(processScore, 50);
+      const combinedScore = totalOutcomeScore + totalProcessScore;
+
+      // Grade
+      let grade: string;
+      if (combinedScore >= 90) grade = "A (Exemplary)";
+      else if (combinedScore >= 80) grade = "B (Good)";
+      else if (combinedScore >= 70) grade = "C (Acceptable)";
+      else if (combinedScore >= 55) grade = "D (Needs Improvement)";
+      else grade = "F (Non-Compliant)";
+
+      // Persist result
+      const resultId = genId("err");
+      db.prepare(`INSERT INTO eval_run_results (id, task_id, session_id, condition, trial_number,
+        outcome_score, process_score, combined_score, outcome_results, forbidden_violations,
+        duration_minutes, total_tool_calls, total_tokens, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(
+        resultId, args.taskId, args.sessionId ?? null, args.condition,
+        args.trialNumber ?? 1, totalOutcomeScore, totalProcessScore, combinedScore,
+        JSON.stringify(outcomes), violations.length > 0 ? JSON.stringify(violations) : null,
+        args.durationMinutes ?? null, args.totalToolCalls ?? null, args.totalTokens ?? null, args.notes ?? null
+      );
+
+      // Update task bank stats
+      if (task) {
+        db.prepare("UPDATE eval_task_bank SET run_count = run_count + 1, pass_count = pass_count + ? WHERE task_id = ?")
+          .run(outcomeRate >= 0.8 ? 1 : 0, args.taskId);
+      }
+
+      // Get ablation comparison if other conditions exist
+      const allConditions = db.prepare(
+        "SELECT condition, AVG(combined_score) as avg_score, COUNT(*) as trials FROM eval_run_results WHERE task_id = ? GROUP BY condition"
+      ).all(args.taskId) as any[];
+
+      return {
+        resultId,
+        taskId: args.taskId,
+        condition: args.condition,
+        trial: args.trialNumber ?? 1,
+        grade,
+        scores: {
+          outcome: { score: totalOutcomeScore, max: 50, breakdown: { criteria: outcomeScore, budget: budgetScore, forbiddenPenalty: -forbiddenPenalty } },
+          process: { score: totalProcessScore, max: 50 },
+          combined: { score: combinedScore, max: 100 },
+        },
+        outcomeDetails: {
+          passed: outcomesPassed,
+          total: outcomesTotal,
+          rate: Math.round(outcomeRate * 100),
+          forbiddenViolations: violations,
+        },
+        ablationComparison: allConditions.length > 1
+          ? allConditions.map((c: any) => ({ condition: c.condition, avgScore: Math.round(c.avg_score), trials: c.trials }))
+          : null,
+        _quickRef: {
+          nextAction: allConditions.length < 2
+            ? `Run the same task with a different condition (bare/lite/full/cold_kb/no_gates) to compare.`
+            : `${allConditions.length} conditions tested. Use compare_eval_runs or get_ablation_report for cross-condition analysis.`,
+          nextTools: allConditions.length < 2
+            ? ["grade_agent_run", "create_task_bank"]
+            : ["compare_eval_runs", "get_self_eval_report"],
+        },
+      };
+    },
+  },
 ];

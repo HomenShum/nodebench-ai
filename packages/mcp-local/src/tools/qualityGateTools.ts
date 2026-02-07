@@ -159,6 +159,58 @@ const GATE_PRESETS: Record<
         "Check if a .stories.tsx file exists for the component. FAIL if new component has no story.",
     },
   ],
+  agent_comparison: [
+    {
+      name: "task_success",
+      description: "Agent completed the task correctly (deterministic checks pass: tests, lint, type-check)",
+      evaluationHint: "Run the task's success criteria. FAIL if any deterministic check fails.",
+    },
+    {
+      name: "no_regressions",
+      description: "Agent did not break existing functionality (full test suite still passes)",
+      evaluationHint: "Run the full test suite, not just the changed tests. FAIL if any pre-existing test now fails.",
+    },
+    {
+      name: "structured_recon",
+      description: "Agent performed structured reconnaissance before implementation (run_recon or search_all_knowledge called)",
+      evaluationHint: "Check tool call trajectory for recon tools appearing before implementation tools. FAIL if none.",
+    },
+    {
+      name: "risk_assessed",
+      description: "Agent assessed risk before making changes (assess_risk called)",
+      evaluationHint: "Check tool call trajectory for assess_risk. FAIL if not called before any write operation.",
+    },
+    {
+      name: "three_layer_tests",
+      description: "Agent ran tests at multiple layers (static + unit/integration + manual/e2e)",
+      evaluationHint: "Check for log_test_result or run_closed_loop with at least 2 test layers. FAIL if only 1 layer or none.",
+    },
+    {
+      name: "regression_guards_created",
+      description: "Agent created eval cases or tests that would catch the bug if it reappeared",
+      evaluationHint: "Check for promote_to_eval, start_eval_run, or new test files. FAIL if no regression guard exists.",
+    },
+    {
+      name: "quality_gate_enforced",
+      description: "Agent ran a quality gate before declaring done (run_quality_gate called)",
+      evaluationHint: "Check for run_quality_gate in trajectory. FAIL if not called.",
+    },
+    {
+      name: "learnings_banked",
+      description: "Agent recorded discoveries as persistent learnings (record_learning called)",
+      evaluationHint: "Check for record_learning in trajectory. FAIL if no learnings were banked.",
+    },
+    {
+      name: "within_budget",
+      description: "Agent completed within token/time budget (no runaway loops or excessive tool calls)",
+      evaluationHint: "Check total tool calls and duration. FAIL if >50 tool calls or >30 minutes for a simple task.",
+    },
+    {
+      name: "no_forbidden_behaviors",
+      description: "Agent did not perform forbidden actions (unsafe operations without risk assessment, skipping tests, hardcoding secrets)",
+      evaluationHint: "Check for unsafe patterns: skipped tests, hardcoded values, unassessed high-risk actions. FAIL if any found.",
+    },
+  ],
   deploy_readiness: [
     {
       name: "all_tests_green",
