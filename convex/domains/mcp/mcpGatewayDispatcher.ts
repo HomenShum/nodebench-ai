@@ -16,6 +16,7 @@ import {
   ok,
   badRequest,
   serverError,
+  tooManyRequests,
 } from "./mcpHttpAuth";
 import type { Id } from "../../_generated/dataModel";
 
@@ -365,9 +366,34 @@ const ALLOWLIST: Record<string, AllowlistEntry> = {
     ref: api.domains.agents.mcp_tools.models.migration.getMigrationStats,
     type: "query",
   },
+
+  // â”€â”€ INTERNAL CONTROL: tool call ledger hooks (used by the gateway service for "direct" tools) â”€â”€
+  // Keys beginning with "__mcp" are excluded from automatic ledger logging.
+  __mcpToolCallStart: {
+    ref: internal.domains.mcp.mcpToolLedger.startToolCallInternal,
+    type: "mutation",
+  },
+  __mcpToolCallFinish: {
+    ref: internal.domains.mcp.mcpToolLedger.finishToolCallInternal,
+    type: "mutation",
+  },
 };
 
 // ── Dispatcher httpAction ──────────────────────────────────────────────────
+
+function inferRiskTier(fn: string, type: FnType): string {
+  // Deterministic default policy:
+  // - queries are read-only
+  // - actions are external-read (network + spend)
+  // - mutations are internal writes
+  // - deletes are destructive (tighter budgets)
+  const lower = fn.toLowerCase();
+  if (lower.startsWith("delete")) return "destructive";
+  if (type === "mutation") return "write_internal";
+  if (type === "action") return "external_read";
+  if (type === "query") return "read_only";
+  return "unknown";
+}
 
 export const mcpGatewayHandler = httpAction(async (ctx, request) => {
   // 1. Auth — validate x-mcp-secret
@@ -384,6 +410,8 @@ export const mcpGatewayHandler = httpAction(async (ctx, request) => {
 
   const fn: string = body.fn;
   const args: Record<string, unknown> = body.args ?? {};
+  const meta: Record<string, unknown> =
+    body && typeof body.meta === "object" && body.meta ? body.meta : {};
 
   // 3. Lookup in allowlist
   const entry = ALLOWLIST[fn];
@@ -394,12 +422,71 @@ export const mcpGatewayHandler = httpAction(async (ctx, request) => {
     );
   }
 
-  // 4. Inject userId if needed
+  // 4. Policy + ledger (trusted access layer)
+  // Skip internal control functions so we don't create "logs that log themselves".
+  const skipLedger = fn.startsWith("__mcp");
+  const riskTier = inferRiskTier(fn, entry.type);
+  const idempotencyKey =
+    typeof (meta as any)?.idempotencyKey === "string"
+      ? String((meta as any).idempotencyKey)
+      : undefined;
+
+  let ledgerCallId: Id<"mcpToolCallLedger"> | null = null;
+  if (!skipLedger) {
+    try {
+      const start: any = await ctx.runMutation(
+        internal.domains.mcp.mcpToolLedger.startToolCallInternal,
+        {
+          toolName: fn,
+          toolType: entry.type,
+          riskTier,
+          args,
+          idempotencyKey,
+          requestMeta: {
+            ...meta,
+            userAgent: request.headers.get("user-agent") ?? undefined,
+            forwardedFor: request.headers.get("x-forwarded-for") ?? undefined,
+          },
+        }
+      );
+
+      ledgerCallId = start.callId as Id<"mcpToolCallLedger">;
+      if (!start.allowed) {
+        const policy = start.policy;
+        const blockedByDenylist = Boolean(policy?.denylist?.blockedByDenylist);
+        const wouldExceed = Boolean(policy?.budgets?.wouldExceed);
+
+        if (blockedByDenylist) {
+          return badRequest(`Tool blocked by policy: "${fn}"`, {
+            callId: ledgerCallId,
+            policy,
+          });
+        }
+        if (wouldExceed) {
+          return tooManyRequests(`Tool budget exceeded: "${fn}"`, {
+            callId: ledgerCallId,
+            policy,
+          });
+        }
+        return badRequest(`Tool blocked by policy: "${fn}"`, {
+          callId: ledgerCallId,
+          policy,
+        });
+      }
+    } catch (err: any) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[mcpGateway] Failed to start ledger for ${fn}:`, message);
+      return serverError(`Ledger start failed: ${message}`);
+    }
+  }
+
+  // 5. Inject userId if needed
   const finalArgs = entry.injectUserId
     ? { ...args, userId: getMcpServiceUserId() }
     : { ...args };
 
-  // 5. Dispatch
+  // 6. Dispatch
+  const t0 = Date.now();
   try {
     let result: unknown;
     switch (entry.type) {
@@ -413,10 +500,46 @@ export const mcpGatewayHandler = httpAction(async (ctx, request) => {
         result = await ctx.runAction(entry.ref, finalArgs);
         break;
     }
+
+    const durationMs = Math.max(0, Date.now() - t0);
+    if (ledgerCallId) {
+      try {
+        await ctx.runMutation(internal.domains.mcp.mcpToolLedger.finishToolCallInternal, {
+          callId: ledgerCallId,
+          success: true,
+          durationMs,
+          result,
+        });
+      } catch (e: any) {
+        console.error(
+          `[mcpGateway] Failed to finish ledger for ${fn}:`,
+          e?.message ?? String(e)
+        );
+      }
+    }
+
     return ok({ success: true, data: result });
   } catch (err: any) {
+    const durationMs = Math.max(0, Date.now() - t0);
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[mcpGateway] Error dispatching ${fn}:`, message);
+
+    if (ledgerCallId) {
+      try {
+        await ctx.runMutation(internal.domains.mcp.mcpToolLedger.finishToolCallInternal, {
+          callId: ledgerCallId,
+          success: false,
+          durationMs,
+          errorMessage: message,
+        });
+      } catch (e: any) {
+        console.error(
+          `[mcpGateway] Failed to finish ledger (error) for ${fn}:`,
+          e?.message ?? String(e)
+        );
+      }
+    }
+
     return serverError(message);
   }
 });

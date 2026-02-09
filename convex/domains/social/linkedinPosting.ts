@@ -1156,6 +1156,46 @@ export const processQueuedPost = internalAction({
 
     console.log(`[queueProcessor] Processing ${item._id}: ${item.postType} (priority=${item.priority})`);
 
+    // ── Pre-post verification (freshness, variety, claims, staleness) ──
+    try {
+      const verification = await ctx.runAction(
+        internal.domains.social.linkedinPrePostVerification.verifyBeforePosting,
+        {
+          queueId: item._id,
+          content: item.content,
+          postType: item.postType,
+          persona: item.persona,
+          target: item.target,
+          createdAt: item.createdAt ?? item._creationTime,
+        },
+      );
+
+      if (!verification.passed) {
+        console.log(`[queueProcessor] Verification FAILED for ${item._id}: ${verification.reason}`);
+
+        const newStatus = verification.suggestedAction === "regenerate"
+          ? "needs_rewrite" as const
+          : "failed" as const;
+
+        await ctx.runMutation(
+          internal.domains.social.linkedinContentQueue.updateQueueStatus,
+          { queueId: item._id, status: newStatus },
+        );
+
+        return {
+          processed: true,
+          posted: false,
+          reason: `verification_failed: ${verification.reason}`,
+          queueId: item._id,
+        };
+      }
+
+      console.log(`[queueProcessor] Verification PASSED for ${item._id} (${verification.checks.length} checks)`);
+    } catch (verifyError) {
+      // Verification errors are non-blocking — log and continue to post
+      console.warn(`[queueProcessor] Verification error (non-blocking): ${verifyError instanceof Error ? verifyError.message : String(verifyError)}`);
+    }
+
     try {
       const postResult = await ctx.runAction(
         internal.domains.social.linkedinPosting.createTargetedTextPost,

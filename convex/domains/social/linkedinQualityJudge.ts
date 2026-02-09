@@ -8,7 +8,7 @@
  * 2. LLM judge (3 boolean criteria: hookQuality, opinionDepth, questionAuthenticity)
  *
  * Model strategy: FREE-FIRST via existing model resolver
- * - devstral-2-free ($0.00/M via OpenRouter)
+ * - qwen3-coder-free ($0.00/M via OpenRouter)
  * - Fallback chain handled by getLanguageModelSafe()
  */
 
@@ -93,7 +93,7 @@ export const judgePostQuality = internalAction({
     }
 
     // Step 2: LLM judge (3 boolean criteria)
-    const modelId = "devstral-2-free";
+    const modelId = "qwen3-coder-free";
 
     try {
       const model = getLanguageModelSafe(modelId);

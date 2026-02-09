@@ -15,8 +15,8 @@ export const testWithOfficialProvider = internalAction({
       const { openrouter } = await import("@openrouter/ai-sdk-provider");
       const { z } = await import("zod");
 
-      // Test with devstral-2-free (supports structured_outputs)
-      const model = openrouter("mistralai/devstral-2512:free");
+      // Test with qwen3-coder-free (supports structured_outputs)
+      const model = openrouter("qwen/qwen3-coder:free");
       console.log("✅ Model created with official provider");
 
       const schema = z.object({
@@ -41,13 +41,13 @@ export const testWithOfficialProvider = internalAction({
       console.log("✅ SUCCESS WITH FREE MODEL!");
       console.log(`⏱️  Generation Time: ${(duration / 1000).toFixed(2)}s`);
       console.log(`💰 Cost: $0.00 (FREE)`);
-      console.log(`📝 Model: devstral-2-free`);
+      console.log(`📝 Model: qwen3-coder-free`);
       console.log(`Subject: ${draft.subject}`);
       console.log(`Body: ${draft.body}`);
 
       return {
         success: true,
-        model: "devstral-2-free",
+        model: "qwen3-coder-free",
         duration,
         cost: "$0.00",
         draft,
@@ -74,7 +74,7 @@ export const testMimoFree = internalAction({
       const { openrouter } = await import("@openrouter/ai-sdk-provider");
       const { z } = await import("zod");
 
-      const model = openrouter("xiaomi/mimo-v2-flash:free");
+      const model = openrouter("qwen/qwen3-coder:free");
       console.log("✅ Model created");
 
       const schema = z.object({
@@ -104,7 +104,7 @@ export const testMimoFree = internalAction({
 
       return {
         success: true,
-        model: "devstral-2-free",
+        model: "qwen3-coder-free",
         duration,
         cost: "$0.00",
         draft,

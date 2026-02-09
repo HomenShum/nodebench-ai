@@ -1,12 +1,16 @@
 // src/components/FastAgentPanel/FastAgentPanel.UIMessageBubble.tsx
 // Message bubble component optimized for UIMessage format from Agent component
 
-import React, { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
-import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye } from 'lucide-react';
+import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye, ThumbsUp, ThumbsDown, Pencil, Bookmark, Volume2, VolumeX, Pin } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
 import type { FileUIPart, ToolUIPart } from 'ai';
@@ -34,6 +38,7 @@ import {
 } from './FastAgentPanel.VisualCitation';
 import { ArbitrageReportCard } from './ArbitrageReportCard';
 import { MemoryPill } from './MemoryPill';
+import { ToolCallTransparency } from './ToolCallTransparency';
 import { FusedSearchResults, type FusedResult, type SourceError, type SearchSource } from './FusedSearchResults';
 // Phase All: Citation & Entity parsing with adaptive enrichment
 import { InteractiveSpanParser } from '@/features/research/components/InteractiveSpanParser';
@@ -66,11 +71,32 @@ interface FastAgentUIMessageBubbleProps {
   onEventSelect?: (event: EventOption) => void;
   onNewsSelect?: (article: NewsArticleOption) => void;
   onDocumentSelect?: (documentId: string) => void;
+  onEditMessage?: (newText: string) => void;
   isParent?: boolean; // Whether this message has child messages
   isChild?: boolean; // Whether this is a child message (specialized agent)
   agentRole?: 'coordinator' | 'documentAgent' | 'mediaAgent' | 'secAgent' | 'webAgent';
   /** Pre-loaded entity enrichment data for medium-detail hover previews */
   entityEnrichment?: Record<string, EntityHoverData>;
+  /** Search query to highlight in message text */
+  searchHighlight?: string;
+  /** Whether this message is bookmarked */
+  isBookmarked?: boolean;
+  /** Callback to toggle bookmark on this message */
+  onToggleBookmark?: () => void;
+  /** Whether this message is pinned */
+  isMessagePinned?: boolean;
+  /** Callback to toggle pin on this message */
+  onTogglePin?: () => void;
+  /** RLHF feedback vote for this message */
+  feedbackVote?: 'up' | 'down' | null;
+  /** Callback for RLHF feedback */
+  onFeedback?: (vote: 'up' | 'down') => void;
+  /** Font size override */
+  fontSize?: number;
+  /** Edit diff data (old vs new text) */
+  editDiff?: { oldText: string; newText: string } | null;
+  /** Whether this message is inside the context window */
+  isInContext?: boolean;
 }
 
 /**
@@ -583,8 +609,79 @@ const agentRoleConfig = {
 };
 
 /**
- * ThinkingAccordion - Collapsible section for agent reasoning
- * Memoized to prevent re-renders during streaming updates
+ * ToolStepsAccordion - Claude-style collapsible "Researching..." block
+ * Groups all tool calls under one expandable section.
+ * Auto-expands during streaming, auto-collapses when done.
+ */
+const ToolStepsAccordion = React.memo(function ToolStepsAccordion({
+  children,
+  toolCount,
+  completedCount,
+  isStreaming,
+}: {
+  children: React.ReactNode;
+  toolCount: number;
+  completedCount: number;
+  isStreaming: boolean;
+}) {
+  const [userToggled, setUserToggled] = useState(false);
+  const [userWantsOpen, setUserWantsOpen] = useState(false);
+  const prevStreamingRef = useRef(isStreaming);
+
+  const isExpanded = userToggled ? userWantsOpen : isStreaming;
+
+  useEffect(() => {
+    if (prevStreamingRef.current && !isStreaming) {
+      setUserToggled(false);
+    }
+    prevStreamingRef.current = isStreaming;
+  }, [isStreaming]);
+
+  const handleToggle = () => {
+    setUserToggled(true);
+    setUserWantsOpen(!isExpanded);
+  };
+
+  const allDone = completedCount >= toolCount && !isStreaming;
+  const label = isStreaming
+    ? `Researching... (${completedCount}/${toolCount} steps)`
+    : `Used ${toolCount} tool${toolCount !== 1 ? 's' : ''}`;
+
+  return (
+    <div className="mb-3 border border-[var(--border-color)] rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={handleToggle}
+        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors bg-[var(--bg-secondary)]"
+      >
+        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+        <Wrench className={cn(
+          "w-3.5 h-3.5",
+          isStreaming ? "text-blue-500 animate-pulse" : "text-[var(--text-muted)]"
+        )} />
+        <span>{label}</span>
+        <span className="ml-auto flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-normal">
+          {isStreaming ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : allDone ? (
+            <CheckCircle2 className="w-3 h-3 text-green-500" />
+          ) : null}
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div className="px-3 py-2.5 border-t border-[var(--border-color)] bg-[var(--bg-primary)] max-h-96 overflow-y-auto">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+});
+
+/**
+ * ThinkingAccordion - Claude-style collapsible thinking block
+ * Auto-expands during streaming, auto-collapses when done.
+ * Shows word count and duration indicator.
  */
 const ThinkingAccordion = React.memo(function ThinkingAccordion({
   reasoning,
@@ -593,33 +690,166 @@ const ThinkingAccordion = React.memo(function ThinkingAccordion({
   reasoning: string;
   isStreaming: boolean;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [userToggled, setUserToggled] = useState(false);
+  const [userWantsOpen, setUserWantsOpen] = useState(false);
+  const prevStreamingRef = useRef(isStreaming);
+
+  // Auto-expand during streaming, auto-collapse when done (Claude pattern)
+  const isExpanded = userToggled ? userWantsOpen : isStreaming;
+
+  // Detect streaming → done transition to reset user toggle
+  useEffect(() => {
+    if (prevStreamingRef.current && !isStreaming) {
+      // Streaming just finished — auto-collapse unless user opened it
+      setUserToggled(false);
+    }
+    prevStreamingRef.current = isStreaming;
+  }, [isStreaming]);
+
+  const handleToggle = () => {
+    setUserToggled(true);
+    setUserWantsOpen(!isExpanded);
+  };
 
   if (!reasoning) return null;
 
+  const wordCount = reasoning.split(/\s+/).filter(Boolean).length;
+
   return (
-    <div className="mb-4 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--bg-secondary)]/30">
+    <div className="mb-3 border border-[var(--border-color)] rounded-lg overflow-hidden">
       <button
         type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+        onClick={handleToggle}
+        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors bg-[var(--bg-secondary)]"
       >
-        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
         <BrainCircuit className={cn(
-          "w-3 h-3 text-purple-500",
-          isStreaming && "animate-pulse"
+          "w-3.5 h-3.5",
+          isStreaming ? "text-purple-500 animate-pulse" : "text-[var(--text-muted)]"
         )} />
-        <span>Reasoning Process</span>
-        {isStreaming && <Loader2 className="w-3 h-3 animate-spin ml-auto text-purple-500" />}
+        <span>{isStreaming ? 'Thinking...' : 'Thought process'}</span>
+        <span className="ml-auto flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-normal">
+          {isStreaming ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <span className="tabular-nums">{wordCount} words</span>
+          )}
+        </span>
       </button>
 
       {isExpanded && (
-        <div className="px-3 py-2 border-t border-[var(--border-color)] bg-[var(--bg-primary)]">
-          <div className="prose prose-xs max-w-none text-[var(--text-secondary)]">
+        <div className="px-3 py-2.5 border-t border-[var(--border-color)] bg-[var(--bg-primary)] max-h-64 overflow-y-auto">
+          <div className="prose prose-xs max-w-none text-[var(--text-muted)] text-[13px] leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0">
             <ReactMarkdown>{reasoning}</ReactMarkdown>
           </div>
         </div>
       )}
+    </div>
+  );
+});
+
+/**
+ * RunCodeButton - In-browser JS/TS code execution with sandboxed eval
+ */
+const RunCodeButton = React.memo(function RunCodeButton({ code, language }: { code: string; language: string }) {
+  const [output, setOutput] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const runCode = useCallback(() => {
+    setIsRunning(true);
+    setOutput(null);
+    const logs: string[] = [];
+    const fakeConsole = {
+      log: (...args: any[]) => logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ')),
+      error: (...args: any[]) => logs.push('[ERROR] ' + args.map(a => String(a)).join(' ')),
+      warn: (...args: any[]) => logs.push('[WARN] ' + args.map(a => String(a)).join(' ')),
+    };
+    try {
+      const fn = new Function('console', code);
+      const result = fn(fakeConsole);
+      if (result !== undefined && logs.length === 0) logs.push(String(result));
+      setOutput(logs.join('\n') || '(no output)');
+    } catch (err: any) {
+      setOutput(`Error: ${err.message}`);
+    }
+    setIsRunning(false);
+  }, [code]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={runCode}
+        className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 transition-colors"
+        disabled={isRunning}
+      >
+        {isRunning ? '⏳' : '▶'} Run
+      </button>
+      {output !== null && (
+        <div className="absolute left-0 right-0 top-full z-50 mx-3 mt-1 rounded-lg border border-[var(--border-color)] bg-gray-900 text-green-400 text-[10px] font-mono p-2 max-h-[120px] overflow-auto shadow-xl whitespace-pre-wrap">
+          {output}
+        </div>
+      )}
+    </>
+  );
+});
+
+/**
+ * CodeBlockWithCopy - Code block with language label and copy button (Claude/ChatGPT pattern)
+ */
+const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
+  language,
+  children,
+}: {
+  language: string;
+  children: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(children);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div className="relative group/code rounded-lg overflow-hidden border border-[var(--border-color)] my-3">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
+        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">{language}</span>
+        <div className="flex items-center gap-2 opacity-0 group-hover/code:opacity-100 transition-opacity">
+          {['html', 'svg', 'jsx', 'tsx', 'css'].includes(language) && (
+            <button
+              type="button"
+              onClick={() => {
+                const type = (language === 'svg' ? 'svg' : language === 'html' ? 'html' : 'code') as 'html' | 'svg' | 'code';
+                window.dispatchEvent(new CustomEvent('fa-open-artifact', { detail: { type, content: children, language } }));
+              }}
+              className="flex items-center gap-1 text-[10px] text-blue-500 hover:text-blue-600 transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" /> Canvas
+            </button>
+          )}
+          {['javascript', 'js', 'typescript', 'ts'].includes(language) && (
+            <RunCodeButton code={children} language={language} />
+          )}
+          <button
+            type="button"
+            onClick={() => { void handleCopy(); }}
+            className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            {copied ? (
+              <><Check className="w-3 h-3 text-green-500" /> Copied</>
+            ) : (
+              <><Copy className="w-3 h-3" /> Copy</>
+            )}
+          </button>
+        </div>
+      </div>
+      <LazySyntaxHighlighter language={language} PreTag="div">
+        {children}
+      </LazySyntaxHighlighter>
     </div>
   );
 });
@@ -1261,15 +1491,96 @@ export function FastAgentUIMessageBubble({
   onEventSelect,
   onNewsSelect,
   onDocumentSelect,
+  onEditMessage,
   isParent,
   isChild,
   agentRole,
   entityEnrichment,
+  searchHighlight,
+  isBookmarked,
+  onToggleBookmark,
+  isMessagePinned,
+  onTogglePin,
+  feedbackVote,
+  onFeedback,
+  fontSize,
+  editDiff,
+  isInContext,
 }: FastAgentUIMessageBubbleProps) {
   const isUser = message.role === 'user';
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState('');
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Read-aloud TTS state (callback defined after visibleText)
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Message collapse/expand for long messages
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const COLLAPSE_THRESHOLD = 1200; // chars (~300 words)
+
+  // Emoji reactions
+  const [emojiReaction, setEmojiReaction] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const QUICK_EMOJIS = ['👍', '❤️', '🔥', '💡', '🎯', '👀'];
+
+  // Smart actions menu
+  const [showSmartActions, setShowSmartActions] = useState(false);
+
+  // Markdown raw/rendered toggle
+  const [showRawMarkdown, setShowRawMarkdown] = useState(false);
+
+  // Text selection toolbar
+  const [selectionToolbar, setSelectionToolbar] = useState<{ x: number; y: number; text: string } | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
+
+  // Streaming token counter
+  const streamStartRef = useRef<number | null>(null);
+  const [streamTokPerSec, setStreamTokPerSec] = useState<number>(0);
+
+  useEffect(() => {
+    if (message.status === 'streaming') {
+      if (!streamStartRef.current) streamStartRef.current = Date.now();
+    } else {
+      streamStartRef.current = null;
+      setStreamTokPerSec(0);
+    }
+  }, [message.status]);
+
+  // Note: streaming tok/s effect uses streamTextRef updated after visibleText
+  const streamTextLenRef = useRef(0);
+
+  // Text selection toolbar handler
+  useEffect(() => {
+    const el = bubbleRef.current;
+    if (!el) return;
+    const handleMouseUp = () => {
+      const sel = window.getSelection();
+      if (sel && sel.toString().trim().length > 2 && el.contains(sel.anchorNode)) {
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const parentRect = el.getBoundingClientRect();
+        setSelectionToolbar({
+          x: rect.left - parentRect.left + rect.width / 2,
+          y: rect.top - parentRect.top - 8,
+          text: sel.toString().trim(),
+        });
+      } else {
+        setSelectionToolbar(null);
+      }
+    };
+    const handleMouseDown = () => setSelectionToolbar(null);
+    el.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => {
+      el.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
 
   // Get handlers from context (stable references) with prop fallback
   const contextHandlers = useMessageHandlers();
@@ -1309,6 +1620,25 @@ export function FastAgentUIMessageBubble({
       contextHandlers.onDeleteMessage(messageId);
     }
     setShowDeleteConfirm(false);
+  };
+
+  const handleStartEdit = () => {
+    setEditText(visibleText || message.text || '');
+    setIsEditing(true);
+    setTimeout(() => editTextareaRef.current?.focus(), 0);
+  };
+
+  const handleSaveEdit = () => {
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== (visibleText || message.text || '')) {
+      onEditMessage?.(trimmed);
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditText('');
   };
 
   const handleCopy = async () => {
@@ -1378,6 +1708,33 @@ export function FastAgentUIMessageBubble({
   // Use smooth text streaming - matches documentation pattern exactly
   const [visibleText] = useSmoothText(message.text, {
     startStreaming: message.status === 'streaming',
+  });
+
+  // Read-aloud TTS callback (must be after visibleText)
+  const handleReadAloud = useCallback(() => {
+    if (isSpeaking) {
+      window.speechSynthesis?.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    const text = visibleText || '';
+    if (!text || !window.speechSynthesis) return;
+    const utterance = new SpeechSynthesisUtterance(text.slice(0, 5000));
+    utterance.rate = 1.1;
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+  }, [isSpeaking, visibleText]);
+
+  // Streaming tok/s effect (must be after visibleText)
+  useEffect(() => {
+    if (message.status !== 'streaming' || !streamStartRef.current) return;
+    streamTextLenRef.current = visibleText?.length ?? 0;
+    const elapsed = (Date.now() - streamStartRef.current) / 1000;
+    if (elapsed > 0.5) {
+      setStreamTokPerSec(Math.round(streamTextLenRef.current / 4 / elapsed));
+    }
   });
 
   // Extract reasoning text from parts
@@ -1775,8 +2132,11 @@ export function FastAgentUIMessageBubble({
   }, [visibleText]);
 
   return (
-    <div className={cn(
-      "flex gap-3 mb-6 group",
+    <div
+      role="article"
+      aria-label={isUser ? "Your message" : "Assistant response"}
+      className={cn(
+      "flex gap-3 mb-6 group msg-entrance",
       isUser ? "justify-end" : "justify-start",
       isChild && "ml-0" // Child messages already have margin from parent container
     )}>
@@ -1784,19 +2144,31 @@ export function FastAgentUIMessageBubble({
       {!isUser && (
         <div className="flex-shrink-0">
           <div className={cn(
-            "w-8 h-8 rounded-full flex items-center justify-center shadow-sm ring-1 ring-white/20 backdrop-blur-sm",
-            "bg-neutral-900 dark:bg-neutral-100"
+            "w-7 h-7 rounded-full flex items-center justify-center",
+            "bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800/40"
           )}>
-            <Bot className="w-5 h-5 text-white dark:text-neutral-900" />
+            <Bot className="w-3.5 h-3.5 text-green-700 dark:text-green-400" />
           </div>
         </div>
       )}
 
       {/* Message Content */}
-      <div className={cn(
-        "flex flex-col gap-2 max-w-[85%]",
+      <div ref={bubbleRef} className={cn(
+        "flex flex-col gap-2 max-w-[85%] relative",
         isUser && "items-end"
       )}>
+        {/* Text Selection Toolbar */}
+        {selectionToolbar && (
+          <div
+            className="selection-toolbar"
+            style={{ left: selectionToolbar.x, top: selectionToolbar.y, transform: 'translate(-50%, -100%)' }}
+          >
+            <button onClick={() => { navigator.clipboard.writeText(selectionToolbar.text); setSelectionToolbar(null); }}>Copy</button>
+            <button onClick={() => { navigator.clipboard.writeText(`> ${selectionToolbar.text}`); setSelectionToolbar(null); }}>Quote</button>
+            <button onClick={() => { window.getSelection()?.removeAllRanges(); setSelectionToolbar(null); }}>Dismiss</button>
+          </div>
+        )}
+
         {/* Agent Role Badge (for specialized agents) */}
         {roleConfig && !isUser && (
           <div className={cn(
@@ -1889,7 +2261,12 @@ export function FastAgentUIMessageBubble({
           ═══════════════════════════════════════════════════════════════════════
         */}
         {!isUser && toolParts.length > 0 && (
-          <div className="mb-4 w-full">
+          <ToolStepsAccordion
+            toolCount={toolParts.filter(p => p.type === 'tool-call' || p.type === 'tool-result').length}
+            completedCount={toolParts.filter(p => p.type === 'tool-result').length}
+            isStreaming={message.status === 'streaming'}
+          >
+          <div className="w-full">
             {toolParts.map((part, idx) => {
               // Only render tool calls, not results (results are nested in steps)
               if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
@@ -1987,6 +2364,25 @@ export function FastAgentUIMessageBubble({
                 return null;
               }
 
+              // ═══════════════════════════════════════════════════════════════
+              // PRECEDENCE 2.5: Convex MCP tools → ToolCallTransparency
+              // ═══════════════════════════════════════════════════════════════
+              if (toolName && toolName.startsWith('convex_')) {
+                const convexToolData = {
+                  toolName,
+                  status: (part.type === 'tool-result' ? 'success' : part.type === 'tool-error' ? 'error' : 'running') as 'running' | 'success' | 'error',
+                  inputSummary: (part as any).args ? JSON.stringify((part as any).args).substring(0, 120) : undefined,
+                  outputSummary: part.type === 'tool-result' && (part as any).output
+                    ? (typeof (part as any).output === 'string' ? (part as any).output.substring(0, 120) : JSON.stringify((part as any).output).substring(0, 120))
+                    : undefined,
+                };
+                return (
+                  <div key={idx} className="my-2 w-full">
+                    <ToolCallTransparency toolCalls={[convexToolData]} />
+                  </div>
+                );
+              }
+
               // Default: Render as standard ToolStep
               return (
                 <ToolStep
@@ -2001,6 +2397,7 @@ export function FastAgentUIMessageBubble({
               );
             })}
           </div>
+          </ToolStepsAccordion>
         )}
 
         {/* Arbitrage Verification Report (if arbitrage tools were used) */}
@@ -2072,20 +2469,87 @@ export function FastAgentUIMessageBubble({
             className={cn(
               "relative p-4 rounded-xl shadow-sm transition-all duration-200 text-sm leading-relaxed",
               isUser
-                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-none shadow-md"
+                ? isEditing
+                  ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-[var(--text-primary)] rounded-br-none"
+                  : "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-none shadow-md"
                 : "bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-bl-none shadow-sm dark:bg-[var(--bg-secondary)]",
               message.status === 'streaming' && 'animate-pulse-subtle',
               message.status === 'failed' && "bg-red-50/80 border-red-200 dark:bg-red-900/20 dark:border-red-800"
             )}
           >
-            {/* Show placeholder while streaming and no text yet */}
-            {!isUser && message.status === 'streaming' && !cleanedText && !visibleText ? (
-              <div className="flex items-center gap-2 text-[var(--text-secondary)] italic">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Generating answer...</span>
+            {/* Inline edit mode for user messages */}
+            {isUser && isEditing ? (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  ref={editTextareaRef}
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSaveEdit(); }
+                    if (e.key === 'Escape') handleCancelEdit();
+                  }}
+                  className="w-full bg-transparent text-sm leading-relaxed resize-none outline-none min-h-[40px] placeholder-blue-300"
+                  rows={Math.max(1, editText.split('\n').length)}
+                />
+                <div className="flex items-center gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="action-btn text-xs px-2.5 py-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveEdit}
+                    className="press-scale text-xs px-3 py-1 rounded-md bg-blue-500 text-white hover:bg-blue-600 font-medium"
+                  >
+                    Save & Resend
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Thinking/Reasoning Disclosure (Claude-style) */}
+            {!isUser && (cleanedText || visibleText || '').includes('<think>') && (() => {
+              const text = cleanedText || visibleText || '';
+              const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
+              if (!thinkMatch) return null;
+              return (
+                <details className="thinking-disclosure mb-2">
+                  <summary>Reasoning ({thinkMatch[1].split(/\s+/).length} words)</summary>
+                  <div className="mt-1 text-[11px] leading-relaxed opacity-80 whitespace-pre-wrap">
+                    {thinkMatch[1].trim()}
+                  </div>
+                </details>
+              );
+            })()}
+
+            {/* Streaming Progress Bar */}
+            {!isUser && message.status === 'streaming' && (cleanedText || visibleText) && (() => {
+              const textLen = (cleanedText || visibleText || '').length;
+              const estimatedTotal = 2000;
+              const pct = Math.min((textLen / estimatedTotal) * 100, 95);
+              return (
+                <div className="w-full h-[2px] bg-[var(--border-color)] rounded-full overflow-hidden mb-1">
+                  <div className="h-full bg-blue-500 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                </div>
+              );
+            })()}
+
+            {/* Normal content (hidden during edit) */}
+            {!(isUser && isEditing) && (!isUser && message.status === 'streaming' && !cleanedText && !visibleText ? (
+              <div className="skeleton-block">
+                <div className="skeleton-line skeleton-shimmer" />
+                <div className="skeleton-line skeleton-shimmer" />
+                <div className="skeleton-line skeleton-shimmer" />
+                <div className="skeleton-line skeleton-shimmer" />
               </div>
             ) : (
+              <div className={cn(!isUser && "prose-agent")}>
               <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
                 components={{
                   code({ inline, className, children, ...props }: any) {
                     const match = /language-(\w+)/.exec(className || '');
@@ -2106,12 +2570,9 @@ export function FastAgentUIMessageBubble({
                     }
 
                     return !inline && match ? (
-                      <LazySyntaxHighlighter
-                        language={language}
-                        PreTag="div"
-                      >
+                      <CodeBlockWithCopy language={language}>
                         {String(children).replace(/\n$/, '')}
-                      </LazySyntaxHighlighter>
+                      </CodeBlockWithCopy>
                     ) : (
                       <code className={cn(
                         "px-1 py-0.5 rounded text-xs font-mono",
@@ -2123,6 +2584,21 @@ export function FastAgentUIMessageBubble({
                   },
                   a({ href, children }) {
                     return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
+                  },
+                  table({ children }) {
+                    return <div className="overflow-x-auto my-3 rounded-lg border border-[var(--border-color)]"><table className="w-full text-xs border-collapse">{children}</table></div>;
+                  },
+                  thead({ children }) {
+                    return <thead className="bg-[var(--bg-secondary)]">{children}</thead>;
+                  },
+                  th({ children }) {
+                    return <th className="px-3 py-2 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] text-[11px]">{children}</th>;
+                  },
+                  td({ children }) {
+                    return <td className="px-3 py-1.5 border-b border-[var(--border-color)] text-[var(--text-secondary)] text-[11px]">{children}</td>;
+                  },
+                  tr({ children }) {
+                    return <tr className="hover:bg-[var(--bg-secondary)] transition-colors">{children}</tr>;
                   },
                   // Phase All: Enhanced paragraph rendering with citation/entity parsing + adaptive enrichment
                   p({ children }) {
@@ -2146,16 +2622,344 @@ export function FastAgentUIMessageBubble({
                       );
                     }
 
-                    // Default paragraph rendering
+                    // Default paragraph rendering (with optional search highlight)
+                    if (searchHighlight && textContent.toLowerCase().includes(searchHighlight.toLowerCase())) {
+                      const regex = new RegExp(`(${searchHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                      const parts = textContent.split(regex);
+                      return (
+                        <p className="mb-2">
+                          {parts.map((part, i) =>
+                            regex.test(part)
+                              ? <mark key={i} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{part}</mark>
+                              : <React.Fragment key={i}>{part}</React.Fragment>
+                          )}
+                        </p>
+                      );
+                    }
                     return <p className="mb-2">{children}</p>;
                   },
                 }}
               >
-                {isUser ? (visibleText || '...') : (cleanedText || visibleText || '...')}
+                {(() => {
+                  const displayText = isUser ? (visibleText || '...') : (cleanedText || visibleText || '...');
+                  const isLong = !isUser && displayText.length > COLLAPSE_THRESHOLD && message.status !== 'streaming';
+                  if (isLong && isCollapsed) {
+                    return displayText.slice(0, COLLAPSE_THRESHOLD) + '...';
+                  }
+                  return displayText;
+                })()}
               </ReactMarkdown>
-            )}
+              {/* Show more/less toggle for long messages */}
+              {!isUser && (cleanedText || visibleText || '').length > COLLAPSE_THRESHOLD && message.status !== 'streaming' && (
+                <button
+                  type="button"
+                  onClick={() => setIsCollapsed(prev => !prev)}
+                  className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline mt-1"
+                >
+                  {isCollapsed ? 'Show more ▼' : 'Show less ▲'}
+                </button>
+              )}
+              {!isUser && message.status === 'streaming' && (cleanedText || visibleText) && (
+                <span className="streaming-caret" />
+              )}
+              </div>
+            ))}
           </div>
         ) : null}
+
+        {/* Smart Actions (assistant messages, after content finishes) */}
+        {!isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            <div className="relative inline-flex">
+              <button
+                type="button"
+                className="smart-action-chip"
+                onClick={() => { navigator.clipboard.writeText(cleanedText || visibleText || ''); toast.success('Copied as Markdown'); }}
+              >
+                📋 Copy
+              </button>
+              <button
+                type="button"
+                className="smart-action-chip !px-1.5 !rounded-l-none -ml-px"
+                onClick={() => {
+                  const text = cleanedText || visibleText || '';
+                  const plain = text.replace(/[#*_`~\[\]()>-]/g, '').replace(/\n{2,}/g, '\n');
+                  navigator.clipboard.writeText(plain);
+                  toast.success('Copied as plain text');
+                }}
+                title="Copy as plain text"
+              >
+                T
+              </button>
+            </div>
+            <button
+              type="button"
+              className="smart-action-chip"
+              onClick={() => setShowRawMarkdown(prev => !prev)}
+            >
+              {showRawMarkdown ? '📄 Rendered' : '{ } Raw'}
+            </button>
+            <button
+              type="button"
+              className="smart-action-chip"
+              onClick={() => {
+                const blob = new Blob([cleanedText || visibleText || ''], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'response.md';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              💾 Save as file
+            </button>
+
+            {/* RLHF Feedback Buttons */}
+            {onFeedback && (
+              <div className="flex items-center gap-0.5 ml-auto">
+                <button
+                  type="button"
+                  className={`smart-action-chip !px-1.5 ${feedbackVote === 'up' ? '!bg-green-100 !text-green-700 dark:!bg-green-900/30 dark:!text-green-400' : ''}`}
+                  onClick={() => onFeedback('up')}
+                  title="Good response"
+                >
+                  👍
+                </button>
+                <button
+                  type="button"
+                  className={`smart-action-chip !px-1.5 ${feedbackVote === 'down' ? '!bg-red-100 !text-red-700 dark:!bg-red-900/30 dark:!text-red-400' : ''}`}
+                  onClick={() => onFeedback('down')}
+                  title="Bad response"
+                >
+                  👎
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Edit Diff View */}
+        {editDiff && (
+          <div className="mt-2 rounded-lg border border-[var(--border-color)] overflow-hidden text-[11px] font-mono">
+            <div className="px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[9px] font-semibold uppercase tracking-wider">Edit Diff</div>
+            <div className="px-3 py-1.5 bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 line-through whitespace-pre-wrap">
+              {editDiff.oldText}
+            </div>
+            <div className="px-3 py-1.5 bg-green-50 dark:bg-green-900/10 text-green-700 dark:text-green-400 whitespace-pre-wrap">
+              {editDiff.newText}
+            </div>
+          </div>
+        )}
+
+        {/* Multi-turn Context Indicator */}
+        {isInContext === false && !isUser && (
+          <div className="mt-1 text-[8px] text-[var(--text-muted)] flex items-center gap-1 opacity-60" title="This message may be outside the model's context window">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+            Outside context window
+          </div>
+        )}
+
+        {/* Reading Time Estimate */}
+        {!isUser && message.status !== 'streaming' && (() => {
+          const text = cleanedText || visibleText || '';
+          const wordCount = text.split(/\s+/).length;
+          if (wordCount < 80) return null;
+          const readMin = Math.ceil(wordCount / 230);
+          return (
+            <span className="text-[9px] text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
+              <Clock className="w-2.5 h-2.5" />
+              {readMin} min read
+            </span>
+          );
+        })()}
+
+        {/* AI Confidence Indicator */}
+        {!isUser && message.status !== 'streaming' && (cleanedText || visibleText) && (() => {
+          const text = cleanedText || visibleText || '';
+          const hedges = (text.match(/\b(might|may|could|possibly|perhaps|likely|unlikely|uncertain|not sure|it seems|appears to|I think|I believe|approximately|roughly)\b/gi) || []).length;
+          const totalWords = text.split(/\s+/).length;
+          const hedgeRatio = totalWords > 0 ? hedges / totalWords : 0;
+          const confidence = hedgeRatio > 0.03 ? 'low' : hedgeRatio > 0.01 ? 'medium' : 'high';
+          const confColors = { high: '#22c55e', medium: '#f59e0b', low: '#ef4444' };
+          const confLabels = { high: 'High confidence', medium: 'Moderate confidence', low: 'Low confidence' };
+          return (
+            <div className="flex items-center gap-1.5 mt-0.5" title={`${confLabels[confidence]} — ${hedges} hedging words in ${totalWords} words`}>
+              <div className="flex gap-0.5">
+                {[0, 1, 2].map(i => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full transition-colors"
+                    style={{ background: i <= (confidence === 'high' ? 2 : confidence === 'medium' ? 1 : 0) ? confColors[confidence] : 'var(--border-color)' }}
+                  />
+                ))}
+              </div>
+              <span className="text-[9px] text-[var(--text-muted)]">{confLabels[confidence]}</span>
+            </div>
+          );
+        })()}
+
+        {/* Inline Source Citations with Hover Preview */}
+        {!isUser && message.status !== 'streaming' && (cleanedText || visibleText || '').match(/\[\d+\]/) && (() => {
+          const text = cleanedText || visibleText || '';
+          const citationNums = [...new Set((text.match(/\[(\d+)\]/g) || []).map(c => c.replace(/[\[\]]/g, '')))];
+          if (citationNums.length === 0) return null;
+          const urls = text.match(/https?:\/\/[^\s)]+/g) || [];
+          return (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              <span className="text-[9px] text-[var(--text-muted)] mr-0.5">Sources:</span>
+              {citationNums.slice(0, 8).map((num, i) => {
+                const url = urls[i] || null;
+                let domain = '';
+                try { if (url) domain = new URL(url).hostname.replace('www.', ''); } catch { /* */ }
+                return (
+                  <span key={num} className="relative group/cite">
+                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-[8px] font-bold cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800/40 transition-colors">
+                      {num}
+                    </span>
+                    {url && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/cite:flex flex-col w-[200px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl p-2 z-50 pointer-events-none">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3 h-3 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          <span className="text-[10px] font-medium text-[var(--text-primary)] truncate">{domain}</span>
+                        </div>
+                        <span className="text-[8px] text-[var(--text-muted)] truncate">{url.slice(0, 60)}</span>
+                      </div>
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* Image/File Inline Previews */}
+        {!isUser && (cleanedText || visibleText || '').match(/!\[.*?\]\(https?:\/\/[^)]+\)/) && (() => {
+          const text = cleanedText || visibleText || '';
+          const imgMatches = [...text.matchAll(/!\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g)];
+          if (imgMatches.length === 0) return null;
+          return (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {imgMatches.slice(0, 4).map((match, i) => (
+                <a
+                  key={i}
+                  href={match[2]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-blue-400 transition-colors shadow-sm"
+                >
+                  <img
+                    src={match[2]}
+                    alt={match[1] || 'Image'}
+                    className="max-w-[160px] max-h-[120px] object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </a>
+              ))}
+            </div>
+          );
+        })()}
+
+        {/* File Attachment Previews (detect file URLs) */}
+        {!isUser && (cleanedText || visibleText || '').match(/\bhttps?:\/\/\S+\.(pdf|csv|xlsx?|docx?|pptx?|json|xml)\b/i) && (() => {
+          const text = cleanedText || visibleText || '';
+          const fileMatches = [...text.matchAll(/\bhttps?:\/\/\S+\.(pdf|csv|xlsx?|docx?|pptx?|json|xml)\b/gi)];
+          if (fileMatches.length === 0) return null;
+          const fileIcons: Record<string, string> = { pdf: '📕', csv: '📊', xls: '📊', xlsx: '📊', doc: '📝', docx: '📝', pptx: '📽️', ppt: '📽️', json: '📋', xml: '📋' };
+          return (
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {fileMatches.slice(0, 4).map((match, i) => {
+                const ext = match[1].toLowerCase();
+                const filename = match[0].split('/').pop() || `file.${ext}`;
+                return (
+                  <a
+                    key={i}
+                    href={match[0]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="smart-action-chip"
+                  >
+                    <span>{fileIcons[ext] || '📎'}</span>
+                    <span className="truncate max-w-[120px]">{decodeURIComponent(filename)}</span>
+                  </a>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* Rich Link Preview Cards */}
+        {!isUser && message.status !== 'streaming' && (cleanedText || visibleText || '').match(/https?:\/\/[^\s)]+/) && (() => {
+          const text = cleanedText || visibleText || '';
+          const urlMatches = [...new Set(text.match(/https?:\/\/[^\s)]+/g) || [])];
+          const imageExts = /\.(png|jpg|jpeg|gif|svg|webp|ico)$/i;
+          const fileExts = /\.(pdf|csv|xlsx?|docx?|pptx?|json|xml)$/i;
+          const links = urlMatches.filter(u => !imageExts.test(u) && !fileExts.test(u)).slice(0, 3);
+          if (links.length === 0) return null;
+          return (
+            <div className="flex flex-col gap-1.5 mt-2">
+              {links.map((url, i) => {
+                let domain = '';
+                try { domain = new URL(url).hostname.replace('www.', ''); } catch { domain = url.slice(0, 30); }
+                return (
+                  <a
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors group/link"
+                  >
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
+                      alt=""
+                      className="w-4 h-4 rounded flex-shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-medium text-[var(--text-primary)] truncate group-hover/link:underline">{domain}</div>
+                      <div className="text-[9px] text-[var(--text-muted)] truncate">{url.slice(0, 80)}</div>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-[var(--text-muted)] flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                  </a>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* Response Latency */}
+        {!isUser && message.status !== 'streaming' && message._creationTime && (() => {
+          const msgs = (message as any)._siblingCreationTime;
+          if (!msgs) return null;
+          const latencyMs = message._creationTime - msgs;
+          if (latencyMs <= 0 || latencyMs > 120000) return null;
+          return (
+            <span className="text-[8px] text-[var(--text-muted)] tabular-nums mt-0.5" title={`Response latency: ${latencyMs}ms`}>
+              {latencyMs < 1000 ? `${latencyMs}ms` : `${(latencyMs / 1000).toFixed(1)}s`} latency
+            </span>
+          );
+        })()}
+
+        {/* Raw Markdown View */}
+        {showRawMarkdown && !isUser && (cleanedText || visibleText) && (
+          <pre className="text-[11px] font-mono bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3 mt-1 overflow-x-auto max-h-[300px] overflow-y-auto text-[var(--text-secondary)] whitespace-pre-wrap">
+            {cleanedText || visibleText}
+          </pre>
+        )}
+
+        {/* Emoji reaction badge */}
+        {emojiReaction && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <button
+              type="button"
+              onClick={() => setEmojiReaction(null)}
+              className="text-sm px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              title="Remove reaction"
+            >
+              {emojiReaction}
+            </button>
+          </div>
+        )}
 
         {/* "Sources cited" dropdown (derived from inline citation tokens) */}
         {!isUser && citedCitationLibrary && message.status !== 'streaming' && (
@@ -2165,20 +2969,53 @@ export function FastAgentUIMessageBubble({
         {/* Status indicator and actions */}
         <div className="flex items-center gap-2 mt-1">
           {message.status === 'streaming' && (
-            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Streaming...
+              <span>Streaming...</span>
+              {streamTokPerSec > 0 && (
+                <span className="tabular-nums text-[10px] text-[var(--text-muted)]">
+                  {streamTokPerSec} tok/s
+                </span>
+              )}
+              {streamStartRef.current && (
+                <span className="tabular-nums text-[10px] text-[var(--text-muted)]">
+                  {((Date.now() - streamStartRef.current) / 1000).toFixed(1)}s
+                </span>
+              )}
             </div>
           )}
 
           {/* Action buttons for completed messages */}
           {message.status !== 'streaming' && visibleText && (
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Timestamp + token estimate on hover */}
+              {message._creationTime && (
+                <span className="text-[10px] text-[var(--text-muted)] tabular-nums mr-1">
+                  {new Date(message._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+              {visibleText && (
+                <span className="text-[10px] text-[var(--text-muted)] tabular-nums mr-1" title={`${visibleText.split(/\s+/).length} words, ${visibleText.length} chars, ~${Math.ceil(visibleText.length / 4)} tokens`}>
+                  ~{Math.ceil(visibleText.length / 4)} tok &middot; {visibleText.split(/\s+/).length}w
+                </span>
+              )}
+              {/* Edit button for user messages */}
+              {isUser && onEditMessage && (
+                <button
+                  type="button"
+                  onClick={handleStartEdit}
+                  className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1"
+                  title="Edit message"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
+
               {/* Copy button */}
               <button
                 type="button"
                 onClick={() => { void handleCopy(); }}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1 transition-colors"
+                className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1"
                 title="Copy response"
               >
                 {copied ? (
@@ -2188,17 +3025,129 @@ export function FastAgentUIMessageBubble({
                 )}
               </button>
 
+              {/* Read-aloud button for assistant messages */}
+              {!isUser && (
+                <button
+                  type="button"
+                  onClick={handleReadAloud}
+                  className={cn(
+                    "action-btn text-xs flex items-center gap-1",
+                    isSpeaking
+                      ? "text-blue-500 dark:text-blue-400"
+                      : "text-[var(--text-muted)] hover:text-blue-500 dark:hover:text-blue-400"
+                  )}
+                  title={isSpeaking ? "Stop reading" : "Read aloud"}
+                >
+                  {isSpeaking ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                </button>
+              )}
+
+              {/* Bookmark button */}
+              {onToggleBookmark && (
+                <button
+                  type="button"
+                  onClick={onToggleBookmark}
+                  className={cn(
+                    "action-btn text-xs flex items-center gap-1",
+                    isBookmarked
+                      ? "text-amber-500 dark:text-amber-400"
+                      : "text-[var(--text-muted)] hover:text-amber-500 dark:hover:text-amber-400"
+                  )}
+                  title={isBookmarked ? "Remove bookmark" : "Bookmark message"}
+                >
+                  <Bookmark className={cn("h-3 w-3", isBookmarked && "fill-current")} />
+                </button>
+              )}
+
+              {/* Pin button */}
+              {onTogglePin && (
+                <button
+                  type="button"
+                  onClick={onTogglePin}
+                  className={cn(
+                    "action-btn text-xs flex items-center gap-1",
+                    isMessagePinned
+                      ? "text-purple-500 dark:text-purple-400"
+                      : "text-[var(--text-muted)] hover:text-purple-500 dark:hover:text-purple-400"
+                  )}
+                  title={isMessagePinned ? "Unpin message" : "Pin message"}
+                >
+                  <Pin className={cn("h-3 w-3", isMessagePinned && "fill-current")} />
+                </button>
+              )}
+
+              {/* Emoji reaction picker */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(prev => !prev)}
+                  className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1"
+                  title="React with emoji"
+                >
+                  <span className="text-sm">😀</span>
+                </button>
+                {showEmojiPicker && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
+                    <div className="absolute bottom-6 left-0 z-50 flex gap-1 p-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl">
+                      {QUICK_EMOJIS.map(e => (
+                        <button
+                          key={e}
+                          type="button"
+                          onClick={() => { setEmojiReaction(e); setShowEmojiPicker(false); }}
+                          className="text-base hover:scale-125 transition-transform p-0.5"
+                        >
+                          {e}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* Regenerate button for assistant messages */}
               {!isUser && onRegenerateMessage && (
                 <button
                   type="button"
                   onClick={handleRegenerate}
                   disabled={isRegenerating}
-                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:text-[var(--text-muted)] flex items-center gap-1 transition-colors"
+                  className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:text-[var(--text-muted)] flex items-center gap-1"
                   title="Regenerate response"
                 >
                   <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
                 </button>
+              )}
+
+              {/* Feedback buttons */}
+              {!isUser && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setFeedback(f => f === 'up' ? null : 'up')}
+                    className={cn(
+                      "action-btn p-0.5 rounded",
+                      feedback === 'up'
+                        ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
+                        : "text-[var(--text-muted)] hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                    )}
+                    title="Good response"
+                  >
+                    <ThumbsUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedback(f => f === 'down' ? null : 'down')}
+                    className={cn(
+                      "action-btn p-0.5 rounded",
+                      feedback === 'down'
+                        ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
+                        : "text-[var(--text-muted)] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    )}
+                    title="Poor response"
+                  >
+                    <ThumbsDown className="h-3 w-3" />
+                  </button>
+                </>
               )}
 
               {/* Delete button */}
@@ -2239,8 +3188,8 @@ export function FastAgentUIMessageBubble({
       {/* User Avatar - Show on RIGHT side for user messages */}
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm ring-1 ring-white/50">
-            <User className="h-4 w-4 text-white" />
+          <div className="w-7 h-7 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] flex items-center justify-center">
+            <User className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
           </div>
         </div>
       )}

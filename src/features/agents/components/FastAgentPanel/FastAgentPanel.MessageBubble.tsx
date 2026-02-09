@@ -1,14 +1,15 @@
 // src/components/FastAgentPanel/FastAgentPanel.MessageBubble.tsx
 // Message bubble component with markdown rendering and metadata
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
-import { User, Bot, Zap, Clock, Loader2 } from 'lucide-react';
+import { User, Bot, Zap, Clock, Loader2, Copy, Check, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useSmoothText } from '@convex-dev/agent/react';
 import { LiveThinking } from './FastAgentPanel.LiveThinking';
 import { MemoryPreview } from './FastAgentPanel.Memory';
 import { StreamingMessage } from './FastAgentPanel.StreamingMessage';
+import { cn } from '@/lib/utils';
 import type { Message, ThinkingStep, ToolCall, Source } from './types';
 
 interface MessageBubbleProps {
@@ -17,6 +18,7 @@ interface MessageBubbleProps {
   liveThinking?: ThinkingStep[];
   liveToolCalls?: ToolCall[];
   liveSources?: Source[];
+  onRetry?: (message: Message) => void;
 }
 
 /**
@@ -28,8 +30,11 @@ export const MessageBubble = React.memo(function MessageBubble({
   liveThinking = [],
   liveToolCalls = [],
   liveSources = [],
+  onRetry,
 }: MessageBubbleProps) {
   const [showMetadata, setShowMetadata] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<'up' | 'down' | null>(null);
 
   const isUser = message.role === 'user';
   const isAssistant = message.role === 'assistant';
@@ -61,29 +66,46 @@ export const MessageBubble = React.memo(function MessageBubble({
   // Use smooth text for streaming, otherwise use the raw content
   const displayText = isStreaming && isAssistant ? smoothText : contentToRender;
 
+  const handleCopy = useCallback(() => {
+    const text = contentToRender || '';
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [contentToRender]);
+
+  const handleFeedback = useCallback((type: 'up' | 'down') => {
+    setFeedback((prev) => (prev === type ? null : type));
+  }, []);
+
   return (
-    <div className={`message-bubble-container ${isUser ? 'user' : 'assistant'}`}>
+    <div
+      className={cn(
+        "group flex gap-3 mb-5 animate-in fade-in slide-in-from-bottom-1 duration-200",
+        isUser && "flex-row-reverse"
+      )}
+    >
       {/* Avatar */}
-      <div className="message-avatar">
+      <div className="flex-shrink-0">
         {isUser ? (
-          <div className="avatar-icon user-avatar">
-            <User className="h-4 w-4" />
+          <div className="w-7 h-7 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] flex items-center justify-center">
+            <User className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
           </div>
         ) : (
-          <div className="avatar-icon assistant-avatar">
-            <Bot className="h-4 w-4" />
+          <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800/40 flex items-center justify-center">
+            <Bot className="h-3.5 w-3.5 text-green-700 dark:text-green-400" />
           </div>
         )}
       </div>
       
       {/* Message Content */}
-      <div className="message-content-wrapper">
+      <div className="flex-1 min-w-0">
         {/* Header with role and timestamp */}
-        <div className="message-header">
-          <span className="message-role">
-            {isUser ? 'You' : 'Assistant'}
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-sm font-semibold text-[var(--text-primary)]">
+            {isUser ? 'You' : 'Nodebench'}
           </span>
-          <span className="message-timestamp">
+          <span className="text-[11px] text-[var(--text-muted)]">
             {new Date(message.timestamp).toLocaleTimeString([], { 
               hour: '2-digit', 
               minute: '2-digit' 
@@ -92,7 +114,12 @@ export const MessageBubble = React.memo(function MessageBubble({
         </div>
         
         {/* Main content */}
-        <div className={`message-content ${isUser ? 'user-content' : 'assistant-content'}`}>
+        <div className={cn(
+          "text-[15px] leading-relaxed",
+          isUser
+            ? "px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
+            : "text-[var(--text-primary)]"
+        )}>
           {/* Use StreamingMessage for messages with streamId */}
           {isAssistant && message.streamId ? (
             <StreamingMessage message={message} />
@@ -120,37 +147,76 @@ export const MessageBubble = React.memo(function MessageBubble({
                 {displayText}
               </ReactMarkdown>
               {isStreaming && (
-                <span
-                  className="typing-cursor"
-                  style={{
-                    display: 'inline-block',
-                    width: '2px',
-                    height: '1em',
-                    backgroundColor: 'currentColor',
-                    marginLeft: '2px',
-                    animation: 'blink 1s infinite',
-                    verticalAlign: 'middle'
-                  }}
-                />
+                <span className="inline-block w-0.5 h-[1em] bg-current ml-0.5 align-middle animate-pulse" />
               )}
             </>
           ) : typeof message.content === 'object' ? (
-            <p className="text-red-500">
+            <p className="text-red-500 dark:text-red-400 text-sm">
               Error: Invalid message content (object received)
             </p>
           ) : message.content ? (
             <p>{String(message.content)}</p>
           ) : (
-            <p className="streaming-placeholder">
-              <Loader2 className="h-4 w-4 animate-spin" />
+            <p className="flex items-center gap-2 text-[var(--text-muted)] italic text-sm">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Thinking...
             </p>
           )}
         </div>
+
+        {/* Hover actions (Claude/ChatGPT pattern) */}
+        {isAssistant && !isStreaming && contentToRender && (
+          <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+              title="Copy message"
+            >
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-green-500" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
+            {onRetry && (
+              <button
+                onClick={() => onRetry(message)}
+                className="p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                title="Retry"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              onClick={() => handleFeedback('up')}
+              className={cn(
+                "p-1 rounded-md transition-colors",
+                feedback === 'up'
+                  ? "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+                  : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              )}
+              title="Good response"
+            >
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => handleFeedback('down')}
+              className={cn(
+                "p-1 rounded-md transition-colors",
+                feedback === 'down'
+                  ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                  : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              )}
+              title="Poor response"
+            >
+              <ThumbsDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         
         {/* Live thinking/tools/sources */}
         {isAssistant && (hasLiveData || isStreaming) && (
-          <div className="message-live-data">
+          <div className="mt-3">
             <LiveThinking
               thinkingSteps={liveThinking}
               toolCalls={liveToolCalls}
@@ -167,26 +233,26 @@ export const MessageBubble = React.memo(function MessageBubble({
         )}
 
         {/* Metadata footer */}
-        {isAssistant && (message.model || message.fastMode || message.elapsedMs) && (
-          <div className="message-footer">
+        {isAssistant && !isStreaming && (message.model || message.fastMode || message.elapsedMs) && (
+          <div className="mt-1.5">
             <button
               onClick={() => setShowMetadata(!showMetadata)}
-              className="metadata-toggle"
+              className="flex items-center gap-1.5 py-0.5 bg-transparent border-none cursor-pointer text-xs"
             >
               {message.fastMode && (
-                <span className="metadata-badge fast-mode">
-                  <Zap className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 text-[10px] font-medium">
+                  <Zap className="h-2.5 w-2.5" />
                   Fast
                 </span>
               )}
               {message.model && (
-                <span className="metadata-badge model">
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-[10px] font-medium">
                   {message.model}
                 </span>
               )}
               {message.elapsedMs && (
-                <span className="metadata-badge elapsed">
-                  <Clock className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-[10px] font-medium">
+                  <Clock className="h-2.5 w-2.5" />
                   {(message.elapsedMs / 1000).toFixed(1)}s
                 </span>
               )}
@@ -194,18 +260,18 @@ export const MessageBubble = React.memo(function MessageBubble({
             
             {/* Expanded metadata */}
             {showMetadata && message.tokensUsed && (
-              <div className="metadata-expanded">
-                <div className="metadata-row">
-                  <span className="metadata-label">Input tokens:</span>
-                  <span className="metadata-value">{message.tokensUsed.input.toLocaleString()}</span>
+              <div className="mt-1.5 px-2.5 py-2 bg-[var(--bg-tertiary)] rounded-md text-[11px] space-y-0.5">
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-muted)]">Input tokens:</span>
+                  <span className="text-[var(--text-primary)] font-medium tabular-nums">{message.tokensUsed.input.toLocaleString()}</span>
                 </div>
-                <div className="metadata-row">
-                  <span className="metadata-label">Output tokens:</span>
-                  <span className="metadata-value">{message.tokensUsed.output.toLocaleString()}</span>
+                <div className="flex justify-between">
+                  <span className="text-[var(--text-muted)]">Output tokens:</span>
+                  <span className="text-[var(--text-primary)] font-medium tabular-nums">{message.tokensUsed.output.toLocaleString()}</span>
                 </div>
-                <div className="metadata-row">
-                  <span className="metadata-label">Total:</span>
-                  <span className="metadata-value">
+                <div className="flex justify-between border-t border-[var(--border-color)] pt-1 mt-1">
+                  <span className="text-[var(--text-muted)]">Total:</span>
+                  <span className="text-[var(--text-primary)] font-medium tabular-nums">
                     {(message.tokensUsed.input + message.tokensUsed.output).toLocaleString()}
                   </span>
                 </div>
@@ -214,181 +280,6 @@ export const MessageBubble = React.memo(function MessageBubble({
           </div>
         )}
       </div>
-      
-      <style>{`
-        .message-bubble-container {
-          display: flex;
-          gap: 0.75rem;
-          margin-bottom: 1.5rem;
-          animation: fadeIn 0.2s ease-out;
-        }
-        
-        .message-bubble-container.user {
-          flex-direction: row-reverse;
-        }
-        
-        .message-avatar {
-          flex-shrink: 0;
-        }
-        
-        .avatar-icon {
-          width: 2rem;
-          height: 2rem;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        
-        .user-avatar {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-        
-        .assistant-avatar {
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-          color: white;
-        }
-        
-        .message-content-wrapper {
-          flex: 1;
-          min-width: 0;
-        }
-        
-        .message-header {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-bottom: 0.5rem;
-        }
-        
-        .message-role {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-        
-        .message-timestamp {
-          font-size: 0.75rem;
-          color: var(--text-secondary);
-        }
-        
-        .message-content {
-          padding: 0.75rem 1rem;
-          border-radius: 0.75rem;
-          font-size: 0.9375rem;
-          line-height: 1.6;
-        }
-        
-        .user-content {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-color);
-          color: var(--text-primary);
-        }
-        
-        .assistant-content {
-          background: transparent;
-          color: var(--text-primary);
-        }
-        
-        .streaming-placeholder {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: var(--text-secondary);
-          font-style: italic;
-        }
-        
-        .streaming-cursor {
-          display: inline-block;
-          margin-left: 2px;
-          animation: blink 1s infinite;
-          color: var(--text-primary);
-        }
-        
-        .message-live-data {
-          margin-top: 0.75rem;
-        }
-        
-        .message-footer {
-          margin-top: 0.5rem;
-        }
-        
-        .metadata-toggle {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.25rem 0;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          font-size: 0.75rem;
-        }
-        
-        .metadata-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.25rem;
-          padding: 0.125rem 0.5rem;
-          border-radius: 0.375rem;
-          font-size: 0.75rem;
-          font-weight: 500;
-        }
-        
-        .metadata-badge.fast-mode {
-          background: #fef3c7;
-          color: #92400e;
-        }
-        
-        .metadata-badge.model {
-          background: var(--bg-tertiary);
-          color: var(--text-secondary);
-        }
-        
-        .metadata-badge.elapsed {
-          background: var(--bg-tertiary);
-          color: var(--text-secondary);
-        }
-        
-        .metadata-expanded {
-          margin-top: 0.5rem;
-          padding: 0.5rem;
-          background: var(--bg-tertiary);
-          border-radius: 0.375rem;
-          font-size: 0.75rem;
-        }
-        
-        .metadata-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 0.25rem 0;
-        }
-        
-        .metadata-label {
-          color: var(--text-secondary);
-        }
-        
-        .metadata-value {
-          color: var(--text-primary);
-          font-weight: 500;
-        }
-        
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        @keyframes blink {
-          0%, 50% { opacity: 1; }
-          51%, 100% { opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 });

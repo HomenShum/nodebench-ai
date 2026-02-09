@@ -1,0 +1,264 @@
+{
+  "dataset": "gorilla-llm/Berkeley-Function-Calling-Leaderboard",
+  "split": "BFCL_v3_multi_turn_long_context",
+  "sourceUrl": "https://huggingface.co/datasets/gorilla-llm/Berkeley-Function-Calling-Leaderboard/resolve/main/BFCL_v3_multi_turn_long_context.json",
+  "generatedAt": "2026-02-05T22:38:30.649Z",
+  "selection": {
+    "requestedLimit": 12,
+    "minTurns": 4,
+    "minExpectedPathLength": 5,
+    "totalRecords": 200,
+    "candidateRecords": 111
+  },
+  "tasks": [
+    {
+      "id": "multi_turn_long_context_109",
+      "title": "BFCL multi_turn_long_context_109",
+      "prompt": "Turn 1: I heard that the technology sector is booming these days. Get me a list of potential tech stocks I could invest in.\nTurn 2: From the tech stocks available, let's dive into one that catches my eye. Grab the latest market data for this stock 'MSFT'. I'm thinking about acquiring it.\nTurn 3: The data looks promising! Go ahead and execute a buy order for 100 shares of this stock at the current market price.\nTurn 4: Can you fetch the details for the order I just placed? I want to ensure everything is accurate.\nTurn 5: Actually, I've changed my mind about this transaction. Could you cancel the recent order for me?\nTurn 6: Since we're sorting out my investments, please give me an overview of my account, especially the available balance and linked card details.\nTurn 7: Could you also compose and send out a tweet 'Just made a move in the tech sector! I initiated and then canceled a 100-share buy order for $MSFT. Always staying sharp with my investment decisions!' sharing my latest investment move to my followers?",
+      "turnCount": 7,
+      "expectedPath": [
+        "TradingBot.get_available_stocks",
+        "TradingBot.get_stock_info",
+        "TradingBot.place_order",
+        "TradingBot.get_order_details",
+        "TradingBot.cancel_order",
+        "TradingBot.get_account_info",
+        "TwitterAPI.post_tweet"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TwitterAPI",
+        "TradingBot"
+      ],
+      "complexityScore": 77
+    },
+    {
+      "id": "multi_turn_long_context_131",
+      "title": "BFCL multi_turn_long_context_131",
+      "prompt": "Turn 1: Could you provide the current time? I need to assess market conditions before proceeding with trades.\nTurn 2: I'm exploring technology sector investments. Could you offer a list of stock symbols to consider?\nTurn 3: I'm keen on analyzing the third stock in the list details, assessing its trading potential.\nTurn 4: Please execute an order for MSFT at current market price, targeting 150 shares in today's strategy.\nTurn 5: May I have the details of the most recent order I've placed to verify the transaction?\nTurn 6: Forward my latest trading summary 'I just executed another order. What do you think of it?' I am Jane. Please send to my financial advisor with id Alice to keep them informed of market activities.\nTurn 7: I've sent incorrect information to my advisor. Please delete the last message to Alice to address this promptly.",
+      "turnCount": 7,
+      "expectedPath": [
+        "TradingBot.get_current_time",
+        "TradingBot.get_available_stocks",
+        "TradingBot.get_stock_info",
+        "TradingBot.place_order",
+        "TradingBot.get_order_details",
+        "MessageAPI.send_message",
+        "MessageAPI.delete_message"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "MessageAPI",
+        "TradingBot"
+      ],
+      "complexityScore": 77
+    },
+    {
+      "id": "multi_turn_long_context_102",
+      "title": "BFCL multi_turn_long_context_102",
+      "prompt": "Turn 1: I'd appreciate a breakdown on the current stock market trends so I can determine the suitability of executing a trade right now. Could you provide the latest market status for me?\nTurn 2: Having assessed the market status, I've resolved to initiate a purchase of 100 shares of Tesla at $700 per share. Kindly proceed with executing this transaction on my behalf.\nTurn 3: Post-execution, it's imperative for me to review the details of the most recent order. Could you furnish me with the specifics of this transaction?\nTurn 4: Upon further contemplation, I've opted to retract the recent order in anticipation of a potential price drop. Would you be able to facilitate this cancellation for me?\nTurn 5: With the order situation now stable, I require a concise overview of my account details to ensure there are no discrepancies.\nTurn 6: An unanticipated error has emerged while accessing my account information. Could you file a support ticket titled 'Account Information Error', with a description of the problem for subsequent investigation 'User-reported issue where updated account information, such as email and phone number, is not displaying correctly and is not syncing across services despite attempts to log out and back in.'?",
+      "turnCount": 6,
+      "expectedPath": [
+        "TradingBot.get_current_time",
+        "TradingBot.update_market_status",
+        "TradingBot.place_order",
+        "TradingBot.get_order_details",
+        "TradingBot.cancel_order",
+        "TradingBot.get_account_info",
+        "TicketAPI.create_ticket"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TradingBot",
+        "TicketAPI"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_110",
+      "title": "BFCL multi_turn_long_context_110",
+      "prompt": "Turn 1: I'm currently exploring the StockView platform and wish to take a peek at the assortment in my stock watchlist. I'd appreciate it if you could display the stocks I'm monitoring right now.\nTurn 2: I observed that among the stocks listed, AAPL is showing promising movement. I'm contemplating acquiring 100 shares at the prevailing market rate. Accompanying this thought, I'd kindly request you to proceed with placing the buy order for me.\nTurn 3: In light of the order placement, I'd be grateful if you could furnish me with the specifics of the trade I just entered, ensuring everything aligns perfectly as intended.\nTurn 4: Reflecting my revised financial direction, I've decided to retract the recent order. I'd be thankful for your assistance in carrying out the cancellation and confirming it.\nTurn 5: Engaging in these market maneuvers, I'm eager to maintain a comprehensive grasp on my financial wellbeing. A summary of my present account balance along with pertinent data would be highly beneficial.\nTurn 6: Regrettably, I've stumbled upon a complication related to one of my recent transactions. I'd appreciate your help in initiating a priority level 3 support ticket labeled 'Urgent: Transaction Issue' with the description 'There is an issue with a recent transaction involving a canceled buy order for 100 shares of AAPL and I am requesting confirmation of the cancellation along with an account summary. My username is user123 and password is 12345 for the ticket login.",
+      "turnCount": 6,
+      "expectedPath": [
+        "TradingBot.get_watchlist",
+        "TradingBot.get_stock_info",
+        "TradingBot.place_order",
+        "TradingBot.get_order_details",
+        "TradingBot.cancel_order",
+        "TradingBot.get_account_info",
+        "TicketAPI.create_ticket"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TradingBot",
+        "TicketAPI"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_116",
+      "title": "BFCL multi_turn_long_context_116",
+      "prompt": "Turn 1: Could you peruse my stock watchlist and share what's on my radar right now, please?\nTurn 2: I'm inclined to shake things up a bit. Let's take Zeta Corp out of the equation from my watchlist, shall we?\nTurn 3: I have a keen interest in Omega Industries at the moment. Let's delve into the latest stock details to see what they hold.\nTurn 4: Word is, the Technology sector is buzzing. Catalogue the stocks in this field for me, as I'm scouting for new investment potential.\nTurn 5: I feel it's time to inject some capital into my portfolio—let's allocate an extra $10,000 to my trading funds.\nTurn 6: With the account bolstered, execute a purchase for 'AAPL'-a fair target seems $150 per share, and I'm thinking 50 shares will do the trick.",
+      "turnCount": 6,
+      "expectedPath": [
+        "TradingBot.get_symbol_by_name",
+        "TradingBot.remove_stock_from_watchlist",
+        "TradingBot.get_watchlist",
+        "TradingBot.get_stock_info",
+        "TradingBot.get_available_stocks",
+        "TradingBot.place_order",
+        "TradingBot.fund_account"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TradingBot"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_117",
+      "title": "BFCL multi_turn_long_context_117",
+      "prompt": "Turn 1: I'd like some assistance today with my investment portfolio. If Zeta Corp is part of my watchlist, please remove it for me. The market trends for their extractions are concerning me recently.\nTurn 2: With my watchlist refreshed, please retrieve the current stocks still listed. I need a clear view of what remains on my radar.\nTurn 3: I'm intrigued by the recent advancements in technology and wish to explore investment opportunities there. Could you provide a list of available technology stock symbols?\nTurn 4: I've been observing Microsoft's stock performance and I find it quite compelling. Could you give me a detailed update on its current status and trends?\nTurn 5: I'm ready to act on my analysis. Please purchase 50 shares of Microsoft at $320 each, given today's indicators.\nTurn 6: Finally, before the end of the trading day, I intend to deposit 10 times the prices of OMEG rounded to nearest thousands into my trading account to secure liquidity for forthcoming ventures.",
+      "turnCount": 6,
+      "expectedPath": [
+        "TradingBot.get_symbol_by_name",
+        "TradingBot.remove_stock_from_watchlist",
+        "TradingBot.get_watchlist",
+        "TradingBot.get_stock_info",
+        "TradingBot.get_available_stocks",
+        "TradingBot.place_order",
+        "TradingBot.fund_account"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TradingBot"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_130",
+      "title": "BFCL multi_turn_long_context_130",
+      "prompt": "Turn 1: Let's envision you suddenly grasp that gauging the stock market's current state is pivotal before making any trading moves. Enlighten me, is the market open or closed given the time right now?\nTurn 2: Having established the market scenario, imagine you're poised to place an order to acquire 150 shares of 'NEPT' at 25.50 USD per share. Would you initiate this order for me?\nTurn 3: Once you've positioned this order, curiosity strikes about its intricate details. Would you mind fetching those details for me now?\nTurn 4: After a detailed inspection of the order, a change of heart leads you to rescind the transaction. Would you revoke the placed order?\nTurn 5: Post cancellation, you're driven to survey your financial standing. Would you compile and relay a summary of your current account particulars?\nTurn 6: Armed with the account overview, you've resolved to infuse 5000 USD into your trading account for potential ventures ahead. Could you arrange for this deposit to be processed efficiently?",
+      "turnCount": 6,
+      "expectedPath": [
+        "TradingBot.get_current_time",
+        "TradingBot.update_market_status",
+        "TradingBot.place_order",
+        "TradingBot.get_order_details",
+        "TradingBot.cancel_order",
+        "TradingBot.get_account_info",
+        "TradingBot.fund_account"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TradingBot"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_162",
+      "title": "BFCL multi_turn_long_context_162",
+      "prompt": "Turn 1: I'd love a comprehensive list of all available departure airports to commence my travel planning, please share what's accessible.\nTurn 2: As I map out my journey, I require the specific details of the nearest airport from charming Rivermist for my departure.\nTurn 3: Great! To proceed, I'd like to ascertain the estimated airfare from tranquil Rivermist to the dynamic New York City, considering an economy ticket for this Sunday 09/10, 2024.\nTurn 4: Subsequent to determining the air ticket cost, I need to convert the expense into RMS and establish it as my fiscal threshold. Could you assist with that exchange rate adjustment and budget setting using access token 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' to 2940?\nTurn 5: I'm ready to proceed with booking the flight. Kindly utilize my access credentials to finalize the reservation, charging it to the credit card registered with id 'card6749', using my traveler particulars.\nTurn 6: A minor matter needs addressing: my departure date had an open query. Could you close ticket number 458219 for me?",
+      "turnCount": 6,
+      "expectedPath": [
+        "TravelAPI.list_all_airports",
+        "TravelAPI.get_nearest_airport_by_city",
+        "TravelAPI.get_flight_cost",
+        "TravelAPI.compute_exchange_rate",
+        "TravelAPI.set_budget_limit",
+        "TravelAPI.book_flight",
+        "TicketAPI.close_ticket"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TicketAPI",
+        "TravelAPI"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_170",
+      "title": "BFCL multi_turn_long_context_170",
+      "prompt": "Turn 1: I'm planning to jet off and stumbled upon a nifty flight from San Francisco to Los Angeles. Since my budget isn't too tight, why don't you go ahead and snag that booking for me? You should know my travel class is 'first' and travel date is '2024-11-15'. Oh, and I've got my card with id 'card123' and account token 'access_token_abc123' all good to go.\nTurn 2: With my flight all set, can you whip up those invoice details for me? I need a nice little record of when I'm traveling, where I'm headed, and how much it's setting me back.\nTurn 3: If things go south with my itinerary, could you be a champ and get me in touch with customer support? Just mention my confirmed booking when you connect us.\nTurn 4: Thinking I might need to call off this trip. Could you chat with support to cancel my reservation and make sure my account gets the refund? Thanks a bunch!\nTurn 5: I've picked up some nifty travel insights from my adventures, and I've got the itch to share them. Could you pen a tweet on my behalf using username 'michael_smith' and password 'michael1234' if I toss you the points? The tweet should say 'Exploring the world, one city at a time!'. Maybe sprinkle in trendy hashtags 'Travel' and 'Adventure'.\nTurn 6: Wow, the tweet with the travel tips got a hit! Can you give it a boost by retweeting it for me? Let's get it out to even more folks.",
+      "turnCount": 6,
+      "expectedPath": [
+        "TravelAPI.get_flight_cost",
+        "TravelAPI.book_flight",
+        "TravelAPI.retrieve_invoice",
+        "TravelAPI.contact_customer_support",
+        "TravelAPI.cancel_booking",
+        "TwitterAPI.post_tweet",
+        "TwitterAPI.retweet"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TwitterAPI",
+        "TravelAPI"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_180",
+      "title": "BFCL multi_turn_long_context_180",
+      "prompt": "Turn 1: I need to cap my travel expenses at 20,000 RMB. Sort out everything to make sure this limit is correctly set up. Around it to have tenth and hundredth digit. Like 12.34 as the input. My access token is abc123xyz if you need.\nTurn 2: With my budget arranged, I want to book a business class ticket going from LAX to JFK on October 12th 2024. Charge it to my main credit card and ensure it stays within my budget plans.\nTurn 3: I've had a change of heart regarding my travel itinerary. Go ahead and cancel my previous booking and process any refunds due.\nTurn 4: I'm looking to get my hands on the invoice for the flights I've arranged recently. Kindly send me the full details.\nTurn 5: There's been some confusion with the invoice. Please liaise with customer support for me, explaining the issue and escalate if needed.\nTurn 6: Initiate a new support ticket titled 'Invoice Discrepancy' outlining the problem I encountered with invoicing and prioritize it at level 3. My username is mzhang and password is SecurePass123",
+      "turnCount": 6,
+      "expectedPath": [
+        "TravelAPI.compute_exchange_rate",
+        "TravelAPI.set_budget_limit",
+        "TravelAPI.book_flight",
+        "TravelAPI.cancel_booking",
+        "TravelAPI.retrieve_invoice",
+        "TravelAPI.contact_customer_support",
+        "TicketAPI.create_ticket"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TicketAPI",
+        "TravelAPI"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_183",
+      "title": "BFCL multi_turn_long_context_183",
+      "prompt": "Turn 1: Please confirm the details for traveler Matt Bradley. His birth date is April 23, 1995, and his passport starts with 'US', numbered 9148817941. We need to make sure everything checks out before proceeding with the booking.\nTurn 2: Wonderful! Next step is identifying the closest airport to Rivermist so I can arrange flights to Los Angeles for the upcoming month at 2024, 11/15. Let's handle the booking using the travel details provided, utilizing my go-to credit card with id 'card_2023' and the accompanying access token 'abc123xyz456' to complete the processing.\nTurn 3: The booking's in place, and I'd love to review the invoice details. Can you fetch the invoice from the latest booking to ensure every cost is properly listed?\nTurn 4: I've got a few questions regarding the booking. Could you reach out on my behalf to customer support to saying 'Requesting clarification on booking details'?\nTurn 5: I'm thinking about adjusting my travel plans shortly. When you get a chance, please cancel my prior booking and ensure the charge is refunded to my card.\nTurn 6: To share the experience with my buddies, I'd like to craft a tweet about my recent travel escapades and tag the airline for extra visibility. Let's throw in some hashtags #TravelSuccess #RivermistJourney. Here's my information, username is 'john' and password 'john1234'. The message to send is 'Just booked a flight to LA!'",
+      "turnCount": 6,
+      "expectedPath": [
+        "TravelAPI.verify_traveler_information",
+        "TravelAPI.get_nearest_airport_by_city",
+        "TravelAPI.book_flight",
+        "TravelAPI.retrieve_invoice",
+        "TravelAPI.contact_customer_support",
+        "TravelAPI.cancel_booking",
+        "TwitterAPI.post_tweet"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "TwitterAPI",
+        "TravelAPI"
+      ],
+      "complexityScore": 67
+    },
+    {
+      "id": "multi_turn_long_context_184",
+      "title": "BFCL multi_turn_long_context_184",
+      "prompt": "Turn 1: I recently obtained a credit card and want to assess its suitability for my travel plans. Schedule a business class flight for me from JFK to LAX on December 15, 2024, using the credit card with id 'card_2108' and access token 'abc123xyz', under the name Lara Croft. Let's verify if the payment processes without issues.\nTurn 2: Having booked the flight, I need to confirm the payment details. Kindly fetch the invoice for the said flight.\nTurn 3: Regrettably, my circumstances have changed, and I must cancel that booking. Could you assist me with the cancellation?\nTurn 4: Subsequent to the cancellation, I have to inform my friend, Sam (id USR006), about the change in my plans. Please send him a concise message 'Hi Sam, my travel plans have changed. I'll update you soon'.'updating him.\nTurn 5: I almost overlooked it; could you display all the messages I sent? I suspect I might have send something significant.\nTurn 6: There's a recent message I sent to Sam that is now superfluous. Please proceed to delete that one.",
+      "turnCount": 6,
+      "expectedPath": [
+        "TravelAPI.register_credit_card",
+        "TravelAPI.book_flight",
+        "TravelAPI.cancel_booking",
+        "TravelAPI.retrieve_invoice",
+        "MessageAPI.send_message",
+        "MessageAPI.view_messages_received",
+        "MessageAPI.delete_message"
+      ],
+      "expectedPathLength": 7,
+      "involvedClasses": [
+        "MessageAPI",
+        "TravelAPI"
+      ],
+      "complexityScore": 67
+    }
+  ]
+}

@@ -48,7 +48,7 @@ export const verifyClaim = internalAction({
         confidence: verificationResult.confidence,
         supportingEvidence: verificationResult.evidence,
         contradictions: verificationResult.contradictions,
-        judgeModel: "devstral-2-free",
+        judgeModel: "qwen3-coder-free",
         judgeReasoning: verificationResult.reasoning,
       }
     );
@@ -187,7 +187,7 @@ async function verifyWithLLM(
     const { generateText } = await import("ai");
     const { getLanguageModelSafe } = await import("../agents/mcp_tools/models/modelResolver");
 
-    const model = await getLanguageModelSafe("devstral-2-free");
+    const model = await getLanguageModelSafe("qwen3-coder-free");
     if (!model) {
       return verifyWithHeuristics(claimText, entities);
     }

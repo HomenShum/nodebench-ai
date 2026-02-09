@@ -528,7 +528,7 @@ Provides:
 - Risk factors (4-5 key risks)
 - Sensitivity analysis (impact of assumption changes)
 
-Uses free-first model strategy (devstral-2-free → gemini-3-flash).`,
+Uses free-first model strategy (qwen3-coder-free → gemini-3-flash).`,
 
   args: z.object({
     modelId: z.string().describe("DCF model ID (must be completed)"),

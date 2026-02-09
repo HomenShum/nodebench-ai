@@ -157,6 +157,11 @@ const LinkedInPostArchiveView = lazy(() =>
     default: mod.LinkedInPostArchiveView,
   })),
 );
+const McpToolLedgerView = lazy(() =>
+  import("@/features/mcp/views/McpToolLedgerView").then((mod) => ({
+    default: mod.McpToolLedgerView,
+  })),
+);
 
 const viewFallback = <ViewSkeleton variant="default" />;
 
@@ -449,6 +454,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                                                         ? `Entity: ${entityName || 'Profile'}`
                                                         : currentView === 'linkedin-posts'
                                                           ? 'LinkedIn Posts'
+                                                          : currentView === 'mcp-ledger'
+                                                            ? 'MCP Ledger'
                                                           : selectedDocumentId
                                                             ? 'My Documents'
                                                             : 'My Workspace'}
@@ -496,7 +503,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setShowFastAgent((open) => !open)}
-                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${showFastAgent
+                className={`relative flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${showFastAgent
                   ? 'bg-stone-900 text-white shadow-sm'
                   : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                   }`}
@@ -505,6 +512,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               >
                 <Zap className="h-4 w-4" />
                 <span className="hidden sm:inline">Fast Agent</span>
+                {/* Notification badge - pulse when panel is closed and there may be updates */}
+                {!showFastAgent && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white animate-pulse" />
+                )}
               </button>
 
               {/* User Avatar */}
@@ -713,6 +724,12 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <div className="h-full overflow-auto bg-canvas-warm">
                   <Suspense fallback={viewFallback}>
                     <LinkedInPostArchiveView />
+                  </Suspense>
+                </div>
+              ) : currentView === 'mcp-ledger' ? (
+                <div className="h-full overflow-auto bg-canvas-warm">
+                  <Suspense fallback={viewFallback}>
+                    <McpToolLedgerView />
                   </Suspense>
                 </div>
               ) : currentView === 'entity' && entityName ? (

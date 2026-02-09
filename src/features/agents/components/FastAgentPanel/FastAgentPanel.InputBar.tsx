@@ -2,7 +2,7 @@
 // Enhanced input bar with auto-resize, context pills, drag-and-drop, and floating design
 
 import React, { useState, useRef, useEffect, useCallback, KeyboardEvent, DragEvent } from 'react';
-import { Send, Loader2, Paperclip, X, Mic, Video, Image as ImageIcon, FileText, ChevronUp, StopCircle, FolderOpen, Table2, Calendar, Zap, Gift } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, Mic, Video, Image as ImageIcon, FileText, ChevronUp, StopCircle, FolderOpen, Table2, Calendar, Zap, Gift, AlignLeft, AlignJustify, BookOpen } from 'lucide-react';
 import { MediaRecorderComponent } from './FastAgentPanel.MediaRecorder';
 import { FileDropOverlay } from '@/shared/components/FileDropOverlay';
 import { cn } from '@/lib/utils';
@@ -176,6 +176,9 @@ interface FastAgentInputBarProps {
   maxLength?: number;
   // Swarm support
   onSpawn?: (query: string, agents: string[]) => void; // Handler for /spawn commands
+  // Response length control
+  responseLength?: 'brief' | 'detailed' | 'exhaustive';
+  onResponseLengthChange?: (length: 'brief' | 'detailed' | 'exhaustive') => void;
 }
 
 /**
@@ -204,6 +207,8 @@ export function FastAgentInputBar({
   placeholder = 'Message...',
   maxLength = 10000,
   onSpawn,
+  responseLength = 'detailed',
+  onResponseLengthChange,
 }: FastAgentInputBarProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null);
@@ -213,6 +218,55 @@ export function FastAgentInputBar({
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showSlashCommands, setShowSlashCommands] = useState(false);
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
+
+  // Inline @mentions autocomplete
+  const [showMentions, setShowMentions] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const MENTION_OPTIONS = [
+    { label: '@web', description: 'Search the web', icon: '🌐' },
+    { label: '@docs', description: 'Search documents', icon: '📄' },
+    { label: '@code', description: 'Analyze code', icon: '💻' },
+    { label: '@data', description: 'Query data sources', icon: '📊' },
+    { label: '@deep', description: 'Deep research mode', icon: '🔬' },
+  ];
+
+  // Speech-to-text state
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const toggleSpeechToText = useCallback(() => {
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Speech recognition not supported in this browser');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    let finalTranscript = input;
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
+        }
+      }
+      setInput(finalTranscript + interim);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }, [isListening, input, setInput]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -688,8 +742,8 @@ export function FastAgentInputBar({
 
       {/* Main Input Card */}
       <div className={cn(
-        "bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-color)] shadow-lg transition-all duration-200",
-        "focus-within:shadow-xl focus-within:border-[var(--accent-primary)]/50 focus-within:ring-1 focus-within:ring-[var(--accent-primary)]/20",
+        "bg-[var(--bg-primary)] rounded-2xl border border-[var(--border-color)] shadow-sm transition-all duration-200",
+        "focus-within:shadow-md focus-within:border-[var(--text-muted)]/40 focus-within:ring-2 focus-within:ring-black/[0.03] dark:focus-within:ring-white/[0.04]",
         isDragOver && dragFeedback.border
       )}>
 
@@ -935,13 +989,18 @@ export function FastAgentInputBar({
             <Paperclip className="w-4.5 h-4.5" />
           </button>
 
-          {/* Audio/Video Recording */}
+          {/* Speech-to-Text / Audio Recording */}
           <button
             type="button"
-            onClick={() => startRecording("audio")}
+            onClick={toggleSpeechToText}
             disabled={isStreaming || isRecording}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
-            title="Record audio"
+            className={cn(
+              "p-2 rounded-xl transition-all duration-200",
+              isListening
+                ? "text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+            )}
+            title={isListening ? "Stop listening" : "Voice input (speech-to-text)"}
           >
             <Mic className="w-4.5 h-4.5" />
           </button>
@@ -969,12 +1028,112 @@ export function FastAgentInputBar({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={(e) => {
+              // Image paste handling
+              const items = e.clipboardData?.items;
+              if (items) {
+                const imageFiles: File[] = [];
+                for (const item of Array.from(items)) {
+                  if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    if (file) imageFiles.push(file);
+                  }
+                }
+                if (imageFiles.length > 0) {
+                  e.preventDefault();
+                  onAttachFiles([...attachedFiles, ...imageFiles]);
+                  toast.success(`Pasted ${imageFiles.length} image${imageFiles.length > 1 ? 's' : ''}`);
+                  return;
+                }
+              }
+              // Smart URL paste: detect URLs and show toast notification
+              const pastedText = e.clipboardData?.getData('text') || '';
+              const urlMatch = pastedText.match(/^https?:\/\/[^\s]+$/);
+              if (urlMatch) {
+                try {
+                  const url = new URL(pastedText.trim());
+                  const domain = url.hostname.replace('www.', '');
+                  toast.info(`URL detected: ${domain}`, { duration: 2000 });
+                } catch { /* not a valid URL */ }
+              }
+            }}
             placeholder={placeholder}
             disabled={isStreaming}
             maxLength={maxLength}
             className="flex-1 max-h-[200px] py-2 bg-transparent border-none focus:ring-0 p-0 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none leading-relaxed"
             rows={1}
+            onChange={(e) => {
+              // Detect @mentions
+              const val = e.target.value;
+              const cursorPos = e.target.selectionStart || 0;
+              const textBefore = val.slice(0, cursorPos);
+              const atMatch = textBefore.match(/@(\w*)$/);
+              if (atMatch) {
+                setShowMentions(true);
+                setMentionQuery(atMatch[1]);
+              } else {
+                setShowMentions(false);
+              }
+            }}
           />
+
+          {/* @Mentions Autocomplete Popup */}
+          {showMentions && (
+            <div className="absolute bottom-full left-0 right-0 mb-1 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl overflow-hidden">
+              {MENTION_OPTIONS
+                .filter(m => !mentionQuery || m.label.toLowerCase().includes(mentionQuery.toLowerCase()))
+                .map((mention, i) => (
+                  <button
+                    key={mention.label}
+                    type="button"
+                    onClick={() => {
+                      const cursorPos = textareaRef.current?.selectionStart || input.length;
+                      const textBefore = input.slice(0, cursorPos);
+                      const textAfter = input.slice(cursorPos);
+                      const atIdx = textBefore.lastIndexOf('@');
+                      const newText = textBefore.slice(0, atIdx) + mention.label + ' ' + textAfter;
+                      setInput(newText);
+                      setShowMentions(false);
+                      textareaRef.current?.focus();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-secondary)] text-left transition-colors"
+                  >
+                    <span className="text-sm">{mention.icon}</span>
+                    <span className="font-medium text-[var(--text-primary)]">{mention.label}</span>
+                    <span className="text-[var(--text-muted)] ml-auto">{mention.description}</span>
+                  </button>
+                ))}
+            </div>
+          )}
+
+          {/* Typing Speed Indicator */}
+          {input.length > 10 && (() => {
+            const words = input.split(/\s+/).filter(Boolean).length;
+            return (
+              <span className="text-[9px] tabular-nums text-[var(--text-muted)] whitespace-nowrap px-1">
+                {words}w
+              </span>
+            );
+          })()}
+
+          {/* Response Length Toggle */}
+          {onResponseLengthChange && (
+            <button
+              type="button"
+              onClick={() => {
+                const cycle = { brief: 'detailed', detailed: 'exhaustive', exhaustive: 'brief' } as const;
+                onResponseLengthChange(cycle[responseLength]);
+              }}
+              className={cn(
+                "p-1.5 rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]",
+                responseLength === 'brief' && "text-amber-500",
+                responseLength === 'exhaustive' && "text-blue-500"
+              )}
+              title={`Response length: ${responseLength}`}
+            >
+              {responseLength === 'brief' ? <AlignLeft className="w-4 h-4" /> : responseLength === 'exhaustive' ? <BookOpen className="w-4 h-4" /> : <AlignJustify className="w-4 h-4" />}
+            </button>
+          )}
 
           {/* Enhance Button (Ctrl+P) */}
           {enableEnhancement && (
@@ -986,23 +1145,31 @@ export function FastAgentInputBar({
             />
           )}
 
+          {/* Input Token Budget Preview */}
+          {input.length > 20 && !isStreaming && (
+            <span className="text-[8px] tabular-nums text-[var(--text-muted)] whitespace-nowrap" title={`Your message: ~${Math.ceil(input.length / 4)} tokens`}>
+              ~{Math.ceil(input.length / 4)}t
+            </span>
+          )}
+
           {/* Send/Stop Button */}
           {isStreaming ? (
             <button
               onClick={onStop}
-              className="p-2.5 bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-800 rounded-xl transition-all duration-200"
+              className="press-scale group relative p-2.5 bg-red-500 text-white hover:bg-red-600 rounded-xl shadow-md shadow-red-500/20 transition-all duration-200"
               title="Stop generating"
             >
-              <StopCircle className="w-5 h-5" />
+              <div className="absolute inset-0 rounded-xl bg-red-400 animate-ping opacity-20" />
+              <StopCircle className="w-5 h-5 relative z-10" />
             </button>
           ) : (
             <button
               onClick={handleSend}
               disabled={!canSend}
               className={cn(
-                "p-2.5 rounded-xl transition-all duration-200",
+                "press-scale p-2.5 rounded-xl",
                 canSend
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md hover:shadow-lg shadow-emerald-600/20"
+                  ? "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-80 shadow-sm"
                   : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
               )}
               title="Send message"

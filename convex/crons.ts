@@ -315,7 +315,16 @@ crons.daily(
   "post daily digest to LinkedIn",
   { hourUTC: 6, minuteUTC: 15 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
-  { persona: "GENERAL", model: "devstral-2-free" }
+  { persona: "GENERAL" }
+);
+
+// Generate daily AI Agent Project Idea post at 7:15 AM UTC
+// Reads digest, picks most buildable signal, recommends nodebench-mcp tools
+crons.daily(
+  "generate agent project idea post",
+  { hourUTC: 7, minuteUTC: 15 },
+  internal.workflows.agentProjectIdeaPost.generateAgentProjectIdeaPost,
+  {}
 );
 
 // Post daily funding tracker to LinkedIn at 12:00 PM UTC (separate from main digest)
@@ -333,7 +342,7 @@ crons.daily(
   "post VC deal flow memo to LinkedIn",
   { hourUTC: 9, minuteUTC: 0 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
-  { persona: "VC_INVESTOR", model: "devstral-2-free" }
+  { persona: "VC_INVESTOR" }
 );
 
 // Post Tech Radar to LinkedIn at 3:00 PM UTC
@@ -342,7 +351,7 @@ crons.daily(
   "post tech radar to LinkedIn",
   { hourUTC: 15, minuteUTC: 0 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
-  { persona: "TECH_BUILDER", model: "devstral-2-free" }
+  { persona: "TECH_BUILDER" }
 );
 
 // Post Startup Funding Brief to LinkedIn at 10:00 AM UTC
@@ -398,7 +407,7 @@ crons.weekly(
 // LINKEDIN CONTENT QUEUE - Judge, schedule, and post from backlog
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Judge pending queue items every 30 minutes (uses FREE models: devstral-2-free)
+// Judge pending queue items every 30 minutes (uses FREE models: qwen3-coder-free)
 crons.interval(
   "judge pending LinkedIn queue",
   { minutes: 30 },
@@ -414,12 +423,32 @@ crons.interval(
   { target: "organization" }
 );
 
-// Post scheduled items when they're due (hourly)
+// Post scheduled items when they're due (hourly) — handles both org and personal targets
 crons.interval(
   "process LinkedIn queue",
   { hours: 1 },
   internal.domains.social.linkedinPosting.processQueuedPost,
   {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FOUNDER PERSONAL POSTS - Auto-generated in founder voice (3/week)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Generate all 3 personal posts for the week (Sun 10PM UTC = prep for week ahead)
+crons.weekly(
+  "generate founder personal posts",
+  { dayOfWeek: "sunday", hourUTC: 22, minuteUTC: 0 },
+  internal.workflows.founderPostGenerator.weeklyFounderBatch,
+  {}
+);
+
+// Schedule approved personal posts into Mon/Wed/Fri evening slots (every 2 hours)
+crons.interval(
+  "schedule approved personal LinkedIn posts",
+  { hours: 2 },
+  internal.domains.social.linkedinScheduleGrid.scheduleNextApprovedPost,
+  { target: "personal" }
 );
 
 // Advance Daily Brief domain memory tasks every 15 minutes
@@ -598,6 +627,18 @@ crons.weekly(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
+// LINKEDIN TOKEN REFRESH - Auto-refresh before expiry
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Check LinkedIn token health daily at 00:00 UTC; refresh proactively 7 days before expiry
+crons.daily(
+  "check and refresh LinkedIn token",
+  { hourUTC: 0, minuteUTC: 0 },
+  internal.domains.social.linkedinOAuth.checkAndRefreshToken,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
 // FREE MODEL DISCOVERY & EVALUATION - Zero-cost autonomous operations
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -647,6 +688,27 @@ crons.weekly(
   "cleanup autonomous model usage",
   { dayOfWeek: "sunday", hourUTC: 5, minuteUTC: 15 },
   internal.domains.models.autonomousModelResolver.cleanupOldUsageRecords,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENT OS - Sweep undispatched proactive events to agents
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Sweep undispatched events every 30 minutes and route them to available agents
+crons.interval(
+  "sweep undispatched events to agents",
+  { minutes: 30 },
+  internal.domains.proactive.agentDispatch.sweepAndDispatch,
+  {}
+);
+
+// Perpetual agent loop: tick all active agents every 15 minutes
+// Checks eligibility (budget, rate limit, concurrency), pulls dispatched events, executes work
+crons.interval(
+  "perpetual agent loop tick",
+  { minutes: 15 },
+  internal.domains.agents.agentLoop.tickAgentLoop,
   {}
 );
 

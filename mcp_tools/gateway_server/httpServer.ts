@@ -22,6 +22,8 @@ import { memoryTools } from "./tools/memoryTools.js";
 import { searchTools } from "./tools/searchTools.js";
 import { financialTools } from "./tools/financialTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
+import { callGateway } from "./convexClient.js";
+import { getRequestContext, runWithRequestContext } from "./requestContext.js";
 
 const domainTools = [
   ...researchTools,
@@ -36,6 +38,7 @@ const domainTools = [
 ];
 
 const allTools = [...domainTools, ...createMetaTools(domainTools)];
+const directToolNames = new Set(financialTools.map((t) => t.name));
 
 const HOST = process.env.MCP_HTTP_HOST || "0.0.0.0";
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4002;
@@ -176,8 +179,99 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
+        const suppliedToken = getSuppliedToken(req);
+        const forwardedFor = (req.headers["x-forwarded-for"] as string | undefined) ?? undefined;
+        const remoteIp = (req.socket as any)?.remoteAddress as string | undefined;
+        const receivedAtIso = new Date().toISOString();
+
         try {
-          const result = await tool.handler(args);
+          const result = await runWithRequestContext(
+            {
+              jsonrpcId: id,
+              method,
+              toolName,
+              tokenAuthEnabled: Boolean(TOKEN),
+              tokenPresent: Boolean(suppliedToken),
+              remoteIp,
+              forwardedFor,
+              receivedAtIso,
+            },
+            async () => {
+              const isDirect = Boolean(toolName && directToolNames.has(toolName));
+              const ctx = getRequestContext();
+
+              let ledgerCallId: string | undefined;
+              if (isDirect) {
+                // Centralised policy + ledger for direct tools (financial): call Convex via dispatcher.
+                // Best-effort: if Convex env vars aren't set, don't fail the tool call.
+                try {
+                  const start: any = await callGateway("__mcpToolCallStart", {
+                    toolName: toolName,
+                    toolType: "direct",
+                    riskTier: "external_read",
+                    args,
+                    requestMeta: {
+                      ...ctx,
+                      source: "gateway_server",
+                      transport: "http",
+                    },
+                  });
+                  ledgerCallId = start?.callId;
+                  if (start?.allowed === false) {
+                    const blockedByDenylist = Boolean(start?.policy?.denylist?.blockedByDenylist);
+                    const wouldExceed = Boolean(start?.policy?.budgets?.wouldExceed);
+                    if (blockedByDenylist) throw new Error(`Tool blocked by policy: ${toolName}`);
+                    if (wouldExceed) throw new Error(`Tool budget exceeded: ${toolName}`);
+                    throw new Error(`Tool blocked by policy: ${toolName}`);
+                  }
+                } catch (e: any) {
+                  const msg = e?.message ?? String(e);
+                  // If policy explicitly blocked, fail closed for the direct tool call.
+                  if (typeof msg === "string" && msg.startsWith("Tool ")) throw e;
+                  // Otherwise (e.g. missing CONVEX_URL / MCP_SECRET), proceed best-effort.
+                }
+              }
+
+              const t0 = Date.now();
+              try {
+                const out = await tool.handler(args);
+                const durationMs = Math.max(0, Date.now() - t0);
+
+                if (ledgerCallId) {
+                  try {
+                    await callGateway("__mcpToolCallFinish", {
+                      callId: ledgerCallId,
+                      success: true,
+                      durationMs,
+                      result: out,
+                    });
+                  } catch {
+                    // best-effort
+                  }
+                }
+
+                return out;
+              } catch (err: any) {
+                const durationMs = Math.max(0, Date.now() - t0);
+
+                if (ledgerCallId) {
+                  try {
+                    await callGateway("__mcpToolCallFinish", {
+                      callId: ledgerCallId,
+                      success: false,
+                      durationMs,
+                      errorMessage: err?.message ?? String(err),
+                    });
+                  } catch {
+                    // best-effort
+                  }
+                }
+
+                throw err;
+              }
+            }
+          );
+
           respond(res, 200, {
             jsonrpc: "2.0",
             id,

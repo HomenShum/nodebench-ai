@@ -132,30 +132,30 @@ const PINNED_FREE_FIRST_MODELS: Array<{
   name: string;
   expectedVision: boolean;
 }> = [
-  // xAI/Grok models - excellent for ranking and recommendation (X algorithm patterns)
+  // Top-tier free models (verified Feb 5, 2026 via OpenRouter API)
   {
-    openRouterId: "xai/grok-3-mini:free",
-    name: "Grok 3 Mini (free)",
+    openRouterId: "qwen/qwen3-coder:free",
+    name: "Qwen3 Coder (free)",
     expectedVision: false,
   },
   {
-    openRouterId: "google/gemini-2.0-flash-exp:free",
-    name: "Gemini 2.0 Flash Experimental (free)",
-    expectedVision: true,
+    openRouterId: "stepfun/step-3.5-flash:free",
+    name: "Step 3.5 Flash (free)",
+    expectedVision: false,
   },
   {
-    openRouterId: "google/gemma-3-27b-it:free",
-    name: "Gemma 3 27B IT (free)",
-    expectedVision: true,
+    openRouterId: "openai/gpt-oss-120b:free",
+    name: "GPT-OSS 120B (free)",
+    expectedVision: false,
   },
   {
-    openRouterId: "allenai/molmo-2-8b:free",
-    name: "Molmo 2 8B (free)",
-    expectedVision: true,
+    openRouterId: "arcee-ai/trinity-large-preview:free",
+    name: "Trinity Large (free)",
+    expectedVision: false,
   },
   {
-    openRouterId: "deepseek/deepseek-r1:free",
-    name: "DeepSeek R1 (free)",
+    openRouterId: "nvidia/nemotron-3-nano-30b-a3b:free",
+    name: "Nemotron 3 Nano (free)",
     expectedVision: false,
   },
   {
@@ -164,14 +164,24 @@ const PINNED_FREE_FIRST_MODELS: Array<{
     expectedVision: false,
   },
   {
+    openRouterId: "google/gemma-3-27b-it:free",
+    name: "Gemma 3 27B IT (free)",
+    expectedVision: false,
+  },
+  {
+    openRouterId: "deepseek/deepseek-r1-0528:free",
+    name: "DeepSeek R1 (free)",
+    expectedVision: false,
+  },
+  {
     openRouterId: "z-ai/glm-4.5-air:free",
     name: "GLM 4.5 Air (free)",
     expectedVision: false,
   },
   {
-    openRouterId: "mistralai/devstral-small-2505:free",
-    name: "Devstral Small 2505 (free)",
-    expectedVision: false,
+    openRouterId: "nvidia/nemotron-nano-12b-v2-vl:free",
+    name: "Nemotron 12B VL (free)",
+    expectedVision: true,
   },
 ];
 
@@ -239,15 +249,23 @@ export const seedPinnedFreeModels = internalAction({
 });
 
 /**
- * Fetch available free models from OpenRouter API
+ * Fetch available free models from OpenRouter API.
+ * Also detects retired models (present in our DB but missing from API) and deactivates them.
+ * Sends ntfy alert when models are retired or when all free models are down.
  */
 export const discoverFreeModels = internalAction({
   args: {},
-  handler: async (ctx): Promise<{ discovered: number; added: number }> => {
+  handler: async (ctx): Promise<{
+    discovered: number;
+    added: number;
+    retired: number;
+    retiredModels: string[];
+    newModels: string[];
+  }> => {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       console.warn("[freeModelDiscovery] OPENROUTER_API_KEY not set, skipping discovery");
-      return { discovered: 0, added: 0 };
+      return { discovered: 0, added: 0, retired: 0, retiredModels: [], newModels: [] };
     }
 
     try {
@@ -256,7 +274,10 @@ export const discoverFreeModels = internalAction({
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": process.env.OPENROUTER_HTTP_REFERER || "https://nodebench.ai",
+          "X-Title": process.env.OPENROUTER_X_TITLE || "NodeBench Model Discovery",
         },
+        signal: AbortSignal.timeout(30_000),
       });
 
       if (!response.ok) {
@@ -277,11 +298,15 @@ export const discoverFreeModels = internalAction({
         );
       });
 
+      // Build set of currently-available free model IDs from API
+      const apiFreeModelIds = new Set(freeModels.map((m) => m.id));
+
       console.log(`[freeModelDiscovery] Found ${freeModels.length} free models with sufficient context`);
 
       let added = 0;
+      const newModels: string[] = [];
 
-      // Process each free model
+      // Process each free model from API
       for (const model of freeModels) {
         const existing = await ctx.runQuery(
           internal.domains.models.freeModelDiscovery.getFreeModelByOpenRouterId,
@@ -289,7 +314,6 @@ export const discoverFreeModels = internalAction({
         );
 
         if (!existing) {
-          // Add new free model
           await ctx.runMutation(
             internal.domains.models.freeModelDiscovery.upsertFreeModel,
             {
@@ -297,8 +321,7 @@ export const discoverFreeModels = internalAction({
               name: model.name,
               contextLength: model.context_length,
               capabilities: {
-                // Assume basic capabilities, will be refined by evaluation
-                toolUse: model.id.includes("instruct") || model.id.includes("chat"),
+                toolUse: model.id.includes("instruct") || model.id.includes("chat") || model.id.includes("coder"),
                 streaming: true,
                 structuredOutputs: false,
                 vision: model.architecture?.modality?.includes("image") ?? false,
@@ -306,17 +329,125 @@ export const discoverFreeModels = internalAction({
             }
           );
           added++;
+          newModels.push(`${model.name} (${model.id})`);
+        } else if (!existing.isActive) {
+          // Re-activate models that are back on the API
+          await ctx.runMutation(
+            internal.domains.models.freeModelDiscovery.reactivateModel,
+            { modelId: existing._id }
+          );
+          console.log(`[freeModelDiscovery] Re-activated ${model.name} (${model.id})`);
         }
       }
 
-      console.log(`[freeModelDiscovery] Added ${added} new free models`);
-      return { discovered: freeModels.length, added };
+      // ═══ RETIREMENT DETECTION ═══
+      // Check all active models in our DB against the API; deactivate any missing
+      const activeDbModels = await ctx.runQuery(
+        internal.domains.models.freeModelDiscovery.getActiveFreeModels,
+        {}
+      );
+
+      let retired = 0;
+      const retiredModels: string[] = [];
+
+      for (const dbModel of activeDbModels) {
+        if (!apiFreeModelIds.has(dbModel.openRouterId)) {
+          // This model is in our DB as active but NOT in the API anymore → retired
+          await ctx.runMutation(
+            internal.domains.models.freeModelDiscovery.deactivateModel,
+            { modelId: dbModel._id, reason: "not_found_in_api" }
+          );
+          retired++;
+          retiredModels.push(`${dbModel.name} (${dbModel.openRouterId})`);
+          console.warn(`[freeModelDiscovery] RETIRED: ${dbModel.name} (${dbModel.openRouterId}) — no longer free on OpenRouter`);
+        }
+      }
+
+      // Update discovery timestamp
+      await ctx.runMutation(
+        internal.domains.models.freeModelDiscovery.updateDiscoveryTime,
+        {}
+      );
+
+      // ═══ ALERTING ═══
+      // Send ntfy alert if models were retired or if we're running low on active free models
+      const remainingActive = activeDbModels.length - retired + added;
+      if (retired > 0 || remainingActive < 3) {
+        await sendModelHealthAlert(ctx, {
+          retired,
+          retiredModels,
+          added,
+          newModels,
+          remainingActive,
+          totalApiFreee: freeModels.length,
+        });
+      }
+
+      console.log(`[freeModelDiscovery] Summary: discovered=${freeModels.length}, added=${added}, retired=${retired}, remaining=${remainingActive}`);
+
+      return { discovered: freeModels.length, added, retired, retiredModels, newModels };
     } catch (error) {
       console.error("[freeModelDiscovery] Discovery failed:", error);
       throw error;
     }
   },
 });
+
+/**
+ * Send ntfy alert about model health changes
+ */
+async function sendModelHealthAlert(
+  ctx: any,
+  info: {
+    retired: number;
+    retiredModels: string[];
+    added: number;
+    newModels: string[];
+    remainingActive: number;
+    totalApiFreee: number;
+  }
+): Promise<void> {
+  const ntfyUrl = process.env.NTFY_URL;
+  if (!ntfyUrl) {
+    console.warn("[freeModelDiscovery] NTFY_URL not set, skipping alert");
+    return;
+  }
+
+  const isCritical = info.remainingActive < 3;
+  const priority = isCritical ? "urgent" : "high";
+  const title = isCritical
+    ? `⚠️ CRITICAL: Only ${info.remainingActive} free models remaining!`
+    : `🔄 Free model changes: ${info.retired} retired, ${info.added} added`;
+
+  const lines: string[] = [];
+  if (info.retired > 0) {
+    lines.push(`Retired (${info.retired}):`);
+    for (const m of info.retiredModels) lines.push(`  - ${m}`);
+  }
+  if (info.added > 0) {
+    lines.push(`New (${info.added}):`);
+    for (const m of info.newModels) lines.push(`  - ${m}`);
+  }
+  lines.push(`Active free models: ${info.remainingActive} (${info.totalApiFreee} total on OpenRouter)`);
+  if (isCritical) {
+    lines.push(`\nLinkedIn posts may fail if no free models are available. Check immediately.`);
+  }
+
+  try {
+    await fetch(ntfyUrl, {
+      method: "POST",
+      headers: {
+        "Title": title,
+        "Priority": priority,
+        "Tags": isCritical ? "warning,robot" : "arrows_counterclockwise,robot",
+      },
+      body: lines.join("\n"),
+    });
+    console.log(`[freeModelDiscovery] Alert sent to ntfy (priority=${priority})`);
+  } catch (e) {
+    console.warn("[freeModelDiscovery] Failed to send ntfy alert:", e);
+  }
+}
 
 /**
  * Evaluate a specific free model's performance
@@ -831,5 +962,92 @@ export const updateDiscoveryTime = internalMutation({
         value: Date.now(),
       });
     }
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RETIREMENT / REACTIVATION MUTATIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Deactivate a model that is no longer available on OpenRouter.
+ * Sets isActive=false and records the reason.
+ */
+export const deactivateModel = internalMutation({
+  args: {
+    modelId: v.id("freeModels"),
+    reason: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, { modelId, reason }) => {
+    const model = await ctx.db.get(modelId) as Doc<"freeModels"> | null;
+    if (!model || !model.isActive) return null;
+
+    await ctx.db.patch(modelId, {
+      isActive: false,
+      rank: 999,
+    });
+
+    console.log(`[freeModelDiscovery] Deactivated ${model.name} (${model.openRouterId}): ${reason}`);
+    return null;
+  },
+});
+
+/**
+ * Re-activate a model that has reappeared on the OpenRouter API.
+ * Resets rank to 999 (will be re-ranked on next evaluation cycle).
+ */
+export const reactivateModel = internalMutation({
+  args: {
+    modelId: v.id("freeModels"),
+  },
+  returns: v.null(),
+  handler: async (ctx, { modelId }) => {
+    const model = await ctx.db.get(modelId) as Doc<"freeModels"> | null;
+    if (!model || model.isActive) return null;
+
+    await ctx.db.patch(modelId, {
+      isActive: true,
+      rank: 999,
+      // Reset eval counters so it gets a fresh evaluation
+      evaluationCount: 0,
+      successCount: 0,
+      failureCount: 0,
+      performanceScore: 0,
+      reliabilityScore: 0,
+      lastEvaluated: 0,
+    });
+
+    console.log(`[freeModelDiscovery] Re-activated ${model.name} (${model.openRouterId})`);
+    return null;
+  },
+});
+
+/**
+ * Get the best healthy free model's OpenRouter ID for direct API calls.
+ * Used by LinkedIn posting and other workflows that need a runtime-resolved model.
+ * Falls back to the first pinned model if no ranked models exist.
+ */
+export const resolveHealthyFreeModel = internalQuery({
+  args: {
+    requireToolUse: v.optional(v.boolean()),
+    requireVision: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { requireToolUse, requireVision }): Promise<string> => {
+    const models = await ctx.db
+      .query("freeModels")
+      .withIndex("by_rank")
+      .filter((q) => q.eq(q.field("isActive"), true))
+      .take(20) as Doc<"freeModels">[];
+
+    const match = models.find((m) =>
+      (!requireToolUse || m.capabilities.toolUse) &&
+      (!requireVision || m.capabilities.vision)
+    );
+
+    if (match) return match.openRouterId;
+
+    // Fallback to first pinned model if no active ranked models
+    return PINNED_FREE_FIRST_MODELS[0].openRouterId;
   },
 });

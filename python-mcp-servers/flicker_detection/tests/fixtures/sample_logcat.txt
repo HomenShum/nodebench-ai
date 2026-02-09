@@ -1,0 +1,7 @@
+02-06 10:15:30.123  1234  5678 I Choreographer: Skipped 3 frames!  The application may be doing too much work on its main thread.
+02-06 10:15:30.456  1234  5678 W SurfaceFlinger: Excessive rendering detected
+02-06 10:15:31.100  1234  5678 I WindowManager: Relayout Window{abc123}: oldVis=0 newVis=0
+02-06 10:15:31.234  1234  5678 I ActivityManager: Displayed com.example.testapp/.MainActivity: +345ms
+02-06 10:15:32.500  1234  5678 I Choreographer: Skipped 5 frames!  The application may be doing too much work on its main thread.
+02-06 10:15:33.100  1234  5678 D InputDispatcher: Delivering touch event to window
+02-06 10:15:33.500  1234  5678 I SurfaceFlinger: VSYNC-sf

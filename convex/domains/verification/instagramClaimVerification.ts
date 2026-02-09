@@ -6,7 +6,7 @@
  * Verifies claims extracted from Instagram posts using free OpenRouter models.
  * Uses Linkup API for source retrieval + LLM-as-Judge for verification.
  *
- * Cost: $0.00 (uses devstral-2-free)
+ * Cost: $0.00 (uses qwen3-coder-free)
  */
 
 import { v } from "convex/values";
@@ -43,7 +43,7 @@ interface InstagramClaim {
 
 // Free model priority - all $0.00 pricing
 const FREE_MODEL_PRIORITY = [
-  "devstral-2-free",         // Free default
+  "qwen3-coder-free",         // Free default
   "deepseek-r1-free",        // Strong reasoning
   "kat-coder-pro-free",      // Good structured output
 ] as const;

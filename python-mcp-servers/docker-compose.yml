@@ -82,6 +82,59 @@ services:
       retries: 3
       start_period: 40s
 
+  flicker_detection:
+    build:
+      context: ./flicker_detection
+      dockerfile: Dockerfile
+    container_name: flicker-detection-mcp-server
+    ports:
+      - "8006:8006"
+    environment:
+      - FLICKER_PORT=8006
+      - FLICKER_HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    env_file:
+      - .env
+    volumes:
+      - ./flicker_detection:/app
+      - ./shared:/app/shared
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8006/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  figma_flow:
+    build:
+      context: ./figma_flow
+      dockerfile: Dockerfile
+    container_name: figma-flow-mcp-server
+    ports:
+      - "8007:8007"
+    environment:
+      - FIGMA_FLOW_PORT=8007
+      - FIGMA_FLOW_HOST=0.0.0.0
+      - FIGMA_ACCESS_TOKEN=${FIGMA_ACCESS_TOKEN}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    env_file:
+      - .env
+    volumes:
+      - ./figma_flow:/app
+      - ./shared:/app/shared
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8007/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   default:
     name: mcp-servers-network

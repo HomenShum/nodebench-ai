@@ -607,7 +607,7 @@ export const seedSampleData = mutation({
           endedAt: session.startedAt + 60000,
           durationMs: 29000,
           data: {
-            model: "gpt-4o",
+            model: "gpt-5.2",
             temperature: 0.7,
             inputTokens: Math.floor(session.inputTokens * 0.7),
             outputTokens: Math.floor(session.outputTokens * 0.7),

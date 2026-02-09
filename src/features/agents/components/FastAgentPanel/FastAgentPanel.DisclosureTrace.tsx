@@ -56,7 +56,13 @@ export type DisclosureEvent =
   // Reasoning tool events - transparent step-by-step thinking
   | { t: number; kind: "reasoning.start"; toolName: "reasoningTool"; promptPreview: string; maxTokens: number }
   | { t: number; kind: "reasoning.thinking"; step: number; thought: string; tokensUsed?: number }
-  | { t: number; kind: "reasoning.complete"; reasoningTokens: number; outputTokens: number; totalTokens: number; cost: number; durationMs: number };
+  | { t: number; kind: "reasoning.complete"; reasoningTokens: number; outputTokens: number; totalTokens: number; cost: number; durationMs: number }
+  // TRACE (Tool-Routed Architecture for Controlled Execution) events
+  | { t: number; kind: "trace.gather_info"; toolName: string; description: string; metadataSummary?: string }
+  | { t: number; kind: "trace.execute_data_op"; toolName: string; description: string; rowCount?: number; charCount?: number }
+  | { t: number; kind: "trace.execute_output"; toolName: string; description: string; outputType?: string }
+  | { t: number; kind: "trace.finalize"; totalSteps: number; durationMs: number; selfCorrections: number }
+  | { t: number; kind: "trace.self_correction"; intendedState: string; actualState: string; correctionDescription?: string };
 
 export interface DisclosureSummary {
   skillSearchCalls: number;
@@ -159,6 +165,17 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
       return <Brain className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />;
     case "reasoning.complete":
       return <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />;
+    // TRACE events
+    case "trace.gather_info":
+      return <Search className="w-3.5 h-3.5 text-blue-400" />;
+    case "trace.execute_data_op":
+      return <Database className="w-3.5 h-3.5 text-emerald-400" />;
+    case "trace.execute_output":
+      return <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />;
+    case "trace.finalize":
+      return <Shield className="w-3.5 h-3.5 text-amber-400" />;
+    case "trace.self_correction":
+      return <RefreshCw className="w-3.5 h-3.5 text-amber-400" />;
     default:
       return <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
   }
@@ -214,6 +231,17 @@ function getEventLabel(event: DisclosureEvent): string {
       return `reasoning: step ${event.step}`;
     case "reasoning.complete":
       return `reasoning: complete (${event.durationMs}ms)`;
+    // TRACE events
+    case "trace.gather_info":
+      return `trace.gather: ${event.toolName}`;
+    case "trace.execute_data_op":
+      return `trace.data_op: ${event.toolName}`;
+    case "trace.execute_output":
+      return `trace.output: ${event.toolName}`;
+    case "trace.finalize":
+      return `trace.finalize: ${event.totalSteps} steps, ${event.durationMs}ms`;
+    case "trace.self_correction":
+      return `trace.correction: ${event.correctionDescription || 'mismatch detected'}`;
     default:
       return "unknown event";
   }
@@ -268,6 +296,16 @@ function getEventDetail(event: DisclosureEvent): string | null {
       return `→ ${event.thought}${event.tokensUsed ? ` (${event.tokensUsed} tokens)` : ""}`;
     case "reasoning.complete":
       return `→ reasoning: ${event.reasoningTokens.toLocaleString()} tokens, output: ${event.outputTokens.toLocaleString()} tokens, cost: $${event.cost.toFixed(6)}`;
+    case "trace.gather_info":
+      return event.metadataSummary ? `→ ${event.metadataSummary}` : `→ ${event.description}`;
+    case "trace.execute_data_op":
+      return `→ ${event.description}${event.rowCount ? ` (${event.rowCount} rows)` : ''}${event.charCount ? ` (${event.charCount.toLocaleString()} chars)` : ''}`;
+    case "trace.execute_output":
+      return `→ ${event.description}${event.outputType ? ` [${event.outputType}]` : ''}`;
+    case "trace.finalize":
+      return `→ ${event.totalSteps} deterministic steps, ${event.selfCorrections} self-correction(s)`;
+    case "trace.self_correction":
+      return `→ Expected: ${event.intendedState} | Actual: ${event.actualState}`;
     default:
       return null;
   }

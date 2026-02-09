@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.claude/settings.local.json
 
 # Editor directories and files
 .vscode/*
@@ -44,7 +45,12 @@ playwright-report/
 temp_*.txt
 temp_*.md
 .tmp-tools/
+.tmp/
 nul
+
+# Local OCR language data (large)
+packages/mcp-local/*.traineddata
+B\[sub1,sub2\]
 
 # Implementation notes (keep only core docs)
 docs/
@@ -59,6 +65,7 @@ docs/
 !docs/BIDIRECTIONAL_FOCUS_TEST_PLAN.md
 .node-24/
 .cache/
+public/evals/*.json
 /test-results/
 /playwright-report/
 /tests/screenshots/

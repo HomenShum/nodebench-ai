@@ -2,7 +2,7 @@
  * Hybrid Approach: GLM 4.7 Flash + Devstral
  *
  * Uses OpenRouter native reasoning API to get glm-4.7-flash reasoning,
- * then uses devstral-2-free to process/extract the final answer.
+ * then uses qwen3-coder-free to process/extract the final answer.
  *
  * Cost: $0.07/M (glm) + $0.00 (devstral) = $0.07/M total
  * vs claude-sonnet-4: $3.00/M (98% savings)
@@ -122,7 +122,7 @@ export const testGlmRawReasoning = internalAction({
  *
  * This combines:
  * 1. glm-4.7-flash ($0.07/M) for deep reasoning
- * 2. devstral-2-free ($0.00) to extract/summarize the answer
+ * 2. qwen3-coder-free ($0.00) to extract/summarize the answer
  *
  * Total cost: $0.07/M (98% savings vs claude-sonnet-4 $3.00/M)
  */
@@ -192,12 +192,12 @@ export const testHybridGlmDevstral = internalAction({
       }
 
       // Step 2: Use devstral to extract structured answer
-      console.log("\n2️⃣  Using devstral-2-free to extract structured answer...");
+      console.log("\n2️⃣  Using qwen3-coder-free to extract structured answer...");
       const { generateObject } = await import("ai");
       const { openrouter } = await import("@openrouter/ai-sdk-provider");
       const { z } = await import("zod");
 
-      const devstralModel = openrouter("mistralai/devstral-2512:free");
+      const devstralModel = openrouter("qwen/qwen3-coder:free");
       const devstralStart = Date.now();
 
       const schema = z.object({
@@ -337,7 +337,7 @@ Think deeply about:
         // Fallback: Use devstral directly
         const { generateText } = await import("ai");
         const { openrouter } = await import("@openrouter/ai-sdk-provider");
-        const model = openrouter("mistralai/devstral-2512:free");
+        const model = openrouter("qwen/qwen3-coder:free");
 
         const result = await generateText({
           model,
@@ -359,7 +359,7 @@ Think deeply about:
       const { openrouter } = await import("@openrouter/ai-sdk-provider");
       const { z } = await import("zod");
 
-      const devstralModel = openrouter("mistralai/devstral-2512:free");
+      const devstralModel = openrouter("qwen/qwen3-coder:free");
       const devstralStart = Date.now();
 
       const schema = z.object({

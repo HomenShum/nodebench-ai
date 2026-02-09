@@ -35,8 +35,8 @@ export const testParallelOrchestratorWithReasoning = internalAction({
       console.log("\n✅ Verifying reasoning tool integration:");
       console.log("   1. Branch exploration uses reasoning tool (Line 334)");
       console.log("   2. Synthesis uses reasoning tool (Line 665)");
-      console.log("   3. Decomposition uses devstral-2-free (FREE)");
-      console.log("   4. Verification uses devstral-2-free (FREE)");
+      console.log("   3. Decomposition uses qwen3-coder-free (FREE)");
+      console.log("   4. Verification uses qwen3-coder-free (FREE)");
 
       // Test the reasoning tool directly to ensure it works
       console.log("\n🧪 Testing reasoning tool directly for exploration scenario...");
@@ -346,7 +346,7 @@ export const testAllOrchestratorIntegrations = internalAction({
 
     console.log("\n🎉 DEPLOYMENT STATUS:");
     console.log("   ✓ Reasoning tool deployed to ALL orchestrators");
-    console.log("   ✓ FREE models (devstral-2-free) used for decomposition/verification");
+    console.log("   ✓ FREE models (qwen3-coder-free) used for decomposition/verification");
     console.log("   ✓ Reasoning tool (glm-4.7-flash) used for exploration/synthesis");
     console.log("   ✓ 72-98% cost savings while improving quality");
     console.log("   ✓ Transparent step-by-step thinking enabled");

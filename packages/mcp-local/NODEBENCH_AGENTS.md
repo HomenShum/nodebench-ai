@@ -21,9 +21,26 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Restart Claude Code. 56 tools available immediately.
+Restart Claude Code. 163 tools available immediately.
 
-**→ Quick Refs:** After setup, run `getMethodology("overview")` | First task? See [Verification Cycle](#verification-cycle-workflow) | New to codebase? See [Environment Setup](#environment-setup)
+### Preset Selection
+
+By default all toolsets are enabled. Use `--preset` to start with a scoped subset:
+
+```json
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp", "--preset", "meta"]
+    }
+  }
+}
+```
+
+The **meta** preset is the recommended front door for new agents: start with just 5 discovery tools, use `discover_tools` to find what you need, then self-escalate to a larger preset. See [Toolset Gating & Presets](#toolset-gating--presets) for the full breakdown.
+
+**→ Quick Refs:** After setup, run `getMethodology("overview")` | First task? See [Verification Cycle](#verification-cycle-workflow) | New to codebase? See [Environment Setup](#environment-setup) | Preset options: See [Toolset Gating & Presets](#toolset-gating--presets)
 
 ---
 
@@ -173,6 +190,26 @@ Run capability benchmark:
 NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test
 ```
 
+GAIA capability benchmark (file-backed lane: PDF / XLSX / CSV):
+- This lane measures the impact of deterministic local parsing tools on GAIA tasks with attachments.
+- Fixture includes ground-truth answers and MUST remain under `.cache/gaia` (gitignored).
+- Attachments are copied into `.cache/gaia/data/<file_path>` for offline deterministic runs after the first download.
+
+Generate file-backed scoring fixture + download attachments (local only, gated):
+```bash
+npm run mcp:dataset:gaia:capability:files:refresh
+```
+
+Run file-backed capability benchmark:
+```bash
+NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:files:test
+```
+
+Modes:
+- Recommended (more stable): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag` (single deterministic extract + answer)
+- More realistic (higher variance): `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (small tool loop)
+Web lane only: `NODEBENCH_GAIA_CAPABILITY_FORCE_WEB_SEARCH=1` and/or `NODEBENCH_GAIA_CAPABILITY_FORCE_FETCH_URL=1`
+
 Run all public lanes:
 ```bash
 npm run mcp:dataset:bench:all
@@ -199,6 +236,10 @@ Implementation files:
 - `packages/mcp-local/src/__tests__/fixtures/generateGaiaCapabilityFixture.py`
 - `.cache/gaia/gaia_capability_2023_all_validation.sample.json`
 - `packages/mcp-local/src/__tests__/gaiaCapabilityEval.test.ts`
+- `packages/mcp-local/src/__tests__/fixtures/generateGaiaCapabilityFilesFixture.py`
+- `.cache/gaia/gaia_capability_files_2023_all_validation.sample.json`
+- `.cache/gaia/data/...` (local GAIA attachments; do not commit)
+- `packages/mcp-local/src/__tests__/gaiaCapabilityFilesEval.test.ts`
 
 Required tool chain per dataset task:
 - `run_recon`
@@ -223,6 +264,7 @@ Use `getMethodology("overview")` to see all available workflows.
 | Category | Tools | When to Use |
 |----------|-------|-------------|
 | **Web** | `web_search`, `fetch_url` | Research, reading docs, market validation |
+| **Local Files** | `read_pdf_text`, `pdf_search_text`, `read_xlsx_file`, `xlsx_select_rows`, `xlsx_aggregate`, `read_csv_file`, `csv_select_rows`, `csv_aggregate`, `read_text_file`, `read_json_file`, `json_select`, `read_jsonl_file`, `zip_list_files`, `zip_read_text_file`, `zip_extract_file`, `read_docx_text`, `read_pptx_text`, `read_image_ocr_text`, `transcribe_audio_file` | Deterministic parsing and aggregation of local attachments (GAIA file-backed lane) |
 | **GitHub** | `search_github`, `analyze_repo` | Finding libraries, studying implementations |
 | **Verification** | `start_cycle`, `log_phase`, `complete_cycle` | Tracking the flywheel process |
 | **Eval** | `start_eval_run`, `log_test_result` | Test case management |
@@ -231,10 +273,85 @@ Use `getMethodology("overview")` to see all available workflows.
 | **Vision** | `analyze_screenshot`, `capture_ui_screenshot` | UI/UX verification |
 | **Bootstrap** | `discover_infrastructure`, `triple_verify`, `self_implement` | Self-setup, triple verification |
 | **Autonomous** | `assess_risk`, `decide_re_update`, `run_self_maintenance` | Risk-aware execution, self-maintenance |
-| **Parallel Agents** | `claim_agent_task`, `release_agent_task`, `list_agent_tasks`, `assign_agent_role`, `get_agent_role`, `log_context_budget`, `run_oracle_comparison`, `get_parallel_status` | Multi-agent coordination, task locking, role specialization, oracle testing |
+| **Parallel Agents** | `claim_agent_task`, `release_agent_task`, `list_agent_tasks`, `assign_agent_role`, `get_agent_role`, `log_context_budget`, `run_oracle_comparison`, `get_parallel_status`, `bootstrap_parallel_agents`, `generate_parallel_agents_md`, `send_agent_message`, `check_agent_inbox`, `broadcast_agent_update` | Multi-agent coordination, task locking, role specialization, oracle testing, agent mailbox |
+| **LLM** | `call_llm`, `extract_structured_data`, `benchmark_models` | LLM calling, structured extraction, model comparison |
+| **Security** | `scan_dependencies`, `run_code_analysis` | Dependency auditing, static code analysis |
+| **Platform** | `query_daily_brief`, `query_funding_entities`, `query_research_queue`, `publish_to_queue` | Convex platform bridge: intelligence, funding, research, publishing |
 | **Meta** | `findTools`, `getMethodology` | Discover tools, get workflow guides |
+| **TOON** | `toon_encode`, `toon_decode` | Token-Oriented Object Notation — ~40% token savings vs JSON |
+| **Pattern** | `mine_session_patterns`, `predict_risks_from_patterns` | Session sequence analysis, risk prediction from history |
+| **Git Workflow** | `check_git_compliance`, `review_pr_checklist`, `enforce_merge_gate` | Branch validation, PR checklist, merge gates |
+| **SEO** | `seo_audit_url`, `check_page_performance`, `analyze_seo_content`, `check_wordpress_site`, `scan_wordpress_updates` | Technical SEO audit, performance, WordPress |
+| **Voice Bridge** | `design_voice_pipeline`, `analyze_voice_config`, `generate_voice_scaffold`, `benchmark_voice_latency` | Voice pipeline design, config, scaffolding, latency |
+| **GAIA Solvers** | `solve_red_green_deviation_average_from_image`, `solve_green_polygon_area_from_image`, `grade_fraction_quiz_from_image`, `extract_fractions_and_simplify_from_image`, `solve_bass_clef_age_from_image`, `solve_storage_upgrade_cost_per_file_from_image` | GAIA media image solvers |
+| **Session Memory** | `save_session_note`, `load_session_notes`, `refresh_task_context` | Compaction-resilient notes, attention refresh |
+| **Discovery** | `discover_tools`, `get_tool_quick_ref`, `get_workflow_chain` | Hybrid search, quick refs, workflow chains |
 
-**→ Quick Refs:** Find tools by keyword: `findTools({ query: "verification" })` | Get workflow guide: `getMethodology({ topic: "..." })` | See [Methodology Topics](#methodology-topics) for all topics
+Meta + Discovery tools (5 total) are **always included** regardless of preset. See [Toolset Gating & Presets](#toolset-gating--presets).
+
+**→ Quick Refs:** Find tools by keyword: `findTools({ query: "verification" })` | Hybrid search: `discover_tools({ query: "security" })` | Get workflow guide: `getMethodology({ topic: "..." })` | See [Methodology Topics](#methodology-topics) for all topics
+
+---
+
+## Toolset Gating & Presets
+
+NodeBench MCP supports 4 presets that control which domain toolsets are loaded at startup. Meta + Discovery tools (5 total) are **always included** on top of any preset.
+
+### Preset Table
+
+| Preset | Domain Toolsets | Domain Tools | Total (with meta+discovery) | Use Case |
+|--------|----------------|-------------|----------------------------|----------|
+| **meta** | 0 | 0 | 5 | Discovery-only front door. Agents start here and self-escalate. |
+| **lite** | 8 | 38 | 43 | Lightweight verification-focused workflows. CI bots, quick checks. |
+| **core** | 23 | 105 | 110 | Full development workflow. Most agent sessions. |
+| **full** | 31 | 158 | 163 | Everything enabled. Benchmarking, exploration, advanced use. |
+
+### Usage
+
+```bash
+npx nodebench-mcp --preset meta       # Discovery-only (5 tools)
+npx nodebench-mcp --preset lite       # Verification + eval + recon + security
+npx nodebench-mcp --preset core       # Full dev workflow without vision/parallel
+npx nodebench-mcp --preset full       # All toolsets (default)
+npx nodebench-mcp --toolsets verification,eval,recon   # Custom selection
+npx nodebench-mcp --exclude vision,ui_capture          # Exclude specific toolsets
+```
+
+### The Meta Preset — Discovery-Only Front Door
+
+The **meta** preset loads zero domain tools. Agents start with only 5 tools:
+
+| Tool | Purpose |
+|------|---------|
+| `findTools` | Keyword search across all registered tools |
+| `getMethodology` | Get workflow guides by topic |
+| `discover_tools` | Hybrid search with relevance scoring (richer than findTools) |
+| `get_tool_quick_ref` | Quick reference card for any specific tool |
+| `get_workflow_chain` | Recommended tool sequence for common workflows |
+
+This is the recommended starting point for autonomous agents. The self-escalation pattern:
+
+```
+1. Start with --preset meta (5 tools)
+2. discover_tools({ query: "what I need to do" })    // Find relevant tools
+3. get_workflow_chain({ workflow: "verification" })    // Get the tool sequence
+4. If needed tools are not loaded:
+   → Restart with --preset core or --preset full
+   → Or use --toolsets to add specific domains
+5. Proceed with full workflow
+```
+
+### Preset Domain Breakdown
+
+**meta** (0 domains): No domain tools. Meta + Discovery only.
+
+**lite** (8 domains): `verification`, `eval`, `quality_gate`, `learning`, `flywheel`, `recon`, `security`, `boilerplate`
+
+**core** (22 domains): Everything in lite plus `bootstrap`, `self_eval`, `llm`, `platform`, `research_writing`, `flicker_detection`, `figma_flow`, `benchmark`, `session_memory`, `toon`, `pattern`, `git_workflow`, `seo`, `voice_bridge`
+
+**full** (30 domains): All toolsets in TOOLSET_MAP including `ui_capture`, `vision`, `local_file`, `web`, `github`, `docs`, `parallel`, `gaia_solvers`, and everything in core.
+
+**→ Quick Refs:** Check current toolset: `findTools({ query: "*" })` | Self-escalate: restart with `--preset core` | See [MCP Tool Categories](#mcp-tool-categories) | CLI help: `npx nodebench-mcp --help`
 
 ---
 
@@ -588,6 +705,10 @@ Available via `getMethodology({ topic: "..." })`:
 | `autonomous_maintenance` | Risk-tiered execution | [Autonomous Maintenance](#autonomous-self-maintenance-system) |
 | `parallel_agent_teams` | Multi-agent coordination, task locking, oracle testing | [Parallel Agent Teams](#parallel-agent-teams) |
 | `self_reinforced_learning` | Trajectory analysis, self-eval, improvement recs | [Self-Reinforced Learning](#self-reinforced-learning-loop) |
+| `toolset_gating` | 4 presets (meta, lite, core, full) and self-escalation | [Toolset Gating & Presets](#toolset-gating--presets) |
+| `toon_format` | TOON encoding — ~40% token savings vs JSON | TOON is on by default since v2.14.1 |
+| `seo_audit` | Full SEO audit workflow (technical + performance + content) | `seo_audit_url`, `check_page_performance`, `analyze_seo_content` |
+| `voice_bridge` | Voice pipeline design, config analysis, scaffolding | `design_voice_pipeline`, `analyze_voice_config` |
 
 **→ Quick Refs:** Find tools: `findTools({ query: "..." })` | Get any methodology: `getMethodology({ topic: "..." })` | See [MCP Tool Categories](#mcp-tool-categories)
 

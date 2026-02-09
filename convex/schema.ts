@@ -1875,6 +1875,72 @@ const mcpToolHistory = defineTable({
   .index("by_user_tool_createdAt", ["userId", "toolId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
+/* MCP TOOL CALL LEDGER - Trusted access audit trail + policy gating    */
+/* ------------------------------------------------------------------ */
+const mcpPolicyConfigs = defineTable({
+  name: v.string(), // singleton key, e.g. "default"
+
+  // If true, policy violations block tool execution. If false, policy is logged only.
+  enforce: v.boolean(),
+
+  // Simple daily budgets. Keys are risk tiers (e.g. "read_only", "external_read", "write_internal").
+  dailyLimitsByTier: v.optional(v.record(v.string(), v.number())),
+
+  // Per-tool daily budgets (toolName -> limit).
+  dailyLimitsByTool: v.optional(v.record(v.string(), v.number())),
+
+  // Explicit tool denylist (toolName -> true). Used for rapid response.
+  blockedTools: v.optional(v.record(v.string(), v.boolean())),
+
+  // Free-form notes for ops rollouts.
+  notes: v.optional(v.string()),
+
+  createdAt: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_name", ["name"]);
+
+const mcpToolUsageDaily = defineTable({
+  dateKey: v.string(), // YYYY-MM-DD (UTC)
+  scope: v.union(v.literal("tier"), v.literal("tool")),
+  key: v.string(), // riskTier or toolName depending on scope
+  count: v.number(),
+  updatedAt: v.number(),
+})
+  .index("by_date_scope_key", ["dateKey", "scope", "key"])
+  .index("by_date_scope", ["dateKey", "scope"]);
+
+const mcpToolCallLedger = defineTable({
+  toolName: v.string(),
+  toolType: v.string(), // "query" | "mutation" | "action" | "direct" | "unknown"
+  riskTier: v.string(), // "read_only" | "external_read" | "write_internal" | ...
+
+  allowed: v.boolean(),
+  policy: v.optional(v.any()), // evaluation summary (budgets, denylist, enforce, etc.)
+
+  argsHash: v.string(),
+  argsKeys: v.array(v.string()),
+  argsPreview: v.optional(v.string()), // redacted + truncated for UI
+
+  idempotencyKey: v.optional(v.string()),
+  requestMeta: v.optional(v.any()), // upstream request context (gateway request id, etc.)
+
+  startedAt: v.number(),
+  finishedAt: v.optional(v.number()),
+  durationMs: v.optional(v.number()),
+
+  success: v.optional(v.boolean()),
+  errorMessage: v.optional(v.string()),
+
+  resultPreview: v.optional(v.string()), // redacted + truncated for UI
+  resultBytes: v.optional(v.number()),
+})
+  .index("by_startedAt", ["startedAt"])
+  .index("by_tool_startedAt", ["toolName", "startedAt"])
+  .index("by_risk_startedAt", ["riskTier", "startedAt"])
+  .index("by_allowed_startedAt", ["allowed", "startedAt"]);
+
+/* ------------------------------------------------------------------ */
 /* DOCUMENT SNAPSHOTS – periodic snapshots to prevent step accumulation */
 /* ------------------------------------------------------------------ */
 const documentSnapshots = defineTable({
@@ -2961,6 +3027,100 @@ const scheduledReports = defineTable({
   .index("by_generated_at", ["generatedAt"])
   .index("by_status", ["status"]);
 
+/* ------------------------------------------------------------------ */
+/* CHAT MEMORIES - Persistent cross-thread memory for FastAgentPanel  */
+/* ------------------------------------------------------------------ */
+const chatMemories = defineTable({
+  userId: v.id("users"),
+  text: v.string(),
+  source: v.optional(v.union(
+    v.literal("user"),
+    v.literal("context_menu"),
+    v.literal("auto"),
+  )),
+  threadId: v.optional(v.string()),
+  createdAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_created", ["userId", "createdAt"]);
+
+/* ------------------------------------------------------------------ */
+/* CHAT SNAPSHOTS - Conversation state snapshots for FastAgentPanel   */
+/* ------------------------------------------------------------------ */
+const chatSnapshots = defineTable({
+  userId: v.id("users"),
+  threadId: v.optional(v.string()),
+  name: v.string(),
+  messageCount: v.number(),
+  messages: v.array(v.object({
+    role: v.string(),
+    text: v.string(),
+  })),
+  createdAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_created", ["userId", "createdAt"]);
+
+/* ------------------------------------------------------------------ */
+/* CHAT ANNOTATIONS - Per-message notes/highlights                     */
+/* ------------------------------------------------------------------ */
+const chatAnnotations = defineTable({
+  userId: v.id("users"),
+  messageId: v.string(),
+  threadId: v.optional(v.string()),
+  note: v.string(),
+  createdAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_message", ["messageId"])
+  .index("by_user_thread", ["userId", "threadId"]);
+
+/* ------------------------------------------------------------------ */
+/* SCHEDULED MESSAGES - Messages scheduled to send later               */
+/* ------------------------------------------------------------------ */
+const chatScheduledMessages = defineTable({
+  userId: v.id("users"),
+  threadId: v.string(),
+  text: v.string(),
+  scheduledAt: v.number(),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("sent"),
+    v.literal("cancelled"),
+  ),
+  sentAt: v.optional(v.number()),
+  createdAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_status_scheduled", ["status", "scheduledAt"])
+  .index("by_user_thread", ["userId", "threadId"]);
+
+/* ------------------------------------------------------------------ */
+/* TOOL APPROVALS - Pending tool call approvals for human-in-the-loop */
+/* ------------------------------------------------------------------ */
+const toolApprovals = defineTable({
+  userId: v.id("users"),
+  threadId: v.string(),
+  toolName: v.string(),
+  toolArgs: v.any(),
+  status: v.union(
+    v.literal("pending"),
+    v.literal("approved"),
+    v.literal("rejected"),
+  ),
+  riskLevel: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("high"),
+  ),
+  reason: v.optional(v.string()),
+  decidedAt: v.optional(v.number()),
+  createdAt: v.number(),
+})
+  .index("by_user", ["userId"])
+  .index("by_user_pending", ["userId", "status"])
+  .index("by_thread", ["threadId", "status"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -3014,6 +3174,9 @@ export default defineSchema({
   mcpToolLearning,
   mcpGuidanceExamples,
   mcpToolHistory,
+  mcpPolicyConfigs,
+  mcpToolUsageDaily,
+  mcpToolCallLedger,
   documentSnapshots,
   spreadsheets,
   sheetCells,
@@ -3054,6 +3217,13 @@ export default defineSchema({
   evaluationRuns,
   evaluation_scenarios,
   digestCache,
+
+  // FastAgentPanel persistent backend tables
+  chatMemories,
+  chatSnapshots,
+  chatAnnotations,
+  chatScheduledMessages,
+  toolApprovals,
 
   /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */
@@ -3476,6 +3646,48 @@ export default defineSchema({
     .index("by_source", ["sourceTaskId"])
     .index("by_target", ["targetTaskId"])
     .index("by_tree_source_target", ["treeId", "sourceTaskId", "targetTaskId"]),
+
+  /* ------------------------------------------------------------------ */
+  /* TRACE AUDIT LOG - Deterministic, code-generated execution trace    */
+  /* Part of the TRACE (Tool-Routed Architecture for Controlled         */
+  /* Execution) framework. Every entry is generated by CODE, not LLM.   */
+  /* ------------------------------------------------------------------ */
+  traceAuditEntries: defineTable({
+    executionId: v.string(),
+    executionType: v.union(
+      v.literal("swarm"),
+      v.literal("tree"),
+      v.literal("chat"),
+    ),
+    seq: v.number(),
+    timestamp: v.number(),
+    choiceType: v.union(
+      v.literal("gather_info"),
+      v.literal("execute_data_op"),
+      v.literal("execute_output"),
+      v.literal("finalize"),
+    ),
+    toolName: v.string(),
+    toolParams: v.optional(v.any()),
+    metadata: v.object({
+      rowCount: v.optional(v.number()),
+      columnCount: v.optional(v.number()),
+      uniqueValues: v.optional(v.any()),
+      charCount: v.optional(v.number()),
+      wordCount: v.optional(v.number()),
+      keyTopics: v.optional(v.array(v.string())),
+      errorMessage: v.optional(v.string()),
+      durationMs: v.number(),
+      success: v.boolean(),
+      intendedState: v.optional(v.string()),
+      actualState: v.optional(v.string()),
+      correctionApplied: v.optional(v.boolean()),
+    }),
+    description: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_execution", ["executionId", "seq"])
+    .index("by_execution_type", ["executionType", "executionId"]),
 
   /* ------------------------------------------------------------------ */
   /* DOSSIER DOMAIN - Bidirectional focus sync for agent↔chart views    */
@@ -6447,7 +6659,7 @@ export default defineSchema({
   /* ------------------------------------------------------------------ */
   freeModels: defineTable({
     // Identity
-    openRouterId: v.string(),                    // e.g., "xiaomi/mimo-v2-flash:free"
+    openRouterId: v.string(),                    // e.g., "qwen/qwen3-coder:free"
     name: v.string(),                            // Human-readable name
     contextLength: v.number(),                   // Max context window
 
@@ -11143,13 +11355,16 @@ export default defineSchema({
     isVerified: v.boolean(),
     hasContradictions: v.boolean(),
     requiresAdjudication: v.boolean(),
+    // Agent posting governance: agent reactions excluded from engagement ranking
+    isAgentReaction: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_thread", ["threadId", "createdAt"])
     .index("by_parent", ["parentPostId", "createdAt"])
     .index("by_type", ["postType", "createdAt"])
-    .index("by_adjudication", ["requiresAdjudication", "createdAt"]),
+    .index("by_adjudication", ["requiresAdjudication", "createdAt"])
+    .index("by_author", ["authorType", "authorId", "createdAt"]),
 
   /**
    * Narrative Replies - Thread commentary and evidence additions (Phase 7)
@@ -11630,4 +11845,215 @@ export default defineSchema({
     .index("by_category", ["category", "effectiveDate"])
     .index("by_source", ["sourceUrl"])
     .index("by_active", ["subject", "expirationDate"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AGENT OS — Perpetual Multi-Agent Runtime
+  // First-class agent identities, communication channels, and heartbeat tracking.
+  // Enables "agents as employees" pattern: always-ready, event-driven, governed.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Agent Identities — first-class agent profiles with persona, permissions, and budget.
+   * Unlike agentRuns (per-invocation execution records), this tracks the agent's
+   * persistent identity, capabilities, and operational constraints across all sessions.
+   */
+  agentIdentities: defineTable({
+    agentId: v.string(),
+    name: v.string(),
+    persona: v.string(),
+    allowedTools: v.array(v.string()),
+    allowedChannels: v.array(v.string()),
+    // Operational constraints
+    heartbeatIntervalMs: v.optional(v.number()),
+    budgetDailyTokens: v.optional(v.number()),
+    budgetDailyCostUsd: v.optional(v.number()),
+    maxConcurrentRuns: v.optional(v.number()),
+    // Trust integration — links to authorTrust for reputation tracking
+    authorTrustTier: v.optional(v.union(
+      v.literal("verified"),
+      v.literal("established"),
+      v.literal("new"),
+      v.literal("quarantined"),
+      v.literal("banned")
+    )),
+    status: v.union(
+      v.literal("active"),
+      v.literal("paused"),
+      v.literal("retired")
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_agentId", ["agentId"])
+    .index("by_status", ["status", "updatedAt"])
+    .index("by_name", ["name"]),
+
+  /**
+   * Agent Channels — grouping for teams/rooms.
+   * narrativeThreads are content threads (research outputs);
+   * agentChannels are operational communication channels (coordination).
+   */
+  agentChannels: defineTable({
+    channelId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    memberAgentIds: v.array(v.string()),
+    memberUserIds: v.array(v.string()),
+    channelType: v.union(
+      v.literal("team"),
+      v.literal("broadcast"),
+      v.literal("alert")
+    ),
+    // Feed/ranking config for this channel
+    rankingWeights: v.optional(v.object({
+      recency: v.optional(v.number()),
+      evidenceCoverage: v.optional(v.number()),
+      novelty: v.optional(v.number()),
+      authorTrust: v.optional(v.number()),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_channelId", ["channelId"])
+    .index("by_type", ["channelType", "updatedAt"]),
+
+  /**
+   * Agent Heartbeats — lightweight heartbeat log for perpetual agent runtime.
+   * Tracks each "wake up" event: what triggered it, what work was done, cost.
+   * Not agentRuns (which tracks full LLM invocations); this is the scheduling layer.
+   */
+  agentHeartbeats: defineTable({
+    agentId: v.string(),
+    triggeredBy: v.union(
+      v.literal("schedule"),
+      v.literal("event"),
+      v.literal("manual"),
+      v.literal("sweep")
+    ),
+    triggerEventId: v.optional(v.string()),
+    triggerOpportunityId: v.optional(v.string()),
+    status: v.union(
+      v.literal("started"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("skipped")
+    ),
+    // Work summary
+    workQueueItemsProcessed: v.optional(v.number()),
+    postsCreated: v.optional(v.number()),
+    gapsIdentified: v.optional(v.number()),
+    tokensBurned: v.optional(v.number()),
+    costUsd: v.optional(v.number()),
+    errorMessage: v.optional(v.string()),
+    // Linkage
+    agentRunId: v.optional(v.id("agentRuns")),
+    // Timestamps
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    durationMs: v.optional(v.number()),
+  })
+    .index("by_agent", ["agentId", "startedAt"])
+    .index("by_agent_status", ["agentId", "status"])
+    .index("by_trigger", ["triggeredBy", "startedAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MODEL ROUTER — Unified Inference Layer Audit Log
+  // Every model call routed through modelRouter.ts is logged here for
+  // budget tracking, usage dashboards, cost analysis, and repro packs.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  modelRouterCalls: defineTable({
+    modelId: v.string(),
+    taskCategory: v.string(),
+    requestedTier: v.string(),
+    actualTier: v.string(),
+    agentId: v.optional(v.string()),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    costUsd: v.number(),
+    latencyMs: v.number(),
+    fallbacksUsed: v.number(),
+    fromCache: v.boolean(),
+    pinnedModel: v.union(v.string(), v.null()),
+    success: v.boolean(),
+    errorMessage: v.union(v.string(), v.null()),
+    calledAt: v.number(),
+  })
+    .index("by_agent", ["agentId", "calledAt"])
+    .index("by_model", ["modelId", "calledAt"])
+    .index("by_task", ["taskCategory", "calledAt"])
+    .index("by_tier", ["actualTier", "calledAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // JUDGE METRICS — Standardized Boolean + Numeric Evaluation Outputs
+  // Every LLM judge evaluation persists structured metrics here.
+  // No prose — only booleans, 0-1 numbers, and categorical decisions.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  judgeMetrics: defineTable({
+    judgeId: v.string(),
+    targetType: v.string(),
+    targetId: v.string(),
+    evaluationContext: v.optional(v.string()),
+    agentRunId: v.optional(v.string()),
+    /** Boolean metric flags */
+    booleans: v.any(),
+    /** Numeric metric scores (0-1) */
+    numerics: v.any(),
+    /** Categorical decisions (verdict, duplicate_decision, etc.) */
+    categories: v.any(),
+    /** Whether all critical metrics pass */
+    criticalPass: v.boolean(),
+    /** Model used for judging */
+    judgeModel: v.optional(v.string()),
+    /** Latency of the judge call in ms */
+    latencyMs: v.optional(v.number()),
+    /** Raw reasoning (debugging only, not the primary output) */
+    reasoning: v.optional(v.string()),
+    recordedAt: v.number(),
+  })
+    .index("by_target", ["targetType", "targetId"])
+    .index("by_judge", ["judgeId", "recordedAt"])
+    .index("by_critical", ["criticalPass", "recordedAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PROMOTION APPROVALS — HITL Queue for High-Impact Writes
+  // Agents submit promotion requests; human operators approve/reject.
+  // Enforces observation-vs-promotion boundary for knowledge integrity.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  promotionApprovals: defineTable({
+    agentId: v.string(),
+    writeType: v.string(),
+    targetType: v.string(),
+    targetId: v.string(),
+    justification: v.string(),
+    context: v.optional(v.string()),
+    decision: v.string(),
+    reviewedBy: v.union(v.string(), v.null()),
+    reviewedAt: v.union(v.number(), v.null()),
+    reviewNotes: v.union(v.string(), v.null()),
+    requestedAt: v.number(),
+  })
+    .index("by_target", ["targetType", "targetId"])
+    .index("by_decision", ["decision", "requestedAt"])
+    .index("by_agent", ["agentId", "requestedAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AGENT NAVIGATION INTENTS — Agent-driven UI view switching
+  // Agents store navigation requests; frontend watches via useQuery and switches views.
+  // Enables "do everything from chat" — agent says "opening that for you" and UI responds.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  agentNavigationIntents: defineTable({
+    navigationId: v.string(),
+    threadId: v.string(),
+    targetView: v.string(),
+    context: v.optional(v.any()),
+    reason: v.optional(v.string()),
+    status: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_threadId_and_status", ["threadId", "status"])
+    .index("by_navigationId", ["navigationId"]),
 });

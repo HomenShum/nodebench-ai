@@ -1,0 +1,18 @@
+Applications Graphics Acceleration Info:
+Uptime: 12345678 Realtime: 12345678
+
+** Graphics info for pid 1234 [com.example.testapp] **
+
+Stats since: 1234567890ns
+Total frames rendered: 1250
+Janky frames: 45 (3.60%)
+50th percentile: 8ms
+90th percentile: 14ms
+95th percentile: 18ms
+99th percentile: 32ms
+Number Missed Vsync: 12
+Number High input latency: 3
+Number Slow UI thread: 8
+Number Slow bitmap uploads: 2
+Number Slow issue draw commands: 5
+Number Frame deadline missed: 15

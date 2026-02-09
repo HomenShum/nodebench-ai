@@ -138,7 +138,7 @@ Examples:
       const { getLanguageModelSafe } = await import("../agents/mcp_tools/models/modelResolver");
 
       // Use free model for cost efficiency
-      const model = getLanguageModelSafe("devstral-2-free");
+      const model = getLanguageModelSafe("qwen3-coder-free");
 
       const schema = {
         type: "object",
