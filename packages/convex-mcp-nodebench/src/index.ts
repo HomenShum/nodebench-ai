@@ -29,6 +29,7 @@ import { integrationBridgeTools } from "./tools/integrationBridgeTools.js";
 import { cronTools } from "./tools/cronTools.js";
 import { componentTools } from "./tools/componentTools.js";
 import { httpTools } from "./tools/httpTools.js";
+import { critterTools } from "./tools/critterTools.js";
 import { CONVEX_GOTCHAS } from "./gotchaSeed.js";
 import { REGISTRY } from "./tools/toolRegistry.js";
 import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
@@ -46,6 +47,7 @@ const ALL_TOOLS: McpTool[] = [
   ...cronTools,
   ...componentTools,
   ...httpTools,
+  ...critterTools,
 ];
 
 const toolMap = new Map<string, McpTool>();

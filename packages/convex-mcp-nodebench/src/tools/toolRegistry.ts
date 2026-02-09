@@ -248,6 +248,21 @@ export const REGISTRY: ToolRegistryEntry[] = [
     phase: "audit",
     complexity: "low",
   },
+  // ── Critter Tools ──────────────────────────
+  {
+    name: "convex_critter_check",
+    category: "methodology",
+    tags: ["intentionality", "why", "who", "purpose", "audience", "reflection", "pre-action", "critter"],
+    quickRef: {
+      nextAction: "Critter check done. If verdict is 'proceed', start your Convex work. If 'reconsider', sharpen answers.",
+      nextTools: ["convex_audit_schema", "convex_audit_functions", "convex_search_gotchas"],
+      methodology: "convex_intentionality",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "meta",
+    complexity: "low",
+  },
 ];
 
 export function getQuickRef(toolName: string): ConvexQuickRef | null {

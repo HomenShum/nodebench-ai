@@ -9,6 +9,7 @@ import { integrationBridgeTools } from "../tools/integrationBridgeTools.js";
 import { cronTools } from "../tools/cronTools.js";
 import { componentTools } from "../tools/componentTools.js";
 import { httpTools } from "../tools/httpTools.js";
+import { critterTools } from "../tools/critterTools.js";
 import { getDb, seedGotchasIfEmpty } from "../db.js";
 import { CONVEX_GOTCHAS } from "../gotchaSeed.js";
 
@@ -296,8 +297,35 @@ describe("HTTP Tools", () => {
   });
 });
 
+describe("Critter Tools", () => {
+  it("convex_critter_check scores a well-intentioned task as proceed", async () => {
+    const tool = critterTools.find((t) => t.name === "convex_critter_check")!;
+    const result: any = await tool.handler({
+      task: "Add an index on users.email for the login query",
+      why: "The login page takes 3 seconds because we do a full table scan on email lookups",
+      who: "End users logging in via the web app — currently 2000 DAU experiencing slow logins",
+      success_looks_like: "Login query drops from 3s to under 200ms in the Convex dashboard",
+    });
+    expect(result.score).toBeGreaterThanOrEqual(70);
+    expect(result.verdict).toBe("proceed");
+    console.log(`Critter check: score=${result.score}, verdict=${result.verdict}`);
+  });
+
+  it("convex_critter_check catches circular reasoning", async () => {
+    const tool = critterTools.find((t) => t.name === "convex_critter_check")!;
+    const result: any = await tool.handler({
+      task: "Add a new table for user preferences",
+      why: "We need to add a table for user preferences",
+      who: "users",
+    });
+    expect(result.score).toBeLessThan(70);
+    expect(result.feedback.some((f: string) => f.toLowerCase().includes("circular") || f.toLowerCase().includes("vague"))).toBe(true);
+    console.log(`Critter check (bad): score=${result.score}, verdict=${result.verdict}`);
+  });
+});
+
 describe("Tool Count", () => {
-  it("has exactly 17 tools", () => {
+  it("has exactly 18 tools", () => {
     const allTools = [
       ...schemaTools,
       ...functionTools,
@@ -308,8 +336,9 @@ describe("Tool Count", () => {
       ...cronTools,
       ...componentTools,
       ...httpTools,
+      ...critterTools,
     ];
-    expect(allTools.length).toBe(17);
+    expect(allTools.length).toBe(18);
     console.log(`Total tools: ${allTools.length}`);
     console.log("Tools:", allTools.map((t) => t.name).join(", "));
   });

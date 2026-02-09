@@ -176,13 +176,30 @@ function auditFunctions(convexDir: string): FunctionIssue[] {
   }
 
   // Check 4: Cross-call violations — queries CANNOT call runMutation or runAction
+  // Use brace-depth tracking to find exact function boundaries (avoids false positives)
   for (const fn of functions) {
     if (fn.type !== "query" && fn.type !== "internalQuery") continue;
     const content = readFileSync(fn.filePath, "utf-8");
     const lines = content.split("\n");
-    // Find the function body (rough: from export line to next export or end)
     const startLine = fn.line - 1;
-    const chunk = lines.slice(startLine, Math.min(startLine + 80, lines.length)).join("\n");
+
+    // Find the function body by tracking brace depth from the opening ({
+    // The pattern is: export const X = query({ ... });
+    let depth = 0;
+    let foundOpen = false;
+    let endLine = Math.min(startLine + 80, lines.length);
+    for (let i = startLine; i < lines.length; i++) {
+      for (const ch of lines[i]) {
+        if (ch === "{") { depth++; foundOpen = true; }
+        if (ch === "}") depth--;
+      }
+      if (foundOpen && depth <= 0) {
+        endLine = i + 1;
+        break;
+      }
+    }
+
+    const chunk = lines.slice(startLine, endLine).join("\n");
 
     if (/ctx\.runMutation/.test(chunk)) {
       issues.push({

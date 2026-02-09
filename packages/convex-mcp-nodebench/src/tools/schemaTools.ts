@@ -128,19 +128,25 @@ function analyzeSchema(schemaContent: string, filePath: string): SchemaIssue[] {
     });
   }
 
-  // Check: v.any() usage (defeats validator purpose)
+  // Check: v.any() usage (defeats validator purpose) — aggregate
+  const vAnyLines: number[] = [];
   lines.forEach((line, i) => {
     if (line.trim().startsWith("//") || line.trim().startsWith("*")) return;
     if (/v\.any\s*\(\s*\)/.test(line)) {
-      issues.push({
-        severity: "warning",
-        location: `${filePath}:${i + 1}`,
-        message: "v.any() defeats the purpose of validators. Use a specific validator type.",
-        fix: "Replace v.any() with the appropriate validator (v.string(), v.object({...}), etc.)",
-        gotchaKey: "avoid_v_any",
-      });
+      vAnyLines.push(i + 1);
     }
   });
+  if (vAnyLines.length > 0) {
+    const examples = vAnyLines.slice(0, 5).map((l) => `line ${l}`).join(", ");
+    const more = vAnyLines.length > 5 ? ` (+${vAnyLines.length - 5} more)` : "";
+    issues.push({
+      severity: "warning",
+      location: filePath,
+      message: `${vAnyLines.length} uses of v.any() defeat the purpose of validators. Locations: ${examples}${more}`,
+      fix: "Replace v.any() with specific validators (v.string(), v.object({...}), v.union(...), etc.)",
+      gotchaKey: "avoid_v_any",
+    });
+  }
 
   // Check: _creationTime or _id in schema definition (system fields)
   lines.forEach((line, i) => {
