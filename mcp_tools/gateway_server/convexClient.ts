@@ -8,6 +8,8 @@
  * The admin key is NOT used — auth boundary is at the Convex httpAction level.
  */
 
+import { getRequestContext } from "./requestContext.js";
+
 const CONVEX_URL = process.env.CONVEX_URL || process.env.CONVEX_BASE_URL;
 const MCP_SECRET = process.env.MCP_SECRET;
 
@@ -25,19 +27,33 @@ if (!MCP_SECRET) {
  */
 export async function callGateway(
   fn: string,
-  args: Record<string, unknown> = {}
+  args: Record<string, unknown> = {},
+  meta?: Record<string, unknown>
 ): Promise<unknown> {
   if (!CONVEX_URL) throw new Error("Missing CONVEX_URL environment variable");
   if (!MCP_SECRET) throw new Error("Missing MCP_SECRET environment variable");
 
   const url = `${CONVEX_URL.replace(/\/$/, "")}/api/mcpGateway`;
+  const ctxMeta = getRequestContext();
+  const mergedMeta = {
+    ...(ctxMeta ?? {}),
+    ...(meta ?? {}),
+    gateway: {
+      service: "nodebench-mcp-unified",
+      receivedAtIso: ctxMeta?.receivedAtIso,
+    },
+  };
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-mcp-secret": MCP_SECRET,
     },
-    body: JSON.stringify({ fn, args }),
+    body: JSON.stringify({
+      fn,
+      args,
+      meta: Object.keys(mergedMeta).length > 0 ? mergedMeta : undefined,
+    }),
   });
 
   if (!res.ok) {

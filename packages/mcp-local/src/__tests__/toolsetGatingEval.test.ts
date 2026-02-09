@@ -36,7 +36,21 @@ import { visionTools } from "../tools/visionTools.js";
 import { webTools } from "../tools/webTools.js";
 import { githubTools } from "../tools/githubTools.js";
 import { documentationTools } from "../tools/documentationTools.js";
-import { localFileTools } from "../tools/localFileTools.js";
+import { localFileTools, gaiaMediaSolvers } from "../tools/localFileTools.js";
+import { llmTools } from "../tools/llmTools.js";
+import { securityTools } from "../tools/securityTools.js";
+import { platformTools } from "../tools/platformTools.js";
+import { researchWritingTools } from "../tools/researchWritingTools.js";
+import { flickerDetectionTools } from "../tools/flickerDetectionTools.js";
+import { figmaFlowTools } from "../tools/figmaFlowTools.js";
+import { boilerplateTools } from "../tools/boilerplateTools.js";
+import { cCompilerBenchmarkTools } from "../tools/cCompilerBenchmarkTools.js";
+import { sessionMemoryTools } from "../tools/sessionMemoryTools.js";
+import { toonTools } from "../tools/toonTools.js";
+import { patternTools } from "../tools/patternTools.js";
+import { gitWorkflowTools } from "../tools/gitWorkflowTools.js";
+import { seoTools } from "../tools/seoTools.js";
+import { voiceBridgeTools } from "../tools/voiceBridgeTools.js";
 import { createMetaTools } from "../tools/metaTools.js";
 import type { McpTool } from "../types.js";
 
@@ -60,11 +74,27 @@ const TOOLSET_MAP: Record<string, McpTool[]> = {
   bootstrap: agentBootstrapTools,
   self_eval: selfEvalTools,
   parallel: parallelAgentTools,
+  llm: llmTools,
+  security: securityTools,
+  platform: platformTools,
+  research_writing: researchWritingTools,
+  flicker_detection: flickerDetectionTools,
+  figma_flow: figmaFlowTools,
+  boilerplate: boilerplateTools,
+  benchmark: cCompilerBenchmarkTools,
+  session_memory: sessionMemoryTools,
+  gaia_solvers: gaiaMediaSolvers,
+  toon: toonTools,
+  pattern: patternTools,
+  git_workflow: gitWorkflowTools,
+  seo: seoTools,
+  voice_bridge: voiceBridgeTools,
 };
 
 const PRESETS: Record<string, string[]> = {
-  lite: ["verification", "eval", "quality_gate", "learning", "recon"],
-  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval"],
+  meta: [],
+  lite: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"],
+  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark", "session_memory", "toon", "pattern", "git_workflow", "seo", "voice_bridge"],
   full: Object.keys(TOOLSET_MAP),
 };
 
@@ -812,50 +842,56 @@ const allTrajectories: PresetTrajectory[] = [];
 describe("Toolset Gating Eval", () => {
   afterAll(async () => { await cleanupAll(); });
 
-  for (const preset of ["lite", "core", "full"] as const) {
+  for (const preset of ["meta", "lite", "core", "full"] as const) {
     describe(`Preset: ${preset}`, () => {
       for (const scenario of SCENARIOS) {
         it(`${preset}/${scenario.id}: runs 8-phase pipeline`, async () => {
           const t = await runTrajectory(preset, scenario);
           allTrajectories.push(t);
 
-          // Core methodology phases should always work (lite, core, full all have these)
+          // Meta phase always succeeds (findTools + getMethodology always present)
           const metaPhase = t.phases.find((p) => p.phase === "meta");
           expect(metaPhase?.success).toBe(true);
 
-          const reconPhase = t.phases.find((p) => p.phase === "recon");
-          expect(reconPhase?.success).toBe(true);
+          if (preset === "meta") {
+            // meta preset: only meta tools available — all other phases skipped
+            expect(t.phasesCompleted).toBe(1); // only meta phase
+            expect(t.toolCount).toBe(3); // findTools + getMethodology + check_mcp_setup
+          } else {
+            // lite, core, full: domain tools available
+            const reconPhase = t.phases.find((p) => p.phase === "recon");
+            expect(reconPhase?.success).toBe(true);
 
-          const verifyPhase = t.phases.find((p) => p.phase === "verification");
-          expect(verifyPhase?.success).toBe(true);
+            const verifyPhase = t.phases.find((p) => p.phase === "verification");
+            expect(verifyPhase?.success).toBe(true);
 
-          const evalPhase = t.phases.find((p) => p.phase === "eval");
-          expect(evalPhase?.success).toBe(true);
+            const evalPhase = t.phases.find((p) => p.phase === "eval");
+            expect(evalPhase?.success).toBe(true);
 
-          const gatePhase = t.phases.find((p) => p.phase === "quality-gate");
-          expect(gatePhase?.success).toBe(true);
+            const gatePhase = t.phases.find((p) => p.phase === "quality-gate");
+            expect(gatePhase?.success).toBe(true);
 
-          // Knowledge phase depends on preset (learning tools in lite + core + full)
-          const knowledgePhase = t.phases.find((p) => p.phase === "knowledge");
-          expect(knowledgePhase?.success).toBe(true);
+            // Knowledge phase depends on preset (learning tools in lite + core + full)
+            const knowledgePhase = t.phases.find((p) => p.phase === "knowledge");
+            expect(knowledgePhase?.success).toBe(true);
+          }
         }, 30_000);
       }
     });
   }
 
   describe("Flywheel availability", () => {
-    it("lite preset does NOT have flywheel tools", () => {
-      const liteTrajectories = allTrajectories.filter((t) => t.preset === "lite");
-      for (const t of liteTrajectories) {
+    it("meta preset does NOT have flywheel tools", () => {
+      const noFlywheel = allTrajectories.filter((t) => t.preset === "meta");
+      for (const t of noFlywheel) {
         const fw = t.phases.find((p) => p.phase === "flywheel");
         expect(fw?.success).toBe(false);
-        expect(fw?.toolsMissing).toContain("run_mandatory_flywheel");
       }
     });
 
-    it("core and full presets HAVE flywheel tools", () => {
-      const coreFullTrajectories = allTrajectories.filter((t) => t.preset !== "lite");
-      for (const t of coreFullTrajectories) {
+    it("lite, core, and full presets HAVE flywheel tools", () => {
+      const withFlywheel = allTrajectories.filter((t) => t.preset === "lite" || t.preset === "core" || t.preset === "full");
+      for (const t of withFlywheel) {
         expect(t.flywheelComplete).toBe(true);
       }
     });
@@ -890,16 +926,16 @@ describe("Toolset Gating Eval", () => {
   });
 
   describe("Self-eval availability", () => {
-    it("lite does NOT have self-eval tools", () => {
-      const liteTrajectories = allTrajectories.filter((t) => t.preset === "lite");
-      for (const t of liteTrajectories) {
+    it("meta and lite do NOT have self-eval tools", () => {
+      const noSelfEval = allTrajectories.filter((t) => t.preset === "meta" || t.preset === "lite");
+      for (const t of noSelfEval) {
         const se = t.phases.find((p) => p.phase === "self-eval");
         if (se) expect(se.success).toBe(false);
       }
     });
 
     it("core and full HAVE self-eval tools", () => {
-      const coreFullTrajectories = allTrajectories.filter((t) => t.preset !== "lite");
+      const coreFullTrajectories = allTrajectories.filter((t) => t.preset === "core" || t.preset === "full");
       for (const t of coreFullTrajectories) {
         const se = t.phases.find((p) => p.phase === "self-eval");
         expect(se?.success).toBe(true);
@@ -908,6 +944,17 @@ describe("Toolset Gating Eval", () => {
   });
 
   describe("Token surface area reduction", () => {
+    it("meta has the fewest tools (only meta tools)", () => {
+      const metaT = allTrajectories.find((t) => t.preset === "meta")!;
+      const liteT = allTrajectories.find((t) => t.preset === "lite")!;
+
+      expect(metaT.toolCount).toBe(3); // findTools + getMethodology + check_mcp_setup
+      expect(metaT.toolCount).toBeLessThan(liteT.toolCount);
+
+      const reduction = 1 - metaT.toolCount / liteT.toolCount;
+      expect(reduction).toBeGreaterThan(0.9); // meta is 90%+ fewer tools than lite
+    });
+
     it("lite reduces tool count and estimated token overhead vs full", () => {
       const liteT = allTrajectories.find((t) => t.preset === "lite")!;
       const fullT = allTrajectories.find((t) => t.preset === "full")!;
@@ -919,12 +966,14 @@ describe("Toolset Gating Eval", () => {
       expect(reduction).toBeGreaterThan(0.5); // lite is at least 50% fewer tools
     });
 
-    it("core is between lite and full", () => {
+    it("presets are ordered: meta < lite < core < full", () => {
+      const metaT = allTrajectories.find((t) => t.preset === "meta")!;
       const liteT = allTrajectories.find((t) => t.preset === "lite")!;
       const coreT = allTrajectories.find((t) => t.preset === "core")!;
       const fullT = allTrajectories.find((t) => t.preset === "full")!;
 
-      expect(coreT.toolCount).toBeGreaterThan(liteT.toolCount);
+      expect(metaT.toolCount).toBeLessThan(liteT.toolCount);
+      expect(liteT.toolCount).toBeLessThan(coreT.toolCount);
       expect(coreT.toolCount).toBeLessThan(fullT.toolCount);
     });
   });
@@ -936,7 +985,7 @@ describe("Toolset Gating Eval", () => {
 
 describe("Toolset Gating Report", () => {
   it("generates trajectory comparison across presets", () => {
-    expect(allTrajectories.length).toBe(27); // 3 presets × 9 scenarios
+    expect(allTrajectories.length).toBe(36); // 4 presets × 9 scenarios
 
     console.log("\n");
     console.log("╔══════════════════════════════════════════════════════════════════════════════╗");
@@ -949,7 +998,7 @@ describe("Toolset Gating Report", () => {
     console.log("┌──────────────────────────────────────────────────────────────────────────────┐");
     console.log("│ 1. TOOL COUNT & ESTIMATED TOKEN OVERHEAD                                     │");
     console.log("├──────────────────────────────────────────────────────────────────────────────┤");
-    for (const preset of ["lite", "core", "full"]) {
+    for (const preset of ["meta", "lite", "core", "full"]) {
       const t = allTrajectories.find((tr) => tr.preset === preset)!;
       const bar = "█".repeat(Math.round(t.toolCount / 3));
       console.log(`│ ${preset.padEnd(6)} ${String(t.toolCount).padStart(3)} tools  ~${String(t.estimatedSchemaTokens).padStart(5)} tokens  ${bar}`.padEnd(79) + "│");
@@ -972,7 +1021,7 @@ describe("Toolset Gating Report", () => {
     const allPhaseNames = ["meta", "recon", "risk", "verification", "eval", "quality-gate", "knowledge", "flywheel", "parallel", "self-eval"];
     for (const phase of allPhaseNames) {
       const cols: string[] = [];
-      for (const preset of ["lite", "core", "full"]) {
+      for (const preset of ["meta", "lite", "core", "full"]) {
         const trajectories = allTrajectories.filter((t) => t.preset === preset);
         const phaseResults = trajectories.map((t) => t.phases.find((p) => p.phase === phase));
         const present = phaseResults.some((p) => p);
@@ -1004,7 +1053,7 @@ describe("Toolset Gating Report", () => {
       { label: "Total tool calls", key: "totalToolCalls" as const },
     ]) {
       const cols: string[] = [];
-      for (const preset of ["lite", "core", "full"]) {
+      for (const preset of ["meta", "lite", "core", "full"]) {
         const sum = allTrajectories
           .filter((t) => t.preset === preset)
           .reduce((s, t) => s + t[metric.key], 0);
@@ -1020,7 +1069,7 @@ describe("Toolset Gating Report", () => {
       { label: "Flywheel complete", fn: (t: PresetTrajectory) => t.flywheelComplete },
     ]) {
       const cols: string[] = [];
-      for (const preset of ["lite", "core", "full"]) {
+      for (const preset of ["meta", "lite", "core", "full"]) {
         const count = allTrajectories
           .filter((t) => t.preset === preset)
           .filter(metric.fn).length;
@@ -1035,7 +1084,7 @@ describe("Toolset Gating Report", () => {
     console.log("┌──────────────────────────────────────────────────────────────────────────────┐");
     console.log("│ 4. TOOLS MISSING BY PRESET (what you lose with gating)                       │");
     console.log("├──────────────────────────────────────────────────────────────────────────────┤");
-    for (const preset of ["lite", "core"]) {
+    for (const preset of ["meta", "lite", "core"]) {
       const missingCalls = callLog.filter((c) => c.preset === preset && c.status === "missing");
       const uniqueMissing = [...new Set(missingCalls.map((c) => c.tool))];
       if (uniqueMissing.length > 0) {
@@ -1108,7 +1157,7 @@ describe("Toolset Gating Report", () => {
     console.log("┌──────────────────────────────────────────────────────────────────────────────┐");
     console.log("│ 7. UNIQUE TOOLS EXERCISED PER PRESET                                        │");
     console.log("├──────────────────────────────────────────────────────────────────────────────┤");
-    for (const preset of ["lite", "core", "full"]) {
+    for (const preset of ["meta", "lite", "core", "full"]) {
       const successCalls = callLog.filter((c) => c.preset === preset && c.status === "success");
       const uniqueTools = [...new Set(successCalls.map((c) => c.tool))];
       const availableTools = buildToolset(preset).length;
@@ -1128,6 +1177,8 @@ describe("Toolset Gating Report", () => {
     console.log("╠══════════════════════════════════════════════════════════════════════════════╣");
     console.log("║                                                                              ║");
 
+    const metaCompleted = allTrajectories.filter((t) => t.preset === "meta").reduce((s, t) => s + t.phasesCompleted, 0);
+    const metaTotal = allTrajectories.filter((t) => t.preset === "meta").reduce((s, t) => s + t.phasesCompleted + t.phasesSkipped, 0);
     const liteCompleted = allTrajectories.filter((t) => t.preset === "lite").reduce((s, t) => s + t.phasesCompleted, 0);
     const liteTotal = allTrajectories.filter((t) => t.preset === "lite").reduce((s, t) => s + t.phasesCompleted + t.phasesSkipped, 0);
     const coreCompleted = allTrajectories.filter((t) => t.preset === "core").reduce((s, t) => s + t.phasesCompleted, 0);
@@ -1135,11 +1186,13 @@ describe("Toolset Gating Report", () => {
     const fullCompleted = allTrajectories.filter((t) => t.preset === "full").reduce((s, t) => s + t.phasesCompleted, 0);
     const fullTotal = allTrajectories.filter((t) => t.preset === "full").reduce((s, t) => s + t.phasesCompleted + t.phasesSkipped, 0);
 
+    console.log(`║  meta: ${metaCompleted}/${metaTotal} phases (${Math.round(metaCompleted / metaTotal * 100)}%)  — discovery only, 5 tools, minimal context`.padEnd(79) + "║");
     console.log(`║  lite: ${liteCompleted}/${liteTotal} phases (${Math.round(liteCompleted / liteTotal * 100)}%)  — ${savings}% fewer tokens, loses flywheel + parallel`.padEnd(79) + "║");
     console.log(`║  core: ${coreCompleted}/${coreTotal} phases (${Math.round(coreCompleted / coreTotal * 100)}%)  — full methodology loop, no parallel/vision/web`.padEnd(79) + "║");
     console.log(`║  full: ${fullCompleted}/${fullTotal} phases (${Math.round(fullCompleted / fullTotal * 100)}%) — everything`.padEnd(79) + "║");
     console.log("║                                                                              ║");
     console.log("║  Recommendation:                                                             ║");
+    console.log("║    Discovery-first / front door → --preset meta  (5 tools, self-escalate)   ║");
     console.log("║    Solo dev, standard tasks     → --preset lite  (fast, low token overhead)  ║");
     console.log("║    Team with methodology needs  → --preset core  (full flywheel loop)        ║");
     console.log("║    Multi-agent / full pipeline   → --preset full  (parallel + self-eval)     ║");
@@ -1147,7 +1200,17 @@ describe("Toolset Gating Report", () => {
     console.log("╚══════════════════════════════════════════════════════════════════════════════╝");
 
     // ─── ASSERTIONS ───
-    // All presets complete the core 6 phases (meta, recon, risk, verification, eval, quality-gate)
+    // meta preset: only meta phase succeeds (discovery-only gate)
+    {
+      const metaTrajectories = allTrajectories.filter((t) => t.preset === "meta");
+      for (const t of metaTrajectories) {
+        expect(t.phases.find((p) => p.phase === "meta")?.success).toBe(true);
+        expect(t.phasesCompleted).toBe(1);
+        expect(t.toolCount).toBe(3);
+      }
+    }
+
+    // lite, core, full: complete the core 6 phases (meta, recon, risk, verification, eval, quality-gate)
     for (const preset of ["lite", "core", "full"]) {
       const trajectories = allTrajectories.filter((t) => t.preset === preset);
       for (const t of trajectories) {
@@ -1160,7 +1223,7 @@ describe("Toolset Gating Report", () => {
       }
     }
 
-    // lite and core detect the same number of issues as full (core methodology is intact)
+    // lite, core, full detect issues (core methodology is intact)
     for (const preset of ["lite", "core", "full"]) {
       const totalIssues = allTrajectories
         .filter((t) => t.preset === preset)

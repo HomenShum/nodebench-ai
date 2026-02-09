@@ -718,7 +718,7 @@ describe("Scenario: Meta Tool Discovery", () => {
 
     expect(result.title).toContain("Overview");
     const topics = Object.keys(result.steps[0].topics);
-    expect(topics.length).toBe(21);
+    expect(topics.length).toBe(24);
   });
 
   it("Step 4: Get specific methodology", async () => {
@@ -1117,6 +1117,10 @@ describe("Coverage Report", () => {
       "generate_report",            // Covered in tools.test.ts
       "monitor_repo",               // Requires GitHub API - covered in tools.test.ts
       "run_tests_cli",              // Covered in tools.test.ts
+      "check_mcp_setup",            // Env-dependent diagnostic wizard - covered in tools.test.ts
+      "scan_capabilities",           // Requires file path - covered in tools.test.ts
+      "verify_concept_support",      // Requires file path - covered in tools.test.ts
+      "generate_implementation_plan", // Depends on verify_concept_support output - covered in tools.test.ts
     ];
 
     // Deprecated tools (kept for backwards compatibility, but flagged)
@@ -1197,7 +1201,8 @@ describe("Coverage Report", () => {
       "Figma Flow": ["analyze_figma_flows", "extract_figma_frames", "cluster_figma_flows", "render_flow_visualization"],
       "Boilerplate": ["scaffold_nodebench_project", "get_boilerplate_status"],
       "Benchmark": ["start_autonomy_benchmark", "log_benchmark_milestone", "complete_autonomy_benchmark"],
-      "Meta": ["findTools", "getMethodology"],
+      "Meta": ["findTools", "getMethodology", "check_mcp_setup"],
+      "Architect": ["scan_capabilities", "verify_concept_support", "generate_implementation_plan"],
       "External (skip)": externalDependencyTools,
     };
 

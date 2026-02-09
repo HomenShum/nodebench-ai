@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -58,6 +58,28 @@ export interface EvalDashboardProps {
   totalTime?: number;
   suiteId?: string;
 }
+
+type GaiaEvalSnapshot = {
+  suiteId: string;
+  lane: string;
+  generatedAtIso: string;
+  config: string;
+  split: string;
+  taskCount: number;
+  concurrency: number;
+  baseline: { model: string; correct: number; passRatePct: number; avgMs: number };
+  tools: {
+    model: string;
+    mode: string;
+    correct: number;
+    passRatePct: number;
+    avgMs: number;
+    avgToolCalls: number;
+  };
+  improved: number;
+  regressions: number;
+  notes?: string;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LATEST BENCHMARK DATA (Jan 8, 2026 - Full 70-eval run)
@@ -187,6 +209,34 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
   suiteId = "core",
 }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "scenarios" | "cost">("overview");
+  const [gaiaWeb, setGaiaWeb] = useState<GaiaEvalSnapshot | null>(null);
+  const [gaiaFiles, setGaiaFiles] = useState<GaiaEvalSnapshot | null>(null);
+  const [gaiaMedia, setGaiaMedia] = useState<GaiaEvalSnapshot | null>(null);
+  const [gaiaAudio, setGaiaAudio] = useState<GaiaEvalSnapshot | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async (url: string, setter: (v: GaiaEvalSnapshot) => void) => {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as GaiaEvalSnapshot;
+        if (!cancelled) setter(json);
+      } catch {
+        // ignore
+      }
+    };
+
+    load("/evals/gaia_capability_latest.json", (v) => setGaiaWeb(v));
+    load("/evals/gaia_capability_files_latest.json", (v) => setGaiaFiles(v));
+    load("/evals/gaia_capability_media_latest.json", (v) => setGaiaMedia(v));
+    load("/evals/gaia_capability_audio_latest.json", (v) => setGaiaAudio(v));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Sort by pass rate for display
   const sortedModels = [...modelResults].sort((a, b) => b.passRate - a.passRate);
@@ -292,6 +342,91 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {activeTab === "overview" && (
+        <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-stone-800">GAIA Capability Lift (Local)</h3>
+              <p className="text-xs text-stone-500 mt-1">
+                Snapshots are written by the GAIA capability tests when{" "}
+                <span className="font-mono">NODEBENCH_WRITE_GAIA_REPORT=1</span>. View tool traces in{" "}
+                <span className="font-mono">/mcp/ledger</span>.
+              </p>
+            </div>
+            <div className="text-[10px] uppercase tracking-widest text-stone-400">
+              No prompts/answers persisted
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {([
+              { label: "Web Lane", snap: gaiaWeb },
+              { label: "File Lane", snap: gaiaFiles },
+              { label: "Media Lane", snap: gaiaMedia },
+              { label: "Audio Lane", snap: gaiaAudio },
+            ] as const).map(({ label, snap }) => {
+              const delta = snap ? snap.tools.passRatePct - snap.baseline.passRatePct : 0;
+              return (
+                <div key={label} className="bg-white rounded-lg border border-stone-200 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                      {label}
+                    </div>
+                    {snap ? (
+                      <div className="text-[11px] text-stone-500 font-mono tabular-nums">
+                        {snap.generatedAtIso.slice(0, 19).replace("T", " ")}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {!snap ? (
+                    <div className="mt-2 text-sm text-stone-600">
+                      No snapshot yet. Run GAIA capability tests with{" "}
+                      <span className="font-mono">NODEBENCH_WRITE_GAIA_REPORT=1</span>.
+                    </div>
+                  ) : (
+                    <div className="mt-2 space-y-1">
+                      <div className="text-sm text-stone-900">
+                        Tools{" "}
+                        <span className="font-semibold tabular-nums">
+                          {snap.tools.passRatePct.toFixed(1)}%
+                        </span>{" "}
+                        vs Baseline{" "}
+                        <span className="font-semibold tabular-nums">
+                          {snap.baseline.passRatePct.toFixed(1)}%
+                        </span>{" "}
+                        <span
+                          className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            delta >= 0 ? "bg-emerald-100 text-emerald-900" : "bg-red-100 text-red-900"
+                          }`}
+                        >
+                          Δ {delta >= 0 ? "+" : ""}
+                          {delta.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="text-xs text-stone-600">
+                        tasks{" "}
+                        <span className="font-mono tabular-nums">{snap.taskCount}</span> • mode{" "}
+                        <span className="font-mono">{snap.tools.mode}</span> • avg tool calls{" "}
+                        <span className="font-mono tabular-nums">
+                          {snap.tools.avgToolCalls.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        config <span className="font-mono">{snap.config}</span> • split{" "}
+                        <span className="font-mono">{snap.split}</span> • improved{" "}
+                        <span className="font-mono tabular-nums">{snap.improved}</span> • regressions{" "}
+                        <span className="font-mono tabular-nums">{snap.regressions}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Main Content based on activeTab */}
       {activeTab === "overview" && (

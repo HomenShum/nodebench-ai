@@ -49,6 +49,31 @@ CREATE TABLE IF NOT EXISTS gaps (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE VIRTUAL TABLE IF NOT EXISTS gaps_fts USING fts5(
+  title,
+  description,
+  fix_strategy,
+  content='gaps',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS gaps_fts_insert AFTER INSERT ON gaps BEGIN
+  INSERT INTO gaps_fts(rowid, title, description, fix_strategy)
+  VALUES (new.rowid, new.title, COALESCE(new.description, ''), COALESCE(new.fix_strategy, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS gaps_fts_delete AFTER DELETE ON gaps BEGIN
+  INSERT INTO gaps_fts(gaps_fts, rowid, title, description, fix_strategy)
+  VALUES ('delete', old.rowid, old.title, COALESCE(old.description, ''), COALESCE(old.fix_strategy, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS gaps_fts_update AFTER UPDATE ON gaps BEGIN
+  INSERT INTO gaps_fts(gaps_fts, rowid, title, description, fix_strategy)
+  VALUES ('delete', old.rowid, old.title, COALESCE(old.description, ''), COALESCE(old.fix_strategy, ''));
+  INSERT INTO gaps_fts(rowid, title, description, fix_strategy)
+  VALUES (new.rowid, new.title, COALESCE(new.description, ''), COALESCE(new.fix_strategy, ''));
+END;
+
 CREATE TABLE IF NOT EXISTS test_results (
   id            TEXT PRIMARY KEY,
   cycle_id      TEXT NOT NULL REFERENCES verification_cycles(id) ON DELETE CASCADE,
@@ -170,6 +195,31 @@ CREATE TABLE IF NOT EXISTS recon_findings (
 CREATE INDEX IF NOT EXISTS idx_recon_findings_session ON recon_findings(session_id);
 CREATE INDEX IF NOT EXISTS idx_recon_findings_category ON recon_findings(category);
 
+CREATE VIRTUAL TABLE IF NOT EXISTS recon_findings_fts USING fts5(
+  summary,
+  relevance,
+  action_items,
+  content='recon_findings',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS recon_findings_fts_insert AFTER INSERT ON recon_findings BEGIN
+  INSERT INTO recon_findings_fts(rowid, summary, relevance, action_items)
+  VALUES (new.rowid, new.summary, COALESCE(new.relevance, ''), COALESCE(new.action_items, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS recon_findings_fts_delete AFTER DELETE ON recon_findings BEGIN
+  INSERT INTO recon_findings_fts(recon_findings_fts, rowid, summary, relevance, action_items)
+  VALUES ('delete', old.rowid, old.summary, COALESCE(old.relevance, ''), COALESCE(old.action_items, ''));
+END;
+
+CREATE TRIGGER IF NOT EXISTS recon_findings_fts_update AFTER UPDATE ON recon_findings BEGIN
+  INSERT INTO recon_findings_fts(recon_findings_fts, rowid, summary, relevance, action_items)
+  VALUES ('delete', old.rowid, old.summary, COALESCE(old.relevance, ''), COALESCE(old.action_items, ''));
+  INSERT INTO recon_findings_fts(rowid, summary, relevance, action_items)
+  VALUES (new.rowid, new.summary, COALESCE(new.relevance, ''), COALESCE(new.action_items, ''));
+END;
+
 -- ═══════════════════════════════════════════
 -- PROJECT CONTEXT (Persistent project metadata)
 -- ═══════════════════════════════════════════
@@ -255,6 +305,27 @@ CREATE TABLE IF NOT EXISTS oracle_comparisons (
 );
 
 CREATE INDEX IF NOT EXISTS idx_oracle_comparisons_label ON oracle_comparisons(test_label);
+
+-- ═══════════════════════════════════════════
+-- AGENT MAILBOX (Inter-agent messaging)
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS agent_mailbox (
+  id            TEXT PRIMARY KEY,
+  sender_id     TEXT NOT NULL,
+  recipient_id  TEXT,
+  recipient_role TEXT,
+  category      TEXT NOT NULL DEFAULT 'status_report',
+  priority      TEXT NOT NULL DEFAULT 'normal',
+  subject       TEXT NOT NULL,
+  body          TEXT NOT NULL,
+  read          INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_mailbox_recipient ON agent_mailbox(recipient_id);
+CREATE INDEX IF NOT EXISTS idx_agent_mailbox_role ON agent_mailbox(recipient_role);
+CREATE INDEX IF NOT EXISTS idx_agent_mailbox_read ON agent_mailbox(read);
 `;
 
 export function getDb(): Database.Database {
@@ -263,6 +334,21 @@ export function getDb(): Database.Database {
   mkdirSync(dir, { recursive: true });
   _db = new Database(join(dir, "nodebench.db"));
   _db.exec(SCHEMA_SQL);
+
+  // One-time FTS5 rebuild for existing data (idempotent, skips if already synced)
+  try {
+    const rf = _db.prepare("SELECT COUNT(*) as c FROM recon_findings").get() as any;
+    const rfFts = _db.prepare("SELECT COUNT(*) as c FROM recon_findings_fts").get() as any;
+    if (rf.c > 0 && rfFts.c === 0) {
+      _db.exec("INSERT INTO recon_findings_fts(recon_findings_fts) VALUES('rebuild')");
+    }
+    const g = _db.prepare("SELECT COUNT(*) as c FROM gaps").get() as any;
+    const gFts = _db.prepare("SELECT COUNT(*) as c FROM gaps_fts").get() as any;
+    if (g.c > 0 && gFts.c === 0) {
+      _db.exec("INSERT INTO gaps_fts(gaps_fts) VALUES('rebuild')");
+    }
+  } catch { /* FTS tables not yet available — fresh DB, triggers will handle it */ }
+
   return _db;
 }
 

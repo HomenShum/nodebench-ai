@@ -1,7 +1,7 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.10.0",
-  "description": "Make AI agents catch the bugs they normally ship. 134 MCP tools: progressive discovery with 7-mode hybrid search (keyword, fuzzy, n-gram, prefix, semantic, exact, dense TF-IDF cosine), agent contract (front-door pattern), project boilerplate scaffolding, autonomous capability benchmarks (C-compiler pattern), structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, platform bridge, model benchmarking, visual regression, report generation, academic paper writing, deterministic local file parsing, Android flicker detection, Figma flow analysis, and contract compliance scoring. --preset lite (36), core (84), or full (134). Benchmarked: 13 issues caught, 26 blind spots prevented.",
+  "version": "2.17.0",
+  "description": "Make AI agents catch the bugs they normally ship. 175 MCP tools across 34 domains: adaptive architect (structural code analysis + concept verification + implementation planning), email (SMTP/IMAP send+read+draft+setup wizard), RSS/Atom feed monitoring with research digest pipeline scaffolding, Agent-as-a-Graph bipartite embedding search (arxiv:2511.18194) with type-conditioned wRRF, MCP annotations (category/phase/complexity), critter intentionality checkpoint, TOON encoding (~40% token savings), pattern mining, git workflow compliance, SEO audit, voice bridge, agent mailbox, progressive discovery with 8-mode hybrid search + neural embeddings (local HuggingFace / Google / OpenAI fallback), model-tier complexity routing, agent contract (front-door + anti-rationalization), session memory, 6 GAIA media solvers, structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, visual regression, academic writing, local file parsing, flicker detection, Figma flow analysis, and contract compliance scoring. --preset meta (6), lite (44), core (122), or full (175).",
   "type": "module",
   "bin": {
     "nodebench-mcp": "./dist/index.js"
@@ -57,7 +57,23 @@
     "qa-automation",
     "agentic",
     "academic-writing",
-    "research-paper"
+    "research-paper",
+    "toon",
+    "seo",
+    "voice-pipeline",
+    "git-workflow",
+    "pattern-mining",
+    "session-memory",
+    "embedding-search",
+    "agent-as-a-graph",
+    "critter",
+    "email",
+    "smtp",
+    "imap",
+    "rss",
+    "research-digest",
+    "structural-analysis",
+    "code-architecture"
   ],
   "repository": {
     "type": "git",
@@ -72,12 +88,14 @@
   "author": "HomenShum",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
+    "@toon-format/toon": "^2.1.0",
     "better-sqlite3": "^11.0.0",
     "nodebench-ai": "file:../.."
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@google/genai": "^1.10.0",
+    "@huggingface/transformers": "^3.8.1",
     "cheerio": "^1.0.0",
     "openai": "^5.8.2",
     "papaparse": "^5.5.3",

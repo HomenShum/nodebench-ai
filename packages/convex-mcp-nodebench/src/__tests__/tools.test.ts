@@ -20,6 +20,11 @@ import { paginationTools as paginationAuditTools } from "../tools/paginationTool
 import { dataModelingTools } from "../tools/dataModelingTools.js";
 import { devSetupTools } from "../tools/devSetupTools.js";
 import { migrationTools } from "../tools/migrationTools.js";
+import { reportingTools } from "../tools/reportingTools.js";
+import { vectorSearchTools } from "../tools/vectorSearchTools.js";
+import { schedulerTools } from "../tools/schedulerTools.js";
+import { qualityGateTools } from "../tools/qualityGateTools.js";
+import { architectTools } from "../tools/architectTools.js";
 import { getDb, seedGotchasIfEmpty } from "../db.js";
 import { CONVEX_GOTCHAS } from "../gotchaSeed.js";
 
@@ -473,8 +478,166 @@ describe("Migration Tools", () => {
   });
 });
 
+describe("Reporting Tools", () => {
+  it("convex_export_sarif exports SARIF 2.1.0 format", async () => {
+    const tool = reportingTools.find((t) => t.name === "convex_export_sarif")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.sarif).toBeDefined();
+    expect(result.sarif.version).toBe("2.1.0");
+    expect(result.sarif.runs).toBeDefined();
+    expect(result.sarif.runs.length).toBe(1);
+    expect(result.sarif.runs[0].tool.driver.name).toBe("convex-mcp-nodebench");
+    expect(result.summary.format).toBe("SARIF 2.1.0");
+    console.log(`SARIF export: ${result.summary.totalResults} results, types: ${result.summary.auditTypesIncluded.join(", ")}`);
+  });
+
+  it("convex_audit_diff computes baseline diff", async () => {
+    // Run a schema audit twice to create baseline data
+    const schemaTool = schemaTools.find((t) => t.name === "convex_audit_schema")!;
+    await schemaTool.handler({ projectDir: PROJECT_DIR });
+    await schemaTool.handler({ projectDir: PROJECT_DIR });
+
+    const tool = reportingTools.find((t) => t.name === "convex_audit_diff")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.totalNew).toBe("number");
+    expect(typeof result.summary.totalFixed).toBe("number");
+    expect(typeof result.summary.totalExisting).toBe("number");
+    expect(["improving", "stable", "degrading"]).toContain(result.summary.trend);
+    console.log(`Audit diff: ${result.summary.totalNew} new, ${result.summary.totalFixed} fixed, trend=${result.summary.trend}`);
+  });
+});
+
+describe("Vector Search Tools", () => {
+  it("convex_audit_vector_search runs against nodebench-ai", async () => {
+    const tool = vectorSearchTools.find((t) => t.name === "convex_audit_vector_search")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.vectorIndexCount).toBe("number");
+    expect(typeof result.summary.vectorSearchCallCount).toBe("number");
+    expect(Array.isArray(result.summary.tablesWithVectors)).toBe(true);
+    expect(result.summary.knownDimensions).toBeDefined();
+    console.log(`Vector search audit: ${result.summary.vectorIndexCount} indexes, ${result.summary.vectorSearchCallCount} search calls, tables: ${result.summary.tablesWithVectors.join(", ") || "none"}`);
+  });
+});
+
+describe("Scheduler Tools", () => {
+  it("convex_audit_schedulers runs against nodebench-ai", async () => {
+    const tool = schedulerTools.find((t) => t.name === "convex_audit_schedulers")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.totalSchedulerCalls).toBe("number");
+    expect(typeof result.summary.runAfterCalls).toBe("number");
+    expect(typeof result.summary.runAtCalls).toBe("number");
+    expect(typeof result.summary.selfSchedulingFunctions).toBe("number");
+    console.log(`Scheduler audit: ${result.summary.totalSchedulerCalls} calls (${result.summary.runAfterCalls} runAfter, ${result.summary.runAtCalls} runAt), ${result.summary.selfSchedulingFunctions} self-scheduling, ${result.summary.totalIssues} issues`);
+  });
+});
+
+describe("Quality Gate Tools", () => {
+  it("convex_quality_gate runs with default thresholds", async () => {
+    const tool = qualityGateTools.find((t) => t.name === "convex_quality_gate")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(typeof result.passed).toBe("boolean");
+    expect(typeof result.score).toBe("number");
+    expect(["A", "B", "C", "D", "F"]).toContain(result.grade);
+    expect(Array.isArray(result.checks)).toBe(true);
+    expect(result.checks.length).toBeGreaterThan(0);
+    expect(result.thresholdsUsed).toBeDefined();
+    console.log(`Quality gate: ${result.passed ? "PASSED" : "FAILED"}, score=${result.score}, grade=${result.grade}, ${result.checks.length} checks`);
+  });
+
+  it("convex_quality_gate respects custom thresholds", async () => {
+    const tool = qualityGateTools.find((t) => t.name === "convex_quality_gate")!;
+    const result = (await tool.handler({
+      projectDir: PROJECT_DIR,
+      thresholds: { maxCritical: 99999, maxWarnings: 99999 },
+    })) as any;
+    expect(result).toBeDefined();
+    expect(result.thresholdsUsed.maxCritical).toBe(99999);
+    expect(result.thresholdsUsed.maxWarnings).toBe(99999);
+    // With very generous thresholds, critical and warning checks should pass
+    const criticalCheck = result.checks.find((c: any) => c.metric === "critical_issues");
+    const warningCheck = result.checks.find((c: any) => c.metric === "warning_issues");
+    if (criticalCheck) expect(criticalCheck.passed).toBe(true);
+    if (warningCheck) expect(warningCheck.passed).toBe(true);
+  });
+});
+
+describe("Architect Tools", () => {
+  it("convex_scan_capabilities scans convex directory", async () => {
+    const tool = architectTools.find((t) => t.name === "convex_scan_capabilities")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.mode).toBe("directory");
+    expect(typeof result.totalFiles).toBe("number");
+    expect(result.totalFiles).toBeGreaterThan(0);
+    expect(typeof result.activeFiles).toBe("number");
+    expect(result.aggregate).toBeDefined();
+    expect(result.aggregate.function_types).toBeDefined();
+    expect(result.aggregate.data_access).toBeDefined();
+    console.log(`Scan capabilities: ${result.totalFiles} files, ${result.activeFiles} active, top file: ${result.topFiles[0]?.file ?? "none"}`);
+  });
+
+  it("convex_scan_capabilities scans a single file", async () => {
+    const schemaPath = resolve(PROJECT_DIR, "convex", "schema.ts");
+    const tool = architectTools.find((t) => t.name === "convex_scan_capabilities")!;
+    const result = (await tool.handler({ filePath: schemaPath })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.mode).toBe("single_file");
+    expect(result.schema_constructs).toBeDefined();
+    // schema.ts should have defineSchema and defineTable
+    expect(result.schema_constructs.define_schema).toBe(true);
+    expect(result.schema_constructs.define_table).toBeGreaterThan(0);
+    console.log(`Scan schema.ts: ${result.schema_constructs.define_table} tables, ${result.schema_constructs.indexes} indexes, ${result.schema_constructs.validators} validators`);
+  });
+
+  it("convex_verify_concept checks for vector search support", async () => {
+    const tool = architectTools.find((t) => t.name === "convex_verify_concept")!;
+    const result = (await tool.handler({
+      projectDir: PROJECT_DIR,
+      concept_name: "Vector Search",
+      required_signatures: ["vectorIndex", "withSearchIndex|vectorSearch", "v\\.array.*v\\.float64"],
+    })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.concept).toBe("Vector Search");
+    expect(typeof result.match_score).toBe("string");
+    expect(["Fully Implemented", "Partially Implemented", "Not Implemented"]).toContain(result.status);
+    expect(result.evidence_found.length + result.gap_analysis.length).toBe(3);
+    console.log(`Verify concept 'Vector Search': ${result.match_score}, status=${result.status}, found=${result.evidence_found.length}, missing=${result.gap_analysis.length}`);
+  });
+
+  it("convex_generate_plan produces Convex-specific steps", async () => {
+    const tool = architectTools.find((t) => t.name === "convex_generate_plan")!;
+    const result = (await tool.handler({
+      concept_name: "Scheduled Retry Queue",
+      missing_signatures: ["scheduler.*runAfter", "internalMutation", "if.*retryCount"],
+    })) as any;
+    expect(result).toBeDefined();
+    expect(result.concept).toBe("Scheduled Retry Queue");
+    expect(result.total_steps).toBe(3);
+    expect(result.steps.length).toBe(3);
+    // Should have Convex-specific strategies
+    expect(result.steps[0].strategy).toContain("scheduler");
+    expect(result.steps[1].strategy).toContain("internalMutation");
+    expect(result.steps[0].convex_file_hint).toBeDefined();
+    expect(result.workflow.length).toBe(5);
+    console.log(`Generate plan: ${result.total_steps} steps, complexity=${result.estimated_complexity}`);
+  });
+});
+
 describe("Tool Count", () => {
-  it("has exactly 28 tools", () => {
+  it("has exactly 36 tools", () => {
     const allTools = [
       ...schemaTools,
       ...functionTools,
@@ -496,8 +659,13 @@ describe("Tool Count", () => {
       ...dataModelingTools,
       ...devSetupTools,
       ...migrationTools,
+      ...reportingTools,
+      ...vectorSearchTools,
+      ...schedulerTools,
+      ...qualityGateTools,
+      ...architectTools,
     ];
-    expect(allTools.length).toBe(28);
+    expect(allTools.length).toBe(36);
     console.log(`Total tools: ${allTools.length}`);
     console.log("Tools:", allTools.map((t) => t.name).join(", "));
   });

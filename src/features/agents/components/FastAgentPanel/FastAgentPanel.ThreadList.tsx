@@ -2,17 +2,33 @@
 // Thread list sidebar with time-based grouping, pagination, and clean design
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, MoreHorizontal, Clock, ChevronDown, Loader2 } from 'lucide-react';
+import { MessageSquare, Pin, Trash2, Search, X, Download, Wrench, MoreHorizontal, Clock, ChevronDown, Loader2, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Thread } from './types';
 
 // Default page size for pagination
 const PAGE_SIZE = 10;
 
+function formatRelativeTime(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks}w`;
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 interface FastAgentThreadListProps {
   activeThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onDeleteThread: (threadId: string) => void;
+  onPinThread?: (threadId: string) => void;
   className?: string;
   /** Threads to display */
   threads?: Thread[];
@@ -73,6 +89,7 @@ export function FastAgentThreadList({
   activeThreadId,
   onSelectThread,
   onDeleteThread,
+  onPinThread,
   className,
   threads = [],
   hasMore = false,
@@ -84,6 +101,30 @@ export function FastAgentThreadList({
   const [deletingThreadId, setDeletingThreadId] = useState<string | null>(null);
   // Local pagination state for client-side slicing when server pagination not available
   const [displayCount, setDisplayCount] = useState(pageSize);
+
+  // Keyboard navigation
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const flatThreads = useMemo(() => {
+    let filtered = threads;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(t => t.title.toLowerCase().includes(q) || t.lastMessage?.toLowerCase().includes(q));
+    }
+    return filtered.sort((a, b) => (b.updatedAt || b._creationTime) - (a.updatedAt || a._creationTime)).slice(0, displayCount);
+  }, [threads, searchQuery, displayCount]);
+
+  const handleKeyNav = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex(prev => Math.min(prev + 1, flatThreads.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < flatThreads.length) {
+      e.preventDefault();
+      onSelectThread(flatThreads[focusedIndex]._id);
+    }
+  }, [focusedIndex, flatThreads, onSelectThread]);
 
   // Handle load more - either call parent handler or expand local display
   const handleLoadMore = useCallback(() => {
@@ -146,7 +187,8 @@ export function FastAgentThreadList({
             type="text"
             placeholder="Search..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(-1); }}
+            onKeyDown={handleKeyNav}
             className="w-full pl-8 pr-8 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-[var(--accent-primary)]/50 transition-all"
           />
           {searchQuery && (
@@ -176,38 +218,63 @@ export function FastAgentThreadList({
                     key={thread._id}
                     onClick={() => onSelectThread(thread._id)}
                     className={cn(
-                      "group relative px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200 border border-transparent",
+                      "group relative px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 message-enter",
                       activeThreadId === thread._id
-                        ? "bg-[var(--bg-primary)] border-[var(--border-color)] shadow-sm"
-                        : "hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)]/50"
+                        ? "bg-[var(--bg-primary)] shadow-sm ring-1 ring-[var(--border-color)]"
+                        : "hover:bg-[var(--bg-hover)]"
                     )}
                   >
+                    {/* Active indicator bar */}
+                    {activeThreadId === thread._id && (
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-[var(--text-primary)]" />
+                    )}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className={cn(
-                          "text-xs font-medium truncate mb-0.5",
-                          activeThreadId === thread._id ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
-                        )}>
-                          {thread.title || "New Chat"}
-                        </h4>
-                        <p className="text-[10px] text-[var(--text-muted)] truncate opacity-80">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <MessageCircle className={cn(
+                            "w-3 h-3 flex-shrink-0",
+                            activeThreadId === thread._id ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"
+                          )} />
+                          <h4 className={cn(
+                            "text-xs font-medium truncate",
+                            activeThreadId === thread._id ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
+                          )}>
+                            {thread.title || "New Chat"}
+                          </h4>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-muted)] truncate pl-[18px]">
                           {thread.lastMessage || "No messages yet"}
                         </p>
                       </div>
 
-                      {/* Hover Actions */}
-                      <div className={cn(
-                        "flex items-center gap-1 opacity-0 transition-opacity",
-                        "group-hover:opacity-100",
-                        activeThreadId === thread._id && "opacity-100" // Always show actions for active thread? Maybe too cluttered. Let's keep hover.
-                      )}>
-                        <button
-                          onClick={(e) => handleDelete(thread._id, e)}
-                          className="p-1 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                      {/* Timestamp + Hover Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <span className="text-[9px] text-[var(--text-muted)] tabular-nums group-hover:hidden">
+                          {formatRelativeTime(thread.updatedAt || thread._creationTime)}
+                        </span>
+                        <div className="hidden group-hover:flex items-center gap-1">
+                          {onPinThread && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onPinThread(thread._id); }}
+                              className={cn(
+                                "p-1 rounded transition-colors",
+                                thread.pinned
+                                  ? "text-amber-500 hover:text-amber-600"
+                                  : "text-[var(--text-muted)] hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                              )}
+                              title={thread.pinned ? "Unpin" : "Pin to top"}
+                            >
+                              <Pin className={cn("w-3 h-3", thread.pinned && "fill-current")} />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => handleDelete(thread._id, e)}
+                            className="p-1 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

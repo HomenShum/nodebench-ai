@@ -29,6 +29,7 @@ import {
   Github,
   GitPullRequest,
   Linkedin,
+  Shield,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 import { SidebarButton } from "./ui";
@@ -70,7 +71,8 @@ interface CleanSidebarProps {
     | 'agent-marketplace'
     | 'github-explorer'
     | 'pr-suggestions'
-    | 'linkedin-posts';
+    | 'linkedin-posts'
+    | 'mcp-ledger';
   /** Callback when view changes */
   onViewChange?: (view:
     | 'documents'
@@ -94,7 +96,8 @@ interface CleanSidebarProps {
     | 'agent-marketplace'
     | 'github-explorer'
     | 'pr-suggestions'
-    | 'linkedin-posts') => void;
+    | 'linkedin-posts'
+    | 'mcp-ledger') => void;
 }
 
 export function CleanSidebar({
@@ -211,6 +214,13 @@ export function CleanSidebar({
             onClick={() => onViewChange?.('industry-updates')}
             isActive={currentView === 'industry-updates'}
             activeColor="blue"
+          />
+          <SidebarButton
+            icon={<Shield />}
+            label="MCP Ledger"
+            onClick={() => onViewChange?.('mcp-ledger')}
+            isActive={currentView === 'mcp-ledger'}
+            activeColor="rose"
           />
         </div>
       </div>

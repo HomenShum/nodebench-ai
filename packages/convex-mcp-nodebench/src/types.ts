@@ -15,7 +15,7 @@ export interface ConvexQuickRef {
 
 export interface ToolRegistryEntry {
   name: string;
-  category: "schema" | "function" | "deployment" | "learning" | "methodology" | "integration";
+  category: "schema" | "function" | "deployment" | "learning" | "methodology" | "integration" | "architect";
   tags: string[];
   quickRef: ConvexQuickRef;
   phase: "audit" | "implement" | "test" | "deploy" | "learn" | "meta";

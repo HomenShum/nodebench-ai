@@ -349,6 +349,9 @@ export const finishToolCallInternal = internalMutation({
 
 export const listToolCalls = query({
   args: {
+    // Optional UTC date filter (YYYY-MM-DD). When provided, only rows whose startedAt
+    // falls within that UTC day are returned.
+    dateKey: v.optional(v.string()),
     limit: v.optional(v.number()),
     cursor: v.optional(v.string()),
     toolName: v.optional(v.string()),
@@ -384,27 +387,48 @@ export const listToolCalls = query({
     const limit = args.limit ?? 50;
     const cursor = typeof args.cursor === "string" ? args.cursor : null;
 
+    const requestedDateKey = typeof args.dateKey === "string" ? args.dateKey.trim() : "";
+    const hasValidDateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateKey);
+    const dayStartMs = hasValidDateKey ? Date.parse(`${requestedDateKey}T00:00:00.000Z`) : NaN;
+    const hasDateRange = Number.isFinite(dayStartMs);
+    const dayEndMs = hasDateRange ? dayStartMs + 24 * 60 * 60 * 1000 : NaN;
+
     let q;
     if (args.toolName) {
       q = ctx.db
         .query("mcpToolCallLedger")
-        .withIndex("by_tool_startedAt", (qq) => qq.eq("toolName", args.toolName!))
+        .withIndex("by_tool_startedAt", (qq) => {
+          let out = qq.eq("toolName", args.toolName!);
+          if (hasDateRange) out = out.gte("startedAt", dayStartMs).lt("startedAt", dayEndMs);
+          return out;
+        })
         .order("desc");
     } else if (args.riskTier) {
       q = ctx.db
         .query("mcpToolCallLedger")
-        .withIndex("by_risk_startedAt", (qq) => qq.eq("riskTier", args.riskTier!))
+        .withIndex("by_risk_startedAt", (qq) => {
+          let out = qq.eq("riskTier", args.riskTier!);
+          if (hasDateRange) out = out.gte("startedAt", dayStartMs).lt("startedAt", dayEndMs);
+          return out;
+        })
         .order("desc");
     } else if (typeof args.allowed === "boolean") {
       q = ctx.db
         .query("mcpToolCallLedger")
-        .withIndex("by_allowed_startedAt", (qq) => qq.eq("allowed", args.allowed!))
+        .withIndex("by_allowed_startedAt", (qq) => {
+          let out = qq.eq("allowed", args.allowed!);
+          if (hasDateRange) out = out.gte("startedAt", dayStartMs).lt("startedAt", dayEndMs);
+          return out;
+        })
         .order("desc");
     } else {
-      q = ctx.db
-        .query("mcpToolCallLedger")
-        .withIndex("by_startedAt")
-        .order("desc");
+      q = ctx.db.query("mcpToolCallLedger");
+      if (hasDateRange) {
+        q = q.withIndex("by_startedAt", (qq) => qq.gte("startedAt", dayStartMs).lt("startedAt", dayEndMs));
+      } else {
+        q = q.withIndex("by_startedAt");
+      }
+      q = q.order("desc");
     }
 
     // Over-fetch; we apply optional in-memory filters (success) after.
@@ -448,7 +472,11 @@ export const listToolCalls = query({
 });
 
 export const getPolicyAndUsage = query({
-  args: {},
+  args: {
+    // Allow inspecting historical usage (e.g. when ledger rows exist for a prior day).
+    // Default remains "today" (UTC).
+    dateKey: v.optional(v.string()),
+  },
   returns: v.object({
     dateKey: v.string(),
     config: v.object({
@@ -466,9 +494,10 @@ export const getPolicyAndUsage = query({
       limit: v.optional(v.number()),
     })),
   }),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const now = Date.now();
-    const dateKey = todayDateKeyUtc(now);
+    const requested = typeof args.dateKey === "string" ? args.dateKey.trim() : "";
+    const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(requested) ? requested : todayDateKeyUtc(now);
     const cfg =
       (await ctx.db
         .query("mcpPolicyConfigs")

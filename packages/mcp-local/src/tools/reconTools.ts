@@ -567,57 +567,110 @@ export const reconTools: McpTool[] = [
         );
       }
 
-      // 2. Search recon findings across ALL sessions
+      // 2. Search recon findings across ALL sessions via FTS5+BM25 (LIKE fallback)
       let reconFindings: any[];
-      if (categories && categories.length > 0) {
-        const placeholders = categories.map(() => "?").join(", ");
-        reconFindings = db
+      try {
+        if (categories && categories.length > 0) {
+          const placeholders = categories.map(() => "?").join(", ");
+          reconFindings = db
+            .prepare(
+              `SELECT f.id, f.session_id, f.source_url, f.category, f.summary,
+                      f.relevance, f.action_items, f.created_at,
+                      s.target as session_target
+               FROM recon_findings_fts fts
+               JOIN recon_findings f ON f.rowid = fts.rowid
+               JOIN recon_sessions s ON s.id = f.session_id
+               WHERE recon_findings_fts MATCH ?
+                 AND f.category IN (${placeholders})
+               ORDER BY rank
+               LIMIT ?`
+            )
+            .all(query, ...categories, limit) as any[];
+        } else {
+          reconFindings = db
+            .prepare(
+              `SELECT f.id, f.session_id, f.source_url, f.category, f.summary,
+                      f.relevance, f.action_items, f.created_at,
+                      s.target as session_target
+               FROM recon_findings_fts fts
+               JOIN recon_findings f ON f.rowid = fts.rowid
+               JOIN recon_sessions s ON s.id = f.session_id
+               WHERE recon_findings_fts MATCH ?
+               ORDER BY rank
+               LIMIT ?`
+            )
+            .all(query, limit) as any[];
+        }
+      } catch {
+        // FTS5 syntax error — fall back to LIKE
+        if (categories && categories.length > 0) {
+          const placeholders = categories.map(() => "?").join(", ");
+          reconFindings = db
+            .prepare(
+              `SELECT f.id, f.session_id, f.source_url, f.category, f.summary,
+                      f.relevance, f.action_items, f.created_at,
+                      s.target as session_target
+               FROM recon_findings f
+               JOIN recon_sessions s ON s.id = f.session_id
+               WHERE (f.summary LIKE ? OR f.relevance LIKE ? OR f.action_items LIKE ?)
+                 AND f.category IN (${placeholders})
+               ORDER BY f.created_at DESC
+               LIMIT ?`
+            )
+            .all(
+              `%${query}%`,
+              `%${query}%`,
+              `%${query}%`,
+              ...categories,
+              limit
+            ) as any[];
+        } else {
+          reconFindings = db
+            .prepare(
+              `SELECT f.id, f.session_id, f.source_url, f.category, f.summary,
+                      f.relevance, f.action_items, f.created_at,
+                      s.target as session_target
+               FROM recon_findings f
+               JOIN recon_sessions s ON s.id = f.session_id
+               WHERE f.summary LIKE ? OR f.relevance LIKE ? OR f.action_items LIKE ?
+               ORDER BY f.created_at DESC
+               LIMIT ?`
+            )
+            .all(`%${query}%`, `%${query}%`, `%${query}%`, limit) as any[];
+        }
+      }
+
+      // 3. Search ALL gaps from past verification cycles via FTS5+BM25 (LIKE fallback)
+      let matchedGaps: any[];
+      try {
+        matchedGaps = db
           .prepare(
-            `SELECT f.id, f.session_id, f.source_url, f.category, f.summary,
-                    f.relevance, f.action_items, f.created_at,
-                    s.target as session_target
-             FROM recon_findings f
-             JOIN recon_sessions s ON s.id = f.session_id
-             WHERE (f.summary LIKE ? OR f.relevance LIKE ? OR f.action_items LIKE ?)
-               AND f.category IN (${placeholders})
-             ORDER BY f.created_at DESC
+            `SELECT g.id, g.cycle_id, g.title, g.description, g.severity,
+                    g.status, g.fix_strategy as resolution, g.resolved_at,
+                    c.title as cycle_target
+             FROM gaps_fts fts
+             JOIN gaps g ON g.rowid = fts.rowid
+             JOIN verification_cycles c ON c.id = g.cycle_id
+             WHERE gaps_fts MATCH ?
+             ORDER BY rank
              LIMIT ?`
           )
-          .all(
-            `%${query}%`,
-            `%${query}%`,
-            `%${query}%`,
-            ...categories,
-            limit
-          ) as any[];
-      } else {
-        reconFindings = db
+          .all(query, limit) as any[];
+      } catch {
+        // FTS5 syntax error — fall back to LIKE
+        matchedGaps = db
           .prepare(
-            `SELECT f.id, f.session_id, f.source_url, f.category, f.summary,
-                    f.relevance, f.action_items, f.created_at,
-                    s.target as session_target
-             FROM recon_findings f
-             JOIN recon_sessions s ON s.id = f.session_id
-             WHERE f.summary LIKE ? OR f.relevance LIKE ? OR f.action_items LIKE ?
-             ORDER BY f.created_at DESC
+            `SELECT g.id, g.cycle_id, g.title, g.description, g.severity,
+                    g.status, g.fix_strategy as resolution, g.resolved_at,
+                    c.title as cycle_target
+             FROM gaps g
+             JOIN verification_cycles c ON c.id = g.cycle_id
+             WHERE (g.description LIKE ? OR g.fix_strategy LIKE ? OR g.title LIKE ?)
+             ORDER BY g.created_at DESC
              LIMIT ?`
           )
           .all(`%${query}%`, `%${query}%`, `%${query}%`, limit) as any[];
       }
-
-      // 3. Search ALL gaps from past verification cycles (resolved + open)
-      const matchedGaps = db
-        .prepare(
-          `SELECT g.id, g.cycle_id, g.title, g.description, g.severity,
-                  g.status, g.fix_strategy as resolution, g.resolved_at,
-                  c.title as cycle_target
-           FROM gaps g
-           JOIN verification_cycles c ON c.id = g.cycle_id
-           WHERE (g.description LIKE ? OR g.fix_strategy LIKE ? OR g.title LIKE ?)
-           ORDER BY g.created_at DESC
-           LIMIT ?`
-        )
-        .all(`%${query}%`, `%${query}%`, `%${query}%`, limit) as any[];
 
       const totalResults =
         learnings.length + reconFindings.length + matchedGaps.length;

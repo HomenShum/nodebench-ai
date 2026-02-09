@@ -390,6 +390,12 @@ Automated org page posts currently read like machine-generated reports. 67 posts
   - `findTools` with `query: "stock price"` — returns matching financial tools
 - Env vars required (Render service): `CONVEX_URL`, `MCP_SECRET`, `MCP_HTTP_TOKEN` (optional)
 - Env vars required (Convex dashboard): `MCP_SERVICE_USER_ID`, `MCP_SECRET`
+- Audit + trust: MCP Tool Call Ledger UI at `/mcp/ledger` (args/result previews + policy evaluation + request metadata). Local dev: `http://127.0.0.1:5173/mcp/ledger`. Workflow: run a tool call, then click the row to inspect Call Detail (human-auditable trace).
+
+Trusted access framing (Reasoning x Access = Capability):
+- In NodeBench, "Access" is safe tool execution across APIs and data under policy, with a deterministic audit trail.
+- Our current primitives are: secret-gated gateway, static allowlist dispatcher, server-side userId injection, risk tiers + budgets, and the MCP Ledger.
+- Next step if capability lift is small: add more deterministic access primitives (e.g., file parsing/search, spreadsheet filters/aggregations) and re-measure on GAIA capability lanes.
 
 ### File vault plane (Obsidian + Git)
 - Init: `npm run vault:init`
@@ -1396,8 +1402,15 @@ After any non-trivial code change, feature addition, or bug fix, the AI Flywheel
 6. **Deploy and document** — Deploy the verified fix, document any gaps found and how they were resolved
 
 **Additional required when changing tool-facing behavior (capability regression guard):**
-- Run GAIA capability eval (accuracy: LLM-only vs LLM+tools): `npm run mcp:dataset:gaia:capability:test`
-- Pass condition: tool-augmented accuracy must be >= baseline accuracy on the sampled tasks (see `packages/mcp-local/src/__tests__/gaiaCapabilityEval.test.ts`)
+- Run GAIA capability eval (web lane, accuracy: LLM-only vs LLM+tools): `npm run mcp:dataset:gaia:capability:test`
+- If your change touches local file tooling or attachment handling, also run the file-backed lane: `npm run mcp:dataset:gaia:capability:files:test`
+- Pass condition (web lane): tool-augmented accuracy must be >= baseline accuracy on the sampled tasks (see `packages/mcp-local/src/__tests__/gaiaCapabilityEval.test.ts`)
+- Pass condition (file lane): tool-augmented accuracy must be >= baseline accuracy, and should show at least 1 improvement on the sampled tasks (see `packages/mcp-local/src/__tests__/gaiaCapabilityFilesEval.test.ts`)
+
+If the capability delta barely improves, treat it as a signal that "Access" is not increasing, not that the model is weak:
+- Benchmark tool-dependent tasks first (GAIA file-backed lane is the fastest check for deterministic gains).
+- Prefer `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` when a single extract is insufficient.
+- Add missing deterministic access primitives (PDF search, sheet selection, table filters/aggregations) before tweaking prompts or switching models.
 
 **When to skip:** Only for trivial changes (typo fixes, comment updates, config tweaks) where the blast radius is near zero.
 
@@ -1570,6 +1583,13 @@ GAIA lane quick commands (gated):
 - Run: `NODEBENCH_GAIA_TASK_LIMIT=8 NODEBENCH_GAIA_CONCURRENCY=4 npm run mcp:dataset:gaia:test`
 - Capability (accuracy) fixture: `npm run mcp:dataset:gaia:capability:refresh` (writes ground truth into `.cache/gaia`, do not commit)
 - Capability (accuracy) run: `NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test`
+- Capability (accuracy) files fixture: `npm run mcp:dataset:gaia:capability:files:refresh` (downloads referenced attachments into `.cache/gaia/data`, do not commit)
+- Capability (accuracy) files run: `NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:files:test`
+- Capability (accuracy) media fixture: `npm run mcp:dataset:gaia:capability:media:refresh` (image OCR lane, do not commit)
+- Capability (accuracy) media run: `NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:media:test`
+- Capability (accuracy) audio fixture: `npm run mcp:dataset:gaia:capability:audio:refresh` (speech-to-text lane, do not commit)
+- Capability (accuracy) audio run: `NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=4 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:audio:test`
+- UI proof (safe screenshots): `npm run build` then `node scripts/ui/captureUiSnapshots.mjs` (writes into `screenshots/`)
 - Full suite (public + GAIA): `npm run mcp:dataset:bench:full`
 
 ### Test file cross-references
@@ -1581,6 +1601,9 @@ GAIA lane quick commands (gated):
 | `openDatasetParallelEval.test.ts` | BFCL long-context parallel | 10 unique | 80 |
 | `openDatasetParallelEvalGaia.test.ts` | GAIA gated parallel | 10 unique | 80 |
 | `gaiaCapabilityEval.test.ts` | GAIA capability (LLM-only vs tools) | external | varies |
+| `gaiaCapabilityFilesEval.test.ts` | GAIA capability (files lane: PDF/XLSX/CSV/etc) | external | varies |
+| `gaiaCapabilityMediaEval.test.ts` | GAIA capability (media lane: image OCR) | external | varies |
+| `gaiaCapabilityAudioEval.test.ts` | GAIA capability (audio lane: speech-to-text) | external | varies |
 | `tools.test.ts` | Static + unit + integration | 60 total | varies |
 
 ---
@@ -1885,3 +1908,180 @@ This principle applies to:
 Scenario 9 specifically tests parallel agent coordination — "I launched 3 Claude Code subagents... they keep overwriting each other's changes" — demonstrating that task locking, progress files, and context budget tracking prevent real coordination failures.
 
 **→ Quick Refs:** `comparativeBench.test.ts` (9 scenarios, 20 tests), `AI_FLYWHEEL.md` (impact table), `metaTools.ts` (`impactPerStep` in parallel_agent_teams)
+
+---
+
+## Toolset Gating & Presets (NodeBench MCP Local)
+
+NodeBench MCP exposes 4 presets that control which domain toolsets are loaded at startup. Agents select a preset via `--preset <name>` on the CLI. Meta tools (`findTools`, `getMethodology`) and discovery tools (`discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`) are always included on top of any preset — they are never gated.
+
+**→ Quick Refs:** `packages/mcp-local/src/index.ts` (PRESETS map, parseToolsets), `--preset meta|lite|core|full`, `TOOLSET_MAP` (31 domain keys), `createMetaTools` + `createProgressiveDiscoveryTools` (always-on), `getHookHint` (auto-save + attention refresh hooks), `getToolComplexity` in toolRegistry.ts (model-tier routing), `embeddingProvider.ts` (Agent-as-a-Graph bipartite search), `--no-embedding` flag, MCP annotations in tools/list
+
+### 4 Presets
+
+| Preset | Domain Toolsets | Domain Tools | + Meta & Discovery | Total Tools | Use Case |
+|--------|----------------|-------------|-------------------|-------------|----------|
+| **meta** | 0 | 0 | 5 (findTools, getMethodology, discover_tools, get_tool_quick_ref, get_workflow_chain) | **5** | Discovery-only front door. Agents start here and self-escalate. |
+| **lite** | 8 (verification, eval, quality_gate, learning, flywheel, recon, security, boilerplate) | 38 | +5 | **43** | Lightweight verification, eval, and flywheel. CI/CD gates, quick audits. |
+| **core** | 23 (lite + bootstrap, self_eval, llm, platform, research_writing, flicker_detection, figma_flow, benchmark, session_memory, toon, pattern, git_workflow, seo, voice_bridge, critter) | 105 | +5 | **110** | Full development methodology without vision/UI/parallel/GAIA overhead. |
+| **full** | all (31 domain keys) | 158 | +5 | **163** | Everything. Multi-agent teams, vision, UI capture, web, GitHub, docs, local files, GAIA solvers. |
+
+### The Meta Preset: Discovery-Only Front Door
+
+The `meta` preset is the recommended starting point for agents. It loads **zero domain tools** — only the 5 always-on meta and discovery tools:
+
+| Tool | Purpose |
+|------|---------|
+| `findTools` | Keyword search across all registered tools (even those not loaded) |
+| `getMethodology` | Load step-by-step methodology for a topic (mandatory_flywheel, parallel_agent_teams, etc.) |
+| `discover_tools` | Hybrid semantic + keyword search with relevance scoring and explanations |
+| `get_tool_quick_ref` | Get the "what to do next" card after calling any tool |
+| `get_workflow_chain` | Get a complete step-by-step tool sequence for a workflow (fix_bug, new_feature, etc.) |
+
+**Self-escalation pattern**: An agent started with `--preset meta` uses `discover_tools` to find which tools it needs, then requests a restart with `--preset lite`, `--preset core`, or targeted `--toolsets` flags to unlock the required capabilities.
+
+### CLI Usage
+
+```bash
+# Discovery-only (5 tools) — recommended default for new agents
+npx nodebench-mcp --preset meta
+
+# Lightweight (verification + eval + recon + security + boilerplate)
+npx nodebench-mcp --preset lite
+
+# Core development methodology (most domain tools, no vision/UI/parallel)
+npx nodebench-mcp --preset core
+
+# Everything enabled
+npx nodebench-mcp --preset full
+
+# Fine-grained: pick specific toolsets
+npx nodebench-mcp --toolsets verification,eval,recon
+
+# Fine-grained: exclude specific toolsets from full
+npx nodebench-mcp --exclude vision,ui_capture,parallel
+```
+
+### Escalation Path
+
+```
+meta (5 tools) → lite (43 tools) → core (110 tools) → full (163 tools)
+     │                │                    │                    │
+     │                │                    │                    └── Multi-agent, vision, web, files, GAIA solvers
+     │                │                    └── Dev methodology + LLM + platform + bootstrap + session memory + toon + pattern + git_workflow + seo + voice_bridge + critter
+     │                └── Verification + eval + flywheel + recon + security + boilerplate
+     └── discover_tools → findTools → getMethodology only
+```
+
+When `discover_tools` returns nothing useful, or a tool says "not configured":
+1. **Escalate toolset**: If started with `--preset meta`, switch to `--preset lite` or `--preset core`
+2. **Resolve providers**: Configure missing API keys (`GEMINI_API_KEY`, `OPENAI_API_KEY`, etc.)
+3. **Bootstrap infra**: Run `scaffold_nodebench_project` or `bootstrap_parallel_agents` if repo lacks infra
+4. **Smoke-test**: Re-run the first workflow chain step to confirm the capability is available
+
+### TOOLSET_MAP Domain Keys (31)
+
+| Domain Key | Source File | Tools |
+|-----------|------------|-------|
+| verification | verificationTools.ts | 8 |
+| eval | evalTools.ts | 6 |
+| quality_gate | qualityGateTools.ts | 4 |
+| learning | learningTools.ts | 4 |
+| flywheel | flywheelTools.ts | 4 |
+| recon | reconTools.ts | 7 |
+| ui_capture | uiCaptureTools.ts | 2 |
+| vision | visionTools.ts | 4 |
+| local_file | localFileTools.ts | 19 |
+| web | webTools.ts | 2 |
+| github | githubTools.ts | 3 |
+| docs | documentationTools.ts | 4 |
+| bootstrap | agentBootstrapTools.ts | 11 |
+| self_eval | selfEvalTools.ts | 9 |
+| parallel | parallelAgentTools.ts | 13 |
+| llm | llmTools.ts | 3 |
+| security | securityTools.ts | 3 |
+| platform | platformTools.ts | 4 |
+| research_writing | researchWritingTools.ts | 8 |
+| flicker_detection | flickerDetectionTools.ts | 5 |
+| figma_flow | figmaFlowTools.ts | 4 |
+| boilerplate | boilerplateTools.ts | 2 |
+| benchmark | cCompilerBenchmarkTools.ts | 3 |
+| session_memory | sessionMemoryTools.ts | 3 |
+| gaia_solvers | localFileTools.ts (gaiaMediaSolvers) | 6 |
+| toon | toonTools.ts | 2 |
+| pattern | patternTools.ts | 2 |
+| git_workflow | gitWorkflowTools.ts | 3 |
+| seo | seoTools.ts | 5 |
+| voice_bridge | voiceBridgeTools.ts | 4 |
+| critter | critterTools.ts | 1 |
+
+### Lightweight Hooks (Auto-Save + Attention Refresh)
+
+The tool dispatch path includes two inline hooks that append `_hint` reminders to tool responses:
+
+| Hook | Trigger | Reminder |
+|------|---------|----------|
+| Auto-save | 2+ consecutive `web_search`/`fetch_url` calls without `save_session_note` | "Consider calling save_session_note to persist findings" |
+| Attention refresh | Every 30 tool calls | "Consider calling refresh_task_context to reload your bearings" |
+
+Hooks never block — they only append text hints to the response `content` array.
+
+### Model-Tier Complexity Routing
+
+Each tool has a recommended model complexity tier (`low`/`medium`/`high`) for cost-aware routing:
+
+| Tier | Model | Example tools |
+|------|-------|---------------|
+| `low` | Haiku | `log_gap`, `record_learning`, `save_session_note`, `fetch_url` |
+| `medium` | Sonnet | `start_verification_cycle`, `run_recon`, `web_search` |
+| `high` | Opus | `compare_eval_runs`, `grade_agent_run`, GAIA solvers, `check_contract_compliance` |
+
+Use `getToolComplexity("tool_name")` from `toolRegistry.ts`. 3-tier fallback: per-tool override → entry field → category default → medium.
+
+### Embedding Search & Agent-as-a-Graph (v2.15.0)
+
+Tool discovery uses a **bipartite knowledge graph** (arxiv:2511.18194) with neural embeddings for true semantic search. The graph has two node types: **tool nodes** (individual tools) and **domain nodes** (category aggregates). When a domain node matches a query, all sibling tools in that domain get a boost via upward traversal.
+
+**Provider fallback** (mcp-local): Local HuggingFace `Xenova/all-MiniLM-L6-v2` (384-dim, 23MB INT8, zero API keys) → Google `text-embedding-004` (768-dim, free) → OpenAI `text-embedding-3-small` (1536-dim). Convex-mcp uses Google → OpenAI only (16 tools doesn't justify local model).
+
+**Scoring**: Type-conditioned weighted Reciprocal Rank Fusion (wRRF) per the paper's Equation 3:
+- `α_T = 1.0` (tool weight — direct embedding match)
+- `α_D = 1.5` (domain weight — upward traversal boost)
+- `K = 60` (RRF smoothing constant)
+- Max contribution at rank 1: tool ≈ 16pts, domain ≈ 25pts
+
+These parameters were validated via a 6-config ablation grid (see `tools.test.ts`). Key finding: K and α_D are coupled — K=60 dampens enough for α_D=1.5 to lift gently. K=20 with α_D=1.5 overshoots.
+
+**14 search strategies** in `hybridSearch`: keyword, fuzzy, n-gram, prefix, semantic (synonym families), TF-IDF, regex, bigram, domain cluster boost, dense, embedding tool_rrf, embedding domain_rrf, graph traversal (trace edges), execution trace co-occurrence.
+
+**8 search modes**: hybrid, fuzzy, regex, prefix, semantic, exact, dense, embedding.
+
+**CLI**: `--no-embedding` disables neural embeddings (search falls back to lexical-only).
+
+**Cache**: `~/.nodebench/embedding_cache.json` (mcp-local), `~/.convex-mcp-nodebench/embedding_cache.json` (convex-mcp). Invalidated via FNV-1a corpus hash.
+
+**→ Quick Refs:** `embeddingProvider.ts` (provider fallback, cache, cosine KNN), `toolRegistry.ts` (wRRF block, `_setWrrfParamsForTesting`), `progressiveDiscoveryTools.ts` (`discover_tools` handler pre-computes query embedding), `index.ts` (`initEmbeddingIndex` background init)
+
+### MCP Annotations (v2.15.0)
+
+The `tools/list` handler returns MCP 2025-11-25 spec `annotations` for each tool:
+
+```json
+{
+  "name": "start_verification_cycle",
+  "annotations": {
+    "title": "start verification cycle",
+    "category": "verification",
+    "phase": "audit",
+    "complexity": "medium"
+  }
+}
+```
+
+This enables MCP hosts to display category badges, sort by phase, and route to model tiers based on complexity.
+
+### Critter Tool (v2.15.0)
+
+The `critter_check` tool is an intentionality checkpoint — "the accountability partner that wants to know everything." It scores agent responses against 10 checks for circular reasoning, vague audience, empty rationale, deference patterns, buzzwords, hedging, and repetitive padding. Verdicts: proceed (≥70), reconsider (40-69), stop (<40). In the `core` preset. Persists to SQLite `critter_checks` table.
+
+**→ Quick Refs:** `critterTools.ts` (10 checks, v2 calibrated scoring), `critterCalibrationEval.ts` (19 scenarios, 100% pass)

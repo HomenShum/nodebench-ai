@@ -19,6 +19,7 @@ import {
   getToolsByPhase,
 } from "./toolRegistry.js";
 import type { SearchMode } from "./toolRegistry.js";
+import { embedQuery, isEmbeddingReady } from "./embeddingProvider.js";
 
 export function createProgressiveDiscoveryTools(
   allRegisteredTools: Array<{ name: string; description: string }>
@@ -28,7 +29,7 @@ export function createProgressiveDiscoveryTools(
     {
       name: "discover_tools",
       description:
-        "Multi-modal tool search engine with 9 scoring strategies: keyword, fuzzy (typo-tolerant), n-gram (partial words), prefix, semantic (synonym expansion), TF-IDF (rare tags score higher), regex, bigram (phrase matching), and domain-aware boosting. Returns ranked results with quick refs. Use mode='hybrid' (default) for best results, or 'regex'/'fuzzy'/'prefix'/'semantic'/'exact' for targeted search.",
+        "Multi-modal tool search engine with 14 scoring strategies: keyword, fuzzy (typo-tolerant), n-gram (partial words), prefix, semantic (synonym expansion), TF-IDF (rare tags score higher), regex, bigram (phrase matching), domain cluster boosting, dense (TF-IDF cosine), neural embedding tool RRF, domain RRF (Agent-as-a-Graph bipartite graph), upward traversal (tool→domain→siblings), and execution trace edges (co-occurrence mining). Returns ranked results with quick refs. Use mode='hybrid' (default) for best results, or 'regex'/'fuzzy'/'prefix'/'semantic'/'exact'/'dense'/'embedding' for targeted search.",
       inputSchema: {
         type: "object",
         properties: {
@@ -45,7 +46,9 @@ export function createProgressiveDiscoveryTools(
               "github", "documentation", "bootstrap", "self_eval",
               "parallel_agents", "llm", "security", "platform",
               "research_writing", "flicker_detection", "figma_flow",
-              "boilerplate", "benchmark", "progressive_discovery", "meta",
+              "boilerplate", "benchmark", "session_memory", "gaia_solvers",
+              "toon", "pattern", "git_workflow", "seo", "voice_bridge",
+              "critter", "email", "rss", "architect", "progressive_discovery", "meta",
             ],
             description: "Filter by tool category (optional)",
           },
@@ -64,8 +67,8 @@ export function createProgressiveDiscoveryTools(
           },
           mode: {
             type: "string",
-            enum: ["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact"],
-            description: "Search mode. 'hybrid' (default) runs all strategies. 'fuzzy' tolerates typos. 'regex' accepts patterns. 'prefix' matches tool name starts. 'semantic' expands synonyms. 'exact' requires exact match.",
+            enum: ["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact", "dense", "embedding"],
+            description: "Search mode. 'hybrid' (default) runs all strategies including neural embeddings when available. 'fuzzy' tolerates typos. 'regex' accepts patterns. 'prefix' matches tool name starts. 'semantic' expands synonyms. 'exact' requires exact match. 'dense' uses TF-IDF cosine similarity. 'embedding' uses neural embedding similarity only.",
           },
           explain: {
             type: "boolean",
@@ -81,6 +84,13 @@ export function createProgressiveDiscoveryTools(
         const mode: SearchMode = args.mode ?? "hybrid";
         const explain = args.explain === true;
 
+        // Pre-compute query embedding (async) before passing to sync hybridSearch
+        let embeddingQueryVec: Float32Array | undefined;
+        if ((mode === "hybrid" || mode === "embedding") && isEmbeddingReady()) {
+          const vec = await embedQuery(query);
+          if (vec) embeddingQueryVec = vec;
+        }
+
         // Multi-modal search with scoring
         const results = hybridSearch(query, allRegisteredTools, {
           category: args.category,
@@ -88,6 +98,7 @@ export function createProgressiveDiscoveryTools(
           limit,
           mode,
           explain,
+          embeddingQueryVec,
         });
 
         // Find matching workflow chains
@@ -205,7 +216,7 @@ export function createProgressiveDiscoveryTools(
     {
       name: "get_workflow_chain",
       description:
-        'Get a recommended tool sequence for a common workflow. Returns step-by-step tool chain with actions for each step. Available chains: new_feature, fix_bug, ui_change, parallel_project, research_phase, academic_paper, c_compiler_benchmark. Call with chain="list" to see all available chains.',
+        'Get a recommended tool sequence for a common workflow. Returns step-by-step tool chain with actions for each step. 25 chains available covering feature dev, debugging, security, deployment, research, academic writing, CI/CD, multi-agent coordination, and more. Call with chain="list" to see all.',
       inputSchema: {
         type: "object",
         properties: {
@@ -213,9 +224,15 @@ export function createProgressiveDiscoveryTools(
             type: "string",
             enum: [
               "new_feature", "fix_bug", "ui_change", "parallel_project",
-              "research_phase", "academic_paper", "c_compiler_benchmark", "list",
+              "research_phase", "academic_paper", "c_compiler_benchmark",
+              "security_audit", "code_review", "deployment", "migration",
+              "coordinator_spawn", "self_setup", "flicker_detection",
+              "figma_flow_analysis", "agent_eval", "contract_compliance",
+              "ablation_eval", "session_recovery", "attention_refresh",
+              "task_bank_setup", "pr_review", "seo_audit", "voice_pipeline",
+              "intentionality_check", "research_digest", "email_assistant", "list",
             ],
-            description: 'Which workflow chain to retrieve. Use "list" to see all available chains.',
+            description: 'Which workflow chain to retrieve. Use "list" to see all available chains with descriptions.',
           },
         },
         required: ["chain"],

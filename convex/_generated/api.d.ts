@@ -50,6 +50,7 @@ import type * as domains_agents_agentLoop from "../domains/agents/agentLoop.js";
 import type * as domains_agents_agentLoopQueries from "../domains/agents/agentLoopQueries.js";
 import type * as domains_agents_agentMarketplace from "../domains/agents/agentMarketplace.js";
 import type * as domains_agents_agentMemory from "../domains/agents/agentMemory.js";
+import type * as domains_agents_agentNavigation from "../domains/agents/agentNavigation.js";
 import type * as domains_agents_agentPlanning from "../domains/agents/agentPlanning.js";
 import type * as domains_agents_agentPostingPipeline from "../domains/agents/agentPostingPipeline.js";
 import type * as domains_agents_agentRouter from "../domains/agents/agentRouter.js";
@@ -64,6 +65,7 @@ import type * as domains_agents_arbitrage_tools_index from "../domains/agents/ar
 import type * as domains_agents_arbitrage_tools_sourceHealthCheck from "../domains/agents/arbitrage/tools/sourceHealthCheck.js";
 import type * as domains_agents_arbitrage_tools_sourceQualityRanking from "../domains/agents/arbitrage/tools/sourceQualityRanking.js";
 import type * as domains_agents_batchAPI from "../domains/agents/batchAPI.js";
+import type * as domains_agents_chatPanelBackend from "../domains/agents/chatPanelBackend.js";
 import type * as domains_agents_chatThreads from "../domains/agents/chatThreads.js";
 import type * as domains_agents_checkpointing from "../domains/agents/checkpointing.js";
 import type * as domains_agents_coordinator_agent from "../domains/agents/coordinator/agent.js";
@@ -227,6 +229,9 @@ import type * as domains_agents_testOrchestratorReasoningIntegration from "../do
 import type * as domains_agents_testParallelOrchestrator from "../domains/agents/testParallelOrchestrator.js";
 import type * as domains_agents_tools_createDCFSpreadsheet from "../domains/agents/tools/createDCFSpreadsheet.js";
 import type * as domains_agents_tools_editDCFSpreadsheet from "../domains/agents/tools/editDCFSpreadsheet.js";
+import type * as domains_agents_traceAuditLog from "../domains/agents/traceAuditLog.js";
+import type * as domains_agents_traceOrchestrator from "../domains/agents/traceOrchestrator.js";
+import type * as domains_agents_traceTypes from "../domains/agents/traceTypes.js";
 import type * as domains_agents_types from "../domains/agents/types.js";
 import type * as domains_ai_ai from "../domains/ai/ai.js";
 import type * as domains_ai_genai from "../domains/ai/genai.js";
@@ -369,6 +374,7 @@ import type * as domains_evaluation_inference_becPlaybook from "../domains/evalu
 import type * as domains_evaluation_inference_index from "../domains/evaluation/inference/index.js";
 import type * as domains_evaluation_inference_llmJudge from "../domains/evaluation/inference/llmJudge.js";
 import type * as domains_evaluation_inference_personaInferenceEval from "../domains/evaluation/inference/personaInferenceEval.js";
+import type * as domains_evaluation_judgeMetrics from "../domains/evaluation/judgeMetrics.js";
 import type * as domains_evaluation_liveApiSmoke from "../domains/evaluation/liveApiSmoke.js";
 import type * as domains_evaluation_liveEval from "../domains/evaluation/liveEval.js";
 import type * as domains_evaluation_llmJudge from "../domains/evaluation/llmJudge.js";
@@ -442,6 +448,7 @@ import type * as domains_financial_sensitivityAnalysis from "../domains/financia
 import type * as domains_financial_taxonomyManagement from "../domains/financial/taxonomyManagement.js";
 import type * as domains_financial_validation from "../domains/financial/validation.js";
 import type * as domains_financial_xbrlParser from "../domains/financial/xbrlParser.js";
+import type * as domains_governance_provenanceExplainer from "../domains/governance/provenanceExplainer.js";
 import type * as domains_governance_quarantine from "../domains/governance/quarantine.js";
 import type * as domains_governance_trustPolicy from "../domains/governance/trustPolicy.js";
 import type * as domains_groundTruth_auditLog from "../domains/groundTruth/auditLog.js";
@@ -525,6 +532,8 @@ import type * as domains_models_autonomousModelResolver from "../domains/models/
 import type * as domains_models_freeModelDiscovery from "../domains/models/freeModelDiscovery.js";
 import type * as domains_models_index from "../domains/models/index.js";
 import type * as domains_models_livePerformanceEval from "../domains/models/livePerformanceEval.js";
+import type * as domains_models_modelRouter from "../domains/models/modelRouter.js";
+import type * as domains_models_modelRouterQueries from "../domains/models/modelRouterQueries.js";
 import type * as domains_monitoring_industryUpdates from "../domains/monitoring/industryUpdates.js";
 import type * as domains_monitoring_industryUpdatesEnhanced from "../domains/monitoring/industryUpdatesEnhanced.js";
 import type * as domains_monitoring_integrationHelpers from "../domains/monitoring/integrationHelpers.js";
@@ -1010,6 +1019,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/agentLoopQueries": typeof domains_agents_agentLoopQueries;
   "domains/agents/agentMarketplace": typeof domains_agents_agentMarketplace;
   "domains/agents/agentMemory": typeof domains_agents_agentMemory;
+  "domains/agents/agentNavigation": typeof domains_agents_agentNavigation;
   "domains/agents/agentPlanning": typeof domains_agents_agentPlanning;
   "domains/agents/agentPostingPipeline": typeof domains_agents_agentPostingPipeline;
   "domains/agents/agentRouter": typeof domains_agents_agentRouter;
@@ -1024,6 +1034,7 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/arbitrage/tools/sourceHealthCheck": typeof domains_agents_arbitrage_tools_sourceHealthCheck;
   "domains/agents/arbitrage/tools/sourceQualityRanking": typeof domains_agents_arbitrage_tools_sourceQualityRanking;
   "domains/agents/batchAPI": typeof domains_agents_batchAPI;
+  "domains/agents/chatPanelBackend": typeof domains_agents_chatPanelBackend;
   "domains/agents/chatThreads": typeof domains_agents_chatThreads;
   "domains/agents/checkpointing": typeof domains_agents_checkpointing;
   "domains/agents/coordinator/agent": typeof domains_agents_coordinator_agent;
@@ -1187,6 +1198,9 @@ declare const fullApi: ApiFromModules<{
   "domains/agents/testParallelOrchestrator": typeof domains_agents_testParallelOrchestrator;
   "domains/agents/tools/createDCFSpreadsheet": typeof domains_agents_tools_createDCFSpreadsheet;
   "domains/agents/tools/editDCFSpreadsheet": typeof domains_agents_tools_editDCFSpreadsheet;
+  "domains/agents/traceAuditLog": typeof domains_agents_traceAuditLog;
+  "domains/agents/traceOrchestrator": typeof domains_agents_traceOrchestrator;
+  "domains/agents/traceTypes": typeof domains_agents_traceTypes;
   "domains/agents/types": typeof domains_agents_types;
   "domains/ai/ai": typeof domains_ai_ai;
   "domains/ai/genai": typeof domains_ai_genai;
@@ -1329,6 +1343,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/inference/index": typeof domains_evaluation_inference_index;
   "domains/evaluation/inference/llmJudge": typeof domains_evaluation_inference_llmJudge;
   "domains/evaluation/inference/personaInferenceEval": typeof domains_evaluation_inference_personaInferenceEval;
+  "domains/evaluation/judgeMetrics": typeof domains_evaluation_judgeMetrics;
   "domains/evaluation/liveApiSmoke": typeof domains_evaluation_liveApiSmoke;
   "domains/evaluation/liveEval": typeof domains_evaluation_liveEval;
   "domains/evaluation/llmJudge": typeof domains_evaluation_llmJudge;
@@ -1402,6 +1417,7 @@ declare const fullApi: ApiFromModules<{
   "domains/financial/taxonomyManagement": typeof domains_financial_taxonomyManagement;
   "domains/financial/validation": typeof domains_financial_validation;
   "domains/financial/xbrlParser": typeof domains_financial_xbrlParser;
+  "domains/governance/provenanceExplainer": typeof domains_governance_provenanceExplainer;
   "domains/governance/quarantine": typeof domains_governance_quarantine;
   "domains/governance/trustPolicy": typeof domains_governance_trustPolicy;
   "domains/groundTruth/auditLog": typeof domains_groundTruth_auditLog;
@@ -1485,6 +1501,8 @@ declare const fullApi: ApiFromModules<{
   "domains/models/freeModelDiscovery": typeof domains_models_freeModelDiscovery;
   "domains/models/index": typeof domains_models_index;
   "domains/models/livePerformanceEval": typeof domains_models_livePerformanceEval;
+  "domains/models/modelRouter": typeof domains_models_modelRouter;
+  "domains/models/modelRouterQueries": typeof domains_models_modelRouterQueries;
   "domains/monitoring/industryUpdates": typeof domains_monitoring_industryUpdates;
   "domains/monitoring/industryUpdatesEnhanced": typeof domains_monitoring_industryUpdatesEnhanced;
   "domains/monitoring/integrationHelpers": typeof domains_monitoring_integrationHelpers;

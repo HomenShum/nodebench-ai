@@ -4,7 +4,13 @@
  * getMethodology teaches agents the development process.
  */
 
+import { createRequire } from "node:module";
 import type { McpTool } from "../types.js";
+
+const _require = createRequire(import.meta.url);
+function _isInstalled(pkg: string): boolean {
+  try { _require.resolve(pkg); return true; } catch { return false; }
+}
 
 const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
   verification: {
@@ -1422,6 +1428,88 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
     composesWith:
       "Build on agent_evaluation for contract scoring. Use the verification methodology for per-task correctness. Feed results into self_reinforced_learning loop. Use parallel_agent_teams methodology for evaluating multi-agent handoffs.",
   },
+  toon_format: {
+    title: "TOON Format — Token-Oriented Object Notation",
+    description:
+      "TOON is a serialization format optimized for LLM token efficiency. It uses ~40% fewer tokens than JSON while achieving better accuracy (73.9% vs 69.7% on benchmarks). It combines YAML-style indentation for objects with CSV-style tabular arrays for uniform collections.",
+    whenToUse: [
+      "Preparing large data payloads for LLM calls (saves ~40% tokens = lower cost)",
+      "Multi-agent handoffs where context budget is tight",
+      "Returning structured results that will be consumed by another LLM",
+      "Any workflow where token savings compound (e.g., iterative refinement loops)",
+    ],
+    whenNotToUse: [
+      "Data consumed by non-LLM systems (JSON is more universally supported)",
+      "Small payloads where savings are negligible (<100 tokens)",
+      "When exact JSON round-trip fidelity is critical (TOON may reorder keys)",
+    ],
+    howItWorks: [
+      "Objects use YAML-style indentation: key: value (one per line)",
+      "Uniform arrays use CSV-style: [N]{field1,field2}: rows... (compact tabular format)",
+      "Strings don't need quotes unless they contain special characters",
+      "Numbers, booleans, null are literal values",
+    ],
+    example: {
+      json: '[{"name":"log_gap","category":"verification","phase":"verify"},{"name":"resolve_gap","category":"verification","phase":"verify"}]',
+      toon: '[2]{name,category,phase}:\n  log_gap,verification,verify\n  resolve_gap,verification,verify',
+      savings: "~40% fewer characters, ~36% fewer tokens",
+    },
+    tools: ["toon_encode", "toon_decode"],
+    cliFlag: "--toon — Auto-encode all tool responses in TOON format. Add to your MCP config for system-wide savings.",
+    references: {
+      spec: "https://github.com/toon-format/toon",
+      npm: "https://www.npmjs.com/package/@toon-format/toon",
+      article: "https://www.infoq.com/news/2025/11/toon-reduce-llm-cost-tokens/",
+    },
+  },
+  seo_audit: {
+    title: "SEO Audit Workflow",
+    description:
+      "Structured SEO audit for websites: technical SEO, content analysis, performance checks, WordPress detection, and actionable recommendations.",
+    steps: [
+      { tool: "seo_audit_url", action: "Analyze meta tags, headings, images, structured data" },
+      { tool: "analyze_seo_content", action: "Check readability, keyword density, link ratios" },
+      { tool: "check_page_performance", action: "Measure response time, compression, caching" },
+      { tool: "check_wordpress_site", action: "Detect WordPress, assess security posture" },
+      { tool: "scan_wordpress_updates", action: "Check plugins/themes for known vulnerabilities" },
+    ],
+    bestPractices: [
+      "Run seo_audit_url first to get the overall score and identify priorities",
+      "Use analyze_seo_content with targetKeyword for keyword-focused audits",
+      "check_wordpress_site is security-focused — run it on any WordPress site before deployment",
+      "Record findings with record_learning for cross-project SEO knowledge",
+    ],
+  },
+  voice_bridge: {
+    title: "Voice Bridge Implementation Guide",
+    description:
+      "End-to-end voice interface implementation: architecture patterns, STT/TTS/LLM options, latency optimization, and scaffold generation. Covers local, cloud, and hybrid deployments.",
+    architecturePatterns: {
+      local: "Whisper + Piper/macOS say — fully offline, best privacy, higher latency (2-5s)",
+      cloud: "Deepgram + Cartesia/ElevenLabs — lowest latency (0.5-1.5s), requires API keys",
+      hybrid: "Whisper local + cloud TTS — privacy for input, quality for output",
+      browser: "Web Speech API — zero dependencies, browser-only, variable quality",
+    },
+    steps: [
+      { tool: "design_voice_pipeline", action: "Get architecture recommendation based on requirements" },
+      { tool: "analyze_voice_config", action: "Validate component compatibility and estimate costs" },
+      { tool: "generate_voice_scaffold", action: "Generate starter code for chosen stack" },
+      { tool: "benchmark_voice_latency", action: "Compare pipeline configurations side-by-side" },
+    ],
+    latencyBudget: {
+      excellent: "<1s total round-trip — requires streaming STT + streaming TTS + fast LLM",
+      good: "1-2s — achievable with cloud STT + streaming TTS",
+      acceptable: "2-4s — local Whisper + cloud TTS",
+      poor: ">4s — batch processing, no streaming",
+    },
+    keyInsights: [
+      "Streaming is critical: STT streaming reduces perceived latency by 50-70%",
+      "TTS is often the bottleneck — choose streaming TTS (Cartesia Sonic, Edge TTS)",
+      "VAD (Voice Activity Detection) prevents unnecessary processing of silence",
+      "Session context must survive compaction — use save_session_note for voice conversation history",
+      "For production: implement interrupt handling (user speaks while TTS is playing)",
+    ],
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1473,6 +1561,12 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "Agent Evaluation — contract compliance scoring (6 dimensions, 100pts), trajectory analysis, eval benchmarks, host-fewer-tools architecture, self-reinforced improvement loop",
           controlled_evaluation:
             "Controlled Evaluation — fixed task banks, ablation experiments (bare/lite/full/cold_kb/no_gates), dual-axis scoring (outcome 50pts + process 50pts), multi-trial statistics, grader types, infra noise controls, promotion strategy. Based on Anthropic eval methodology.",
+          toon_format:
+            "TOON Format — Token-Oriented Object Notation for ~40% token savings on LLM payloads",
+          seo_audit:
+            "SEO Audit — technical SEO, content analysis, performance, WordPress security",
+          voice_bridge:
+            "Voice Bridge — STT/TTS/LLM pipeline design, scaffold generation, latency benchmarking",
         },
       },
       {
@@ -1810,6 +1904,707 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
           );
 
         return content;
+      },
+    },
+    {
+      name: "check_mcp_setup",
+      description:
+        "Comprehensive diagnostic wizard for the entire NodeBench MCP. Checks all env vars, API keys, optional npm packages, and external services across every domain. Returns a full readiness report with per-domain status and step-by-step setup instructions for anything missing. Run this FIRST to see what capabilities are available and what needs configuration.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          domains: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Specific domains to check (default: all). Options: web, vision, github, llm, embedding, email, flicker_detection, figma_flow, ui_capture, local_file, gaia_solvers",
+          },
+          test_connections: {
+            type: "boolean",
+            description:
+              "Test reachability of Python servers (flicker on :8006, figma on :8007) and email SMTP/IMAP. Default: false",
+          },
+          generate_config: {
+            type: "boolean",
+            description:
+              "Generate a complete MCP config snippet with all needed env vars (default: true)",
+          },
+          generate_setup: {
+            type: "boolean",
+            description:
+              "Generate complete setup files that an agent can write to disk to self-enable every capability: .env.nodebench (env template), setup-nodebench.sh (bash), setup-nodebench.ps1 (powershell), docker-compose.nodebench.yml (Python servers). Default: false",
+          },
+        },
+        required: [],
+      },
+      handler: async (args: any) => {
+        const testConnections = args.test_connections === true;
+        const generateConfig = args.generate_config !== false;
+        const generateSetup = args.generate_setup === true;
+        const targetDomains = args.domains as string[] | undefined;
+
+        type Check = {
+          item: string;
+          status: "ok" | "missing" | "optional" | "installed" | "not_installed";
+          value?: string;
+          hint?: string;
+        };
+        type DomainReport = {
+          domain: string;
+          ready: boolean;
+          status: "ready" | "partial" | "not_configured";
+          checks: Check[];
+          tools: string[];
+          setupInstructions?: string[];
+        };
+
+        const reports: DomainReport[] = [];
+
+        const envCheck = (name: string, hint?: string): Check => {
+          const val = process.env[name];
+          return {
+            item: name,
+            status: val ? "ok" : "missing",
+            value: val ? `${val.substring(0, 4)}***` : undefined,
+            hint: !val ? hint : undefined,
+          };
+        };
+        const anyEnv = (...names: string[]) => names.some((n) => !!process.env[n]);
+        const pkgCheck = (name: string): Check => ({
+          item: `npm: ${name}`,
+          status: _isInstalled(name) ? "installed" : "not_installed",
+          hint: !_isInstalled(name) ? `npm install ${name}` : undefined,
+        });
+        const shouldCheck = (d: string) => !targetDomains || targetDomains.includes(d);
+
+        // ── WEB ──
+        if (shouldCheck("web")) {
+          const checks = [
+            envCheck("GEMINI_API_KEY", "Google AI key (free at https://aistudio.google.com/apikey)"),
+            envCheck("OPENAI_API_KEY", "OpenAI key from https://platform.openai.com/api-keys"),
+            envCheck("PERPLEXITY_API_KEY", "Perplexity key from https://www.perplexity.ai/settings/api"),
+          ];
+          const ok = anyEnv("GEMINI_API_KEY", "OPENAI_API_KEY", "PERPLEXITY_API_KEY");
+          reports.push({
+            domain: "web",
+            ready: ok,
+            status: ok ? "ready" : "not_configured",
+            checks,
+            tools: ["web_search", "fetch_url"],
+            ...(!ok
+              ? {
+                  setupInstructions: [
+                    "web_search needs at least ONE LLM API key.",
+                    "Easiest: Get a free Gemini key at https://aistudio.google.com/apikey",
+                    "Set GEMINI_API_KEY=your-key in your MCP config env vars.",
+                    "fetch_url works without any API keys (raw HTTP fetch).",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── VISION ──
+        if (shouldCheck("vision")) {
+          const pw = _isInstalled("playwright");
+          const checks = [
+            envCheck("GEMINI_API_KEY", "Needed for LLM-based image analysis"),
+            envCheck("OPENAI_API_KEY", "Alternative: OpenAI vision models"),
+            pkgCheck("playwright"),
+          ];
+          const hasLlm = anyEnv("GEMINI_API_KEY", "OPENAI_API_KEY");
+          reports.push({
+            domain: "vision",
+            ready: hasLlm,
+            status: hasLlm ? (pw ? "ready" : "partial") : "not_configured",
+            checks,
+            tools: ["discover_vision_env", "analyze_screenshot", "manipulate_screenshot", "diff_screenshots"],
+            ...(!hasLlm
+              ? {
+                  setupInstructions: [
+                    "Vision tools need an LLM API key for image analysis.",
+                    "Set GEMINI_API_KEY or OPENAI_API_KEY.",
+                    "Optional: npm install playwright && npx playwright install chromium",
+                  ],
+                }
+              : !pw
+                ? {
+                    setupInstructions: [
+                      "Vision LLM analysis is ready.",
+                      "Optional: npm install playwright && npx playwright install chromium (for browser screenshots)",
+                    ],
+                  }
+                : {}),
+          });
+        }
+
+        // ── GITHUB ──
+        if (shouldCheck("github")) {
+          const checks = [envCheck("GITHUB_TOKEN", "Fine-grained token from https://github.com/settings/tokens")];
+          const ok = !!process.env.GITHUB_TOKEN;
+          reports.push({
+            domain: "github",
+            ready: ok,
+            status: ok ? "ready" : "not_configured",
+            checks,
+            tools: ["search_github", "analyze_repo", "monitor_repo"],
+            ...(!ok
+              ? {
+                  setupInstructions: [
+                    "1. Go to https://github.com/settings/tokens",
+                    "2. Generate fine-grained token with: Contents (read), Metadata (read)",
+                    "3. Set GITHUB_TOKEN=ghp_your-token",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── LLM ──
+        if (shouldCheck("llm")) {
+          const checks = [
+            envCheck("ANTHROPIC_API_KEY", "From https://console.anthropic.com/settings/keys"),
+            envCheck("OPENAI_API_KEY", "OpenAI key"),
+            envCheck("GEMINI_API_KEY", "Google AI key (free tier)"),
+          ];
+          const ok = anyEnv("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY");
+          reports.push({
+            domain: "llm",
+            ready: ok,
+            status: ok ? "ready" : "not_configured",
+            checks,
+            tools: ["call_llm", "extract_structured_data", "benchmark_models"],
+            ...(!ok
+              ? {
+                  setupInstructions: [
+                    "call_llm needs at least ONE LLM API key.",
+                    "ANTHROPIC_API_KEY (Claude), OPENAI_API_KEY (GPT), or GEMINI_API_KEY (Gemini, free).",
+                    "Easiest: Get a free Gemini key at https://aistudio.google.com/apikey",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── EMBEDDING ──
+        if (shouldCheck("embedding")) {
+          const hasHf = _isInstalled("@huggingface/transformers");
+          const checks = [
+            pkgCheck("@huggingface/transformers"),
+            envCheck("GEMINI_API_KEY", "Fallback: Google text-embedding-004 (free)"),
+            envCheck("OPENAI_API_KEY", "Fallback: OpenAI text-embedding-3-small"),
+          ];
+          const ok = hasHf || anyEnv("GEMINI_API_KEY", "OPENAI_API_KEY");
+          reports.push({
+            domain: "embedding",
+            ready: ok,
+            status: ok ? "ready" : "not_configured",
+            checks,
+            tools: ["discover_tools (semantic mode)"],
+            ...(!ok
+              ? {
+                  setupInstructions: [
+                    "Embedding search enhances discover_tools with semantic understanding.",
+                    "Option 1 (recommended, free, local): npm install @huggingface/transformers",
+                    "  Uses Xenova/all-MiniLM-L6-v2 (23MB INT8, no API key needed)",
+                    "Option 2: Set GEMINI_API_KEY (free Google text-embedding-004)",
+                    "Option 3: Set OPENAI_API_KEY (OpenAI text-embedding-3-small, paid)",
+                    "Without embedding, discover_tools still works with keyword/fuzzy search.",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── EMAIL ──
+        if (shouldCheck("email")) {
+          const checks = [
+            envCheck("EMAIL_USER", "Your email address (e.g., agent@gmail.com)"),
+            envCheck("EMAIL_PASS", "App password (NOT regular password)"),
+          ];
+          const ok = !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS;
+          reports.push({
+            domain: "email",
+            ready: ok,
+            status: ok ? "ready" : "not_configured",
+            checks,
+            tools: ["send_email", "read_emails", "draft_email_reply", "check_email_setup"],
+            ...(!ok
+              ? {
+                  setupInstructions: [
+                    "For detailed per-provider setup, run check_email_setup instead.",
+                    "Quick start (Gmail):",
+                    "1. Enable 2FA at https://myaccount.google.com/security",
+                    "2. Create app password at https://myaccount.google.com/apppasswords",
+                    "3. Set EMAIL_USER=your.email@gmail.com",
+                    "4. Set EMAIL_PASS=your-16-char-app-password",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── FLICKER DETECTION ──
+        if (shouldCheck("flicker_detection")) {
+          const checks: Check[] = [
+            { item: "Python FastAPI server (port 8006)", status: "optional", hint: "docker compose up flicker_detection" },
+          ];
+          let serverOk = false;
+          if (testConnections) {
+            try {
+              const res = await fetch("http://localhost:8006/health", { signal: AbortSignal.timeout(3000) });
+              serverOk = res.ok;
+              checks[0] = { item: "Python FastAPI server (port 8006)", status: serverOk ? "ok" : "missing", hint: serverOk ? "Server running" : "Not reachable" };
+            } catch {
+              checks[0] = { item: "Python FastAPI server (port 8006)", status: "missing", hint: "Not reachable. Start with: docker compose up flicker_detection" };
+            }
+          }
+          reports.push({
+            domain: "flicker_detection",
+            ready: testConnections ? serverOk : true,
+            status: testConnections ? (serverOk ? "ready" : "not_configured") : "partial",
+            checks,
+            tools: ["start_flicker_analysis", "get_flicker_status", "get_flicker_results", "compare_flicker_runs", "detect_flicker_frames"],
+            setupInstructions: [
+              "Flicker detection requires a Python FastAPI server:",
+              "1. cd python-mcp-servers",
+              "2. docker compose up flicker_detection",
+              "3. Server starts on port 8006",
+              "4. Requires ffmpeg installed on the server",
+              "Run check_mcp_setup with test_connections=true to verify.",
+            ],
+          });
+        }
+
+        // ── FIGMA FLOW ──
+        if (shouldCheck("figma_flow")) {
+          const checks: Check[] = [
+            envCheck("FIGMA_ACCESS_TOKEN", "From https://www.figma.com/developers/api#access-tokens"),
+            { item: "Python FastAPI server (port 8007)", status: "optional", hint: "docker compose up figma_flow" },
+          ];
+          let serverOk = false;
+          if (testConnections) {
+            try {
+              const res = await fetch("http://localhost:8007/health", { signal: AbortSignal.timeout(3000) });
+              serverOk = res.ok;
+              checks[1] = { item: "Python FastAPI server (port 8007)", status: serverOk ? "ok" : "missing" };
+            } catch {
+              checks[1] = { item: "Python FastAPI server (port 8007)", status: "missing", hint: "Not reachable. Start with: docker compose up figma_flow" };
+            }
+          }
+          const hasToken = !!process.env.FIGMA_ACCESS_TOKEN;
+          reports.push({
+            domain: "figma_flow",
+            ready: hasToken && (testConnections ? serverOk : true),
+            status: hasToken ? (testConnections ? (serverOk ? "ready" : "partial") : "partial") : "not_configured",
+            checks,
+            tools: ["analyze_figma_flow", "get_figma_flow_status", "get_figma_flow_results", "compare_figma_flows"],
+            ...(!hasToken
+              ? {
+                  setupInstructions: [
+                    "1. Go to https://www.figma.com/developers/api#access-tokens",
+                    "2. Generate a personal access token",
+                    "3. Set FIGMA_ACCESS_TOKEN=your-token",
+                    "4. Start server: cd python-mcp-servers && docker compose up figma_flow (port 8007)",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── UI CAPTURE ──
+        if (shouldCheck("ui_capture")) {
+          const pw = _isInstalled("playwright");
+          reports.push({
+            domain: "ui_capture",
+            ready: pw,
+            status: pw ? "ready" : "not_configured",
+            checks: [pkgCheck("playwright")],
+            tools: ["capture_ui_screenshot", "capture_responsive_suite"],
+            ...(!pw
+              ? {
+                  setupInstructions: [
+                    "1. npm install playwright",
+                    "2. npx playwright install chromium",
+                    "Uses headless Chromium to screenshot URLs at multiple breakpoints.",
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── LOCAL FILE ──
+        if (shouldCheck("local_file")) {
+          const deps = [
+            { name: "cheerio", use: "HTML parsing" },
+            { name: "pdf-parse", use: "PDF extraction" },
+            { name: "xlsx", use: "Excel/CSV parsing" },
+            { name: "sharp", use: "Image processing" },
+            { name: "tesseract.js", use: "OCR (text from images)" },
+            { name: "yauzl", use: "ZIP extraction" },
+            { name: "papaparse", use: "CSV parsing" },
+          ];
+          const checks = deps.map((d) => ({
+            ...pkgCheck(d.name),
+            hint: _isInstalled(d.name) ? `Used for: ${d.use}` : `npm install ${d.name} (for: ${d.use})`,
+          }));
+          const count = deps.filter((d) => _isInstalled(d.name)).length;
+          reports.push({
+            domain: "local_file",
+            ready: true,
+            status: count === deps.length ? "ready" : count > 0 ? "partial" : "not_configured",
+            checks,
+            tools: ["parse_html_file", "parse_pdf_file", "parse_excel_file", "parse_csv_file", "ocr_image", "extract_zip", "read_local_file"],
+            setupInstructions: [
+              "Core file tools (read, stat, list) always work. Optional deps extend capabilities:",
+              ...deps.filter((d) => !_isInstalled(d.name)).map((d) => `  npm install ${d.name} → ${d.use}`),
+              deps.every((d) => _isInstalled(d.name))
+                ? "All optional file deps installed!"
+                : "Install all: npm install cheerio pdf-parse xlsx sharp tesseract.js yauzl papaparse",
+            ],
+          });
+        }
+
+        // ── GAIA SOLVERS ──
+        if (shouldCheck("gaia_solvers")) {
+          const checks = [
+            envCheck("HF_TOKEN", "Hugging Face token from https://huggingface.co/settings/tokens"),
+            pkgCheck("sharp"),
+            pkgCheck("tesseract.js"),
+          ];
+          const hasToken = !!process.env.HF_TOKEN;
+          const hasDeps = _isInstalled("sharp") && _isInstalled("tesseract.js");
+          reports.push({
+            domain: "gaia_solvers",
+            ready: hasToken && hasDeps,
+            status: hasToken && hasDeps ? "ready" : hasToken || hasDeps ? "partial" : "not_configured",
+            checks,
+            tools: ["solve_red_green_deviation_average_from_image", "solve_green_polygon_area_from_image", "read_image_ocr_text", "count_shapes_in_image", "solve_chessboard_fen", "measure_angles_in_image"],
+            ...(!hasToken || !hasDeps
+              ? {
+                  setupInstructions: [
+                    ...(!hasToken ? ["1. Get token at https://huggingface.co/settings/tokens", "2. Set HF_TOKEN=hf_your-token"] : []),
+                    ...(!hasDeps ? ["3. npm install sharp tesseract.js"] : []),
+                  ],
+                }
+              : {}),
+          });
+        }
+
+        // ── Summary ──
+        const readyCount = reports.filter((r) => r.ready).length;
+        const partialCount = reports.filter((r) => r.status === "partial").length;
+        const missingCount = reports.filter((r) => r.status === "not_configured").length;
+
+        // ── MCP config snippet ──
+        let configSnippet: string | undefined;
+        if (generateConfig) {
+          const envVars: Record<string, string> = {};
+          for (const report of reports) {
+            for (const check of report.checks) {
+              if (check.status === "missing" && !check.item.startsWith("npm:") && !check.item.includes("server")) {
+                envVars[check.item] = check.hint || "your-value-here";
+              }
+            }
+          }
+          if (Object.keys(envVars).length > 0) {
+            configSnippet = JSON.stringify(
+              {
+                mcpServers: {
+                  nodebench: {
+                    command: "npx",
+                    args: ["-y", "nodebench-mcp"],
+                    env: Object.fromEntries(
+                      Object.entries(envVars).map(([k, v]) => [k, process.env[k] || v])
+                    ),
+                  },
+                },
+              },
+              null,
+              2
+            );
+          }
+        }
+
+        // ── Setup file generation ──
+        let setupFiles: Record<string, { filename: string; content: string; description: string }> | undefined;
+        if (generateSetup) {
+          // .env.nodebench — complete env var template
+          const envTemplate = [
+            "# ═══════════════════════════════════════════════════════════",
+            "# NodeBench MCP — Environment Variables",
+            "# Generated by check_mcp_setup. Fill in values and rename to .env",
+            "# ═══════════════════════════════════════════════════════════",
+            "",
+            "# ── LLM / Web Search (at least ONE required) ──",
+            `GEMINI_API_KEY=${process.env.GEMINI_API_KEY || ""}                  # Free at https://aistudio.google.com/apikey`,
+            `OPENAI_API_KEY=${process.env.OPENAI_API_KEY || ""}                  # https://platform.openai.com/api-keys`,
+            `ANTHROPIC_API_KEY=${process.env.ANTHROPIC_API_KEY || ""}            # https://console.anthropic.com/settings/keys`,
+            `PERPLEXITY_API_KEY=${process.env.PERPLEXITY_API_KEY || ""}          # https://www.perplexity.ai/settings/api`,
+            "",
+            "# ── GitHub ──",
+            `GITHUB_TOKEN=${process.env.GITHUB_TOKEN || ""}                      # Fine-grained: https://github.com/settings/tokens`,
+            "",
+            "# ── Email (SMTP/IMAP) ──",
+            `EMAIL_USER=${process.env.EMAIL_USER || ""}                          # e.g. agent@gmail.com`,
+            `EMAIL_PASS=${process.env.EMAIL_PASS || ""}                          # App password (NOT regular password)`,
+            `EMAIL_SMTP_HOST=${process.env.EMAIL_SMTP_HOST || "smtp.gmail.com"}  # Default: smtp.gmail.com`,
+            `EMAIL_SMTP_PORT=${process.env.EMAIL_SMTP_PORT || "465"}             # Default: 465 (TLS)`,
+            `EMAIL_IMAP_HOST=${process.env.EMAIL_IMAP_HOST || "imap.gmail.com"}  # Default: imap.gmail.com`,
+            `EMAIL_IMAP_PORT=${process.env.EMAIL_IMAP_PORT || "993"}             # Default: 993 (TLS)`,
+            "",
+            "# ── Figma ──",
+            `FIGMA_ACCESS_TOKEN=${process.env.FIGMA_ACCESS_TOKEN || ""}          # https://www.figma.com/developers/api#access-tokens`,
+            "",
+            "# ── Hugging Face (GAIA solvers + local embeddings) ──",
+            `HF_TOKEN=${process.env.HF_TOKEN || ""}                              # https://huggingface.co/settings/tokens`,
+            "",
+            "# ── Python servers (flicker detection + figma flow) ──",
+            "# These are started via docker compose, not env vars.",
+            "# See docker-compose.nodebench.yml for configuration.",
+            "",
+          ].join("\n");
+
+          // setup-nodebench.sh — bash install script
+          const bashScript = [
+            "#!/usr/bin/env bash",
+            "set -euo pipefail",
+            "",
+            "# ═══════════════════════════════════════════════════════════",
+            "# NodeBench MCP — Setup Script (bash)",
+            "# Generated by check_mcp_setup",
+            "# ═══════════════════════════════════════════════════════════",
+            "",
+            'echo "=== NodeBench MCP Setup ==="',
+            'echo ""',
+            "",
+            "# Step 1: Install required dependencies",
+            'echo "→ Installing required npm packages..."',
+            "npm install @modelcontextprotocol/sdk better-sqlite3 @toon-format/toon",
+            "",
+            "# Step 2: Install optional dependencies for extended capabilities",
+            'echo "→ Installing optional dependencies..."',
+            'echo "  These unlock: HTML parsing, PDF extraction, Excel/CSV, OCR, images, ZIP, browser screenshots"',
+            "npm install cheerio pdf-parse xlsx sharp tesseract.js yauzl papaparse || true",
+            "",
+            "# Step 3: Install embedding provider (local semantic search)",
+            'echo "→ Installing local embedding model..."',
+            'echo "  Enables semantic search in discover_tools (23MB model, no API key needed)"',
+            "npm install @huggingface/transformers || true",
+            "",
+            "# Step 4: Install Playwright for browser-based tools",
+            'echo "→ Installing Playwright + Chromium..."',
+            "npm install playwright || true",
+            "npx playwright install chromium || true",
+            "",
+            "# Step 5: Install LLM SDKs",
+            'echo "→ Installing LLM SDKs..."',
+            "npm install @anthropic-ai/sdk @google/genai openai || true",
+            "",
+            "# Step 6: Set up Python servers (optional)",
+            'echo ""',
+            'echo "→ Python servers (flicker detection + figma flow):"',
+            'echo "  If you need these, run: docker compose -f docker-compose.nodebench.yml up -d"',
+            "",
+            "# Step 7: Environment variables",
+            'echo ""',
+            'echo "=== Setup Complete ==="',
+            'echo ""',
+            'echo "Next steps:"',
+            'echo "  1. Copy .env.nodebench to .env and fill in your API keys"',
+            'echo "  2. Add env vars to your MCP config (Claude Code / Cursor / etc)"',
+            'echo "  3. Run: npx nodebench-mcp --preset full"',
+            'echo "  4. Verify: call check_mcp_setup to see all domains"',
+            "",
+          ].join("\n");
+
+          // setup-nodebench.ps1 — PowerShell install script
+          const psScript = [
+            "# ═══════════════════════════════════════════════════════════",
+            "# NodeBench MCP — Setup Script (PowerShell)",
+            "# Generated by check_mcp_setup",
+            "# ═══════════════════════════════════════════════════════════",
+            "",
+            '$ErrorActionPreference = "Continue"',
+            "",
+            'Write-Host "=== NodeBench MCP Setup ===" -ForegroundColor Cyan',
+            'Write-Host ""',
+            "",
+            "# Step 1: Required dependencies",
+            'Write-Host "-> Installing required npm packages..." -ForegroundColor Yellow',
+            "npm install @modelcontextprotocol/sdk better-sqlite3 @toon-format/toon",
+            "",
+            "# Step 2: Optional dependencies",
+            'Write-Host "-> Installing optional dependencies..." -ForegroundColor Yellow',
+            "npm install cheerio pdf-parse xlsx sharp tesseract.js yauzl papaparse 2>$null",
+            "",
+            "# Step 3: Embedding provider",
+            'Write-Host "-> Installing local embedding model..." -ForegroundColor Yellow',
+            "npm install @huggingface/transformers 2>$null",
+            "",
+            "# Step 4: Playwright",
+            'Write-Host "-> Installing Playwright + Chromium..." -ForegroundColor Yellow',
+            "npm install playwright 2>$null",
+            "npx playwright install chromium 2>$null",
+            "",
+            "# Step 5: LLM SDKs",
+            'Write-Host "-> Installing LLM SDKs..." -ForegroundColor Yellow',
+            "npm install @anthropic-ai/sdk @google/genai openai 2>$null",
+            "",
+            "# Step 6: Python servers",
+            'Write-Host ""',
+            'Write-Host "-> Python servers (flicker detection + figma flow):" -ForegroundColor Yellow',
+            'Write-Host "  If needed: docker compose -f docker-compose.nodebench.yml up -d"',
+            "",
+            'Write-Host ""',
+            'Write-Host "=== Setup Complete ===" -ForegroundColor Green',
+            'Write-Host ""',
+            'Write-Host "Next steps:"',
+            'Write-Host "  1. Copy .env.nodebench to .env and fill in your API keys"',
+            'Write-Host "  2. Add env vars to your MCP config (Claude Code / Cursor / etc)"',
+            'Write-Host "  3. Run: npx nodebench-mcp --preset full"',
+            'Write-Host "  4. Verify: call check_mcp_setup to see all domains"',
+            "",
+          ].join("\n");
+
+          // docker-compose.nodebench.yml
+          const dockerCompose = [
+            "# ═══════════════════════════════════════════════════════════",
+            "# NodeBench MCP — Docker Compose for Python Servers",
+            "# Generated by check_mcp_setup",
+            "# ═══════════════════════════════════════════════════════════",
+            "# Usage: docker compose -f docker-compose.nodebench.yml up -d",
+            "",
+            "services:",
+            "  flicker_detection:",
+            "    build: ./python-mcp-servers/flicker_detection",
+            "    ports:",
+            '      - "8006:8006"',
+            "    volumes:",
+            "      - ./tmp/flicker:/app/tmp",
+            "    restart: unless-stopped",
+            "    healthcheck:",
+            "      test: curl -f http://localhost:8006/health || exit 1",
+            "      interval: 30s",
+            "      timeout: 5s",
+            "      retries: 3",
+            "",
+            "  figma_flow:",
+            "    build: ./python-mcp-servers/figma_flow",
+            "    ports:",
+            '      - "8007:8007"',
+            "    environment:",
+            "      - FIGMA_ACCESS_TOKEN=${FIGMA_ACCESS_TOKEN:-}",
+            "    volumes:",
+            "      - ./tmp/figma:/app/tmp",
+            "    restart: unless-stopped",
+            "    healthcheck:",
+            "      test: curl -f http://localhost:8007/health || exit 1",
+            "      interval: 30s",
+            "      timeout: 5s",
+            "      retries: 3",
+            "",
+          ].join("\n");
+
+          // Full MCP config with ALL env vars
+          const allEnvVars: Record<string, string> = {
+            GEMINI_API_KEY: process.env.GEMINI_API_KEY || "your-gemini-api-key",
+            OPENAI_API_KEY: process.env.OPENAI_API_KEY || "your-openai-api-key",
+            ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || "your-anthropic-api-key",
+            PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY || "your-perplexity-api-key",
+            GITHUB_TOKEN: process.env.GITHUB_TOKEN || "ghp_your-github-token",
+            EMAIL_USER: process.env.EMAIL_USER || "your.email@gmail.com",
+            EMAIL_PASS: process.env.EMAIL_PASS || "your-16-char-app-password",
+            EMAIL_SMTP_HOST: process.env.EMAIL_SMTP_HOST || "smtp.gmail.com",
+            EMAIL_SMTP_PORT: process.env.EMAIL_SMTP_PORT || "465",
+            EMAIL_IMAP_HOST: process.env.EMAIL_IMAP_HOST || "imap.gmail.com",
+            EMAIL_IMAP_PORT: process.env.EMAIL_IMAP_PORT || "993",
+            FIGMA_ACCESS_TOKEN: process.env.FIGMA_ACCESS_TOKEN || "your-figma-token",
+            HF_TOKEN: process.env.HF_TOKEN || "hf_your-huggingface-token",
+          };
+          const fullMcpConfig = JSON.stringify(
+            {
+              mcpServers: {
+                nodebench: {
+                  command: "npx",
+                  args: ["-y", "nodebench-mcp", "--preset", "full"],
+                  env: allEnvVars,
+                },
+              },
+            },
+            null,
+            2
+          );
+
+          setupFiles = {
+            env: {
+              filename: ".env.nodebench",
+              content: envTemplate,
+              description: "Environment variable template — copy to .env and fill in your API keys",
+            },
+            bash: {
+              filename: "setup-nodebench.sh",
+              content: bashScript,
+              description: "Bash install script — chmod +x setup-nodebench.sh && ./setup-nodebench.sh",
+            },
+            powershell: {
+              filename: "setup-nodebench.ps1",
+              content: psScript,
+              description: "PowerShell install script — .\\setup-nodebench.ps1",
+            },
+            docker: {
+              filename: "docker-compose.nodebench.yml",
+              content: dockerCompose,
+              description: "Docker Compose for Python servers (flicker detection + figma flow)",
+            },
+            mcpConfig: {
+              filename: "mcp-config.nodebench.json",
+              content: fullMcpConfig,
+              description: "Full MCP config with ALL env vars — paste into Claude Code / Cursor settings",
+            },
+          };
+        }
+
+        return {
+          summary: {
+            totalDomains: reports.length,
+            ready: readyCount,
+            partial: partialCount,
+            notConfigured: missingCount,
+            overallStatus:
+              missingCount === 0
+                ? "fully_configured"
+                : readyCount > 0
+                  ? "partially_configured"
+                  : "needs_setup",
+          },
+          domains: reports,
+          ...(configSnippet ? { mcpConfigSnippet: configSnippet } : {}),
+          ...(setupFiles ? { setupFiles } : {}),
+          nextSteps:
+            readyCount === reports.length
+              ? [
+                  "All checked domains are configured! Start working.",
+                  "Run discover_tools to find the right tools for your task.",
+                  "Run getMethodology('overview') to see available methodologies.",
+                ]
+              : generateSetup
+                ? [
+                    "Setup files generated! Write them to your project root:",
+                    "  1. Write .env.nodebench → fill in API keys → rename to .env",
+                    "  2. Run setup-nodebench.sh (bash) or setup-nodebench.ps1 (PowerShell) to install all deps",
+                    "  3. Optionally run docker-compose.nodebench.yml for Python servers",
+                    "  4. Copy mcp-config.nodebench.json content into your Claude Code / Cursor MCP settings",
+                    "  5. Re-run check_mcp_setup to verify everything is configured",
+                  ]
+                : [
+                    `${missingCount} domain(s) need configuration. See setupInstructions per domain.`,
+                    "Add env vars to your MCP config (see mcpConfigSnippet) or shell profile.",
+                    "Re-run check_mcp_setup to verify after configuration.",
+                    "Tip: Most capabilities work without ALL domains configured. Start with what you need.",
+                    "Tip: Run check_mcp_setup with generate_setup=true to get ready-to-write setup files.",
+                  ],
+        };
       },
     },
   ];

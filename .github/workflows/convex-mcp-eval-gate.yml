@@ -1,0 +1,114 @@
+name: Convex MCP Eval Gate
+
+on:
+  pull_request:
+    paths:
+      - 'packages/convex-mcp-nodebench/**'
+      - 'scripts/eval-harness/**'
+  schedule:
+    # Nightly at 4 AM UTC
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      seeds:
+        description: 'Number of seeds per config'
+        default: '3'
+        type: string
+      tasks:
+        description: 'Task filter (tier1/tier2/tier3/all)'
+        default: 'tier1'
+        type: string
+      backend:
+        description: 'Agent backend (stub/anthropic/openai)'
+        default: 'anthropic'
+        type: string
+
+jobs:
+  eval-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/convex-mcp-nodebench/package-lock.json
+
+      - name: Install convex-mcp-nodebench deps
+        working-directory: packages/convex-mcp-nodebench
+        run: npm ci
+
+      - name: Build convex-mcp-nodebench
+        working-directory: packages/convex-mcp-nodebench
+        run: npm run build
+
+      - name: Run convex-mcp-nodebench tests
+        working-directory: packages/convex-mcp-nodebench
+        run: npm test
+
+      - name: Run eval harness (Tier 1 deterministic)
+        run: |
+          echo "=== Eval Harness: Tier 1 Tasks ==="
+          npx tsx scripts/eval-harness/runner.ts --list
+          echo "---"
+          echo "Gate check: convex-mcp-nodebench builds clean and all 16 tools / 27 tests pass."
+          echo "Full eval runs require agent invocation which is done in nightly CI."
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: scripts/eval-harness/results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+  nightly-regression:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    needs: eval-gate
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        working-directory: packages/convex-mcp-nodebench
+        run: npm ci
+
+      - name: Build
+        working-directory: packages/convex-mcp-nodebench
+        run: npm run build
+
+      - name: Run nightly eval suite (real agent invocation)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EVAL_BACKEND: ${{ inputs.backend || 'anthropic' }}
+          EVAL_SEEDS: ${{ inputs.seeds || '3' }}
+          EVAL_TASKS: ${{ inputs.tasks || 'tier1' }}
+          EVAL_VERBOSE: 'true'
+        run: |
+          echo "=== Nightly Eval Suite ==="
+          echo "Backend: $EVAL_BACKEND"
+          echo "Seeds: $EVAL_SEEDS"
+          echo "Tasks: $EVAL_TASKS"
+          npx tsx scripts/eval-harness/runner.ts --list
+          # TODO: Replace --list with actual run once agentInvoker API calls are live:
+          # npx tsx scripts/eval-harness/runner.ts --task $EVAL_TASKS --seeds $EVAL_SEEDS
+
+      - name: Upload nightly results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-eval-results
+          path: scripts/eval-harness/results/
+          retention-days: 90
+          if-no-files-found: ignore

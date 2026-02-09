@@ -41,6 +41,7 @@ const DOMAIN_FILE_MAP = {
   llm: "llmTools.ts",
   security: "securityTools.ts",
   platform: "platformTools.ts",
+  research_writing: "researchWritingTools.ts",
 };
 
 function setOutput(key, value) {

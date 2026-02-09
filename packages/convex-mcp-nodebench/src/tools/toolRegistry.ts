@@ -413,6 +413,123 @@ export const REGISTRY: ToolRegistryEntry[] = [
     phase: "deploy",
     complexity: "medium",
   },
+  // ── Reporting Tools ─────────────────────
+  {
+    name: "convex_export_sarif",
+    category: "integration",
+    tags: ["sarif", "export", "report", "github", "code-scanning", "ci", "static-analysis"],
+    quickRef: {
+      nextAction: "Upload the SARIF file to GitHub Code Scanning or open in VS Code SARIF Viewer",
+      nextTools: ["convex_audit_diff", "convex_quality_gate"],
+      methodology: "convex_deploy_verification",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "deploy",
+    complexity: "low",
+  },
+  {
+    name: "convex_audit_diff",
+    category: "deployment",
+    tags: ["diff", "baseline", "trend", "new-issues", "fixed", "improving", "degrading", "comparison"],
+    quickRef: {
+      nextAction: "Focus on fixing new issues first, then tackle existing ones",
+      nextTools: ["convex_export_sarif", "convex_quality_gate"],
+      methodology: "convex_deploy_verification",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "deploy",
+    complexity: "medium",
+  },
+  // ── Vector Search Tools ─────────────────
+  {
+    name: "convex_audit_vector_search",
+    category: "schema",
+    tags: ["vector", "search", "embedding", "dimension", "similarity", "vectorIndex", "float64", "AI", "RAG"],
+    quickRef: {
+      nextAction: "Fix dimension mismatches and add filterFields to vector indexes for better performance",
+      nextTools: ["convex_audit_schema", "convex_suggest_indexes"],
+      methodology: "convex_schema_audit",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "medium",
+  },
+  // ── Scheduler Tools ─────────────────────
+  {
+    name: "convex_audit_schedulers",
+    category: "function",
+    tags: ["scheduler", "runAfter", "runAt", "schedule", "cron", "infinite-loop", "backoff", "retry", "delayed"],
+    quickRef: {
+      nextAction: "Fix self-scheduling loops (add termination conditions) and implement exponential backoff",
+      nextTools: ["convex_check_crons", "convex_audit_actions"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "medium",
+  },
+  // ── Quality Gate Tools ──────────────────
+  {
+    name: "convex_quality_gate",
+    category: "deployment",
+    tags: ["quality", "gate", "score", "grade", "threshold", "sonarqube", "metrics", "pass-fail", "A-F"],
+    quickRef: {
+      nextAction: "Fix blockers to raise your grade, then run again to verify improvement",
+      nextTools: ["convex_audit_diff", "convex_export_sarif", "convex_pre_deploy_gate"],
+      methodology: "convex_deploy_verification",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "deploy",
+    complexity: "high",
+  },
+  // ── Architect Tools ──────────────────────
+  {
+    name: "convex_scan_capabilities",
+    category: "architect",
+    tags: ["scan", "capabilities", "structure", "patterns", "analysis", "functions", "schema", "data-access", "regex"],
+    quickRef: {
+      nextAction: "Use the capability report to identify what patterns exist before implementing new features",
+      nextTools: ["convex_verify_concept", "convex_generate_plan"],
+      methodology: "convex_schema_audit",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "low",
+  },
+  {
+    name: "convex_verify_concept",
+    category: "architect",
+    tags: ["verify", "concept", "signatures", "gap-analysis", "implementation", "check", "progress", "regex"],
+    quickRef: {
+      nextAction: "Pass missing signatures to convex_generate_plan to get Convex-specific implementation steps",
+      nextTools: ["convex_generate_plan", "convex_scan_capabilities"],
+      methodology: "convex_schema_audit",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "low",
+  },
+  {
+    name: "convex_generate_plan",
+    category: "architect",
+    tags: ["plan", "implementation", "strategy", "missing", "signatures", "steps", "inject", "convex-specific"],
+    quickRef: {
+      nextAction: "Implement each step in order, then re-verify with convex_verify_concept to track progress",
+      nextTools: ["convex_verify_concept", "convex_quality_gate"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "implement",
+    complexity: "low",
+  },
 ];
 
 export function getQuickRef(toolName: string): ConvexQuickRef | null {

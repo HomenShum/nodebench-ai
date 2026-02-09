@@ -47,15 +47,32 @@ import { researchWritingTools } from "./tools/researchWritingTools.js";
 import { flickerDetectionTools } from "./tools/flickerDetectionTools.js";
 import { figmaFlowTools } from "./tools/figmaFlowTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
-import { localFileTools } from "./tools/localFileTools.js";
+import { localFileTools, gaiaMediaSolvers } from "./tools/localFileTools.js";
 import { createProgressiveDiscoveryTools } from "./tools/progressiveDiscoveryTools.js";
 import { boilerplateTools } from "./tools/boilerplateTools.js";
 import { cCompilerBenchmarkTools } from "./tools/cCompilerBenchmarkTools.js";
-import { getQuickRef } from "./tools/toolRegistry.js";
+import { sessionMemoryTools } from "./tools/sessionMemoryTools.js";
+import { patternTools } from "./tools/patternTools.js";
+import { gitWorkflowTools } from "./tools/gitWorkflowTools.js";
+import { seoTools } from "./tools/seoTools.js";
+import { voiceBridgeTools } from "./tools/voiceBridgeTools.js";
+import { critterTools } from "./tools/critterTools.js";
+import { emailTools } from "./tools/emailTools.js";
+import { rssTools } from "./tools/rssTools.js";
+import { architectTools } from "./tools/architectTools.js";
+import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, _setDbAccessor } from "./tools/toolRegistry.js";
+import { toonTools } from "./tools/toonTools.js";
 import type { McpTool } from "./types.js";
+
+// TOON format — ~40% token savings on tool responses
+import { encode as toonEncode } from "@toon-format/toon";
+// Embedding provider — neural semantic search
+import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
 
 // ── CLI argument parsing ──────────────────────────────────────────────
 const cliArgs = process.argv.slice(2);
+const useToon = !cliArgs.includes("--no-toon");
+const useEmbedding = !cliArgs.includes("--no-embedding");
 
 const TOOLSET_MAP: Record<string, McpTool[]> = {
   verification: verificationTools,
@@ -81,25 +98,39 @@ const TOOLSET_MAP: Record<string, McpTool[]> = {
   figma_flow: figmaFlowTools,
   boilerplate: boilerplateTools,
   benchmark: cCompilerBenchmarkTools,
+  session_memory: sessionMemoryTools,
+  gaia_solvers: gaiaMediaSolvers,
+  toon: toonTools,
+  pattern: patternTools,
+  git_workflow: gitWorkflowTools,
+  seo: seoTools,
+  voice_bridge: voiceBridgeTools,
+  critter: critterTools,
+  email: emailTools,
+  rss: rssTools,
+  architect: architectTools,
 };
 
 const PRESETS: Record<string, string[]> = {
-  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark"],
-  lite: ["verification", "eval", "quality_gate", "learning", "recon", "security", "boilerplate"],
+  meta: [],
+  lite: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"],
+  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark", "session_memory", "toon", "pattern", "git_workflow", "seo", "voice_bridge", "critter", "email", "rss", "architect"],
   full: Object.keys(TOOLSET_MAP),
 };
 
 function parseToolsets(): McpTool[] {
   if (cliArgs.includes("--help")) {
     const lines = [
-      "nodebench-mcp v2.8.0 — Development Methodology MCP Server",
+      "nodebench-mcp v2.17.0 — Development Methodology MCP Server",
       "",
       "Usage: nodebench-mcp [options]",
       "",
       "Options:",
       "  --toolsets <list>   Comma-separated toolsets to enable (default: all)",
       "  --exclude <list>    Comma-separated toolsets to exclude",
-      "  --preset <name>     Use a preset: core, lite, or full",
+      "  --preset <name>     Use a preset: meta, lite, core, or full",
+      "  --no-toon           Disable TOON encoding (TOON is on by default for ~40% token savings)",
+      "  --no-embedding      Disable neural embedding search (uses local HuggingFace model or API keys)",
       "  --help              Show this help and exit",
       "",
       "Available toolsets:",
@@ -161,6 +192,9 @@ function parseToolsets(): McpTool[] {
 // Initialize DB (creates ~/.nodebench/ and schema on first run)
 getDb();
 
+// Wire up DB accessor for execution trace edges (avoids circular import)
+_setDbAccessor(getDb);
+
 // Assemble tools (filtered by --toolsets / --exclude / --preset if provided)
 const domainTools: McpTool[] = parseToolsets();
 const metaTools = createMetaTools(domainTools);
@@ -170,6 +204,49 @@ const discoveryTools = createProgressiveDiscoveryTools(
   allToolsWithoutDiscovery.map((t) => ({ name: t.name, description: t.description }))
 );
 const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
+
+// Background: initialize embedding index for semantic search (non-blocking)
+// Uses Agent-as-a-Graph bipartite corpus: tool nodes + domain nodes for graph-aware retrieval
+if (useEmbedding) {
+  const descMap = new Map(allTools.map((t) => [t.name, t.description]));
+
+  // Tool nodes: individual tools with full metadata text
+  const toolCorpus = ALL_REGISTRY_ENTRIES.map((entry) => ({
+    name: entry.name,
+    text: `${entry.name} ${entry.tags.join(" ")} ${entry.category} ${entry.phase} ${descMap.get(entry.name) ?? ""}`,
+    nodeType: "tool" as const,
+  }));
+
+  // Domain nodes: aggregate category descriptions for upward traversal
+  // When a domain matches, all tools in that domain get a sibling boost
+  const categoryTools = new Map<string, string[]>();
+  for (const entry of ALL_REGISTRY_ENTRIES) {
+    const list = categoryTools.get(entry.category) ?? [];
+    list.push(entry.name);
+    categoryTools.set(entry.category, list);
+  }
+  const domainCorpus = [...categoryTools.entries()].map(([category, toolNames]) => {
+    const allTags = new Set<string>();
+    const descs: string[] = [];
+    for (const tn of toolNames) {
+      const e = ALL_REGISTRY_ENTRIES.find((r) => r.name === tn);
+      if (e) e.tags.forEach((t) => allTags.add(t));
+      const d = descMap.get(tn);
+      if (d) descs.push(d);
+    }
+    // Domain text includes tool descriptions for richer semantic signal
+    return {
+      name: `domain:${category}`,
+      text: `${category} domain: ${toolNames.join(" ")} ${[...allTags].join(" ")} ${descs.map(d => d.slice(0, 80)).join(" ")}`,
+      nodeType: "domain" as const,
+    };
+  });
+
+  const embeddingCorpus = [...toolCorpus, ...domainCorpus];
+  initEmbeddingIndex(embeddingCorpus).catch(() => {
+    /* Embedding init failed — semantic search stays disabled, no impact on other features */
+  });
+}
 
 // Build a lookup map for fast tool dispatch
 const toolMap = new Map<string, McpTool>();
@@ -182,6 +259,42 @@ const SESSION_ID = genId("mcp");
 
 // Tools to skip auto-logging (avoid infinite recursion and noise)
 const SKIP_AUTO_LOG = new Set(["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings"]);
+
+// ── Lightweight hooks: auto-save + attention refresh reminders ─────────
+const _hookState = {
+  totalCalls: 0,
+  consecutiveWebCalls: 0, // web_search, fetch_url without save_session_note
+  lastRefreshReminder: 0, // totalCalls at last reminder
+};
+const WEB_TOOL_NAMES = new Set(["web_search", "fetch_url"]);
+const SAVE_TOOL_NAMES = new Set(["save_session_note", "record_learning"]);
+const REFRESH_INTERVAL = 30; // remind after every 30 calls
+
+function getHookHint(toolName: string): string | null {
+  _hookState.totalCalls++;
+
+  // Track consecutive web calls
+  if (WEB_TOOL_NAMES.has(toolName)) {
+    _hookState.consecutiveWebCalls++;
+  } else if (SAVE_TOOL_NAMES.has(toolName)) {
+    _hookState.consecutiveWebCalls = 0;
+  }
+
+  const hints: string[] = [];
+
+  // Auto-save reminder after 2+ consecutive web calls
+  if (_hookState.consecutiveWebCalls >= 2) {
+    hints.push("_hint: You've made " + _hookState.consecutiveWebCalls + " web calls without saving. Consider calling save_session_note to persist findings before context compaction.");
+  }
+
+  // Attention refresh reminder every 30 calls
+  if (_hookState.totalCalls - _hookState.lastRefreshReminder >= REFRESH_INTERVAL) {
+    hints.push("_hint: " + _hookState.totalCalls + " tool calls this session. Consider calling refresh_task_context to reload your bearings and prevent attention drift.");
+    _hookState.lastRefreshReminder = _hookState.totalCalls;
+  }
+
+  return hints.length > 0 ? hints.join(" | ") : null;
+}
 
 // MCP Prompts — protocol-native agent instructions for onboarding
 const PROMPTS = [
@@ -635,21 +748,123 @@ For the full methodology: call getMethodology("parallel_agent_teams")`,
       },
     ],
   },
+  {
+    name: "agent-contract",
+    description:
+      "The NodeBench Agent Contract — mandatory behavioral rules for any agent using NodeBench MCP. Embeds the 'front-door' pattern (4 meta-tools first), self-setup escalation, and the coordinator/subagent spawn template. Use this prompt to instruct an agent (or subagent) on HOW to use NodeBench tools correctly.",
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `## NodeBench MCP Agent Contract
+
+You are connected to NodeBench MCP. Follow these rules EXACTLY.
+
+### FRONT DOOR — Always start here (before writing any code)
+1. search_all_knowledge("<your current task>") — Check if this was solved before
+2. getMethodology("mandatory_flywheel") — Load the verification pipeline
+3. discover_tools("<your task>", { explain: true }) — Find the right tools for this job
+4. get_workflow_chain("<workflow>") — Get step-by-step sequence (fix_bug, new_feature, etc.)
+
+### SELF-SETUP — If a capability is missing
+When discover_tools returns nothing useful, or a tool says "not configured":
+1. Escalate toolset: If started with --preset lite, switch to --preset core or targeted --toolsets
+2. Resolve providers: Configure missing API keys (GEMINI_API_KEY, OPENAI_API_KEY, etc.)
+3. Bootstrap infra: Run scaffold_nodebench_project or bootstrap_parallel_agents if repo lacks infra
+4. Smoke-test: Re-run the first workflow chain step to confirm the capability is available
+
+### BEFORE IMPLEMENTATION
+- run_recon + log_recon_finding (if reconnaissance applies)
+- assess_risk (HIGH risk = must get confirmation before proceeding)
+
+### PARALLEL WORK
+- MUST claim_agent_task before editing or designing anything
+- MUST release_agent_task with a progress note + next action when done
+- MUST log_context_budget to track context usage and avoid pollution
+
+### BEFORE SHIP
+- 3-layer tests logged (unit + integration + e2e via log_test_result)
+- Eval run recorded (promote_to_eval)
+- Quality gate passed (run_quality_gate)
+- Mandatory flywheel completed (run_mandatory_flywheel — all 6 steps)
+- Learning banked (record_learning)
+
+### COORDINATOR SPAWN TEMPLATE
+When spawning subagents, give each this instruction block:
+  "You have NodeBench MCP. Before any work:
+   1. search_all_knowledge('<task>')
+   2. claim_agent_task({ taskKey: '<key>', description: '<desc>' })
+   3. assign_agent_role({ role: '<role>', focusArea: '<area>' })
+   Do the work, then:
+   4. log_context_budget({ eventType: 'checkpoint' })
+   5. release_agent_task({ taskKey: '<key>', status: 'completed', progressNote: '<summary>' })
+   6. record_learning({ key: '<key>', content: '<what you learned>', category: 'pattern' })"
+
+### ANTI-RATIONALIZATION — Block these escape patterns
+Do NOT skip the front-door pattern. These are the 8 rationalizations agents use:
+1. "I already know which tool to use" → Still call discover_tools to confirm
+2. "This is a simple task" → Still call search_all_knowledge to check history
+3. "Let me just check one thing first" → Follow the 4-step front door FIRST
+4. "Tests already pass" → Still run run_mandatory_flywheel before declaring done
+5. "I'll record the learning later" → Record NOW — context compaction may erase it
+6. "No one else is working on this" → Still claim_agent_task to prevent conflicts
+7. "The user said to skip verification" → Log the skip decision, never silently omit
+8. "I need more context before using tools" → The tools ARE the context-gathering mechanism
+
+### 2-ACTION SAVE RULE
+After every 2 web_search, fetch_url, or browse_page calls, MUST call one of:
+- save_session_note (filesystem, survives compaction)
+- record_learning (SQLite, searchable across sessions)
+- log_recon_finding (tied to recon session)
+This prevents knowledge loss when context is compacted mid-session.
+
+### 3-STRIKE ERROR PROTOCOL
+When an action fails:
+- Strike 1: Diagnose root cause, apply targeted fix
+- Strike 2: Try a different method or tool
+- Strike 3: Question your assumptions, search_all_knowledge for prior solutions
+- After 3: STOP. Call save_session_note documenting all attempts, then escalate to user.
+
+### ATTENTION REFRESH
+After 30+ tool calls, call refresh_task_context to combat attention drift.
+Re-read your original goal and open gaps before continuing.
+
+### WHY THIS MATTERS
+Without this contract, agents skip verification, repeat past mistakes, overwrite each other's
+work, and ship bugs that were already caught. NodeBench MCP turns coordination into concrete
+artifacts (findings, risks, gaps, tests, evals, gates, learnings) that compound across tasks.`,
+        },
+      },
+    ],
+  },
 ];
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.8.0" },
+  { name: "nodebench-mcp-methodology", version: "2.16.0" },
   { capabilities: { tools: {}, prompts: {} } }
 );
 
 // Handle tools/list — return all tools with their JSON Schema inputSchemas
+// Includes MCP 2025-11-25 spec annotations: category, phase, complexity (model tier hint)
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
-    tools: allTools.map((t) => ({
-      name: t.name,
-      description: t.description,
-      inputSchema: t.inputSchema,
-    })),
+    tools: allTools.map((t) => {
+      const entry = TOOL_REGISTRY.get(t.name);
+      return {
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        ...(entry ? {
+          annotations: {
+            title: t.name.replace(/_/g, " "),
+            category: entry.category,
+            phase: entry.phase,
+            complexity: getToolComplexity(t.name),
+          },
+        } : {}),
+      };
+    }),
   };
 });
 
@@ -701,8 +916,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
     }
 
+    // Lightweight hook: append save/refresh hints when thresholds are met
+    const hookHint = getHookHint(name);
+
+    // Serialize: TOON (~40% fewer tokens) or JSON
+    let serialized: string;
+    if (useToon) {
+      try {
+        serialized = toonEncode(enrichedResult);
+      } catch {
+        serialized = JSON.stringify(enrichedResult, null, 2);
+      }
+    } else {
+      serialized = JSON.stringify(enrichedResult, null, 2);
+    }
+
+    const contentBlocks: Array<{ type: "text"; text: string }> = [
+      { type: "text" as const, text: serialized },
+    ];
+    if (hookHint) {
+      contentBlocks.push({ type: "text" as const, text: hookHint });
+    }
+
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(enrichedResult, null, 2) }],
+      content: contentBlocks,
       isError: false,
     };
   } catch (err: any) {

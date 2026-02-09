@@ -10,6 +10,8 @@
  * 3. Build tool chains (recommended sequences for common workflows)
  */
 
+import { isEmbeddingReady, embeddingSearch } from "./embeddingProvider.js";
+
 export interface ToolQuickRef {
   /** 1-2 sentence guidance on what to do after calling this tool */
   nextAction: string;
@@ -28,6 +30,8 @@ export interface ToolRegistryEntry {
   quickRef: ToolQuickRef;
   /** Where this tool sits in a typical workflow: research, implement, test, verify, ship */
   phase: "research" | "implement" | "test" | "verify" | "ship" | "meta" | "utility";
+  /** Recommended model tier: low=Haiku, medium=Sonnet, high=Opus. Used for cost-aware routing. */
+  complexity?: "low" | "medium" | "high";
 }
 
 // ── Registry: every tool mapped with metadata ────────────────────────────
@@ -1551,6 +1555,507 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "meta",
   },
+  {
+    name: "check_mcp_setup",
+    category: "meta",
+    tags: ["setup", "wizard", "diagnostic", "config", "env", "api-key", "onboarding", "health-check", "status", "readiness"],
+    quickRef: {
+      nextAction: "Review the readiness report. Configure missing domains by following setupInstructions. Re-run to verify.",
+      nextTools: ["check_email_setup", "discover_tools", "getMethodology"],
+      tip: "Run this FIRST when starting with NodeBench MCP. Checks all env vars, API keys, npm packages, and servers across every domain.",
+    },
+    phase: "meta",
+  },
+  // ── Image solver tools (GAIA media lane) ──────────────────────────────
+  {
+    name: "solve_red_green_deviation_average_from_image",
+    category: "gaia_solvers",
+    tags: ["image", "ocr", "statistics", "deviation", "red", "green", "color", "pixel", "media"],
+    quickRef: {
+      nextAction: "Pass the image path. Tool extracts red/green numbers via color masking, computes population/sample std-dev, returns average.",
+      nextTools: ["read_image_ocr_text", "log_test_result"],
+      methodology: "gaia_media_solve",
+      tip: "Specify decimals parameter for precision control (default 2).",
+    },
+    phase: "utility",
+  },
+  {
+    name: "solve_green_polygon_area_from_image",
+    category: "gaia_solvers",
+    tags: ["image", "polygon", "area", "green", "geometry", "pixel", "ocr", "media"],
+    quickRef: {
+      nextAction: "Pass the image path. Tool segments green pixels, traces boundary, reads purple labels for scale, computes area via Shoelace formula.",
+      nextTools: ["read_image_ocr_text", "log_test_result"],
+      methodology: "gaia_media_solve",
+      tip: "Works best on clean diagrams with distinct green fill and purple numeric labels.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "grade_fraction_quiz_from_image",
+    category: "gaia_solvers",
+    tags: ["image", "ocr", "fractions", "quiz", "grading", "math", "score", "media"],
+    quickRef: {
+      nextAction: "Pass image path and scoring params (bonusPoints, pointsAddSubtract, etc.). Tool OCRs problems, computes correct answers, grades each.",
+      nextTools: ["read_image_ocr_text", "log_test_result"],
+      methodology: "gaia_media_solve",
+      tip: "Extracts problem types (add/sub, mul/div, improper, mixed) and scores per type.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "extract_fractions_and_simplify_from_image",
+    category: "gaia_solvers",
+    tags: ["image", "ocr", "fractions", "simplify", "math", "worksheet", "media"],
+    quickRef: {
+      nextAction: "Pass image path. Tool detects slash fractions in body text and stacked fractions in worksheet region, simplifies all via GCD.",
+      nextTools: ["read_image_ocr_text", "log_test_result"],
+      methodology: "gaia_media_solve",
+      tip: "Returns comma-separated simplified fractions. Handles both 3/4 and stacked numerator-over-denominator formats.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "solve_bass_clef_age_from_image",
+    category: "gaia_solvers",
+    tags: ["image", "ocr", "music", "bass-clef", "notes", "staff", "media"],
+    quickRef: {
+      nextAction: "Pass image path. Tool detects staff lines, maps note positions to bass-clef letters, forms a word, and derives the age value.",
+      nextTools: ["read_image_ocr_text", "log_test_result"],
+      methodology: "gaia_media_solve",
+      tip: "Works on simple single-staff bass-clef images. Upscales small images for robust detection.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "solve_storage_upgrade_cost_per_file_from_image",
+    category: "gaia_solvers",
+    tags: ["image", "ocr", "storage", "pricing", "cost", "upgrade", "media"],
+    quickRef: {
+      nextAction: "Pass image path and plan params (currentPlanName, filesUploaded, overLimitGb, additionalFiles). Tool OCRs pricing table and computes cost/file.",
+      nextTools: ["read_image_ocr_text", "log_test_result"],
+      methodology: "gaia_media_solve",
+      tip: "Detects plan tiers (Standard/Plus/Premium) and their storage limits from the image.",
+    },
+    phase: "utility",
+  },
+
+  // ═══ SESSION MEMORY (inspired by claude-mem, planning-with-files, oh-my-claudecode) ═══
+  {
+    name: "save_session_note",
+    category: "session_memory",
+    tags: ["note", "save", "persist", "compaction", "memory", "finding", "decision", "progress", "filesystem"],
+    quickRef: {
+      nextAction: "Note saved to filesystem. Continue working — it survives context compaction. Use load_session_notes after /clear to recover.",
+      nextTools: ["load_session_notes", "refresh_task_context", "record_learning"],
+      methodology: "session_recovery",
+      tip: "Call after every major finding or decision. 2-action save rule: save after every 2 web searches.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "load_session_notes",
+    category: "session_memory",
+    tags: ["note", "load", "recover", "compaction", "resume", "session", "filesystem", "context"],
+    quickRef: {
+      nextAction: "Notes loaded. Review findings and decisions, then continue where you left off. Use refresh_task_context for a full context refresher.",
+      nextTools: ["refresh_task_context", "search_all_knowledge", "save_session_note"],
+      methodology: "session_recovery",
+      tip: "Use date='all' to search across sessions. Use keyword filter to find specific topics.",
+    },
+    phase: "research",
+  },
+  {
+    name: "refresh_task_context",
+    category: "session_memory",
+    tags: ["refresh", "context", "attention", "drift", "goal", "focus", "recite", "mid-session", "compaction"],
+    quickRef: {
+      nextAction: "Context refreshed. Re-read the taskDescription and open gaps. Focus on the highest-severity gap first.",
+      nextTools: ["save_session_note", "get_verification_status", "search_all_knowledge"],
+      methodology: "session_recovery",
+      tip: "Call after 30+ tool calls to prevent attention drift. Re-state your original goal in taskDescription.",
+    },
+    phase: "meta",
+  },
+
+  // ═══ TOON FORMAT ═══
+  {
+    name: "toon_encode",
+    category: "toon",
+    tags: ["toon", "encode", "token", "compress", "serialize", "format", "json", "optimize"],
+    quickRef: {
+      nextAction: "Data encoded to TOON. Pass the toon string to another LLM call or agent for ~40% token savings.",
+      nextTools: ["toon_decode", "save_session_note"],
+      methodology: "toon_format",
+      tip: "Use for large data payloads before LLM calls. Savings compound in iterative workflows.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "toon_decode",
+    category: "toon",
+    tags: ["toon", "decode", "parse", "deserialize", "format", "json"],
+    quickRef: {
+      nextAction: "Data decoded to JSON. Process the result with any standard tool.",
+      nextTools: ["toon_encode"],
+      methodology: "toon_format",
+    },
+    phase: "utility",
+  },
+
+  // ═══ PATTERN MINING ═══
+  {
+    name: "mine_session_patterns",
+    category: "pattern",
+    tags: ["pattern", "mine", "session", "trajectory", "bigram", "trigram", "sequence", "analytics"],
+    quickRef: {
+      nextAction: "Patterns extracted. Review success rates — high-failure sequences indicate workflow issues. Use predict_risks_from_patterns before your next task.",
+      nextTools: ["predict_risks_from_patterns", "record_learning"],
+      methodology: "self_reinforced_learning",
+      tip: "Run periodically to discover which tool sequences reliably succeed vs fail.",
+    },
+    phase: "meta",
+  },
+  {
+    name: "predict_risks_from_patterns",
+    category: "pattern",
+    tags: ["predict", "risk", "pattern", "failure", "session", "forecast", "gap"],
+    quickRef: {
+      nextAction: "Risk predictions generated. Address high-confidence risks before starting. Use assess_risk for formal risk assessment.",
+      nextTools: ["assess_risk", "search_all_knowledge", "mine_session_patterns"],
+      methodology: "self_reinforced_learning",
+      tip: "Run at the start of every task to catch known failure modes before they bite.",
+    },
+    phase: "research",
+  },
+
+  // ═══ AGENT MAILBOX ═══
+  {
+    name: "send_agent_message",
+    category: "parallel_agents",
+    tags: ["message", "send", "mailbox", "agent", "handoff", "communication", "blocker"],
+    quickRef: {
+      nextAction: "Message sent. The recipient will see it when they call check_agent_inbox. For urgent blockers, use broadcast_agent_update instead.",
+      nextTools: ["check_agent_inbox", "broadcast_agent_update", "get_parallel_status"],
+      methodology: "parallel_agent_teams",
+    },
+    phase: "implement",
+  },
+  {
+    name: "check_agent_inbox",
+    category: "parallel_agents",
+    tags: ["inbox", "check", "message", "mailbox", "agent", "read", "handoff"],
+    quickRef: {
+      nextAction: "Messages retrieved. Handle blockers first (CRITICAL priority). Task assignments should be claimed with claim_agent_task.",
+      nextTools: ["claim_agent_task", "send_agent_message", "get_parallel_status"],
+      methodology: "parallel_agent_teams",
+      tip: "Call at session start to pick up handoffs and blockers from other agents.",
+    },
+    phase: "research",
+  },
+  {
+    name: "broadcast_agent_update",
+    category: "parallel_agents",
+    tags: ["broadcast", "update", "agent", "status", "announce", "milestone"],
+    quickRef: {
+      nextAction: "Broadcast sent to all agents. Continue your work — others will see it in their inbox.",
+      nextTools: ["get_parallel_status", "send_agent_message"],
+      methodology: "parallel_agent_teams",
+    },
+    phase: "implement",
+  },
+
+  // ═══ GIT WORKFLOW ═══
+  {
+    name: "check_git_compliance",
+    category: "git_workflow",
+    tags: ["git", "compliance", "branch", "commit", "conventional", "protected"],
+    quickRef: {
+      nextAction: "Git compliance checked. Fix any warnings before proceeding. If on a protected branch, create a feature branch first.",
+      nextTools: ["review_pr_checklist", "enforce_merge_gate", "assess_risk"],
+      methodology: "verification",
+      tip: "Run before starting work to ensure you're on the right branch with clean state.",
+    },
+    phase: "verify",
+  },
+  {
+    name: "review_pr_checklist",
+    category: "git_workflow",
+    tags: ["pr", "pull-request", "review", "checklist", "merge", "code-review"],
+    quickRef: {
+      nextAction: "PR checklist evaluated. Address failing items. If verificationCycleId provided, cross-references NodeBench verification status.",
+      nextTools: ["enforce_merge_gate", "run_quality_gate", "record_learning"],
+    },
+    phase: "verify",
+  },
+  {
+    name: "enforce_merge_gate",
+    category: "git_workflow",
+    tags: ["merge", "gate", "pre-merge", "validation", "branch", "deploy"],
+    quickRef: {
+      nextAction: "Merge gate evaluated. If canMerge=false, resolve all blockingIssues before merging.",
+      nextTools: ["check_git_compliance", "run_quality_gate", "run_mandatory_flywheel"],
+      methodology: "verification",
+      tip: "Enable requireVerification and requireTests for maximum safety.",
+    },
+    phase: "ship",
+  },
+
+  // ═══ SEO ═══
+  {
+    name: "seo_audit_url",
+    category: "seo",
+    tags: ["seo", "audit", "meta", "title", "description", "og", "heading", "structured-data"],
+    quickRef: {
+      nextAction: "SEO audit complete. Address low-scoring elements first. Use analyze_seo_content for deeper content analysis.",
+      nextTools: ["analyze_seo_content", "check_page_performance", "check_wordpress_site"],
+      methodology: "seo_audit",
+    },
+    phase: "verify",
+  },
+  {
+    name: "check_page_performance",
+    category: "seo",
+    tags: ["performance", "speed", "response-time", "compression", "cache", "lighthouse"],
+    quickRef: {
+      nextAction: "Performance checked. Enable compression and caching if missing. For deeper analysis, use browser dev tools.",
+      nextTools: ["seo_audit_url", "record_learning"],
+      methodology: "seo_audit",
+    },
+    phase: "verify",
+  },
+  {
+    name: "analyze_seo_content",
+    category: "seo",
+    tags: ["content", "readability", "keyword", "density", "flesch-kincaid", "headings", "links"],
+    quickRef: {
+      nextAction: "Content analyzed. Target readability score 60-80. Keyword density 0.5-3% is optimal.",
+      nextTools: ["seo_audit_url", "record_learning"],
+      methodology: "seo_audit",
+    },
+    phase: "verify",
+  },
+  {
+    name: "check_wordpress_site",
+    category: "seo",
+    tags: ["wordpress", "wp", "security", "login", "xmlrpc", "plugin", "theme"],
+    quickRef: {
+      nextAction: "WordPress check complete. Address security risks (xmlrpc, exposed login) immediately. Use scan_wordpress_updates for vulnerability details.",
+      nextTools: ["scan_wordpress_updates", "seo_audit_url", "record_learning"],
+      methodology: "seo_audit",
+    },
+    phase: "verify",
+  },
+  {
+    name: "scan_wordpress_updates",
+    category: "seo",
+    tags: ["wordpress", "plugin", "theme", "vulnerability", "wpscan", "update", "cve"],
+    quickRef: {
+      nextAction: "WordPress scan complete. Update plugins with known vulnerabilities immediately. Provide wpscanApiToken for full vulnerability data.",
+      nextTools: ["check_wordpress_site", "record_learning"],
+      methodology: "seo_audit",
+    },
+    phase: "verify",
+  },
+
+  // ═══ VOICE BRIDGE ═══
+  {
+    name: "design_voice_pipeline",
+    category: "voice_bridge",
+    tags: ["voice", "pipeline", "stt", "tts", "architecture", "design", "latency", "whisper", "deepgram"],
+    quickRef: {
+      nextAction: "Pipeline designed. Review the recommended stack. Use analyze_voice_config to validate compatibility, then generate_voice_scaffold for starter code.",
+      nextTools: ["analyze_voice_config", "generate_voice_scaffold", "benchmark_voice_latency"],
+      methodology: "voice_bridge",
+    },
+    phase: "research",
+  },
+  {
+    name: "analyze_voice_config",
+    category: "voice_bridge",
+    tags: ["voice", "config", "validate", "compatibility", "cost", "bottleneck"],
+    quickRef: {
+      nextAction: "Config analyzed. Address compatibility issues and bottlenecks. Use benchmark_voice_latency to compare alternatives.",
+      nextTools: ["benchmark_voice_latency", "generate_voice_scaffold", "design_voice_pipeline"],
+      methodology: "voice_bridge",
+    },
+    phase: "research",
+  },
+  {
+    name: "generate_voice_scaffold",
+    category: "voice_bridge",
+    tags: ["voice", "scaffold", "code", "template", "whisper", "deepgram", "webspeech", "piper"],
+    quickRef: {
+      nextAction: "Scaffold generated. Write files to disk, install dependencies, and test the pipeline. Use run_closed_loop for build verification.",
+      nextTools: ["run_closed_loop", "log_test_result", "record_learning"],
+      methodology: "voice_bridge",
+    },
+    phase: "implement",
+  },
+  {
+    name: "benchmark_voice_latency",
+    category: "voice_bridge",
+    tags: ["voice", "benchmark", "latency", "comparison", "performance", "streaming"],
+    quickRef: {
+      nextAction: "Latency benchmarked. Pick the config rated 'excellent' or 'good'. Use generate_voice_scaffold with the winning stack.",
+      nextTools: ["generate_voice_scaffold", "design_voice_pipeline", "record_learning"],
+      methodology: "voice_bridge",
+    },
+    phase: "research",
+  },
+
+  // ═══ CRITTER (pre-action intentionality check) ═══
+  {
+    name: "critter_check",
+    category: "critter",
+    tags: ["intentionality", "why", "who", "purpose", "audience", "reflection", "scope", "pre-action", "metacognition"],
+    quickRef: {
+      nextAction: "Answered critter check. If verdict is 'proceed', continue with your task. If 'reconsider', sharpen answers and re-run.",
+      nextTools: ["save_session_note", "start_verification_cycle", "run_recon"],
+      methodology: "agent_contract",
+      tip: "Call at the start of any non-trivial task. Prevents scope creep and aimless exploration.",
+    },
+    phase: "research",
+  },
+
+  // ═══ EMAIL (SMTP send, IMAP read, draft replies) ═══
+  {
+    name: "send_email",
+    category: "email",
+    tags: ["email", "smtp", "send", "gmail", "notification", "alert", "digest", "report"],
+    quickRef: {
+      nextAction: "Email sent. Log the action with save_session_note and continue with your workflow.",
+      nextTools: ["save_session_note", "record_learning", "build_research_digest"],
+      methodology: "agent_contract",
+      tip: "Requires EMAIL_USER and EMAIL_PASS env vars. For Gmail, use an App Password. Supports html parameter for rich emails.",
+    },
+    phase: "implement",
+  },
+  {
+    name: "read_emails",
+    category: "email",
+    tags: ["email", "imap", "read", "inbox", "gmail", "fetch", "messages", "unread"],
+    quickRef: {
+      nextAction: "Emails retrieved. Review subjects/content, then draft_email_reply for actionable items or save_session_note to persist context.",
+      nextTools: ["draft_email_reply", "save_session_note", "extract_structured_data"],
+      methodology: "agent_contract",
+      tip: "Requires EMAIL_USER and EMAIL_PASS env vars. Use folder param for specific mailboxes (INBOX default). Limit controls count.",
+    },
+    phase: "research",
+  },
+  {
+    name: "draft_email_reply",
+    category: "email",
+    tags: ["email", "reply", "draft", "compose", "response", "assistant"],
+    quickRef: {
+      nextAction: "Draft generated. Review the draft, then send_email to deliver or edit and re-draft.",
+      nextTools: ["send_email", "save_session_note"],
+      methodology: "agent_contract",
+      tip: "Generates a professional reply draft from original email context. Always review before sending.",
+    },
+    phase: "implement",
+  },
+
+  // ═══ RSS (subscribe, fetch, digest feeds) ═══
+  {
+    name: "add_rss_source",
+    category: "rss",
+    tags: ["rss", "atom", "feed", "subscribe", "source", "monitor", "research", "news"],
+    quickRef: {
+      nextAction: "RSS source registered. Call fetch_rss_feeds to pull articles, then build_research_digest for a summary.",
+      nextTools: ["fetch_rss_feeds", "build_research_digest", "save_session_note"],
+      methodology: "research_digest",
+      tip: "Validates the feed URL on add. Use category param to group sources for filtered digests.",
+    },
+    phase: "research",
+  },
+  {
+    name: "fetch_rss_feeds",
+    category: "rss",
+    tags: ["rss", "atom", "feed", "fetch", "articles", "news", "update", "pull"],
+    quickRef: {
+      nextAction: "Feeds fetched. New articles stored in SQLite. Call build_research_digest to generate a summary of new items.",
+      nextTools: ["build_research_digest", "save_session_note", "record_learning"],
+      methodology: "research_digest",
+      tip: "Deduplicates automatically — same article won't be stored twice. Fetches all registered sources if no URLs specified.",
+    },
+    phase: "research",
+  },
+  {
+    name: "build_research_digest",
+    category: "rss",
+    tags: ["rss", "digest", "summary", "research", "newsletter", "report", "markdown", "html"],
+    quickRef: {
+      nextAction: "Digest generated. Use send_email with html format to distribute, or save_session_note to persist the digest.",
+      nextTools: ["send_email", "save_session_note", "record_learning"],
+      methodology: "research_digest",
+      tip: "Marks articles as seen after digest — next call only shows truly new content. Use format='html' for email-ready output.",
+    },
+    phase: "implement",
+  },
+
+  // ═══ SETUP WIZARDS ═══
+  {
+    name: "check_email_setup",
+    category: "email",
+    tags: ["email", "setup", "wizard", "diagnostic", "config", "smtp", "imap", "onboarding", "gmail", "outlook"],
+    quickRef: {
+      nextAction: "Setup check complete. If ready, try send_email or read_emails. If not, follow the setup instructions.",
+      nextTools: ["send_email", "read_emails", "get_workflow_chain"],
+      methodology: "agent_contract",
+      tip: "Run this FIRST before using any email tools. Tests SMTP/IMAP connections and generates MCP config snippets.",
+    },
+    phase: "research",
+  },
+  {
+    name: "scaffold_research_pipeline",
+    category: "rss",
+    tags: ["rss", "scaffold", "pipeline", "project", "cron", "automation", "digest", "email", "standalone", "setup", "wizard"],
+    quickRef: {
+      nextAction: "Pipeline scaffolded. Save the generated files, configure .env, add feeds, and run.",
+      nextTools: ["save_session_note", "check_email_setup"],
+      methodology: "research_digest",
+      tip: "Generates a ZERO-dependency standalone Node.js project. Copy files, add feeds, run. No nodebench-mcp needed at runtime.",
+    },
+    phase: "implement",
+  },
+
+  // ═══════════════════════════════════════════
+  // ARCHITECT — Structural code analysis
+  // ═══════════════════════════════════════════
+  {
+    name: "scan_capabilities",
+    category: "architect",
+    tags: ["structural-analysis", "capability-scan", "code-patterns", "regex-scan", "react", "backend", "state-management", "layout", "interaction", "rendering"],
+    quickRef: {
+      nextAction: "Review the capability report. Use verify_concept_support to check if a specific concept is implemented.",
+      nextTools: ["verify_concept_support", "generate_implementation_plan", "save_session_note"],
+      tip: "Pure regex analysis — no LLM needed, instant results. Scans React hooks, layout patterns, interaction handlers, rendering, and backend patterns.",
+    },
+    phase: "research",
+  },
+  {
+    name: "verify_concept_support",
+    category: "architect",
+    tags: ["concept-verification", "gap-analysis", "structural-analysis", "regex-scan", "implementation-check", "progress-tracking"],
+    quickRef: {
+      nextAction: "If gaps found, use generate_implementation_plan to build a plan. If fully implemented, move on.",
+      nextTools: ["generate_implementation_plan", "scan_capabilities", "record_learning"],
+      tip: "Define required signatures from web research, then verify against code. Results persisted to SQLite for tracking progress.",
+    },
+    phase: "research",
+  },
+  {
+    name: "generate_implementation_plan",
+    category: "architect",
+    tags: ["implementation-plan", "gap-analysis", "code-generation", "structural-analysis", "concept-verification", "strategy"],
+    quickRef: {
+      nextAction: "Follow the step-by-step plan. After each step, re-run verify_concept_support to track progress.",
+      nextTools: ["verify_concept_support", "scan_capabilities", "start_verification_cycle"],
+      tip: "Pass current_context from scan_capabilities to get conflict-aware injection strategies.",
+    },
+    phase: "implement",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -1578,6 +2083,113 @@ export function getToolsByPhase(phase: ToolRegistryEntry["phase"]): ToolRegistry
   return REGISTRY_ENTRIES.filter((e) => e.phase === phase);
 }
 
+// ── Model-tier complexity routing ─────────────────────────────────────────
+
+/** Default complexity by category (tools can override via the complexity field) */
+const CATEGORY_COMPLEXITY: Record<string, "low" | "medium" | "high"> = {
+  verification: "medium",
+  eval: "medium",
+  quality_gate: "medium",
+  learning: "low",
+  flywheel: "medium",
+  reconnaissance: "medium",
+  ui_capture: "medium",
+  vision: "high",
+  local_file: "low",
+  web: "medium",
+  github: "medium",
+  documentation: "medium",
+  bootstrap: "medium",
+  self_eval: "high",
+  parallel_agents: "medium",
+  llm: "high",
+  security: "medium",
+  platform: "medium",
+  research_writing: "high",
+  flicker_detection: "high",
+  figma_flow: "high",
+  boilerplate: "low",
+  benchmark: "high",
+  progressive_discovery: "low",
+  meta: "low",
+  session_memory: "low",
+  gaia_solvers: "high",
+  toon: "low",
+  pattern: "medium",
+  git_workflow: "medium",
+  seo: "medium",
+  voice_bridge: "medium",
+  critter: "low",
+  email: "medium",
+  rss: "low",
+  architect: "low",
+};
+
+/** Per-tool complexity overrides (when category default is wrong) */
+const TOOL_COMPLEXITY_OVERRIDES: Record<string, "low" | "medium" | "high"> = {
+  // Verification: logging is low
+  log_phase_findings: "low",
+  log_gap: "low",
+  resolve_gap: "low",
+  log_test_result: "low",
+  get_verification_status: "low",
+  list_verification_cycles: "low",
+  // Eval: recording is low, comparison is high
+  record_eval_result: "low",
+  list_eval_runs: "low",
+  compare_eval_runs: "high",
+  // Quality gate
+  get_gate_history: "low",
+  get_gate_preset: "low",
+  // Flywheel
+  get_flywheel_status: "low",
+  // Recon
+  log_recon_finding: "low",
+  get_recon_summary: "low",
+  // Self-eval: logging is low
+  log_tool_call: "low",
+  cleanup_stale_runs: "low",
+  // Parallel: simple operations are low
+  claim_agent_task: "low",
+  release_agent_task: "low",
+  get_parallel_status: "low",
+  get_agent_role: "low",
+  log_context_budget: "low",
+  list_agent_tasks: "low",
+  // Bootstrap
+  get_project_context: "low",
+  // Local file: image/audio processing is medium/high
+  read_image_ocr_text: "medium",
+  transcribe_audio_file: "medium",
+  extract_structured_data: "medium",
+  solve_red_green_deviation_average_from_image: "high",
+  solve_green_polygon_area_from_image: "high",
+  grade_fraction_quiz_from_image: "high",
+  extract_fractions_and_simplify_from_image: "high",
+  solve_bass_clef_age_from_image: "high",
+  solve_storage_upgrade_cost_per_file_from_image: "high",
+  // Web
+  fetch_url: "low",
+  // GitHub
+  search_github: "low",
+  // Boilerplate
+  get_boilerplate_status: "low",
+  // Benchmark
+  log_benchmark_milestone: "low",
+};
+
+/** Get the recommended model complexity tier for a tool */
+export function getToolComplexity(toolName: string): "low" | "medium" | "high" {
+  // 1. Check per-tool override
+  if (TOOL_COMPLEXITY_OVERRIDES[toolName]) return TOOL_COMPLEXITY_OVERRIDES[toolName];
+  // 2. Check explicit field on registry entry
+  const entry = TOOL_REGISTRY.get(toolName);
+  if (entry?.complexity) return entry.complexity;
+  // 3. Fall back to category default
+  if (entry) return CATEGORY_COMPLEXITY[entry.category] ?? "medium";
+  return "medium";
+}
+
 // ── Multi-modal search engine ─────────────────────────────────────────────
 
 export interface SearchResult {
@@ -1592,11 +2204,11 @@ export interface SearchResult {
   tags: string[];
 }
 
-export type SearchMode = "hybrid" | "fuzzy" | "regex" | "prefix" | "semantic" | "exact" | "dense";
+export type SearchMode = "hybrid" | "fuzzy" | "regex" | "prefix" | "semantic" | "exact" | "dense" | "embedding";
 
 // ── Synonym / semantic expansion map ──────────────────────────────────────
 const SYNONYM_MAP: Record<string, string[]> = {
-  verify: ["validate", "check", "confirm", "test", "assert", "ensure"],
+  verify: ["validate", "check", "confirm", "test", "assert", "ensure", "correct"],
   test: ["verify", "validate", "check", "assert", "spec", "expect"],
   search: ["find", "discover", "lookup", "query", "locate", "browse"],
   find: ["search", "discover", "lookup", "locate"],
@@ -1608,7 +2220,7 @@ const SYNONYM_MAP: Record<string, string[]> = {
   monitor: ["watch", "observe", "track", "follow"],
   security: ["vulnerability", "audit", "cve", "secret", "credential", "leak", "exposure"],
   benchmark: ["measure", "evaluate", "score", "grade", "performance", "capability"],
-  parallel: ["multi-agent", "coordinate", "team", "concurrent", "distributed"],
+  parallel: ["multi-agent", "coordinate", "team", "concurrent", "distributed", "multiple"],
   document: ["doc", "documentation", "readme", "agents-md", "report"],
   research: ["recon", "investigate", "discover", "explore", "gather"],
   quality: ["gate", "check", "validate", "standard", "rule"],
@@ -1620,10 +2232,19 @@ const SYNONYM_MAP: Record<string, string[]> = {
   review: ["inspect", "audit", "pr", "pull-request", "feedback", "critique"],
   performance: ["speed", "latency", "optimize", "fast", "slow", "bottleneck"],
   data: ["csv", "xlsx", "json", "pdf", "file", "parse", "extract", "spreadsheet"],
-  paper: ["academic", "research", "write", "publish", "neurips", "icml", "arxiv"],
+  paper: ["academic", "research", "write", "publish", "neurips", "icml", "arxiv", "section"],
   start: ["begin", "init", "kick-off", "launch", "bootstrap", "new"],
   report: ["generate", "summary", "output", "export", "document"],
   clean: ["cleanup", "prune", "remove", "delete", "stale", "orphan"],
+  remember: ["save", "record", "persist", "store", "note", "session"],
+  save: ["remember", "record", "persist", "store", "note", "keep"],
+  wrong: ["investigate", "debug", "diagnose", "error", "issue", "problem", "fail"],
+  correct: ["verify", "validate", "check", "ensure", "confirm"],
+  write: ["paper", "section", "draft", "compose", "author", "document"],
+  task: ["claim", "assign", "work", "agent", "parallel", "concurrent"],
+  why: ["purpose", "reason", "intentionality", "motivation", "goal", "critter"],
+  purpose: ["why", "reason", "intentionality", "motivation", "goal", "critter"],
+  reflect: ["think", "pause", "reconsider", "intentionality", "metacognition", "critter"],
 };
 
 // ── TF-IDF: compute inverse document frequency for tags ───────────────────
@@ -1690,7 +2311,7 @@ function ngramSimilarity(a: string, b: string, n = 3): number {
 // ── Dense search: TF-IDF cosine similarity on full text ──────────────────
 
 /** Tokenize text into lowercase words (alpha + underscore only) */
-function tokenize(text: string): string[] {
+export function tokenize(text: string): string[] {
   return text.toLowerCase().match(/[a-z_]+/g) ?? [];
 }
 
@@ -1708,7 +2329,7 @@ function termFreq(tokens: string[]): Map<string, number> {
 let _denseVectorsCache: Map<string, Map<string, number>> | null = null;
 let _denseIDFCache: Map<string, number> | null = null;
 
-function buildDenseIndex(): { vectors: Map<string, Map<string, number>>; idf: Map<string, number> } {
+export function buildDenseIndex(): { vectors: Map<string, Map<string, number>>; idf: Map<string, number> } {
   if (_denseVectorsCache && _denseIDFCache) return { vectors: _denseVectorsCache, idf: _denseIDFCache };
 
   // Build corpus: each tool's full text (name + tags + description + category)
@@ -1771,6 +2392,150 @@ const DOMAIN_CLUSTERS: Record<string, string[]> = {
   measurement: ["eval", "benchmark", "self_eval"],
 };
 
+// ── Execution trace edges — co-occurrence mining from tool_call_log ────────
+// Based on Agent-as-a-Graph (arxiv:2511.18194): execution trace edges
+// mine sequential co-occurrence patterns to discover implicit tool relationships.
+let _cooccurrenceCache: Map<string, string[]> | null = null;
+let _cooccurrenceCacheTime = 0;
+const COOCCURRENCE_TTL_MS = 60_000; // refresh every 60s
+
+/** Agent-as-a-Graph wRRF constants (arxiv:2511.18194).
+ *
+ *  Paper optimal: α_A=1.5, α_T=1.0, K=60. Ablation confirmed this beats 5 alternatives
+ *  even for single-server tool retrieval (Recall@5=0.625 vs 0.583 for α_D=0.6/K=20).
+ *
+ *  Key finding: K and α_D are coupled. K=60 dampens scores enough that α_D=1.5 lifts
+ *  category siblings gently. K=20 with α_D=1.5 overshoots (domain boost drowns lexical).
+ *  The paper's full parameter set is internally consistent — don't cherry-pick.
+ *
+ *  Max embedding contribution at rank 1: α_T * 1000/(60+1) ≈ 16 pts (tool),
+ *  α_D * 1000/(60+1) ≈ 25 pts (domain). These slot into the additive scoring system
+ *  alongside keyword (3-50), fuzzy (4-12), dense (0-40) as a moderate signal.
+ *
+ *  Validated via 6-config ablation grid: see tools.test.ts "wRRF α ratio ablation". */
+let WRRF_ALPHA_T = 1.0; // tool weight — direct embedding match
+let WRRF_ALPHA_D = 1.5; // domain weight — upward traversal boost (paper optimal)
+let WRRF_K = 60;        // RRF smoothing constant (paper optimal)
+
+/** Bonus score for tools that frequently co-occur with top-ranked results.
+ *  Calibrated to lift borderline tools ~1-2 positions without overriding strong lexical matches.
+ *  At +4, a tool needs ≥8 points of lexical evidence to appear in results at all (score > 0),
+ *  then trace edges nudge it up. Compare: keyword:desc = +3, semantic:tag = +6, domain_boost = +5. */
+const TRACE_EDGE_BOOST = 4;
+
+// DB accessor injected at init time to avoid circular import (toolRegistry is pure ESM)
+let _dbAccessor: (() => any) | null = null;
+
+/** Inject the DB accessor — called once from index.ts at startup. */
+export function _setDbAccessor(accessor: () => any): void {
+  _dbAccessor = accessor;
+}
+
+/**
+ * Mine co-occurrence patterns from tool_call_log.
+ * Returns a map of toolName → [most co-occurring tools] based on session adjacency.
+ *
+ * Approach: for each session, pull the ordered tool sequence, then count
+ * pairs within a sliding window of 5 calls. O(n) per session, no self-join.
+ */
+function getCooccurrenceEdges(): Map<string, string[]> {
+  const now = Date.now();
+  if (_cooccurrenceCache && now - _cooccurrenceCacheTime < COOCCURRENCE_TTL_MS) {
+    return _cooccurrenceCache;
+  }
+
+  const edges = new Map<string, string[]>();
+  if (!_dbAccessor) {
+    _cooccurrenceCache = edges;
+    _cooccurrenceCacheTime = now;
+    return edges;
+  }
+
+  try {
+    const db = _dbAccessor();
+
+    // Pull recent sessions' tool sequences, ordered by creation time
+    const rows = db.prepare(`
+      SELECT session_id, tool_name
+      FROM tool_call_log
+      WHERE created_at > datetime('now', '-7 days')
+      ORDER BY session_id, created_at ASC
+    `).all() as Array<{ session_id: string; tool_name: string }>;
+
+    // Group by session
+    const sessions = new Map<string, string[]>();
+    for (const row of rows) {
+      const list = sessions.get(row.session_id) ?? [];
+      list.push(row.tool_name);
+      sessions.set(row.session_id, list);
+    }
+
+    // Count co-occurrences within sliding window of 5
+    const pairCounts = new Map<string, number>();
+    for (const [, sequence] of sessions) {
+      for (let i = 0; i < sequence.length; i++) {
+        const toolA = sequence[i];
+        for (let j = i + 1; j < Math.min(i + 6, sequence.length); j++) {
+          const toolB = sequence[j];
+          if (toolA === toolB) continue;
+          const key = `${toolA}\0${toolB}`;
+          pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
+          // Bidirectional
+          const keyR = `${toolB}\0${toolA}`;
+          pairCounts.set(keyR, (pairCounts.get(keyR) ?? 0) + 1);
+        }
+      }
+    }
+
+    // Filter to pairs with 2+ co-occurrences, sort by count
+    const sorted = [...pairCounts.entries()]
+      .filter(([, cnt]) => cnt >= 2)
+      .sort((a, b) => b[1] - a[1]);
+
+    for (const [key] of sorted) {
+      const [toolA, toolB] = key.split("\0");
+      const list = edges.get(toolA) ?? [];
+      if (list.length < 10) {
+        list.push(toolB);
+        edges.set(toolA, list);
+      }
+    }
+  } catch {
+    // No DB or table not yet created — return empty (graceful degradation)
+  }
+
+  _cooccurrenceCache = edges;
+  _cooccurrenceCacheTime = now;
+  return edges;
+}
+
+/** Reset co-occurrence cache — for testing only. */
+export function _resetCooccurrenceCache(): void {
+  _cooccurrenceCache = null;
+  _cooccurrenceCacheTime = 0;
+}
+
+/** Inject co-occurrence edges directly — for testing only. */
+export function _setCooccurrenceForTesting(edges: Map<string, string[]>): void {
+  _cooccurrenceCache = edges;
+  _cooccurrenceCacheTime = Date.now() + 999_999_999; // never expire
+}
+
+/** Override wRRF weights — for ablation testing only.
+ *  Allows comparing paper's α_A=1.5,α_T=1.0,K=60 vs our α_T=1.0,α_D=0.6,K=20. */
+export function _setWrrfParamsForTesting(params: { alphaT?: number; alphaD?: number; k?: number }): void {
+  if (params.alphaT !== undefined) WRRF_ALPHA_T = params.alphaT;
+  if (params.alphaD !== undefined) WRRF_ALPHA_D = params.alphaD;
+  if (params.k !== undefined) WRRF_K = params.k;
+}
+
+/** Restore default wRRF weights — for ablation testing only. */
+export function _resetWrrfParamsForTesting(): void {
+  WRRF_ALPHA_T = 1.0;
+  WRRF_ALPHA_D = 1.5;
+  WRRF_K = 60;
+}
+
 function getDomainBoost(category: string, topCategories: Set<string>): number {
   for (const [, cluster] of Object.entries(DOMAIN_CLUSTERS)) {
     if (cluster.includes(category) && cluster.some((c) => topCategories.has(c) && c !== category)) {
@@ -1781,7 +2546,7 @@ function getDomainBoost(category: string, topCategories: Set<string>): number {
 }
 
 /**
- * Multi-modal hybrid search engine.
+ * Multi-modal hybrid search engine with Agent-as-a-Graph bipartite retrieval.
  *
  * Search modes (all run in parallel, scores merged):
  * - **keyword**: Exact and partial word matching on name, tags, description, category
@@ -1793,6 +2558,11 @@ function getDomainBoost(category: string, topCategories: Set<string>): number {
  * - **regex**: Pass a regex pattern to match against tool names/descriptions
  * - **bigram**: Two-word phrase matching (e.g., "quality gate" matched as phrase)
  * - **domain boost**: Related categories get boosted when top results cluster
+ * - **embedding**: Neural embedding with type-specific wRRF (tool α_T + domain α_D nodes)
+ * - **graph traversal**: Upward traversal from tools → domains → sibling tools
+ * - **trace edges**: Execution co-occurrence mining from tool_call_log (dynamic graph edges)
+ *
+ * Graph architecture based on arxiv:2511.18194 (Agent-as-a-Graph).
  */
 export function hybridSearch(
   query: string,
@@ -1804,6 +2574,8 @@ export function hybridSearch(
     mode?: SearchMode;
     /** If true, includes matchReasons in results explaining why each tool matched */
     explain?: boolean;
+    /** Pre-computed query embedding vector for semantic search (passed from async caller) */
+    embeddingQueryVec?: Float32Array;
   }
 ): SearchResult[] {
   const queryLower = query.toLowerCase().trim();
@@ -1831,6 +2603,43 @@ export function hybridSearch(
     for (const word of queryWords) {
       const syns = SYNONYM_MAP[word];
       if (syns) syns.forEach((s) => expandedWords.add(s));
+    }
+  }
+
+  // ── Pre-compute query-invariant data ONCE before the per-tool loop ──
+
+  // Dense: TF-IDF query vector (query-invariant — don't recompute per tool)
+  let denseQueryVec: Map<string, number> | null = null;
+  let denseDocVectors: Map<string, Map<string, number>> | null = null;
+  if (mode === "dense" || mode === "hybrid") {
+    const { vectors, idf: denseIdf } = buildDenseIndex();
+    const queryTokens = tokenize(queryLower);
+    if (queryTokens.length > 0) {
+      const queryTf = termFreq(queryTokens);
+      denseQueryVec = new Map<string, number>();
+      for (const [term, tfVal] of queryTf) {
+        denseQueryVec.set(term, tfVal * (denseIdf.get(term) ?? 1));
+      }
+      denseDocVectors = vectors;
+    }
+  }
+
+  // Embedding: pre-split ranks by node type (query-invariant — don't recompute per tool)
+  let embToolRanks: Map<string, number> | null = null;
+  let embDomainRanks: Map<string, number> | null = null;
+  if ((mode === "embedding" || mode === "hybrid") && isEmbeddingReady() && options?.embeddingQueryVec) {
+    const vecResults = embeddingSearch(options.embeddingQueryVec, 50);
+    embToolRanks = new Map<string, number>();
+    embDomainRanks = new Map<string, number>();
+    let toolIdx = 0, domainIdx = 0;
+    for (const r of vecResults) {
+      if (r.nodeType === "domain") {
+        domainIdx++;
+        embDomainRanks.set(r.name.replace("domain:", ""), domainIdx);
+      } else {
+        toolIdx++;
+        embToolRanks.set(r.name, toolIdx);
+      }
     }
   }
 
@@ -1973,25 +2782,35 @@ export function hybridSearch(
       }
     }
 
-    // ── DENSE: TF-IDF cosine similarity on full text ──
-    if (mode === "dense" || mode === "hybrid") {
-      const { vectors, idf: denseIdf } = buildDenseIndex();
-      const queryTokens = tokenize(queryLower);
-      if (queryTokens.length > 0) {
-        const queryTf = termFreq(queryTokens);
-        const queryVec = new Map<string, number>();
-        for (const [term, tfVal] of queryTf) {
-          queryVec.set(term, tfVal * (denseIdf.get(term) ?? 1));
+    // ── DENSE: TF-IDF cosine similarity (query vec pre-computed above) ──
+    if (denseQueryVec && denseDocVectors) {
+      const docVec = denseDocVectors.get(tool.name);
+      if (docVec) {
+        const sim = cosineSimilarity(denseQueryVec, docVec);
+        if (sim > 0.05) {
+          const denseScore = Math.round(sim * 40);
+          score += denseScore;
+          reasons.push(`dense:cosine(sim=${sim.toFixed(3)},+${denseScore})`);
         }
-        const docVec = vectors.get(tool.name);
-        if (docVec) {
-          const sim = cosineSimilarity(queryVec, docVec);
-          if (sim > 0.05) {
-            const denseScore = Math.round(sim * 40);
-            score += denseScore;
-            reasons.push(`dense:cosine(sim=${sim.toFixed(3)},+${denseScore})`);
-          }
-        }
+      }
+    }
+
+    // ── EMBEDDING: Agent-as-a-Graph bipartite RRF (ranks pre-computed above) ──
+    if (embToolRanks && embDomainRanks) {
+      const toolRank = embToolRanks.get(tool.name);
+      if (toolRank) {
+        const rrfScore = Math.round(WRRF_ALPHA_T * 1000 / (WRRF_K + toolRank));
+        score += rrfScore;
+        reasons.push(`embedding:tool_rrf(rank=${toolRank},+${rrfScore})`);
+      }
+
+      // Upward traversal: if this tool's domain matched, boost it (sibling expansion)
+      const toolCategory = entry.category;
+      const domainRank = embDomainRanks.get(toolCategory);
+      if (domainRank) {
+        const domainRrf = Math.round(WRRF_ALPHA_D * 1000 / (WRRF_K + domainRank));
+        score += domainRrf;
+        reasons.push(`embedding:domain_rrf(${toolCategory},rank=${domainRank},+${domainRrf})`);
       }
     }
 
@@ -2008,6 +2827,17 @@ export function hybridSearch(
     if (entry) topCategories.add(entry.category);
   }
 
+  // ── Execution trace edges (2nd pass) — co-occurrence boost ──
+  // Agent-as-a-Graph: mine tool_call_log for sequential co-occurrence.
+  // If a top-ranked tool frequently co-occurs with another tool, boost the sibling.
+  const cooccurrence = getCooccurrenceEdges();
+  const topToolNames = sortedPrelim.slice(0, 5).map(([name]) => name);
+  const traceBoostTargets = new Set<string>();
+  for (const topTool of topToolNames) {
+    const neighbors = cooccurrence.get(topTool);
+    if (neighbors) neighbors.forEach((n) => traceBoostTargets.add(n));
+  }
+
   const results: SearchResult[] = [];
   for (const tool of tools) {
     const entry = TOOL_REGISTRY.get(tool.name);
@@ -2018,6 +2848,12 @@ export function hybridSearch(
     if (domainBoost > 0) {
       scored.score += domainBoost;
       scored.reasons.push(`domain_boost:+${domainBoost}`);
+    }
+
+    // Execution trace edge: boost tools that frequently co-occur with top results
+    if (traceBoostTargets.has(tool.name) && !topToolNames.includes(tool.name)) {
+      scored.score += TRACE_EDGE_BOOST;
+      scored.reasons.push(`trace_edge:+${TRACE_EDGE_BOOST}`);
     }
 
     results.push({
@@ -2037,7 +2873,7 @@ export function hybridSearch(
 }
 
 /** Available search modes for discover_tools */
-export const SEARCH_MODES: SearchMode[] = ["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact", "dense"];
+export const SEARCH_MODES: SearchMode[] = ["hybrid", "fuzzy", "regex", "prefix", "semantic", "exact", "dense", "embedding"];
 
 // ── Workflow chains ──────────────────────────────────────────────────────
 
@@ -2304,6 +3140,28 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "record_learning", action: "Step 10: Bank findings — which tools, gates, and knowledge types contributed most" },
     ],
   },
+  session_recovery: {
+    name: "Session Recovery (Post-Compaction)",
+    description: "Recover state after context compaction, /clear, or session resume. Loads filesystem notes, refreshes task context, and continues where you left off.",
+    steps: [
+      { tool: "load_session_notes", action: "Step 1: Load today's session notes from filesystem" },
+      { tool: "refresh_task_context", action: "Step 2: Re-inject active verification cycle, open gaps, and recent learnings" },
+      { tool: "search_all_knowledge", action: "Step 3: Search for relevant prior findings" },
+      { tool: "get_verification_status", action: "Step 4: Check progress on active verification cycle" },
+      { tool: "get_parallel_status", action: "Step 5: Check if other agents are working (parallel scenarios)" },
+      { tool: "save_session_note", action: "Step 6: Save a 'session resumed' note with current state" },
+    ],
+  },
+  attention_refresh: {
+    name: "Attention Refresh (Mid-Session)",
+    description: "Combat attention drift after 30+ tool calls. Re-injects original goals, checks for drift, and re-anchors focus. Based on Manus 'Manipulate Attention Through Recitation' principle.",
+    steps: [
+      { tool: "refresh_task_context", action: "Step 1: Re-inject current goals, open gaps, and session stats" },
+      { tool: "save_session_note", action: "Step 2: Save progress checkpoint before continuing" },
+      { tool: "get_verification_status", action: "Step 3: Check which phases remain" },
+      { tool: "search_all_knowledge", action: "Step 4: Re-check learnings for current phase" },
+    ],
+  },
   task_bank_setup: {
     name: "Task Bank Setup (50-Task Starter Kit)",
     description: "Build a statistically meaningful task bank for agent evaluation. Covers 7 categories (bugfix/refactor/integration/ui/security/performance/migration) × 4 difficulty levels with deterministic grading criteria.",
@@ -2317,6 +3175,72 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "create_task_bank", action: "Step 7: Add 5 performance tasks with latency/memory/bundle criteria" },
       { tool: "create_task_bank", action: "Step 8: Add 5 migration tasks with backward-compat/rollback criteria" },
       { tool: "record_learning", action: "Step 9: Record task bank design patterns for future expansion" },
+    ],
+  },
+  pr_review: {
+    name: "Pull Request Review",
+    description: "Structured PR review with git compliance, verification cross-reference, and merge gate",
+    steps: [
+      { tool: "check_git_compliance", action: "Verify branch state and commit conventions" },
+      { tool: "review_pr_checklist", action: "Run structured PR checklist with verification cross-reference" },
+      { tool: "run_quality_gate", action: "Validate against quality rules" },
+      { tool: "enforce_merge_gate", action: "Pre-merge validation combining all checks" },
+      { tool: "record_learning", action: "Record PR patterns and review feedback" },
+    ],
+  },
+  seo_audit: {
+    name: "Full SEO Audit",
+    description: "End-to-end SEO audit: technical SEO, content analysis, performance, WordPress security",
+    steps: [
+      { tool: "seo_audit_url", action: "Analyze meta tags, headings, images, structured data" },
+      { tool: "analyze_seo_content", action: "Check readability, keyword density, link ratios" },
+      { tool: "check_page_performance", action: "Measure response time, compression, caching" },
+      { tool: "check_wordpress_site", action: "Detect WordPress, assess security posture" },
+      { tool: "scan_wordpress_updates", action: "Check plugins/themes for known vulnerabilities" },
+      { tool: "record_learning", action: "Record SEO patterns and findings" },
+    ],
+  },
+  voice_pipeline: {
+    name: "Voice Pipeline Implementation",
+    description: "Design, validate, scaffold, and benchmark a voice interface",
+    steps: [
+      { tool: "design_voice_pipeline", action: "Get architecture recommendation based on requirements" },
+      { tool: "analyze_voice_config", action: "Validate component compatibility and estimate costs" },
+      { tool: "benchmark_voice_latency", action: "Compare pipeline configurations side-by-side" },
+      { tool: "generate_voice_scaffold", action: "Generate starter code for chosen stack" },
+      { tool: "run_closed_loop", action: "Build and test the scaffold" },
+      { tool: "record_learning", action: "Record voice pipeline implementation patterns" },
+    ],
+  },
+  intentionality_check: {
+    name: "Intentionality Check (Critter)",
+    description: "Pause before action — articulate why and who, then proceed with clarity",
+    steps: [
+      { tool: "critter_check", action: "Answer: Why are you doing this? Who is it for? Score your intentionality" },
+      { tool: "save_session_note", action: "Persist the critter check so it survives context compaction" },
+      { tool: "run_recon", action: "Gather context now that purpose is clear" },
+    ],
+  },
+  research_digest: {
+    name: "Automated Research Digest",
+    description: "Subscribe to RSS/Atom feeds, fetch new articles, build a digest, and optionally email it",
+    steps: [
+      { tool: "add_rss_source", action: "Register RSS/Atom feed URLs for topics of interest (arXiv, blogs, news)" },
+      { tool: "fetch_rss_feeds", action: "Pull latest articles from all registered sources — new items stored in SQLite" },
+      { tool: "build_research_digest", action: "Generate a categorized digest of new (unseen) articles in markdown, json, or html" },
+      { tool: "send_email", action: "Email the html digest to yourself or your team for daily/weekly review" },
+      { tool: "save_session_note", action: "Persist key findings so they survive context compaction" },
+      { tool: "record_learning", action: "Record insights from noteworthy articles for the knowledge base" },
+    ],
+  },
+  email_assistant: {
+    name: "Email Draft Assistant",
+    description: "Read inbox, draft professional replies, review, and send — all from the agent",
+    steps: [
+      { tool: "read_emails", action: "Fetch recent/unread emails from IMAP inbox to understand what needs attention" },
+      { tool: "draft_email_reply", action: "Generate a professional reply draft from original email context and your instructions" },
+      { tool: "send_email", action: "Send the reviewed and approved draft reply" },
+      { tool: "save_session_note", action: "Log sent emails so you have an audit trail that survives compaction" },
     ],
   },
 };

@@ -164,12 +164,42 @@ export const executeParallelTaskTree = action({
         phaseProgress: 85,
       });
 
-      const mergedResult = await mergeSurvivingPaths(
-        ctx,
-        treeId,
-        survivingBranches,
-        crossCheckMatrix,
-        query
+      // TRACE finalization: deterministic merge + audit log + optional AI analysis
+      // Instead of passing raw branch results to LLM for merging (Risk 1: Hallucination),
+      // we use the TRACE Verifiable Orchestrator pattern.
+      const traceOutput = await ctx.runAction(
+        internal.domains.agents.traceOrchestrator.executeTraceFinalization,
+        {
+          executionId: treeId as string,
+          executionType: "tree" as const,
+          query,
+          agentResults: survivingBranches.map((b) => ({
+            agentName: b.title,
+            role: `Branch (verification: ${(b.verificationScore * 100).toFixed(0)}%)`,
+            result: b.result,
+          })),
+          generateAnalysis: true,
+        }
+      );
+
+      // Build enhanced result with clear separation of deterministic vs AI content
+      const { buildTraceEnhancedResult } = await import("./traceOrchestrator");
+      const auditSummary = await ctx.runQuery(
+        api.domains.agents.traceAuditLog.getAuditSummary,
+        { executionId: treeId as string }
+      );
+
+      const rawMergedData = survivingBranches
+        .filter((b) => b.result && b.result.length > 50)
+        .map((b) =>
+          `[Source: ${b.title} (Verification: ${(b.verificationScore * 100).toFixed(0)}%)]\n${b.result}`
+        )
+        .join("\n\n---\n\n");
+
+      const enhancedResult = buildTraceEnhancedResult(
+        rawMergedData,
+        traceOutput.analysis,
+        auditSummary,
       );
 
       // 8. Complete the tree
@@ -177,21 +207,23 @@ export const executeParallelTaskTree = action({
         api.domains.agents.parallelTaskTree.setTreeResult,
         {
           treeId,
-          mergedResult: mergedResult.content,
-          confidence: mergedResult.confidence,
+          mergedResult: enhancedResult,
+          confidence: traceOutput.confidence,
         }
       );
 
       return {
         success: true,
         treeId,
-        result: mergedResult.content,
-        confidence: mergedResult.confidence,
+        result: enhancedResult,
+        confidence: traceOutput.confidence,
         stats: {
           totalBranches: branches.length,
           survivingBranches: survivingBranches.length,
           prunedBranches: branches.length - survivingBranches.length,
           elapsed: Date.now() - startTime,
+          traceSteps: traceOutput.totalSteps,
+          selfCorrections: traceOutput.selfCorrections,
         },
       };
 

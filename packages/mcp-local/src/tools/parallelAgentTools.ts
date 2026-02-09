@@ -1455,4 +1455,257 @@ Install: \`npx -y nodebench-mcp\` or \`claude mcp add nodebench -- npx -y nodebe
       };
     },
   },
+
+  // ─── Agent Mailbox — Inter-Agent Messaging ─────────────────────
+  {
+    name: "send_agent_message",
+    description:
+      "Send a message to another agent by session ID or role. Enables asynchronous inter-agent communication for task handoffs, status reports, blockers, and findings. Messages persist in SQLite so agents spawned later can read them.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        senderId: {
+          type: "string",
+          description: "Sender agent session ID (defaults to current session)",
+        },
+        recipientId: {
+          type: "string",
+          description: "Target agent session ID (for direct messages)",
+        },
+        recipientRole: {
+          type: "string",
+          description:
+            "Target agent role (e.g. 'implementer', 'test_writer'). Used for role-based routing when you don't know the session ID.",
+        },
+        category: {
+          type: "string",
+          enum: ["task_assignment", "status_report", "finding", "blocker", "handoff"],
+          description: "Message category for filtering",
+        },
+        priority: {
+          type: "string",
+          enum: ["low", "normal", "high", "critical"],
+          description: "Message priority (default: normal)",
+        },
+        subject: {
+          type: "string",
+          description: "Short message subject line",
+        },
+        body: {
+          type: "string",
+          description: "Full message body with details",
+        },
+      },
+      required: ["subject", "body"],
+    },
+    handler: async (args) => {
+      const db = getDb();
+      const id = genId("msg");
+      const senderId = args.senderId || `agent_${Date.now()}`;
+      const recipientId = args.recipientId || null;
+      const recipientRole = args.recipientRole || null;
+      const category = args.category || "status_report";
+      const priority = args.priority || "normal";
+
+      if (!recipientId && !recipientRole) {
+        return {
+          error: true,
+          message: "Provide either recipientId (session ID) or recipientRole to route the message.",
+        };
+      }
+
+      db.prepare(
+        "INSERT INTO agent_mailbox (id, sender_id, recipient_id, recipient_role, category, priority, subject, body, read, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))"
+      ).run(id, senderId, recipientId, recipientRole, category, priority, args.subject, args.body);
+
+      return {
+        sent: true,
+        messageId: id,
+        to: recipientId || `role:${recipientRole}`,
+        category,
+        priority,
+        subject: args.subject,
+      };
+    },
+  },
+  {
+    name: "check_agent_inbox",
+    description:
+      "Read unread messages for the current agent session. Filter by category, sender, or priority. Messages are marked as read after retrieval. Use this at the start of a session to pick up handoffs and blockers from other agents.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "Your agent session ID to check messages for",
+        },
+        role: {
+          type: "string",
+          description: "Your agent role — also receives role-addressed messages",
+        },
+        category: {
+          type: "string",
+          enum: ["task_assignment", "status_report", "finding", "blocker", "handoff"],
+          description: "Filter by message category",
+        },
+        senderFilter: {
+          type: "string",
+          description: "Filter by sender session ID",
+        },
+        priorityFilter: {
+          type: "string",
+          enum: ["low", "normal", "high", "critical"],
+          description: "Filter by minimum priority",
+        },
+        unreadOnly: {
+          type: "boolean",
+          description: "Only return unread messages (default: true)",
+        },
+        markAsRead: {
+          type: "boolean",
+          description: "Mark retrieved messages as read (default: true)",
+        },
+      },
+    },
+    handler: async (args) => {
+      const db = getDb();
+      const sessionId = args.sessionId || "";
+      const role = args.role || "";
+      const unreadOnly = args.unreadOnly !== false;
+      const markAsRead = args.markAsRead !== false;
+
+      const conditions: string[] = [];
+      const params: any[] = [];
+
+      // Match by session ID, role, or broadcast messages
+      if (sessionId && role) {
+        conditions.push("(recipient_id = ? OR recipient_id = '__broadcast__' OR recipient_role = ?)");
+        params.push(sessionId, role);
+      } else if (sessionId) {
+        conditions.push("(recipient_id = ? OR recipient_id = '__broadcast__')");
+        params.push(sessionId);
+      } else if (role) {
+        conditions.push("(recipient_role = ? OR recipient_id = '__broadcast__')");
+        params.push(role);
+      } else {
+        // No filter — return broadcasts only
+        conditions.push("recipient_id = '__broadcast__'");
+      }
+
+      if (unreadOnly) {
+        conditions.push("read = 0");
+      }
+
+      if (args.category) {
+        conditions.push("category = ?");
+        params.push(args.category);
+      }
+
+      if (args.senderFilter) {
+        conditions.push("sender_id = ?");
+        params.push(args.senderFilter);
+      }
+
+      if (args.priorityFilter) {
+        const priorityOrder = ["low", "normal", "high", "critical"];
+        const minIdx = priorityOrder.indexOf(args.priorityFilter);
+        if (minIdx >= 0) {
+          const validPriorities = priorityOrder.slice(minIdx);
+          conditions.push(`priority IN (${validPriorities.map(() => "?").join(",")})`);
+          params.push(...validPriorities);
+        }
+      }
+
+      const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const messages = db
+        .prepare(`SELECT * FROM agent_mailbox ${where} ORDER BY created_at DESC LIMIT 50`)
+        .all(...params) as any[];
+
+      // Mark as read
+      if (markAsRead && messages.length > 0) {
+        const ids = messages.filter((m) => !m.read).map((m) => m.id);
+        if (ids.length > 0) {
+          db.prepare(
+            `UPDATE agent_mailbox SET read = 1 WHERE id IN (${ids.map(() => "?").join(",")})`
+          ).run(...ids);
+        }
+      }
+
+      return {
+        messages: messages.map((m) => ({
+          id: m.id,
+          from: m.sender_id,
+          category: m.category,
+          priority: m.priority,
+          subject: m.subject,
+          body: m.body,
+          read: !!m.read,
+          createdAt: m.created_at,
+        })),
+        count: messages.length,
+        unreadCount: messages.filter((m) => !m.read).length,
+      };
+    },
+  },
+  {
+    name: "broadcast_agent_update",
+    description:
+      "Broadcast a status update to all active agents. Unlike send_agent_message (point-to-point), this creates a message with no specific recipient that all agents can see via check_agent_inbox. Useful for announcing blockers, completed milestones, or coordination changes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        senderId: {
+          type: "string",
+          description: "Sender agent session ID",
+        },
+        category: {
+          type: "string",
+          enum: ["task_assignment", "status_report", "finding", "blocker", "handoff"],
+          description: "Message category (default: status_report)",
+        },
+        priority: {
+          type: "string",
+          enum: ["low", "normal", "high", "critical"],
+          description: "Message priority (default: normal)",
+        },
+        subject: {
+          type: "string",
+          description: "Broadcast subject line",
+        },
+        body: {
+          type: "string",
+          description: "Broadcast message body",
+        },
+      },
+      required: ["subject", "body"],
+    },
+    handler: async (args) => {
+      const db = getDb();
+      const id = genId("bcast");
+      const senderId = args.senderId || `agent_${Date.now()}`;
+      const category = args.category || "status_report";
+      const priority = args.priority || "normal";
+
+      // Broadcast: recipient_id = '__broadcast__', no recipient_role
+      db.prepare(
+        "INSERT INTO agent_mailbox (id, sender_id, recipient_id, recipient_role, category, priority, subject, body, read, created_at) VALUES (?, ?, '__broadcast__', NULL, ?, ?, ?, ?, 0, datetime('now'))"
+      ).run(id, senderId, category, priority, args.subject, args.body);
+
+      // Count active agents (from recent task claims)
+      const activeAgents = db
+        .prepare(
+          "SELECT COUNT(DISTINCT session_id) as count FROM agent_tasks WHERE status = 'claimed'"
+        )
+        .get() as any;
+
+      return {
+        broadcast: true,
+        messageId: id,
+        category,
+        priority,
+        subject: args.subject,
+        activeAgentCount: activeAgents?.count || 0,
+      };
+    },
+  },
 ];

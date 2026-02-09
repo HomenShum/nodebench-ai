@@ -86,17 +86,17 @@ def main() -> None:
     parser.add_argument("--min-tools", type=int, default=0)
     parser.add_argument(
         "--file-types",
-        default="pdf,xlsx,csv",
+        default="pdf,xlsx,csv,docx,pptx,zip,json,jsonl,txt,md,xml",
         help="Comma-separated list of allowed attachment extensions (no dots).",
     )
     parser.add_argument(
         "--require-tools-regex",
-        default="excel|spreadsheet|csv|pdf",
+        default="excel|spreadsheet|csv|pdf|word|docx|powerpoint|ppt|zip|xml|json|text",
         help="Regex that must match Annotator Metadata.Tools (lowercased).",
     )
     parser.add_argument(
         "--exclude-tools-regex",
-        default="web browser|search engine|web|image|audio|video|png|jpg|jpeg|mp3|ppt|powerpoint|zip",
+        default="web browser|search engine|web|image|ocr|audio|video|png|jpg|jpeg|mp3|wav|youtube",
         help="Regex that must NOT match Annotator Metadata.Tools (lowercased).",
     )
     parser.add_argument("--require-question-regex", default="")
@@ -230,7 +230,9 @@ def main() -> None:
 
     total_records = len(df.index)
     candidates = tasks
-    candidates.sort(key=lambda t: (t["complexityScore"], t["id"]))
+    # Default to HARDER tasks first: baseline (no files) is usually weak, and we want
+    # this lane to be a real capability lift measurement, not an "easy subset" demo.
+    candidates.sort(key=lambda t: (-t["complexityScore"], t["id"]))
 
     selected = candidates[: max(1, int(args.limit))]
     if not selected:
@@ -295,4 +297,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

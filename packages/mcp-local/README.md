@@ -39,7 +39,7 @@ Every additional tool call produces a concrete artifact — an issue found, a ri
 
 **QA engineer** — Transitioned a manual QA workflow website into an AI agent-driven app for a pet care messaging platform. Uses NodeBench's quality gates, verification cycles, and eval runs to ensure the AI agent handles edge cases that manual QA caught but bare AI agents miss.
 
-Both found different subsets of the 129 tools useful — which is why v2.8 ships with `--preset` gating to load only what you need.
+Both found different subsets of the 163 tools useful — which is why NodeBench ships with 4 `--preset` levels to load only what you need.
 
 ---
 
@@ -77,10 +77,13 @@ Tasks 1-3 start with zero prior knowledge. By task 9, the agent finds 2+ relevan
 ### Install (30 seconds)
 
 ```bash
-# Claude Code CLI — all 129 tools
+# Claude Code CLI — all 163 tools (TOON encoding on by default for ~40% token savings)
 claude mcp add nodebench -- npx -y nodebench-mcp
 
-# Or start lean — 39 tools, ~70% less token overhead
+# Or start with discovery only — 5 tools, agents self-escalate to what they need
+claude mcp add nodebench -- npx -y nodebench-mcp --preset meta
+
+# Or start lean — 43 tools, ~70% less token overhead
 claude mcp add nodebench -- npx -y nodebench-mcp --preset lite
 ```
 
@@ -184,9 +187,9 @@ Notes:
 
 ---
 
-## Progressive Discovery (v2.8.1)
+## Progressive Discovery
 
-129 tools is a lot. The progressive disclosure system helps agents find exactly what they need:
+163 tools is a lot. The progressive disclosure system helps agents find exactly what they need:
 
 ### Multi-modal search engine
 
@@ -194,7 +197,7 @@ Notes:
 > discover_tools("verify my implementation")
 ```
 
-The `discover_tools` search engine scores tools using **9 parallel strategies**:
+The `discover_tools` search engine scores tools using **14 parallel strategies** (including Agent-as-a-Graph bipartite embedding search):
 
 | Strategy | What it does | Example |
 |---|---|---|
@@ -207,8 +210,9 @@ The `discover_tools` search engine scores tools using **9 parallel strategies**:
 | Regex | Pattern matching | `"^run_.*loop$"` → `run_closed_loop` |
 | Bigram | Phrase matching | "quality gate" matched as unit |
 | Domain boost | Related categories boosted together | verification + quality_gate cluster |
+| Dense | TF-IDF cosine similarity for vector-like ranking | "audit compliance" surfaces related tools |
 
-**6 search modes**: `hybrid` (default, all strategies), `fuzzy`, `regex`, `prefix`, `semantic`, `exact`
+**7 search modes**: `hybrid` (default, all strategies), `fuzzy`, `regex`, `prefix`, `semantic`, `exact`, `dense`
 
 Pass `explain: true` to see exactly which strategies contributed to each score.
 
@@ -224,7 +228,7 @@ Call `get_tool_quick_ref("tool_name")` for any tool's guidance.
 
 ### Workflow chains — step-by-step recipes
 
-11 pre-built chains for common workflows:
+24 pre-built chains for common workflows:
 
 | Chain | Steps | Use case |
 |---|---|---|
@@ -239,6 +243,19 @@ Call `get_tool_quick_ref("tool_name")` for any tool's guidance.
 | `code_review` | 8 | Structured code review |
 | `deployment` | 8 | Ship with full verification |
 | `migration` | 10 | SDK/framework upgrade |
+| `coordinator_spawn` | 10 | Parallel coordinator setup |
+| `self_setup` | 8 | Agent self-onboarding |
+| `flicker_detection` | 7 | Android flicker analysis |
+| `figma_flow_analysis` | 5 | Figma prototype flow audit |
+| `agent_eval` | 9 | Evaluate agent performance |
+| `contract_compliance` | 5 | Check agent contract adherence |
+| `ablation_eval` | 10 | Ablation experiment design |
+| `session_recovery` | 6 | Recover context after compaction |
+| `attention_refresh` | 4 | Reload bearings mid-session |
+| `task_bank_setup` | 9 | Create evaluation task banks |
+| `pr_review` | 5 | Pull request review |
+| `seo_audit` | 6 | Full SEO audit |
+| `voice_pipeline` | 6 | Voice pipeline implementation |
 
 Call `get_workflow_chain("new_feature")` to get the step-by-step sequence.
 
@@ -269,7 +286,7 @@ Research → Risk → Implement → Test (3 layers) → Eval → Gate → Learn 
 **Outer loop** (over time): Eval-driven development ensures improvement.
 **Together**: The AI Flywheel — every verification produces eval artifacts, every regression triggers verification.
 
-Ask the agent: `Use getMethodology("overview")` to see all 19 methodology topics.
+Ask the agent: `Use getMethodology("overview")` to see all 20 methodology topics.
 
 ---
 
@@ -298,20 +315,31 @@ Based on Anthropic's ["Building a C Compiler with Parallel Claudes"](https://www
 
 ---
 
-## Toolset Gating (v2.8)
+## Toolset Gating
 
-129 tools means tens of thousands of tokens of schema per API call. If you only need core methodology, gate the toolset:
+163 tools means tens of thousands of tokens of schema per API call. If you only need core methodology, gate the toolset:
 
 ### Presets
 
+| Preset | Tools | Domains | Use case |
+|---|---|---|---|
+| `meta` | 5 | 0 | Discovery-only front door — agents start here and self-escalate via `discover_tools` |
+| `lite` | 43 | 8 | Core methodology — verification, eval, flywheel, learning, recon, security, boilerplate |
+| `core` | 110 | 23 | Full workflow — adds bootstrap, self-eval, llm, platform, research_writing, flicker_detection, figma_flow, benchmark, session_memory, toon, pattern, git_workflow, seo, voice_bridge, critter |
+| `full` | 163 | 31 | Everything — adds vision, UI capture, web, GitHub, docs, parallel, local files, GAIA solvers |
+
 ```bash
-# Lite — 39 tools (verification, eval, gates, learning, recon, security, boilerplate + meta + discovery)
+# Meta — 5 tools (discovery-only: findTools, getMethodology, discover_tools, get_tool_quick_ref, get_workflow_chain)
+# Agents start here and self-escalate to the tools they need
+claude mcp add nodebench -- npx -y nodebench-mcp --preset meta
+
+# Lite — 43 tools (verification, eval, flywheel, learning, recon, security, boilerplate + meta + discovery)
 claude mcp add nodebench -- npx -y nodebench-mcp --preset lite
 
-# Core — 87 tools (adds flywheel, bootstrap, self-eval, llm, platform, research_writing, flicker_detection, figma_flow, benchmark + meta + discovery)
+# Core — 110 tools (adds bootstrap, self-eval, llm, platform, research_writing, flicker_detection, figma_flow, benchmark, session_memory, toon, pattern, git_workflow, seo, voice_bridge, critter + meta + discovery)
 claude mcp add nodebench -- npx -y nodebench-mcp --preset core
 
-# Full — all 129 tools (default)
+# Full — all 163 tools (default, TOON encoding on by default)
 claude mcp add nodebench -- npx -y nodebench-mcp
 ```
 
@@ -322,7 +350,7 @@ Or in config:
   "mcpServers": {
     "nodebench": {
       "command": "npx",
-      "args": ["-y", "nodebench-mcp", "--preset", "core"]
+      "args": ["-y", "nodebench-mcp", "--preset", "meta"]
     }
   }
 }
@@ -352,14 +380,14 @@ npx nodebench-mcp --help
 | recon | 7 | Research, findings, framework checks, risk |
 | flywheel | 4 | Mandatory flywheel, promote, investigate |
 | bootstrap | 11 | Project setup, agents.md, self-implement, autonomous, test runner |
-| self_eval | 6 | Trajectory analysis, health reports |
-| parallel | 10 | Task locks, roles, context budget, oracle |
+| self_eval | 9 | Trajectory analysis, health reports, task banks, grading, contract compliance |
+| parallel | 13 | Task locks, roles, context budget, oracle, agent mailbox (point-to-point + broadcast) |
 | vision | 4 | Screenshot analysis, UI capture, diff |
 | ui_capture | 2 | Playwright-based capture |
 | web | 2 | Web search, URL fetch |
 | github | 3 | Repo search, analysis, monitoring |
 | docs | 4 | Documentation generation, reports |
-| local_file | 17 | Deterministic parsing (CSV/XLSX/PDF/DOCX/PPTX/ZIP/JSON/JSONL/TXT) |
+| local_file | 19 | Deterministic parsing (CSV/XLSX/PDF/DOCX/PPTX/ZIP/JSON/JSONL/TXT/OCR/audio) |
 | llm | 3 | LLM calling, extraction, benchmarking |
 | security | 3 | Dependency scanning, code analysis, terminal security scanning |
 | platform | 4 | Convex bridge: briefs, funding, research, publish |
@@ -368,10 +396,33 @@ npx nodebench-mcp --help
 | figma_flow | 4 | Figma flow analysis + rendering |
 | boilerplate | 2 | Scaffold NodeBench projects + status |
 | benchmark | 3 | Autonomous benchmark lifecycle (C-compiler pattern) |
+| session_memory | 3 | Compaction-resilient notes, attention refresh, context reload |
+| gaia_solvers | 6 | GAIA media image solvers (red/green deviation, polygon area, fraction quiz, bass clef, storage cost) |
+| toon | 2 | TOON encode/decode — Token-Oriented Object Notation (~40% token savings) |
+| pattern | 2 | Session pattern mining + risk prediction from historical sequences |
+| git_workflow | 3 | Branch compliance, PR checklist review, merge gate enforcement |
+| seo | 5 | Technical SEO audit, page performance, content analysis, WordPress detection + updates |
+| voice_bridge | 4 | Voice pipeline design, config analysis, scaffold generation, latency benchmarking |
 
-Always included (regardless of gating):
+Always included (regardless of gating) — these 5 tools form the `meta` preset:
 - Meta: `findTools`, `getMethodology`
 - Discovery: `discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`
+
+The `meta` preset loads **only** these 5 tools (0 domain tools). Agents use `discover_tools` to find what they need and self-escalate.
+
+### TOON Format — Token Savings
+
+TOON (Token-Oriented Object Notation) is **on by default** since v2.14.1. Every tool response is TOON-encoded for ~40% fewer tokens vs JSON. Disable with `--no-toon` if your client can't handle non-JSON responses.
+
+```bash
+# TOON on (default)
+claude mcp add nodebench -- npx -y nodebench-mcp
+
+# TOON off
+claude mcp add nodebench -- npx -y nodebench-mcp --no-toon
+```
+
+Use the `toon_encode` and `toon_decode` tools to convert between TOON and JSON in your own workflows.
 
 ---
 

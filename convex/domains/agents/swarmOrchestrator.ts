@@ -16,6 +16,7 @@ import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
 import { internal, api } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // ============================================================================
 // Types & Constants
@@ -112,22 +113,11 @@ export const createSwarm = action({
   handler: async (ctx, args) => {
     const { query, agents, pattern = "fan_out_gather", model = "claude-sonnet-4-20250514" } = args;
 
-    // Get user from auth context
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Authentication required to create swarm");
+    // Get userId from auth context (works for both authenticated and anonymous users)
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Authentication required to create swarm. Please sign in or use anonymous access.");
     }
-
-    // Get userId from users table by email
-    const user = await ctx.runQuery(api.domains.agents.swarmQueries.getUserByEmail, {
-      email: identity.email!,
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const userId = user._id;
     const swarmId = crypto.randomUUID();
     const now = Date.now();
 
@@ -351,7 +341,9 @@ export const executeSwarmInternal = internalAction({
         return;
       }
 
-      // 7. Synthesize results
+      // 7. Synthesize results via TRACE (Verifiable Orchestrator pattern)
+      // Instead of passing raw results to the LLM for merging (Risk 1: Hallucination),
+      // we use deterministic tools and only expose metadata to the LLM.
       await ctx.runMutation(api.domains.agents.swarmMutations.updateSwarmStatus, {
         swarmId,
         status: "synthesizing",
@@ -361,13 +353,44 @@ export const executeSwarmInternal = internalAction({
         swarmId,
       });
 
-      const synthesis = await synthesizeResults(ctx, swarm?.query || "", results);
+      // TRACE finalization: deterministic merge + audit log + optional AI analysis
+      const traceOutput = await ctx.runAction(
+        internal.domains.agents.traceOrchestrator.executeTraceFinalization,
+        {
+          executionId: swarmId,
+          executionType: "swarm" as const,
+          query: swarm?.query || "",
+          agentResults: results,
+          generateAnalysis: true,
+        }
+      );
+
+      // Build the enhanced result with clear separation of deterministic vs AI content
+      const { buildTraceEnhancedResult } = await import("./traceOrchestrator");
+      const auditSummary = await ctx.runQuery(
+        api.domains.agents.traceAuditLog.getAuditSummary,
+        { executionId: swarmId }
+      );
+
+      // Deterministic merge of raw agent results with provenance markers
+      const rawMergedData = results
+        .filter((r: { result: string }) => r.result && r.result.length > 50)
+        .map((r: { agentName: string; role: string; result: string }) =>
+          `[Source: ${r.agentName} (${r.role})]\n${r.result}`
+        )
+        .join("\n\n---\n\n");
+
+      const enhancedResult = buildTraceEnhancedResult(
+        rawMergedData,
+        traceOutput.analysis,
+        auditSummary,
+      );
 
       // 8. Save merged result
       await ctx.runMutation(api.domains.agents.swarmMutations.setSwarmResult, {
         swarmId,
-        mergedResult: synthesis.content,
-        confidence: synthesis.confidence,
+        mergedResult: enhancedResult,
+        confidence: traceOutput.confidence,
       });
 
       // 9. Add synthesis as assistant message to thread

@@ -186,8 +186,8 @@ def main() -> None:
 
     total_records = len(df.index)
     candidates = tasks
-    # For capability eval, prefer *easier* tasks so we can measure real deltas with small budgets.
-    candidates.sort(key=lambda t: (t["complexityScore"], t["id"]))
+    # Default to HARDER tasks first to make the baseline vs tools delta meaningful.
+    candidates.sort(key=lambda t: (-t["complexityScore"], t["id"]))
 
     selected = candidates[: max(1, int(args.limit))]
     if not selected:

@@ -28,7 +28,8 @@ export type MainView =
     | 'agent-marketplace'
     | 'github-explorer'
     | 'pr-suggestions'
-    | 'linkedin-posts';
+    | 'linkedin-posts'
+    | 'mcp-ledger';
 
 interface UseMainLayoutRoutingReturn {
     currentView: MainView;
@@ -83,6 +84,7 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
         if (pathname.startsWith('/marketplace') || pathname.startsWith('/agent-marketplace')) return { view: 'agent-marketplace', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/github') || pathname.startsWith('/github-explorer')) return { view: 'github-explorer', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/pr-suggestions') || pathname.startsWith('/prs')) return { view: 'pr-suggestions', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+        if (pathname.startsWith('/mcp/ledger') || pathname.startsWith('/mcp-ledger')) return { view: 'mcp-ledger', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
 
         if (pathname.startsWith('/entity/') || pathname.startsWith('/entity%2f')) {
             const match = (rawPathname || '').match(/^\/entity[\/](.+)$/i);

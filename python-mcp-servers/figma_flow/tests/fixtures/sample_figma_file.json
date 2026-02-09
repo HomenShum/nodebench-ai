@@ -1,0 +1,108 @@
+{
+  "document": {
+    "id": "0:0",
+    "name": "Document",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "1:0",
+        "name": "Page 1",
+        "type": "CANVAS",
+        "children": [
+          {
+            "id": "2:0",
+            "name": "Login Flows",
+            "type": "SECTION",
+            "absoluteBoundingBox": {"x": -50, "y": -50, "width": 1650, "height": 912},
+            "children": [
+              {
+                "id": "3:0",
+                "name": "Login - Splash",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 0, "y": 0, "width": 375, "height": 812},
+                "children": []
+              },
+              {
+                "id": "3:1",
+                "name": "Login - Email",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 475, "y": 0, "width": 375, "height": 812},
+                "transitionNodeID": "3:2",
+                "children": []
+              },
+              {
+                "id": "3:2",
+                "name": "Login - Password",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 950, "y": 0, "width": 375, "height": 812},
+                "transitionNodeID": "3:3",
+                "children": []
+              },
+              {
+                "id": "3:3",
+                "name": "Login - Success",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 1425, "y": 0, "width": 375, "height": 812},
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "2:1",
+            "name": "Onboarding",
+            "type": "SECTION",
+            "absoluteBoundingBox": {"x": -50, "y": 1050, "width": 1175, "height": 912},
+            "children": [
+              {
+                "id": "4:0",
+                "name": "Onboarding - Welcome",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 0, "y": 1100, "width": 375, "height": 812},
+                "children": []
+              },
+              {
+                "id": "4:1",
+                "name": "Onboarding - Profile Setup",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 475, "y": 1100, "width": 375, "height": 812},
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "2:2",
+            "name": "Settings",
+            "type": "SECTION",
+            "absoluteBoundingBox": {"x": 1950, "y": 1050, "width": 1175, "height": 912},
+            "children": [
+              {
+                "id": "5:0",
+                "name": "Settings - General",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 2000, "y": 1100, "width": 375, "height": 812},
+                "children": []
+              },
+              {
+                "id": "5:1",
+                "name": "Settings - Privacy",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 2475, "y": 1100, "width": 375, "height": 812},
+                "children": []
+              },
+              {
+                "id": "5:2",
+                "name": "Settings - Account",
+                "type": "FRAME",
+                "absoluteBoundingBox": {"x": 2950, "y": 1100, "width": 375, "height": 812},
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "name": "Test Design File",
+  "lastModified": "2026-02-06T00:00:00Z",
+  "version": "1234567890"
+}
