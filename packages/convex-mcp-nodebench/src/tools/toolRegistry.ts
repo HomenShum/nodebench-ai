@@ -326,7 +326,11 @@ function getBM25Index(): BM25Index {
   return _bm25Index;
 }
 
-export function findTools(query: string): ToolRegistryEntry[] {
+export interface ScoredToolEntry extends ToolRegistryEntry {
+  _score: number;
+}
+
+export function findTools(query: string): ScoredToolEntry[] {
   const queryTokens = tokenize(query);
   if (queryTokens.length === 0) return [];
 
@@ -349,20 +353,19 @@ export function findTools(query: string): ToolRegistryEntry[] {
       score += termIdf * (termTf * (k1 + 1)) / (termTf + k1 * (1 - b + b * (dl / index.avgDl)));
     }
 
-    return { entry, score };
+    return { ...entry, _score: score };
   });
 
   return scored
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map((s) => s.entry);
+    .filter((s) => s._score > 0)
+    .sort((a, b) => b._score - a._score);
 }
 
 /**
  * Async wrapper around findTools that fuses BM25 results with embedding RRF
  * when a neural embedding provider is available. Falls back to plain findTools otherwise.
  */
-export async function findToolsWithEmbedding(query: string): Promise<ToolRegistryEntry[]> {
+export async function findToolsWithEmbedding(query: string): Promise<ScoredToolEntry[]> {
   const bm25Results = findTools(query);
 
   if (!isEmbeddingReady()) return bm25Results;
@@ -401,5 +404,6 @@ export async function findToolsWithEmbedding(query: string): Promise<ToolRegistr
 
   return [...allEntries.values()]
     .filter((e) => fusedScores.has(e.name))
-    .sort((a, b) => (fusedScores.get(b.name) ?? 0) - (fusedScores.get(a.name) ?? 0));
+    .sort((a, b) => (fusedScores.get(b.name) ?? 0) - (fusedScores.get(a.name) ?? 0))
+    .map((e) => ({ ...e, _score: fusedScores.get(e.name) ?? 0 }));
 }

@@ -51,24 +51,27 @@ function scoreCritterCheck(input: CritterInput): {
   const whyLower = input.why.toLowerCase().trim();
   const whoLower = input.who.toLowerCase().trim();
 
-  // Check 1: Circular reasoning
+  // Check 1: Circular reasoning (threshold 0.5)
   const taskWords = new Set(taskLower.split(/\s+/).filter((w) => w.length > 3));
   const whyWords = whyLower.split(/\s+/).filter((w) => w.length > 3);
   const overlap = whyWords.filter((w) => taskWords.has(w));
-  if (whyWords.length > 0 && overlap.length / whyWords.length > 0.7) {
+  if (whyWords.length > 0 && overlap.length / whyWords.length > 0.5) {
     score -= 30;
     feedback.push("Circular: your 'why' mostly restates the task. What user outcome does this enable?");
   }
 
   // Check 2: Vague audience
-  const vagueAudiences = ["users", "everyone", "people", "the team", "stakeholders", "clients"];
+  const vagueAudiences = ["users", "everyone", "people", "the team", "stakeholders", "clients", "customers", "developers"];
   if (vagueAudiences.includes(whoLower)) {
     score -= 20;
     feedback.push(`"${input.who}" is too broad. Which user role or API consumer specifically?`);
   }
 
-  // Check 3: Too short
-  if (whyLower.length < 10) {
+  // Check 3: Empty or too short
+  if (whyLower.length === 0) {
+    score -= 40;
+    feedback.push("Empty 'why': you haven't stated any purpose at all.");
+  } else if (whyLower.length < 10) {
     score -= 25;
     feedback.push("The 'why' is too short. What problem does this solve?");
   }
@@ -82,6 +85,76 @@ function scoreCritterCheck(input: CritterInput): {
   if (deferPatterns.some((p) => whyLower.includes(p))) {
     score -= 15;
     feedback.push("Citing authority instead of understanding purpose. Why does this matter to the product?");
+  }
+
+  // Check 5: Non-answer patterns (count matches, -20 each, cap -40)
+  const nonAnswerPatterns = [
+    "just because", "don't know", "not sure", "why not", "might need it",
+    "no reason", "no idea", "whatever", "idk", "tbd",
+  ];
+  const nonAnswerHits = nonAnswerPatterns.filter((p) => whyLower.includes(p)).length;
+  if (nonAnswerHits > 0) {
+    const nonAnswerPenalty = Math.min(nonAnswerHits * 20, 40);
+    score -= nonAnswerPenalty;
+    feedback.push("Non-answer: your 'why' signals unclear purpose. What specific problem does this solve?");
+  }
+
+  // Check 6: Repetitive padding (why + who)
+  const whyAllWords = whyLower.split(/\s+/).filter((w) => w.length > 2);
+  if (whyAllWords.length >= 5) {
+    const whyUniqueWords = new Set(whyAllWords);
+    if (whyUniqueWords.size / whyAllWords.length < 0.4) {
+      score -= 25;
+      feedback.push("Repetitive: your 'why' repeats the same words. Articulate distinct reasoning.");
+    }
+  }
+  const whoAllWords = whoLower.split(/\s+/).filter((w) => w.length > 2);
+  if (whoAllWords.length >= 5) {
+    const whoUniqueWords = new Set(whoAllWords);
+    if (whoUniqueWords.size / whoAllWords.length < 0.4) {
+      score -= 25;
+      feedback.push("Repetitive: your 'who' repeats the same words. Name a real audience.");
+    }
+  }
+
+  // Check 7: Buzzword-heavy corporate-speak (scans why + who)
+  const buzzwords = [
+    "leverage", "synergies", "synergy", "paradigm", "holistic", "alignment",
+    "transformation", "innovative", "disruptive", "best practices",
+    "streamline", "ecosystem", "actionable", "circle back",
+  ];
+  const allText = `${whyLower} ${whoLower}`;
+  const buzzCount = buzzwords.filter((b) => allText.includes(b)).length;
+  if (buzzCount >= 4) {
+    score -= 35;
+    feedback.push("Buzzword-heavy: corporate-speak without concrete meaning. What specific problem does this solve?");
+  } else if (buzzCount >= 3) {
+    score -= 30;
+    feedback.push("Buzzword-heavy: corporate-speak without concrete meaning. What specific problem does this solve?");
+  } else if (buzzCount >= 2) {
+    score -= 20;
+    feedback.push("Buzzword-heavy: corporate-speak without concrete meaning. What specific problem does this solve?");
+  }
+
+  // Check 8: Hedging language
+  const hedgeWords = ["could", "potentially", "maybe", "possibly", "might", "perhaps", "hopefully"];
+  const hedgeCount = hedgeWords.filter((h) => {
+    const regex = new RegExp(`\\b${h}\\b`, "i");
+    return regex.test(whyLower);
+  }).length;
+  if (hedgeCount >= 2) {
+    score -= 15;
+    feedback.push("Hedging: too many 'could/maybe/potentially' signals uncertain value. Be definitive.");
+  }
+
+  // Check 9: Task-word echo — same word from task repeated 3+ times in why
+  for (const tw of taskWords) {
+    const twCount = whyWords.filter((w) => w === tw).length;
+    if (twCount >= 3) {
+      score -= 20;
+      feedback.push(`Echo: "${tw}" appears ${twCount} times in your 'why' — this is filler, not reasoning.`);
+      break;
+    }
   }
 
   // Bonus for specificity

@@ -270,9 +270,13 @@ export const integrationBridgeTools: McpTool[] = [
         } catch { /* ignore */ }
       }
 
+      const parsed = JSON.parse(snapshot.schemaJson);
       return {
         snapshotId: id,
         tableCount: snapshot.tableCount,
+        tables: parsed.tables,
+        totalIndexes: parsed.totalIndexes,
+        indexes: parsed.indexes,
         diff,
         quickRef: getQuickRef("convex_audit_schema"),
       };

@@ -114,7 +114,13 @@ export const methodologyTools: McpTool[] = [
       required: ["topic"],
     },
     handler: async (args: { topic: string }) => {
-      const content = METHODOLOGY_CONTENT[args.topic];
+      // Default to overview when topic is missing
+      let topic = args.topic || "overview";
+      // Accept short names: "schema_audit" -> "convex_schema_audit"
+      if (!METHODOLOGY_CONTENT[topic] && METHODOLOGY_CONTENT[`convex_${topic}`]) {
+        topic = `convex_${topic}`;
+      }
+      const content = METHODOLOGY_CONTENT[topic];
       if (!content) {
         return {
           error: `Unknown topic: ${args.topic}`,
@@ -158,6 +164,7 @@ export const methodologyTools: McpTool[] = [
         matchingTools: results.length,
         tools: results.map((r) => ({
           name: r.name,
+          score: Math.round(r._score * 100) / 100,
           category: r.category,
           phase: r.phase,
           complexity: r.complexity,
