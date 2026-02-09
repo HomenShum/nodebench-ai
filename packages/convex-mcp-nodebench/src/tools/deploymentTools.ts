@@ -25,7 +25,12 @@ function runPreDeployChecks(projectDir: string): DeployGateResult {
   if (!convexDir) {
     checks.push({ name: "convex_dir_exists", passed: false, message: "No convex/ directory found" });
     blockers.push("No convex/ directory found");
-    return { passed: false, checks, blockers };
+    return {
+      passed: false,
+      checks,
+      blockers: blockers.map((b, i) => ({ priority: i + 1, blocker: b, fixFirst: i === 0 })),
+      fixOrder: "Fix #1: Create a convex/ directory. Then re-run convex_pre_deploy_gate.",
+    };
   }
   checks.push({ name: "convex_dir_exists", passed: true, message: `Found at ${convexDir}` });
 
@@ -108,10 +113,20 @@ function runPreDeployChecks(projectDir: string): DeployGateResult {
     blockers.push("Run 'npx convex dev' to initialize the project before deploying");
   }
 
+  // Add priority ordering to blockers
+  const prioritizedBlockers = blockers.map((b, i) => ({
+    priority: i + 1,
+    blocker: b,
+    fixFirst: i === 0,
+  }));
+
   return {
     passed: blockers.length === 0,
     checks,
-    blockers,
+    blockers: prioritizedBlockers,
+    fixOrder: blockers.length > 0
+      ? `Fix ${blockers.length} blocker(s) in order: ${blockers.map((_, i) => `#${i + 1}`).join(" → ")}. Then re-run convex_pre_deploy_gate.`
+      : "All checks passed. Safe to deploy.",
   };
 }
 
@@ -256,8 +271,34 @@ export const deploymentTools: McpTool[] = [
       const projectDir = resolve(args.projectDir);
       const result = checkEnvVars(projectDir);
 
+      // Group missing vars by service for actionable output
+      const serviceGroups: Record<string, string[]> = {};
+      for (const v of result.missingInEnvFile) {
+        const vUp = v.toUpperCase();
+        const svc = vUp.includes("OPENAI") ? "OpenAI" :
+          vUp.includes("GEMINI") || vUp.includes("GOOGLE") ? "Google" :
+          vUp.includes("OPENBB") ? "OpenBB" :
+          vUp.includes("TWILIO") ? "Twilio" :
+          vUp.includes("LINKEDIN") ? "LinkedIn" :
+          vUp.includes("GITHUB") ? "GitHub" :
+          vUp.includes("STRIPE") ? "Stripe" :
+          vUp.includes("OPENROUTER") ? "OpenRouter" :
+          vUp.includes("RESEARCH") ? "Research MCP" :
+          vUp.includes("MCP") ? "MCP" :
+          vUp.includes("NTFY") ? "Ntfy" :
+          vUp.includes("XAI") ? "xAI" :
+          vUp.includes("CLERK") ? "Clerk" :
+          vUp.includes("CONVEX") ? "Convex" :
+          "Other";
+        if (!serviceGroups[svc]) serviceGroups[svc] = [];
+        serviceGroups[svc].push(v);
+      }
+
       return {
         ...result,
+        missingByService: Object.entries(serviceGroups)
+          .sort(([, a], [, b]) => b.length - a.length)
+          .map(([service, vars]) => ({ service, count: vars.length, vars })),
         quickRef: getQuickRef("convex_check_env_vars"),
       };
     },

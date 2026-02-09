@@ -341,6 +341,21 @@ export const functionTools: McpTool[] = [
       const critical = issues.filter((i) => i.severity === "critical");
       const warnings = issues.filter((i) => i.severity === "warning");
 
+      // Aggregate issues by category for cleaner output
+      const categories: Record<string, { severity: string; count: number; examples: typeof issues }> = {};
+      for (const issue of issues) {
+        const cat = issue.message.includes("missing args") ? "missing_args_validator" :
+          issue.message.includes("missing returns") ? "missing_returns_validator" :
+          issue.message.includes("missing handler") ? "missing_handler_old_syntax" :
+          issue.message.includes("sensitive") ? "sensitive_function_public" :
+          issue.message.includes("queries cannot") ? "query_cross_call_violation" :
+          issue.message.includes("multiple actions") ? "action_from_action" :
+          "other";
+        if (!categories[cat]) categories[cat] = { severity: issue.severity, count: 0, examples: [] };
+        categories[cat].count++;
+        if (categories[cat].examples.length < 5) categories[cat].examples.push(issue);
+      }
+
       return {
         summary: {
           totalFunctions: functions.length,
@@ -350,7 +365,14 @@ export const functionTools: McpTool[] = [
           critical: critical.length,
           warnings: warnings.length,
         },
-        issues,
+        issuesByCategory: Object.entries(categories)
+          .sort(([, a], [, b]) => (b.severity === "critical" ? 1 : 0) - (a.severity === "critical" ? 1 : 0) || b.count - a.count)
+          .map(([cat, data]) => ({
+            category: cat,
+            severity: data.severity,
+            count: data.count,
+            examples: data.examples,
+          })),
         quickRef: getQuickRef("convex_audit_functions"),
       };
     },

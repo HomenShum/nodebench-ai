@@ -45,5 +45,10 @@ export interface DeployGateResult {
     passed: boolean;
     message: string;
   }>;
-  blockers: string[];
+  blockers: Array<{
+    priority: number;
+    blocker: string;
+    fixFirst: boolean;
+  }>;
+  fixOrder: string;
 }

@@ -379,9 +379,40 @@ export const schemaTools: McpTool[] = [
       }
 
       const suggestions = suggestIndexes(convexDir);
+
+      // Add existing index context per table mentioned in suggestions
+      const schemaContent = readSchemaFile(convexDir);
+      const existingByTable: Record<string, string[]> = {};
+      if (schemaContent) {
+        let currentTable = "";
+        for (const line of schemaContent.split("\n")) {
+          const tableDef = line.match(/(\w+)\s*[:=]\s*defineTable\s*\(/);
+          if (tableDef) currentTable = tableDef[1];
+          const idxMatch = line.match(/\.index\s*\(\s*["']([^"']+)["']/);
+          if (idxMatch && currentTable) {
+            if (!existingByTable[currentTable]) existingByTable[currentTable] = [];
+            existingByTable[currentTable].push(idxMatch[1]);
+          }
+        }
+      }
+
+      // Group suggestions by table for cleaner output
+      const byTable: Record<string, typeof suggestions> = {};
+      for (const s of suggestions) {
+        if (!byTable[s.table]) byTable[s.table] = [];
+        byTable[s.table].push(s);
+      }
+
       return {
         totalSuggestions: suggestions.length,
-        suggestions,
+        tablesNeedingIndexes: Object.keys(byTable).length,
+        suggestionsByTable: Object.entries(byTable)
+          .sort(([, a], [, b]) => b.length - a.length)
+          .map(([table, sugs]) => ({
+            table,
+            existingIndexes: existingByTable[table] || [],
+            suggestions: sugs,
+          })),
         quickRef: getQuickRef("convex_suggest_indexes"),
       };
     },
