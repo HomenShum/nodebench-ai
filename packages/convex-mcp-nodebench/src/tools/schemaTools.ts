@@ -165,6 +165,81 @@ function analyzeSchema(schemaContent: string, filePath: string): SchemaIssue[] {
   return issues;
 }
 
+// ── Search & Vector Index Inventory ─────────────────────────────────
+
+interface SearchIndexInfo {
+  table: string;
+  name: string;
+  searchField: string;
+  filterFields: string[];
+  line: number;
+}
+
+interface VectorIndexInfo {
+  table: string;
+  name: string;
+  dimensions?: number;
+  filterFields: string[];
+  line: number;
+}
+
+function analyzeAdvancedIndexes(schemaContent: string): {
+  searchIndexes: SearchIndexInfo[];
+  vectorIndexes: VectorIndexInfo[];
+} {
+  const searchIndexes: SearchIndexInfo[] = [];
+  const vectorIndexes: VectorIndexInfo[] = [];
+  const lines = schemaContent.split("\n");
+
+  let currentTable = "";
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Track current table context
+    const tableDef = line.match(/(\w+)\s*[:=]\s*defineTable\s*\(/);
+    if (tableDef) currentTable = tableDef[1];
+
+    // Detect .searchIndex("name", { ... })
+    const searchMatch = line.match(/\.searchIndex\s*\(\s*["']([^"']+)["']/);
+    if (searchMatch && currentTable) {
+      // Look ahead for searchField and filterFields
+      const chunk = lines.slice(i, Math.min(i + 10, lines.length)).join("\n");
+      const searchFieldMatch = chunk.match(/searchField\s*:\s*["']([^"']+)["']/);
+      const filterFieldsMatch = chunk.match(/filterFields\s*:\s*\[([^\]]*)\]/);
+      const filterFields = filterFieldsMatch
+        ? (filterFieldsMatch[1].match(/["']([^"']+)["']/g) || []).map(f => f.replace(/["']/g, ""))
+        : [];
+      searchIndexes.push({
+        table: currentTable,
+        name: searchMatch[1],
+        searchField: searchFieldMatch?.[1] || "unknown",
+        filterFields,
+        line: i + 1,
+      });
+    }
+
+    // Detect .vectorIndex("name", { ... })
+    const vectorMatch = line.match(/\.vectorIndex\s*\(\s*["']([^"']+)["']/);
+    if (vectorMatch && currentTable) {
+      const chunk = lines.slice(i, Math.min(i + 10, lines.length)).join("\n");
+      const dimMatch = chunk.match(/dimensions\s*:\s*(\d+)/);
+      const filterFieldsMatch = chunk.match(/filterFields\s*:\s*\[([^\]]*)\]/);
+      const filterFields = filterFieldsMatch
+        ? (filterFieldsMatch[1].match(/["']([^"']+)["']/g) || []).map(f => f.replace(/["']/g, ""))
+        : [];
+      vectorIndexes.push({
+        table: currentTable,
+        name: vectorMatch[1],
+        dimensions: dimMatch ? parseInt(dimMatch[1]) : undefined,
+        filterFields,
+        line: i + 1,
+      });
+    }
+  }
+
+  return { searchIndexes, vectorIndexes };
+}
+
 // ── Validator Coverage Analysis ─────────────────────────────────────
 
 interface ValidatorCoverageResult {
@@ -333,6 +408,7 @@ export const schemaTools: McpTool[] = [
 
       const schemaPath = join(convexDir, "schema.ts");
       const issues = analyzeSchema(schemaContent, schemaPath);
+      const advancedIndexes = analyzeAdvancedIndexes(schemaContent);
 
       // Store audit result
       const db = getDb();
@@ -344,6 +420,10 @@ export const schemaTools: McpTool[] = [
       const warnings = issues.filter((i) => i.severity === "warning");
       const info = issues.filter((i) => i.severity === "info");
 
+      // Count tables and regular indexes
+      const tableCount = (schemaContent.match(/defineTable\s*\(/g) || []).length;
+      const regularIndexCount = (schemaContent.match(/\.index\s*\(/g) || []).length;
+
       return {
         summary: {
           totalIssues: issues.length,
@@ -351,8 +431,18 @@ export const schemaTools: McpTool[] = [
           warnings: warnings.length,
           info: info.length,
           schemaFile: schemaPath,
+          tables: tableCount,
+          regularIndexes: regularIndexCount,
+          searchIndexes: advancedIndexes.searchIndexes.length,
+          vectorIndexes: advancedIndexes.vectorIndexes.length,
         },
         issues,
+        searchIndexes: advancedIndexes.searchIndexes.length > 0
+          ? advancedIndexes.searchIndexes
+          : undefined,
+        vectorIndexes: advancedIndexes.vectorIndexes.length > 0
+          ? advancedIndexes.vectorIndexes
+          : undefined,
         quickRef: getQuickRef("convex_audit_schema"),
       };
     },

@@ -28,9 +28,14 @@ interface EmbeddingCache {
   entries: Record<string, number[]>;
 }
 
+/** Node type in the bipartite graph: tool nodes vs domain (agent) nodes */
+export type GraphNodeType = "tool" | "domain";
+
 interface EmbeddingIndexEntry {
   name: string;
   vector: Float32Array;
+  /** Node type for Agent-as-a-Graph bipartite scoring */
+  nodeType: GraphNodeType;
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -130,14 +135,14 @@ export async function getEmbeddingProvider(): Promise<EmbeddingProvider | null> 
 }
 
 export async function initEmbeddingIndex(
-  corpus: Array<{ name: string; text: string }>
+  corpus: Array<{ name: string; text: string; nodeType?: GraphNodeType }>
 ): Promise<void> {
   if (_initPromise) return _initPromise;
   _initPromise = _doInit(corpus);
   return _initPromise;
 }
 
-async function _doInit(corpus: Array<{ name: string; text: string }>): Promise<void> {
+async function _doInit(corpus: Array<{ name: string; text: string; nodeType?: GraphNodeType }>): Promise<void> {
   const provider = await getEmbeddingProvider();
   if (!provider) return;
 
@@ -156,6 +161,7 @@ async function _doInit(corpus: Array<{ name: string; text: string }>): Promise<v
     _embeddingIndex = corpus.map((c) => ({
       name: c.name,
       vector: new Float32Array(cached.entries[c.name]),
+      nodeType: c.nodeType ?? "tool",
     }));
     return;
   }
@@ -167,6 +173,7 @@ async function _doInit(corpus: Array<{ name: string; text: string }>): Promise<v
     _embeddingIndex = corpus.map((c, i) => ({
       name: c.name,
       vector: vectors[i],
+      nodeType: c.nodeType ?? "tool",
     }));
 
     const cacheData: EmbeddingCache = {
@@ -200,12 +207,13 @@ export async function embedQuery(text: string): Promise<Float32Array | null> {
 export function embeddingSearch(
   queryVec: Float32Array,
   limit: number = 30
-): Array<{ name: string; similarity: number }> {
+): Array<{ name: string; similarity: number; nodeType: GraphNodeType }> {
   if (!_embeddingIndex) return [];
 
   const scored = _embeddingIndex.map((entry) => ({
     name: entry.name,
     similarity: cosineSim(queryVec, entry.vector),
+    nodeType: entry.nodeType,
   }));
 
   scored.sort((a, b) => b.similarity - a.similarity);

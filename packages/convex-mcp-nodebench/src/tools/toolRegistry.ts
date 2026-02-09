@@ -364,6 +364,10 @@ export function findTools(query: string): ScoredToolEntry[] {
 /**
  * Async wrapper around findTools that fuses BM25 results with embedding RRF
  * when a neural embedding provider is available. Falls back to plain findTools otherwise.
+ *
+ * Uses Agent-as-a-Graph bipartite RRF (arxiv:2511.18194):
+ * - Tool nodes get direct wRRF with α_T = 1.0
+ * - Domain nodes get softer wRRF with α_D = 0.6 (lifts sibling tools in that category)
  */
 export async function findToolsWithEmbedding(query: string): Promise<ScoredToolEntry[]> {
   const bm25Results = findTools(query);
@@ -373,25 +377,63 @@ export async function findToolsWithEmbedding(query: string): Promise<ScoredToolE
   const queryVec = await embedQuery(query);
   if (!queryVec) return bm25Results;
 
-  const vecResults = embeddingSearch(queryVec, 16);
-  const vecRanks = new Map<string, number>();
-  vecResults.forEach((r, i) => vecRanks.set(r.name, i + 1));
+  const vecResults = embeddingSearch(queryVec, 30);
 
-  // RRF fusion: combine BM25 rank with embedding rank
+  // Split embedding results by node type
+  const toolRanks = new Map<string, number>();
+  const domainRanks = new Map<string, number>();
+  let toolIdx = 0, domainIdx = 0;
+  for (const r of vecResults) {
+    if (r.nodeType === "domain") {
+      domainIdx++;
+      domainRanks.set(r.name.replace("domain:", ""), domainIdx);
+    } else {
+      toolIdx++;
+      toolRanks.set(r.name, toolIdx);
+    }
+  }
+
+  // Type-specific wRRF: α_T for direct tool matches, α_D for domain matches
+  const ALPHA_T = 1.0; // tool weight
+  const ALPHA_D = 0.6; // domain weight (gentler — lifts siblings, doesn't dominate)
+  const K = 20;        // RRF k parameter
+
+  // RRF fusion: combine BM25 rank with type-specific embedding ranks
   const fusedScores = new Map<string, number>();
 
   bm25Results.forEach((entry, i) => {
-    const bm25Rrf = 1000 / (20 + i + 1);
-    const embRank = vecRanks.get(entry.name);
-    const embRrf = embRank ? 1000 / (20 + embRank) : 0;
-    fusedScores.set(entry.name, bm25Rrf + embRrf);
+    const bm25Rrf = 1000 / (K + i + 1);
+
+    // Direct tool embedding match
+    const tRank = toolRanks.get(entry.name);
+    const toolRrf = tRank ? ALPHA_T * 1000 / (K + tRank) : 0;
+
+    // Domain-level embedding match (upward traversal: tool → category → domain node)
+    const dRank = domainRanks.get(entry.category);
+    const domainRrf = dRank ? ALPHA_D * 1000 / (K + dRank) : 0;
+
+    fusedScores.set(entry.name, bm25Rrf + toolRrf + domainRrf);
   });
 
   // Also include embedding-only hits not in BM25 results
-  for (const [name, rank] of vecRanks) {
+  for (const [name, rank] of toolRanks) {
     if (!fusedScores.has(name)) {
-      const embRrf = 1000 / (20 + rank);
-      fusedScores.set(name, embRrf);
+      const toolRrf = ALPHA_T * 1000 / (K + rank);
+      // Look up domain boost for this tool
+      const entry = REGISTRY.find((e) => e.name === name);
+      const dRank = entry ? domainRanks.get(entry.category) : undefined;
+      const domainRrf = dRank ? ALPHA_D * 1000 / (K + dRank) : 0;
+      fusedScores.set(name, toolRrf + domainRrf);
+    }
+  }
+
+  // Domain-only hits: boost all tools in a matched domain even without direct tool hit
+  for (const [category, dRank] of domainRanks) {
+    const domainRrf = ALPHA_D * 1000 / (K + dRank);
+    for (const entry of REGISTRY) {
+      if (entry.category === category && !fusedScores.has(entry.name)) {
+        fusedScores.set(entry.name, domainRrf);
+      }
     }
   }
 

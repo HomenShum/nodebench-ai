@@ -288,9 +288,10 @@ describe("HTTP Tools", () => {
     expect(result).toBeDefined();
     // Project may or may not have http.ts
     if (result.hasHttp) {
-      expect(result.totalRoutes).toBeGreaterThanOrEqual(0);
+      expect(result.totalStaticRoutes).toBeGreaterThanOrEqual(0);
       expect(result.issues).toBeDefined();
-      console.log(`HTTP: ${result.totalRoutes} routes, CORS: ${result.hasCors}, issues: ${result.issues.total}`);
+      expect(result.filesScanned).toBeDefined();
+      console.log(`HTTP: ${result.totalStaticRoutes} static routes across ${result.filesScanned.length} files, ${result.compositeRouteSources} composites, CORS: ${result.hasCors}, issues: ${result.issues.total}`);
     } else {
       console.log("HTTP: no http.ts found");
     }
@@ -346,8 +347,9 @@ describe("Tool Count", () => {
 
 // ── Embedding search A/B ─────────────────────────────────────────────────
 
-import { findToolsWithEmbedding } from "../tools/toolRegistry.js";
-import { isEmbeddingReady, _resetForTesting as resetEmbedding, _setIndexForTesting } from "../tools/embeddingProvider.js";
+import { findToolsWithEmbedding, REGISTRY } from "../tools/toolRegistry.js";
+import { isEmbeddingReady, _resetForTesting as resetEmbedding, _setIndexForTesting, _setProviderForTesting } from "../tools/embeddingProvider.js";
+import type { EmbeddingProvider } from "../tools/embeddingProvider.js";
 
 describe("Embedding-enhanced tool discovery", () => {
   it("findToolsWithEmbedding returns same as findTools when no provider", async () => {
@@ -361,23 +363,23 @@ describe("Embedding-enhanced tool discovery", () => {
   it("findToolsWithEmbedding fuses BM25 + embedding when index is loaded", async () => {
     // Mock embedding index where convex_search_gotchas is closest to "find past mistakes"
     const mockEntries = [
-      { name: "convex_audit_schema", vector: new Float32Array([0.1, 0.1, 0.9]) },
-      { name: "convex_suggest_indexes", vector: new Float32Array([0.1, 0.1, 0.8]) },
-      { name: "convex_check_validator_coverage", vector: new Float32Array([0.1, 0.1, 0.7]) },
-      { name: "convex_audit_functions", vector: new Float32Array([0.1, 0.1, 0.6]) },
-      { name: "convex_check_function_refs", vector: new Float32Array([0.1, 0.1, 0.5]) },
-      { name: "convex_pre_deploy_gate", vector: new Float32Array([0.1, 0.1, 0.4]) },
-      { name: "convex_check_env_vars", vector: new Float32Array([0.1, 0.1, 0.3]) },
-      { name: "convex_record_gotcha", vector: new Float32Array([0.7, 0.3, 0.0]) },
-      { name: "convex_search_gotchas", vector: new Float32Array([0.9, 0.1, 0.0]) },
-      { name: "convex_get_methodology", vector: new Float32Array([0.1, 0.1, 0.2]) },
-      { name: "convex_discover_tools", vector: new Float32Array([0.1, 0.1, 0.1]) },
-      { name: "convex_generate_rules_md", vector: new Float32Array([0.1, 0.1, 0.05]) },
-      { name: "convex_snapshot_schema", vector: new Float32Array([0.1, 0.1, 0.04]) },
-      { name: "convex_bootstrap_project", vector: new Float32Array([0.1, 0.1, 0.03]) },
-      { name: "convex_check_crons", vector: new Float32Array([0.1, 0.1, 0.02]) },
-      { name: "convex_analyze_components", vector: new Float32Array([0.1, 0.1, 0.01]) },
-      { name: "convex_analyze_http", vector: new Float32Array([0.1, 0.1, 0.005]) },
+      { name: "convex_audit_schema", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.9]) },
+      { name: "convex_suggest_indexes", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.8]) },
+      { name: "convex_check_validator_coverage", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.7]) },
+      { name: "convex_audit_functions", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.6]) },
+      { name: "convex_check_function_refs", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.5]) },
+      { name: "convex_pre_deploy_gate", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.4]) },
+      { name: "convex_check_env_vars", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.3]) },
+      { name: "convex_record_gotcha", nodeType: "tool" as const, vector: new Float32Array([0.7, 0.3, 0.0]) },
+      { name: "convex_search_gotchas", nodeType: "tool" as const, vector: new Float32Array([0.9, 0.1, 0.0]) },
+      { name: "convex_get_methodology", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.2]) },
+      { name: "convex_discover_tools", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.1]) },
+      { name: "convex_generate_rules_md", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.05]) },
+      { name: "convex_snapshot_schema", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.04]) },
+      { name: "convex_bootstrap_project", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.03]) },
+      { name: "convex_check_crons", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.02]) },
+      { name: "convex_analyze_components", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.01]) },
+      { name: "convex_analyze_http", nodeType: "tool" as const, vector: new Float32Array([0.1, 0.1, 0.005]) },
     ];
     _setIndexForTesting(mockEntries);
 
@@ -386,6 +388,50 @@ describe("Embedding-enhanced tool discovery", () => {
     // BM25 already ranks gotcha tools high, but embedding should reinforce them
     expect(names).toContain("convex_search_gotchas");
     expect(names).toContain("convex_record_gotcha");
+
+    resetEmbedding();
+  });
+
+  it("bipartite domain expansion surfaces tools from matched domain even without BM25 hit", async () => {
+    // Build index where ONLY the "learning" domain node is close — no tool nodes close.
+    // The domain expansion loop (lines 430-438) should surface learning tools
+    // even though BM25 didn't find them and no tool embedding matched.
+    const allToolNames = REGISTRY.map((e) => e.name);
+    const categories = [...new Set(REGISTRY.map((e) => e.category))];
+
+    const toolEntries = allToolNames.map((name) => ({
+      name,
+      nodeType: "tool" as const,
+      vector: new Float32Array([0.1, 0.1, 0.8]), // ALL tools distant
+    }));
+
+    const domainEntries = categories.map((cat) => ({
+      name: `domain:${cat}`,
+      nodeType: "domain" as const,
+      vector: cat === "learning"
+        ? new Float32Array([0.95, 0.05, 0.0])  // Only learning domain close
+        : new Float32Array([0.05, 0.05, 0.9]),
+    }));
+
+    // Mock provider so embedQuery() returns a vector instead of null
+    const mockProvider: EmbeddingProvider = {
+      name: "mock",
+      dimensions: 3,
+      embed: async (texts: string[]) => texts.map(() => new Float32Array([1.0, 0.0, 0.0])),
+    };
+    _setProviderForTesting(mockProvider);
+    _setIndexForTesting([...toolEntries, ...domainEntries]);
+
+    // Use a query with minimal lexical overlap — forces embedding path to matter
+    const results = await findToolsWithEmbedding("remember findings insights");
+    const learningTools = results.filter((r) => r.category === "learning");
+
+    // Learning tools should appear from domain expansion
+    expect(learningTools.length).toBeGreaterThanOrEqual(1);
+    // At least one learning tool should be present
+    expect(learningTools.some((r) =>
+      r.name === "convex_record_gotcha" || r.name === "convex_search_gotchas"
+    )).toBe(true);
 
     resetEmbedding();
   });

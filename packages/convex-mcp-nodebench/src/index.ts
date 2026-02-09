@@ -81,10 +81,41 @@ seedGotchasIfEmpty(CONVEX_GOTCHAS as unknown as Array<{
 }>);
 
 // ── Background: initialize embedding index for semantic search ───────
-const embeddingCorpus = REGISTRY.map((entry) => ({
+// Uses Agent-as-a-Graph bipartite corpus: tool nodes + domain nodes for graph-aware retrieval
+const descMap = new Map(ALL_TOOLS.map((t) => [t.name, t.description]));
+
+// Tool nodes: individual tools with full metadata text
+const toolCorpus = REGISTRY.map((entry) => ({
   name: entry.name,
-  text: `${entry.name} ${entry.tags.join(" ")} ${entry.category} ${entry.phase}`,
+  text: `${entry.name} ${entry.tags.join(" ")} ${entry.category} ${entry.phase} ${descMap.get(entry.name) ?? ""}`,
+  nodeType: "tool" as const,
 }));
+
+// Domain nodes: aggregate category descriptions for upward traversal
+// When a domain matches, all tools in that domain get a sibling boost
+const categoryTools = new Map<string, string[]>();
+for (const entry of REGISTRY) {
+  const list = categoryTools.get(entry.category) ?? [];
+  list.push(entry.name);
+  categoryTools.set(entry.category, list);
+}
+const domainCorpus = [...categoryTools.entries()].map(([category, toolNames]) => {
+  const allTags = new Set<string>();
+  const descs: string[] = [];
+  for (const tn of toolNames) {
+    const e = REGISTRY.find((r) => r.name === tn);
+    if (e) e.tags.forEach((t) => allTags.add(t));
+    const d = descMap.get(tn);
+    if (d) descs.push(d);
+  }
+  return {
+    name: `domain:${category}`,
+    text: `${category} domain: ${toolNames.join(" ")} ${[...allTags].join(" ")} ${descs.map(d => d.slice(0, 80)).join(" ")}`,
+    nodeType: "domain" as const,
+  };
+});
+
+const embeddingCorpus = [...toolCorpus, ...domainCorpus];
 initEmbeddingIndex(embeddingCorpus).catch(() => {
   /* Embedding init failed — semantic search stays disabled */
 });
