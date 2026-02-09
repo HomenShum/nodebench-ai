@@ -1,0 +1,13 @@
+src/
+src/__tests__/
+dist/__tests__/
+*.test.ts
+*.test.js
+*.test.d.ts
+*.js.map
+vitest.config.ts
+tsconfig.json
+.tmp/
+*.db
+*.db-journal
+node_modules/

@@ -1,0 +1,60 @@
+{
+  "name": "@homenshum/convex-mcp-nodebench",
+  "version": "0.3.0",
+  "description": "Convex-specific MCP server applying NodeBench self-instruct diligence patterns to Convex development. Schema audit, function compliance, deployment gates, persistent gotcha DB, and methodology guidance. Complements Context7 (raw docs) and official Convex MCP (deployment introspection) with structured verification workflows.",
+  "type": "module",
+  "bin": {
+    "convex-mcp-nodebench": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/__tests__",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "keywords": [
+    "mcp",
+    "convex",
+    "model-context-protocol",
+    "schema-audit",
+    "function-compliance",
+    "deploy-gates",
+    "gotcha-db",
+    "self-instruct",
+    "ai-agents",
+    "verification"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HomenShum/nodebench-ai.git",
+    "directory": "packages/convex-mcp-nodebench"
+  },
+  "license": "MIT",
+  "author": "HomenShum",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^11.0.0"
+  },
+  "optionalDependencies": {
+    "@google/genai": "^1.10.0",
+    "openai": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
