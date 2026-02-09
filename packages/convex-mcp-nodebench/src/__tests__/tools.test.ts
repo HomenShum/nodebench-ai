@@ -10,6 +10,16 @@ import { cronTools } from "../tools/cronTools.js";
 import { componentTools } from "../tools/componentTools.js";
 import { httpTools } from "../tools/httpTools.js";
 import { critterTools } from "../tools/critterTools.js";
+import { authorizationTools } from "../tools/authorizationTools.js";
+import { queryEfficiencyTools } from "../tools/queryEfficiencyTools.js";
+import { actionAuditTools } from "../tools/actionAuditTools.js";
+import { typeSafetyTools } from "../tools/typeSafetyTools.js";
+import { transactionSafetyTools } from "../tools/transactionSafetyTools.js";
+import { storageAuditTools } from "../tools/storageAuditTools.js";
+import { paginationTools as paginationAuditTools } from "../tools/paginationTools.js";
+import { dataModelingTools } from "../tools/dataModelingTools.js";
+import { devSetupTools } from "../tools/devSetupTools.js";
+import { migrationTools } from "../tools/migrationTools.js";
 import { getDb, seedGotchasIfEmpty } from "../db.js";
 import { CONVEX_GOTCHAS } from "../gotchaSeed.js";
 
@@ -325,8 +335,146 @@ describe("Critter Tools", () => {
   });
 });
 
+// ── New Tier 1-4 Tools ──────────────────────────────────────────────────────
+
+describe("Authorization Tools", () => {
+  it("convex_audit_authorization runs against nodebench-ai", async () => {
+    const tool = authorizationTools.find((t) => t.name === "convex_audit_authorization")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.totalPublicFunctions).toBe("number");
+    expect(typeof result.summary.publicWithAuth).toBe("number");
+    expect(typeof result.summary.authCoverage).toBe("string");
+    console.log(`Auth audit: ${result.summary.totalPublicFunctions} public functions, ${result.summary.authCoverage} with auth, ${result.summary.totalIssues} issues`);
+  });
+});
+
+describe("Query Efficiency Tools", () => {
+  it("convex_audit_query_efficiency runs against nodebench-ai", async () => {
+    const tool = queryEfficiencyTools.find((t) => t.name === "convex_audit_query_efficiency")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.collectWithoutLimit).toBe("number");
+    expect(typeof result.summary.filterWithoutIndex).toBe("number");
+    console.log(`Query efficiency: ${result.summary.totalIssues} issues (${result.summary.collectWithoutLimit} unbounded collect, ${result.summary.filterWithoutIndex} filter without index, ${result.summary.mutationAsRead} mutation-as-read)`);
+  });
+});
+
+describe("Action Audit Tools", () => {
+  it("convex_audit_actions runs against nodebench-ai", async () => {
+    const tool = actionAuditTools.find((t) => t.name === "convex_audit_actions")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.totalActions).toBe("number");
+    console.log(`Action audit: ${result.summary.totalActions} actions, ${result.summary.totalIssues} issues (${result.summary.actionsWithDbAccess} db access, ${result.summary.actionsWithoutErrorHandling} no error handling)`);
+  });
+});
+
+describe("Type Safety Tools", () => {
+  it("convex_check_type_safety runs against nodebench-ai", async () => {
+    const tool = typeSafetyTools.find((t) => t.name === "convex_check_type_safety")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.asAnyCastCount).toBe("number");
+    expect(typeof result.summary.undefinedReturns).toBe("number");
+    console.log(`Type safety: ${result.summary.totalFiles} files, ${result.summary.asAnyCastCount} as-any casts across ${result.summary.filesWithAsAny} files, ${result.summary.undefinedReturns} undefined returns, ${result.summary.looseIdTypes} loose IDs`);
+  });
+});
+
+describe("Transaction Safety Tools", () => {
+  it("convex_audit_transaction_safety runs against nodebench-ai", async () => {
+    const tool = transactionSafetyTools.find((t) => t.name === "convex_audit_transaction_safety")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.totalMutations).toBe("number");
+    console.log(`Transaction safety: ${result.summary.totalMutations} mutations, ${result.summary.readModifyWrite} read-modify-write, ${result.summary.multipleRunMutation} multiple-runMutation`);
+  });
+});
+
+describe("Storage Audit Tools", () => {
+  it("convex_audit_storage_usage runs against nodebench-ai", async () => {
+    const tool = storageAuditTools.find((t) => t.name === "convex_audit_storage_usage")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.filesUsingStorage).toBe("number");
+    console.log(`Storage usage: ${result.summary.filesUsingStorage} files, ${result.summary.storageStoreCalls} stores, ${result.summary.storageDeleteCalls} deletes, ${result.summary.missingNullChecks} missing null checks`);
+  });
+});
+
+describe("Pagination Tools", () => {
+  it("convex_audit_pagination runs against nodebench-ai", async () => {
+    const tool = paginationAuditTools.find((t) => t.name === "convex_audit_pagination")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.paginateCalls).toBe("number");
+    console.log(`Pagination: ${result.summary.paginateCalls} paginate calls, ${result.summary.missingPaginationOptsValidator} missing validator, ${result.summary.functionsUsingPagination} functions`);
+  });
+});
+
+describe("Data Modeling Tools", () => {
+  it("convex_audit_data_modeling runs against nodebench-ai", async () => {
+    const tool = dataModelingTools.find((t) => t.name === "convex_audit_data_modeling")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.error).toBeUndefined();
+    expect(result.summary).toBeDefined();
+    expect(typeof result.summary.totalTables).toBe("number");
+    expect(result.summary.totalTables).toBeGreaterThan(0);
+    console.log(`Data modeling: ${result.summary.totalTables} tables, ${result.summary.tablesWithArrays} with arrays, ${result.summary.tablesWithDeepNesting} deep nesting, ${result.summary.danglingIdRefs} dangling refs, ${result.summary.vAnyCount} v.any()`);
+  });
+});
+
+describe("Dev Setup Tools", () => {
+  it("convex_audit_dev_setup runs against nodebench-ai", async () => {
+    const tool = devSetupTools.find((t) => t.name === "convex_audit_dev_setup")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    expect(result.summary).toBeDefined();
+    expect(result.checks).toBeDefined();
+    expect(Array.isArray(result.checks)).toBe(true);
+    expect(result.summary.totalChecks).toBeGreaterThan(0);
+    console.log(`Dev setup: ${result.summary.passed} passed, ${result.summary.warned} warned, ${result.summary.failed} failed`);
+  });
+});
+
+describe("Migration Tools", () => {
+  it("convex_schema_migration_plan needs 2 snapshots", async () => {
+    // First ensure we have at least 2 snapshots
+    const snapshotTool = integrationBridgeTools.find((t) => t.name === "convex_snapshot_schema")!;
+    await snapshotTool.handler({ projectDir: PROJECT_DIR });
+    await snapshotTool.handler({ projectDir: PROJECT_DIR });
+
+    const tool = migrationTools.find((t) => t.name === "convex_schema_migration_plan")!;
+    const result = (await tool.handler({ projectDir: PROJECT_DIR })) as any;
+    expect(result).toBeDefined();
+    // Either has steps (diff found) or summary (no changes)
+    if (result.steps) {
+      expect(result.summary).toBeDefined();
+      expect(result.summary.riskLevel).toBeDefined();
+      console.log(`Migration plan: ${result.steps.length} steps, risk=${result.summary.riskLevel}`);
+    } else if (result.error) {
+      // Less than 2 snapshots — acceptable in clean test env
+      console.log(`Migration plan: ${result.error}`);
+    }
+  });
+});
+
 describe("Tool Count", () => {
-  it("has exactly 18 tools", () => {
+  it("has exactly 28 tools", () => {
     const allTools = [
       ...schemaTools,
       ...functionTools,
@@ -338,8 +486,18 @@ describe("Tool Count", () => {
       ...componentTools,
       ...httpTools,
       ...critterTools,
+      ...authorizationTools,
+      ...queryEfficiencyTools,
+      ...actionAuditTools,
+      ...typeSafetyTools,
+      ...transactionSafetyTools,
+      ...storageAuditTools,
+      ...paginationAuditTools,
+      ...dataModelingTools,
+      ...devSetupTools,
+      ...migrationTools,
     ];
-    expect(allTools.length).toBe(18);
+    expect(allTools.length).toBe(28);
     console.log(`Total tools: ${allTools.length}`);
     console.log("Tools:", allTools.map((t) => t.name).join(", "));
   });

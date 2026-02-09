@@ -263,6 +263,156 @@ export const REGISTRY: ToolRegistryEntry[] = [
     phase: "meta",
     complexity: "low",
   },
+  // ── Authorization Tools ──────────────────
+  {
+    name: "convex_audit_authorization",
+    category: "function",
+    tags: ["auth", "authorization", "security", "getUserIdentity", "public", "mutation", "permission"],
+    quickRef: {
+      nextAction: "Fix critical auth issues: add getUserIdentity() checks to public mutations that write data",
+      nextTools: ["convex_audit_functions", "convex_audit_actions"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: ["internal_for_private"],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "high",
+  },
+  // ── Query Efficiency Tools ────────────────
+  {
+    name: "convex_audit_query_efficiency",
+    category: "schema",
+    tags: ["query", "performance", "collect", "filter", "index", "pagination", "efficiency", "table-scan"],
+    quickRef: {
+      nextAction: "Add .take() limits to unbounded .collect() calls and indexes for .filter() patterns",
+      nextTools: ["convex_suggest_indexes", "convex_audit_pagination"],
+      methodology: "convex_index_optimization",
+      relatedGotchas: ["index_field_order"],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "medium",
+  },
+  // ── Action Audit Tools ────────────────────
+  {
+    name: "convex_audit_actions",
+    category: "function",
+    tags: ["action", "ctx.db", "use-node", "fetch", "error-handling", "external-api", "runtime"],
+    quickRef: {
+      nextAction: "Fix critical action issues: remove ctx.db access, add 'use node' directives, wrap external calls in try/catch",
+      nextTools: ["convex_audit_functions", "convex_audit_transaction_safety"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: ["action_from_action"],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "medium",
+  },
+  // ── Type Safety Tools ─────────────────────
+  {
+    name: "convex_check_type_safety",
+    category: "function",
+    tags: ["type", "safety", "as-any", "undefined", "null", "id", "generated", "typescript"],
+    quickRef: {
+      nextAction: "Replace `as any` casts with proper types and use v.id() instead of v.string() for ID fields",
+      nextTools: ["convex_check_validator_coverage", "convex_audit_functions"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "medium",
+  },
+  // ── Transaction Safety Tools ──────────────
+  {
+    name: "convex_audit_transaction_safety",
+    category: "function",
+    tags: ["transaction", "atomicity", "race-condition", "TOCTOU", "runMutation", "consistency"],
+    quickRef: {
+      nextAction: "Combine multiple runMutation calls into single atomic mutation to avoid partial failures",
+      nextTools: ["convex_audit_actions", "convex_audit_functions"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: [],
+      confidence: "medium",
+    },
+    phase: "audit",
+    complexity: "high",
+  },
+  // ── Storage Audit Tools ───────────────────
+  {
+    name: "convex_audit_storage_usage",
+    category: "function",
+    tags: ["storage", "file", "upload", "blob", "getUrl", "orphan", "null-check"],
+    quickRef: {
+      nextAction: "Add null checks for storage.get()/getUrl() and implement file cleanup on record deletion",
+      nextTools: ["convex_audit_functions", "convex_check_type_safety"],
+      methodology: "convex_function_compliance",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "low",
+  },
+  // ── Pagination Tools ──────────────────────
+  {
+    name: "convex_audit_pagination",
+    category: "schema",
+    tags: ["pagination", "paginate", "cursor", "numItems", "paginationOptsValidator", "limit"],
+    quickRef: {
+      nextAction: "Add paginationOptsValidator to paginated queries and bound numItems",
+      nextTools: ["convex_audit_query_efficiency", "convex_suggest_indexes"],
+      methodology: "convex_index_optimization",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "audit",
+    complexity: "low",
+  },
+  // ── Data Modeling Tools ───────────────────
+  {
+    name: "convex_audit_data_modeling",
+    category: "schema",
+    tags: ["modeling", "schema", "nesting", "array", "v.id", "referential-integrity", "normalization"],
+    quickRef: {
+      nextAction: "Fix dangling v.id() references and consider normalizing deeply nested tables",
+      nextTools: ["convex_audit_schema", "convex_suggest_indexes"],
+      methodology: "convex_schema_audit",
+      relatedGotchas: ["system_fields_auto"],
+      confidence: "medium",
+    },
+    phase: "audit",
+    complexity: "medium",
+  },
+  // ── Dev Setup Tools ───────────────────────
+  {
+    name: "convex_audit_dev_setup",
+    category: "deployment",
+    tags: ["setup", "gitignore", "env", "tsconfig", "initialize", "onboarding", "convex-json"],
+    quickRef: {
+      nextAction: "Fix setup issues: update .gitignore, create .env.example, run npx convex dev",
+      nextTools: ["convex_bootstrap_project", "convex_pre_deploy_gate"],
+      methodology: "convex_deploy_verification",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "deploy",
+    complexity: "low",
+  },
+  // ── Migration Tools ───────────────────────
+  {
+    name: "convex_schema_migration_plan",
+    category: "schema",
+    tags: ["migration", "diff", "snapshot", "deploy", "risk", "breaking-change", "backup"],
+    quickRef: {
+      nextAction: "Review migration steps and back up data before deploying if risk is high",
+      nextTools: ["convex_snapshot_schema", "convex_pre_deploy_gate"],
+      methodology: "convex_deploy_verification",
+      relatedGotchas: [],
+      confidence: "high",
+    },
+    phase: "deploy",
+    complexity: "medium",
+  },
 ];
 
 export function getQuickRef(toolName: string): ConvexQuickRef | null {
@@ -367,7 +517,7 @@ export function findTools(query: string): ScoredToolEntry[] {
  *
  * Uses Agent-as-a-Graph bipartite RRF (arxiv:2511.18194):
  * - Tool nodes get direct wRRF with α_T = 1.0
- * - Domain nodes get softer wRRF with α_D = 0.6 (lifts sibling tools in that category)
+ * - Domain nodes get stronger wRRF with α_D = 1.5 (paper-optimal, lifts sibling tools in that category)
  */
 export async function findToolsWithEmbedding(query: string): Promise<ScoredToolEntry[]> {
   const bm25Results = findTools(query);
@@ -394,9 +544,11 @@ export async function findToolsWithEmbedding(query: string): Promise<ScoredToolE
   }
 
   // Type-specific wRRF: α_T for direct tool matches, α_D for domain matches
+  // Paper-optimal (arxiv:2511.18194): α_A=1.5, α_T=1.0, K=60
+  // Validated via 6-config ablation grid in mcp-local tools.test.ts
   const ALPHA_T = 1.0; // tool weight
-  const ALPHA_D = 0.6; // domain weight (gentler — lifts siblings, doesn't dominate)
-  const K = 20;        // RRF k parameter
+  const ALPHA_D = 1.5; // domain weight (paper-optimal — upward traversal boost)
+  const K = 60;        // RRF k parameter (paper-optimal)
 
   // RRF fusion: combine BM25 rank with type-specific embedding ranks
   const fusedScores = new Map<string, number>();

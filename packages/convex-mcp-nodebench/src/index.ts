@@ -30,6 +30,16 @@ import { cronTools } from "./tools/cronTools.js";
 import { componentTools } from "./tools/componentTools.js";
 import { httpTools } from "./tools/httpTools.js";
 import { critterTools } from "./tools/critterTools.js";
+import { authorizationTools } from "./tools/authorizationTools.js";
+import { queryEfficiencyTools } from "./tools/queryEfficiencyTools.js";
+import { actionAuditTools } from "./tools/actionAuditTools.js";
+import { typeSafetyTools } from "./tools/typeSafetyTools.js";
+import { transactionSafetyTools } from "./tools/transactionSafetyTools.js";
+import { storageAuditTools } from "./tools/storageAuditTools.js";
+import { paginationTools } from "./tools/paginationTools.js";
+import { dataModelingTools } from "./tools/dataModelingTools.js";
+import { devSetupTools } from "./tools/devSetupTools.js";
+import { migrationTools } from "./tools/migrationTools.js";
 import { CONVEX_GOTCHAS } from "./gotchaSeed.js";
 import { REGISTRY } from "./tools/toolRegistry.js";
 import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
@@ -48,6 +58,16 @@ const ALL_TOOLS: McpTool[] = [
   ...componentTools,
   ...httpTools,
   ...critterTools,
+  ...authorizationTools,
+  ...queryEfficiencyTools,
+  ...actionAuditTools,
+  ...typeSafetyTools,
+  ...transactionSafetyTools,
+  ...storageAuditTools,
+  ...paginationTools,
+  ...dataModelingTools,
+  ...devSetupTools,
+  ...migrationTools,
 ];
 
 const toolMap = new Map<string, McpTool>();

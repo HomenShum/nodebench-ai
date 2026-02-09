@@ -1,6 +1,6 @@
 {
   "name": "@homenshum/convex-mcp-nodebench",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Convex-specific MCP server applying NodeBench self-instruct diligence patterns to Convex development. Schema audit, function compliance, deployment gates, persistent gotcha DB, and methodology guidance. Complements Context7 (raw docs) and official Convex MCP (deployment introspection) with structured verification workflows.",
   "type": "module",
   "bin": {
