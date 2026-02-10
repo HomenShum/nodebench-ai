@@ -485,7 +485,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             <button
               type="button"
               onClick={onGoHome}
-              className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
             >
               <ArrowRight className="w-3 h-3 rotate-180" />
               <span>Return to Pulse</span>
@@ -544,7 +544,7 @@ function ResearchHubContent(props: ResearchHubProps) {
               <button
                 type="button"
                 onClick={onGoHome}
-                className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
               >
                 <ArrowRight className="w-3 h-3 rotate-180" />
                 <span>Return to Pulse Overview</span>
@@ -768,7 +768,7 @@ function ResearchHubContent(props: ResearchHubProps) {
           {/* RIGHT: COMPACT HUD SIDEBAR */}
           <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden xl:block">
             {/* Gradient separator */}
-            <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-gray-200/0 via-gray-200 to-gray-200/0" />
+            <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-gray-200/0 via-gray-200 to-gray-200/0 dark:from-white/0 dark:via-white/[0.06] dark:to-white/0" />
 
             <div className="space-y-4 pl-4">
               <React.Suspense fallback={<SectionLoading />}>
