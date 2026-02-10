@@ -624,7 +624,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                         <Newspaper className="w-4 h-4 text-gray-800" />
                         <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Executive Synthesis</h3>
                         {selectedDate && (
-                          <span className="px-1.5 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-bold uppercase tracking-wider border border-amber-900/10 rounded">Archive</span>
+                          <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-[9px] font-bold uppercase tracking-wider border border-amber-900/10 dark:border-amber-500/20 rounded">Archive</span>
                         )}
                       </div>
                       <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-indigo-600')} />
@@ -659,7 +659,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <TrendingUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Live Signal Stream</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 text-gray-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Real-time</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Real-time</div>
                   </div>
                   <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>
@@ -680,7 +680,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <Layers className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Institutional Briefing</h3>
                     </div>
-                    <span className="text-[10px] font-medium italic text-gray-400">Deep Analysis</span>
+                    <span className="text-[10px] font-medium text-gray-400">Deep Analysis</span>
                   </div>
                   <React.Suspense fallback={<SectionLoading />}>
                     <BriefingSection
