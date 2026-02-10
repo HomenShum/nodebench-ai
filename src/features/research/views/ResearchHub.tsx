@@ -589,7 +589,7 @@ function ResearchHubContent(props: ResearchHubProps) {
           <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-16">
 
             {/* TAB NAVIGATION */}
-            <nav className="flex items-center gap-1 mb-4 p-1 bg-gray-100/50 rounded-lg border border-gray-200 w-fit">
+            <nav className="flex items-center gap-1 mb-4 p-1 bg-gray-100/50 dark:bg-white/[0.04] rounded-lg border border-gray-200 dark:border-white/[0.06] w-fit">
               {CONTENT_TABS.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -600,8 +600,8 @@ function ResearchHubContent(props: ResearchHubProps) {
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all',
                       activeTab === tab.id
-                        ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                        ? 'bg-white dark:bg-white/[0.08] text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200 dark:border-white/[0.06]'
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -619,10 +619,10 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <div className="space-y-6 animate-in fade-in duration-300">
                   {/* Executive Synthesis */}
                   <section ref={actIRef} data-act-id="actI">
-                    <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+                    <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                       <div className="flex items-center gap-3">
                         <Newspaper className="w-4 h-4 text-gray-800" />
-                        <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.3em]">Executive Synthesis</h3>
+                        <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Executive Synthesis</h3>
                         {selectedDate && (
                           <span className="px-1.5 py-0.5 bg-amber-100 text-amber-900 text-[9px] font-bold uppercase tracking-wider border border-amber-900/10 rounded">Archive</span>
                         )}
@@ -654,14 +654,14 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* SIGNALS TAB: Live Signal Stream */}
               {activeTab === 'signals' && (
                 <section ref={actIIIRef} data-act-id="actIII" className="animate-in fade-in duration-300">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="w-4 h-4 text-orange-600" />
-                      <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.3em]">Live Signal Stream</h3>
+                      <TrendingUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Live Signal Stream</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-50 text-gray-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Real-time</div>
                   </div>
-                  <div className="bg-gray-50/50 p-4 border border-gray-200/60 rounded-lg">
+                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>
                       <FeedSection
                         onItemClick={handleFeedItemClick}
@@ -675,10 +675,10 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* BRIEFING TAB: Institutional Briefing */}
               {activeTab === 'briefing' && (
                 <section ref={actIIRef} data-act-id="actII" className="animate-in fade-in duration-300">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
-                      <Layers className="w-4 h-4 text-blue-600" />
-                      <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.3em]">Institutional Briefing</h3>
+                      <Layers className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Institutional Briefing</h3>
                     </div>
                     <span className="text-[10px] font-medium italic text-gray-400">Deep Analysis</span>
                   </div>
@@ -698,10 +698,10 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* DEALS TAB: Deal Radar */}
               {activeTab === 'deals' && (
                 <section className="animate-in fade-in duration-300 pb-8">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
                       <Briefcase className="w-4 h-4 text-gray-700" />
-                      <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.3em]">Deal Radar</h3>
+                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Deal Radar</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-gray-900 text-white text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
                   </div>
@@ -718,14 +718,14 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* CHANGES TAB: Knowledge Product Layer diffs */}
               {activeTab === 'changes' && (
                 <section className="animate-in fade-in duration-300 pb-8">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
                       <Bell className="w-4 h-4 text-indigo-700" />
-                      <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.3em]">What Changed</h3>
+                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">What Changed</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Sources</div>
                   </div>
-                  <div className="bg-gray-50/50 p-4 border border-gray-200/60 rounded-lg">
+                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense
                       fallback={
                         <div className="flex items-center justify-center py-10 text-sm text-gray-500">
@@ -742,14 +742,14 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* CHANGELOG TAB: Product changelog */}
               {activeTab === 'changelog' && (
                 <section className="animate-in fade-in duration-300 pb-8">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
                       <ScrollText className="w-4 h-4 text-gray-800" />
-                      <h3 className="text-[11px] font-black text-gray-900 uppercase tracking-[0.3em]">Changelog</h3>
+                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Changelog</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-50 text-gray-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Product</div>
                   </div>
-                  <div className="bg-gray-50/50 p-4 border border-gray-200/60 rounded-lg">
+                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense
                       fallback={
                         <div className="flex items-center justify-center py-10 text-sm text-gray-500">
