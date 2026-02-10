@@ -67,17 +67,19 @@ function auditPagination(convexDir: string): {
       }
     }
 
-    // Check: functions using paginate but missing paginationOptsValidator in args
+    // Check: public queries using paginate but missing paginationOptsValidator in args
+    // NOTE: internalQuery doesn't need paginationOptsValidator — it's not client-callable
     const funcPattern = /export\s+(?:const\s+(\w+)\s*=|default)\s+(query|internalQuery)\s*\(/g;
     let m;
     while ((m = funcPattern.exec(content)) !== null) {
       const funcName = m[1] || "default";
+      const funcType = m[2];
       const startLine = content.slice(0, m.index).split("\n").length - 1;
       const chunk = lines.slice(startLine, Math.min(startLine + 30, lines.length)).join("\n");
 
       if (/\.paginate\s*\(/.test(chunk)) {
-        // Check for paginationOptsValidator
-        if (!/paginationOptsValidator/.test(chunk) && !/paginationOpts/.test(chunk)) {
+        // Only flag public queries — internalQuery can use paginate with hardcoded opts
+        if (funcType === "query" && !/paginationOptsValidator/.test(chunk) && !/paginationOpts/.test(chunk)) {
           missingPaginationOptsValidator++;
           issues.push({
             severity: "critical",

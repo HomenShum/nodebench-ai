@@ -470,14 +470,14 @@ function ResearchHubContent(props: ResearchHubProps) {
   return (
     <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-background overflow-hidden`}>
       {!embedded && (
-        <header className="h-20 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-gray-200 shadow-sm">
+        <header className="h-20 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-gray-200 dark:border-white/[0.06] shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
+            <div className="w-10 h-10 bg-gray-900 dark:bg-white/[0.12] rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
-              <div className="text-2xl font-bold tracking-tight text-[color:var(--text-primary)] italic leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
-              <div className="text-[10px] font-black text-gray-900 uppercase tracking-[0.3em] mt-1 ml-0.5 opacity-60">Archive Dossier 2027</div>
+              <div className="text-2xl font-bold tracking-tight text-[color:var(--text-primary)] leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
+              <div className="text-[10px] font-black text-gray-900 dark:text-gray-400 uppercase tracking-[0.3em] mt-1 ml-0.5 opacity-60">Archive Dossier 2027</div>
             </div>
           </div>
 
@@ -494,7 +494,7 @@ function ResearchHubContent(props: ResearchHubProps) {
 
           <div className="flex items-center gap-8">
             {/* Historical Date Selector */}
-            <div className="flex items-center gap-2 p-1 bg-gray-100/50 border border-gray-200">
+            <div className="flex items-center gap-2 p-1 bg-gray-100/50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06]">
               {availableDates && availableDates.length > 0 ? (
                 <>
                   {availableDates.slice(0, 3).map((date: string) => (
@@ -503,18 +503,18 @@ function ResearchHubContent(props: ResearchHubProps) {
                       key={date}
                       onClick={() => setSelectedDate(date)}
                       className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
-                        ? "bg-gray-950 text-white shadow-lg"
-                        : "text-gray-400 hover:text-gray-900"
+                        ? "bg-gray-950 dark:bg-white/[0.12] text-white shadow-lg"
+                        : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
                     >
                       {new Date(date + "T00:00:00").toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </button>
                   ))}
-                  <div className="w-[1px] h-3 bg-gray-300 mx-1" />
+                  <div className="w-[1px] h-3 bg-gray-300 dark:bg-white/[0.08] mx-1" />
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-gray-950 text-white" : "text-gray-400"}`}
+                    className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-gray-400"}`}
                   >
                     Latest
                   </button>
@@ -525,11 +525,11 @@ function ResearchHubContent(props: ResearchHubProps) {
             </div>
 
             <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
-              <div className="w-2 h-2 rounded-full bg-gray-700 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-gray-700 dark:bg-gray-400 animate-pulse" />
               <span>Encrypted Intelligence Stream</span>
             </div>
-            <div className="hidden sm:block w-[1px] h-6 bg-gray-200" />
-            <div className="text-sm font-semibold text-gray-600 font-mono tracking-widest">
+            <div className="hidden sm:block w-[1px] h-6 bg-gray-200 dark:bg-white/[0.06]" />
+            <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 font-mono tracking-widest">
               <span>{briefingDateString?.replace(/-/g, '.').toUpperCase()}</span>
             </div>
           </div>
@@ -540,7 +540,7 @@ function ResearchHubContent(props: ResearchHubProps) {
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-background">
         {embedded && onGoHome && (
           <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200 dark:border-white/[0.06] pb-3">
               <button
                 type="button"
                 onClick={onGoHome}
@@ -621,7 +621,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <section ref={actIRef} data-act-id="actI">
                     <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                       <div className="flex items-center gap-3">
-                        <Newspaper className="w-4 h-4 text-gray-800" />
+                        <Newspaper className="w-4 h-4 text-gray-800 dark:text-gray-300" />
                         <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Executive Synthesis</h3>
                         {selectedDate && (
                           <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-[9px] font-bold uppercase tracking-wider border border-amber-900/10 dark:border-amber-500/20 rounded">Archive</span>
@@ -700,7 +700,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <section className="animate-in fade-in duration-300 pb-8">
                   <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
-                      <Briefcase className="w-4 h-4 text-gray-700" />
+                      <Briefcase className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Deal Radar</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-gray-900 dark:bg-white/[0.08] text-white dark:text-gray-300 text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
@@ -720,7 +720,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <section className="animate-in fade-in duration-300 pb-8">
                   <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
-                      <Bell className="w-4 h-4 text-indigo-700" />
+                      <Bell className="w-4 h-4 text-indigo-700 dark:text-indigo-400" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">What Changed</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Sources</div>
@@ -744,7 +744,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <section className="animate-in fade-in duration-300 pb-8">
                   <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
-                      <ScrollText className="w-4 h-4 text-gray-800" />
+                      <ScrollText className="w-4 h-4 text-gray-800 dark:text-gray-300" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Changelog</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Product</div>

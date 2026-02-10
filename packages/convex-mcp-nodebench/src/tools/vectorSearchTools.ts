@@ -61,13 +61,20 @@ function auditVectorSearch(convexDir: string): {
   const schemaPath = join(convexDir, "schema.ts");
 
   // Parse schema for vectorIndex definitions
-  const vectorIndexes: Array<{ table: string; dimensions: number; filterFields: string[]; line: number }> = [];
+  const vectorIndexes: Array<{ tableName: string; indexName: string; dimensions: number; filterFields: string[]; line: number }> = [];
 
   if (existsSync(schemaPath)) {
     const schema = readFileSync(schemaPath, "utf-8");
     const lines = schema.split("\n");
 
+    // Track current table context: scan for "tableName: defineTable(" or "tableName = defineTable("
+    let currentTable = "";
     for (let i = 0; i < lines.length; i++) {
+      const tableMatch = lines[i].match(/(\w+)\s*[:=]\s*defineTable\s*\(/);
+      if (tableMatch) {
+        currentTable = tableMatch[1];
+      }
+
       // Match .vectorIndex("name", { ... })
       const viMatch = lines[i].match(/\.vectorIndex\s*\(\s*["']([^"']+)["']/);
       if (viMatch) {
@@ -81,7 +88,7 @@ function auditVectorSearch(convexDir: string): {
           ? filterMatch[1].match(/["']([^"']+)["']/g)?.map(s => s.replace(/["']/g, "")) ?? []
           : [];
 
-        vectorIndexes.push({ table: viMatch[1], dimensions: dims, filterFields: filters, line: i + 1 });
+        vectorIndexes.push({ tableName: currentTable || viMatch[1], indexName: viMatch[1], dimensions: dims, filterFields: filters, line: i + 1 });
 
         // Check: uncommon dimension size
         if (dims > 0 && !KNOWN_DIMENSIONS[dims]) {
@@ -130,19 +137,20 @@ function auditVectorSearch(convexDir: string): {
     const lines = content.split("\n");
 
     for (let i = 0; i < lines.length; i++) {
+      // vectorSearch("tableName", "indexName", options) — first arg is TABLE name
       const vsMatch = lines[i].match(/\.vectorSearch\s*\(\s*["']([^"']+)["']/);
       if (vsMatch) {
         vectorSearchCallCount++;
-        const indexName = vsMatch[1];
+        const tableName = vsMatch[1];
 
-        // Check if the referenced index exists
-        const matchingIdx = vectorIndexes.find(vi => vi.table === indexName);
+        // Check if the referenced table has any vector index
+        const matchingIdx = vectorIndexes.find(vi => vi.tableName === tableName);
         if (!matchingIdx && vectorIndexes.length > 0) {
           issues.push({
             severity: "critical",
             location: `${relativePath}:${i + 1}`,
-            message: `vectorSearch references index "${indexName}" which is not defined in schema.ts.`,
-            fix: `Add a .vectorIndex("${indexName}", { ... }) to the appropriate table in schema.ts`,
+            message: `vectorSearch references table "${tableName}" which has no vectorIndex defined in schema.ts.`,
+            fix: `Add a .vectorIndex("by_embedding", { ... }) to the "${tableName}" table in schema.ts`,
           });
         }
 
@@ -152,7 +160,7 @@ function auditVectorSearch(convexDir: string): {
           issues.push({
             severity: "info",
             location: `${relativePath}:${i + 1}`,
-            message: `vectorSearch on "${indexName}" doesn't use filter — available filterFields: ${matchingIdx.filterFields.join(", ")}`,
+            message: `vectorSearch on "${tableName}" doesn't use filter — available filterFields: ${matchingIdx.filterFields.join(", ")}`,
             fix: "Add filter parameter to narrow results and improve performance",
           });
         }
@@ -165,7 +173,7 @@ function auditVectorSearch(convexDir: string): {
             issues.push({
               severity: "critical",
               location: `${relativePath}:${i + 1}`,
-              message: `Vector dimensions mismatch: code uses ${codeDims} but schema defines ${matchingIdx.dimensions} for index "${indexName}".`,
+              message: `Vector dimensions mismatch: code uses ${codeDims} but schema defines ${matchingIdx.dimensions} for table "${tableName}".`,
               fix: `Ensure embedding model output (${codeDims}) matches schema dimensions (${matchingIdx.dimensions})`,
             });
           }
@@ -174,7 +182,7 @@ function auditVectorSearch(convexDir: string): {
     }
   }
 
-  const tablesWithVectors = [...new Set(vectorIndexes.map(vi => vi.table))];
+  const tablesWithVectors = [...new Set(vectorIndexes.map(vi => vi.tableName))];
   const dimensions = [...new Set(vectorIndexes.map(vi => vi.dimensions).filter(d => d > 0))];
 
   return {

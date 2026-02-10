@@ -29,8 +29,8 @@ function LastEditorDisplay({ userId }: { userId: string }) {
 
   if (!user) {
     return (
-      <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic">
-        by {userId.slice(-8)} (loading...)
+      <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic inline-flex items-center gap-1">
+        by <span className="inline-block w-16 h-2.5 bg-[var(--bg-hover)] rounded animate-pulse" />
       </span>
     );
   }

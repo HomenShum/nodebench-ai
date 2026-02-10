@@ -94,7 +94,9 @@ function auditAuthorization(convexDir: string): {
         const body = lines.slice(i, endLine).join("\n");
 
         const hasAuthCheck = /ctx\.auth\.getUserIdentity\s*\(\s*\)/.test(body) ||
-          /getUserIdentity/.test(body);
+          /getUserIdentity/.test(body) ||
+          /getAuthUserId/.test(body) ||
+          /getAuthSessionId/.test(body);
         const hasDbWrite = dbWriteOps.test(body);
         const isSensitiveName = writeSensitive.test(funcName);
 
@@ -105,7 +107,6 @@ function auditAuthorization(convexDir: string): {
           const identityAssign = body.match(/(?:const|let)\s+(\w+)\s*=\s*await\s+ctx\.auth\.getUserIdentity\s*\(\s*\)/);
           if (identityAssign) {
             const varName = identityAssign[1];
-            // Look for null check: if (!var), if (var === null), if (var == null), if (!var)
             const hasNullCheck = new RegExp(
               `if\\s*\\(\\s*!${varName}\\b|if\\s*\\(\\s*${varName}\\s*===?\\s*null|if\\s*\\(\\s*!${varName}\\s*\\)`
             ).test(body);
@@ -120,22 +121,40 @@ function auditAuthorization(convexDir: string): {
               });
             }
           }
+
+          // Check: getAuthUserId called but return not null-checked
+          const authUserAssign = body.match(/(?:const|let)\s+(\w+)\s*=\s*await\s+getAuthUserId\s*\(/);
+          if (authUserAssign) {
+            const varName = authUserAssign[1];
+            const hasNullCheck = new RegExp(
+              `if\\s*\\(\\s*!${varName}\\b|if\\s*\\(\\s*${varName}\\s*===?\\s*null|throw.*!${varName}`
+            ).test(body);
+            if (!hasNullCheck) {
+              uncheckedIdentity++;
+              issues.push({
+                severity: "critical",
+                location: `${relativePath}:${i + 1}`,
+                functionName: funcName,
+                message: `${ft} "${funcName}" calls getAuthUserId() but doesn't check for null. Unauthenticated users will get null userId.`,
+                fix: `Add: if (!${varName}) { throw new Error("Not authenticated"); }`,
+              });
+            }
+          }
         } else {
           withoutAuth++;
 
           // Critical: public mutation/action with DB writes but no auth
           if ((ft === "mutation" || ft === "action") && hasDbWrite) {
+            const sensitiveHint = isSensitiveName ? ` Name "${funcName}" suggests a destructive operation.` : "";
             issues.push({
               severity: "critical",
               location: `${relativePath}:${i + 1}`,
               functionName: funcName,
-              message: `Public ${ft} "${funcName}" writes to DB without auth check. Any client can call this.`,
+              message: `Public ${ft} "${funcName}" writes to DB without auth check. Any client can call this.${sensitiveHint}`,
               fix: `Add: const identity = await ctx.auth.getUserIdentity(); if (!identity) throw new Error("Not authenticated");`,
             });
-          }
-
-          // Critical: sensitive-named function without auth
-          if (isSensitiveName) {
+          } else if (isSensitiveName) {
+            // Only flag sensitive name separately if not already caught by DB-write check
             issues.push({
               severity: "critical",
               location: `${relativePath}:${i + 1}`,

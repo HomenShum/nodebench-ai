@@ -20,9 +20,9 @@ function collectTsFiles(dir: string): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     const full = join(dir, entry.name);
-    if (entry.isDirectory() && entry.name !== "node_modules" && entry.name !== "_generated") {
+    if (entry.isDirectory() && entry.name !== "node_modules" && entry.name !== "_generated" && !entry.name.startsWith("_type")) {
       results.push(...collectTsFiles(full));
-    } else if (entry.isFile() && entry.name.endsWith(".ts")) {
+    } else if (entry.isFile() && entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")) {
       results.push(full);
     }
   }

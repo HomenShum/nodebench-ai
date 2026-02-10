@@ -74,7 +74,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         {isOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-h-80 overflow-y-auto">
+            <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-white dark:bg-[#09090B] rounded-lg shadow-xl border border-gray-200 dark:border-white/[0.06] py-1 max-h-80 overflow-y-auto">
               {MODELS.map((model) => {
                 const style = PROVIDER_COLORS[model.provider];
                 const Icon = TIER_ICONS[model.tier];
@@ -84,7 +84,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     type="button"
                     key={model.id}
                     onClick={() => { onChange(model.id); setIsOpen(false); }}
-                    className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center gap-2 ${isSelected ? 'bg-gray-50' : ''}`}
+                    className={`w-full px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/[0.03] flex items-center gap-2 ${isSelected ? 'bg-gray-50 dark:bg-white/[0.03]' : ''}`}
                   >
                     <span className="text-sm">{style.icon}</span>
                     <div className="flex-1 min-w-0">
@@ -118,7 +118,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               filterProvider === provider
                 ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]"
             }`}
           >
             {provider === "all"
@@ -147,7 +147,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               className={`p-3 rounded-lg border-2 text-left transition-all ${
                 isSelected
                   ? `${style.border} ${style.bg} ring-2 ring-offset-1 ring-indigo-500`
-                  : "border-gray-200 hover:border-gray-300 bg-white"
+                  : "border-gray-200 dark:border-white/[0.06] hover:border-gray-300 dark:hover:border-white/[0.1] bg-white dark:bg-[#09090B]"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -165,7 +165,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 </div>
               </div>
               <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
-                <span className="px-1.5 py-0.5 bg-gray-100 rounded">{model.contextWindow}</span>
+                <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-white/[0.06] rounded">{model.contextWindow}</span>
               </div>
             </button>
           );

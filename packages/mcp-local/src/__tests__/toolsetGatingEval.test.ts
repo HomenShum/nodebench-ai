@@ -51,6 +51,10 @@ import { patternTools } from "../tools/patternTools.js";
 import { gitWorkflowTools } from "../tools/gitWorkflowTools.js";
 import { seoTools } from "../tools/seoTools.js";
 import { voiceBridgeTools } from "../tools/voiceBridgeTools.js";
+import { critterTools } from "../tools/critterTools.js";
+import { emailTools } from "../tools/emailTools.js";
+import { rssTools } from "../tools/rssTools.js";
+import { architectTools } from "../tools/architectTools.js";
 import { createMetaTools } from "../tools/metaTools.js";
 import type { McpTool } from "../types.js";
 
@@ -89,12 +93,16 @@ const TOOLSET_MAP: Record<string, McpTool[]> = {
   git_workflow: gitWorkflowTools,
   seo: seoTools,
   voice_bridge: voiceBridgeTools,
+  critter: critterTools,
+  email: emailTools,
+  rss: rssTools,
+  architect: architectTools,
 };
 
 const PRESETS: Record<string, string[]> = {
   meta: [],
   lite: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"],
-  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark", "session_memory", "toon", "pattern", "git_workflow", "seo", "voice_bridge"],
+  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark", "session_memory", "toon", "pattern", "git_workflow", "seo", "voice_bridge", "critter", "email", "rss", "architect"],
   full: Object.keys(TOOLSET_MAP),
 };
 

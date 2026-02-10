@@ -28,9 +28,9 @@ export function ConfirmationDialog({
   if (!isOpen) return null;
 
   const variantStyles = {
-    danger: 'bg-red-50 border-red-200',
-    warning: 'bg-yellow-50 border-yellow-200',
-    info: 'bg-blue-50 border-blue-200',
+    danger: 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20',
+    warning: 'bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/20',
+    info: 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/20',
   };
 
   const buttonStyles = {
@@ -43,7 +43,7 @@ export function ConfirmationDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-md w-full mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-yellow-600" />
             <h3 className="font-semibold text-[var(--text-primary)]">{title}</h3>

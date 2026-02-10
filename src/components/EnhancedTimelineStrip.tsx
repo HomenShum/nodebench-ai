@@ -113,7 +113,7 @@ export function EnhancedTimelineStrip({
 
   return (
     <div
-      className={`${sticky ? 'sticky top-0 z-40' : ''} bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm ${className}`}
+      className={`${sticky ? 'sticky top-0 z-40' : ''} bg-white/95 dark:bg-[#09090B]/95 backdrop-blur-sm border-b border-gray-200 dark:border-white/[0.06] shadow-sm ${className}`}
     >
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Header with filter toggle */}
@@ -162,7 +162,7 @@ export function EnhancedTimelineStrip({
                       key={cat}
                       onClick={() => toggleFilter(cat)}
                       className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs border transition-all ${
-                        isActive ? config.color : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                        isActive ? config.color : 'bg-gray-50 dark:bg-white/[0.03] text-gray-500 border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]'
                       }`}
                     >
                       <Icon className="w-3 h-3" />
@@ -185,7 +185,7 @@ export function EnhancedTimelineStrip({
           <button
             type="button"
             onClick={() => scroll('left')}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -239,7 +239,7 @@ export function EnhancedTimelineStrip({
           <button
             type="button"
             onClick={() => scroll('right')}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Scroll right"
           >
             <ChevronRight className="w-4 h-4" />

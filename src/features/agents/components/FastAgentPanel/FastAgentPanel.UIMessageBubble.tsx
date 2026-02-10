@@ -159,8 +159,8 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
     <div ref={containerRef} className="relative min-h-[100px]">
       {/* Show placeholder until visible */}
       {!isVisible && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded">
-          <div className="text-xs text-[var(--text-muted)]">Loading...</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded animate-pulse">
+          <div className="w-8 h-8 rounded-lg bg-[var(--bg-hover)]" />
         </div>
       )}
       {/* Only load image once visible */}
@@ -1758,136 +1758,136 @@ export function FastAgentUIMessageBubble({
   const { citedCitationLibrary, entityLibrary } = useMemo(() => {
     if (isUser) return { citedCitationLibrary: undefined, entityLibrary: undefined };
 
-		// Parse NodeBench live-feed tool output into deterministic citation records so
-		// tokens like `{{cite:feed_1|...}}` can resolve to URLs + published dates.
-		function parseLiveFeedToolOutput(text: string): Array<{
-			id: string;
-			title: string;
-			url?: string;
-			source?: string;
-			publishedAt?: string;
-			summary?: string;
-		}> {
-			const raw = String(text ?? "");
-			if (!raw.includes("Latest feed items") && !raw.includes("Top Headlines")) return [];
+    // Parse NodeBench live-feed tool output into deterministic citation records so
+    // tokens like `{{cite:feed_1|...}}` can resolve to URLs + published dates.
+    function parseLiveFeedToolOutput(text: string): Array<{
+      id: string;
+      title: string;
+      url?: string;
+      source?: string;
+      publishedAt?: string;
+      summary?: string;
+    }> {
+      const raw = String(text ?? "");
+      if (!raw.includes("Latest feed items") && !raw.includes("Top Headlines")) return [];
 
-			const lines = raw.split(/\r?\n/);
-			type Item = {
-				idx: number;
-				title: string;
-				url?: string;
-				source?: string;
-				publishedAt?: string;
-				summary?: string;
-			};
-			const items: Item[] = [];
-			let cur: Item | null = null;
+      const lines = raw.split(/\r?\n/);
+      type Item = {
+        idx: number;
+        title: string;
+        url?: string;
+        source?: string;
+        publishedAt?: string;
+        summary?: string;
+      };
+      const items: Item[] = [];
+      let cur: Item | null = null;
 
-			const pushCur = () => {
-				if (!cur) return;
-				items.push(cur);
-				cur = null;
-			};
+      const pushCur = () => {
+        if (!cur) return;
+        items.push(cur);
+        cur = null;
+      };
 
-			for (const line of lines) {
-				const mIndex = /^\s*(\d+)\.\s+(.*)\s*$/.exec(line);
-				if (mIndex) {
-					pushCur();
-					cur = { idx: Number(mIndex[1]), title: mIndex[2] };
-					continue;
-				}
+      for (const line of lines) {
+        const mIndex = /^\s*(\d+)\.\s+(.*)\s*$/.exec(line);
+        if (mIndex) {
+          pushCur();
+          cur = { idx: Number(mIndex[1]), title: mIndex[2] };
+          continue;
+        }
 
-				if (!cur) continue;
+        if (!cur) continue;
 
-				const mSource = /^\s*(?:-\s*)?Source:\s*(.*?)\s*(?:\||$)/.exec(line);
-				if (mSource && !cur.source) {
-					cur.source = mSource[1]?.trim();
-				}
+        const mSource = /^\s*(?:-\s*)?Source:\s*(.*?)\s*(?:\||$)/.exec(line);
+        if (mSource && !cur.source) {
+          cur.source = mSource[1]?.trim();
+        }
 
-				const mPublished = /Published:\s*([^|\n]+)\s*$/.exec(line);
-				if (mPublished && !cur.publishedAt) {
-					cur.publishedAt = mPublished[1]?.trim();
-				}
+        const mPublished = /Published:\s*([^|\n]+)\s*$/.exec(line);
+        if (mPublished && !cur.publishedAt) {
+          cur.publishedAt = mPublished[1]?.trim();
+        }
 
-				const mUrl = /^\s*(?:-\s*)?URL:\s*(\S.*)\s*$/.exec(line);
-				if (mUrl && !cur.url) {
-					cur.url = mUrl[1]?.trim();
-				}
+        const mUrl = /^\s*(?:-\s*)?URL:\s*(\S.*)\s*$/.exec(line);
+        if (mUrl && !cur.url) {
+          cur.url = mUrl[1]?.trim();
+        }
 
-				const mSummary = /^\s*(?:-\s*)?Summary:\s*(\S.*)\s*$/.exec(line);
-				if (mSummary && !cur.summary) {
-					cur.summary = mSummary[1]?.trim();
-				}
-			}
-			pushCur();
+        const mSummary = /^\s*(?:-\s*)?Summary:\s*(\S.*)\s*$/.exec(line);
+        if (mSummary && !cur.summary) {
+          cur.summary = mSummary[1]?.trim();
+        }
+      }
+      pushCur();
 
-			return items
-				.filter((i) => Number.isFinite(i.idx) && i.idx > 0 && Boolean(i.title))
-				.map((i) => ({
-					id: `feed_${i.idx}`,
-					title: i.title,
-					url: i.url,
-					source: i.source,
-					publishedAt: i.publishedAt,
-					summary: i.summary,
-				}));
-		}
+      return items
+        .filter((i) => Number.isFinite(i.idx) && i.idx > 0 && Boolean(i.title))
+        .map((i) => ({
+          id: `feed_${i.idx}`,
+          title: i.title,
+          url: i.url,
+          source: i.source,
+          publishedAt: i.publishedAt,
+          summary: i.summary,
+        }));
+    }
 
-		// Many assistant responses include a markdown "Sources Cited" section with real links
-		// (e.g. `- [Title](https://...) {{cite:feed_1|Title|type:source}}`).
-		// If tool-result parts aren't persisted, this is still enough to make the dropdown titles clickable.
-		function parseCitationUrlsFromText(text: string): Map<string, string> {
-			const urlById = new Map<string, string>();
-			const raw = String(text ?? '');
-			if (!raw.includes('{{cite:')) return urlById;
+    // Many assistant responses include a markdown "Sources Cited" section with real links
+    // (e.g. `- [Title](https://...) {{cite:feed_1|Title|type:source}}`).
+    // If tool-result parts aren't persisted, this is still enough to make the dropdown titles clickable.
+    function parseCitationUrlsFromText(text: string): Map<string, string> {
+      const urlById = new Map<string, string>();
+      const raw = String(text ?? '');
+      if (!raw.includes('{{cite:')) return urlById;
 
-			const extractUrl = (line: string | undefined): string | undefined => {
-				const rawLine = String(line ?? '').trim();
-				if (!rawLine) return undefined;
+      const extractUrl = (line: string | undefined): string | undefined => {
+        const rawLine = String(line ?? '').trim();
+        if (!rawLine) return undefined;
 
-				const mUrlLine = /\bURL:\s*(https?:\/\/\S+)\s*$/i.exec(rawLine);
-				if (mUrlLine?.[1]) return mUrlLine[1].trim();
+        const mUrlLine = /\bURL:\s*(https?:\/\/\S+)\s*$/i.exec(rawLine);
+        if (mUrlLine?.[1]) return mUrlLine[1].trim();
 
-				const mMdLink = /\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/.exec(rawLine);
-				if (mMdLink?.[1]) return mMdLink[1].trim();
+        const mMdLink = /\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/.exec(rawLine);
+        if (mMdLink?.[1]) return mMdLink[1].trim();
 
-				const mPlain = /(https?:\/\/\S+)/.exec(rawLine);
-				if (mPlain?.[1]) return mPlain[1].trim();
-				return undefined;
-			};
+        const mPlain = /(https?:\/\/\S+)/.exec(rawLine);
+        if (mPlain?.[1]) return mPlain[1].trim();
+        return undefined;
+      };
 
-			const lines = raw.split(/\r?\n/);
-			for (let i = 0; i < lines.length; i++) {
-				const line = lines[i] ?? '';
-				const citeIds: string[] = [];
-				const citeRe = /\{\{cite:([^|}]+)(?:\|([^|}]+))?(?:\|type:([^}]+))?\}\}/g;
-				let m: RegExpExecArray | null;
-				while ((m = citeRe.exec(line))) {
-					if (m[1]) citeIds.push(m[1]);
-				}
-				if (citeIds.length === 0) continue;
+      const lines = raw.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i] ?? '';
+        const citeIds: string[] = [];
+        const citeRe = /\{\{cite:([^|}]+)(?:\|([^|}]+))?(?:\|type:([^}]+))?\}\}/g;
+        let m: RegExpExecArray | null;
+        while ((m = citeRe.exec(line))) {
+          if (m[1]) citeIds.push(m[1]);
+        }
+        if (citeIds.length === 0) continue;
 
-				const url =
-					extractUrl(line) ??
-					extractUrl(lines[i + 1]) ??
-					extractUrl(lines[i + 2]);
-				if (!url) continue;
+        const url =
+          extractUrl(line) ??
+          extractUrl(lines[i + 1]) ??
+          extractUrl(lines[i + 2]);
+        if (!url) continue;
 
-				for (const id of citeIds) {
-					if (!urlById.has(id)) urlById.set(id, url);
-				}
-			}
+        for (const id of citeIds) {
+          if (!urlById.has(id)) urlById.set(id, url);
+        }
+      }
 
-			return urlById;
-		}
+      return urlById;
+    }
 
-		// Use the message timestamp as the stable "accessed" time for any sources used in this response.
-		// (Avoids confusing per-render Date.now() differences.)
-		const accessedAt = new Date(
-			typeof message._creationTime === 'number' && Number.isFinite(message._creationTime)
-				? message._creationTime
-				: Date.now(),
-		).toISOString();
+    // Use the message timestamp as the stable "accessed" time for any sources used in this response.
+    // (Avoids confusing per-render Date.now() differences.)
+    const accessedAt = new Date(
+      typeof message._creationTime === 'number' && Number.isFinite(message._creationTime)
+        ? message._creationTime
+        : Date.now(),
+    ).toISOString();
 
     // Build a master library from fusion search results (tool outputs embed structured payload markers)
     let masterCitationLibrary = createCitationLibrary();
@@ -1895,34 +1895,34 @@ export function FastAgentUIMessageBubble({
 
     const toolResultParts = message.parts.filter((p: any) => p.type === 'tool-result');
 
-			// Ingest live feed tool outputs so `feed_#` citations can resolve to real URLs.
-			for (const part of toolResultParts) {
-				const toolName = (part as any).toolName as string | undefined;
-				const toolOutput = (part as any).output ?? (part as any).result;
-				const outputText = typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput ?? '', null, 2);
-				// Tool name may vary depending on how it's registered; also allow content-based detection.
-				const looksLikeLiveFeed =
-					(toolName && toolName.toLowerCase().includes('l ivefeed'.replace(' ', ''))) ||
-					outputText.includes('Latest feed items') ||
-					outputText.includes('Top Headlines');
-				if (!looksLikeLiveFeed) continue;
+    // Ingest live feed tool outputs so `feed_#` citations can resolve to real URLs.
+    for (const part of toolResultParts) {
+      const toolName = (part as any).toolName as string | undefined;
+      const toolOutput = (part as any).output ?? (part as any).result;
+      const outputText = typeof toolOutput === 'string' ? toolOutput : JSON.stringify(toolOutput ?? '', null, 2);
+      // Tool name may vary depending on how it's registered; also allow content-based detection.
+      const looksLikeLiveFeed =
+        (toolName && toolName.toLowerCase().includes('l ivefeed'.replace(' ', ''))) ||
+        outputText.includes('Latest feed items') ||
+        outputText.includes('Top Headlines');
+      if (!looksLikeLiveFeed) continue;
 
-				for (const item of parseLiveFeedToolOutput(outputText)) {
-					if (!item.id || seenCitationIds.has(item.id)) continue;
-					seenCitationIds.add(item.id);
+      for (const item of parseLiveFeedToolOutput(outputText)) {
+        if (!item.id || seenCitationIds.has(item.id)) continue;
+        seenCitationIds.add(item.id);
 
-					masterCitationLibrary = addCitation(masterCitationLibrary, {
-						id: item.id,
-						type: 'source',
-						label: (item.title || item.id).slice(0, 120),
-						fullText: [item.title, item.summary].filter(Boolean).join(' — ').slice(0, 500),
-						url: item.url,
-						author: item.source,
-						publishedAt: item.publishedAt,
-						accessedAt,
-					});
-				}
-			}
+        masterCitationLibrary = addCitation(masterCitationLibrary, {
+          id: item.id,
+          type: 'source',
+          label: (item.title || item.id).slice(0, 120),
+          fullText: [item.title, item.summary].filter(Boolean).join(' — ').slice(0, 500),
+          url: item.url,
+          author: item.source,
+          publishedAt: item.publishedAt,
+          accessedAt,
+        });
+      }
+    }
 
     for (const part of toolResultParts) {
       const toolName = (part as any).toolName as string | undefined;
@@ -1944,7 +1944,7 @@ export function FastAgentUIMessageBubble({
           url: r.url,
           author: r.source,
           publishedAt: r.publishedAt,
-				accessedAt,
+          accessedAt,
         });
       }
     }
@@ -1972,16 +1972,16 @@ export function FastAgentUIMessageBubble({
           fullText: [s.title, s.description].filter(Boolean).join(' — ').slice(0, 500),
           url,
           author: s.domain,
-				publishedAt: s.publishedAt,
-				accessedAt,
+          publishedAt: s.publishedAt,
+          accessedAt,
         });
       }
     }
 
-			// Build the "cited" library in order of appearance in the final text, so markers are [1], [2], ...
-			const finalText = visibleText || message.text || '';
-			const urlByCitationId = parseCitationUrlsFromText(finalText);
-			const citationTokens = parseCitations(finalText);
+    // Build the "cited" library in order of appearance in the final text, so markers are [1], [2], ...
+    const finalText = visibleText || message.text || '';
+    const urlByCitationId = parseCitationUrlsFromText(finalText);
+    const citationTokens = parseCitations(finalText);
     const citeOrder: string[] = [];
     const citeTokenById = new Map<string, typeof citationTokens[number]>();
     for (const token of citationTokens) {
@@ -1998,16 +1998,16 @@ export function FastAgentUIMessageBubble({
         const tokenType = (token?.type as CitationType | undefined) ?? undefined;
         const type = tokenType ?? base?.type ?? 'source';
 
-				citedCitationLibrary = addCitation(citedCitationLibrary, {
+        citedCitationLibrary = addCitation(citedCitationLibrary, {
           id,
           type,
           label: token?.label || base?.label || id,
           fullText: base?.fullText || token?.label || id,
-					url: base?.url ?? urlByCitationId.get(id),
+          url: base?.url ?? urlByCitationId.get(id),
           author: base?.author,
           publishedAt: base?.publishedAt,
-					// Ensure we always show a deterministic date, even for citations that only exist as inline tokens.
-					accessedAt: base?.accessedAt ?? accessedAt,
+          // Ensure we always show a deterministic date, even for citations that only exist as inline tokens.
+          accessedAt: base?.accessedAt ?? accessedAt,
         });
       }
     }
@@ -2136,10 +2136,10 @@ export function FastAgentUIMessageBubble({
       role="article"
       aria-label={isUser ? "Your message" : "Assistant response"}
       className={cn(
-      "flex gap-3 mb-6 group msg-entrance",
-      isUser ? "justify-end" : "justify-start",
-      isChild && "ml-0" // Child messages already have margin from parent container
-    )}>
+        "flex gap-3 mb-6 group msg-entrance",
+        isUser ? "justify-end" : "justify-start",
+        isChild && "ml-0" // Child messages already have margin from parent container
+      )}>
       {/* Agent Avatar - Show on LEFT side for agent messages */}
       {!isUser && (
         <div className="flex-shrink-0">
@@ -2266,137 +2266,137 @@ export function FastAgentUIMessageBubble({
             completedCount={toolParts.filter(p => p.type === 'tool-result').length}
             isStreaming={message.status === 'streaming'}
           >
-          <div className="w-full">
-            {toolParts.map((part, idx) => {
-              // Only render tool calls, not results (results are nested in steps)
-              if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
+            <div className="w-full">
+              {toolParts.map((part, idx) => {
+                // Only render tool calls, not results (results are nested in steps)
+                if (part.type !== 'tool-call' && part.type !== 'tool-result' && part.type !== 'tool-error') return null;
 
-              const toolName = (part as any).toolName;
+                const toolName = (part as any).toolName;
 
-              // ═══════════════════════════════════════════════════════════════
-              // PRECEDENCE 1: Fusion Search tools → FusedSearchResults
-              // ═══════════════════════════════════════════════════════════════
-              if (isFusionSearchTool(toolName) && part.type === 'tool-result') {
-                // Pass toolName for structured observability logging
-                const toolOutput = (part as any).output ?? (part as any).result;
-                const parsed = parseFusionSearchOutput(toolOutput, toolName);
-                if (parsed.isValid && parsed.results.length > 0) {
+                // ═══════════════════════════════════════════════════════════════
+                // PRECEDENCE 1: Fusion Search tools → FusedSearchResults
+                // ═══════════════════════════════════════════════════════════════
+                if (isFusionSearchTool(toolName) && part.type === 'tool-result') {
+                  // Pass toolName for structured observability logging
+                  const toolOutput = (part as any).output ?? (part as any).result;
+                  const parsed = parseFusionSearchOutput(toolOutput, toolName);
+                  if (parsed.isValid && parsed.results.length > 0) {
+                    return (
+                      <div key={idx} className="my-3 w-full">
+                        <FusedSearchResults
+                          results={parsed.results}
+                          sourcesQueried={parsed.sourcesQueried}
+                          errors={parsed.errors}
+                          timing={parsed.timing}
+                          totalTimeMs={parsed.totalTimeMs}
+                          showCitations={true}
+                        />
+                      </div>
+                    );
+                  }
+                  // If parsing failed, log and fall through to default ToolStep rendering
+                  if (parsed.parseError) {
+                    console.warn(`[UIMessageBubble] Fusion search parse failed: ${parsed.parseError}`);
+                  }
+                }
+
+                // Skip tool-call for fusion search (we render the result above, no spinner needed)
+                if (isFusionSearchTool(toolName) && part.type === 'tool-call') {
+                  return null;
+                }
+
+                // ═══════════════════════════════════════════════════════════════
+                // PRECEDENCE 2: Memory/Planning tools → ToolPill
+                // ═══════════════════════════════════════════════════════════════
+
+                // Check for Memory/Planning tools to render as Pills
+
+                if (toolName && (
+                  toolName.includes('writeMemory') ||
+                  toolName.includes('createPlan') ||
+                  toolName.includes('updatePlanStep') ||
+                  toolName.includes('logEpisodic')
+                )) {
+
+                  // Determine pill type and title based on tool name
+                  let type: 'plan_update' | 'test_result' | 'memory_write' = 'memory_write';
+                  let title = 'Memory Updated';
+                  let details = '';
+
+                  if (toolName.includes('createPlan')) {
+                    type = 'plan_update';
+                    title = 'New Plan Created';
+                    details = (part as any).args?.goal ? `Goal: ${(part as any).args.goal}` : 'New mission plan initialized';
+                  } else if (toolName.includes('updatePlanStep')) {
+                    type = 'plan_update';
+                    title = 'Plan Updated';
+                    const status = (part as any).args?.status;
+                    details = status ? `Step marked as ${status}` : 'Plan progress updated';
+                  } else if (toolName.includes('logEpisodic')) {
+                    type = 'test_result';
+                    title = 'Episodic Log';
+                    details = 'System event recorded';
+                  } else {
+                    // writeMemory
+                    const key = (part as any).args?.key || 'unknown';
+                    title = key.startsWith('constraint:') ? 'Constraint Added' : 'Memory Updated';
+                    details = `Key: ${key}`;
+                  }
+
+                  // If this is a tool-call, render the pill
+                  // We ignore the tool-result for these as the pill usually summarizes the action
+                  if (part.type === 'tool-call') {
+                    return (
+                      <div key={idx} className="my-2 flex justify-center w-full">
+                        <MemoryPill
+                          event={{
+                            id: `pill-${idx}`,
+                            type,
+                            title,
+                            details,
+                            timestamp: Date.now()
+                          }}
+                        />
+                      </div>
+                    );
+                  }
+                  // Skip results/errors for memory tools to keep stream clean
+                  return null;
+                }
+
+                // ═══════════════════════════════════════════════════════════════
+                // PRECEDENCE 2.5: Convex MCP tools → ToolCallTransparency
+                // ═══════════════════════════════════════════════════════════════
+                if (toolName && toolName.startsWith('convex_')) {
+                  const convexToolData = {
+                    toolName,
+                    status: (part.type === 'tool-result' ? 'success' : part.type === 'tool-error' ? 'error' : 'running') as 'running' | 'success' | 'error',
+                    inputSummary: (part as any).args ? JSON.stringify((part as any).args).substring(0, 120) : undefined,
+                    outputSummary: part.type === 'tool-result' && (part as any).output
+                      ? (typeof (part as any).output === 'string' ? (part as any).output.substring(0, 120) : JSON.stringify((part as any).output).substring(0, 120))
+                      : undefined,
+                  };
                   return (
-                    <div key={idx} className="my-3 w-full">
-                      <FusedSearchResults
-                        results={parsed.results}
-                        sourcesQueried={parsed.sourcesQueried}
-                        errors={parsed.errors}
-                        timing={parsed.timing}
-                        totalTimeMs={parsed.totalTimeMs}
-                        showCitations={true}
-                      />
+                    <div key={idx} className="my-2 w-full">
+                      <ToolCallTransparency toolCalls={[convexToolData]} />
                     </div>
                   );
                 }
-                // If parsing failed, log and fall through to default ToolStep rendering
-                if (parsed.parseError) {
-                  console.warn(`[UIMessageBubble] Fusion search parse failed: ${parsed.parseError}`);
-                }
-              }
 
-              // Skip tool-call for fusion search (we render the result above, no spinner needed)
-              if (isFusionSearchTool(toolName) && part.type === 'tool-call') {
-                return null;
-              }
-
-              // ═══════════════════════════════════════════════════════════════
-              // PRECEDENCE 2: Memory/Planning tools → ToolPill
-              // ═══════════════════════════════════════════════════════════════
-
-              // Check for Memory/Planning tools to render as Pills
-
-              if (toolName && (
-                toolName.includes('writeMemory') ||
-                toolName.includes('createPlan') ||
-                toolName.includes('updatePlanStep') ||
-                toolName.includes('logEpisodic')
-              )) {
-
-                // Determine pill type and title based on tool name
-                let type: 'plan_update' | 'test_result' | 'memory_write' = 'memory_write';
-                let title = 'Memory Updated';
-                let details = '';
-
-                if (toolName.includes('createPlan')) {
-                  type = 'plan_update';
-                  title = 'New Plan Created';
-                  details = (part as any).args?.goal ? `Goal: ${(part as any).args.goal}` : 'New mission plan initialized';
-                } else if (toolName.includes('updatePlanStep')) {
-                  type = 'plan_update';
-                  title = 'Plan Updated';
-                  const status = (part as any).args?.status;
-                  details = status ? `Step marked as ${status}` : 'Plan progress updated';
-                } else if (toolName.includes('logEpisodic')) {
-                  type = 'test_result';
-                  title = 'Episodic Log';
-                  details = 'System event recorded';
-                } else {
-                  // writeMemory
-                  const key = (part as any).args?.key || 'unknown';
-                  title = key.startsWith('constraint:') ? 'Constraint Added' : 'Memory Updated';
-                  details = `Key: ${key}`;
-                }
-
-                // If this is a tool-call, render the pill
-                // We ignore the tool-result for these as the pill usually summarizes the action
-                if (part.type === 'tool-call') {
-                  return (
-                    <div key={idx} className="my-2 flex justify-center w-full">
-                      <MemoryPill
-                        event={{
-                          id: `pill-${idx}`,
-                          type,
-                          title,
-                          details,
-                          timestamp: Date.now()
-                        }}
-                      />
-                    </div>
-                  );
-                }
-                // Skip results/errors for memory tools to keep stream clean
-                return null;
-              }
-
-              // ═══════════════════════════════════════════════════════════════
-              // PRECEDENCE 2.5: Convex MCP tools → ToolCallTransparency
-              // ═══════════════════════════════════════════════════════════════
-              if (toolName && toolName.startsWith('convex_')) {
-                const convexToolData = {
-                  toolName,
-                  status: (part.type === 'tool-result' ? 'success' : part.type === 'tool-error' ? 'error' : 'running') as 'running' | 'success' | 'error',
-                  inputSummary: (part as any).args ? JSON.stringify((part as any).args).substring(0, 120) : undefined,
-                  outputSummary: part.type === 'tool-result' && (part as any).output
-                    ? (typeof (part as any).output === 'string' ? (part as any).output.substring(0, 120) : JSON.stringify((part as any).output).substring(0, 120))
-                    : undefined,
-                };
+                // Default: Render as standard ToolStep
                 return (
-                  <div key={idx} className="my-2 w-full">
-                    <ToolCallTransparency toolCalls={[convexToolData]} />
-                  </div>
+                  <ToolStep
+                    key={idx}
+                    part={part}
+                    stepNumber={idx + 1}
+                    onCompanySelect={effectiveOnCompanySelect}
+                    onPersonSelect={effectiveOnPersonSelect}
+                    onEventSelect={effectiveOnEventSelect}
+                    onNewsSelect={effectiveOnNewsSelect}
+                  />
                 );
-              }
-
-              // Default: Render as standard ToolStep
-              return (
-                <ToolStep
-                  key={idx}
-                  part={part}
-                  stepNumber={idx + 1}
-                  onCompanySelect={effectiveOnCompanySelect}
-                  onPersonSelect={effectiveOnPersonSelect}
-                  onEventSelect={effectiveOnEventSelect}
-                  onNewsSelect={effectiveOnNewsSelect}
-                />
-              );
-            })}
-          </div>
+              })}
+            </div>
           </ToolStepsAccordion>
         )}
 
@@ -2442,8 +2442,8 @@ export function FastAgentUIMessageBubble({
               ) : isText ? (
                 <FileTextPreview fileUrl={fileUrl} fileName={fileName} />
               ) : (
-                <div className="px-4 py-3 bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-primary)] flex items-center gap-3 group hover:from-blue-50 hover:to-[var(--bg-primary)] transition-colors">
-                  <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                <div className="px-4 py-3 bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-primary)] flex items-center gap-3 group hover:from-blue-50 dark:hover:from-blue-900/20 hover:to-[var(--bg-primary)] transition-colors">
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300">
                     <ImageIcon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -2547,121 +2547,121 @@ export function FastAgentUIMessageBubble({
               </div>
             ) : (
               <div className={cn(!isUser && "prose-agent")}>
-              <ReactMarkdown
-                remarkPlugins={[remarkMath]}
-                rehypePlugins={[rehypeKatex]}
-                components={{
-                  code({ inline, className, children, ...props }: any) {
-                    const match = /language-(\w+)/.exec(className || '');
-                    const language = match ? match[1] : '';
+                <ReactMarkdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                  components={{
+                    code({ inline, className, children, ...props }: any) {
+                      const match = /language-(\w+)/.exec(className || '');
+                      const language = match ? match[1] : '';
 
-                    if (!inline && language === 'mermaid') {
-                      const mermaidCode = String(children).replace(/\n$/, '');
-                      const isStreaming = message.status === 'streaming';
-                      return (
-                        <Suspense fallback={<div className="animate-pulse h-40 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center text-sm text-[var(--text-muted)]">Loading diagram...</div>}>
-                          <MermaidDiagram
-                            code={mermaidCode}
-                            onRetryRequest={onMermaidRetry}
-                            isStreaming={isStreaming}
-                          />
-                        </Suspense>
+                      if (!inline && language === 'mermaid') {
+                        const mermaidCode = String(children).replace(/\n$/, '');
+                        const isStreaming = message.status === 'streaming';
+                        return (
+                          <Suspense fallback={<div className="animate-pulse h-40 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center text-sm text-[var(--text-muted)]">Loading diagram...</div>}>
+                            <MermaidDiagram
+                              code={mermaidCode}
+                              onRetryRequest={onMermaidRetry}
+                              isStreaming={isStreaming}
+                            />
+                          </Suspense>
+                        );
+                      }
+
+                      return !inline && match ? (
+                        <CodeBlockWithCopy language={language}>
+                          {String(children).replace(/\n$/, '')}
+                        </CodeBlockWithCopy>
+                      ) : (
+                        <code className={cn(
+                          "px-1 py-0.5 rounded text-xs font-mono",
+                          isUser ? "bg-blue-700/50 text-white" : "bg-[var(--bg-hover)] text-[var(--text-primary)]"
+                        )} {...props}>
+                          {children}
+                        </code>
                       );
-                    }
+                    },
+                    a({ href, children }) {
+                      return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
+                    },
+                    table({ children }) {
+                      return <div className="overflow-x-auto my-3 rounded-lg border border-[var(--border-color)]"><table className="w-full text-xs border-collapse">{children}</table></div>;
+                    },
+                    thead({ children }) {
+                      return <thead className="bg-[var(--bg-secondary)]">{children}</thead>;
+                    },
+                    th({ children }) {
+                      return <th className="px-3 py-2 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] text-[11px]">{children}</th>;
+                    },
+                    td({ children }) {
+                      return <td className="px-3 py-1.5 border-b border-[var(--border-color)] text-[var(--text-secondary)] text-[11px]">{children}</td>;
+                    },
+                    tr({ children }) {
+                      return <tr className="hover:bg-[var(--bg-secondary)] transition-colors">{children}</tr>;
+                    },
+                    // Phase All: Enhanced paragraph rendering with citation/entity parsing + adaptive enrichment
+                    p({ children }) {
+                      // Convert children to string for token detection
+                      const textContent = React.Children.toArray(children)
+                        .map(child => typeof child === 'string' ? child : '')
+                        .join('');
 
-                    return !inline && match ? (
-                      <CodeBlockWithCopy language={language}>
-                        {String(children).replace(/\n$/, '')}
-                      </CodeBlockWithCopy>
-                    ) : (
-                      <code className={cn(
-                        "px-1 py-0.5 rounded text-xs font-mono",
-                        isUser ? "bg-blue-700/50 text-white" : "bg-[var(--bg-hover)] text-[var(--text-primary)]"
-                      )} {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                  a({ href, children }) {
-                    return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
-                  },
-                  table({ children }) {
-                    return <div className="overflow-x-auto my-3 rounded-lg border border-[var(--border-color)]"><table className="w-full text-xs border-collapse">{children}</table></div>;
-                  },
-                  thead({ children }) {
-                    return <thead className="bg-[var(--bg-secondary)]">{children}</thead>;
-                  },
-                  th({ children }) {
-                    return <th className="px-3 py-2 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] text-[11px]">{children}</th>;
-                  },
-                  td({ children }) {
-                    return <td className="px-3 py-1.5 border-b border-[var(--border-color)] text-[var(--text-secondary)] text-[11px]">{children}</td>;
-                  },
-                  tr({ children }) {
-                    return <tr className="hover:bg-[var(--bg-secondary)] transition-colors">{children}</tr>;
-                  },
-                  // Phase All: Enhanced paragraph rendering with citation/entity parsing + adaptive enrichment
-                  p({ children }) {
-                    // Convert children to string for token detection
-                    const textContent = React.Children.toArray(children)
-                      .map(child => typeof child === 'string' ? child : '')
-                      .join('');
+                      // If text contains {{cite:...}} or @@entity:...@@ tokens, use InteractiveSpanParser
+                      // Pass entityEnrichment for rich hover previews with adaptive profile data
+                      if (parseCitations(textContent).length > 0 || parseEntities(textContent).length > 0) {
+                        return (
+                          <p className="mb-2">
+                            <InteractiveSpanParser
+                              text={textContent}
+                              citations={citedCitationLibrary}
+                              entities={entityLibrary}
+                              entityEnrichment={entityEnrichment}
+                            />
+                          </p>
+                        );
+                      }
 
-                    // If text contains {{cite:...}} or @@entity:...@@ tokens, use InteractiveSpanParser
-                    // Pass entityEnrichment for rich hover previews with adaptive profile data
-                    if (parseCitations(textContent).length > 0 || parseEntities(textContent).length > 0) {
-                      return (
-                        <p className="mb-2">
-                          <InteractiveSpanParser
-                            text={textContent}
-                            citations={citedCitationLibrary}
-                            entities={entityLibrary}
-                            entityEnrichment={entityEnrichment}
-                          />
-                        </p>
-                      );
-                    }
-
-                    // Default paragraph rendering (with optional search highlight)
-                    if (searchHighlight && textContent.toLowerCase().includes(searchHighlight.toLowerCase())) {
-                      const regex = new RegExp(`(${searchHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                      const parts = textContent.split(regex);
-                      return (
-                        <p className="mb-2">
-                          {parts.map((part, i) =>
-                            regex.test(part)
-                              ? <mark key={i} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{part}</mark>
-                              : <React.Fragment key={i}>{part}</React.Fragment>
-                          )}
-                        </p>
-                      );
-                    }
-                    return <p className="mb-2">{children}</p>;
-                  },
-                }}
-              >
-                {(() => {
-                  const displayText = isUser ? (visibleText || '...') : (cleanedText || visibleText || '...');
-                  const isLong = !isUser && displayText.length > COLLAPSE_THRESHOLD && message.status !== 'streaming';
-                  if (isLong && isCollapsed) {
-                    return displayText.slice(0, COLLAPSE_THRESHOLD) + '...';
-                  }
-                  return displayText;
-                })()}
-              </ReactMarkdown>
-              {/* Show more/less toggle for long messages */}
-              {!isUser && (cleanedText || visibleText || '').length > COLLAPSE_THRESHOLD && message.status !== 'streaming' && (
-                <button
-                  type="button"
-                  onClick={() => setIsCollapsed(prev => !prev)}
-                  className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline mt-1"
+                      // Default paragraph rendering (with optional search highlight)
+                      if (searchHighlight && textContent.toLowerCase().includes(searchHighlight.toLowerCase())) {
+                        const regex = new RegExp(`(${searchHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        const parts = textContent.split(regex);
+                        return (
+                          <p className="mb-2">
+                            {parts.map((part, i) =>
+                              regex.test(part)
+                                ? <mark key={i} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{part}</mark>
+                                : <React.Fragment key={i}>{part}</React.Fragment>
+                            )}
+                          </p>
+                        );
+                      }
+                      return <p className="mb-2">{children}</p>;
+                    },
+                  }}
                 >
-                  {isCollapsed ? 'Show more ▼' : 'Show less ▲'}
-                </button>
-              )}
-              {!isUser && message.status === 'streaming' && (cleanedText || visibleText) && (
-                <span className="streaming-caret" />
-              )}
+                  {(() => {
+                    const displayText = isUser ? (visibleText || '...') : (cleanedText || visibleText || '...');
+                    const isLong = !isUser && displayText.length > COLLAPSE_THRESHOLD && message.status !== 'streaming';
+                    if (isLong && isCollapsed) {
+                      return displayText.slice(0, COLLAPSE_THRESHOLD) + '...';
+                    }
+                    return displayText;
+                  })()}
+                </ReactMarkdown>
+                {/* Show more/less toggle for long messages */}
+                {!isUser && (cleanedText || visibleText || '').length > COLLAPSE_THRESHOLD && message.status !== 'streaming' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCollapsed(prev => !prev)}
+                    className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline mt-1"
+                  >
+                    {isCollapsed ? 'Show more ▼' : 'Show less ▲'}
+                  </button>
+                )}
+                {!isUser && message.status === 'streaming' && (cleanedText || visibleText) && (
+                  <span className="streaming-caret" />
+                )}
               </div>
             ))}
           </div>
@@ -2963,7 +2963,7 @@ export function FastAgentUIMessageBubble({
 
         {/* "Sources cited" dropdown (derived from inline citation tokens) */}
         {!isUser && citedCitationLibrary && message.status !== 'streaming' && (
-			<SourcesCitedDropdown library={citedCitationLibrary} basisMs={message._creationTime} />
+          <SourcesCitedDropdown library={citedCitationLibrary} basisMs={message._creationTime} />
         )}
 
         {/* Status indicator and actions */}

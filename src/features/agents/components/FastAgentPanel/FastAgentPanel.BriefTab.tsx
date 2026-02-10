@@ -375,11 +375,11 @@ export function BriefTab() {
     <div className="flex-1 flex flex-col min-h-0 bg-[var(--bg-primary)]">
       {/* Historical viewing bar */}
       {isViewingHistorical && (
-        <div className="mx-3 mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="mx-3 mt-3 px-3 py-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="w-3 h-3 text-amber-600" />
-              <span className="text-xs text-amber-800 font-medium">
+              <span className="text-xs text-amber-800 dark:text-amber-300 font-medium">
                 Viewing historical brief: {displayDateLabel}
               </span>
             </div>
@@ -441,7 +441,7 @@ export function BriefTab() {
                 className={buttonIcon}
                 title="Previous day"
               >
-                <ChevronLeft className="w-3 h-3 text-slate-600" />
+                <ChevronLeft className="w-3 h-3 text-slate-600 dark:text-slate-400" />
               </button>
               <button
                 type="button"
@@ -450,10 +450,10 @@ export function BriefTab() {
                 className={buttonIcon}
                 title="Next day"
               >
-                <ChevronRight className="w-3 h-3 text-slate-600" />
+                <ChevronRight className="w-3 h-3 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="text-[10px] text-slate-500 font-mono">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
               {isViewingHistorical ? (
                 <span className="text-amber-600 font-medium">
                   {displayDateLabel}
@@ -526,7 +526,7 @@ export function BriefTab() {
         {/* Date pills */}
         {availableDates.length > 1 && (
           <div className="mt-3">
-            <div className="text-[9px] uppercase tracking-widest text-slate-400 mb-1">
+            <div className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
               Historical Briefs
             </div>
             <div className="flex flex-wrap gap-1">
@@ -541,7 +541,7 @@ export function BriefTab() {
                     "px-2 py-1 text-[10px] rounded transition-colors border",
                     date === displayDate
                       ? "bg-indigo-600 text-white font-medium border-indigo-600"
-                      : "bg-white hover:bg-slate-100 text-slate-600 border-slate-200",
+                      : "bg-white dark:bg-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.06]",
                   )}
                   title={`View brief from ${date}`}
                 >
@@ -560,7 +560,7 @@ export function BriefTab() {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {personalFeatures.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 mb-2">
+            <div className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
               Personalized Tasks
             </div>
             <div className="space-y-2">
@@ -607,7 +607,7 @@ export function BriefTab() {
         )}
 
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-slate-400 mb-2">
+          <div className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
             Global Brief Tasks
           </div>
           <div className="space-y-2">

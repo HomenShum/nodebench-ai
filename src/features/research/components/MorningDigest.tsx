@@ -486,7 +486,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     if (digestData?.lastUpdated) {
       return `Updated ${Math.round((Date.now() - digestData.lastUpdated) / 60000)} min ago`;
     }
-    return 'Loading...';
+    return 'Fetching latest…';
   }, [digestData?.lastUpdated, cachedSummary?.generatedAt, isFromCache]);
 
   const digestStats = useMemo(() => {

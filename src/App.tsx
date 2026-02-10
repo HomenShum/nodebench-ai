@@ -14,6 +14,8 @@ import { FeedbackListener } from "@/shared/hooks/FeedbackListener";
 import { AgentGuidedOnboarding } from "@/features/onboarding/components/AgentGuidedOnboarding";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SkipLinks } from "./components/SkipLinks";
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { ViewSkeleton } from "@/components/skeletons/ViewSkeleton";
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -111,12 +113,16 @@ function App() {
             <SelectionProvider>
               <ContextPillsProvider>
                 {/* Use MainLayout for visual consistency - limited features for guests */}
-                <MainLayout
-                  selectedDocumentId={null}
-                  onDocumentSelect={() => { }}
-                  onShowWelcome={() => { }}
-                  onShowResearchHub={() => { }}
-                />
+                <ErrorBoundary title="Something went wrong">
+                  <Suspense fallback={<ViewSkeleton />}>
+                    <MainLayout
+                      selectedDocumentId={null}
+                      onDocumentSelect={() => { }}
+                      onShowWelcome={() => { }}
+                      onShowResearchHub={() => { }}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
                 {/* Global Fast Agent Panel for guests */}
                 <GlobalFastAgentPanel />
               </ContextPillsProvider>
@@ -127,20 +133,24 @@ function App() {
           <FastAgentProvider>
             <SelectionProvider>
               <ContextPillsProvider>
-                {showTutorial ? (
-                  <TutorialPage
-                    onGetStarted={handleGetStarted}
-                    onDocumentSelect={handleDocumentSelect}
-                  />
-                ) : (
-                  /* Always use MainLayout - it handles research/workspace views internally */
-                  <MainLayout
-                    selectedDocumentId={selectedDocumentId}
-                    onDocumentSelect={setSelectedDocumentId}
-                    onShowWelcome={handleShowTutorial}
-                    onShowResearchHub={handleShowResearchHub}
-                  />
-                )}
+                <ErrorBoundary title="Something went wrong">
+                  <Suspense fallback={<ViewSkeleton />}>
+                    {showTutorial ? (
+                      <TutorialPage
+                        onGetStarted={handleGetStarted}
+                        onDocumentSelect={handleDocumentSelect}
+                      />
+                    ) : (
+                      /* Always use MainLayout - it handles research/workspace views internally */
+                      <MainLayout
+                        selectedDocumentId={selectedDocumentId}
+                        onDocumentSelect={setSelectedDocumentId}
+                        onShowWelcome={handleShowTutorial}
+                        onShowResearchHub={handleShowResearchHub}
+                      />
+                    )}
+                  </Suspense>
+                </ErrorBoundary>
                 {/* Global Fast Agent Panel - controlled via context */}
                 <GlobalFastAgentPanel />
                 {/* Global Feedback Listener for audio/visual cues */}

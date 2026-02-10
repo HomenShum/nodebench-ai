@@ -92,7 +92,7 @@ export default function FiltersToolsBar(props: Props) {
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 ${
                 isActive
                   ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900"
+                  : "bg-white dark:bg-[#09090B] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.06] hover:border-gray-300 dark:hover:border-white/[0.1] hover:text-gray-900 dark:hover:text-gray-200"
               }`}
               role="tab"
               aria-selected={isActive}
@@ -113,22 +113,22 @@ export default function FiltersToolsBar(props: Props) {
       {/* Right: View toggle + Actions */}
       <div className="flex items-center gap-3">
         {/* View mode toggle */}
-        <div className="flex gap-0.5 bg-gray-100/80 backdrop-blur-sm p-1 rounded-xl border border-gray-200/50 shadow-sm">
+        <div className="flex gap-0.5 bg-gray-100/80 dark:bg-white/[0.06] backdrop-blur-sm p-1 rounded-xl border border-gray-200/50 dark:border-white/[0.06] shadow-sm">
           <button
             onClick={() => setViewMode("cards")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-gray-900 bg-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-white/[0.1] shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
           >
             Cards
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "list" ? "text-gray-900 bg-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "list" ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-white/[0.1] shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
           >
             List
           </button>
           <button
             onClick={() => setViewMode("segmented")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-gray-900 bg-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-white/[0.1] shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
             title="Show grouped sections"
           >
             Segmented

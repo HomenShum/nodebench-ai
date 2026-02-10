@@ -44,9 +44,9 @@ export function EnhancedPersonalPulse({
   };
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] shadow-sm overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-blue-50">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-white/[0.06] bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-500/10 dark:to-blue-500/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-purple-600" />
@@ -60,7 +60,7 @@ export function EnhancedPersonalPulse({
       </div>
 
       {/* Sections */}
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100 dark:divide-white/[0.06]">
         {/* Tasks Section */}
         <CollapsibleSection
           title="Today's Tasks"
@@ -76,7 +76,7 @@ export function EnhancedPersonalPulse({
                 <button
                   key={task._id}
                   onClick={() => onTaskSelect?.(task._id)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left"
                 >
                   <div className="w-4 h-4 rounded border-2 border-gray-300" />
                   <span className="text-sm text-gray-700 flex-1 truncate">{task.title}</span>
@@ -104,7 +104,7 @@ export function EnhancedPersonalPulse({
                 <button
                   key={doc._id}
                   onClick={() => onDocumentSelect?.(doc._id)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left"
                 >
                   <FileText className="h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-700 flex-1 truncate">{doc.title || 'Untitled'}</span>
@@ -159,11 +159,11 @@ interface CollapsibleSectionProps {
 function CollapsibleSection({ title, icon: Icon, count, isExpanded, onToggle, color, children }: CollapsibleSectionProps) {
   return (
     <div>
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors">
+      <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
         <div className="flex items-center gap-2">
           <Icon className={`h-4 w-4 ${color}`} />
           <span className="text-sm font-medium text-gray-800">{title}</span>
-          {count > 0 && <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">{count}</span>}
+          {count > 0 && <span className="text-xs text-gray-500 bg-gray-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded-full">{count}</span>}
         </div>
         <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
       </button>

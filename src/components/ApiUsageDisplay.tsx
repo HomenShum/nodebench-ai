@@ -11,7 +11,7 @@ export function ApiUsageDisplay() {
 
   if (!usageSummary) {
     return (
-      <div className="p-4 border border-gray-200 rounded-lg">
+      <div className="p-4 border border-gray-200 dark:border-white/[0.06] rounded-lg">
         <div className="flex items-center gap-2 mb-2">
           <Activity className="h-5 w-5 text-gray-500" />
           <h3 className="font-semibold">API Usage</h3>
@@ -28,7 +28,7 @@ export function ApiUsageDisplay() {
   const totalCostDollars = (summary.totalCost / 100).toFixed(2);
 
   return (
-    <div className="p-4 border border-gray-200 rounded-lg space-y-4">
+    <div className="p-4 border border-gray-200 dark:border-white/[0.06] rounded-lg space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <Activity className="h-5 w-5 text-blue-600" />
         <h3 className="font-semibold text-lg">API Usage</h3>
@@ -63,14 +63,14 @@ export function ApiUsageDisplay() {
 
       {/* Success Rate */}
       {summary.totalCalls > 0 && (
-        <div className="p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-lg">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Success Rate</span>
             <span className="text-lg font-bold text-green-600">
               {((summary.successfulCalls / summary.totalCalls) * 100).toFixed(1)}%
             </span>
           </div>
-          <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="mt-2 h-2 bg-gray-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
             <div 
               className="h-full bg-green-500"
               style={{ width: `${(summary.successfulCalls / summary.totalCalls) * 100}%` }}
@@ -113,7 +113,7 @@ export function ApiUsageDisplay() {
                 : 0;
 
               return (
-                <div key={apiName} className="p-3 border border-gray-200 rounded-lg">
+                <div key={apiName} className="p-3 border border-gray-200 dark:border-white/[0.06] rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${

@@ -397,9 +397,14 @@ export function ThreadTabBar({
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {isLoading ? (
-          <div className="flex items-center gap-2 px-2 py-1 text-xs text-[var(--text-muted)]">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            Loading...
+          <div className="flex items-center gap-2 px-2 py-1">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-6 rounded-md bg-[var(--bg-hover)] animate-pulse"
+                style={{ width: `${60 + i * 16}px` }}
+              />
+            ))}
           </div>
         ) : threads.length === 0 ? (
           <div className="px-2 py-1 text-xs text-[var(--text-muted)]">

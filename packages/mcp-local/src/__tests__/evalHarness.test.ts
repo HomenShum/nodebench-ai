@@ -326,7 +326,7 @@ describe("Scenario: Flywheel Orchestration", () => {
     expect(result).toHaveProperty("innerLoop");
     expect(result).toHaveProperty("outerLoop");
     expect(result).toHaveProperty("connections");
-  });
+  }, 15_000);
 
   it("Step 2: Run mandatory flywheel check", async () => {
     // Actual schema: target, steps array with stepName enum

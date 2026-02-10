@@ -49,7 +49,7 @@ export function GoalCard({
   };
 
   return (
-    <div className="mb-4 p-4 border border-[var(--border-color)] rounded-lg bg-gradient-to-r from-blue-50 to-purple-50">
+    <div className="mb-4 p-4 border border-[var(--border-color)] rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20">
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
         <div className={cn(

@@ -58,7 +58,10 @@ function auditActions(convexDir: string): {
   let actionCallingAction = 0;
 
   // Node APIs that require "use node" directive
-  const nodeApis = /\b(require|__dirname|__filename|Buffer\.|process\.env|fs\.|path\.|crypto\.|child_process|net\.|http\.|https\.)\b/;
+  // NOTE: process.env is polyfilled by Convex in both runtimes — NOT a Node-only API
+  // NOTE: crypto.subtle / crypto.getRandomValues are Web Crypto API — available without "use node"
+  const nodeApis = /\b(require\s*\(|__dirname|__filename|Buffer\.|fs\.|path\.|child_process|net\.|http\.|https\.)\b/;
+  const nodeCryptoApis = /\bcrypto\.(create|randomBytes|pbkdf2|scrypt|sign|verify|getCiphers|getDiffieHellman|getHashes|Hash|Hmac|Cipher|Decipher)\b/;
 
   for (const filePath of files) {
     const content = readFileSync(filePath, "utf-8");
@@ -101,7 +104,7 @@ function auditActions(convexDir: string): {
       }
 
       // Check 2: Node API usage without "use node"
-      if (!hasUseNode && nodeApis.test(body)) {
+      if (!hasUseNode && (nodeApis.test(body) || nodeCryptoApis.test(body))) {
         actionsWithoutNodeDirective++;
         issues.push({
           severity: "critical",

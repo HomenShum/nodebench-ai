@@ -61,6 +61,47 @@ function auditDataModeling(convexDir: string): {
     totalTables++;
   }
 
+  // Detect spread-imported table providers (e.g. ...authTables adds "users", "sessions")
+  // Strategy 1: Known spreads from popular Convex packages
+  const knownSpreads: Record<string, string[]> = {
+    authTables: ["users", "authSessions", "authAccounts", "authRefreshTokens", "authVerificationCodes", "authRateLimits", "authVerifiers"],
+  };
+  // Strategy 2: Parse inline comments next to spreads for table name hints
+  // e.g. ...authTables, // `users`, `sessions`
+  const spreadCommentPattern = /\.\.\.(\w+)\s*,?\s*\/\/\s*(.+)/g;
+  let sm;
+  while ((sm = spreadCommentPattern.exec(content)) !== null) {
+    const spreadName = sm[1];
+    const comment = sm[2];
+    // Extract backtick-quoted or quoted table names from comment
+    const commentTables = [...comment.matchAll(/[`"'](\w+)[`"']/g)].map(m => m[1]);
+    // Merge known + comment-discovered tables
+    const tables = new Set([
+      ...(knownSpreads[spreadName] ?? []),
+      ...commentTables,
+    ]);
+    for (const t of tables) {
+      if (!tableNames.has(t)) {
+        tableNames.add(t);
+        totalTables++;
+      }
+    }
+  }
+  // Strategy 3: If no comment matched, still apply known spreads
+  const simpleSpreadPattern = /\.\.\.(\w+)/g;
+  let sm2;
+  while ((sm2 = simpleSpreadPattern.exec(content)) !== null) {
+    const tables = knownSpreads[sm2[1]];
+    if (tables) {
+      for (const t of tables) {
+        if (!tableNames.has(t)) {
+          tableNames.add(t);
+          totalTables++;
+        }
+      }
+    }
+  }
+
   // Per-table analysis
   let currentTable = "";
   let tableStartLine = 0;

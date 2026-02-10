@@ -622,8 +622,8 @@ export const generateScheduledReport = internalAction({
     // Determine lookback period
     const lookbackDays = args.lookbackDays ?? (
       reportType === "weekly" ? 7 :
-      reportType === "monthly" ? 30 :
-      90 // quarterly
+        reportType === "monthly" ? 30 :
+          90 // quarterly
     );
 
     console.log(`[scheduledPDFReports] Starting ${reportType} report generation, lookback=${lookbackDays} days`);
@@ -967,6 +967,69 @@ export const generateScheduledReport = internalAction({
           insights,
         }
       );
+    }
+
+    // Step 10: Record component analytics (mirrors dailyBriefInitializer pattern)
+    try {
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const componentMetrics: Array<{
+        date: string;
+        reportType: "funding_report";
+        componentType: string;
+        sourceName: string;
+        category?: string;
+        itemCount: number;
+        freshnessHours?: number;
+      }> = [];
+
+      // Track deals by sector
+      for (const sector of sectorBreakdown.slice(0, 8)) {
+        componentMetrics.push({
+          date: today,
+          reportType: "funding_report",
+          componentType: "funding_events",
+          sourceName: sector.sector,
+          category: "sector",
+          itemCount: sector.dealCount,
+          freshnessHours: lookbackDays * 24,
+        });
+      }
+
+      // Track deals by round type
+      for (const round of roundTypeBreakdown.slice(0, 6)) {
+        componentMetrics.push({
+          date: today,
+          reportType: "funding_report",
+          componentType: "funding_rounds",
+          sourceName: round.roundType,
+          category: "round_type",
+          itemCount: round.dealCount,
+          freshnessHours: lookbackDays * 24,
+        });
+      }
+
+      // Track top investors activity
+      for (const investor of topInvestors.slice(0, 5)) {
+        componentMetrics.push({
+          date: today,
+          reportType: "funding_report",
+          componentType: "investor_activity",
+          sourceName: investor.name,
+          category: "investors",
+          itemCount: investor.dealCount,
+          freshnessHours: lookbackDays * 24,
+        });
+      }
+
+      if (componentMetrics.length > 0) {
+        await ctx.runMutation(
+          internal.domains.analytics.componentMetrics.batchRecordComponentMetrics,
+          { metrics: componentMetrics }
+        );
+        console.log(`[scheduledPDFReports] Recorded ${componentMetrics.length} component metrics for ${today}`);
+      }
+    } catch (analyticsErr) {
+      console.warn("[scheduledPDFReports] Analytics tracking failed (non-fatal):", analyticsErr);
     }
 
     const processingTimeMs = Date.now() - startTime;

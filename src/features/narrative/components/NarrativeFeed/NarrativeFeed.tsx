@@ -398,7 +398,7 @@ export function NarrativeFeed({
                 disabled={isLoading}
                 className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors disabled:opacity-50"
               >
-                {isLoading ? "Loading..." : "Load More"}
+                {isLoading ? "Loading more…" : "Load More"}
               </button>
             </div>
           )}

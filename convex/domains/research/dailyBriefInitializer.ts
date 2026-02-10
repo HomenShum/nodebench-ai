@@ -254,6 +254,48 @@ export const initializeForSnapshot = internalAction({
       }
     }
 
+    // RECORD ANALYTICS: Track component metrics for this brief
+    try {
+      const metrics: any[] = [];
+      const date = snapshot.dateString;
+
+      // Helper to push metrics
+      const pushMetric = (componentType: string, items: any[], category?: string) => {
+        const bySource = new Map<string, number>();
+        items.forEach(item => {
+          const source = item.source || "Unknown";
+          bySource.set(source, (bySource.get(source) || 0) + 1);
+        });
+
+        bySource.forEach((count, source) => {
+          metrics.push({
+            date,
+            reportType: "daily_brief",
+            componentType,
+            sourceName: source,
+            category: category || "general",
+            itemCount: count,
+            freshnessHours: 24, // Assumed for daily brief
+          });
+        });
+      };
+
+      if (repoItems.length > 0) pushMetric("github_repos", repoItems, "software");
+      if (paperItems.length > 0) pushMetric("research_papers", paperItems, "research");
+      if (topNews.length > 0) pushMetric("top_stories", topNews, "news");
+
+      // Also track deep diffs if any
+      if (deepStoryItems.length > 0) pushMetric("deep_analysis", deepStoryItems, "intelligence");
+
+      if (metrics.length > 0) {
+        await ctx.runMutation(internal.domains.analytics.componentMetrics.batchRecordComponentMetrics, {
+          metrics,
+        });
+      }
+    } catch (err) {
+      console.warn("[dailyBriefInitializer] analytics tracking failed", err);
+    }
+
     const goal = `Daily Morning Brief follow-ups for ${snapshot.dateString}`;
 
     const progressLog = [
