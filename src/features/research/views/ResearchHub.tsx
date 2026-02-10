@@ -31,16 +31,16 @@ import { cn } from "@/lib/utils";
 const SectionLoading = () => (
   <div className="py-6 space-y-4 animate-pulse">
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-gray-200/60 rounded-lg" />
+      <div className="w-10 h-10 bg-gray-200/60 dark:bg-white/[0.06] rounded-lg" />
       <div className="space-y-2 flex-1">
-        <div className="h-4 bg-gray-200/60 rounded w-1/3" />
-        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-4 bg-gray-200/60 dark:bg-white/[0.06] rounded w-1/3" />
+        <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-1/2" />
       </div>
     </div>
     <div className="space-y-2">
-      <div className="h-3 bg-gray-100 rounded w-full" />
-      <div className="h-3 bg-gray-100 rounded w-5/6" />
-      <div className="h-3 bg-gray-100 rounded w-4/6" />
+      <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-full" />
+      <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-5/6" />
+      <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-4/6" />
     </div>
   </div>
 );
@@ -580,7 +580,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             else setActiveAct('actIII');
             setPhaseFilter(event.phase);
           }}
-          className="mx-auto max-w-[1600px] px-16 pt-8"
+          className="mx-auto max-w-[1600px] px-8 md:px-12 pt-6"
         />
 
         <div className="max-w-[1600px] mx-auto flex items-start gap-4">
@@ -703,7 +703,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <Briefcase className="w-4 h-4 text-gray-700" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Deal Radar</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-gray-900 text-white text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
+                    <div className="px-1.5 py-0.5 bg-gray-900 dark:bg-white/[0.08] text-white dark:text-gray-300 text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
                   </div>
                   <React.Suspense fallback={<SectionLoading />}>
                     <DealRadar
@@ -723,7 +723,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <Bell className="w-4 h-4 text-indigo-700" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">What Changed</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 text-indigo-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Sources</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Sources</div>
                   </div>
                   <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense
@@ -747,7 +747,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <ScrollText className="w-4 h-4 text-gray-800" />
                       <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Changelog</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 text-gray-800 border border-indigo-200 text-[9px] font-bold uppercase tracking-wider rounded">Product</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Product</div>
                   </div>
                   <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense
