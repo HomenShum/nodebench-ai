@@ -217,7 +217,7 @@ export const MessageBubble = React.memo(function MessageBubble({
         
         {/* Live thinking/tools/sources */}
         {isAssistant && (hasLiveData || isStreaming) && (
-          <div className="mt-3">
+          <div className="mt-3 message-live-data">
             <LiveThinking
               thinkingSteps={liveThinking}
               toolCalls={liveToolCalls}
