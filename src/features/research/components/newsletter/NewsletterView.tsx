@@ -296,7 +296,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
     }
 
     return (
-        <div className="min-h-screen bg-[color:var(--bg-primary)]">
+        <div className="min-h-screen bg-[color:var(--bg-primary)] editorial-layout">
             {/* Main Document Container - Centered, max-w-3xl like a standard doc */}
             <div className="max-w-3xl mx-auto px-8 py-12">
 

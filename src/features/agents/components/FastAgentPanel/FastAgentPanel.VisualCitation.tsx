@@ -141,8 +141,8 @@ export function HighlightableSource({
       className={cn(
         "relative transition-all duration-300 rounded-lg",
         isHighlighted && [
-          "ring-2 ring-blue-500 ring-offset-2",
-          "shadow-lg shadow-blue-500/25",
+          "ring-2 ring-violet-500 ring-offset-2",
+          "shadow-lg shadow-violet-500/25",
           "scale-[1.02]",
           "z-10",
         ],
@@ -151,7 +151,7 @@ export function HighlightableSource({
     >
       {/* Glow effect overlay */}
       {isHighlighted && (
-        <div className="absolute inset-0 rounded-lg bg-blue-500/5 pointer-events-none animate-pulse" />
+        <div className="absolute inset-0 rounded-lg bg-violet-500/5 pointer-events-none animate-pulse" />
       )}
       {children}
     </div>
@@ -180,8 +180,8 @@ const STATUS_CONFIG: Record<ArbitrageStatus, {
   verified: {
     label: 'Verified',
     icon: '✓',
-    bgClass: 'bg-emerald-100 dark:bg-emerald-900/40',
-    textClass: 'text-emerald-700 dark:text-emerald-300',
+    bgClass: 'bg-indigo-100 dark:bg-gray-900/40',
+    textClass: 'text-gray-700 dark:text-indigo-300',
     description: 'Confirmed by primary source',
   },
   partial: {

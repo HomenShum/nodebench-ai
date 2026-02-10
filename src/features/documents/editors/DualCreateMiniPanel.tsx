@@ -83,10 +83,10 @@ export default function DualCreateMiniPanel({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {/* Task create card */}
         <div className="relative overflow-visible p-2 rounded-sm border border-[var(--border-color)] bg-[var(--bg-secondary)]">
-          <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500/60" aria-hidden />
+          <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500/60" aria-hidden />
           <div className="min-w-0 flex flex-col gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500" />
               <span className="truncate text-[var(--text-primary)] text-xs">Add Task</span>
             </div>
             <input

@@ -18,7 +18,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
   fill = "transparent",
 }) => {
   if (!data.length) {
-    return <div className="h-8 w-[120px] bg-stone-100" />;
+    return <div className="h-8 w-[120px] bg-gray-100" />;
   }
 
   const min = Math.min(...data);
@@ -65,7 +65,7 @@ export const SparkBars: React.FC<SparkBarsProps> = ({
   onBarLeave,
 }) => {
   if (!data.length) {
-    return <div className="h-8 w-[120px] bg-stone-100" />;
+    return <div className="h-8 w-[120px] bg-gray-100" />;
   }
 
   const max = Math.max(...data, 1);

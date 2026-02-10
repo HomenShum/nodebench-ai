@@ -34,7 +34,7 @@ const AGENT_ICONS: Record<string, React.ElementType> = {
 };
 
 const AGENT_COLORS: Record<string, string> = {
-  DocumentAgent: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+  DocumentAgent: "text-violet-500 bg-violet-500/10 border-violet-500/20",
   MediaAgent: "text-purple-500 bg-purple-500/10 border-purple-500/20",
   SECAgent: "text-amber-500 bg-amber-500/10 border-amber-500/20",
   OpenBBAgent: "text-green-500 bg-green-500/10 border-green-500/20",
@@ -223,7 +223,7 @@ const SwarmProgressBar = memo(function SwarmProgressBar({
             "h-full rounded-full transition-all duration-300",
             status === "completed" ? "bg-green-500" :
             status === "failed" ? "bg-red-500" :
-            "bg-blue-500"
+            "bg-violet-500"
           )}
           style={{ width: `${progress.percentComplete}%` }}
         />
@@ -298,7 +298,7 @@ export function SwarmLanesView({
         <div className="flex items-center gap-1.5">
           <Zap className={cn(
             "w-4 h-4",
-            isActive ? "text-blue-500" : "text-green-500"
+            isActive ? "text-violet-500" : "text-green-500"
           )} />
           <span className="text-xs font-medium text-[var(--text-primary)]">
             Parallel Agents

@@ -16,7 +16,7 @@ export function Badge({
   const tones: Record<string, string> = {
     default:
       "border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]",
-    success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    success: "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-300",
     info: "border-[var(--accent-primary)]/30 bg-[var(--accent-muted)] text-[var(--text-primary)]",
   };

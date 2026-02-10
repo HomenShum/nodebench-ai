@@ -37,13 +37,13 @@ function ActIIChangeView({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-emerald-900/10 pb-6">
-        <h2 className="text-3xl font-serif font-medium text-emerald-950 tracking-tight mb-2">
+      <div className="border-b border-gray-900/10 pb-6">
+        <h2 className="text-3xl font-medium text-gray-950 tracking-tight mb-2">
           Context Graph
         </h2>
         <div className="flex items-center gap-2">
-          <Share2 className="w-3 h-3 text-emerald-900" />
-          <span className="text-[10px] font-black text-emerald-900/60 uppercase tracking-widest">
+          <Share2 className="w-3 h-3 text-gray-900" />
+          <span className="text-[10px] font-black text-gray-900/60 uppercase tracking-widest">
             Active Narratives
           </span>
         </div>
@@ -53,17 +53,17 @@ function ActIIChangeView({
 
       <div className="space-y-4">
         {drivers.length === 0 ? (
-          <div className="text-sm text-stone-400 italic">No active narratives detected.</div>
+          <div className="text-sm text-gray-400 italic">No active narratives detected.</div>
         ) : (
           drivers.map((signal: any, i: number) => (
             <div key={signal.headline ?? i} className="group cursor-default">
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-900/40 group-hover:bg-emerald-900 transition-colors" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900/50 group-hover:text-emerald-900 transition-colors">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-900/40 group-hover:bg-gray-900 transition-colors" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-gray-900/50 group-hover:text-gray-900 transition-colors">
                   Node {i + 1}
                 </span>
               </div>
-              <p className="text-sm font-serif font-medium text-emerald-950 leading-snug pl-4 border-l border-emerald-900/10 group-hover:border-emerald-900/40 transition-colors">
+              <p className="text-sm font-medium text-gray-950 leading-snug pl-4 border-l border-gray-900/10 group-hover:border-gray-900/40 transition-colors">
                 {signal.headline}
               </p>
             </div>
@@ -84,40 +84,40 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-emerald-900/10 pb-6">
-        <h2 className="text-3xl font-serif font-medium text-emerald-950 tracking-tight mb-2">
+      <div className="border-b border-gray-900/10 pb-6">
+        <h2 className="text-3xl font-medium text-gray-950 tracking-tight mb-2">
           Signal Velocity
         </h2>
         <div className="flex items-center gap-2">
-          <Zap className="w-3 h-3 text-emerald-900" />
-          <span className="text-[10px] font-black text-emerald-900/60 uppercase tracking-widest">
+          <Zap className="w-3 h-3 text-gray-900" />
+          <span className="text-[10px] font-black text-gray-900/60 uppercase tracking-widest">
             Processing Rate
           </span>
         </div>
       </div>
 
       {/* Velocity Big Stat */}
-      <div className="py-8 text-center bg-[#f2f1ed] border border-stone-200/50">
-        <span className="text-6xl font-serif font-bold text-emerald-950 block">{velocity}</span>
-        <span className="text-[10px] font-black text-emerald-900/40 uppercase tracking-[0.3em]">Nodes / Hour</span>
+      <div className="py-8 text-center bg-[#f2f1ed] border border-gray-200/50">
+        <span className="text-6xl font-bold text-gray-950 block">{velocity}</span>
+        <span className="text-[10px] font-black text-gray-900/40 uppercase tracking-[0.3em]">Nodes / Hour</span>
       </div>
 
       {/* Source Distribution */}
       <div className="space-y-3">
-        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-emerald-900/60 mb-2">
+        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-900/60 mb-2">
           <span>Source Distribution</span>
         </div>
         {(summary?.breakdown || []).slice(0, 4).map((item: { source: string; count: number }) => (
           <div key={item.source} className="flex items-center justify-between group">
-            <span className="text-xs font-serif text-stone-600 group-hover:text-emerald-900 transition-colors capitalize">{item.source}</span>
+            <span className="text-xs text-gray-600 group-hover:text-gray-900 transition-colors capitalize">{item.source}</span>
             <div className="flex items-center gap-2">
-              <div className="w-24 h-1.5 bg-stone-200 rounded-full overflow-hidden">
+              <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-900/60 group-hover:bg-emerald-900 transition-all duration-500"
+                  className="h-full bg-gray-900/60 group-hover:bg-gray-900 transition-all duration-500"
                   style={{ width: `${(item.count / totalNodes) * 100}%` }}
                 />
               </div>
-              <span className="text-[10px] font-mono text-stone-400 w-4 text-right">{item.count}</span>
+              <span className="text-[10px] font-mono text-gray-400 w-4 text-right">{item.count}</span>
             </div>
           </div>
         ))}

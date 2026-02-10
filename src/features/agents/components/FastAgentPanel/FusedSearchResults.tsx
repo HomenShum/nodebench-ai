@@ -130,7 +130,7 @@ function SourceBadge({ source, count, active, onClick }: {
       aria-label={`Filter by ${config.label} source (${count} result${count !== 1 ? 's' : ''})`}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
+        "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1",
         active ? config.color : "bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] opacity-50"
       )}
     >
@@ -200,7 +200,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
       target="_blank"
       rel="noopener noreferrer"
       aria-label={ariaLabel}
-      className="group block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)] hover:shadow-md transition-all bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+      className="group block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)] hover:shadow-md transition-all bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1"
     >
       <div className="flex items-start gap-3">
         {/* Source icon */}
@@ -363,7 +363,7 @@ export function FusedSearchResults({
         <button
           type="button"
           onClick={() => setShowAll(!showAll)}
-          className="w-full py-2 text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded"
+          className="w-full py-2 text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1 rounded"
           aria-expanded={showAll}
           aria-label={showAll ? "Show fewer results" : `Show ${filteredResults.length - INITIAL_COUNT} more results`}
         >

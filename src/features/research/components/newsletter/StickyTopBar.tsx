@@ -30,9 +30,9 @@ const SCOPE_LABELS = {
 const VERIFICATION_CONFIG = {
     verified: {
         icon: CheckCircle2,
-        color: 'text-emerald-600',
-        bg: 'bg-emerald-50',
-        border: 'border-emerald-200',
+        color: 'text-indigo-600',
+        bg: 'bg-indigo-50',
+        border: 'border-indigo-200',
         label: 'Verified',
     },
     partial: {

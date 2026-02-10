@@ -80,7 +80,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getSourceQualityBadge = () => {
     if (!item.sourceQuality) return null;
     const badges: Record<SourceQualityTier, { icon: string; label: string; color: string }> = {
-      excellent: { icon: '✓', label: 'Excellent', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+      excellent: { icon: '✓', label: 'Excellent', color: 'bg-indigo-50 text-gray-700 border-indigo-200' },
       good: { icon: '●', label: 'Good', color: 'bg-blue-50 text-blue-700 border-blue-200' },
       fair: { icon: '◐', label: 'Fair', color: 'bg-amber-50 text-amber-700 border-amber-200' },
       poor: { icon: '○', label: 'Poor', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-color)]' },
@@ -96,7 +96,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getVerifiedBadge = () => {
     if (!item.verified) return null;
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-emerald-50 text-emerald-700 border-emerald-200" title="Facts verified">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-indigo-50 text-gray-700 border-indigo-200" title="Facts verified">
         ✓ Verified
       </span>
     );
@@ -190,7 +190,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         </div>
 
         {/* Title: Serif for dossiers (newsletter feel), Sans for data */}
-        <h3 className={`text-lg font-semibold leading-tight mb-2 ${isDossier ? 'font-serif' : 'font-sans'} text-[color:var(--text-primary)]`}>
+        <h3 className={`text-lg font-semibold leading-tight mb-2 ${'font-sans'} text-[color:var(--text-primary)]`}>
           {item.title}
         </h3>
 

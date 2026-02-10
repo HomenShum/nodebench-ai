@@ -331,7 +331,7 @@ export function ParallelTaskTimeline({
             </div>
             <div className="h-1 bg-[var(--bg-primary)] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
+                className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-300"
                 style={{ width: `${tree.phaseProgress ?? 0}%` }}
               />
             </div>
@@ -405,7 +405,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
       <div
         className={`flex items-start gap-2 p-2 rounded-lg transition-colors ${
           node.status === "running"
-            ? "bg-blue-500/10 border border-blue-500/30"
+            ? "bg-violet-500/10 border border-violet-500/30"
             : node.status === "pruned"
             ? "bg-amber-500/5 opacity-60"
             : node.status === "failed" || node.status === "backtracked"
@@ -539,7 +539,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
 function StatusBadge({ status }: { status: TreeStatus }) {
   const config = {
     decomposing: { bg: "bg-purple-500/20", text: "text-purple-400", label: "Decomposing" },
-    executing: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Executing" },
+    executing: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Executing" },
     verifying: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Verifying" },
     cross_checking: { bg: "bg-indigo-500/20", text: "text-indigo-400", label: "Cross-checking" },
     merging: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Merging" },
@@ -621,7 +621,7 @@ function getStatusConfig(status: TaskStatus) {
 function getTypeConfig(type: TaskType) {
   const configs: Record<TaskType, { icon: React.ElementType; bg: string; text: string; label: string }> = {
     root: { icon: Target, bg: "bg-purple-500/20", text: "text-purple-400", label: "Root" },
-    branch: { icon: GitBranch, bg: "bg-blue-500/20", text: "text-blue-400", label: "Branch" },
+    branch: { icon: GitBranch, bg: "bg-violet-500/20", text: "text-violet-400", label: "Branch" },
     verification: { icon: Shield, bg: "bg-amber-500/20", text: "text-amber-400", label: "Verify" },
     critique: { icon: MessageSquare, bg: "bg-indigo-500/20", text: "text-indigo-400", label: "Critique" },
     merge: { icon: Merge, bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Merge" },

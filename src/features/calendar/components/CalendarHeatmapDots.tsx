@@ -65,7 +65,7 @@ export function CalendarHeatmapDots({
     if (hasDeadline || hasEarnings || maxPriority >= 4) return "ring-red-500";
     if (maxPriority >= 3) return "ring-amber-500";
     if (maxPriority >= 2) return "ring-yellow-500";
-    if (maxPriority >= 1) return "ring-emerald-500";
+    if (maxPriority >= 1) return "ring-indigo-500";
     return "";
   };
 
@@ -92,7 +92,7 @@ export function CalendarHeatmapDots({
         )}
         {/* Green pill for files/notes */}
         {(notes > 0 || files > 0) && (
-          <div className={cn(pillSize, "rounded-full bg-emerald-500")} 
+          <div className={cn(pillSize, "rounded-full bg-indigo-500")} 
                style={{ width: Math.min((notes + files) * 4, 16) }}
                title={`${notes + files} notes/files`} />
         )}
@@ -126,7 +126,7 @@ export function CalendarHeatmapDots({
       )}
       {/* Green dot for notes/files */}
       {(notes > 0 || files > 0) && (
-        <span className={cn(dotSize, "rounded-full bg-emerald-500")} 
+        <span className={cn(dotSize, "rounded-full bg-indigo-500")} 
               title={`${notes + files} notes/files`} />
       )}
       {/* Purple dot for holidays */}
@@ -159,7 +159,7 @@ export function PriorityRing({
     if (hasDeadline || hasEarnings || maxPriority >= 4) return "ring-2 ring-red-500/60";
     if (maxPriority >= 3) return "ring-2 ring-amber-500/60";
     if (maxPriority >= 2) return "ring-2 ring-yellow-500/60";
-    if (maxPriority >= 1) return "ring-2 ring-emerald-500/60";
+    if (maxPriority >= 1) return "ring-2 ring-indigo-500/60";
     return "";
   };
 

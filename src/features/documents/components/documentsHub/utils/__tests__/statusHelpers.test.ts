@@ -22,7 +22,7 @@ describe("statusHelpers", () => {
 
     it("should return correct classes for done status", () => {
       expect(statusChipClasses("done")).toBe(
-        "bg-emerald-50 text-emerald-700 border-emerald-200",
+        "bg-indigo-50 text-gray-700 border-indigo-200",
       );
     });
 
@@ -94,7 +94,7 @@ describe("statusHelpers", () => {
 
   describe("eventStatusBar", () => {
     it("should return correct color for confirmed", () => {
-      expect(eventStatusBar("confirmed")).toBe("bg-emerald-500/60");
+      expect(eventStatusBar("confirmed")).toBe("bg-indigo-500/60");
     });
 
     it("should return correct color for tentative", () => {
@@ -124,7 +124,7 @@ describe("statusHelpers", () => {
     });
 
     it("should return correct color for done", () => {
-      expect(kanbanStatusBar("done")).toBe("bg-emerald-500/80");
+      expect(kanbanStatusBar("done")).toBe("bg-indigo-500/80");
     });
 
     it("should return correct color for blocked", () => {

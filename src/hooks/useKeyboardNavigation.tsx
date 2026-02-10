@@ -142,21 +142,21 @@ export function KeyboardShortcutsHint({ visible }: { visible: boolean }) {
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex items-center gap-4 px-4 py-2.5 bg-stone-900/95 backdrop-blur-sm rounded-full shadow-lg">
-        <span className="text-[11px] text-stone-400">Navigate:</span>
+      <div className="flex items-center gap-4 px-4 py-2.5 bg-gray-900/95 backdrop-blur-sm rounded-full shadow-lg">
+        <span className="text-[11px] text-gray-400">Navigate:</span>
         <div className="flex items-center gap-1">
-          <kbd className="px-1.5 py-0.5 text-[10px] bg-stone-800 text-stone-300 rounded font-mono">j</kbd>
-          <kbd className="px-1.5 py-0.5 text-[10px] bg-stone-800 text-stone-300 rounded font-mono">k</kbd>
+          <kbd className="px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300 rounded font-mono">j</kbd>
+          <kbd className="px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300 rounded font-mono">k</kbd>
         </div>
-        <span className="text-stone-600">|</span>
-        <span className="text-[11px] text-stone-400">Open:</span>
-        <kbd className="px-1.5 py-0.5 text-[10px] bg-stone-800 text-stone-300 rounded font-mono">o</kbd>
-        <span className="text-stone-600">|</span>
-        <span className="text-[11px] text-stone-400">Analyze:</span>
-        <kbd className="px-1.5 py-0.5 text-[10px] bg-stone-800 text-stone-300 rounded font-mono">a</kbd>
-        <span className="text-stone-600">|</span>
-        <span className="text-[11px] text-stone-400">Save:</span>
-        <kbd className="px-1.5 py-0.5 text-[10px] bg-stone-800 text-stone-300 rounded font-mono">s</kbd>
+        <span className="text-gray-600">|</span>
+        <span className="text-[11px] text-gray-400">Open:</span>
+        <kbd className="px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300 rounded font-mono">o</kbd>
+        <span className="text-gray-600">|</span>
+        <span className="text-[11px] text-gray-400">Analyze:</span>
+        <kbd className="px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300 rounded font-mono">a</kbd>
+        <span className="text-gray-600">|</span>
+        <span className="text-[11px] text-gray-400">Save:</span>
+        <kbd className="px-1.5 py-0.5 text-[10px] bg-gray-800 text-gray-300 rounded font-mono">s</kbd>
       </div>
     </div>
   );

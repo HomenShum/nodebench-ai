@@ -33,7 +33,7 @@ function DeltaBadge({ deltaSummary }: DeltaBadgeProps) {
     || deltaSummary.toLowerCase().includes("decrease");
 
   const colorClass = isPositive
-    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+    ? "bg-indigo-50 text-gray-700 border-indigo-200"
     : isNegative
     ? "bg-red-50 text-red-700 border-red-200"
     : "bg-amber-50 text-amber-700 border-amber-200";
@@ -102,7 +102,7 @@ export function SignalCard({
               {signalLabel}
             </span>
             {signal.vizArtifactId && showMicroViz && (
-              <span className="text-[10px] text-stone-400 flex items-center gap-1">
+              <span className="text-[10px] text-gray-400 flex items-center gap-1">
                 <BarChart2 className="w-2.5 h-2.5" />
                 Chart
               </span>

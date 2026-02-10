@@ -55,7 +55,7 @@ const TYPE_ICONS: Record<ArtifactType, React.ReactNode> = {
 
 const TYPE_COLORS: Record<ArtifactType, { bg: string; text: string; border: string }> = {
   code: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800' },
-  table: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800' },
+  table: { bg: 'bg-indigo-50 dark:bg-gray-900/20', text: 'text-gray-700 dark:text-indigo-300', border: 'border-indigo-200 dark:border-gray-800' },
   document: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' },
   markdown: { bg: 'bg-[var(--bg-secondary)] dark:bg-gray-900/20', text: 'text-[var(--text-primary)] dark:text-gray-300', border: 'border-[var(--border-color)] dark:border-gray-800' },
   json: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800' },
@@ -233,7 +233,7 @@ export function ArtifactCard({
               "w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
               saving
                 ? "bg-[var(--bg-hover)] dark:bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
-                : "bg-blue-500 text-white hover:bg-blue-600 shadow-sm hover:shadow"
+                : "bg-violet-500 text-white hover:bg-violet-600 shadow-sm hover:shadow"
             )}
           >
             {saving ? (

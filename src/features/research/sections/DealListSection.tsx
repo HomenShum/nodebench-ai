@@ -124,8 +124,8 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
       <div className="mb-3 flex items-center justify-between text-[11px] text-[color:var(--text-secondary)]">
         <div className="flex items-center gap-2">
           <span className="uppercase tracking-widest font-semibold text-[color:var(--text-secondary)]">Live Deal Flow</span>
-          {isRefreshing && <span className="text-emerald-600">Refreshing…</span>}
-          {!isRefreshing && cachedDeals?.length ? <span className="text-emerald-600">Synced</span> : null}
+          {isRefreshing && <span className="text-indigo-600">Refreshing…</span>}
+          {!isRefreshing && cachedDeals?.length ? <span className="text-indigo-600">Synced</span> : null}
         </div>
         <button
           type="button"

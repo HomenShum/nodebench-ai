@@ -98,7 +98,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
       <div className="max-w-2xl mx-auto">
         {!uploadedFile ? (
           <div className="flex items-center justify-center">
-            <label className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer transition-colors">
+            <label className="flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 cursor-pointer transition-colors">
               {isUploading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -173,13 +173,13 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Ask a question about this file..."
-                className="flex-1 px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="flex-1 px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] text-sm"
                 disabled={isSubmitting}
               />
               <button
                 type="submit"
                 disabled={!question.trim() || isSubmitting}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm font-medium"
+                className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm font-medium"
               >
                 {isSubmitting ? (
                   <>

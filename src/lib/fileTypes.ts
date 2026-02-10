@@ -16,8 +16,8 @@ export type FileType =
 
 export const FILE_TYPE_COLORS: Record<FileType, string> = {
   nbdoc: "#3b82f6", // blue-500
-  csv: "#10b981", // emerald-500
-  excel: "#10b981", // emerald-500
+  csv: "#10b981", // indigo-500
+  excel: "#10b981", // indigo-500
   pdf: "#ef4444", // red-500
   video: "#8b5cf6", // violet-500
   audio: "#f59e0b", // amber-500

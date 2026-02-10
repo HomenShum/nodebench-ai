@@ -53,7 +53,7 @@ const agentLabels: Record<AgentName, string> = {
 const statusColors = {
   scheduled: "bg-[var(--bg-secondary)]/20 text-[var(--text-muted)] border-[var(--border-color)]/30",
   running: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  completed: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+  completed: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
   failed: "bg-red-500/20 text-red-400 border-red-500/30",
   cancelled: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
 };
@@ -61,7 +61,7 @@ const statusColors = {
 const statusIcons = {
   scheduled: <Loader2 className="w-3 h-3 text-[var(--text-muted)]" />,
   running: <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />,
-  completed: <CheckCircle2 className="w-3 h-3 text-emerald-400" />,
+  completed: <CheckCircle2 className="w-3 h-3 text-indigo-400" />,
   failed: <AlertCircle className="w-3 h-3 text-red-400" />,
   cancelled: <AlertCircle className="w-3 h-3 text-yellow-400" />,
 };
@@ -165,7 +165,7 @@ function LaneCard({ delegation }: LaneCardProps) {
       {/* Completed indicator */}
       {delegation.status === "completed" && (
         <div className="absolute top-2 right-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <CheckCircle2 className="w-4 h-4 text-indigo-400" />
         </div>
       )}
     </div>

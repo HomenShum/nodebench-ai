@@ -56,7 +56,7 @@ export function MorningBriefingHeader({
       </div>
 
       {/* Main Greeting - Serif Font for Newspaper Feel */}
-      <h1 className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-[color:var(--text-primary)]">
+      <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[color:var(--text-primary)]">
         {greeting}.
       </h1>
 

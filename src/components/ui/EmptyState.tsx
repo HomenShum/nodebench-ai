@@ -219,10 +219,10 @@ export function EmptyState({
         {illustrations[variant]}
       </div>
       
-      <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
       
       {description && (
-        <p className="text-sm text-stone-500 max-w-sm mb-6">{description}</p>
+        <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
       )}
       
       {action && (
@@ -230,7 +230,7 @@ export function EmptyState({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={action.onClick}
-          className="px-5 py-2.5 bg-emerald-900 text-white text-sm font-medium rounded-lg hover:bg-emerald-800 transition-colors shadow-sm"
+          className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
         >
           {action.label}
         </motion.button>

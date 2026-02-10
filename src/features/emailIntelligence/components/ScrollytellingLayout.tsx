@@ -104,12 +104,12 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
       </span>
 
       {/* Section Title - Editorial Serif */}
-      <h2 className="mb-6 font-serif text-3xl font-bold tracking-tight text-[color:var(--text-primary)] leading-tight">
+      <h2 className="mb-6 text-3xl font-bold tracking-tight text-[color:var(--text-primary)] leading-tight">
         {section.meta.title}
       </h2>
 
       {/* Narrative Body - Serif for Editorial Feel */}
-      <div className="prose prose-lg prose-slate font-serif text-[color:var(--text-primary)] leading-relaxed">
+      <div className="prose prose-lg prose-slate text-[color:var(--text-primary)] leading-relaxed">
         {section.content.body.map((paragraph, idx) => (
           <p key={idx} className="mb-4 last:mb-0">
             {parseSmartLinks(paragraph, (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>)}

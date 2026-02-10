@@ -323,7 +323,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                 )}
                 {/* Verification status badge */}
                 {item.verificationStatus === 'verified' && (
-                  <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">✓</span>
+                  <span className="text-[8px] px-1 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200">✓</span>
                 )}
                 {item.verificationStatus === 'stale' && (
                   <span className="text-[8px] px-1 py-0.5 rounded bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] border border-[color:var(--border-color)]" title="Data may be stale">

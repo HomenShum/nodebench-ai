@@ -55,13 +55,13 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-stone-900 animate-pulse">
-        <div className="p-4 border-b border-stone-700">
-          <div className="h-8 bg-stone-700 rounded w-1/3" />
+      <div className="flex flex-col h-full bg-gray-900 animate-pulse">
+        <div className="p-4 border-b border-gray-700">
+          <div className="h-8 bg-gray-700 rounded w-1/3" />
         </div>
         <div className="p-4 space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-stone-800 rounded-lg" />
+            <div key={i} className="h-32 bg-gray-800 rounded-lg" />
           ))}
         </div>
       </div>
@@ -69,16 +69,16 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
   }
 
   return (
-    <div className="flex flex-col h-full bg-stone-900">
+    <div className="flex flex-col h-full bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-stone-700">
+      <div className="p-4 border-b border-gray-700">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-purple-500/20 rounded-lg">
             <FileText className="h-6 w-6 text-purple-400" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Daily Email Reports</h1>
-            <p className="text-sm text-stone-400">
+            <p className="text-sm text-gray-400">
               AI-powered email summaries and insights
             </p>
           </div>
@@ -93,7 +93,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                 className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
                   activeReport?._id === report._id
                     ? 'bg-purple-600 text-white'
-                    : 'bg-stone-800 text-stone-400 hover:text-white'
+                    : 'bg-gray-800 text-gray-400 hover:text-white'
                 }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -119,7 +119,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                   <Star className="h-5 w-5 text-purple-400" />
                   Executive Summary
                 </h2>
-                <p className="text-stone-300">{activeReport.executiveSummary}</p>
+                <p className="text-gray-300">{activeReport.executiveSummary}</p>
               </motion.div>
             )}
 
@@ -155,7 +155,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
             {activeReport.groupedEmails && activeReport.groupedEmails.length > 0 && (
               <div>
                 <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Archive className="h-5 w-5 text-stone-400" />
+                  <Archive className="h-5 w-5 text-gray-400" />
                   Email Groups
                 </h2>
                 <div className="space-y-3">
@@ -191,14 +191,14 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                       <div className="flex items-start gap-3">
                         <div className="mt-1">
                           {item.completed ? (
-                            <CheckCircle className="h-4 w-4 text-emerald-400" />
+                            <CheckCircle className="h-4 w-4 text-indigo-400" />
                           ) : (
                             <Circle className="h-4 w-4 text-amber-400" />
                           )}
                         </div>
                         <div className="flex-1">
                           <p className="text-sm text-white">{item.action}</p>
-                          <p className="text-xs text-stone-400 mt-1">
+                          <p className="text-xs text-gray-400 mt-1">
                             From: {item.from} • {item.subject}
                           </p>
                         </div>
@@ -216,7 +216,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
 
             {/* Delivery Status */}
             {activeReport.deliveredVia && activeReport.deliveredVia.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-stone-500 pt-4 border-t border-stone-700">
+              <div className="flex items-center gap-2 text-sm text-gray-500 pt-4 border-t border-gray-700">
                 <Bell className="h-4 w-4" />
                 <span>Delivered via: {activeReport.deliveredVia.join(', ')}</span>
                 {activeReport.generatedAt && (
@@ -228,7 +228,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-stone-400">
+          <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <FileText className="h-12 w-12 mb-4 opacity-50" />
             <p>No reports available yet</p>
             <p className="text-sm mt-2">Daily reports are generated automatically at 10 PM UTC</p>
@@ -279,7 +279,7 @@ function StatCard({
     blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    emerald: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
   };
 
   return (
@@ -310,21 +310,21 @@ function CategorySection({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-stone-800/50 rounded-lg border border-stone-700 overflow-hidden"
+      className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden"
     >
       {/* Category Header */}
       <button
         onClick={onToggle}
-        className="w-full p-4 flex items-center justify-between hover:bg-stone-800/80 transition-colors"
+        className="w-full p-4 flex items-center justify-between hover:bg-gray-800/80 transition-colors"
       >
         <div className="flex items-center gap-3">
           {isExpanded ? (
-            <ChevronDown className="h-5 w-5 text-stone-400" />
+            <ChevronDown className="h-5 w-5 text-gray-400" />
           ) : (
-            <ChevronRight className="h-5 w-5 text-stone-400" />
+            <ChevronRight className="h-5 w-5 text-gray-400" />
           )}
           <span className="font-medium text-white">{group.category}</span>
-          <span className="px-2 py-0.5 bg-stone-700 text-stone-300 text-sm rounded">
+          <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-sm rounded">
             {group.count} email{group.count !== 1 ? 's' : ''}
           </span>
         </div>
@@ -344,7 +344,7 @@ function CategorySection({
               {group.emails.map((email, i) => (
                 <div
                   key={i}
-                  className="p-3 bg-stone-900/50 rounded-lg border border-stone-700/50"
+                  className="p-3 bg-gray-900/50 rounded-lg border border-gray-700/50"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -352,15 +352,15 @@ function CategorySection({
                         {email.status === 'unread' ? (
                           <Circle className="h-3 w-3 text-blue-400 fill-blue-400" />
                         ) : (
-                          <CheckCircle className="h-3 w-3 text-stone-500" />
+                          <CheckCircle className="h-3 w-3 text-gray-500" />
                         )}
                         <p className="text-sm font-medium text-white truncate">
                           {email.subject}
                         </p>
                       </div>
-                      <p className="text-xs text-stone-400 truncate">{email.from}</p>
+                      <p className="text-xs text-gray-400 truncate">{email.from}</p>
                       {email.summary && (
-                        <p className="text-xs text-stone-500 mt-1 line-clamp-2">
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                           {email.summary}
                         </p>
                       )}
@@ -397,7 +397,7 @@ function getPriorityStyle(priority: string): string {
     case 'high':
       return 'bg-orange-500/20 text-orange-400';
     case 'low':
-      return 'bg-stone-500/20 text-stone-400';
+      return 'bg-gray-500/20 text-gray-400';
     default:
       return 'bg-blue-500/20 text-blue-400';
   }

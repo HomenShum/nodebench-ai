@@ -68,8 +68,8 @@ const qualityTierConfig: Record<
   },
   good: {
     color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/30",
+    bgColor: "bg-violet-500/10",
+    borderColor: "border-violet-500/30",
     label: "Good",
     description: "Solid foundation with 5+ facts",
   },

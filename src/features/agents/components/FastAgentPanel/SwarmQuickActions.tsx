@@ -41,8 +41,8 @@ const SWARM_PRESETS: SwarmPreset[] = [
     placeholder: "e.g., Tesla competitors and market position",
     agents: ["DocumentAgent", "MediaAgent", "SECAgent"],
     icon: Search,
-    color: "text-blue-600",
-    bgColor: "bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/20",
+    color: "text-violet-600",
+    bgColor: "bg-violet-500/10 hover:bg-violet-500/20 border-violet-500/20",
   },
   {
     id: "financial",
@@ -51,8 +51,8 @@ const SWARM_PRESETS: SwarmPreset[] = [
     placeholder: "e.g., AAPL Q4 earnings analysis",
     agents: ["SECAgent", "OpenBBAgent", "DocumentAgent"],
     icon: TrendingUp,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20",
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20",
   },
   {
     id: "media",
@@ -105,7 +105,7 @@ const QuickActionCard = memo(function QuickActionCard({
       className={cn(
         "group relative rounded-xl border transition-all duration-150 cursor-pointer overflow-hidden will-change-transform",
         preset.bgColor,
-        isExpanded ? "ring-2 ring-offset-1 ring-blue-500/40" : "hover:translate-y-[-2px] hover:shadow-md"
+        isExpanded ? "ring-2 ring-offset-1 ring-violet-500/40" : "hover:translate-y-[-2px] hover:shadow-md"
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
@@ -151,7 +151,7 @@ const QuickActionCard = memo(function QuickActionCard({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={preset.placeholder}
-              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
+              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:border-violet-300 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
               autoFocus
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -174,7 +174,7 @@ const QuickActionCard = memo(function QuickActionCard({
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200",
                 query.trim()
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 shadow-sm"
+                  ? "bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-600 hover:to-indigo-600 shadow-sm"
                   : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
               )}
             >

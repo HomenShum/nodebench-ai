@@ -314,7 +314,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
                 type="button"
                 onClick={() => setColor(c)}
                 className={`h-5 w-5 rounded-full border border-[var(--border-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
-                  c === "blue" ? "bg-blue-500" : c === "green" ? "bg-emerald-500" : c === "amber" ? "bg-amber-500" : c === "red" ? "bg-red-500" : c === "purple" ? "bg-purple-500" : "bg-gray-400"
+                  c === "blue" ? "bg-blue-500" : c === "green" ? "bg-indigo-500" : c === "amber" ? "bg-amber-500" : c === "red" ? "bg-red-500" : c === "purple" ? "bg-purple-500" : "bg-gray-400"
                 } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
                 title={c}
               />

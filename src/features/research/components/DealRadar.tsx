@@ -43,17 +43,17 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             {/* Header with Stats */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-2xl font-serif font-bold text-[color:var(--text-primary)] italic">Deal Radar</h3>
-                    <p className="text-xs text-stone-500 mt-1">
+                    <h3 className="text-2xl font-bold text-[color:var(--text-primary)] italic">Deal Radar</h3>
+                    <p className="text-xs text-gray-500 mt-1">
                         Recent financings matching JPM criteria • {stats.filtered} of {stats.total} deals
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-900/10 rounded">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-emerald-700">Avg Score</div>
-                        <div className="text-xl font-serif font-bold text-emerald-900">{stats.avgBankerScore}</div>
+                    <div className="px-3 py-1.5 bg-indigo-50 border border-gray-900/10 rounded">
+                        <div className="text-[9px] font-bold uppercase tracking-widest text-gray-700">Avg Score</div>
+                        <div className="text-xl font-bold text-gray-900">{stats.avgBankerScore}</div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-stone-400 uppercase tracking-widest">
+                    <div className="flex items-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest">
                         <Building2 className="w-4 h-4" />
                         <span>Last 30 Days</span>
                     </div>
@@ -61,7 +61,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-2 border-b border-stone-200 pb-3">
+            <div className="flex items-center gap-2 border-b border-gray-200 pb-3">
                 {STAGE_OPTIONS.map((option) => {
                     const count = option.value === 'all' ? stats.total : stats.byStage[option.value as DealStage] || 0;
                     return (
@@ -69,12 +69,12 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             key={option.value}
                             onClick={() => setActiveTab(option.value as typeof activeTab)}
                             className={`px-4 py-2 text-xs font-bold uppercase tracking-tight transition-all ${activeTab === option.value
-                                    ? 'bg-emerald-900 text-white'
-                                    : 'text-stone-500 hover:text-stone-900 hover:bg-stone-100'
+                                    ? 'bg-gray-900 text-white'
+                                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
                                 }`}
                         >
                             {option.label}
-                            <span className={`ml-2 ${activeTab === option.value ? 'text-emerald-200' : 'text-stone-400'}`}>
+                            <span className={`ml-2 ${activeTab === option.value ? 'text-indigo-200' : 'text-gray-400'}`}>
                                 ({count})
                             </span>
                         </button>
@@ -83,16 +83,16 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-4 p-4 bg-stone-50 border border-stone-200">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 border border-gray-200">
                 <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-stone-400" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Filters</span>
+                    <Filter className="w-4 h-4 text-gray-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Filters</span>
                 </div>
 
                 <select
                     value={sectorFilter}
                     onChange={(e) => setSectorFilter(e.target.value as typeof sectorFilter)}
-                    className="px-3 py-1.5 text-xs font-medium border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="px-3 py-1.5 text-xs font-medium border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                     {SECTOR_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -102,7 +102,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                 </select>
 
                 <div className="flex items-center gap-2">
-                    <label className="text-xs text-stone-600">Min Score:</label>
+                    <label className="text-xs text-gray-600">Min Score:</label>
                     <input
                         type="range"
                         min="0"
@@ -112,7 +112,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                         onChange={(e) => setMinScore(Number(e.target.value))}
                         className="w-32"
                     />
-                    <span className="text-xs font-mono font-semibold text-stone-700 w-8">{minScore}</span>
+                    <span className="text-xs font-mono font-semibold text-gray-700 w-8">{minScore}</span>
                 </div>
 
                 {(sectorFilter !== 'all' || minScore > 0) && (
@@ -121,7 +121,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             setSectorFilter('all');
                             setMinScore(0);
                         }}
-                        className="ml-auto text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-emerald-900 transition-colors"
+                        className="ml-auto text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-gray-900 transition-colors"
                     >
                         Clear Filters
                     </button>
@@ -129,19 +129,19 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Deal Table */}
-            <div className="border border-stone-200 bg-white">
+            <div className="border border-gray-200 bg-white">
                 <DealTable deals={deals} onDealClick={onDealClick} />
             </div>
 
             {/* Footer Stats */}
             {deals.length > 0 && (
-                <div className="flex items-center justify-between text-xs text-stone-500 px-4">
+                <div className="flex items-center justify-between text-xs text-gray-500 px-4">
                     <div>
                         Showing {deals.length} deal{deals.length !== 1 ? 's' : ''}
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-emerald-600" />
+                            <div className="w-2 h-2 rounded-full bg-indigo-600" />
                             <span>High Quality (80+)</span>
                         </div>
                         <div className="flex items-center gap-1">

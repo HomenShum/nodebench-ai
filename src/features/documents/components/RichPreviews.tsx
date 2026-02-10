@@ -233,7 +233,7 @@ export function SpreadsheetPreview({
             <span className="text-[5px] text-[var(--text-muted)]">{row}</span>
           </div>
           <div className="flex-1 h-3.5 border-r border-b border-[var(--border-color)] p-0.5 flex items-center">
-            <div className={`h-1.5 bg-emerald-100 rounded-[1px] ${row === 1 ? "w-4/5" : row % 2 === 0 ? "w-1/2" : "w-2/3"}`} />
+            <div className={`h-1.5 bg-indigo-100 rounded-[1px] ${row === 1 ? "w-4/5" : row % 2 === 0 ? "w-1/2" : "w-2/3"}`} />
           </div>
           <div className="flex-1 h-3.5 border-r border-b border-[var(--border-color)] p-0.5 flex items-center">
             <div className={`h-1.5 bg-blue-50 rounded-[1px] ${row === 1 ? "w-3/5" : "w-1/3"}`} />

@@ -129,7 +129,7 @@ export function CalendarDatePopover({
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-serif text-[var(--text-primary)]">{shortDate}</h2>
+          <h2 className="text-2xl text-[var(--text-primary)]">{shortDate}</h2>
           {onClose && (
             <button
               aria-label="Close"
@@ -220,7 +220,7 @@ export function CalendarDatePopover({
                           {evt.proposed && evt._id && (
                             <>
                               <button
-                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-indigo-200 bg-indigo-50 text-gray-700 hover:bg-indigo-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onAcceptProposed?.(evt._id);
@@ -264,7 +264,7 @@ export function CalendarDatePopover({
             {/* Tasks */}
             {hasTasks && (
               <div className="space-y-1.5">
-                <div className="px-1 text-[10px] font-semibold text-emerald-600 uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-[10px] font-semibold text-indigo-600 uppercase tracking-wide flex items-center gap-1">
                   <CheckSquare className="w-3 h-3" />
                   Tasks
                 </div>
@@ -274,7 +274,7 @@ export function CalendarDatePopover({
                     className="flex items-center gap-3 p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                     onClick={() => onSelectTask?.(task._id, task.documentId)}
                   >
-                    <CheckSquare className="w-4 h-4 text-emerald-600" />
+                    <CheckSquare className="w-4 h-4 text-indigo-600" />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium text-[var(--text-primary)] truncate">{task.title}</div>
                       <div className="text-[11px] text-[var(--text-secondary)]">

@@ -109,7 +109,7 @@ const getSupplementColors = (type: SupplementType) => {
     case "deep_dive":
       return "bg-blue-50 text-blue-700 border-blue-200";
     case "data_appendix":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-indigo-50 text-gray-700 border-indigo-200";
     case "methodology":
       return "bg-purple-50 text-purple-700 border-purple-200";
     case "sources":

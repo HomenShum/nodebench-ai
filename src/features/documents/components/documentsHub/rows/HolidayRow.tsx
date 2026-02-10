@@ -74,7 +74,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
             checked
             readOnly
             aria-label="All-day"
-            className="h-4 w-4 rounded border-[var(--border-color)] text-emerald-600 bg-white"
+            className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 bg-white"
           />
 
           <div className="w-7 h-7 rounded-md bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-secondary)] flex items-center justify-center shrink-0">

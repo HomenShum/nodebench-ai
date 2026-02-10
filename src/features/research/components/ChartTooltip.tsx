@@ -39,9 +39,9 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
   const sentimentColors = {
     positive: {
       bg: "bg-slate-900/95",
-      accent: "bg-emerald-400",
-      accentText: "text-emerald-400",
-      border: "border-emerald-500/30",
+      accent: "bg-indigo-400",
+      accentText: "text-indigo-400",
+      border: "border-indigo-500/30",
       glow: "shadow-[0_0_8px_rgba(52,211,153,0.5)]",
     },
     negative: {
@@ -100,7 +100,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
             </div>
 
             {/* Title */}
-            <h4 className="relative font-serif font-bold text-sm mb-2 text-white leading-tight">
+            <h4 className="relative font-bold text-sm mb-2 text-white leading-tight">
               {data.title}
             </h4>
 

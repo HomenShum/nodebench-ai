@@ -12,6 +12,9 @@ interface UsePanelResizeOptions {
 interface UsePanelResizeReturn {
     // Sidebar
     sidebarWidth: number;
+    effectiveSidebarWidth: number;
+    isSidebarCollapsed: boolean;
+    toggleSidebarCollapse: () => void;
     startSidebarResizing: (e: React.MouseEvent) => void;
     // Agent Panel
     agentPanelWidth: number;
@@ -34,8 +37,24 @@ export function usePanelResize(options: UsePanelResizeOptions = {}): UsePanelRes
 
     // Sidebar state
     const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sidebar-collapsed') === 'true';
+        }
+        return false;
+    });
     const sidebarResizingRef = useRef(false);
     const startSidebarWidthRef = useRef(0);
+
+    const toggleSidebarCollapse = useCallback(() => {
+        setIsSidebarCollapsed(prev => {
+            const next = !prev;
+            localStorage.setItem('sidebar-collapsed', String(next));
+            return next;
+        });
+    }, []);
+
+    const effectiveSidebarWidth = isSidebarCollapsed ? 56 : sidebarWidth;
 
     // Agent Panel state
     const [agentPanelWidth, setAgentPanelWidth] = useState(initialAgentPanelWidth);
@@ -94,6 +113,9 @@ export function usePanelResize(options: UsePanelResizeOptions = {}): UsePanelRes
 
     return {
         sidebarWidth,
+        effectiveSidebarWidth,
+        isSidebarCollapsed,
+        toggleSidebarCollapse,
         startSidebarResizing,
         agentPanelWidth,
         startAgentResizing,

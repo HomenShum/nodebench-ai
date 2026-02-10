@@ -51,7 +51,7 @@ export function CitationLink({
         "text-xs font-medium transition-all",
         "border border-blue-300 bg-blue-50 text-blue-700",
         "hover:bg-blue-100 hover:border-blue-400 hover:shadow-sm",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1",
+        "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1",
         isHovered && "scale-105"
       )}
       title={taskName ? `Jump to: ${taskName}` : 'Jump to task'}

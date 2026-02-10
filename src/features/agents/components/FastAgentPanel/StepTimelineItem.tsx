@@ -33,7 +33,7 @@ const statusIcons = {
 // Status colors
 const statusColors = {
   pending: 'text-[var(--text-muted)]',
-  running: 'text-blue-500',
+  running: 'text-violet-500',
   complete: 'text-green-500',
   error: 'text-red-500',
 };
@@ -77,7 +77,7 @@ const StepTimelineItemComponent = memo(
           className={cn(
             'absolute left-2 top-1 w-4 h-4 rounded-full border-2 bg-[var(--bg-primary)] flex items-center justify-center transition-all duration-300',
             step.status === 'complete' && 'border-green-500',
-            step.status === 'running' && 'border-blue-500',
+            step.status === 'running' && 'border-violet-500',
             step.status === 'error' && 'border-red-500',
             step.status === 'pending' && 'border-[var(--border-color)]'
           )}

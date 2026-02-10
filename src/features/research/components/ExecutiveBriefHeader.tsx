@@ -71,7 +71,7 @@ interface KPITileProps {
 function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
   const colorClasses = {
     blue: "text-blue-600 bg-blue-50/50 border-blue-100",
-    green: "text-emerald-600 bg-emerald-50/50 border-emerald-100",
+    green: "text-indigo-600 bg-indigo-50/50 border-indigo-100",
     amber: "text-amber-600 bg-amber-50/50 border-amber-100",
     red: "text-red-600 bg-red-50/50 border-red-100",
   };
@@ -85,7 +85,7 @@ function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
       </div>
       <div className="min-w-0">
         <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 font-outfit">{label}</div>
-        <div className="text-2xl font-serif font-bold leading-none tracking-tight text-[color:var(--text-primary)]">{value}</div>
+        <div className="text-2xl font-bold leading-none tracking-tight text-[color:var(--text-primary)]">{value}</div>
         {sublabel && <div className="text-[11px] font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
       </div>
     </div>
@@ -190,7 +190,7 @@ export function ExecutiveBriefHeader({
       <div className="px-8 py-6 border-b border-[color:var(--bg-secondary)]/50 bg-gradient-to-r from-[color:var(--bg-secondary)]/30 to-transparent">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-serif font-bold text-[color:var(--text-primary)] tracking-tight italic">
+            <h1 className="text-3xl font-bold text-[color:var(--text-primary)] tracking-tight italic">
               {effectiveHeadline}
             </h1>
             <p className="mt-2 text-base text-[color:var(--text-secondary)] font-medium leading-relaxed max-w-2xl">

@@ -49,10 +49,10 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
   // Early returns after all hooks are called
   if (!hasValidTechStack) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-2">
-        <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Stack Impact</div>
-        <div className="text-sm font-semibold text-stone-900">Set your tech stack</div>
-        <div className="text-xs text-stone-500">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Stack Impact</div>
+        <div className="text-sm font-semibold text-gray-900">Set your tech stack</div>
+        <div className="text-xs text-gray-500">
           Add your stack in Settings to map direct and second-order exposure.
         </div>
       </div>
@@ -68,18 +68,18 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 space-y-3">
+    <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Stack Impact</div>
-          <div className="text-sm font-semibold text-stone-900">Dependency Map</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Stack Impact</div>
+          <div className="text-sm font-semibold text-gray-900">Dependency Map</div>
         </div>
         <button
           type="button"
           onClick={() =>
             refresh({ title, summary, url, techStack, forceRefresh: true }).then((res) => setImpact(res.impact))
           }
-          className="p-1 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700"
+          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
           aria-label="Refresh stack impact"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -87,7 +87,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
       </div>
 
       {impact?.summary && (
-        <div className="text-xs text-stone-600 leading-relaxed">{impact.summary}</div>
+        <div className="text-xs text-gray-600 leading-relaxed">{impact.summary}</div>
       )}
 
       {impact?.riskLevel && (
@@ -105,14 +105,14 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
           (cveUrl ? cveUrl.match(/CVE-\\d{4}-\\d{4,7}/i)?.[0] : undefined);
         if (!cveId && !cveUrl) return null;
         return (
-        <div className="text-xs text-stone-600">
+        <div className="text-xs text-gray-600">
           <span className="font-semibold">CVE:</span>{" "}
           {cveUrl ? (
             <a
               href={cveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-700 hover:text-emerald-900"
+              className="text-gray-700 hover:text-gray-900"
             >
               {cveId || cveUrl}
             </a>
@@ -127,7 +127,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
 
       {impact?.sourceUrls?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Sources</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Sources</div>
           <div className="flex flex-wrap gap-2 text-xs">
             {impact.sourceUrls.slice(0, 4).map((url: string, idx: number) => {
               let label = url;
@@ -142,7 +142,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-2 py-1 text-stone-600 hover:text-stone-900"
+                  className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-gray-600 hover:text-gray-900"
                 >
                   {label}
                 </a>

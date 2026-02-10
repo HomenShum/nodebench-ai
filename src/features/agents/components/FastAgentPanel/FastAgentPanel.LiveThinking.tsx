@@ -37,7 +37,7 @@ export function LiveThinking({
   // Check sources first (usually last step of research)
   if (sources.length > 0) {
     const lastSource = sources[sources.length - 1];
-    activeIcon = <FileText className="h-3.5 w-3.5 text-blue-500" />;
+    activeIcon = <FileText className="h-3.5 w-3.5 text-violet-500" />;
     activeText = `Found source: ${lastSource.title}`;
     activeType = 'source';
   }
@@ -88,9 +88,9 @@ export function LiveThinking({
         <span className="max-w-[200px] truncate">{activeText}</span>
         {isStreaming && (
           <div className="flex gap-0.5 ml-1">
-            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full animate-bounce"></span>
+            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full typing-dot [animation-delay:-0.3s]"></span>
+            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full typing-dot [animation-delay:-0.15s]"></span>
+            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full typing-dot"></span>
           </div>
         )}
       </div>

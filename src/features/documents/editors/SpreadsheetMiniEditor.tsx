@@ -408,7 +408,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
                   <button
                     type="button"
                     onClick={handleAnalyzeSelection}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-emerald-500/25"
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-indigo-500 hover:from-indigo-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-indigo-500/25"
                     title="Analyze selected cells with AI"
                   >
                     <MessageSquare className="w-4 h-4" />

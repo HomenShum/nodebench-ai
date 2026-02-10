@@ -11,11 +11,11 @@ const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="my-6 overflow-hidden rounded-md border-l-4 border-indigo-500 bg-stone-50">
+    <div className="my-6 overflow-hidden rounded-md border-l-4 border-indigo-500 bg-gray-50">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-[color:var(--text-primary)] font-serif hover:bg-[color:var(--bg-hover)] transition-colors"
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors"
       >
         <span>Deep Dive: {title}</span>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>

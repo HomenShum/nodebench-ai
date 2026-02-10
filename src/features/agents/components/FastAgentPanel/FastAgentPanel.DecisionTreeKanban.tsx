@@ -132,7 +132,7 @@ export function DecisionTreeKanban({
       {/* Progress Bar */}
       <div className="relative h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
         <motion.div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-indigo-500"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-indigo-500"
           initial={{ width: 0 }}
           animate={{ width: `${graph.phaseProgress}%` }}
           transition={{ duration: 0.3 }}
@@ -217,12 +217,12 @@ function SourceCard({ node }: { node: ReasoningNode }) {
         isComplete
           ? "bg-green-500/5 border-green-500/20"
           : isRunning
-          ? "bg-blue-500/5 border-blue-500/20"
+          ? "bg-violet-500/5 border-violet-500/20"
           : "bg-[var(--bg-tertiary)] border-[var(--border-color)]"
       }`}
     >
       <div className="flex items-center gap-2">
-        {isRunning && <Loader2 className="w-3 h-3 animate-spin text-blue-500" />}
+        {isRunning && <Loader2 className="w-3 h-3 animate-spin text-violet-500" />}
         {isComplete && <CheckCircle className="w-3 h-3 text-green-500" />}
         <span className="font-medium text-[var(--text-primary)] truncate">
           {node.label}
@@ -255,7 +255,7 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
           : isVerified
           ? "bg-green-500/5 border-green-500/20"
           : isRunning
-          ? "bg-blue-500/5 border-blue-500/20"
+          ? "bg-violet-500/5 border-violet-500/20"
           : "bg-[var(--bg-secondary)] border-[var(--border-color)]"
       }`}
       onClick={onClick}
@@ -360,7 +360,7 @@ function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?
 
   if (status === "running") {
     return (
-      <span className="flex items-center text-[10px] font-bold text-blue-600 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">
+      <span className="flex items-center text-[10px] font-bold text-violet-600 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20">
         <Loader2 className="w-3 h-3 mr-1 animate-spin" />
         Enriching
       </span>
@@ -411,7 +411,7 @@ function EnrichmentGrid({ data }: { data?: CandidateData }) {
   ];
 
   const colorMap: Record<string, string> = {
-    blue: "bg-blue-500/10 border-blue-500/20 text-blue-700",
+    blue: "bg-violet-500/10 border-violet-500/20 text-violet-700",
     purple: "bg-purple-500/10 border-purple-500/20 text-purple-700",
     amber: "bg-amber-500/10 border-amber-500/20 text-amber-700",
     green: "bg-green-500/10 border-green-500/20 text-green-700",
@@ -456,7 +456,7 @@ function SynthesisCard({ node }: { node: ReasoningNode }) {
       animate={{ opacity: 1, y: 0 }}
       className={`rounded-lg border p-4 ${
         isComplete
-          ? "bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20"
+          ? "bg-gradient-to-br from-green-500/5 to-indigo-500/5 border-green-500/20"
           : "bg-[var(--bg-secondary)] border-[var(--border-color)]"
       }`}
     >

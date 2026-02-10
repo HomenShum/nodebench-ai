@@ -329,15 +329,15 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
         className="absolute inset-0 bg-black/30"
         aria-label="Close entity drawer"
       />
-      <div className="ml-auto w-full max-w-md h-full bg-white shadow-2xl border-l border-stone-200 flex flex-col relative">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-200">
+      <div className="ml-auto w-full max-w-md h-full bg-white shadow-2xl border-l border-gray-200 flex flex-col relative">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-900 text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center">
               <Building2 className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-stone-900">{entityName ?? "Entity"}</div>
-              <div className="text-[10px] uppercase tracking-widest text-stone-400">{entityType}</div>
+              <div className="text-sm font-semibold text-gray-900">{entityName ?? "Entity"}</div>
+              <div className="text-[10px] uppercase tracking-widest text-gray-400">{entityType}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -377,7 +377,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                   })
                   .finally(() => setIsLoading(false));
               }}
-              className="p-2 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700"
+              className="p-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
               aria-label="Refresh entity"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -385,7 +385,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-700"
+              className="p-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
               aria-label="Close drawer"
             >
               <X className="w-4 h-4" />
@@ -403,13 +403,13 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
           {!error && (
             <>
               <div className="space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Summary</div>
-                <p className="text-sm text-stone-700 leading-relaxed">{summary}</p>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Summary</div>
+                <p className="text-sm text-gray-700 leading-relaxed">{summary}</p>
 
                 {/* Freshness Badge */}
                 {insight?.freshness && (
                   <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-semibold ${insight.freshness.withinBankerWindow
-                    ? "bg-emerald-100 text-emerald-800"
+                    ? "bg-indigo-100 text-gray-800"
                     : "bg-amber-100 text-amber-800"
                     }`}>
                     <span>{insight.freshness.withinBankerWindow ? "✓" : "⚠"}</span>
@@ -477,7 +477,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {/* Persona Status */}
               {insight?.personaHooks?.JPM_STARTUP_BANKER && (
                 <div className={`rounded-md border p-3 text-xs ${insight.personaHooks.JPM_STARTUP_BANKER.failTriggers?.length === 0
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  ? "border-indigo-200 bg-indigo-50 text-gray-900"
                   : "border-amber-200 bg-amber-50 text-amber-900"
                   }`}>
                   <div className="flex items-center justify-between">
@@ -485,7 +485,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                       Banker Readiness
                     </span>
                     <span className={`font-semibold ${insight.personaHooks.JPM_STARTUP_BANKER.failTriggers?.length === 0
-                      ? "text-emerald-700"
+                      ? "text-gray-700"
                       : "text-amber-700"
                       }`}>
                       {insight.personaHooks.JPM_STARTUP_BANKER.failTriggers?.length === 0 ? "✓ PASS" : "⚠ GAPS"}
@@ -503,33 +503,33 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {/* Banker-Grade: Financials */}
               {insight?.financials && (
-                <div className="rounded-md border border-emerald-100 bg-emerald-50/50 p-3 text-xs text-emerald-900 space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 flex items-center gap-1">
+                <div className="rounded-md border border-indigo-100 bg-indigo-50/50 p-3 text-xs text-gray-900 space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-700 flex items-center gap-1">
                     <DollarSign className="w-3 h-3" /> Financials
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {insight.financials.burnRate && (
                       <div>
-                        <span className="text-[10px] text-emerald-600 uppercase">Burn Rate</span>
+                        <span className="text-[10px] text-indigo-600 uppercase">Burn Rate</span>
                         <div className="font-semibold">${insight.financials.burnRate.toLocaleString()} / mo</div>
                       </div>
                     )}
                     {insight.financials.revenue && (
                       <div>
-                        <span className="text-[10px] text-emerald-600 uppercase">Revenue</span>
+                        <span className="text-[10px] text-indigo-600 uppercase">Revenue</span>
                         <div className="font-semibold">${insight.financials.revenue.toLocaleString()} / yr</div>
                       </div>
                     )}
                     {insight.financials.costToServe && (
                       <div>
-                        <span className="text-[10px] text-emerald-600 uppercase">Cost to Serve</span>
+                        <span className="text-[10px] text-indigo-600 uppercase">Cost to Serve</span>
                         <div className="font-semibold">${insight.financials.costToServe} unit</div>
                       </div>
                     )}
                   </div>
                   {insight.financials.unitEconomics && (
-                    <div className="pt-2 border-t border-emerald-200">
-                      <span className="text-[10px] text-emerald-600 uppercase">Unit Economics</span>
+                    <div className="pt-2 border-t border-indigo-200">
+                      <span className="text-[10px] text-indigo-600 uppercase">Unit Economics</span>
                       <div className="text-sm">{insight.financials.unitEconomics}</div>
                     </div>
                   )}
@@ -567,27 +567,27 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {/* Banker-Grade: Technical Specs */}
               {insight?.technicalSpecs && (
-                <div className="rounded-md border border-stone-200 bg-stone-50 p-3 text-xs text-stone-800 space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Technical Specs</div>
+                <div className="rounded-md border border-gray-200 bg-gray-50 p-3 text-xs text-gray-800 space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Technical Specs</div>
 
                   {insight.technicalSpecs.repoStats && (
-                    <div className="pb-2 border-b border-stone-200">
+                    <div className="pb-2 border-b border-gray-200">
                       <div className="grid grid-cols-3 gap-2">
                         <div className="text-center">
                           <div className="text-xs font-bold">{insight.technicalSpecs.repoStats.stars}</div>
-                          <div className="text-[9px] uppercase text-stone-500">Stars</div>
+                          <div className="text-[9px] uppercase text-gray-500">Stars</div>
                         </div>
                         <div className="text-center">
                           <div className="text-xs font-bold">{insight.technicalSpecs.repoStats.forks}</div>
-                          <div className="text-[9px] uppercase text-stone-500">Forks</div>
+                          <div className="text-[9px] uppercase text-gray-500">Forks</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-xs font-bold text-emerald-600">+{insight.technicalSpecs.repoStats.starVelocity}</div>
-                          <div className="text-[9px] uppercase text-stone-500">Velocity</div>
+                          <div className="text-xs font-bold text-indigo-600">+{insight.technicalSpecs.repoStats.starVelocity}</div>
+                          <div className="text-[9px] uppercase text-gray-500">Velocity</div>
                         </div>
                       </div>
                       {/* Deep Dive Repo Panel */}
-                      <div className="mt-3 pt-2 border-t border-stone-200/50">
+                      <div className="mt-3 pt-2 border-t border-gray-200/50">
                         <RepoStatsPanel
                           repoUrl={insight.technicalSpecs.repoStats.url || "https://github.com/example/repo"}
                           initialData={insight.technicalSpecs}
@@ -623,79 +623,79 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                   {insight.ecosystem.dependencies && insight.ecosystem.dependencies.length > 0 && (
                     <div>
                       <span className="text-[9px] text-amber-600 uppercase">Dependencies</span>
-                      <div className="text-stone-700">{insight.ecosystem.dependencies.join(", ")}</div>
+                      <div className="text-gray-700">{insight.ecosystem.dependencies.join(", ")}</div>
                     </div>
                   )}
                   {insight.ecosystem.downstreamImpact && insight.ecosystem.downstreamImpact.length > 0 && (
                     <div>
                       <span className="text-[9px] text-amber-600 uppercase">Downstream Impact</span>
-                      <div className="text-stone-700">{insight.ecosystem.downstreamImpact.join(", ")}</div>
+                      <div className="text-gray-700">{insight.ecosystem.downstreamImpact.join(", ")}</div>
                     </div>
                   )}
                 </div>
               )}
 
 
-              <div className="grid grid-cols-2 gap-3 text-xs text-stone-600">
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+              <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <MapPin className="w-3 h-3" /> HQ
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">{crm.hqLocation || "n/a"}</div>
+                  <div className="mt-1 font-semibold text-gray-900">{crm.hqLocation || "n/a"}</div>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <Calendar className="w-3 h-3" /> Founded
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">{crm.foundingYear || "n/a"}</div>
+                  <div className="mt-1 font-semibold text-gray-900">{crm.foundingYear || "n/a"}</div>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <Users className="w-3 h-3" /> Founders
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">
+                  <div className="mt-1 font-semibold text-gray-900">
                     {(crm.founders ?? []).slice(0, 2).join(", ") || "n/a"}
                   </div>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <Globe className="w-3 h-3" /> Website
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">{crm.website || "n/a"}</div>
+                  <div className="mt-1 font-semibold text-gray-900">{crm.website || "n/a"}</div>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <DollarSign className="w-3 h-3" /> Funding
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">{crm.totalFunding || "n/a"}</div>
+                  <div className="mt-1 font-semibold text-gray-900">{crm.totalFunding || "n/a"}</div>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <Building2 className="w-3 h-3" /> Stage
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">{crm.fundingStage || "n/a"}</div>
+                  <div className="mt-1 font-semibold text-gray-900">{crm.fundingStage || "n/a"}</div>
                 </div>
-                <div className="rounded-md border border-stone-100 bg-stone-50 p-3">
-                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-stone-400">
+                <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-gray-400">
                     <Calendar className="w-3 h-3" /> Last round
                   </div>
-                  <div className="mt-1 font-semibold text-stone-900">{crm.lastFundingDate || "n/a"}</div>
+                  <div className="mt-1 font-semibold text-gray-900">{crm.lastFundingDate || "n/a"}</div>
                 </div>
               </div>
 
               {crm.foundersBackground && (
-                <div className="rounded-md border border-stone-100 bg-white p-3 text-xs text-stone-600">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Founder background</div>
-                  <div className="mt-1 text-sm text-stone-800">{crm.foundersBackground}</div>
+                <div className="rounded-md border border-gray-100 bg-white p-3 text-xs text-gray-600">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Founder background</div>
+                  <div className="mt-1 text-sm text-gray-800">{crm.foundersBackground}</div>
                 </div>
               )}
 
               {crm.keyPeople?.length > 0 && (
-                <div className="rounded-md border border-stone-100 bg-white p-3 text-xs text-stone-600 space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Key people</div>
+                <div className="rounded-md border border-gray-100 bg-white p-3 text-xs text-gray-600 space-y-2">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Key people</div>
                   <ul className="space-y-1">
                     {crm.keyPeople.slice(0, 3).map((person: any, idx: number) => (
-                      <li key={`${person.name}-${idx}`} className="text-sm text-stone-800">
+                      <li key={`${person.name}-${idx}`} className="text-sm text-gray-800">
                         <span className="font-semibold">{person.name}</span> - {person.title}
                       </li>
                     ))}
@@ -704,54 +704,54 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               )}
 
               {crm.investors?.length > 0 && (
-                <div className="rounded-md border border-stone-100 bg-white p-3 text-xs text-stone-600">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Investors</div>
-                  <div className="mt-1 text-sm text-stone-800">{crm.investors.slice(0, 4).join(", ")}</div>
+                <div className="rounded-md border border-gray-100 bg-white p-3 text-xs text-gray-600">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Investors</div>
+                  <div className="mt-1 text-sm text-gray-800">{crm.investors.slice(0, 4).join(", ")}</div>
                 </div>
               )}
 
               {crm.competitors?.length > 0 && (
-                <div className="rounded-md border border-stone-100 bg-white p-3 text-xs text-stone-600">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Competitors</div>
-                  <div className="mt-1 text-sm text-stone-800">{crm.competitors.slice(0, 4).join(", ")}</div>
+                <div className="rounded-md border border-gray-100 bg-white p-3 text-xs text-gray-600">
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Competitors</div>
+                  <div className="mt-1 text-sm text-gray-800">{crm.competitors.slice(0, 4).join(", ")}</div>
                 </div>
               )}
 
               {stockPrice?.price && (
-                <div className="rounded-md border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-900">
+                <div className="rounded-md border border-indigo-100 bg-indigo-50 p-3 text-xs text-gray-900">
                   <div className="flex items-center justify-between">
                     <span className="font-bold uppercase tracking-widest">Stock</span>
                     <span className="font-semibold">${stockPrice.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                   </div>
                   {stockPrice.asOf && (
-                    <div className="text-[10px] text-emerald-700 mt-1">As of {stockPrice.asOf}</div>
+                    <div className="text-[10px] text-gray-700 mt-1">As of {stockPrice.asOf}</div>
                   )}
                 </div>
               )}
 
               <div className="space-y-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Key facts</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Key facts</div>
                 {keyFacts.length > 0 ? (
-                  <ul className="list-disc list-inside text-xs text-stone-600 space-y-1">
+                  <ul className="list-disc list-inside text-xs text-gray-600 space-y-1">
                     {keyFacts.slice(0, 6).map((fact, idx) => (
                       <li key={`${fact}-${idx}`}>{fact}</li>
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-xs text-stone-400">No key facts captured yet.</div>
+                  <div className="text-xs text-gray-400">No key facts captured yet.</div>
                 )}
               </div>
 
               {(contextMatches.watchlistMatches.length > 0 || contextMatches.stackMatches.length > 0) && (
                 <div className="space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Your context</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Your context</div>
                   {contextMatches.watchlistMatches.length > 0 && (
-                    <div className="text-xs text-stone-600">
+                    <div className="text-xs text-gray-600">
                       Watchlist matches: {contextMatches.watchlistMatches.join(", ")}
                     </div>
                   )}
                   {contextMatches.stackMatches.length > 0 && (
-                    <div className="text-xs text-stone-600">
+                    <div className="text-xs text-gray-600">
                       Stack matches: {contextMatches.stackMatches.join(", ")}
                     </div>
                   )}
@@ -760,7 +760,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {recentNews.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Recent news</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Recent news</div>
                   <div className="space-y-2">
                     {recentNews.slice(0, 5).map((item, idx) => (
                       <button
@@ -781,13 +781,13 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                             window.open(item.url, "_blank", "noopener,noreferrer");
                           }
                         }}
-                        className="w-full text-left rounded-md border border-stone-100 bg-stone-50 px-3 py-2 hover:bg-white transition-colors"
+                        className="w-full text-left rounded-md border border-gray-100 bg-gray-50 px-3 py-2 hover:bg-white transition-colors"
                       >
-                        <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-stone-400">
+                        <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-gray-400">
                           <span>{item.source || "Source"}</span>
                           {item.date && <span>{item.date}</span>}
                         </div>
-                        <div className="text-xs text-stone-700 mt-1">{item.headline}</div>
+                        <div className="text-xs text-gray-700 mt-1">{item.headline}</div>
                       </button>
                     ))}
                   </div>
@@ -796,7 +796,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {sources.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Sources</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Sources</div>
                   <div className="space-y-2">
                     {sources.slice(0, 5).map((source, idx) => (
                       <button
@@ -815,14 +815,14 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                             window.open(source.url, "_blank", "noopener,noreferrer");
                           }
                         }}
-                        className="w-full text-left rounded-md border border-stone-100 bg-white px-3 py-2 hover:border-emerald-900 transition-colors"
+                        className="w-full text-left rounded-md border border-gray-100 bg-white px-3 py-2 hover:border-gray-900 transition-colors"
                       >
-                        <div className="flex items-center justify-between text-[11px] font-semibold text-stone-700">
+                        <div className="flex items-center justify-between text-[11px] font-semibold text-gray-700">
                           <span>{source.name || "Source"}</span>
-                          <ArrowUpRight className="w-3 h-3 text-stone-400" />
+                          <ArrowUpRight className="w-3 h-3 text-gray-400" />
                         </div>
                         {source.snippet && (
-                          <div className="text-[10px] text-stone-500 mt-1 line-clamp-2">{source.snippet}</div>
+                          <div className="text-[10px] text-gray-500 mt-1 line-clamp-2">{source.snippet}</div>
                         )}
                       </button>
                     ))}
@@ -833,7 +833,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
           )}
         </div>
 
-        <div className="border-t border-stone-200 px-5 py-4">
+        <div className="border-t border-gray-200 px-5 py-4">
           <button
             type="button"
             onClick={() => {
@@ -844,7 +844,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                 contextWebUrls: (sources || []).map((s) => s.url).filter(Boolean),
               });
             }}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-emerald-900 hover:bg-black transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-gray-900 hover:bg-black transition-colors"
           >
             Ask agent
           </button>

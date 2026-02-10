@@ -30,7 +30,7 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
 
   return (
     <div className="w-full">
-      <div className="flex flex-wrap gap-2 mb-6 border-b border-stone-100 pb-4">
+      <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-100 pb-4">
         {sources.map((source) => {
           const Icon = source.icon || defaultIcons[source.id];
           const isActive = activeSource === source.id;
@@ -42,7 +42,7 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
                 isActive
                   ? "bg-gray-900 text-white shadow-sm"
-                  : "bg-white text-stone-600 border border-stone-200 hover:border-stone-300 hover:bg-stone-50"
+                  : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
               )}
             >
               {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -61,7 +61,7 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
       </motion.div>
 
       {filteredItems.length === 0 && (
-        <div className="py-10 text-center text-stone-400 text-sm">No updates found for this source.</div>
+        <div className="py-10 text-center text-gray-400 text-sm">No updates found for this source.</div>
       )}
     </div>
   );
@@ -70,7 +70,7 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
 const FeedCard = ({ item }: { item: FeedItem }) => {
   const badgeColor =
     (item.source || "").toLowerCase() === "github"
-      ? "bg-stone-100 text-stone-700"
+      ? "bg-gray-100 text-gray-700"
       : (item.source || "").toLowerCase() === "ycombinator" || (item.source || "").toLowerCase() === "hackernews"
         ? "bg-orange-50 text-orange-700"
         : (item.source || "").toLowerCase() === "techcrunch"
@@ -86,23 +86,23 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.15 }}
-      className="group relative flex flex-col justify-between rounded-lg border border-stone-200 bg-white p-4 hover:border-indigo-200 hover:shadow-md transition-all"
+      className="group relative flex flex-col justify-between rounded-lg border border-gray-200 bg-white p-4 hover:border-indigo-200 hover:shadow-md transition-all"
     >
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className={clsx("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded", badgeColor)}>
             {item.source || "News"}
           </span>
-          <ExternalLink className="w-3.5 h-3.5 text-stone-300 group-hover:text-indigo-400" />
+          <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-indigo-400" />
         </div>
-        <h4 className="text-sm font-semibold text-stone-900 leading-snug mb-2 line-clamp-2">{item.title}</h4>
-        <p className="text-xs text-stone-500 line-clamp-2 mb-3">{item.subtitle || item.type}</p>
+        <h4 className="text-sm font-semibold text-gray-900 leading-snug mb-2 line-clamp-2">{item.title}</h4>
+        <p className="text-xs text-gray-500 line-clamp-2 mb-3">{item.subtitle || item.type}</p>
       </div>
-      <div className="flex items-center gap-3 border-t border-stone-50 pt-3 text-[11px] text-stone-500">
+      <div className="flex items-center gap-3 border-t border-gray-50 pt-3 text-[11px] text-gray-500">
         {item.timestamp && <span>{item.timestamp}</span>}
         {item.tags?.length ? <span className="truncate">#{item.tags.slice(0, 2).join(" #")}</span> : null}
         {typeof item.relevanceScore === "number" && (
-          <span className="ml-auto font-mono text-xs text-stone-600">Relevance {item.relevanceScore}</span>
+          <span className="ml-auto font-mono text-xs text-gray-600">Relevance {item.relevanceScore}</span>
         )}
       </div>
     </motion.div>

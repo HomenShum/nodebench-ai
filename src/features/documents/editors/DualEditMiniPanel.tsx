@@ -98,7 +98,7 @@ export default function DualEditMiniPanel({
           {/* Task row */}
           <div className="flex items-center gap-2">
             <div className="shrink-0 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)] min-w-[58px]">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500" />
               <span>Task</span>
             </div>
             <input

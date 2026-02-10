@@ -5,17 +5,26 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter var", ...fontFamily.sans],
-        serif: ["Georgia", "serif"],
+        sans: ["Inter", "Inter var", ...fontFamily.sans],
+        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
         DEFAULT: "8px",
+        sm: "6px",
+        md: "8px",
+        lg: "10px",
+        xl: "12px",
+        "2xl": "16px",
         secondary: "4px",
         container: "12px",
       },
       boxShadow: {
-        DEFAULT: "0 1px 4px rgba(0, 0, 0, 0.1)",
-        hover: "0 2px 8px rgba(0, 0, 0, 0.12)",
+        DEFAULT: "0 0 0 1px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04)",
+        sm: "0 0 0 1px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04)",
+        md: "0 0 0 1px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.05), 0 12px 24px rgba(0, 0, 0, 0.05)",
+        lg: "0 0 0 1px rgba(0, 0, 0, 0.03), 0 4px 8px rgba(0, 0, 0, 0.06), 0 24px 48px rgba(0, 0, 0, 0.08)",
+        xl: "0 0 0 1px rgba(0, 0, 0, 0.03), 0 8px 16px rgba(0, 0, 0, 0.08), 0 32px 64px rgba(0, 0, 0, 0.10)",
+        hover: "0 0 0 1px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.08)",
       },
       colors: {
         border: "hsl(var(--border))",
@@ -26,7 +35,7 @@ module.exports = {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          hover: "#4338CA",
+          hover: "#4F5BC0",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -44,18 +53,15 @@ module.exports = {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
-          hover: "#7C3AED",
+          hover: "#4F5BC0",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        canvas: {
-          warm: "#faf9f6",
-        },
         brand: {
-          dark: "#163628",
-          purple: "#8b5cf6",
+          dark: "#111827",
+          indigo: "#5E6AD2",
         },
         card: {
           DEFAULT: "hsl(var(--card))",
@@ -65,6 +71,10 @@ module.exports = {
       spacing: {
         "form-field": "16px",
         section: "32px",
+      },
+      letterSpacing: {
+        'panel': '-0.02em',
+        'label': '-0.01em',
       },
       keyframes: {
         shimmer: {
@@ -116,6 +126,17 @@ module.exports = {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'spring-in': {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        'slide-up-spring': {
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
       },
       animation: {
         shimmer: 'shimmer 2s ease-in-out infinite',
@@ -130,6 +151,8 @@ module.exports = {
         'spin-slow': 'spin-slow 20s linear infinite',
         'pulse-subtle': 'pulse-subtle 4s ease-in-out infinite',
         'skeleton-shimmer': 'skeleton-shimmer 1.5s ease-in-out infinite',
+        'spring-in': 'spring-in 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards',
+        'slide-up-spring': 'slide-up-spring 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards',
       },
     },
   },

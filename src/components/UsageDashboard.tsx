@@ -73,7 +73,7 @@ const StatCard: React.FC<{
     <div className="flex items-start justify-between">
       <div className="p-2 bg-gray-50 rounded-lg">{icon}</div>
       {trend !== undefined && (
-        <div className={`flex items-center gap-0.5 text-xs font-medium ${trend >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+        <div className={`flex items-center gap-0.5 text-xs font-medium ${trend >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
           <TrendingUp className={`h-3 w-3 ${trend < 0 ? 'rotate-180' : ''}`} />
           {Math.abs(trend)}%
         </div>
@@ -171,7 +171,7 @@ export const UsageDashboard: React.FC<UsageDashboardProps> = ({
         <StatCard
           label="Cost Today"
           value={formatCost(data.costToday)}
-          icon={<DollarSign className="h-5 w-5 text-emerald-500" />}
+          icon={<DollarSign className="h-5 w-5 text-indigo-500" />}
         />
         <StatCard
           label="Avg Response"
@@ -206,7 +206,7 @@ export const UsageDashboard: React.FC<UsageDashboardProps> = ({
           max={data.costLimit}
           label="Cost"
           icon={<DollarSign className="h-4 w-4" />}
-          color="bg-emerald-500"
+          color="bg-indigo-500"
           format={formatCost}
         />
       </div>

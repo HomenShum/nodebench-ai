@@ -110,7 +110,7 @@ export function EventMarker({
             transition={{ duration: 0.15 }}
             className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 pointer-events-none"
           >
-            <div className="bg-stone-900 text-white rounded-lg shadow-xl p-3 text-xs">
+            <div className="bg-gray-900 text-white rounded-lg shadow-xl p-3 text-xs">
               {/* Header */}
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1 min-w-0">
@@ -123,7 +123,7 @@ export function EventMarker({
                       ${event.significance === "plot_twist" ? "text-red-400" :
                         event.significance === "major" ? "text-purple-400" :
                         event.significance === "moderate" ? "text-blue-400" :
-                        "text-stone-400"}
+                        "text-gray-400"}
                     `}>
                       {event.significance.replace("_", " ")}
                     </span>
@@ -132,22 +132,22 @@ export function EventMarker({
                     {event.headline}
                   </h4>
                 </div>
-                <div className="flex items-center gap-1 text-stone-400 flex-shrink-0">
+                <div className="flex items-center gap-1 text-gray-400 flex-shrink-0">
                   {event.isVerified ? (
-                    <CheckCircle className="w-3 h-3 text-emerald-400" title="Verified" />
+                    <CheckCircle className="w-3 h-3 text-indigo-400" title="Verified" />
                   ) : (
-                    <XCircle className="w-3 h-3 text-stone-500" title="Unverified" />
+                    <XCircle className="w-3 h-3 text-gray-500" title="Unverified" />
                   )}
                 </div>
               </div>
 
               {/* Summary */}
-              <p className="text-stone-300 leading-relaxed mb-2 line-clamp-3">
+              <p className="text-gray-300 leading-relaxed mb-2 line-clamp-3">
                 {event.summary}
               </p>
 
               {/* Meta */}
-              <div className="flex items-center justify-between text-stone-400 pt-2 border-t border-stone-700">
+              <div className="flex items-center justify-between text-gray-400 pt-2 border-t border-gray-700">
                 <span>{formatRelativeTime(event.occurredAt)}</span>
                 <span>{event.sourceUrls.length} source{event.sourceUrls.length !== 1 ? "s" : ""}</span>
               </div>
@@ -158,13 +158,13 @@ export function EventMarker({
                   {event.sourceNames.slice(0, 3).map((name, i) => (
                     <span
                       key={i}
-                      className="px-1.5 py-0.5 bg-stone-800 rounded text-[10px] text-stone-400"
+                      className="px-1.5 py-0.5 bg-gray-800 rounded text-[10px] text-gray-400"
                     >
                       {name}
                     </span>
                   ))}
                   {event.sourceNames.length > 3 && (
-                    <span className="px-1.5 py-0.5 text-[10px] text-stone-500">
+                    <span className="px-1.5 py-0.5 text-[10px] text-gray-500">
                       +{event.sourceNames.length - 3} more
                     </span>
                   )}
@@ -181,7 +181,7 @@ export function EventMarker({
 
               {/* Tooltip Arrow */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
-                <div className="border-8 border-transparent border-t-stone-900" />
+                <div className="border-8 border-transparent border-t-gray-900" />
               </div>
             </div>
           </motion.div>

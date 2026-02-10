@@ -174,7 +174,7 @@ export function ExportBriefButton({ brief, className = "" }: ExportBriefButtonPr
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-4 h-4 text-indigo-500" /> : <Copy className="w-4 h-4" />}
             {copied ? "Copied!" : "Copy as Markdown"}
           </button>
 

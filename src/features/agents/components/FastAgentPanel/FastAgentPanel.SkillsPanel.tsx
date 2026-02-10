@@ -22,8 +22,8 @@ interface SkillSummary {
 
 // Minimal category dot colors
 const categoryDots: Record<string, string> = {
-  research: 'bg-blue-500',
-  document: 'bg-emerald-500',
+  research: 'bg-violet-500',
+  document: 'bg-indigo-500',
   media: 'bg-violet-500',
   financial: 'bg-amber-500',
   workflow: 'bg-cyan-500',
@@ -67,7 +67,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search skills..."
             autoFocus
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[var(--bg-secondary)] border-0 rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[var(--bg-secondary)] border-0 rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
           />
         </div>
       </div>
@@ -85,11 +85,11 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
               <button
                 key={skill._id}
                 onClick={() => handleSkillClick(skill.key || 'custom', skill.content)}
-                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-blue-50 transition-colors mb-1 group"
+                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-violet-50 transition-colors mb-1 group"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                  <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-blue-600 truncate">
+                  <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                  <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-violet-600 truncate">
                     {skill.key || skill.category || 'Custom skill'}
                   </span>
                 </div>
@@ -126,7 +126,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
                   <div className="flex items-start gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${categoryDots[skill.category] || 'bg-[var(--text-muted)]'}`} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-[var(--text-primary)] group-hover:text-blue-600 transition-colors truncate">
+                      <div className="text-xs font-medium text-[var(--text-primary)] group-hover:text-violet-600 transition-colors truncate">
                         {skill.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </div>
                       <div className="text-[11px] text-[var(--text-secondary)] line-clamp-1 mt-0.5">

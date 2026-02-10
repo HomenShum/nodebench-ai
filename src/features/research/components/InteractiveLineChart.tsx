@@ -348,7 +348,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
                 cx={x}
                 cy={y}
                 r="4"
-                className="fill-white stroke-emerald-600 stroke-[2px] cursor-pointer hover:stroke-emerald-400 hover:scale-125 transition-all duration-300"
+                className="fill-white stroke-indigo-600 stroke-[2px] cursor-pointer hover:stroke-indigo-400 hover:scale-125 transition-all duration-300"
               />
               <circle
                 cx={x}

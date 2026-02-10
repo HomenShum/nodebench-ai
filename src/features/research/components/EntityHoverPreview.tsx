@@ -132,12 +132,12 @@ const getEntityColors = (type: ExtendedEntityType) => {
   switch (type) {
     case "company":
       return {
-        text: "text-emerald-700",
-        bg: "bg-emerald-50",
-        border: "border-emerald-200",
-        icon: "text-emerald-500",
-        badge: "bg-emerald-100 text-emerald-700",
-        ring: "ring-emerald-500/20",
+        text: "text-gray-700",
+        bg: "bg-indigo-50",
+        border: "border-indigo-200",
+        icon: "text-indigo-500",
+        badge: "bg-indigo-100 text-gray-700",
+        ring: "ring-indigo-500/20",
       };
     case "person":
       return {
@@ -384,7 +384,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                 {data.circleOfInfluence.tier1?.slice(0, 3).map((name, idx) => (
                   <span
                     key={`t1-${idx}`}
-                    className="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded"
+                    className="px-1.5 py-0.5 text-[10px] bg-indigo-100 text-gray-700 rounded"
                     title="Inner circle"
                   >
                     {name}
@@ -405,11 +405,11 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
 
           {/* Timeline Highlight (from adaptive enrichment) */}
           {data.timelineHighlight && (
-            <div className="mb-3 flex items-start gap-2 px-2 py-1.5 bg-stone-50 rounded-lg border border-stone-100">
-              <Calendar className="w-3.5 h-3.5 text-stone-400 mt-0.5 flex-shrink-0" />
+            <div className="mb-3 flex items-start gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+              <Calendar className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
               <div>
-                <div className="text-[10px] text-stone-500">{data.timelineHighlight.date}</div>
-                <div className="text-xs text-stone-700 line-clamp-1">{data.timelineHighlight.title}</div>
+                <div className="text-[10px] text-gray-500">{data.timelineHighlight.date}</div>
+                <div className="text-xs text-gray-700 line-clamp-1">{data.timelineHighlight.title}</div>
               </div>
             </div>
           )}

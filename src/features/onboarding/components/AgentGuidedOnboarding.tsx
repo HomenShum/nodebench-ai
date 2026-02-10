@@ -75,7 +75,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
         subtitle: "Your workspace awaits",
         description: "Open a document and try the Fast Agent with a simple question, or ask the Deep Agent to research a topic for you.",
         icon: <CheckCircle className="w-8 h-8" />,
-        color: "from-green-500 to-emerald-500",
+        color: "from-green-500 to-indigo-500",
         features: [
             "Type '/' in any document for commands",
             "Click ⚡ to open the Fast Agent panel",
@@ -142,7 +142,7 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
                     </div>
 
                     {/* Title */}
-                    <h2 className="text-3xl font-bold text-[color:var(--text-primary)] mb-1 font-serif tracking-tight">{step.title}</h2>
+                    <h2 className="text-3xl font-bold text-[color:var(--text-primary)] mb-1 tracking-tight">{step.title}</h2>
                     <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--text-secondary)] mb-4">{step.subtitle}</p>
 
                     {/* Description */}

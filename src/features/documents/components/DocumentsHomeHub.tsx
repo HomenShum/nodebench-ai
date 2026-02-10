@@ -5473,7 +5473,7 @@ export function DocumentsHomeHub({
                     {/* Lane watermark */}
 
                     <span
-                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-blue-400" : key === "done" ? "text-emerald-400" : key === "blocked" ? "text-rose-400" : "text-stone-400"}`}
+                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-blue-400" : key === "done" ? "text-indigo-400" : key === "blocked" ? "text-rose-400" : "text-gray-400"}`}
                     >
                       <ListTodo className="h-14 w-14 rotate-12" />
                     </span>
@@ -5497,7 +5497,7 @@ export function DocumentsHomeHub({
                     <div className="flex items-center justify-between mb-2">
                       {editingLane === key ? (
                         <input
-                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-stone-700"}`}
+                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-gray-700" : key === "blocked" ? "text-rose-700" : "text-gray-700"}`}
                           autoFocus
                           value={laneDraft}
                           onChange={(e) => setLaneDraft(e.target.value)}
@@ -5517,7 +5517,7 @@ export function DocumentsHomeHub({
                         />
                       ) : (
                         <h3
-                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-emerald-700" : key === "blocked" ? "text-rose-700" : "text-stone-700"}`}
+                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-gray-700" : key === "blocked" ? "text-rose-700" : "text-gray-700"}`}
                           title="Click to rename lane"
                           onClick={() => startEditLane(key)}
                         >
@@ -5527,7 +5527,7 @@ export function DocumentsHomeHub({
 
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-blue-50 border-blue-200 text-blue-700" : key === "done" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-stone-50 border-stone-200 text-stone-700"}`}
+                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-blue-50 border-blue-200 text-blue-700" : key === "done" ? "bg-indigo-50 border-indigo-200 text-gray-700" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-gray-50 border-gray-200 text-gray-700"}`}
                         >
                           {sorted.length}
                         </span>
@@ -5661,11 +5661,11 @@ export function DocumentsHomeHub({
         <div className="flex items-center justify-between">
           {isToday ? (
             <div className="inline-flex items-center gap-2">
-              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-gray-700 border border-indigo-200">
                 Today
               </span>
 
-              <span className="text-sm font-semibold text-emerald-700">
+              <span className="text-sm font-semibold text-gray-700">
                 {date.getDate()}
               </span>
             </div>
@@ -6943,7 +6943,7 @@ export function DocumentsHomeHub({
                   <div className="mb-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                        <FileSpreadsheet className="h-4 w-4 text-emerald-700" />
+                        <FileSpreadsheet className="h-4 w-4 text-gray-700" />
                         Spreadsheets
                         <span className="text-[var(--text-secondary)] font-normal">
                           ({spreadsheets.length})
@@ -6964,7 +6964,7 @@ export function DocumentsHomeHub({
                         <button
                           key={String(s._id)}
                           type="button"
-                          className="text-left rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] p-3 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                          className="text-left rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] p-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                           onClick={() => {
                             navigate(`/spreadsheets/${String(s._id)}`);
                           }}

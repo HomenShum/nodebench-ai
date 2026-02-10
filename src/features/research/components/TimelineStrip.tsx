@@ -62,10 +62,10 @@ const getPhaseIcon = (phase: TemporalPhase) => {
 const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
   const baseColors = {
     past: {
-      bg: isActive ? "bg-stone-700" : "bg-stone-100 hover:bg-stone-200",
-      text: isActive ? "text-white" : "text-stone-600",
-      border: isActive ? "border-stone-700" : "border-stone-200",
-      dot: "bg-stone-400",
+      bg: isActive ? "bg-gray-700" : "bg-gray-100 hover:bg-gray-200",
+      text: isActive ? "text-white" : "text-gray-600",
+      border: isActive ? "border-gray-700" : "border-gray-200",
+      dot: "bg-gray-400",
     },
     present: {
       bg: isActive ? "bg-blue-600" : "bg-blue-50 hover:bg-blue-100",
@@ -249,7 +249,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           {/* Phase segments */}
           <div className="absolute inset-0 flex">
             <div
-              className="h-full bg-stone-200"
+              className="h-full bg-gray-200"
               style={{ width: `${progressInfo.phasePercentages.past}%` }}
             />
             <div
@@ -263,7 +263,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           </div>
           {/* Progress indicator */}
           <motion.div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-stone-500 via-blue-500 to-blue-600 rounded-full"
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-500 via-blue-500 to-blue-600 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progressInfo.percentage}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}

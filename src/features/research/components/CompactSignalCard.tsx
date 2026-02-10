@@ -13,21 +13,21 @@ const SOURCE_CONFIG: Record<string, { icon: string; color: string; bg: string }>
   'FierceBiotech': { icon: '🧬', color: 'text-rose-700', bg: 'bg-rose-50' },
   'Bloomberg': { icon: '📊', color: 'text-blue-700', bg: 'bg-blue-50' },
   'Financial Times': { icon: '📈', color: 'text-amber-700', bg: 'bg-amber-50' },
-  'OpenAI Blog': { icon: '🤖', color: 'text-emerald-700', bg: 'bg-emerald-50' },
+  'OpenAI Blog': { icon: '🤖', color: 'text-gray-700', bg: 'bg-indigo-50' },
   'Google AI Blog': { icon: '🔬', color: 'text-cyan-700', bg: 'bg-cyan-50' },
   'The Hacker News': { icon: '🔒', color: 'text-red-700', bg: 'bg-red-50' },
-  'default': { icon: '📌', color: 'text-stone-700', bg: 'bg-stone-50' },
+  'default': { icon: '📌', color: 'text-gray-700', bg: 'bg-gray-50' },
 };
 
 const CATEGORY_STYLES: Record<string, string> = {
   'ai_ml': 'bg-violet-100 text-violet-800',
   'research': 'bg-blue-100 text-blue-800',
-  'finance': 'bg-emerald-100 text-emerald-800',
+  'finance': 'bg-indigo-100 text-gray-800',
   'startups': 'bg-orange-100 text-orange-800',
   'biotech': 'bg-pink-100 text-pink-800',
   'tech': 'bg-cyan-100 text-cyan-800',
   'security': 'bg-red-100 text-red-800',
-  'default': 'bg-stone-100 text-stone-700',
+  'default': 'bg-gray-100 text-gray-700',
 };
 
 interface CompactSignalCardProps {
@@ -81,7 +81,7 @@ export function CompactSignalCard({
       onClick={onClick}
       className={cn(
         'group flex items-start gap-2 p-2.5 rounded-lg border border-transparent',
-        'hover:bg-stone-50 hover:border-stone-200 cursor-pointer transition-all duration-150',
+        'hover:bg-gray-50 hover:border-gray-200 cursor-pointer transition-all duration-150',
         showSummary && 'py-3',
         className
       )}
@@ -94,23 +94,23 @@ export function CompactSignalCard({
       {/* Content */}
       <div className="flex-1 min-w-0">
         {/* Title - truncated to 2 lines */}
-        <h4 className="text-[13px] font-medium text-stone-800 leading-snug line-clamp-2 group-hover:text-emerald-900 transition-colors">
+        <h4 className="text-[13px] font-medium text-gray-800 leading-snug line-clamp-2 group-hover:text-gray-900 transition-colors">
           {title}
         </h4>
 
         {/* Summary - only when expanded */}
         {showSummary && summary && (
-          <p className="mt-1 text-[11px] text-stone-500 leading-relaxed line-clamp-2">
+          <p className="mt-1 text-[11px] text-gray-500 leading-relaxed line-clamp-2">
             {summary}
           </p>
         )}
 
         {/* Meta row */}
-        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-stone-500">
+        <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-500">
           <span className={cn('font-medium', sourceConfig.color)}>{source}</span>
           {timeAgo && (
             <>
-              <span className="text-stone-300">•</span>
+              <span className="text-gray-300">•</span>
               <span className="flex items-center gap-0.5">
                 <Clock className="w-2.5 h-2.5" />
                 {timeAgo}
@@ -119,7 +119,7 @@ export function CompactSignalCard({
           )}
           {category && (
             <>
-              <span className="text-stone-300">•</span>
+              <span className="text-gray-300">•</span>
               <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase', categoryStyle)}>
                 {category.replace('_', '/')}
               </span>
@@ -137,7 +137,7 @@ export function CompactSignalCard({
       {/* Score / Action */}
       <div className="flex items-center gap-1 shrink-0">
         {score !== undefined && score > 70 && (
-          <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">
+          <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-100 text-gray-700 rounded text-[10px] font-bold">
             <Zap className="w-2.5 h-2.5" />
             {score}
           </div>
@@ -148,7 +148,7 @@ export function CompactSignalCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1 opacity-0 group-hover:opacity-100 transition-opacity text-stone-400 hover:text-emerald-600"
+            className="p-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-indigo-600"
             title="Open article"
             aria-label="Open article in new tab"
           >
@@ -191,7 +191,7 @@ export function CompactSignalList({
         />
       ))}
       {remaining > 0 && (
-        <div className="text-center py-2 text-[11px] text-stone-400">
+        <div className="text-center py-2 text-[11px] text-gray-400">
           +{remaining} more signals
         </div>
       )}

@@ -28,7 +28,7 @@ export function KanbanLane({ laneId, density, children }: KanbanLaneProps) {
         laneId === "in_progress"
           ? "bg-blue-500/5"
           : laneId === "done"
-            ? "bg-emerald-500/5"
+            ? "bg-indigo-500/5"
             : laneId === "blocked"
               ? "bg-rose-500/5"
               : laneId === "events"

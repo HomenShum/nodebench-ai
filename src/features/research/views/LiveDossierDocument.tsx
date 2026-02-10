@@ -600,7 +600,7 @@ function LiveDossierDocumentInner({
     });
 
     return (
-        <div className="w-full animate-in fade-in duration-700">
+        <div className="w-full animate-in fade-in duration-700 editorial-layout">
             {/* Newsletter Container - Wider for better readability */}
             <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-8 sm:py-10">
 
@@ -632,7 +632,7 @@ function LiveDossierDocumentInner({
                     </div>
 
                     {/* Masthead Title - Serif font for newspaper feel */}
-                    <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground text-center mb-4">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground text-center mb-4">
                         The Daily Dossier
                     </h1>
 
@@ -645,7 +645,7 @@ function LiveDossierDocumentInner({
 
                     {/* Entity Name as Subhead */}
                     <div className="text-center mb-6">
-                        <h2 className="font-serif text-xl sm:text-2xl font-semibold text-foreground italic">
+                        <h2 className="text-xl sm:text-2xl font-semibold text-foreground italic">
                             {entityName}
                         </h2>
                         {allArtifacts.length > 0 && (
@@ -694,7 +694,7 @@ function LiveDossierDocumentInner({
                     className="prose prose-lg prose-neutral dark:prose-invert max-w-none
                         prose-p:leading-[1.8] prose-p:text-[17px] prose-p:text-foreground prose-p:mb-5
                         prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline
-                        prose-headings:text-foreground prose-headings:font-bold prose-headings:tracking-tight prose-headings:font-serif
+                        prose-headings:text-foreground prose-headings:font-bold prose-headings:tracking-tight
                         prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-5
                         prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-border/30
                         prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
@@ -861,7 +861,7 @@ function EmptyState() {
                 </div>
 
                 {/* Heading */}
-                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mb-3">
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
                     Your Live Dossier Awaits
                 </h2>
 
@@ -1102,7 +1102,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
     const statusColors = {
         pending: "bg-[color:var(--text-secondary)]/20 text-[color:var(--text-secondary)] border-[color:var(--text-secondary)]/30",
         running: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-        complete: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+        complete: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
         error: "bg-red-500/20 text-red-400 border-red-500/30",
     };
 
@@ -1121,14 +1121,14 @@ function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
     const statusIcons = {
         pending: <Loader2 className="w-3 h-3 text-[color:var(--text-secondary)]" />,
         running: <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />,
-        complete: <CheckCircle2 className="w-3 h-3 text-emerald-400" />,
+        complete: <CheckCircle2 className="w-3 h-3 text-indigo-400" />,
         error: <AlertCircle className="w-3 h-3 text-red-400" />,
     };
 
     const statusBg = {
         pending: "bg-[color:var(--text-secondary)]/10 border-[color:var(--text-secondary)]/20",
         running: "bg-blue-500/10 border-blue-500/20",
-        complete: "bg-emerald-500/10 border-emerald-500/20",
+        complete: "bg-indigo-500/10 border-indigo-500/20",
         error: "bg-red-500/10 border-red-500/20",
     };
 
@@ -1208,9 +1208,9 @@ function LiveAgentTicker({
                                     Multi-Agent Research
                                 </h3>
                                 {isActive && (
-                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
-                                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full live-dot" />
-                                        <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Live</span>
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30">
+                                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full live-dot" />
+                                        <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Live</span>
                                     </span>
                                 )}
                                 {followUpLabel && (

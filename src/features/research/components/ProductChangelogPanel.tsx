@@ -64,24 +64,24 @@ export default function ProductChangelogPanel() {
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
-          <h2 className="text-[14px] font-black uppercase tracking-[0.28em] text-emerald-900">Changelog</h2>
-          <p className="text-sm text-stone-500">Product updates and release notes.</p>
+          <h2 className="text-[14px] font-black uppercase tracking-[0.28em] text-gray-900">Changelog</h2>
+          <p className="text-sm text-gray-500">Product updates and release notes.</p>
         </div>
-        <div className="text-xs text-stone-500">
+        <div className="text-xs text-gray-500">
           {entries.length ? `${entries.length} releases` : "No releases found"}
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-4">
         <aside className="xl:sticky xl:top-4 xl:self-start">
-          <div className="bg-white/60 border border-stone-200 rounded-lg p-3">
+          <div className="bg-white/60 border border-gray-200 rounded-lg p-3">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search releases..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-stone-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
@@ -93,23 +93,23 @@ export default function ProductChangelogPanel() {
                   onClick={() => handleJumpTo(e.id)}
                   className={cn(
                     "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors",
-                    e.id === latestId ? "text-emerald-900 font-semibold" : "text-stone-600",
-                    "hover:bg-stone-50",
+                    e.id === latestId ? "text-gray-900 font-semibold" : "text-gray-600",
+                    "hover:bg-gray-50",
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate">{e.version}</span>
                     {e.id === latestId ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 text-gray-800 border border-indigo-200">
                         Latest
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-[11px] text-stone-400 truncate">{e.dateLabel}</div>
+                  <div className="text-[11px] text-gray-400 truncate">{e.dateLabel}</div>
                 </button>
               ))}
               {filtered.length === 0 ? (
-                <div className="py-6 text-sm text-stone-500 text-center">No matches.</div>
+                <div className="py-6 text-sm text-gray-500 text-center">No matches.</div>
               ) : null}
             </div>
           </div>
@@ -122,13 +122,13 @@ export default function ProductChangelogPanel() {
               ref={(node) => {
                 entryRefs.current[e.id] = node;
               }}
-              className="bg-white/60 border border-stone-200 rounded-lg p-5"
+              className="bg-white/60 border border-gray-200 rounded-lg p-5"
             >
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="text-[11px] font-black uppercase tracking-[0.25em] text-emerald-900">{e.version}</div>
-                <div className="text-xs text-stone-500">{e.dateLabel}</div>
+                <div className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-900">{e.version}</div>
+                <div className="text-xs text-gray-500">{e.dateLabel}</div>
                 {e.id === latestId ? (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 text-gray-800 border border-indigo-200">
                     Latest
                   </span>
                 ) : null}

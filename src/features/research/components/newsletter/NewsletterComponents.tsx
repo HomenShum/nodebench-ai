@@ -87,7 +87,7 @@ function MediaItem({ item }: { item: NewsletterMediaItem }) {
                     <div className="text-xs font-medium text-[color:var(--text-primary)] truncate">{item.title}</div>
                     <div className="text-[10px] text-[color:var(--text-secondary)] truncate">{item.domain}</div>
                 </div>
-                {item.verified && <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />}
+                {item.verified && <CheckCircle2 className="w-3 h-3 text-indigo-500 shrink-0" />}
             </div>
         </div>
     );
@@ -120,7 +120,7 @@ export function NewsletterSectionBlock({
                 <div className="p-1 rounded text-[color:var(--text-secondary)] group-hover:text-[color:var(--text-primary)] transition-colors">
                     {section.icon}
                 </div>
-                <h2 className="text-xl font-semibold font-serif text-[color:var(--text-primary)] flex-1">{section.title}</h2>
+                <h2 className="text-xl font-semibold text-[color:var(--text-primary)] flex-1">{section.title}</h2>
 
                 {/* Confidence Badge - Subtle */}
                 {section.confidence && (

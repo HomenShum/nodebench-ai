@@ -22,7 +22,7 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-green-50 to-teal-50 rounded-xl border border-green-200 shadow-sm"
+      className="p-6 bg-gradient-to-br from-green-50 to-indigo-50 rounded-xl border border-green-200 shadow-sm"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">

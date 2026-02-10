@@ -99,7 +99,7 @@ export default function AgendaHoverPreview({
           <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
             item?.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' :
             item?.status === 'tentative' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-            'bg-emerald-50 text-emerald-700 border-emerald-200'
+            'bg-indigo-50 text-gray-700 border-indigo-200'
           }`}>
             {String(item?.status ?? 'confirmed')}
           </span>
@@ -107,7 +107,7 @@ export default function AgendaHoverPreview({
           <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
             item?.status === 'blocked' ? 'bg-rose-50 text-rose-700 border-rose-200' :
             item?.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-            item?.status === 'done' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+            item?.status === 'done' ? 'bg-indigo-50 text-gray-700 border-indigo-200' :
             'bg-slate-50 text-slate-700 border-slate-200'
           }`}>
             {String(item?.status ?? 'todo')}

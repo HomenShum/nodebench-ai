@@ -46,12 +46,12 @@ const statusConfig: Record<TaskStatus, { icon: React.ReactNode; color: string; l
   },
   in_progress: { 
     icon: <Clock className="w-3.5 h-3.5" />, 
-    color: 'text-blue-500', 
+    color: 'text-violet-500',
     label: 'In Progress' 
   },
   done: { 
     icon: <CheckCircle2 className="w-3.5 h-3.5" />, 
-    color: 'text-emerald-500', 
+    color: 'text-indigo-500', 
     label: 'Done' 
   },
   blocked: { 
@@ -189,12 +189,12 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder={scope === 'thread' ? "Add task to this thread..." : "Add a task..."}
-            className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
           />
           <button
             type="submit"
             disabled={isCreating || !newTaskTitle.trim()}
-            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
           >
             {isCreating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
             Add

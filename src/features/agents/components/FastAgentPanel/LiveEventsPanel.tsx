@@ -27,13 +27,13 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
   const config = useMemo(() => {
     const configs: Record<string, { icon: typeof Wrench; color: string; bg: string }> = {
       tool_start: { icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-100' },
-      tool_end: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+      tool_end: { icon: CheckCircle2, color: 'text-indigo-600', bg: 'bg-indigo-100' },
       tool_error: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-100' },
       agent_spawn: { icon: Bot, color: 'text-violet-600', bg: 'bg-violet-100' },
       agent_complete: { icon: Sparkles, color: 'text-violet-600', bg: 'bg-violet-100' },
       memory_read: { icon: Database, color: 'text-cyan-600', bg: 'bg-cyan-100' },
       memory_write: { icon: Database, color: 'text-cyan-600', bg: 'bg-cyan-100' },
-      thinking: { icon: Cpu, color: 'text-blue-600', bg: 'bg-blue-100' },
+      thinking: { icon: Cpu, color: 'text-violet-600', bg: 'bg-violet-100' },
     };
     return configs[event.type] || { icon: Zap, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-secondary)]' };
   }, [event.type]);
@@ -73,7 +73,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
             </span>
           )}
           {isRunning && (
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
           )}
         </div>
         <p className="text-xs text-[var(--text-primary)] truncate">
@@ -147,13 +147,13 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
           <div className="flex items-center gap-2">
             <Activity className={cn(
               "w-4 h-4",
-              isStreaming ? "text-blue-500 animate-pulse" : "text-[var(--text-muted)]"
+              isStreaming ? "text-violet-500 animate-pulse" : "text-[var(--text-muted)]"
             )} />
             <div>
               <div className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 Live Activity
                 {stats.running > 0 && (
-                  <span className="px-1.5 py-0.5 text-[10px] bg-blue-500 text-white rounded-full font-medium">
+                  <span className="px-1.5 py-0.5 text-[10px] bg-violet-500 text-white rounded-full font-medium">
                     {stats.running}
                   </span>
                 )}
@@ -194,7 +194,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors border",
                   filter === key
-                    ? "bg-blue-50 border-blue-200 text-blue-700"
+                    ? "bg-violet-50 border-violet-200 text-violet-700"
                     : "bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]"
                 )}
               >
@@ -203,7 +203,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
                 {count > 0 && (
                   <span className={cn(
                     "px-1 py-0.5 rounded text-[9px] font-semibold",
-                    filter === key ? "bg-blue-200 text-blue-800" : "bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+                    filter === key ? "bg-violet-200 text-violet-800" : "bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
                   )}>
                     {count}
                   </span>
@@ -229,7 +229,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
             )}>
               <Activity className={cn(
                 "w-5 h-5",
-                isStreaming ? "text-blue-500 animate-pulse" : "text-[var(--text-muted)]"
+                isStreaming ? "text-violet-500 animate-pulse" : "text-[var(--text-muted)]"
               )} />
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)] mb-1">
@@ -262,7 +262,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
               setAutoScroll(true);
               scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
             }}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium text-violet-600 bg-violet-50 hover:bg-violet-100 transition-colors"
           >
             <ChevronDown className="w-3.5 h-3.5" />
             Jump to latest

@@ -46,7 +46,7 @@ const getTypeBadgeColors = (type: CitationType) => {
     case "source":
       return "bg-blue-50 text-blue-600 border-blue-200";
     case "data":
-      return "bg-emerald-50 text-emerald-600 border-emerald-200";
+      return "bg-indigo-50 text-indigo-600 border-indigo-200";
     case "quote":
       return "bg-amber-50 text-amber-600 border-amber-200";
     case "analysis":

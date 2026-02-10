@@ -108,8 +108,8 @@ const SwarmStatusIcon = memo(function SwarmStatusIcon({
   if (["pending", "spawning", "executing", "gathering", "synthesizing"].includes(status)) {
     return (
       <div className="relative flex items-center">
-        <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
-        <span className="ml-0.5 text-[9px] text-blue-500 font-medium">
+        <Loader2 className="w-3 h-3 text-violet-500 animate-spin" />
+        <span className="ml-0.5 text-[9px] text-violet-500 font-medium">
           {completedCount}/{agentCount}
         </span>
       </div>
@@ -143,24 +143,24 @@ const ThreadTab = memo(function ThreadTab({
       onClick={onSelect}
       className={cn(
         "group flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
-        "hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-blue-500/40",
+        "hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
         isActive
           ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-color)]"
           : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent",
-        isSwarmActive && "ring-1 ring-blue-500/40 bg-blue-50/50"
+        isSwarmActive && "ring-1 ring-violet-500/40 bg-violet-50/50"
       )}
     >
       {/* Icon */}
       {hasSwarm ? (
         <div className={cn(
           "w-5 h-5 rounded-md flex items-center justify-center",
-          isSwarmActive ? "bg-blue-100 text-blue-600" : "bg-stone-100 text-stone-400"
+          isSwarmActive ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-400"
         )}>
           <Zap className="w-3 h-3" />
         </div>
       ) : (
-        <div className="w-5 h-5 rounded-md bg-stone-100 flex items-center justify-center">
-          <MessageSquare className="w-3 h-3 text-stone-400" />
+        <div className="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center">
+          <MessageSquare className="w-3 h-3 text-gray-400" />
         </div>
       )}
 
@@ -282,9 +282,9 @@ export function ThreadTabBar({
         onClick={onNewThread}
         className={cn(
           "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
-          "hover:bg-emerald-50 text-stone-600 hover:text-emerald-700",
-          "focus:outline-none focus:ring-2 focus:ring-emerald-500/40",
-          !activeThreadId && "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
+          "hover:bg-indigo-50 text-gray-600 hover:text-gray-700",
+          "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
+          !activeThreadId && "bg-indigo-50 text-gray-700 border border-indigo-200/50"
         )}
         title="New chat (⌘1)"
       >
@@ -300,9 +300,9 @@ export function ThreadTabBar({
             onClick={() => setShowSwarmMenu(!showSwarmMenu)}
             className={cn(
               "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
-              "hover:bg-blue-50 text-blue-600 hover:text-blue-700",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500/40",
-              showSwarmMenu && "bg-blue-50 border border-blue-200/50"
+              "hover:bg-violet-50 text-violet-600 hover:text-violet-700",
+              "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
+              showSwarmMenu && "bg-violet-50 border border-violet-200/50"
             )}
             title="Spawn parallel agents"
           >
@@ -324,7 +324,7 @@ export function ThreadTabBar({
                   value={swarmQuery}
                   onChange={(e) => setSwarmQuery(e.target.value)}
                   placeholder="e.g., Tesla competitors analysis"
-                  className="w-full px-3 py-2 text-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                  className="w-full px-3 py-2 text-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && swarmQuery.trim()) {
@@ -357,8 +357,8 @@ export function ThreadTabBar({
                           : "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-4 h-4 text-blue-500" />
+                      <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-4 h-4 text-violet-500" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-[var(--text-primary)]">

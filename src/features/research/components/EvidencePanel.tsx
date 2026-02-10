@@ -38,15 +38,15 @@ export function EvidencePanel({
     const shouldScroll = expanded && evidence.length > maxVisible;
 
     return (
-        <div className="border-t border-stone-200/60 pt-5 mt-6">
+        <div className="border-t border-gray-200/60 pt-5 mt-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                    <FileText className="w-3 h-3 text-emerald-900/50" />
-                    <h4 className="text-[10px] font-black text-emerald-900 uppercase tracking-widest">
+                    <FileText className="w-3 h-3 text-gray-900/50" />
+                    <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
                         {title}
                     </h4>
-                    <span className="text-[9px] font-mono text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+                    <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                         {evidence.length}
                     </span>
                 </div>
@@ -55,7 +55,7 @@ export function EvidencePanel({
                     <button
                         onClick={() => setExpanded(!expanded)}
                         aria-expanded={expanded}
-                        className="flex items-center gap-1 text-[10px] text-emerald-700 hover:text-emerald-900 transition-colors"
+                        className="flex items-center gap-1 text-[10px] text-gray-700 hover:text-gray-900 transition-colors"
                     >
                         {expanded ? (
                             <>
@@ -91,10 +91,10 @@ export function EvidencePanel({
                             <li
                                 key={`${ev.id ?? ev.url ?? ev.title ?? ev.source ?? "evidence"}-${i}`}
                                 data-evidence-id={ev.id}
-                                className={`group flex items-start gap-2.5 ${isHighlighted ? "bg-emerald-50/60 rounded-md px-2 py-1" : ""}`}
+                                className={`group flex items-start gap-2.5 ${isHighlighted ? "bg-indigo-50/60 rounded-md px-2 py-1" : ""}`}
                             >
                                 {/* Index Badge */}
-                                <span className="text-[9px] font-mono text-stone-400 bg-stone-100 w-5 h-5 flex items-center justify-center rounded shrink-0">
+                                <span className="text-[9px] font-mono text-gray-400 bg-gray-100 w-5 h-5 flex items-center justify-center rounded shrink-0">
                                     {i + 1}
                                 </span>
 
@@ -103,7 +103,7 @@ export function EvidencePanel({
                                     <button
                                         type="button"
                                         onClick={handleOpen}
-                                        className="text-[11px] text-stone-600 hover:text-emerald-900 transition-colors flex items-start gap-1.5 group/link text-left w-full"
+                                        className="text-[11px] text-gray-600 hover:text-gray-900 transition-colors flex items-start gap-1.5 group/link text-left w-full"
                                     >
                                         <span className="truncate flex-1">
                                             {ev.title || ev.source || ev.url || "Source"}
@@ -115,7 +115,7 @@ export function EvidencePanel({
 
                                     {/* Source Badge */}
                                     {ev.source && ev.title && (
-                                        <span className="text-[9px] text-stone-400 mt-0.5 block">
+                                        <span className="text-[9px] text-gray-400 mt-0.5 block">
                                             via {ev.source}
                                         </span>
                                     )}
@@ -128,15 +128,15 @@ export function EvidencePanel({
 
             {/* Collapsed indicator */}
             {!expanded && hasMore && (
-                <div className="mt-3 pt-2 border-t border-dashed border-stone-200/50 text-center">
-                    <span className="text-[9px] text-stone-400 italic">
+                <div className="mt-3 pt-2 border-t border-dashed border-gray-200/50 text-center">
+                    <span className="text-[9px] text-gray-400 italic">
                         {evidence.length - maxVisible} more sources available
                     </span>
                 </div>
             )}
             {expanded && shouldScroll && (
-                <div className="mt-3 pt-2 border-t border-dashed border-stone-200/50 text-center">
-                    <span className="text-[9px] text-stone-400 italic">
+                <div className="mt-3 pt-2 border-t border-dashed border-gray-200/50 text-center">
+                    <span className="text-[9px] text-gray-400 italic">
                         Scroll to view all sources
                     </span>
                 </div>

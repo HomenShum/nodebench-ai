@@ -54,8 +54,8 @@ const MATCH_ICONS: Record<string, { icon: React.ElementType; color: string }> = 
   'Keywords': { icon: Sparkles, color: 'text-blue-600 bg-blue-50' },
   'Same source': { icon: Zap, color: 'text-amber-600 bg-amber-50' },
   'Same type': { icon: TrendingUp, color: 'text-green-600 bg-green-50' },
-  'Recent': { icon: Clock, color: 'text-stone-600 bg-stone-50' },
-  'High relevance': { icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
+  'Recent': { icon: Clock, color: 'text-gray-600 bg-gray-50' },
+  'High relevance': { icon: TrendingUp, color: 'text-indigo-600 bg-indigo-50' },
 };
 
 function getMatchIcon(reason: string) {
@@ -64,7 +64,7 @@ function getMatchIcon(reason: string) {
       return config;
     }
   }
-  return { icon: Sparkles, color: 'text-stone-500 bg-stone-50' };
+  return { icon: Sparkles, color: 'text-gray-500 bg-gray-50' };
 }
 
 function formatTimestamp(timestamp: number): string {
@@ -104,8 +104,8 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
     return (
       <div className={`${className}`}>
         <div className="flex items-center gap-2 mb-4">
-          <Loader2 className="w-4 h-4 animate-spin text-stone-400" />
-          <span className="text-sm text-stone-500">Finding related content...</span>
+          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+          <span className="text-sm text-gray-500">Finding related content...</span>
         </div>
       </div>
     );
@@ -123,10 +123,10 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
           <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
             <Sparkles className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-sm font-semibold text-stone-800">
+          <span className="text-sm font-semibold text-gray-800">
             Related Content
           </span>
-          <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">
+          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
             {items.length} items
           </span>
         </div>
@@ -142,14 +142,14 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
             <button
               key={`${item.itemId}-${idx}`}
               onClick={() => onItemClick?.(item)}
-              className="group text-left p-3 bg-white rounded-xl border border-stone-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+              className="group text-left p-3 bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
             >
               {/* Match Indicator */}
               <div className="flex items-center gap-2 mb-2">
                 <div className={`p-1 rounded ${matchConfig.color}`}>
                   <MatchIcon className="w-3 h-3" />
                 </div>
-                <span className="text-[10px] font-medium text-stone-500 truncate flex-1">
+                <span className="text-[10px] font-medium text-gray-500 truncate flex-1">
                   {item.matchReasons?.[0] || 'Related'}
                 </span>
                 {item.matchScore && item.matchScore >= 30 && (
@@ -160,18 +160,18 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
               </div>
 
               {/* Title */}
-              <h4 className="text-xs font-medium text-stone-800 line-clamp-2 mb-1.5 group-hover:text-indigo-700 transition-colors">
+              <h4 className="text-xs font-medium text-gray-800 line-clamp-2 mb-1.5 group-hover:text-indigo-700 transition-colors">
                 {item.title}
               </h4>
 
               {/* Snippet */}
-              <p className="text-[10px] text-stone-500 line-clamp-2 mb-2">
+              <p className="text-[10px] text-gray-500 line-clamp-2 mb-2">
                 {item.snippet || 'No preview available'}
               </p>
 
               {/* Footer */}
               <div className="flex items-center justify-between">
-                <span className="text-[9px] text-stone-400">
+                <span className="text-[9px] text-gray-400">
                   {formatTimestamp(item.timestamp)}
                 </span>
                 <div className="flex items-center gap-1 text-[10px] text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -182,8 +182,8 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
 
               {/* Source Badge */}
               {item.metadata?.source && (
-                <div className="mt-2 pt-2 border-t border-stone-100">
-                  <span className="text-[9px] text-stone-400 flex items-center gap-1">
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <span className="text-[9px] text-gray-400 flex items-center gap-1">
                     <ExternalLink className="w-2.5 h-2.5" />
                     {item.metadata.source}
                   </span>
@@ -197,7 +197,7 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
       {/* "See More" hint if there are more items */}
       {relatedData?.totalCandidates && relatedData.totalCandidates > maxItems && (
         <div className="mt-3 text-center">
-          <span className="text-[10px] text-stone-400">
+          <span className="text-[10px] text-gray-400">
             +{relatedData.totalCandidates - maxItems} more related items
           </span>
         </div>

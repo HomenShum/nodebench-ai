@@ -51,14 +51,14 @@ const statusConfig: Record<AgentTaskStatus, { icon: React.ReactNode; color: stri
   },
   running: { 
     icon: <Clock className="w-3.5 h-3.5 animate-pulse" />, 
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-100',
+    color: 'text-violet-500',
+    bgColor: 'bg-violet-100',
     label: 'Running' 
   },
   complete: { 
     icon: <CheckCircle2 className="w-3.5 h-3.5" />, 
-    color: 'text-emerald-500',
-    bgColor: 'bg-emerald-100',
+    color: 'text-indigo-500',
+    bgColor: 'bg-indigo-100',
     label: 'Complete' 
   },
   paused: { 
@@ -88,7 +88,7 @@ const agentTypeConfig: Record<AgentType, { icon: React.ReactNode; color: string;
   },
   leaf: {
     icon: <Zap className="w-3 h-3" />,
-    color: 'text-emerald-600 bg-emerald-100',
+    color: 'text-indigo-600 bg-indigo-100',
     label: 'Worker'
   },
 };
@@ -147,7 +147,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
             <div className="flex items-center gap-1.5">
               <div className="w-16 h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-500 rounded-full transition-all"
+                  className="h-full bg-violet-500 rounded-full transition-all"
                   style={{ width: `${task.progress * 100}%` }}
                 />
               </div>

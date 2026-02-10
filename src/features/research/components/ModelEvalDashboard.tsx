@@ -176,7 +176,7 @@ export const LATEST_SCENARIO_DATA: ScenarioResult[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 const getPassRateColor = (rate: number): string => {
-  if (rate >= 90) return "#10b981"; // emerald-500
+  if (rate >= 90) return "#10b981"; // indigo-500
   if (rate >= 70) return "#f59e0b"; // amber-500
   if (rate >= 50) return "#f97316"; // orange-500
   return "#ef4444"; // red-500
@@ -261,16 +261,16 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
     }));
 
   return (
-    <div className="space-y-6 p-4 bg-white rounded-xl border border-stone-200">
+    <div className="space-y-6 p-4 bg-white rounded-xl border border-gray-200">
       {/* v0.1.0 Announcement Banner */}
-      <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-lg p-4">
+      <div className="bg-gradient-to-r from-indigo-500/10 to-indigo-500/10 border border-indigo-500/30 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <Zap className="w-5 h-5 text-emerald-600" />
+          <Zap className="w-5 h-5 text-indigo-600" />
           <div>
-            <h3 className="text-emerald-700 font-semibold text-sm">v0.1.0 — Gemini 3 Flash is Now Default</h3>
-            <p className="text-xs text-stone-600 mt-0.5">
+            <h3 className="text-gray-700 font-semibold text-sm">v0.1.0 — Gemini 3 Flash is Now Default</h3>
+            <p className="text-xs text-gray-600 mt-0.5">
               100% pass rate • 16.1s avg latency • $0.10/M input tokens •
-              <span className="text-emerald-600 ml-1">3× faster than Claude Haiku</span>
+              <span className="text-indigo-600 ml-1">3× faster than Claude Haiku</span>
             </p>
           </div>
         </div>
@@ -279,12 +279,12 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-600" />
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-indigo-600" />
             NodeBench AI Model Evaluation
           </h2>
-          <p className="text-xs text-stone-500 mt-1">
-            Suite: <span className="font-mono text-stone-700">{suiteId}</span> | Run: {runDate} | Total Time: {totalTime.toFixed(1)}s
+          <p className="text-xs text-gray-500 mt-1">
+            Suite: <span className="font-mono text-gray-700">{suiteId}</span> | Run: {runDate} | Total Time: {totalTime.toFixed(1)}s
           </p>
         </div>
         <div className="flex gap-2">
@@ -294,8 +294,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
               onClick={() => setActiveTab(tab as typeof activeTab)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 activeTab === tab
-                  ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                  : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                  ? "bg-indigo-100 text-gray-800 border border-indigo-300"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -306,10 +306,10 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
 
       {/* Summary Cards */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-4 border border-emerald-200">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Best Model</div>
-          <div className="text-lg font-bold text-emerald-900 mt-1">{bestModel.model}</div>
-          <div className="text-xs text-emerald-700 flex items-center gap-1 mt-1">
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg p-4 border border-indigo-200">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">Best Model</div>
+          <div className="text-lg font-bold text-gray-900 mt-1">{bestModel.model}</div>
+          <div className="text-xs text-gray-700 flex items-center gap-1 mt-1">
             <CheckCircle2 className="w-3 h-3" />
             {bestModel.passRate}% pass rate
           </div>
@@ -344,17 +344,17 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
       </div>
 
       {activeTab === "overview" && (
-        <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-stone-800">GAIA Capability Lift (Local)</h3>
-              <p className="text-xs text-stone-500 mt-1">
+              <h3 className="text-sm font-semibold text-gray-800">GAIA Capability Lift (Local)</h3>
+              <p className="text-xs text-gray-500 mt-1">
                 Snapshots are written by the GAIA capability tests when{" "}
                 <span className="font-mono">NODEBENCH_WRITE_GAIA_REPORT=1</span>. View tool traces in{" "}
                 <span className="font-mono">/mcp/ledger</span>.
               </p>
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-stone-400">
+            <div className="text-[10px] uppercase tracking-widest text-gray-400">
               No prompts/answers persisted
             </div>
           </div>
@@ -368,26 +368,26 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
             ] as const).map(({ label, snap }) => {
               const delta = snap ? snap.tools.passRatePct - snap.baseline.passRatePct : 0;
               return (
-                <div key={label} className="bg-white rounded-lg border border-stone-200 p-4">
+                <div key={label} className="bg-white rounded-lg border border-gray-200 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
                       {label}
                     </div>
                     {snap ? (
-                      <div className="text-[11px] text-stone-500 font-mono tabular-nums">
+                      <div className="text-[11px] text-gray-500 font-mono tabular-nums">
                         {snap.generatedAtIso.slice(0, 19).replace("T", " ")}
                       </div>
                     ) : null}
                   </div>
 
                   {!snap ? (
-                    <div className="mt-2 text-sm text-stone-600">
+                    <div className="mt-2 text-sm text-gray-600">
                       No snapshot yet. Run GAIA capability tests with{" "}
                       <span className="font-mono">NODEBENCH_WRITE_GAIA_REPORT=1</span>.
                     </div>
                   ) : (
                     <div className="mt-2 space-y-1">
-                      <div className="text-sm text-stone-900">
+                      <div className="text-sm text-gray-900">
                         Tools{" "}
                         <span className="font-semibold tabular-nums">
                           {snap.tools.passRatePct.toFixed(1)}%
@@ -398,14 +398,14 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                         </span>{" "}
                         <span
                           className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            delta >= 0 ? "bg-emerald-100 text-emerald-900" : "bg-red-100 text-red-900"
+                            delta >= 0 ? "bg-indigo-100 text-gray-900" : "bg-red-100 text-red-900"
                           }`}
                         >
                           Δ {delta >= 0 ? "+" : ""}
                           {delta.toFixed(1)}%
                         </span>
                       </div>
-                      <div className="text-xs text-stone-600">
+                      <div className="text-xs text-gray-600">
                         tasks{" "}
                         <span className="font-mono tabular-nums">{snap.taskCount}</span> • mode{" "}
                         <span className="font-mono">{snap.tools.mode}</span> • avg tool calls{" "}
@@ -413,7 +413,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                           {snap.tools.avgToolCalls.toFixed(2)}
                         </span>
                       </div>
-                      <div className="text-xs text-stone-500">
+                      <div className="text-xs text-gray-500">
                         config <span className="font-mono">{snap.config}</span> • split{" "}
                         <span className="font-mono">{snap.split}</span> • improved{" "}
                         <span className="font-mono tabular-nums">{snap.improved}</span> • regressions{" "}
@@ -432,8 +432,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
       {activeTab === "overview" && (
         <div className="grid grid-cols-2 gap-6">
           {/* Pass Rate Bar Chart */}
-          <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
-            <h3 className="text-sm font-semibold text-stone-800 mb-4">Pass Rate by Model</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Pass Rate by Model</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={sortedModels} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -453,8 +453,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
           </div>
 
           {/* Performance Radar */}
-          <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
-            <h3 className="text-sm font-semibold text-stone-800 mb-4">Multi-Dimensional Performance</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Multi-Dimensional Performance</h3>
             <ResponsiveContainer width="100%" height={300}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="#d1d5db" />
@@ -469,8 +469,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
           </div>
 
           {/* Response Time Comparison */}
-          <div className="col-span-2 bg-stone-50 rounded-lg p-4 border border-stone-200">
-            <h3 className="text-sm font-semibold text-stone-800 mb-4">Average Response Time (seconds)</h3>
+          <div className="col-span-2 bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Average Response Time (seconds)</h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={sortedModels}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -490,8 +490,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
 
       {activeTab === "scenarios" && scenarioResults && (
         <div className="space-y-4">
-          <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
-            <h3 className="text-sm font-semibold text-stone-800 mb-4">Scenario Pass Rates</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Scenario Pass Rates</h3>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={scenarioResults} layout="vertical" margin={{ left: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -514,8 +514,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
 
       {activeTab === "cost" && (
         <div className="space-y-4">
-          <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
-            <h3 className="text-sm font-semibold text-stone-800 mb-4">Cost per Million Tokens</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Cost per Million Tokens</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={sortedModels.filter((m) => m.costPerMillion)}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -530,11 +530,11 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
           </div>
 
           {/* Cost vs Performance scatter-like view */}
-          <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
-            <h3 className="text-sm font-semibold text-stone-800 mb-4">Value Analysis: Pass Rate vs Total Cost</h3>
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-800 mb-4">Value Analysis: Pass Rate vs Total Cost</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="text-[10px] uppercase tracking-widest text-stone-400 border-b border-stone-200">
+                <thead className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200">
                   <tr>
                     <th className="py-2 pr-4">Model</th>
                     <th className="py-2 pr-4">Provider</th>
@@ -552,8 +552,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                       const totalCost = (m.costPerMillion?.input || 0) + (m.costPerMillion?.output || 0);
                       const valueScore = m.passRate / (totalCost || 1);
                       return (
-                        <tr key={m.model} className="border-b border-stone-100 hover:bg-stone-100/50">
-                          <td className="py-2 pr-4 font-semibold text-stone-800">{m.model}</td>
+                        <tr key={m.model} className="border-b border-gray-100 hover:bg-gray-100/50">
+                          <td className="py-2 pr-4 font-semibold text-gray-800">{m.model}</td>
                           <td className="py-2 pr-4">
                             <span
                               className="inline-block px-2 py-0.5 rounded text-[10px] font-medium text-white"
@@ -576,13 +576,13 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                           <td className="py-2 pr-4 font-semibold">${totalCost.toFixed(2)}</td>
                           <td className="py-2">
                             <div className="flex items-center gap-2">
-                              <div className="h-2 w-16 rounded-full bg-stone-200 overflow-hidden">
+                              <div className="h-2 w-16 rounded-full bg-gray-200 overflow-hidden">
                                 <div
-                                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400"
+                                  className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400"
                                   style={{ width: `${Math.min(100, valueScore * 2)}%` }}
                                 />
                               </div>
-                              <span className="text-stone-600">{valueScore.toFixed(1)}</span>
+                              <span className="text-gray-600">{valueScore.toFixed(1)}</span>
                             </div>
                           </td>
                         </tr>
@@ -596,11 +596,11 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
       )}
 
       {/* Detailed Results Table */}
-      <div className="bg-stone-50 rounded-lg p-4 border border-stone-200">
-        <h3 className="text-sm font-semibold text-stone-800 mb-4">Detailed Results</h3>
+      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-800 mb-4">Detailed Results</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="text-[10px] uppercase tracking-widest text-stone-400 border-b border-stone-200">
+            <thead className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-200">
               <tr>
                 <th className="py-2 pr-4">Model</th>
                 <th className="py-2 pr-4">Provider</th>
@@ -613,8 +613,8 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
             </thead>
             <tbody>
               {sortedModels.map((m) => (
-                <tr key={m.model} className="border-b border-stone-100 hover:bg-stone-100/50">
-                  <td className="py-2.5 pr-4 font-semibold text-stone-800">{m.model}</td>
+                <tr key={m.model} className="border-b border-gray-100 hover:bg-gray-100/50">
+                  <td className="py-2.5 pr-4 font-semibold text-gray-800">{m.model}</td>
                   <td className="py-2.5 pr-4">
                     <span
                       className="inline-block px-2 py-0.5 rounded text-[10px] font-medium text-white"
@@ -623,11 +623,11 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                       {m.provider}
                     </span>
                   </td>
-                  <td className="py-2.5 pr-4 text-center text-emerald-600 font-semibold">{m.passed}</td>
+                  <td className="py-2.5 pr-4 text-center text-indigo-600 font-semibold">{m.passed}</td>
                   <td className="py-2.5 pr-4 text-center text-rose-600 font-semibold">{m.failed}</td>
                   <td className="py-2.5 pr-4">
                     <div className="flex items-center gap-2">
-                      <div className="h-2 w-20 rounded-full bg-stone-200 overflow-hidden">
+                      <div className="h-2 w-20 rounded-full bg-gray-200 overflow-hidden">
                         <div
                           className="h-full transition-all"
                           style={{
@@ -641,10 +641,10 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
                       </span>
                     </div>
                   </td>
-                  <td className="py-2.5 pr-4 text-stone-600">{m.avgTimeSeconds.toFixed(1)}s</td>
+                  <td className="py-2.5 pr-4 text-gray-600">{m.avgTimeSeconds.toFixed(1)}s</td>
                   <td className="py-2.5">
                     {m.passRate === 100 ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-gray-800 text-[10px] font-bold">
                         <CheckCircle2 className="w-3 h-3" /> PERFECT
                       </span>
                     ) : m.passRate >= 80 ? (
@@ -669,7 +669,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="text-[10px] text-stone-400 text-center border-t border-stone-200 pt-4">
+      <div className="text-[10px] text-gray-400 text-center border-t border-gray-200 pt-4">
         NodeBench AI Evaluation Framework | {modelResults.length} models | {totalTests} total tests | Generated {runDate}
       </div>
     </div>

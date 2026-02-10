@@ -399,7 +399,7 @@ export function WhatChangedPanel({
                 ? `Last refresh: ${new Date(refreshSummary.lastFetchedAt).toLocaleString()}`
                 : "Last refresh: unknown"}
             </span>
-            {refreshState.status === "done" && <span className="text-emerald-700">{refreshState.message}</span>}
+            {refreshState.status === "done" && <span className="text-gray-700">{refreshState.message}</span>}
             {refreshState.status === "error" && <span className="text-red-700">{refreshState.message}</span>}
           </div>
         </div>

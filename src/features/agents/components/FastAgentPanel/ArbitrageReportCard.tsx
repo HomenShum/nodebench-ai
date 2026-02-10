@@ -92,7 +92,7 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
  */
 function QualityTierBadge({ tier, score }: { tier: string; score: number }) {
   const config: Record<string, { bg: string; text: string }> = {
-    excellent: { bg: 'bg-emerald-100 dark:bg-emerald-900/40', text: 'text-emerald-700 dark:text-emerald-300' },
+    excellent: { bg: 'bg-indigo-100 dark:bg-gray-900/40', text: 'text-gray-700 dark:text-indigo-300' },
     good: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-300' },
     fair: { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-300' },
     poor: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-300' },
@@ -128,7 +128,7 @@ function CollapsibleSection({
   const variantStyles = {
     default: 'border-[var(--border-color)] dark:border-[var(--border-color)]',
     warning: 'border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/20',
-    success: 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/20',
+    success: 'border-indigo-300 dark:border-gray-700 bg-indigo-50/50 dark:bg-gray-900/20',
     error: 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/20',
   };
 
@@ -173,7 +173,7 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
     <div className={cn('space-y-2 mb-4', className)}>
       {/* Header with overall status */}
       <div className="flex items-center gap-2 px-1">
-        <Shield className="h-4 w-4 text-blue-500" />
+        <Shield className="h-4 w-4 text-violet-500" />
         <span className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)]">Verification Report</span>
         {data.overallStatus && <StatusBadge status={data.overallStatus} size="sm" />}
       </div>

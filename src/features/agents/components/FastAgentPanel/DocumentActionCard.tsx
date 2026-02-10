@@ -53,7 +53,7 @@ export function DocumentActionCard({ document, className, onDocumentSelect }: Do
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
         isCreated
           ? "bg-gradient-to-br from-green-50 to-white border-green-200 hover:border-green-300 focus:ring-green-500"
-          : "bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:border-blue-300 focus:ring-blue-500",
+          : "bg-gradient-to-br from-violet-50 to-white border-violet-200 hover:border-violet-300 focus:ring-[var(--accent-primary)]",
         className
       )}
     >

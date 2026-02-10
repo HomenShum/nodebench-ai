@@ -124,7 +124,7 @@ function getPostTypeConfig(type: PostType) {
   const configs: Record<PostType, { icon: React.ReactNode; label: string; color: string }> = {
     delta_update: { icon: <GitBranch className="w-3.5 h-3.5" />, label: 'Update', color: 'bg-blue-50 text-blue-700 border-blue-200' },
     thesis_revision: { icon: <Lightbulb className="w-3.5 h-3.5" />, label: 'Thesis Revision', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-    evidence_addition: { icon: <FileText className="w-3.5 h-3.5" />, label: 'Evidence', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    evidence_addition: { icon: <FileText className="w-3.5 h-3.5" />, label: 'Evidence', color: 'bg-indigo-50 text-gray-700 border-indigo-200' },
     counterpoint: { icon: <AlertTriangle className="w-3.5 h-3.5" />, label: 'Counterpoint', color: 'bg-amber-50 text-amber-700 border-amber-200' },
     question: { icon: <HelpCircle className="w-3.5 h-3.5" />, label: 'Question', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]' },
     correction: { icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: 'Correction', color: 'bg-red-50 text-red-700 border-red-200' },
@@ -242,7 +242,7 @@ function PostCard({
               </span>
             )}
             {post.isVerified && (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
             )}
             {post.hasContradictions && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-red-50 text-red-700 border-red-200">
@@ -357,7 +357,7 @@ function DisputePanel({
   const statusColors: Record<ThreadDispute['status'], string> = {
     open: 'bg-red-50 text-red-700 border-red-200',
     under_review: 'bg-amber-50 text-amber-700 border-amber-200',
-    resolved_original: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    resolved_original: 'bg-indigo-50 text-gray-700 border-indigo-200',
     resolved_challenge: 'bg-blue-50 text-blue-700 border-blue-200',
     merged: 'bg-purple-50 text-purple-700 border-purple-200',
   };

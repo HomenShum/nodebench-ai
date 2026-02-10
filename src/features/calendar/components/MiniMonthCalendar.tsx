@@ -676,7 +676,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
               : pr === 2
               ? "ring-2 ring-yellow-500"
               : pr === 1
-              ? "ring-2 ring-emerald-500"
+              ? "ring-2 ring-indigo-500"
               : "";
             return (
               <div
@@ -765,8 +765,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                     {/* Bottom row: tasks (left), notes (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
-                        <span className={`inline-block w-1 h-1 rounded-full ${m.tasks > 0 ? "bg-emerald-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-emerald-600" : "text-[var(--text-muted)]"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
+                        <span className={`inline-block w-1 h-1 rounded-full ${m.tasks > 0 ? "bg-indigo-500" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-indigo-600" : "text-[var(--text-muted)]"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.notes > 0 ? "bg-amber-500" : "opacity-0"}`} />

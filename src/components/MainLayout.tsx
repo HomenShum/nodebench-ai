@@ -9,7 +9,7 @@ import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 import { AnimatePresence, motion } from "framer-motion";
 
-import { Sparkles, Zap, Menu, X as CloseIcon } from "lucide-react";
+import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
@@ -165,6 +165,35 @@ const McpToolLedgerView = lazy(() =>
 
 const viewFallback = <ViewSkeleton variant="default" />;
 
+const VIEW_TITLES: Record<string, string> = {
+  research: 'Home',
+  public: 'Public Documents',
+  spreadsheets: 'Spreadsheets',
+  'for-you-feed': 'For You',
+  'document-recommendations': 'Recommendations',
+  'agent-marketplace': 'Agent Marketplace',
+  'github-explorer': 'GitHub Explorer',
+  'pr-suggestions': 'PR Suggestions',
+  calendar: 'Calendar',
+  roadmap: 'Roadmap',
+  timeline: 'Timeline',
+  signals: 'Signals',
+  benchmarks: 'Model Benchmarks',
+  funding: 'Funding Brief',
+  'analytics-hitl': 'HITL Analytics',
+  'analytics-components': 'Component Metrics',
+  'analytics-recommendations': 'Recommendation Feedback',
+  'cost-dashboard': 'Cost Dashboard',
+  'industry-updates': 'Industry Updates',
+  'linkedin-posts': 'LinkedIn Posts',
+  'mcp-ledger': 'MCP Ledger',
+  documents: 'My Workspace',
+  agents: 'Agents',
+  activity: 'Activity',
+  showcase: 'Showcase',
+  footnotes: 'Footnotes',
+};
+
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
   onDocumentSelect: (documentId: Id<"documents"> | null) => void;
@@ -300,6 +329,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Hook 2: Panel Resizing
   const {
     sidebarWidth,
+    effectiveSidebarWidth,
+    isSidebarCollapsed,
+    toggleSidebarCollapse,
     startSidebarResizing,
     agentPanelWidth,
     startAgentResizing,
@@ -335,7 +367,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
   return (
-    <div className="h-screen flex bg-white transition-colors duration-200">
+    <div className="h-screen flex bg-background transition-colors duration-200">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -347,12 +379,12 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-          flex-shrink-0 h-full bg-white border-r border-stone-200 z-50 transition-transform duration-300
+          flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blur-xl border-r border-gray-200/60 dark:border-white/[0.06] z-50 transition-all duration-200
           lg:relative lg:translate-x-0
           fixed inset-y-0 left-0
           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
-        style={{ width: `${sidebarWidth}px` }}
+        style={{ width: `${effectiveSidebarWidth}px` }}
       >
         <CleanSidebar
           appMode={appMode}
@@ -378,12 +410,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           onDocumentSelect={onDocumentSelect}
           currentView={currentView}
           onViewChange={setCurrentView}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapse}
         />
       </div>
 
       {/* Sidebar Resize Handle - Desktop Only */}
       <div
-        className="hidden lg:block w-1 bg-stone-200 hover:bg-stone-400 cursor-col-resize transition-colors duration-200 flex-shrink-0"
+        className="hidden lg:block w-1 bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0"
         onMouseDown={startSidebarResizing}
       />
 
@@ -394,154 +428,121 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
           style={{ width: '100%' }}
         >
-          {/* Top Bar */}
-          <div className="h-14 bg-white border-b border-stone-200 px-4 sm:px-6 flex items-center transition-colors duration-200 relative">
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* Mobile Hamburger Menu */}
+          {/* Top Bar — Linear-style with breadcrumb + Cmd+K */}
+          <div className="h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/60 dark:border-white/[0.06] px-4 sm:px-5 flex items-center transition-colors duration-200 relative z-10">
+            {/* Left: hamburger + breadcrumb */}
+            <div className="flex items-center gap-2 min-w-0">
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-2 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+                className="lg:hidden p-1.5 rounded-md text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
                 title={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
-                {isMobileSidebarOpen ? (
-                  <CloseIcon className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
+                {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
 
-              <h1 className="text-base sm:text-lg font-semibold text-stone-900">
-                {currentView === 'research'
-                  ? 'Home'
-                  : currentView === 'public'
-                    ? 'Public Documents'
-                    : currentView === 'spreadsheets'
-                      ? 'Spreadsheets'
-                      : currentView === 'for-you-feed'
-                        ? 'For You'
-                        : currentView === 'document-recommendations'
-                          ? 'Document Recommendations'
-                          : currentView === 'agent-marketplace'
-                            ? 'Agent Marketplace'
-                            : currentView === 'github-explorer'
-                              ? 'GitHub Explorer'
-                              : currentView === 'pr-suggestions'
-                                ? 'PR Suggestions'
-                                : currentView === 'calendar'
-                                  ? 'Calendar'
-                                  : currentView === 'roadmap'
-                                    ? 'Roadmap'
-                                    : currentView === 'timeline'
-                                      ? 'Timeline'
-                                      : currentView === 'signals'
-                                        ? 'Signals'
-                                        : currentView === 'benchmarks'
-                                          ? 'Model Benchmarks'
-                                          : currentView === 'funding'
-                                            ? 'Funding Brief'
-                                            : currentView === 'analytics-hitl'
-                                              ? 'HITL Analytics'
-                                              : currentView === 'analytics-components'
-                                                ? 'Component Metrics'
-                                                : currentView === 'analytics-recommendations'
-                                                  ? 'Recommendation Feedback'
-                                                  : currentView === 'cost-dashboard'
-                                                    ? 'Cost Dashboard'
-                                                    : currentView === 'industry-updates'
-                                                      ? 'Industry Updates'
-                                                      : currentView === 'entity'
-                                                        ? `Entity: ${entityName || 'Profile'}`
-                                                        : currentView === 'linkedin-posts'
-                                                          ? 'LinkedIn Posts'
-                                                          : currentView === 'mcp-ledger'
-                                                            ? 'MCP Ledger'
-                                                          : selectedDocumentId
-                                                            ? 'My Documents'
-                                                            : 'My Workspace'}
-              </h1>
+              {/* Breadcrumb */}
+              <nav className="flex items-center gap-1 text-[13px] min-w-0">
+                <button
+                  type="button"
+                  onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
+                  className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors shrink-0"
+                >
+                  Home
+                </button>
+                {currentView !== 'research' && (
+                  <>
+                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" />
+                    <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {VIEW_TITLES[currentView] || (currentView === 'entity' ? entityName || 'Entity' : selectedDocumentId ? 'My Documents' : 'My Workspace')}
+                    </span>
+                  </>
+                )}
+                {currentView === 'research' && showResearchDossier && (
+                  <>
+                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" />
+                    <span className="font-medium text-gray-900 dark:text-gray-100 truncate">Research Hub</span>
+                  </>
+                )}
+              </nav>
             </div>
 
-            <div className="flex items-center gap-2 ml-auto">
-              {/* Research Hub / Back to Home CTA - always visible for consistent navigation */}
+            {/* Center: Cmd+K search trigger */}
+            <div className="hidden sm:flex flex-1 justify-center px-4">
+              <button
+                type="button"
+                onClick={commandPalette.toggle}
+                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span className="text-[13px]">Search...</span>
+                <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300">
+                  {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl+'}K
+                </kbd>
+              </button>
+            </div>
+
+            {/* Right: actions */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Research Hub CTA */}
               {currentView === 'research' && showResearchDossier ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowResearchDossier(false);
-                  }}
-                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors"
-                  title="Back to Home"
-                  aria-label="Back to Home"
+                  onClick={() => setShowResearchDossier(false)}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  <span>Home</span>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Home
                 </button>
               ) : (
                 <button
                   type="button"
-                  onClick={() => {
-                    onShowResearchHub?.();
-                    setCurrentView('research');
-                    setResearchHubInitialTab("overview");
-                    setShowResearchDossier(true);
-                  }}
-                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-emerald-900 text-white hover:bg-emerald-800 shadow-sm transition-colors relative"
-                  title="Open Research Hub"
-                  aria-label="Open Research Hub"
+                  onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-gray-900 dark:bg-white/[0.12] text-white hover:bg-gray-800 dark:hover:bg-white/[0.16] shadow-sm transition-colors relative"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  <span>Research Hub</span>
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Research
                   {(userStats?.unreadBriefings ?? 0) > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
                       {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
                     </span>
                   )}
                 </button>
               )}
 
+              {/* Fast Agent toggle */}
               <button
                 type="button"
                 onClick={() => setShowFastAgent((open) => !open)}
-                className={`relative flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${showFastAgent
-                  ? 'bg-stone-900 text-white shadow-sm'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-                  }`}
-                title="Toggle Fast Agent Panel"
-                aria-label="Toggle Fast Agent Panel"
+                className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 ${showFastAgent
+                  ? 'bg-gray-900 dark:bg-indigo-500/20 text-white dark:text-indigo-300 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
+                }`}
               >
-                <Zap className="h-4 w-4" />
-                <span className="hidden sm:inline">Fast Agent</span>
-                {/* Notification badge - pulse when panel is closed and there may be updates */}
+                <Zap className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Agent</span>
                 {!showFastAgent && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white animate-pulse" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
                 )}
               </button>
+
+              {/* Divider */}
+              <div className="w-px h-5 bg-gray-200/60 dark:bg-white/[0.06] mx-0.5" />
 
               {/* User Avatar */}
               {user && (
                 <button
                   onClick={() => openSettings('profile')}
-                  className="flex items-center gap-2 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-full border border-stone-200 bg-white hover:bg-stone-50 transition-colors"
+                  className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
                   title={user.name || user.email || 'Profile'}
-                  aria-label="Open profile and settings"
                 >
                   {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name || user.email || 'User'}
-                      className="h-7 w-7 rounded-full"
-                    />
+                    <img src={user.image} alt="" className="h-6 w-6 rounded-full" />
                   ) : (
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white">
-                      <span className="text-xs font-bold">
-                        {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
-                      </span>
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                      {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
                     </div>
                   )}
-                  <span className="hidden sm:inline text-sm font-medium text-stone-900 truncate max-w-[140px]">
-                    {user.name || user.email}
-                  </span>
                 </button>
               )}
             </div>
@@ -564,9 +565,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           )}
 
           {/* Content Area - Resizable Split */}
-          <div className={`flex-1 overflow-hidden transition-opacity duration-150 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
-            <Suspense
+          <div className={`flex-1 overflow-hidden ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
+            <AnimatePresence mode="wait">
+            <motion.div
               key={`${currentView}:${showResearchDossier ? "hub" : "home"}`}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              className="h-full w-full"
+            >
+            <Suspense
               fallback={viewFallback}
             >
               {currentView === 'research' ? (
@@ -657,7 +666,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               ) : currentView === 'signals' ? (
                 <PublicSignalsLog />
               ) : currentView === 'benchmarks' ? (
-                <div className="h-full overflow-auto p-6 bg-stone-50">
+                <div className="h-full overflow-auto p-6 bg-gray-50 dark:bg-[#09090B]">
                   <ModelEvalDashboard />
                 </div>
               ) : currentView === 'funding' ? (
@@ -667,67 +676,67 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <PublicActivityView />
                 </Suspense>
               ) : currentView === 'analytics-hitl' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <HITLAnalyticsDashboard />
                 </div>
               ) : currentView === 'analytics-components' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <ComponentMetricsDashboard />
                 </div>
               ) : currentView === 'analytics-recommendations' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <RecommendationFeedbackDashboard />
                 </div>
               ) : currentView === 'cost-dashboard' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <CostDashboard />
                   </Suspense>
                 </div>
               ) : currentView === 'industry-updates' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <IndustryUpdatesPanel />
                   </Suspense>
                 </div>
               ) : currentView === 'for-you-feed' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <ForYouFeed />
                   </Suspense>
                 </div>
               ) : currentView === 'document-recommendations' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <DocumentRecommendations />
                   </Suspense>
                 </div>
               ) : currentView === 'agent-marketplace' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <AgentMarketplace />
                   </Suspense>
                 </div>
               ) : currentView === 'github-explorer' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <GitHubExplorer />
                   </Suspense>
                 </div>
               ) : currentView === 'pr-suggestions' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <PRSuggestions />
                   </Suspense>
                 </div>
               ) : currentView === 'linkedin-posts' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <LinkedInPostArchiveView />
                   </Suspense>
                 </div>
               ) : currentView === 'mcp-ledger' ? (
-                <div className="h-full overflow-auto bg-canvas-warm">
+                <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <McpToolLedgerView />
                   </Suspense>
@@ -766,9 +775,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </div>
               )}
             </Suspense>
+            </motion.div>
+            </AnimatePresence>
           </div>
-
-
 
           {/* Floating Context Pills */}
           {/* Context pills rendered inline in views */}
@@ -777,7 +786,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* Resize Handle between Main and AI Chat Panel */}
         {showFastAgent && (
           <div
-            className="hidden lg:block w-1 bg-stone-200 hover:bg-stone-400 cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
+            className="hidden lg:block w-1 bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
             onMouseDown={startAgentResizing}
           />
         )}
@@ -785,7 +794,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* AI Chat Panel - Right Side Column (Desktop) */}
         {showFastAgent && (
           <div
-            className="hidden lg:flex flex-shrink-0 h-full bg-white border-l border-stone-200 z-20 shadow-xl lg:shadow-none lg:relative overflow-hidden"
+            className="hidden lg:flex flex-shrink-0 h-full bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-xl border-l border-gray-200/60 dark:border-white/[0.06] z-20 shadow-xl lg:shadow-none lg:relative overflow-hidden"
             style={{ width: `${agentPanelWidth}px` }}
           >
             <ErrorBoundary title="Fast Agent Panel Error">

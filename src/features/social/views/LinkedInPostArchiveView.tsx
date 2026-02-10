@@ -106,9 +106,9 @@ export const LinkedInPostArchiveView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas-warm">
+    <div className="min-h-screen bg-background">
       {/* Header - always visible */}
-      <div className="sticky top-0 z-10 bg-canvas-warm border-b border-stone-200">
+      <div className="sticky top-0 z-10 bg-background border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -116,8 +116,8 @@ export const LinkedInPostArchiveView: React.FC = () => {
                 <Linkedin className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-stone-900">LinkedIn Post Archive</h1>
-                <p className="text-xs text-stone-500">
+                <h1 className="text-lg font-semibold text-gray-900">LinkedIn Post Archive</h1>
+                <p className="text-xs text-gray-500">
                   {stats
                     ? `${stats.totalPosts} posts across ${stats.recentDates.length} days`
                     : "\u00A0"}
@@ -127,7 +127,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
 
             {stats && (
               <div className="hidden sm:flex items-center gap-3">
-                <div className="flex items-center gap-1 text-xs text-stone-500">
+                <div className="flex items-center gap-1 text-xs text-gray-500">
                   <BarChart3 className="w-3.5 h-3.5" />
                   <span>{stats.byType.length} categories</span>
                 </div>
@@ -137,7 +137,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
 
           {/* Filter chips - always visible */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <Filter className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
+            <Filter className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
             {POST_TYPE_FILTERS.map((filter) => {
               const count = stats
                 ? filter.key === "all"
@@ -150,13 +150,13 @@ export const LinkedInPostArchiveView: React.FC = () => {
                   key={filter.key}
                   onClick={() => handleFilterChange(filter.key)}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeFilter === filter.key
-                      ? "bg-stone-900 text-white"
-                      : "bg-white text-stone-600 hover:bg-stone-100 border border-stone-200"
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
                     }`}
                 >
                   {filter.label}
                   {count > 0 && (
-                    <span className={`ml-1.5 ${activeFilter === filter.key ? "text-stone-300" : "text-stone-400"}`}>
+                    <span className={`ml-1.5 ${activeFilter === filter.key ? "text-gray-300" : "text-gray-400"}`}>
                       {count}
                     </span>
                   )}
@@ -174,8 +174,8 @@ export const LinkedInPostArchiveView: React.FC = () => {
             <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Linkedin className="w-8 h-8 text-blue-400" />
             </div>
-            <h2 className="text-lg font-semibold text-stone-800 mb-2">No posts found</h2>
-            <p className="text-sm text-stone-500 max-w-sm mx-auto">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">No posts found</h2>
+            <p className="text-sm text-gray-500 max-w-sm mx-auto">
               {activeFilter === "all"
                 ? "Posts will appear here once the archive starts collecting them."
                 : `No ${POST_TYPE_FILTERS.find((f) => f.key === activeFilter)?.label || activeFilter} posts found. Try a different filter.`}
@@ -186,11 +186,11 @@ export const LinkedInPostArchiveView: React.FC = () => {
           <div className="space-y-4 pt-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-4 bg-stone-200 rounded w-48 mb-3" />
-                <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-2">
-                  <div className="h-3 bg-stone-100 rounded w-24" />
-                  <div className="h-3 bg-stone-100 rounded w-full" />
-                  <div className="h-3 bg-stone-100 rounded w-3/4" />
+                <div className="h-4 bg-gray-200 rounded w-48 mb-3" />
+                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
+                  <div className="h-3 bg-gray-100 rounded w-24" />
+                  <div className="h-3 bg-gray-100 rounded w-full" />
+                  <div className="h-3 bg-gray-100 rounded w-3/4" />
                 </div>
               </div>
             ))}
@@ -208,17 +208,17 @@ export const LinkedInPostArchiveView: React.FC = () => {
                     className="flex items-center gap-2 mb-3 group w-full text-left"
                   >
                     {isCollapsed ? (
-                      <ChevronRight className="w-4 h-4 text-stone-400" />
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-stone-400" />
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
                     )}
-                    <h2 className="text-sm font-semibold text-stone-700 tracking-wide uppercase">
+                    <h2 className="text-sm font-semibold text-gray-700 tracking-wide uppercase">
                       {formatDateHeader(date)}
                     </h2>
-                    <span className="text-xs text-stone-400">
+                    <span className="text-xs text-gray-400">
                       {posts.length} {posts.length === 1 ? "post" : "posts"}
                     </span>
-                    <div className="flex-1 border-t border-stone-200 ml-2" />
+                    <div className="flex-1 border-t border-gray-200 ml-2" />
                   </button>
 
                   {/* Posts */}
@@ -248,11 +248,11 @@ export const LinkedInPostArchiveView: React.FC = () => {
               <div className="flex justify-center pt-4 pb-8">
                 <button
                   onClick={loadMore}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-white border border-stone-200 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
                 >
-                  <Loader2 className="w-4 h-4 text-stone-400" />
+                  <Loader2 className="w-4 h-4 text-gray-400" />
                   Load {Math.min(LOAD_MORE_INCREMENT, dateGroups.length - visibleGroups)} more days
-                  <span className="text-xs text-stone-400">
+                  <span className="text-xs text-gray-400">
                     ({dateGroups.length - visibleGroups} remaining)
                   </span>
                 </button>

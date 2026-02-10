@@ -317,7 +317,7 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
       phaseLabel: "Act III",
       kpis: [
         { label: "Actions", value: brief.actIII.actions.length, unit: "", color: "bg-slate-900" },
-        { label: "Proposed", value: proposedActions.length, unit: "", color: "bg-emerald-600" }
+        { label: "Proposed", value: proposedActions.length, unit: "", color: "bg-indigo-600" }
       ],
       marketSentiment: Math.round((proposedActions.length / Math.max(brief.actIII.actions.length, 1)) * 100),
       activeRegion: "Global"

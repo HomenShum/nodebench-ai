@@ -28,7 +28,7 @@ interface LinkedInPostCardProps {
 
 const POST_TYPE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   daily_digest: { label: "Daily Digest", color: "bg-indigo-100 text-indigo-700", icon: Newspaper },
-  funding_tracker: { label: "Funding Tracker", color: "bg-emerald-100 text-emerald-700", icon: TrendingUp },
+  funding_tracker: { label: "Funding Tracker", color: "bg-indigo-100 text-gray-700", icon: TrendingUp },
   funding_brief: { label: "Funding Brief", color: "bg-green-100 text-green-700", icon: DollarSign },
   fda: { label: "FDA Update", color: "bg-red-100 text-red-700", icon: Shield },
   clinical: { label: "Clinical Trial", color: "bg-purple-100 text-purple-700", icon: FlaskConical },
@@ -37,10 +37,10 @@ const POST_TYPE_CONFIG: Record<string, { label: string; color: string; icon: Rea
 };
 
 const PERSONA_CONFIG: Record<string, { label: string; color: string }> = {
-  GENERAL: { label: "General", color: "bg-stone-100 text-stone-600" },
+  GENERAL: { label: "General", color: "bg-gray-100 text-gray-600" },
   VC_INVESTOR: { label: "VC Investor", color: "bg-violet-100 text-violet-600" },
   TECH_BUILDER: { label: "Tech Builder", color: "bg-cyan-100 text-cyan-600" },
-  FUNDING: { label: "Funding", color: "bg-emerald-100 text-emerald-600" },
+  FUNDING: { label: "Funding", color: "bg-indigo-100 text-indigo-600" },
   FDA: { label: "FDA", color: "bg-red-100 text-red-600" },
   CLINICAL: { label: "Clinical", color: "bg-purple-100 text-purple-600" },
   RESEARCH: { label: "Research", color: "bg-blue-100 text-blue-600" },
@@ -82,7 +82,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
   };
 
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -96,16 +96,16 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
             </span>
           )}
           {metadata?.part && (
-            <span className="text-xs text-stone-400">
+            <span className="text-xs text-gray-400">
               Part {String(metadata.part)}/{String(metadata.totalParts)}
             </span>
           )}
         </div>
-        <span className="text-xs text-stone-400">{formattedTime}</span>
+        <span className="text-xs text-gray-400">{formattedTime}</span>
       </div>
 
       {/* Content */}
-      <div className="text-sm text-stone-800 whitespace-pre-wrap leading-relaxed font-light">
+      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed font-light">
         {displayContent}
       </div>
 
@@ -128,8 +128,8 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-stone-100">
-        <div className="flex items-center gap-3 text-xs text-stone-400">
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <div className="flex items-center gap-3 text-xs text-gray-400">
           {factCheckCount != null && factCheckCount > 0 && (
             <span>{factCheckCount} fact checks</span>
           )}
@@ -138,10 +138,10 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-stone-500 hover:text-stone-700 hover:bg-stone-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors"
             title="Copy post text"
           >
-            {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+            {copied ? <Check className="w-3 h-3 text-indigo-500" /> : <Copy className="w-3 h-3" />}
             {copied ? "Copied" : "Copy"}
           </button>
           {postUrl && (

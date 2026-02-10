@@ -140,7 +140,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
                   <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.location}</span>
                   <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.sector}</span>
                   {deal.leads?.[0] && <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">Lead: {deal.leads[0]}</span>}
-                  {deal.traction && <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">{deal.traction}</span>}
+                  {deal.traction && <span className="text-gray-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">{deal.traction}</span>}
                 </div>
               </div>
               {deal.spark && (

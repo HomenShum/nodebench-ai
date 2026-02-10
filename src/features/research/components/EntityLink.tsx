@@ -90,11 +90,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
   switch (type) {
     case "company":
       return {
-        text: "text-emerald-700",
-        bg: "bg-emerald-50 hover:bg-emerald-100",
-        border: "border-emerald-200",
-        icon: "text-emerald-500",
-        badge: "bg-emerald-100 text-emerald-700",
+        text: "text-gray-700",
+        bg: "bg-indigo-50 hover:bg-indigo-100",
+        border: "border-indigo-200",
+        icon: "text-indigo-500",
+        badge: "bg-indigo-100 text-gray-700",
       };
     case "person":
       return {
@@ -122,11 +122,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     case "topic":
       return {
-        text: "text-stone-700",
-        bg: "bg-stone-50 hover:bg-stone-100",
-        border: "border-stone-200",
-        icon: "text-stone-500",
-        badge: "bg-stone-100 text-stone-700",
+        text: "text-gray-700",
+        bg: "bg-gray-50 hover:bg-gray-100",
+        border: "border-gray-200",
+        icon: "text-gray-500",
+        badge: "bg-gray-100 text-gray-700",
       };
     case "region":
       return {
@@ -412,7 +412,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                       detail: { entity }
                     }));
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors"
                 >
                   <FileText className="w-3 h-3" />
                   <span>Create Dossier</span>

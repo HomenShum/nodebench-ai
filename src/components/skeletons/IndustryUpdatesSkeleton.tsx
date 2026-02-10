@@ -18,7 +18,7 @@ export function IndustryUpdatesSkeleton() {
           </div>
           <Skeleton className="h-4 w-64" />
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-stone-100 rounded-lg">
+        <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
           <Skeleton className="w-2 h-2" rounded="full" />
           <Skeleton className="h-4 w-24" />
         </div>
@@ -47,7 +47,7 @@ export function IndustryUpdatesSkeleton() {
 
 function UpdateCardSkeleton() {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-4">
       {/* Card Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -71,7 +71,7 @@ function UpdateCardSkeleton() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
         <div className="flex gap-2">
           <SkeletonBadge width={70} />
           <SkeletonBadge width={50} />

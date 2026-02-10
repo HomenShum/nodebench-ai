@@ -76,7 +76,7 @@ export function WorkspaceGrid({
       {/* Quick Access Grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-stone-900">Quick Access</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Quick Access</h2>
           <button
             onClick={onCreateDocument}
             className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -125,7 +125,7 @@ export function WorkspaceGrid({
       {recentDocs.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-stone-900">Recent Documents</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Documents</h2>
             <button
               onClick={() => onNavigate?.('/documents')}
               className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
@@ -139,18 +139,18 @@ export function WorkspaceGrid({
               <motion.button
                 key={doc._id}
                 onClick={() => onDocumentSelect?.(doc._id)}
-                className="p-4 bg-white rounded-xl border border-stone-200 text-left hover:border-blue-300 hover:shadow-md transition-all group"
+                className="p-4 bg-white rounded-xl border border-gray-200 text-left hover:border-blue-300 hover:shadow-md transition-all group"
                 whileHover={{ y: -2 }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4 text-stone-400 group-hover:text-blue-500 transition-colors" />
-                  <span className="text-xs text-stone-400">
+                  <FileText className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                  <span className="text-xs text-gray-400">
                     {doc._creationTime
                       ? new Date(doc._creationTime).toLocaleDateString()
                       : 'Recently'}
                   </span>
                 </div>
-                <h3 className="font-medium text-sm text-stone-800 truncate">
+                <h3 className="font-medium text-sm text-gray-800 truncate">
                   {doc.title || 'Untitled'}
                 </h3>
               </motion.button>

@@ -61,9 +61,9 @@ function getProviderColor(provider: ArtifactProvider | undefined): string {
     case "twitter": return "text-sky-500";
     case "linkedin": return "text-blue-700";
     case "crunchbase": return "text-orange-500";
-    case "github": return "text-stone-800";
-    case "news": return "text-emerald-600";
-    default: return "text-stone-500";
+    case "github": return "text-gray-800";
+    case "news": return "text-indigo-600";
+    default: return "text-gray-500";
   }
 }
 
@@ -109,14 +109,14 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
     <div
       onClick={handleClick}
       className={`
-        group relative flex flex-col bg-white border border-stone-200 rounded-lg 
+        group relative flex flex-col bg-white border border-gray-200 rounded-lg 
         overflow-hidden cursor-pointer transition-all duration-200
         hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5
         ${compact ? 'w-40' : 'w-52'}
       `}
     >
       {/* Thumbnail or Placeholder */}
-      <div className={`relative bg-stone-100 ${compact ? 'h-24' : 'h-32'}`}>
+      <div className={`relative bg-gray-100 ${compact ? 'h-24' : 'h-32'}`}>
         {thumbnail ? (
           <img 
             src={thumbnail} 
@@ -141,7 +141,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
         {kind === "video" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
             <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-              <Play className="w-5 h-5 text-stone-900 ml-0.5" />
+              <Play className="w-5 h-5 text-gray-900 ml-0.5" />
             </div>
           </div>
         )}
@@ -154,7 +154,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
             </div>
           )}
           {flags.isCited && (
-            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center">
               <CheckCircle2 className="w-3 h-3 text-white" />
             </div>
           )}
@@ -163,12 +163,12 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
       
       {/* Content */}
       <div className={`flex-1 ${compact ? 'p-2' : 'p-3'}`}>
-        <h4 className={`font-medium text-stone-900 line-clamp-2 break-words ${compact ? 'text-xs' : 'text-sm'}`}>
+        <h4 className={`font-medium text-gray-900 line-clamp-2 break-words ${compact ? 'text-xs' : 'text-sm'}`}>
           {title}
         </h4>
         
         {!compact && snippet && (
-          <p className="mt-1 text-xs text-stone-500 line-clamp-2 break-words overflow-hidden">
+          <p className="mt-1 text-xs text-gray-500 line-clamp-2 break-words overflow-hidden">
             {snippet}
           </p>
         )}
@@ -179,7 +179,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
             {getProviderLabel(provider)}
           </span>
           {host && (
-            <span className="text-[10px] text-stone-400 truncate max-w-[80px]">
+            <span className="text-[10px] text-gray-400 truncate max-w-[80px]">
               {host}
             </span>
           )}
@@ -188,7 +188,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
       
       {/* External Link Icon */}
       <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <ExternalLink className="w-3.5 h-3.5 text-stone-400" />
+        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
       </div>
     </div>
   );
@@ -244,11 +244,11 @@ export function MediaRail({
     <div className="my-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <div className="h-px flex-1 bg-stone-200"></div>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-500">
+        <div className="h-px flex-1 bg-gray-200"></div>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
           Sources & Media ({sortedArtifacts.length})
         </span>
-        <div className="h-px flex-1 bg-stone-200"></div>
+        <div className="h-px flex-1 bg-gray-200"></div>
       </div>
       
       {/* Horizontal Scroll Rail */}
@@ -303,17 +303,17 @@ export function InlineMediaRail({ artifacts, maxVisible = 4 }: InlineMediaRailPr
           href={artifact.canonicalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-2 py-1 bg-stone-100 hover:bg-stone-200 rounded text-xs text-stone-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors"
         >
           <span className={getProviderColor(artifact.provider)}>
             {getKindIcon(artifact.kind)}
           </span>
           <span className="max-w-[120px] truncate">{artifact.title}</span>
-          <ExternalLink className="w-3 h-3 text-stone-400" />
+          <ExternalLink className="w-3 h-3 text-gray-400" />
         </a>
       ))}
       {remaining > 0 && (
-        <span className="text-xs text-stone-500">+{remaining} more</span>
+        <span className="text-xs text-gray-500">+{remaining} more</span>
       )}
     </div>
   );

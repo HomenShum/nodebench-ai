@@ -73,7 +73,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
       case "keyword": return "bg-amber-50 text-amber-800 border-amber-200";
       case "entity": return "bg-violet-50 text-violet-800 border-violet-200";
       case "topic": return "bg-sky-50 text-sky-800 border-sky-200";
-      case "community": return "bg-emerald-50 text-emerald-800 border-emerald-200";
+      case "community": return "bg-indigo-50 text-gray-800 border-indigo-200";
       case "relationship": return "bg-rose-50 text-rose-800 border-rose-200";
       default: return "bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]";
     }
@@ -83,7 +83,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
       case "keyword": return "bg-amber-400";
       case "entity": return "bg-violet-400";
       case "topic": return "bg-sky-400";
-      case "community": return "bg-emerald-400";
+      case "community": return "bg-indigo-400";
       case "relationship": return "bg-rose-400";
       default: return "bg-[var(--border-color)]";
     }

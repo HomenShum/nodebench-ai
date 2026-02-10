@@ -46,15 +46,15 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
     return (
       <motion.div
         ref={ref}
-        whileHover={isClickable ? { y: -2, boxShadow: '0 8px 25px -5px rgba(0,0,0,0.1)' } : undefined}
+        whileHover={isClickable ? { y: -2, boxShadow: '0 0 0 1px rgba(0,0,0,0.03), 0 4px 8px rgba(0,0,0,0.04), 0 24px 48px rgba(0,0,0,0.08)' } : undefined}
         whileTap={isClickable ? { scale: 0.995 } : undefined}
         transition={{ type: 'tween', duration: 0.15 }}
         className={cn(
-          'bg-white rounded-xl',
-          bordered && 'border border-stone-200',
+          'bg-card rounded-xl',
+          bordered && 'border border-gray-200/60',
           paddingStyles[padding],
           isClickable && 'cursor-pointer will-change-transform',
-          'shadow-sm transition-shadow',
+          'shadow-sm transition-all duration-150',
           className
         )}
         onClick={onClick}
@@ -80,7 +80,7 @@ export function CardHeader({ className, children }: { className?: string; childr
 /** Card title */
 export function CardTitle({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <h3 className={cn('text-base font-semibold text-stone-900 tracking-tight', className)}>
+    <h3 className={cn('text-base font-semibold text-gray-900 tracking-tight', className)}>
       {children}
     </h3>
   );
@@ -89,7 +89,7 @@ export function CardTitle({ className, children }: { className?: string; childre
 /** Card description */
 export function CardDescription({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <p className={cn('text-sm text-stone-500', className)}>
+    <p className={cn('text-sm text-gray-500', className)}>
       {children}
     </p>
   );
@@ -107,7 +107,7 @@ export function CardContent({ className, children }: { className?: string; child
 /** Card footer section */
 export function CardFooter({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn('flex items-center gap-2 mt-4 pt-3 border-t border-stone-100', className)}>
+    <div className={cn('flex items-center gap-2 mt-4 pt-3 border-t border-gray-100', className)}>
       {children}
     </div>
   );

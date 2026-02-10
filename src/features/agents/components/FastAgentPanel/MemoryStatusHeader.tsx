@@ -54,7 +54,7 @@ export function MemoryStatusHeader({
             case 'done':
                 return <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />;
             case 'active':
-                return <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />;
+                return <Loader2 className="w-3.5 h-3.5 text-violet-500 animate-spin" />;
             case 'failed':
                 return <Circle className="w-3.5 h-3.5 text-red-500" />;
             default:
@@ -97,7 +97,7 @@ export function MemoryStatusHeader({
                     <div className={cn(
                         "w-2 h-2 rounded-full flex-shrink-0",
                         doneItems === totalItems && totalItems > 0 ? "bg-green-500" :
-                            activeItem ? "bg-blue-500 animate-pulse" : "bg-[var(--text-muted)]"
+                            activeItem ? "bg-violet-500 animate-pulse" : "bg-[var(--text-muted)]"
                     )} />
 
                     {/* Progress text */}

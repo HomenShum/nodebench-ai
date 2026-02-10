@@ -98,7 +98,7 @@ export function NarrativeCard({
               </span>
               {thread.plotTwistCount > 0 && (
                 <>
-                  <span className="text-stone-300">·</span>
+                  <span className="text-gray-300">·</span>
                   <span className="text-xs text-red-600 font-medium">
                     {thread.plotTwistCount} plot twist{thread.plotTwistCount > 1 ? "s" : ""}
                   </span>
@@ -107,25 +107,25 @@ export function NarrativeCard({
             </div>
 
             {/* Headline */}
-            <h3 className="text-2xl md:text-3xl font-serif font-bold text-stone-900 leading-tight group-hover:text-emerald-800 transition-colors">
+            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight group-hover:text-gray-800 transition-colors">
               {thread.name}
             </h3>
 
             {/* Thesis */}
-            <p className="text-stone-600 leading-relaxed text-lg font-light line-clamp-3">
+            <p className="text-gray-600 leading-relaxed text-lg font-light line-clamp-3">
               {thread.thesis}
             </p>
 
             {/* Latest Event */}
             {latestEvent && (
-              <div className="bg-stone-50 rounded-lg p-3 border border-stone-100">
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-stone-500">Latest Development</span>
-                  <span className="text-xs text-stone-400">
+                  <span className="text-xs font-medium text-gray-500">Latest Development</span>
+                  <span className="text-xs text-gray-400">
                     {formatTimeAgo(latestEvent.occurredAt)}
                   </span>
                 </div>
-                <p className="text-sm text-stone-700 line-clamp-2">
+                <p className="text-sm text-gray-700 line-clamp-2">
                   {latestEvent.headline}
                 </p>
               </div>
@@ -143,7 +143,7 @@ export function NarrativeCard({
                   </span>
                 ))}
               </div>
-              <span className="text-sm text-stone-400">
+              <span className="text-sm text-gray-400">
                 {thread.eventCount} events
               </span>
               <button
@@ -151,8 +151,8 @@ export function NarrativeCard({
                 onClick={handleSave}
                 className={`ml-auto p-2 rounded-full transition-colors ${
                   saved
-                    ? "text-emerald-700 bg-emerald-50"
-                    : "text-stone-400 hover:text-stone-600 hover:bg-stone-50"
+                    ? "text-gray-700 bg-indigo-50"
+                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
                 }`}
                 title={saved ? "Saved" : "Save for later"}
                 aria-label={saved ? "Saved" : "Save for later"}
@@ -180,14 +180,14 @@ export function NarrativeCard({
 
   if (variant === "compact") {
     return (
-      <article onClick={onClick} className="group cursor-pointer py-3 border-b border-stone-100 last:border-0">
+      <article onClick={onClick} className="group cursor-pointer py-3 border-b border-gray-100 last:border-0">
         <div className="flex items-start gap-3">
           <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${phaseColors.bg} ${phaseColors.border} border`} />
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-stone-900 group-hover:text-emerald-800 transition-colors line-clamp-1">
+            <h4 className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors line-clamp-1">
               {thread.name}
             </h4>
-            <div className="flex items-center gap-2 text-xs text-stone-500 mt-0.5">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
               <span>{phaseDisplay.label}</span>
               <span>·</span>
               <span>{thread.eventCount} events</span>
@@ -210,17 +210,17 @@ export function NarrativeCard({
         </span>
 
         {/* Headline */}
-        <h4 className="text-lg font-serif font-semibold text-stone-900 leading-snug group-hover:text-emerald-800 transition-colors line-clamp-2">
+        <h4 className="text-lg font-semibold text-gray-900 leading-snug group-hover:text-gray-800 transition-colors line-clamp-2">
           {thread.name}
         </h4>
 
         {/* Thesis */}
-        <p className="text-sm text-stone-500 leading-relaxed line-clamp-2 font-light">
+        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 font-light">
           {thread.thesis}
         </p>
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-stone-400 pt-1">
+        <div className="flex items-center gap-3 text-xs text-gray-400 pt-1">
           <span>{thread.eventCount} events</span>
           <span>{formatTimeAgo(thread.latestEventAt)}</span>
           <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />

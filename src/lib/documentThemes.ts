@@ -22,11 +22,11 @@ export function getThemeForFileType(type: FileType): DocumentCardTheme {
     case "csv":
     case "excel":
       return {
-        ring: "ring-1 ring-emerald-400/25",
-        gradient: "bg-gradient-to-br from-emerald-50/10 to-transparent",
-        iconBg: "bg-emerald-500",
-        label: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700",
-        watermarkText: "text-emerald-500",
+        ring: "ring-1 ring-indigo-400/25",
+        gradient: "bg-gradient-to-br from-indigo-50/10 to-transparent",
+        iconBg: "bg-indigo-500",
+        label: "bg-indigo-500/10 border-indigo-500/30 text-gray-700",
+        watermarkText: "text-indigo-500",
       } as const;
     case "pdf":
       return {

@@ -54,7 +54,7 @@ export function GoalCard({
       <div className="flex items-start gap-3 mb-3">
         <div className={cn(
           "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isStreaming ? "bg-blue-500 animate-pulse" : "bg-blue-600"
+          isStreaming ? "bg-violet-500 animate-pulse" : "bg-violet-600"
         )}>
           <Target className="h-4 w-4 text-white" />
         </div>

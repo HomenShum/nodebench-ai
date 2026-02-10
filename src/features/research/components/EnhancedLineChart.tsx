@@ -112,7 +112,7 @@ function DeltaCallout({ delta }: { delta: TrendLineConfig["delta"] }) {
   if (!delta) return null;
   
   const Icon = delta.direction === "up" ? TrendingUp : delta.direction === "down" ? TrendingDown : Minus;
-  const colorClass = delta.direction === "up" ? "text-emerald-600 bg-emerald-50" 
+  const colorClass = delta.direction === "up" ? "text-indigo-600 bg-indigo-50" 
     : delta.direction === "down" ? "text-red-600 bg-red-50" 
     : "text-slate-600 bg-slate-50";
   const sign = delta.direction === "up" ? "+" : delta.direction === "down" ? "" : "";

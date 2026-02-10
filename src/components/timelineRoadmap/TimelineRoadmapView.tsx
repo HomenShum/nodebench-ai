@@ -1122,7 +1122,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   ))}
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-[var(--bg-secondary)] overflow-hidden">
-                  <div className="h-full bg-emerald-500 transition-all" style={{ width: `${scrollProgress}%` }} />
+                  <div className="h-full bg-indigo-500 transition-all" style={{ width: `${scrollProgress}%` }} />
                 </div>
               </div>
             </section>
@@ -1272,7 +1272,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
             )}
 
             <section id="roadmap-overview" className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-5 overflow-hidden">
-              <div className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
               <div className="pointer-events-none absolute -left-24 bottom-0 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl" />
               <div className="relative space-y-4">
                 <div>
@@ -1573,9 +1573,9 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
 
 function SliceStat({ label, value, total, color }: { label: string; value: number; total: number; color: "emerald" | "indigo" | "rose" }) {
   const percent = pct(value, total);
-  const bar = color === "emerald" ? "bg-emerald-500" : color === "indigo" ? "bg-indigo-500" : "bg-rose-500";
-  const tint = color === "emerald" ? "bg-emerald-500/10" : color === "indigo" ? "bg-indigo-500/10" : "bg-rose-500/10";
-  const text = color === "emerald" ? "text-emerald-600" : color === "indigo" ? "text-indigo-600" : "text-rose-600";
+  const bar = color === "emerald" ? "bg-indigo-500" : color === "indigo" ? "bg-indigo-500" : "bg-rose-500";
+  const tint = color === "emerald" ? "bg-indigo-500/10" : color === "indigo" ? "bg-indigo-500/10" : "bg-rose-500/10";
+  const text = color === "emerald" ? "text-indigo-600" : color === "indigo" ? "text-indigo-600" : "text-rose-600";
 
   return (
     <div className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
@@ -1595,7 +1595,7 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
     green: "text-green-600 bg-green-500/10",
     orange: "text-orange-600 bg-orange-500/10",
     indigo: "text-indigo-600 bg-indigo-500/10",
-    teal: "text-teal-600 bg-teal-500/10",
+    teal: "text-indigo-600 bg-indigo-500/10",
     rose: "text-rose-600 bg-rose-500/10",
     amber: "text-amber-600 bg-amber-500/10",
   };
@@ -1645,8 +1645,8 @@ const sectionToneClasses: Record<SectionTone, string> = {
   slate: "border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]",
   sky: "border-sky-500/20 bg-sky-500/10 text-sky-600",
   indigo: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600",
-  emerald: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
-  teal: "border-teal-500/20 bg-teal-500/10 text-teal-600",
+  emerald: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600",
+  teal: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600",
   violet: "border-violet-500/20 bg-violet-500/10 text-violet-600",
   amber: "border-amber-500/20 bg-amber-500/10 text-amber-600",
   rose: "border-rose-500/20 bg-rose-500/10 text-rose-600",
@@ -1682,12 +1682,12 @@ function SectionHeader({
 }
 
 const summaryAccents = [
-  "bg-emerald-500",
+  "bg-indigo-500",
   "bg-sky-500",
   "bg-indigo-500",
   "bg-amber-500",
   "bg-rose-500",
-  "bg-teal-500",
+  "bg-indigo-500",
   "bg-violet-500",
   "bg-cyan-500",
 ];
@@ -1755,7 +1755,7 @@ function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
 function TagPill({ label, tone = "default" }: { label: string; tone?: "default" | "success" | "warning" | "info" }) {
   const toneClasses = {
     default: "border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]",
-    success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600",
+    success: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600",
     info: "border-sky-500/30 bg-sky-500/10 text-sky-600",
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   };
@@ -1768,7 +1768,7 @@ function TagPill({ label, tone = "default" }: { label: string; tone?: "default" 
 
 function RoadmapNavButton({ item, isActive }: { item: { label: string; target: string }; isActive?: boolean }) {
   const activeClasses = isActive
-    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+    ? "border-indigo-500/40 bg-indigo-500/10 text-gray-700"
     : "border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]";
   return (
     <button
@@ -1906,7 +1906,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
   const priorityStyles: Record<"rose" | "amber" | "emerald", { bar: string; pill: string }> = {
     rose: { bar: "bg-rose-500", pill: "border-rose-500/30 bg-rose-500/10 text-rose-600" },
     amber: { bar: "bg-amber-500", pill: "border-amber-500/30 bg-amber-500/10 text-amber-600" },
-    emerald: { bar: "bg-emerald-500", pill: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" },
+    emerald: { bar: "bg-indigo-500", pill: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600" },
   };
   const tone = priorityStyles[priorityTone];
   return (
@@ -2201,7 +2201,7 @@ function RiskCard({ risk }: { risk: RiskDependency }) {
 
 function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
   const phaseTone = phase.phase === "Now" ? "emerald" : phase.phase === "Next" ? "amber" : "violet";
-  const phaseBar = phaseTone === "emerald" ? "bg-emerald-500" : phaseTone === "amber" ? "bg-amber-500" : "bg-violet-500";
+  const phaseBar = phaseTone === "emerald" ? "bg-indigo-500" : phaseTone === "amber" ? "bg-amber-500" : "bg-violet-500";
   return (
     <div className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 overflow-hidden transition-shadow hover:shadow-sm">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${phaseBar}`} />

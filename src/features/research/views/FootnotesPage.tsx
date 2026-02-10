@@ -64,7 +64,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   const filteredCount = filteredLibrary.order.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[color:var(--bg-secondary)] to-[color:var(--bg-primary)]">
+    <div className="min-h-screen bg-gradient-to-b from-[color:var(--bg-secondary)] to-[color:var(--bg-primary)] editorial-layout">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[color:var(--bg-primary)]/95 backdrop-blur-sm border-b border-[color:var(--border-color)] shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-4">

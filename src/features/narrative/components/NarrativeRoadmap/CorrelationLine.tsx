@@ -235,7 +235,7 @@ export function CorrelationLegend() {
   ];
 
   return (
-    <div className="flex items-center gap-4 text-xs text-stone-500">
+    <div className="flex items-center gap-4 text-xs text-gray-500">
       {types.map(({ type, label }) => (
         <div key={type} className="flex items-center gap-1.5">
           <svg width="24" height="8" className="flex-shrink-0">
@@ -283,7 +283,7 @@ export function CorrelationTooltip({ correlation, position }: CorrelationTooltip
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 5 }}
-      className="absolute z-50 bg-white rounded-lg shadow-lg border border-stone-200 p-3 max-w-xs"
+      className="absolute z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-3 max-w-xs"
       style={{
         left: position.x,
         top: position.y + 10,
@@ -295,12 +295,12 @@ export function CorrelationTooltip({ correlation, position }: CorrelationTooltip
           className="w-3 h-3 rounded-full"
           style={{ backgroundColor: getCorrelationColor(correlation.correlationType) }}
         />
-        <span className="text-sm font-medium text-stone-900">
+        <span className="text-sm font-medium text-gray-900">
           {typeLabels[correlation.correlationType]}
         </span>
       </div>
-      <p className="text-sm text-stone-600 mb-2">{correlation.description}</p>
-      <div className="flex items-center justify-between text-xs text-stone-400">
+      <p className="text-sm text-gray-600 mb-2">{correlation.description}</p>
+      <div className="flex items-center justify-between text-xs text-gray-400">
         <span>Strength: {Math.round(correlation.strength * 100)}%</span>
         <span>{correlation.relatedEventIds.length} event(s)</span>
       </div>

@@ -97,7 +97,7 @@ function getTagStyle(kind?: string, fallbackStyle?: string): string {
     case "topic":
       return "bg-blue-500/10 text-blue-600 border border-blue-500/20";
     case "community":
-      return "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20";
+      return "bg-indigo-500/10 text-indigo-600 border border-indigo-500/20";
     case "relationship":
       return "bg-orange-500/10 text-orange-600 border border-orange-500/20";
     case "keyword":
@@ -304,8 +304,8 @@ export function DocumentRow({
       {/* 4. AI Status */}
       <div className="w-28 hidden lg:flex items-center">
         {status.variant === "ready" ? (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-medium border border-emerald-500/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 text-[10px] font-medium border border-indigo-500/20">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
             {status.label}
           </div>
         ) : status.variant === "analyzing" ? (
@@ -361,7 +361,7 @@ export function DocumentRow({
               onShare(doc._id);
             }}
             title="Share"
-            className="p-1.5 hover:bg-emerald-500/10 rounded text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
+            className="p-1.5 hover:bg-indigo-500/10 rounded text-[var(--text-muted)] hover:text-indigo-500 transition-colors"
           >
             <Share2 className="w-3.5 h-3.5" />
           </button>

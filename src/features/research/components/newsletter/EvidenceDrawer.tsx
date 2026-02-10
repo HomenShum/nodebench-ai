@@ -62,7 +62,7 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
                             {source.title}
                         </h4>
                         {source.verified && (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                         )}
                     </div>
                     <p className="text-[10px] text-[color:var(--text-secondary)] truncate">{source.domain}</p>
@@ -233,10 +233,10 @@ export function EvidenceDrawer({
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                        <CheckCircle2 className="w-4 h-4 text-indigo-500" />
                                         <span className="text-sm text-[color:var(--text-primary)]">Verified</span>
                                     </div>
-                                    <span className="text-sm font-medium text-emerald-600">{verifiedCount}</span>
+                                    <span className="text-sm font-medium text-indigo-600">{verifiedCount}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export function EvidenceDrawer({
                             <div className="mt-3 pt-3 border-t border-[color:var(--border-color)]">
                                 <div className="h-2 bg-[color:var(--bg-secondary)] rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-emerald-500 rounded-full transition-all"
+                                        className="h-full bg-indigo-500 rounded-full transition-all"
                                         style={{ width: sources.length > 0 ? `${(verifiedCount / sources.length) * 100}%` : '0%' }}
                                     />
                                 </div>

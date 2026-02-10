@@ -110,9 +110,9 @@ function SeverityBadge({ severity }: { severity: Severity }) {
       label: "Medium",
     },
     low: {
-      bg: "bg-stone-50",
-      text: "text-stone-600",
-      border: "border-stone-200",
+      bg: "bg-gray-50",
+      text: "text-gray-600",
+      border: "border-gray-200",
       icon: <Info className="w-3 h-3" />,
       label: "Low",
     },
@@ -139,8 +139,8 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
     { bg: string; text: string; icon: React.ReactNode; label: string }
   > = {
     guidance_added: {
-      bg: "bg-emerald-100",
-      text: "text-emerald-700",
+      bg: "bg-indigo-100",
+      text: "text-gray-700",
       icon: <PlusCircle className="w-3 h-3" />,
       label: "Added",
     },
@@ -187,14 +187,14 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
       label: "API Change",
     },
     model_update: {
-      bg: "bg-teal-100",
-      text: "text-teal-700",
+      bg: "bg-indigo-100",
+      text: "text-indigo-700",
       icon: <Zap className="w-3 h-3" />,
       label: "Model Update",
     },
     minor_update: {
-      bg: "bg-stone-100",
-      text: "text-stone-600",
+      bg: "bg-gray-100",
+      text: "text-gray-600",
       icon: <Info className="w-3 h-3" />,
       label: "Minor",
     },
@@ -232,9 +232,9 @@ function formatTimeAgo(timestamp: number): string {
  */
 function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
   return (
-    <div className="font-mono text-xs rounded border border-stone-200 overflow-hidden">
+    <div className="font-mono text-xs rounded border border-gray-200 overflow-hidden">
       {hunk.context && (
-        <div className="bg-stone-50 px-3 py-1 text-stone-500 border-b border-stone-200">
+        <div className="bg-gray-50 px-3 py-1 text-gray-500 border-b border-gray-200">
           {hunk.context}
         </div>
       )}
@@ -245,8 +245,8 @@ function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
         </div>
       )}
       {hunk.type === "add" && hunk.newText && (
-        <div className="bg-emerald-50 px-3 py-1 text-emerald-700">
-          <span className="text-emerald-500">+ </span>
+        <div className="bg-indigo-50 px-3 py-1 text-gray-700">
+          <span className="text-indigo-500">+ </span>
           {hunk.newText}
         </div>
       )}
@@ -259,8 +259,8 @@ function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
             </div>
           )}
           {hunk.newText && (
-            <div className="bg-emerald-50 px-3 py-1 text-emerald-700">
-              <span className="text-emerald-500">+ </span>
+            <div className="bg-indigo-50 px-3 py-1 text-gray-700">
+              <span className="text-indigo-500">+ </span>
               {hunk.newText}
             </div>
           )}
@@ -350,13 +350,13 @@ export function ChangeCard({
               {diff.affectedSections.slice(0, 3).map((section) => (
                 <span
                   key={section}
-                  className="px-1.5 py-0.5 text-[10px] bg-stone-100 text-stone-600 rounded"
+                  className="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 rounded"
                 >
                   {section}
                 </span>
               ))}
               {diff.affectedSections.length > 3 && (
-                <span className="px-1.5 py-0.5 text-[10px] bg-stone-100 text-stone-500 rounded">
+                <span className="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded">
                   +{diff.affectedSections.length - 3} more
                 </span>
               )}
@@ -395,7 +395,7 @@ export function ChangeCard({
                 {diff.affectedSections.map((section) => (
                   <span
                     key={section}
-                    className="px-2 py-1 text-xs bg-stone-100 text-stone-600 rounded"
+                    className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
                   >
                     {section}
                   </span>
@@ -450,7 +450,7 @@ export function ChangeListItem({ diff, source, selected = false, onSelect }: Cha
     critical: "bg-red-500",
     high: "bg-orange-500",
     medium: "bg-amber-500",
-    low: "bg-stone-400",
+    low: "bg-gray-400",
   };
 
   return (

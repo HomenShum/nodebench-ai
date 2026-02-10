@@ -46,10 +46,10 @@ export function useToast() {
 const toastConfig = {
   success: {
     icon: CheckCircle2,
-    bg: 'bg-emerald-50 border-emerald-200',
-    iconColor: 'text-emerald-600',
-    titleColor: 'text-emerald-900',
-    progressColor: 'bg-emerald-500',
+    bg: 'bg-green-50 border-green-200',
+    iconColor: 'text-green-600',
+    titleColor: 'text-green-900',
+    progressColor: 'bg-green-500',
   },
   error: {
     icon: XCircle,
@@ -100,14 +100,14 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       <div className="flex-1 min-w-0">
         <p className={cn('text-sm font-semibold', config.titleColor)}>{toast.title}</p>
         {toast.message && (
-          <p className="text-sm text-stone-600 mt-0.5 line-clamp-2">{toast.message}</p>
+          <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{toast.message}</p>
         )}
       </div>
       <button
         onClick={onRemove}
         className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
       >
-        <X className="w-4 h-4 text-stone-400" />
+        <X className="w-4 h-4 text-gray-400" />
       </button>
       
       {/* Progress bar */}

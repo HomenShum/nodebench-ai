@@ -74,7 +74,7 @@ interface AuditEntry {
 function getChoiceIcon(choiceType: AuditEntry["choiceType"]) {
   switch (choiceType) {
     case "gather_info":
-      return <Search className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />;
+      return <Search className="w-3.5 h-3.5 text-violet-500 dark:text-violet-400" />;
     case "execute_data_op":
       return <Wrench className="w-3.5 h-3.5 text-[var(--text-secondary)]" />;
     case "execute_output":

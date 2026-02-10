@@ -39,7 +39,7 @@ function stripeClass(kind: AgendaMiniKind, status?: string): string {
     case "in_progress":
       return "bg-blue-400/70";
     case "done":
-      return "bg-emerald-500/80";
+      return "bg-indigo-500/80";
     default:
       return "bg-slate-400/70";
   }
@@ -48,7 +48,7 @@ function stripeClass(kind: AgendaMiniKind, status?: string): string {
 function eventContainerClasses(color?: string): string {
   switch (color) {
     case "green":
-      return "border-emerald-200 bg-emerald-50";
+      return "border-indigo-200 bg-indigo-50";
     case "amber":
       return "border-amber-200 bg-amber-50";
     case "red":
@@ -71,7 +71,7 @@ function noteContainerClasses(): string {
 function eventBadgeClasses(color?: string): string {
   switch (color) {
     case "green":
-      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      return "border-indigo-200 bg-indigo-50 text-gray-700";
     case "amber":
       return "border-amber-200 bg-amber-50 text-amber-700";
     case "red":
@@ -205,7 +205,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
             ? 'border-purple-200 bg-purple-50'
             : kind === 'note'
               ? noteContainerClasses()
-              : 'border-emerald-200 bg-emerald-50'
+              : 'border-indigo-200 bg-indigo-50'
       }`}
       role={onSelect ? "button" : undefined}
       tabIndex={onSelect ? 0 : -1}
@@ -231,7 +231,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={String(item?.status ?? 'todo') === 'done' ? 'Mark task as not done' : 'Mark task as done'}
-              className="h-3.5 w-3.5 rounded border-[var(--border-color)] text-emerald-600 focus:ring-1 focus:ring-emerald-500/50 bg-white"
+              className="h-3.5 w-3.5 rounded border-[var(--border-color)] text-indigo-600 focus:ring-1 focus:ring-indigo-500/50 bg-white"
             />
           ) : null}
           <span
@@ -242,7 +242,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
                   ? 'border-purple-200 bg-purple-50 text-purple-700'
                   : kind === 'note'
                     ? 'border-amber-200 bg-amber-50 text-amber-700'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-indigo-200 bg-indigo-50 text-gray-700'
             }`}
           >
             {kind === 'event' ? 'Event' : kind === 'holiday' ? 'Holiday' : kind === 'note' ? 'Note' : 'Task'}
@@ -265,7 +265,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
                 item?.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                 item?.status === 'tentative' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                'bg-emerald-50 text-emerald-700 border-emerald-200'
+                'bg-indigo-50 text-gray-700 border-indigo-200'
               }`}>
                 {String(item?.status ?? 'confirmed')}
               </span>
@@ -273,7 +273,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
                 item?.status === 'blocked' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                 item?.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                item?.status === 'done' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                item?.status === 'done' ? 'bg-indigo-50 text-gray-700 border-indigo-200' :
                 'bg-slate-50 text-slate-700 border-slate-200'
               }`}>
                 {String(item?.status ?? 'todo')}
@@ -305,7 +305,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
                 {item?.proposed && (
                   <div className="flex items-center gap-2 pt-1">
                     <button
-                      className="px-2 py-1 text-[10px] rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                      className="px-2 py-1 text-[10px] rounded bg-indigo-600 text-white hover:bg-gray-700"
                       onClick={(e) => { e.stopPropagation(); onAcceptProposed?.(item?._id as Id<"events">); }}
                     >
                       Accept

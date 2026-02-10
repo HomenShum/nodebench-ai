@@ -81,7 +81,7 @@ export const TaskRowGlobal = ({
       case "in_progress":
         return "bg-blue-400/70";
       case "done":
-        return "bg-emerald-500/80";
+        return "bg-indigo-500/80";
       case "blocked":
         return "bg-rose-500/80";
       default:
@@ -92,7 +92,7 @@ export const TaskRowGlobal = ({
   const eventStatusBar = (s?: string) => {
     switch (s) {
       case "confirmed":
-        return "bg-emerald-500/60";
+        return "bg-indigo-500/60";
       case "tentative":
         return "bg-amber-500/60";
       case "cancelled":
@@ -305,7 +305,7 @@ export const TaskRowGlobal = ({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={t.status === "done" ? "Mark as not completed" : "Mark as completed"}
-              className="h-4 w-4 rounded border-[var(--border-color)] text-emerald-600 focus:ring-2 focus:ring-emerald-500/50 bg-white"
+              className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-white"
             />
           ) : isAllDayEvent(t) ? (
             <input
@@ -318,7 +318,7 @@ export const TaskRowGlobal = ({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={t.status !== "cancelled" ? "Mark event unchecked" : "Mark event checked"}
-              className="h-4 w-4 rounded border-[var(--border-color)] text-emerald-600 focus:ring-2 focus:ring-emerald-500/50 bg-white"
+              className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-white"
             />
           ) : (
             <div className="w-4 h-4" />

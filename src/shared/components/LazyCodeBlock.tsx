@@ -41,7 +41,7 @@ function CodeBlockFallback({ code, language }: { code: string; language?: string
   return (
     <div className="relative group">
       <div className="absolute top-2 right-2 flex items-center gap-2">
-        <span className="text-[10px] font-mono text-stone-400 uppercase">{language || 'code'}</span>
+        <span className="text-[10px] font-mono text-gray-400 uppercase">{language || 'code'}</span>
       </div>
       <pre className="p-4 bg-[#1e1e1e] text-[#d4d4d4] rounded-lg overflow-x-auto text-sm font-mono animate-pulse">
         <code>{code}</code>
@@ -75,12 +75,12 @@ function HighlightedCodeBlock({
     <div className="relative group">
       {/* Header bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-[#2d2d2d] rounded-t-lg border-b border-[#3d3d3d]">
-        <span className="text-[10px] font-mono text-stone-400 uppercase tracking-wider">
+        <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
           {language}
         </span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-xs text-stone-400 hover:text-white transition-colors"
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
           title="Copy code"
         >
           {copied ? (

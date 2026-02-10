@@ -226,9 +226,9 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                   )}
                 </div>
 
-                <h1 className="text-3xl md:text-4xl font-serif font-bold text-[color:var(--text-primary)] leading-tight mb-8">{item.title}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-[color:var(--text-primary)] leading-tight mb-8">{item.title}</h1>
 
-                <div className="prose prose-lg prose-gray max-w-none font-serif leading-relaxed text-[color:var(--text-primary)]">
+                <div className="prose prose-lg prose-gray max-w-none leading-relaxed text-[color:var(--text-primary)]">
                   <p className="text-xl leading-relaxed text-[color:var(--text-primary)] font-sans mb-8 border-l-4 border-blue-500 pl-6 italic">
                     {readerExcerpt}
                   </p>
@@ -310,21 +310,21 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                 {isStrategy && <StrategyMetricsPanel title={item.title} summary={item.subtitle} url={item.url} />}
                 {showCostCrossover && <CostCrossoverCalculator />}
 
-                <div className="rounded-xl border border-stone-200 bg-[color:var(--bg-primary)] p-4 space-y-3">
+                <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Deep dive</div>
-                      <div className="text-sm font-semibold text-stone-900">Raw data + timeline</div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Deep dive</div>
+                      <div className="text-sm font-semibold text-gray-900">Raw data + timeline</div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-400">
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gray-400">
                       {(["summary", "data", "timeline"] as const).map((tab) => (
                         <button
                           key={tab}
                           type="button"
                           onClick={() => setDeepDiveTab(tab)}
                           className={`px-2 py-1 border ${deepDiveTab === tab
-                            ? "border-emerald-900 text-emerald-900"
-                            : "border-stone-200 text-stone-400 hover:text-emerald-900"
+                            ? "border-gray-900 text-gray-900"
+                            : "border-gray-200 text-gray-400 hover:text-gray-900"
                             }`}
                         >
                           {tab}
@@ -334,39 +334,39 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                   </div>
 
                   {deepDiveTab === "summary" && (
-                    <div className="space-y-3 text-xs text-stone-600">
+                    <div className="space-y-3 text-xs text-gray-600">
                       <div className="flex flex-wrap gap-2">
                         {tags.length > 0 ? (
                           tags.map((tag) => (
-                            <span key={`tag-${tag}`} className="px-2 py-0.5 border border-stone-200 bg-stone-50">
+                            <span key={`tag-${tag}`} className="px-2 py-0.5 border border-gray-200 bg-gray-50">
                               {tag}
                             </span>
                           ))
                         ) : (
-                          <span className="text-stone-400">No tags.</span>
+                          <span className="text-gray-400">No tags.</span>
                         )}
                       </div>
                       {metrics.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-[10px] uppercase tracking-widest text-stone-400">Metrics</div>
+                          <div className="text-[10px] uppercase tracking-widest text-gray-400">Metrics</div>
                           <div className="grid grid-cols-2 gap-2">
                             {metrics.slice(0, 4).map((metric) => (
-                              <div key={metric.label} className="rounded-md border border-stone-100 bg-stone-50 p-2">
-                                <div className="text-[10px] text-stone-400 uppercase tracking-widest">{metric.label}</div>
-                                <div className="text-sm font-semibold text-stone-900">{metric.value}</div>
+                              <div key={metric.label} className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                                <div className="text-[10px] text-gray-400 uppercase tracking-widest">{metric.label}</div>
+                                <div className="text-sm font-semibold text-gray-900">{metric.value}</div>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-md border border-stone-100 bg-stone-50 p-2">
-                          <div className="text-[10px] uppercase tracking-widest text-stone-400">Source</div>
-                          <div className="text-sm font-semibold text-stone-900">{item.source || "n/a"}</div>
+                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                          <div className="text-[10px] uppercase tracking-widest text-gray-400">Source</div>
+                          <div className="text-sm font-semibold text-gray-900">{item.source || "n/a"}</div>
                         </div>
-                        <div className="rounded-md border border-stone-100 bg-stone-50 p-2">
-                          <div className="text-[10px] uppercase tracking-widest text-stone-400">Timestamp</div>
-                          <div className="text-sm font-semibold text-stone-900">{timestamp || "n/a"}</div>
+                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                          <div className="text-[10px] uppercase tracking-widest text-gray-400">Timestamp</div>
+                          <div className="text-sm font-semibold text-gray-900">{timestamp || "n/a"}</div>
                         </div>
                       </div>
                     </div>
@@ -374,20 +374,20 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
 
                   {deepDiveTab === "data" && (
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2 text-[10px] text-stone-500">
-                        <div className="rounded-md border border-stone-100 bg-stone-50 p-2">
-                          <div className="uppercase tracking-widest text-stone-400">Content bytes</div>
-                          <div className="text-sm font-semibold text-stone-800">{readerData?.contentBytes ?? "n/a"}</div>
+                      <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-500">
+                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                          <div className="uppercase tracking-widest text-gray-400">Content bytes</div>
+                          <div className="text-sm font-semibold text-gray-800">{readerData?.contentBytes ?? "n/a"}</div>
                         </div>
-                        <div className="rounded-md border border-stone-100 bg-stone-50 p-2">
-                          <div className="uppercase tracking-widest text-stone-400">Sources</div>
-                          <div className="text-sm font-semibold text-stone-800">{sourceMatrix.length}</div>
+                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
+                          <div className="uppercase tracking-widest text-gray-400">Sources</div>
+                          <div className="text-sm font-semibold text-gray-800">{sourceMatrix.length}</div>
                         </div>
                       </div>
                       {sourceMatrixItems.length > 0 && (
-                        <div className="max-h-40 overflow-auto border border-stone-200 rounded-md">
+                        <div className="max-h-40 overflow-auto border border-gray-200 rounded-md">
                           <table className="w-full text-[10px] text-left">
-                            <thead className="sticky top-0 bg-stone-50 text-stone-400 uppercase tracking-widest">
+                            <thead className="sticky top-0 bg-gray-50 text-gray-400 uppercase tracking-widest">
                               <tr>
                                 <th className="px-2 py-1">Source</th>
                                 <th className="px-2 py-1">Domain</th>
@@ -395,24 +395,24 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                             </thead>
                             <tbody>
                               {sourceMatrixItems.map((source, idx) => (
-                                <tr key={`${source.url}-${idx}`} className="border-t border-stone-100">
-                                  <td className="px-2 py-1 text-stone-700">{source.title}</td>
-                                  <td className="px-2 py-1 text-stone-500">{source.domain || "n/a"}</td>
+                                <tr key={`${source.url}-${idx}`} className="border-t border-gray-100">
+                                  <td className="px-2 py-1 text-gray-700">{source.title}</td>
+                                  <td className="px-2 py-1 text-gray-500">{source.domain || "n/a"}</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
                       )}
-                      <pre className="text-[10px] text-stone-600 bg-stone-50 border border-stone-200 rounded-md p-3 overflow-auto max-h-64">
+                      <pre className="text-[10px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md p-3 overflow-auto max-h-64">
                         {rawPayload}
                       </pre>
                     </div>
                   )}
 
                   {deepDiveTab === "timeline" && (
-                    <div className="space-y-3 text-xs text-stone-600">
-                      <div className="text-[10px] uppercase tracking-widest text-stone-400">Source matrix</div>
+                    <div className="space-y-3 text-xs text-gray-600">
+                      <div className="text-[10px] uppercase tracking-widest text-gray-400">Source matrix</div>
                       {sourceMatrixItems.length > 0 ? (
                         <div className="space-y-2">
                           {sourceMatrixItems.map((source, idx) => (
@@ -422,15 +422,15 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                               onClick={() => {
                                 if (source.url) window.open(source.url, "_blank", "noopener,noreferrer");
                               }}
-                              className="w-full text-left rounded-md border border-stone-100 bg-white px-3 py-2 hover:border-emerald-900 transition-colors"
+                              className="w-full text-left rounded-md border border-gray-100 bg-white px-3 py-2 hover:border-gray-900 transition-colors"
                             >
-                              <div className="text-[11px] font-semibold text-stone-800">{source.title}</div>
-                              <div className="text-[10px] text-stone-400">{source.domain || "Source"}</div>
+                              <div className="text-[11px] font-semibold text-gray-800">{source.title}</div>
+                              <div className="text-[10px] text-gray-400">{source.domain || "Source"}</div>
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <div className="text-stone-400">No source matrix entries.</div>
+                        <div className="text-gray-400">No source matrix entries.</div>
                       )}
                     </div>
                   )}

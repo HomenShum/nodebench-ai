@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TelemetrySpanTree - Hierarchical span visualization
  * 
  * Features:
@@ -27,9 +27,9 @@ import {
 import { cn } from '@/lib/utils';
 import type { TaskSpan, SpanType, SpanStatus } from './types';
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 // SPAN TYPE CONFIGURATION
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 
 const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; bgColor: string; label: string }> = {
   agent: {
@@ -58,8 +58,8 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
   },
   handoff: {
     icon: <ArrowRightLeft className="w-3 h-3" />,
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-100 dark:bg-teal-900/30',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
     label: 'Handoff'
   },
   retrieval: {
@@ -84,13 +84,13 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
 
 const spanStatusConfig: Record<SpanStatus, { icon: React.ReactNode; color: string }> = {
   running: { icon: <Loader2 className="w-3 h-3 animate-spin" />, color: 'text-blue-500' },
-  completed: { icon: <CheckCircle2 className="w-3 h-3" />, color: 'text-emerald-500' },
+  completed: { icon: <CheckCircle2 className="w-3 h-3" />, color: 'text-indigo-500' },
   error: { icon: <AlertCircle className="w-3 h-3" />, color: 'text-red-500' },
 };
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 // UTILITIES
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -98,9 +98,9 @@ function formatDuration(ms: number): string {
   return `${(ms / 60000).toFixed(1)}m`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 // SPAN NODE COMPONENT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface SpanNodeProps {
   span: TaskSpan;
@@ -187,9 +187,9 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════
 
 interface TelemetrySpanTreeProps {
   spans: TaskSpan[];
@@ -223,7 +223,7 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
         <span className="text-xs text-[var(--text-primary)] font-medium">
           {spans.length} spans
         </span>
-        <span className="text-[10px] text-emerald-600">
+        <span className="text-[10px] text-indigo-600">
           {completedSpans} completed
         </span>
         {errorSpans > 0 && (

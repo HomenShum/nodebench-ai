@@ -54,7 +54,7 @@ export function TypingIndicator({ agentRole, message }: TypingIndicatorProps) {
           "w-8 h-8 rounded-full flex items-center justify-center",
           roleConfig
             ? `bg-gradient-to-br from-${roleConfig.color}-400 to-${roleConfig.color}-600`
-            : "bg-gradient-to-br from-purple-500 to-blue-500"
+            : "bg-gradient-to-br from-purple-500 to-violet-500"
         )}>
           <Bot className="h-4 w-4 text-white" />
         </div>
@@ -83,9 +83,9 @@ export function TypingIndicator({ agentRole, message }: TypingIndicatorProps) {
           <div className="flex items-center gap-3">
             {/* Animated Dots */}
             <div className="flex gap-1">
-              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full typing-dot" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full typing-dot" style={{ animationDelay: '150ms' }}></span>
+              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full typing-dot" style={{ animationDelay: '300ms' }}></span>
             </div>
 
             {/* Optional Status Message */}

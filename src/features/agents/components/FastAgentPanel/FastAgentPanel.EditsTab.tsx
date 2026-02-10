@@ -49,8 +49,8 @@ const statusConfig: Record<EditStatus, { icon: React.ReactNode; color: string; b
   },
   applied: { 
     icon: <CheckCircle2 className="w-3.5 h-3.5" />, 
-    color: 'text-emerald-600', 
-    bgColor: 'bg-emerald-50',
+    color: 'text-indigo-600', 
+    bgColor: 'bg-indigo-50',
     label: 'Applied' 
   },
   failed: { 
@@ -263,7 +263,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                         </div>
                         <div>
                           <div className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">Replace:</div>
-                          <pre className="p-2 bg-emerald-50 border border-emerald-200 rounded text-[10px] text-emerald-800 overflow-x-auto whitespace-pre-wrap">
+                          <pre className="p-2 bg-indigo-50 border border-indigo-200 rounded text-[10px] text-gray-800 overflow-x-auto whitespace-pre-wrap">
                             {edit.operation.replace}
                           </pre>
                         </div>
@@ -274,7 +274,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                         <div className="flex gap-2 mt-3">
                           <button
                             onClick={() => handleApprove(edit)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded transition-colors"
                           >
                             <Check className="w-3 h-3" />
                             Apply
@@ -292,7 +292,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                       {edit.status === 'failed' && (
                         <button
                           onClick={() => handleRetry(edit)}
-                          className="w-full flex items-center justify-center gap-1 mt-3 px-2 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors"
+                          className="w-full flex items-center justify-center gap-1 mt-3 px-2 py-1.5 bg-violet-500 hover:bg-violet-600 text-white text-xs font-medium rounded transition-colors"
                         >
                           <RefreshCw className="w-3 h-3" />
                           Retry

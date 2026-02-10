@@ -27,9 +27,9 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-emerald-900 text-white hover:bg-emerald-800 shadow-sm hover:shadow-md',
-  secondary: 'bg-stone-100 text-stone-800 hover:bg-stone-200 border border-stone-200',
-  ghost: 'bg-transparent text-stone-600 hover:bg-stone-100 hover:text-stone-800',
+  primary: 'bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md',
+  secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200/60',
+  ghost: 'bg-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-700',
   danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md',
   success: 'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md',
 };
@@ -66,7 +66,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         transition={{ type: 'tween', duration: 0.1 }}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-colors will-change-transform',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantStyles[variant],
           sizeStyles[size],
@@ -131,7 +131,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         transition={{ type: 'spring', stiffness: 400, damping: 17 }}
         className={cn(
           'inline-flex items-center justify-center transition-colors will-change-transform',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           variantStyles[variant],
           iconSizeStyles[size],

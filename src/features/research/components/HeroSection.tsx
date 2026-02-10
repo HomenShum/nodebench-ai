@@ -26,7 +26,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 >
                     <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4 py-1.5 text-sm font-medium shadow-sm">
                         <span className="relative flex h-2 w-2">
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
                         </span>
                         <span className="text-[color:var(--text-primary)]">{todayFormatted}</span>
                         <span className="text-[color:var(--bg-tertiary)]">|</span>

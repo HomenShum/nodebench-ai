@@ -102,7 +102,7 @@ export function DeepAgentProgress({
       <div className="space-y-1">
         <div className="w-full bg-[var(--border-color)] dark:bg-[var(--bg-secondary)] rounded-full h-2 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 dark:from-blue-400 dark:to-indigo-400 transition-all duration-500 ease-out"
+            className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 dark:from-violet-400 dark:to-indigo-400 transition-all duration-500 ease-out"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>

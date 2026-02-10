@@ -48,20 +48,20 @@ export function SentimentBar({
   return (
     <div className="flex">
       {/* Empty space for thread column */}
-      <div className="w-48 flex-shrink-0 border-r border-stone-200" />
+      <div className="w-48 flex-shrink-0 border-r border-gray-200" />
 
       {/* Sentiment segments for each week */}
       {weekColumns.map((week, index) => {
         const data = sentimentData.get(week.weekNumber);
         const sentimentColor = data
           ? SENTIMENT_COLORS[data.sentiment]
-          : "bg-stone-100";
+          : "bg-gray-100";
         const indicator = data ? getSentimentIndicator(data.sentiment) : null;
 
         return (
           <div
             key={week.weekNumber}
-            className={`w-24 flex-shrink-0 border-r border-stone-100 relative group ${
+            className={`w-24 flex-shrink-0 border-r border-gray-100 relative group ${
               week.isCurrent ? "bg-blue-50/20" : ""
             }`}
           >
@@ -77,11 +77,11 @@ export function SentimentBar({
             {/* Tooltip on hover */}
             {data && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                <div className="bg-stone-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap">
+                <div className="bg-gray-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap">
                   <span className="font-medium">{indicator}</span>
                   <span className="ml-1">{data.sentiment.replace("_", " ")}</span>
                   {data.delta !== 0 && (
-                    <span className={`ml-1 ${data.delta > 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    <span className={`ml-1 ${data.delta > 0 ? "text-indigo-400" : "text-red-400"}`}>
                       ({data.delta > 0 ? "+" : ""}{(data.delta * 100).toFixed(0)}%)
                     </span>
                   )}

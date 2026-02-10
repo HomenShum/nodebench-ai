@@ -39,7 +39,7 @@ export function ThemeCustomizer() {
     <div className="space-y-6">
       {/* Theme Mode */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Appearance
         </label>
         <div className="flex gap-2">
@@ -51,7 +51,7 @@ export function ThemeCustomizer() {
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
                 theme.mode === option.value
                   ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'border-stone-200 hover:border-stone-300 dark:border-stone-600 dark:hover:border-stone-500'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
               }`}
             >
               {option.icon}
@@ -59,14 +59,14 @@ export function ThemeCustomizer() {
             </button>
           ))}
         </div>
-        <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
           Currently using: {resolvedMode} mode
         </p>
       </div>
 
       {/* Accent Color */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Accent Color
         </label>
         <div className="flex flex-wrap gap-2">
@@ -91,7 +91,7 @@ export function ThemeCustomizer() {
 
       {/* Density */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Density
         </label>
         <div className="flex gap-2">
@@ -103,7 +103,7 @@ export function ThemeCustomizer() {
               className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
                 theme.density === option.value
                   ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'border-stone-200 hover:border-stone-300 dark:border-stone-600 dark:hover:border-stone-500'
+                  : 'border-gray-200 hover:border-gray-300 dark:border-gray-600 dark:hover:border-gray-500'
               }`}
             >
               {option.label}
@@ -114,13 +114,13 @@ export function ThemeCustomizer() {
 
       {/* Font Family */}
       <div>
-        <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Font
         </label>
         <select
           value={theme.fontFamily}
           onChange={(e) => setFontFamily(e.target.value)}
-          className="w-full px-3 py-2 border border-stone-200 rounded-lg text-sm dark:border-stone-600 dark:bg-stone-800"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm dark:border-gray-600 dark:bg-gray-800"
         >
           {FONT_FAMILIES.map((font) => (
             <option key={font.name} value={font.name}>
@@ -133,10 +133,10 @@ export function ThemeCustomizer() {
       {/* Reduced Motion */}
       <div className="flex items-center justify-between">
         <div>
-          <label className="block text-sm font-medium text-stone-700 dark:text-stone-300">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Reduce Motion
           </label>
-          <p className="text-xs text-stone-500 dark:text-stone-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Minimize animations for accessibility
           </p>
         </div>
@@ -144,7 +144,7 @@ export function ThemeCustomizer() {
           type="button"
           onClick={() => setReducedMotion(!theme.reducedMotion)}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            theme.reducedMotion ? 'bg-blue-500' : 'bg-stone-200 dark:bg-stone-600'
+            theme.reducedMotion ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-600'
           }`}
         >
           <span
@@ -156,11 +156,11 @@ export function ThemeCustomizer() {
       </div>
 
       {/* Reset */}
-      <div className="pt-4 border-t border-stone-200 dark:border-stone-700">
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
         <button
           type="button"
           onClick={resetToDefaults}
-          className="flex items-center gap-2 text-sm text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
         >
           <RotateCcw className="w-4 h-4" />
           Reset to defaults

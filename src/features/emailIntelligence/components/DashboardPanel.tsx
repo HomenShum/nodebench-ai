@@ -55,7 +55,7 @@ const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
               <span>With NodeBench</span>
               <span className="font-mono">${(data.roiChart.withNodeBench / 1_000_000).toFixed(1)}M</span>
             </div>
-            <div className="mt-2 text-xs text-emerald-700 font-semibold">
+            <div className="mt-2 text-xs text-gray-700 font-semibold">
               Savings: {data.roiChart.savingsPercent}% projected
             </div>
           </div>

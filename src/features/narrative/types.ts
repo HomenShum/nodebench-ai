@@ -143,14 +143,14 @@ export const PHASE_COLORS: Record<ThreadPhase, { bg: string; text: string; borde
     border: "border-red-200",
   },
   resolution: {
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
+    bg: "bg-indigo-50",
+    text: "text-gray-700",
+    border: "border-indigo-200",
   },
   dormant: {
-    bg: "bg-stone-50",
-    text: "text-stone-500",
-    border: "border-stone-200",
+    bg: "bg-gray-50",
+    text: "text-gray-500",
+    border: "border-gray-200",
   },
 };
 
@@ -159,8 +159,8 @@ export const PHASE_COLORS: Record<ThreadPhase, { bg: string; text: string; borde
  */
 export const SIGNIFICANCE_COLORS: Record<EventSignificance, { bg: string; ring: string }> = {
   minor: {
-    bg: "bg-stone-300",
-    ring: "ring-stone-200",
+    bg: "bg-gray-300",
+    ring: "ring-gray-200",
   },
   moderate: {
     bg: "bg-blue-400",
@@ -182,7 +182,7 @@ export const SIGNIFICANCE_COLORS: Record<EventSignificance, { bg: string; ring: 
 export const SENTIMENT_COLORS: Record<SentimentLevel, string> = {
   very_negative: "bg-red-500",
   negative: "bg-orange-400",
-  neutral: "bg-stone-300",
-  positive: "bg-emerald-400",
-  very_positive: "bg-emerald-600",
+  neutral: "bg-gray-300",
+  positive: "bg-indigo-400",
+  very_positive: "bg-indigo-600",
 };

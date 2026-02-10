@@ -122,7 +122,7 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
     case "skill.search":
       return <Search className="w-3.5 h-3.5 text-blue-400" />;
     case "skill.describe":
-      return <BookOpen className="w-3.5 h-3.5 text-emerald-400" />;
+      return <BookOpen className="w-3.5 h-3.5 text-indigo-400" />;
     case "skill.cache_hit":
       return <Zap className="w-3.5 h-3.5 text-yellow-400" />;
     case "skill.fallback":
@@ -153,9 +153,9 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
     case "invariant.check":
       return <Shield className="w-3.5 h-3.5 text-violet-400" />;
     case "context.compaction":
-      return <Minimize2 className="w-3.5 h-3.5 text-teal-400" />;
+      return <Minimize2 className="w-3.5 h-3.5 text-indigo-400" />;
     case "memory.update":
-      return <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />;
+      return <RefreshCw className="w-3.5 h-3.5 text-indigo-400" />;
     case "memory.query":
       return <Brain className="w-3.5 h-3.5 text-purple-400" />;
     // Reasoning tool events
@@ -169,7 +169,7 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
     case "trace.gather_info":
       return <Search className="w-3.5 h-3.5 text-blue-400" />;
     case "trace.execute_data_op":
-      return <Database className="w-3.5 h-3.5 text-emerald-400" />;
+      return <Database className="w-3.5 h-3.5 text-indigo-400" />;
     case "trace.execute_output":
       return <CheckCircle2 className="w-3.5 h-3.5 text-purple-400" />;
     case "trace.finalize":
@@ -450,7 +450,7 @@ export function DisclosureTrace({
                 ? "bg-red-500/20 text-red-400"
                 : budgetUtilization > 50
                   ? "bg-amber-500/20 text-amber-400"
-                  : "bg-emerald-500/20 text-emerald-400"
+                  : "bg-indigo-500/20 text-indigo-400"
             )}
           >
             {stats.totalTokensAdded.toLocaleString()} / {(budgetLimit / 1000).toFixed(0)}K
@@ -503,7 +503,7 @@ export function DisclosureTrace({
                 {stats.confirmationsRequested > 0 && (
                   <span className="text-[var(--text-secondary)]">
                     Confirmations:{" "}
-                    <span className="text-emerald-400 font-medium">
+                    <span className="text-indigo-400 font-medium">
                       {stats.confirmationsGranted}/{stats.confirmationsRequested}
                     </span>
                   </span>
@@ -517,7 +517,7 @@ export function DisclosureTrace({
 
               <div className="flex items-center gap-2">
                 {stats.usedSkillFirst && (
-                  <span className="flex items-center gap-1 text-emerald-400">
+                  <span className="flex items-center gap-1 text-indigo-400">
                     <Check className="w-3 h-3" />
                     Skill-first
                   </span>
@@ -536,7 +536,7 @@ export function DisclosureTrace({
               <div className="flex items-center gap-4">
                 {/* Memory-first compliance */}
                 {stats.memoryFirstCompliant ? (
-                  <span className="flex items-center gap-1 text-emerald-400">
+                  <span className="flex items-center gap-1 text-indigo-400">
                     <CheckCircle2 className="w-3 h-3" />
                     Memory-first
                   </span>
@@ -564,7 +564,7 @@ export function DisclosureTrace({
                 {stats.compactionEvents > 0 && (
                   <span className="text-[var(--text-secondary)]">
                     Compaction:{" "}
-                    <span className="text-teal-400 font-medium">
+                    <span className="text-indigo-400 font-medium">
                       -{stats.tokensSavedByCompaction.toLocaleString()} tokens
                     </span>
                   </span>
@@ -578,19 +578,19 @@ export function DisclosureTrace({
                     Invariants:
                     <span className={cn(
                       "px-1 rounded text-[10px] font-mono",
-                      stats.invariantStatus.A === "pass" ? "bg-emerald-500/20 text-emerald-400" :
+                      stats.invariantStatus.A === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.A === "fail" ? "bg-red-500/20 text-red-400" :
                       "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>A</span>
                     <span className={cn(
                       "px-1 rounded text-[10px] font-mono",
-                      stats.invariantStatus.C === "pass" ? "bg-emerald-500/20 text-emerald-400" :
+                      stats.invariantStatus.C === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.C === "fail" ? "bg-red-500/20 text-red-400" :
                       "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>C</span>
                     <span className={cn(
                       "px-1 rounded text-[10px] font-mono",
-                      stats.invariantStatus.D === "pass" ? "bg-emerald-500/20 text-emerald-400" :
+                      stats.invariantStatus.D === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.D === "fail" ? "bg-red-500/20 text-red-400" :
                       "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>D</span>
@@ -602,7 +602,7 @@ export function DisclosureTrace({
             {/* Row 3: Memory updates */}
             {stats.memoryUpdates.length > 0 && (
               <div className="flex items-center gap-2 text-xs">
-                <RefreshCw className="w-3 h-3 text-emerald-400" />
+                <RefreshCw className="w-3 h-3 text-indigo-400" />
                 <span className="text-[var(--text-secondary)]">Updates:</span>
                 <div className="flex flex-wrap gap-1">
                   {stats.memoryUpdates.slice(0, 5).map((u, i) => (
@@ -610,8 +610,8 @@ export function DisclosureTrace({
                       key={i}
                       className={cn(
                         "px-1.5 py-0.5 rounded text-[10px]",
-                        u.action === "create" ? "bg-emerald-500/20 text-emerald-400" :
-                        u.action === "update" ? "bg-blue-500/20 text-blue-400" :
+                        u.action === "create" ? "bg-indigo-500/20 text-indigo-400" :
+                        u.action === "update" ? "bg-violet-500/20 text-violet-400" :
                         "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                       )}
                     >
@@ -679,7 +679,7 @@ export function DisclosureTrace({
                       ? "bg-red-500"
                       : budgetUtilization > 50
                         ? "bg-amber-500"
-                        : "bg-emerald-500"
+                        : "bg-indigo-500"
                   )}
                   style={{ width: `${budgetUtilization}%` }}
                 />
@@ -784,7 +784,7 @@ export function PendingConfirmation({
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={onConfirm}
-                className="px-3 py-1.5 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors"
+                className="px-3 py-1.5 text-sm font-medium bg-indigo-600 hover:bg-gray-700 text-white rounded transition-colors"
               >
                 Confirm
               </button>

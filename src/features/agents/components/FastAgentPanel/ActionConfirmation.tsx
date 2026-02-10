@@ -213,7 +213,7 @@ export function ActionConfirmation({
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Reason for rejection (optional)..."
-            className="w-full text-xs px-2 py-1.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full text-xs px-2 py-1.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleReject();

@@ -52,9 +52,9 @@ const SECTOR_COLORS: Record<string, { bg: string; text: string }> = {
   enterprise: { bg: "bg-blue-100", text: "text-blue-700" },
   consumer: { bg: "bg-orange-100", text: "text-orange-700" },
   deeptech: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  climate: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  climate: { bg: "bg-indigo-100", text: "text-gray-700" },
   technology: { bg: "bg-gray-100", text: "text-gray-700" },
-  other: { bg: "bg-stone-100", text: "text-stone-700" },
+  other: { bg: "bg-gray-100", text: "text-gray-700" },
 };
 
 // Verification status badges
@@ -519,7 +519,7 @@ export function FundingBriefView() {
   }, [data?.stats?.byRoundType]);
 
   return (
-    <div className="h-full w-full overflow-auto bg-[color:var(--bg-secondary)]">
+    <div className="h-full w-full overflow-auto bg-[color:var(--bg-secondary)] editorial-layout">
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">

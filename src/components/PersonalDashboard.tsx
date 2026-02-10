@@ -80,14 +80,14 @@ export function PersonalDashboard({ className = '', onNavigate }: PersonalDashbo
   }, [tasks, documents, events, behaviorSummary]);
 
   return (
-    <div className={`bg-white rounded-xl border border-stone-200 shadow-sm p-6 ${className}`}>
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-purple-600" />
-          <h2 className="text-lg font-semibold text-stone-900">Your Dashboard</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Your Dashboard</h2>
         </div>
-        <div className="flex items-center gap-2 text-xs text-stone-500">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
           <Clock className="h-3 w-3" />
           <span>{timeContext.greeting}</span>
         </div>
@@ -130,7 +130,7 @@ export function PersonalDashboard({ className = '', onNavigate }: PersonalDashbo
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-purple-600" />
-            <span className="text-sm font-medium text-stone-800">Productivity Score</span>
+            <span className="text-sm font-medium text-gray-800">Productivity Score</span>
           </div>
           <span className="text-2xl font-bold text-purple-700">{stats.productivityScore}%</span>
         </div>
@@ -142,7 +142,7 @@ export function PersonalDashboard({ className = '', onNavigate }: PersonalDashbo
             transition={{ duration: 0.8, ease: 'easeOut' }}
           />
         </div>
-        <p className="text-xs text-stone-600 mt-2">
+        <p className="text-xs text-gray-600 mt-2">
           Based on {stats.completedTasks + stats.pendingTasks} total tasks this week
         </p>
       </div>

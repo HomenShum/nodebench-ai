@@ -36,14 +36,14 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-stone-900 animate-pulse">
-        <div className="p-4 border-b border-stone-700">
-          <div className="h-8 bg-stone-700 rounded w-3/4 mb-2" />
-          <div className="h-4 bg-stone-700 rounded w-1/2" />
+      <div className="flex flex-col h-full bg-gray-900 animate-pulse">
+        <div className="p-4 border-b border-gray-700">
+          <div className="h-8 bg-gray-700 rounded w-3/4 mb-2" />
+          <div className="h-4 bg-gray-700 rounded w-1/2" />
         </div>
         <div className="p-4 space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-40 bg-stone-800 rounded-lg" />
+            <div key={i} className="h-40 bg-gray-800 rounded-lg" />
           ))}
         </div>
       </div>
@@ -52,7 +52,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
 
   if (!thread) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-stone-900 text-stone-400">
+      <div className="flex flex-col items-center justify-center h-full bg-gray-900 text-gray-400">
         <p>Thread not found</p>
         <button
           onClick={onBack}
@@ -65,13 +65,13 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
   }
 
   return (
-    <div className="flex flex-col h-full bg-stone-900">
+    <div className="flex flex-col h-full bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-stone-700">
+      <div className="p-4 border-b border-gray-700">
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={onBack}
-            className="p-2 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -88,9 +88,9 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
 
         {/* AI Insights */}
         {(thread.aiCategory || thread.aiPriority || thread.aiSummary) && (
-          <div className="p-3 bg-stone-800/50 rounded-lg border border-stone-700">
+          <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-stone-400 uppercase tracking-wide">AI Insights</span>
+              <span className="text-xs text-gray-400 uppercase tracking-wide">AI Insights</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-2">
               {thread.aiCategory && (
@@ -112,7 +112,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
               )}
             </div>
             {thread.aiSummary && (
-              <p className="text-sm text-stone-300">{thread.aiSummary}</p>
+              <p className="text-sm text-gray-300">{thread.aiSummary}</p>
             )}
             {thread.aiActionSuggestion && (
               <p className="text-sm text-amber-300 mt-2">
@@ -135,20 +135,20 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
             />
           ))
         ) : (
-          <div className="text-center text-stone-400 py-8">
+          <div className="text-center text-gray-400 py-8">
             <p>No messages in this thread</p>
           </div>
         )}
       </div>
 
       {/* Reply Bar */}
-      <div className="p-4 border-t border-stone-700">
+      <div className="p-4 border-t border-gray-700">
         <div className="flex gap-2">
           <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center gap-2 transition-colors">
             <Reply className="h-4 w-4" />
             Reply
           </button>
-          <button className="py-2 px-4 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg flex items-center justify-center gap-2 transition-colors">
+          <button className="py-2 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg flex items-center justify-center gap-2 transition-colors">
             <Forward className="h-4 w-4" />
             Forward
           </button>
@@ -169,7 +169,7 @@ function ActionButton({
   fillColor?: string;
 }) {
   return (
-    <button className="p-2 text-stone-400 hover:text-white hover:bg-stone-800 rounded-lg transition-colors">
+    <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
       <Icon className={`h-5 w-5 ${filled ? `${fillColor} fill-current` : ''}`} />
     </button>
   );
@@ -204,12 +204,12 @@ function EmailMessage({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-stone-800/50 rounded-lg border border-stone-700 overflow-hidden"
+      className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden"
     >
       {/* Message Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-start gap-3 hover:bg-stone-800/80 transition-colors text-left"
+        className="w-full p-4 flex items-start gap-3 hover:bg-gray-800/80 transition-colors text-left"
       >
         {/* Avatar */}
         <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
@@ -221,14 +221,14 @@ function EmailMessage({
           <div className="flex items-center justify-between">
             <span className="font-medium text-white truncate">{extractName(message.from)}</span>
             {message.date && (
-              <span className="text-xs text-stone-500 ml-2 whitespace-nowrap">
+              <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
                 {formatDateTime(message.date)}
               </span>
             )}
           </div>
-          <p className="text-xs text-stone-400 truncate">{message.from}</p>
+          <p className="text-xs text-gray-400 truncate">{message.from}</p>
           {message.to && message.to.length > 0 && (
-            <p className="text-xs text-stone-500 truncate">
+            <p className="text-xs text-gray-500 truncate">
               To: {message.to.join(', ')}
             </p>
           )}
@@ -237,9 +237,9 @@ function EmailMessage({
         {/* Expand/Collapse */}
         <div className="mt-1">
           {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-stone-400" />
+            <ChevronUp className="h-5 w-5 text-gray-400" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-stone-400" />
+            <ChevronDown className="h-5 w-5 text-gray-400" />
           )}
         </div>
       </button>
@@ -247,15 +247,15 @@ function EmailMessage({
       {/* Message Body */}
       {isExpanded && (
         <div className="px-4 pb-4">
-          <div className="border-t border-stone-700 pt-4">
+          <div className="border-t border-gray-700 pt-4">
             {/* Body Content */}
             {message.bodyHtml && !showRaw ? (
               <div
-                className="prose prose-invert prose-sm max-w-none text-stone-300"
+                className="prose prose-invert prose-sm max-w-none text-gray-300"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.bodyHtml) }}
               />
             ) : (
-              <pre className="text-sm text-stone-300 whitespace-pre-wrap font-mono bg-stone-900 p-3 rounded-lg overflow-x-auto">
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-gray-900 p-3 rounded-lg overflow-x-auto">
                 {message.bodyText || 'No content'}
               </pre>
             )}
@@ -264,7 +264,7 @@ function EmailMessage({
             {message.bodyHtml && message.bodyText && (
               <button
                 onClick={() => setShowRaw(!showRaw)}
-                className="mt-3 text-xs text-stone-500 hover:text-stone-400"
+                className="mt-3 text-xs text-gray-500 hover:text-gray-400"
               >
                 {showRaw ? 'Show HTML' : 'Show Plain Text'}
               </button>
@@ -272,10 +272,10 @@ function EmailMessage({
 
             {/* Attachments */}
             {message.hasAttachments && message.attachments && message.attachments.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-stone-700">
+              <div className="mt-4 pt-4 border-t border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <Paperclip className="h-4 w-4 text-stone-400" />
-                  <span className="text-sm text-stone-400">
+                  <Paperclip className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-400">
                     {message.attachments.length} attachment{message.attachments.length > 1 ? 's' : ''}
                   </span>
                 </div>
@@ -283,12 +283,12 @@ function EmailMessage({
                   {message.attachments.map((att, i) => (
                     <div
                       key={i}
-                      className="px-3 py-2 bg-stone-900 rounded-lg flex items-center gap-2 text-sm text-stone-300"
+                      className="px-3 py-2 bg-gray-900 rounded-lg flex items-center gap-2 text-sm text-gray-300"
                     >
-                      <Paperclip className="h-4 w-4 text-stone-500" />
+                      <Paperclip className="h-4 w-4 text-gray-500" />
                       <span className="truncate max-w-[200px]">{att.filename}</span>
                       {att.size && (
-                        <span className="text-xs text-stone-500">
+                        <span className="text-xs text-gray-500">
                           ({formatFileSize(att.size)})
                         </span>
                       )}
@@ -312,7 +312,7 @@ function getPriorityStyle(priority: string): string {
     case 'high':
       return 'bg-orange-500/20 text-orange-400';
     case 'low':
-      return 'bg-stone-500/20 text-stone-400';
+      return 'bg-gray-500/20 text-gray-400';
     default:
       return 'bg-blue-500/20 text-blue-400';
   }

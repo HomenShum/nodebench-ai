@@ -174,7 +174,7 @@ export function EmailDashboardWidget({ onNavigate }: EmailDashboardWidgetProps) 
             </span>
             {latestReport.deliveredVia && (
               <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-emerald-400" />
+                <CheckCircle className="h-3 w-3 text-indigo-400" />
                 Delivered via {latestReport.deliveredVia.join(', ')}
               </span>
             )}
@@ -214,7 +214,7 @@ function StatCard({
   const colorClasses = {
     blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    emerald: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
   };
 
   return (

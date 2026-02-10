@@ -495,13 +495,13 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   // Newspaper-style layout used for WelcomeLanding dossiers
   if (variant === 'newspaper') {
     return (
-      <div className="h-full overflow-y-auto bg-[#f8f6f1]">
+      <div className="h-full overflow-y-auto bg-[#f8f6f1] editorial-layout">
         <div className="max-w-[1100px] mx-auto px-6 py-8">
-          <div className="bg-[color:var(--bg-primary)] shadow-lg border border-[color:var(--border-color)] font-serif">
+          <div className="bg-[color:var(--bg-primary)] shadow-lg border border-[color:var(--border-color)]">
             {/* Masthead */}
             <div className="border-b-4 border-black px-8 pt-6 pb-3">
               <div className="text-center border-b border-[color:var(--border-color)] pb-3 mb-2">
-                <h1 className="font-serif text-5xl font-black tracking-tight text-black mb-1">
+                <h1 className="text-5xl font-black tracking-tight text-black mb-1">
                   THE DAILY DOSSIER
                 </h1>
                 <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-widest">Research Intelligence Report</p>
@@ -522,7 +522,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
 
             {/* Document Title */}
             <div className="px-8 pt-6 pb-4 border-b border-[color:var(--border-color)]">
-              <h2 className="font-serif text-3xl font-bold text-black leading-tight">
+              <h2 className="text-3xl font-bold text-black leading-tight">
                 {document?.title || 'Untitled Research'}
               </h2>
             </div>

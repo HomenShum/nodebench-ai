@@ -92,8 +92,8 @@ export const MessageBubble = React.memo(function MessageBubble({
             <User className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
           </div>
         ) : (
-          <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800/40 flex items-center justify-center">
-            <Bot className="h-3.5 w-3.5 text-green-700 dark:text-green-400" />
+          <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/40 flex items-center justify-center">
+            <Bot className="h-3.5 w-3.5 text-violet-700 dark:text-violet-400" />
           </div>
         )}
       </div>
@@ -117,8 +117,8 @@ export const MessageBubble = React.memo(function MessageBubble({
         <div className={cn(
           "text-[15px] leading-relaxed",
           isUser
-            ? "px-3.5 py-2.5 rounded-2xl rounded-tr-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
-            : "text-[var(--text-primary)]"
+            ? "px-3.5 py-2.5 rounded-xl rounded-tr-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
+            : "px-3.5 py-2.5 rounded-xl rounded-tl-sm bg-[var(--bg-secondary)]/40 border-l-2 border-l-[var(--accent-primary)]/20 text-[var(--text-primary)]"
         )}>
           {/* Use StreamingMessage for messages with streamId */}
           {isAssistant && message.streamId ? (
@@ -157,10 +157,11 @@ export const MessageBubble = React.memo(function MessageBubble({
           ) : message.content ? (
             <p>{String(message.content)}</p>
           ) : (
-            <p className="flex items-center gap-2 text-[var(--text-muted)] italic text-sm">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Thinking...
-            </p>
+            <div className="skeleton-shimmer">
+              <div className="skeleton-line"></div>
+              <div className="skeleton-line"></div>
+              <div className="skeleton-line"></div>
+            </div>
           )}
         </div>
 
@@ -169,7 +170,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
             <button
               onClick={handleCopy}
-              className="p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+              className="action-btn p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
               title="Copy message"
             >
               {copied ? (
@@ -181,7 +182,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             {onRetry && (
               <button
                 onClick={() => onRetry(message)}
-                className="p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                className="action-btn p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
                 title="Retry"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -190,7 +191,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             <button
               onClick={() => handleFeedback('up')}
               className={cn(
-                "p-1 rounded-md transition-colors",
+                "action-btn p-1 rounded-md transition-colors",
                 feedback === 'up'
                   ? "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
                   : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -202,7 +203,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             <button
               onClick={() => handleFeedback('down')}
               className={cn(
-                "p-1 rounded-md transition-colors",
+                "action-btn p-1 rounded-md transition-colors",
                 feedback === 'down'
                   ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
                   : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"

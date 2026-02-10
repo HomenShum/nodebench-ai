@@ -370,7 +370,7 @@
 
   /* Diff line coloring */
   .nb-diff-add {
-    background: rgba(16, 185, 129, 0.12); /* emerald-500 @ 12% */
+    background: rgba(16, 185, 129, 0.12); /* indigo-500 @ 12% */
     color: var(--text-primary);
     border-left: 3px solid rgba(16, 185, 129, 0.5);
     border-radius: 4px;

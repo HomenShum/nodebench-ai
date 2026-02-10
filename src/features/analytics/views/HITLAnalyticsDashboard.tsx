@@ -196,16 +196,16 @@ export default function HITLAnalyticsDashboard() {
   const isLoading = approvalData === undefined || reviewTimeByType === undefined;
 
   return (
-    <div className="min-h-screen bg-canvas-warm p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
               <Activity size={32} />
               HITL Decision Analytics
             </h1>
-            <p className="text-stone-600 mt-1">
+            <p className="text-gray-600 mt-1">
               Human-in-the-loop review performance and automation opportunities
             </p>
           </div>
@@ -234,7 +234,7 @@ export default function HITLAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -246,8 +246,8 @@ export default function HITLAnalyticsDashboard() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <Activity className="animate-spin mx-auto text-stone-400 mb-2" size={32} />
-            <p className="text-stone-600">Loading metrics...</p>
+            <Activity className="animate-spin mx-auto text-gray-400 mb-2" size={32} />
+            <p className="text-gray-600">Loading metrics...</p>
           </div>
         )}
 
@@ -317,12 +317,12 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Decision Breakdown */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-stone-900">
+                <h2 className="text-lg font-semibold text-gray-900">
                   Decision Breakdown
                 </h2>
-                <span className="text-sm text-stone-500">
+                <span className="text-sm text-gray-500">
                   {metrics.total} total decisions
                 </span>
               </div>
@@ -356,18 +356,18 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Average Review Time by Request Type */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-stone-900">
+                <h2 className="text-lg font-semibold text-gray-900">
                   Review Time by Request Type
                 </h2>
-                <span className="text-sm text-stone-500">
+                <span className="text-sm text-gray-500">
                   {reviewTimeByType?.length || 0} types
                 </span>
               </div>
 
               {!reviewTimeByType || reviewTimeByType.length === 0 ? (
-                <div className="text-center py-8 text-stone-500">
+                <div className="text-center py-8 text-gray-500">
                   No request types recorded yet
                 </div>
               ) : (
@@ -387,18 +387,18 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Most Modified Fields */}
-            <div className="bg-white border border-stone-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-stone-900">
+                <h2 className="text-lg font-semibold text-gray-900">
                   Most Modified Fields
                 </h2>
-                <span className="text-sm text-stone-500">
+                <span className="text-sm text-gray-500">
                   {modifiedFields?.length || 0} fields
                 </span>
               </div>
 
               {!modifiedFields || modifiedFields.length === 0 ? (
-                <div className="text-center py-8 text-stone-500">
+                <div className="text-center py-8 text-gray-500">
                   No field modifications recorded yet
                 </div>
               ) : (
@@ -486,15 +486,15 @@ export default function HITLAnalyticsDashboard() {
 
             {/* Empty State */}
             {metrics.total === 0 && (
-              <div className="bg-white border border-stone-200 rounded-lg p-12 text-center">
-                <Activity className="mx-auto text-stone-300 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-stone-900 mb-2">
+              <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+                <Activity className="mx-auto text-gray-300 mb-4" size={48} />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   No HITL Decisions Yet
                 </h3>
-                <p className="text-stone-600 mb-4">
+                <p className="text-gray-600 mb-4">
                   HITL decision data will appear here once agents request human input and users respond.
                 </p>
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-gray-500">
                   Make sure the HumanRequestCard component is integrated and agents are using the askHuman tool.
                 </p>
               </div>

@@ -26,15 +26,15 @@ export function DeltaIndicator({
     const direction = value > 0 ? "up" : value < 0 ? "down" : "flat";
 
     const colorClass = {
-        up: "text-emerald-600",
+        up: "text-indigo-600",
         down: "text-red-500",
-        flat: "text-stone-400"
+        flat: "text-gray-400"
     }[direction];
 
     const bgClass = {
-        up: "bg-emerald-50",
+        up: "bg-indigo-50",
         down: "bg-red-50",
-        flat: "bg-stone-50"
+        flat: "bg-gray-50"
     }[direction];
 
     const Icon = {
@@ -58,7 +58,7 @@ export function DeltaIndicator({
             <Icon size={iconSize} className="shrink-0" />
             <span>{value > 0 ? '+' : ''}{value.toFixed(1)}{unit}</span>
             {label && (
-                <span className="text-stone-400 font-normal ml-0.5">
+                <span className="text-gray-400 font-normal ml-0.5">
                     {label}
                 </span>
             )}

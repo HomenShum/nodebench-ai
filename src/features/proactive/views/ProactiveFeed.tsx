@@ -235,10 +235,10 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
     const colors: Record<string, string> = {
       detected: "bg-blue-500/20 text-blue-600",
       approved: "bg-green-500/20 text-green-600",
-      completed: "bg-stone-500/20 text-stone-600",
-      dismissed: "bg-stone-500/20 text-stone-600",
+      completed: "bg-gray-500/20 text-gray-600",
+      dismissed: "bg-gray-500/20 text-gray-600",
     };
-    return colors[status] || "bg-stone-500/20 text-stone-600";
+    return colors[status] || "bg-gray-500/20 text-gray-600";
   };
 
   return (

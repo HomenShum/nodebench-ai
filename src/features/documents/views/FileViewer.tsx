@@ -323,7 +323,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     switch (fileType) {
       case 'csv':
       case 'excel':
-        return <Table className="h-8 w-8 text-emerald-500" />;
+        return <Table className="h-8 w-8 text-indigo-500" />;
       case 'image':
         return <ImageIcon className="h-8 w-8 text-cyan-500" />;
       case 'video':

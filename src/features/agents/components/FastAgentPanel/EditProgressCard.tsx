@@ -33,9 +33,9 @@ export function EditProgressCard({ edit, onRetry, onCancel, className }: EditPro
   const statusConfig = {
     pending: {
       icon: Loader2,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200',
+      color: 'text-violet-500',
+      bgColor: 'bg-violet-50',
+      borderColor: 'border-violet-200',
       label: 'Applying...',
       animate: true,
     },

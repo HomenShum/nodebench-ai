@@ -14,7 +14,7 @@ export const statusChipClasses = (s?: string) => {
     case "in_progress":
       return "bg-blue-50 text-blue-700 border-blue-200";
     case "done":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-indigo-50 text-gray-700 border-indigo-200";
     case "blocked":
       return "bg-rose-50 text-rose-700 border-rose-200";
     default:
@@ -52,7 +52,7 @@ export const isTaskStatus = (v: string): v is TaskStatus =>
 export const eventStatusBar = (s?: string) => {
   switch (s) {
     case "confirmed":
-      return "bg-emerald-500/60";
+      return "bg-indigo-500/60";
     case "tentative":
       return "bg-amber-500/60";
     case "cancelled":
@@ -72,7 +72,7 @@ export const kanbanStatusBar = (s?: string) => {
     case "in_progress":
       return "bg-blue-400/70";
     case "done":
-      return "bg-emerald-500/80";
+      return "bg-indigo-500/80";
     case "blocked":
       return "bg-rose-500/80";
     default:

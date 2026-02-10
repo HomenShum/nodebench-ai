@@ -99,11 +99,11 @@ export function NarrativeRoadmap({
 
   if (isLoading) {
     return (
-      <div className={`bg-canvas-warm rounded-xl border border-stone-200 p-8 ${className}`}>
+      <div className={`bg-background rounded-xl border border-gray-200 p-8 ${className}`}>
         <div className="flex items-center justify-center h-48">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-700 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-stone-500 text-sm font-light">Loading narratives...</p>
+            <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500 text-sm font-light">Loading narratives...</p>
           </div>
         </div>
       </div>
@@ -112,13 +112,13 @@ export function NarrativeRoadmap({
 
   if (threads.length === 0) {
     return (
-      <div className={`bg-[#faf9f6] rounded-xl border border-stone-200 p-8 ${className}`}>
+      <div className={`bg-[#FAFAFA] rounded-xl border border-gray-200 p-8 ${className}`}>
         <div className="text-center">
-          <Sparkles className="w-12 h-12 text-stone-300 mx-auto mb-4" />
-          <h3 className="text-lg font-serif font-semibold text-stone-900 mb-2">
+          <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
             No Narratives Yet
           </h3>
-          <p className="text-stone-500 text-sm font-light max-w-md mx-auto">
+          <p className="text-gray-500 text-sm font-light max-w-md mx-auto">
             Start tracking entities to build evolving narrative threads.
             The newsroom pipeline runs weekly to discover new developments.
           </p>
@@ -128,17 +128,17 @@ export function NarrativeRoadmap({
   }
 
   return (
-    <div className={`bg-[#faf9f6] rounded-xl border border-stone-200 overflow-hidden ${className}`}>
+    <div className={`bg-[#FAFAFA] rounded-xl border border-gray-200 overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-stone-200">
+      <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-stone-500" />
+            <Calendar className="w-5 h-5 text-gray-500" />
             <div>
-              <h2 className="text-lg font-serif font-bold text-stone-900">
+              <h2 className="text-lg font-bold text-gray-900">
                 Narrative Roadmap
               </h2>
-              <p className="text-xs text-stone-500 font-light">
+              <p className="text-xs text-gray-500 font-light">
                 {threads.length} threads · {weekCount} weeks
               </p>
             </div>
@@ -146,7 +146,7 @@ export function NarrativeRoadmap({
 
           {/* Phase Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-stone-400" />
+            <Filter className="w-4 h-4 text-gray-400" />
             <div className="flex gap-1">
               {(["all", "emerging", "escalating", "climax", "resolution", "dormant"] as const).map(
                 (phase) => (
@@ -155,8 +155,8 @@ export function NarrativeRoadmap({
                     type="button"
                     onClick={() => setPhaseFilter(phase)}
                     className={`px-2 py-1 text-xs rounded-md transition-colors ${phaseFilter === phase
-                        ? "bg-stone-900 text-white"
-                        : "text-stone-600 hover:bg-stone-100"
+                        ? "bg-gray-900 text-white"
+                        : "text-gray-600 hover:bg-gray-100"
                       }`}
                   >
                     {phase === "all" ? "All" : phase.charAt(0).toUpperCase() + phase.slice(1)}
@@ -177,7 +177,7 @@ export function NarrativeRoadmap({
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 shadow-md hover:bg-white transition-colors"
           aria-label="Scroll left"
         >
-          <ChevronLeft className="w-4 h-4 text-stone-600" />
+          <ChevronLeft className="w-4 h-4 text-gray-600" />
         </button>
         <button
           type="button"
@@ -185,7 +185,7 @@ export function NarrativeRoadmap({
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 shadow-md hover:bg-white transition-colors"
           aria-label="Scroll right"
         >
-          <ChevronRight className="w-4 h-4 text-stone-600" />
+          <ChevronRight className="w-4 h-4 text-gray-600" />
         </button>
 
         {/* Scrollable content */}
@@ -195,10 +195,10 @@ export function NarrativeRoadmap({
         >
           <div className="min-w-max">
             {/* Week Headers */}
-            <div className="flex border-b border-stone-200 bg-stone-50/50">
+            <div className="flex border-b border-gray-200 bg-gray-50/50">
               {/* Thread name column */}
-              <div className="w-48 flex-shrink-0 px-4 py-3 border-r border-stone-200">
-                <span className="text-xs font-medium uppercase tracking-wider text-stone-500">
+              <div className="w-48 flex-shrink-0 px-4 py-3 border-r border-gray-200">
+                <span className="text-xs font-medium uppercase tracking-wider text-gray-500">
                   Threads
                 </span>
               </div>
@@ -206,11 +206,11 @@ export function NarrativeRoadmap({
               {weekColumns.map((week) => (
                 <div
                   key={week.weekNumber}
-                  className={`w-24 flex-shrink-0 px-2 py-3 text-center border-r border-stone-100 ${week.isCurrent ? "bg-blue-50/50" : ""
+                  className={`w-24 flex-shrink-0 px-2 py-3 text-center border-r border-gray-100 ${week.isCurrent ? "bg-blue-50/50" : ""
                     }`}
                 >
-                  <div className="text-xs font-medium text-stone-700">{week.label}</div>
-                  <div className="text-[10px] text-stone-400">{week.weekNumber}</div>
+                  <div className="text-xs font-medium text-gray-700">{week.label}</div>
+                  <div className="text-[10px] text-gray-400">{week.weekNumber}</div>
                 </div>
               ))}
             </div>
@@ -241,13 +241,13 @@ export function NarrativeRoadmap({
       </div>
 
       {/* Legend */}
-      <div className="px-6 py-3 border-t border-stone-200 bg-stone-50/30">
-        <div className="flex items-center justify-between text-xs text-stone-500">
+      <div className="px-6 py-3 border-t border-gray-200 bg-gray-50/30">
+        <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center gap-4">
             <span className="font-medium">Event Significance:</span>
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-stone-300" /> Minor
+                <span className="w-2 h-2 rounded-full bg-gray-300" /> Minor
               </span>
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded-full bg-blue-400" /> Moderate

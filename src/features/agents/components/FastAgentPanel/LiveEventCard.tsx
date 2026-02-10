@@ -97,9 +97,9 @@ function getStatusStyles(status: LiveEventStatus) {
       return {
         bg: 'bg-blue-50 dark:bg-blue-900/20',
         border: 'border-blue-200 dark:border-blue-800',
-        text: 'text-blue-700 dark:text-blue-400',
-        icon: 'text-blue-500',
-        dot: 'bg-blue-500',
+        text: 'text-violet-700 dark:text-violet-400',
+        icon: 'text-violet-500',
+        dot: 'bg-violet-500',
       };
     case 'success':
       return {
@@ -169,7 +169,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
           {/* Status dot */}
           <div className={cn(
             "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-gray-900 z-10",
-            event.status === 'running' && "border-blue-500 animate-pulse",
+            event.status === 'running' && "border-violet-500 animate-pulse",
             event.status === 'success' && "border-green-500",
             event.status === 'error' && "border-red-500",
             event.status === 'pending' && "border-[var(--text-muted)]"

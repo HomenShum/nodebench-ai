@@ -215,7 +215,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
         <div className="flex-1 overflow-y-auto" data-reader-content>
           <article className="p-6 space-y-6">
             {/* Title */}
-            <h1 className="text-2xl font-serif font-medium text-[color:var(--text-primary)] leading-tight">
+            <h1 className="text-2xl font-medium text-[color:var(--text-primary)] leading-tight">
               {displayItem.title}
             </h1>
 

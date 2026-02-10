@@ -53,10 +53,10 @@ export interface DocumentCardProps {
 /** AI Status badge colors */
 const AI_STATUS_CONFIG = {
   indexed: {
-    dot: 'bg-emerald-500',
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-200',
-    text: 'text-emerald-700',
+    dot: 'bg-indigo-500',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-200',
+    text: 'text-gray-700',
     label: 'AI Indexed',
   },
   processing: {

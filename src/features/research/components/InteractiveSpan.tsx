@@ -98,7 +98,7 @@ export const InteractiveSpan: React.FC<InteractiveSpanProps> = ({
   // Variant styles
   const variantStyles = {
     default: "text-blue-700 decoration-blue-300/60 hover:bg-blue-50 hover:text-blue-800",
-    positive: "text-emerald-700 decoration-emerald-300/60 hover:bg-emerald-50 hover:text-emerald-800",
+    positive: "text-gray-700 decoration-indigo-300/60 hover:bg-indigo-50 hover:text-gray-800",
     negative: "text-red-700 decoration-red-300/60 hover:bg-red-50 hover:text-red-800",
     warning: "text-amber-700 decoration-amber-300/60 hover:bg-amber-50 hover:text-amber-800",
     neutral: "text-[color:var(--text-primary)] decoration-[color:var(--bg-tertiary)]/60 hover:bg-[color:var(--bg-hover)] hover:text-[color:var(--text-primary)]",

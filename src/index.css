@@ -1,5 +1,5 @@
-/* Fonts with font-display: swap for faster FCP */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap');
+/* Fonts: Inter for UI, JetBrains Mono for code */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,76 +7,86 @@
 
 @layer base {
   :root {
-    --background: 40 20% 97%;
-    /* #faf9f6 - Warm Cream / Off-White */
-    --foreground: 160 5% 10%;
-    /* #181919 - Soft Black / Carbon */
-    --card: 40 20% 97%;
-    --card-foreground: 160 5% 10%;
-    --popover: 40 20% 97%;
-    --popover-foreground: 160 5% 10%;
-    --primary: 155 40% 15%;
-    /* #163628 - Deep Forest Green */
-    --primary-foreground: 40 20% 97%;
-    --secondary: 40 10% 90%;
-    /* #E5E5E2 - Warm Gray */
-    --secondary-foreground: 160 5% 10%;
-    --muted: 40 10% 92%;
-    --muted-foreground: 160 5% 35%;
-    /* Updated for WCAG AA: 7:1 contrast ratio */
-    --accent: 70 15% 90%;
-    /* Sage/Stone accent */
-    --accent-foreground: 155 40% 15%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 40 10% 88%;
-    /* Warm stone border */
-    --input: 40 10% 88%;
-    --ring: 155 40% 15%;
-    --radius: 0.25rem;
-    /* Sharper 4px radius */
+    --background: 0 0% 98%;
+    /* #FAFAFA - Cool off-white */
+    --foreground: 224 71% 4%;
+    /* #111827 - Near black */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 234 56% 58%;
+    /* #5E6AD2 - Muted indigo (Linear-style) */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 91%;
+    /* #E5E7EB */
+    --secondary-foreground: 0 0% 4%;
+    --muted: 220 14% 96%;
+    /* #F3F4F6 */
+    --muted-foreground: 220 9% 46%;
+    /* #6B7280 - WCAG AA */
+    --accent: 220 14% 96%;
+    --accent-foreground: 234 56% 58%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    /* #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 234 56% 58%;
+    --radius: 0.5rem;
 
-    /* FastAgentPanel variables remapped to Warm Theme */
-    --text-primary: #181919;
-    --text-secondary: #2C2E2E;
-    /* Updated for WCAG AA: 10:1 contrast */
-    --text-muted: #505252;
-    /* Updated for WCAG AA: 7:1 contrast */
-    --bg-primary: #FAF9F6;
-    --bg-secondary: #F2F1ED;
-    --bg-hover: #E8E7E3;
-    --bg-tertiary: #E0DFDB;
-    --border-color: #E0DFDB;
-    --accent-primary: #1F4A38;
-    /* Deep Green */
-    --accent-secondary: #4A5D23;
-    /* Olive/Moss */
-    --accent-primary-bg: rgba(31, 74, 56, 0.08);
+    /* Component direct-access vars */
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-muted: #6B7280;
+    --bg-primary: #FAFAFA;
+    --bg-secondary: #F3F4F6;
+    --bg-hover: #E5E7EB;
+    --bg-tertiary: #F3F4F6;
+    --border-color: rgba(0, 0, 0, 0.06);
+    --accent-primary: #5E6AD2;
+    --accent-secondary: #818CF8;
+    --accent-primary-bg: rgba(94, 106, 210, 0.08);
+    --accent-primary-hover: #4F5BC0;
   }
 
   .dark {
-    /* Keep dark mode relatively neutral but warmer */
-    --background: 160 5% 8%;
-    /* #131414 */
-    --foreground: 40 20% 90%;
-    --card: 160 5% 8%;
-    --card-foreground: 40 20% 90%;
-    --popover: 160 5% 8%;
-    --popover-foreground: 40 20% 90%;
-    --primary: 40 20% 90%;
-    --primary-foreground: 160 40% 10%;
-    --secondary: 160 5% 15%;
-    --secondary-foreground: 40 20% 90%;
-    --muted: 160 5% 15%;
-    --muted-foreground: 160 3% 70%;
-    /* Updated for WCAG AA in dark mode */
-    --accent: 160 5% 15%;
-    --accent-foreground: 40 20% 90%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 160 5% 15%;
-    --input: 160 5% 15%;
-    --ring: 155 30% 50%;
+    --background: 240 6% 4%;
+    /* #09090B - Near black */
+    --foreground: 0 0% 95%;
+    --card: 240 4% 10%;
+    /* #18181B */
+    --card-foreground: 0 0% 95%;
+    --popover: 240 4% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 234 56% 65%;
+    /* Lighter indigo for dark mode */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 16%;
+    /* #27272A */
+    --secondary-foreground: 0 0% 95%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 234 56% 65%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 234 56% 65%;
+
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1AA;
+    --text-muted: #71717A;
+    --bg-primary: #0a0a0e;
+    --bg-secondary: #1a1a1f;
+    --bg-hover: #2a2a32;
+    --bg-tertiary: #201f27;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --accent-primary: #7C8AE4;
+    --accent-secondary: #818CF8;
+    --accent-primary-bg: rgba(124, 138, 228, 0.1);
+    --accent-primary-hover: #8B97E8;
   }
 }
 
@@ -87,6 +97,10 @@
 
   body {
     @apply bg-background text-foreground;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1,
@@ -95,9 +109,69 @@
   h4,
   h5,
   h6 {
-    @apply font-serif;
+    @apply font-sans tracking-tight;
   }
 }
+
+/* Preserve serif in editorial/research views */
+.editorial-layout h1,
+.editorial-layout h2,
+.editorial-layout h3,
+.editorial-layout h4,
+.editorial-layout h5,
+.editorial-layout h6 {
+  font-family: Georgia, serif;
+  letter-spacing: normal;
+}
+
+/* ───── Depth & Polish Utilities (Linear/Vercel tier) ───── */
+
+/* Noise texture overlay — 2% opacity grain for surface depth */
+.noise-bg {
+  position: relative;
+}
+.noise-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 0;
+  border-radius: inherit;
+}
+
+/* Scroll edge fade — gradient masks at top/bottom */
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 24px, black calc(100% - 24px), transparent 100%);
+}
+
+/* Refined focus ring — soft glow instead of harsh outline */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent-primary), 0 0 12px rgba(94, 106, 210, 0.15);
+}
+
+/* Inline code — monospace with subtle accent background */
+:not(pre) > code {
+  background: var(--accent-primary-bg);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.875em;
+  color: var(--accent-primary);
+  border: 1px solid rgba(94, 106, 210, 0.12);
+}
+
+/* Stagger utility — cascade children with 50ms delays */
+.stagger > * { animation-fill-mode: both; }
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(n+6) { animation-delay: 250ms; }
 
 /* Custom Scrollbar for Webkit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
@@ -110,14 +184,26 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E5E7EB;
-  /* gray-200 */
+  background: rgba(0, 0, 0, 0.12);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #D1D5DB;
-  /* gray-300 */
+  background: rgba(0, 0, 0, 0.20);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Firefox dark mode scrollbar */
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

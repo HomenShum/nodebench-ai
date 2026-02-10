@@ -29,7 +29,7 @@ type BriefStatus = "pending" | "failing" | "passing";
 
 function statusIcon(status: BriefStatus) {
   if (status === "passing") {
-    return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />;
+    return <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />;
   }
   if (status === "failing") {
     return <AlertCircle className="w-3.5 h-3.5 text-red-600" />;
@@ -400,7 +400,7 @@ export function BriefTab() {
       <div className="flex-shrink-0 p-3 border-b border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <RefreshCcw className="w-4 h-4 text-blue-500" />
+            <RefreshCcw className="w-4 h-4 text-violet-500" />
             <span className="text-sm font-medium text-[var(--text-primary)]">
               Daily Brief Memory
             </span>
@@ -415,7 +415,7 @@ export function BriefTab() {
           <div className="mb-3">
             <div className="h-1.5 w-full bg-[var(--bg-hover)] rounded overflow-hidden flex">
               <div
-                className="h-full bg-emerald-500"
+                className="h-full bg-indigo-500"
                 style={{ width: `${passingPct}%` }}
               />
               <div

@@ -13,7 +13,7 @@ const CalendarHomeHub = lazy(() =>
 );
 
 const viewFallback = (
-  <div className="h-full w-full flex items-center justify-center text-sm text-stone-500">
+  <div className="h-full w-full flex items-center justify-center text-sm text-gray-500">
     Loading view...
   </div>
 );
@@ -324,9 +324,9 @@ export function TabManager({
     "bg-[var(--accent-secondary)]/9 text-[var(--text-primary)] border-[var(--accent-secondary)]/18 hover:bg-[var(--accent-secondary)]/13",
   ];
   const dotColors = [
-    "bg-blue-500", "bg-emerald-500", "bg-purple-500", "bg-orange-500",
+    "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-orange-500",
     "bg-pink-500", "bg-cyan-500", "bg-red-500", "bg-yellow-500",
-    "bg-indigo-500", "bg-rose-500", "bg-teal-500", "bg-lime-500",
+    "bg-indigo-500", "bg-rose-500", "bg-indigo-500", "bg-lime-500",
   ];
 
   return (
