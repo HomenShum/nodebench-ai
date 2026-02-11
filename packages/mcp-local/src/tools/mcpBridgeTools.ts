@@ -310,11 +310,27 @@ export const mcpBridgeTools: McpTool[] = [
         };
       }
 
+      // Auto-fill required fields from tool schema (handles mobile-mcp's noParams quirk)
+      const finalArgs: Record<string, unknown> = { ...(args ?? {}) };
+      const schema = toolMeta.inputSchema as any;
+      if (schema?.required && schema?.properties) {
+        for (const reqField of schema.required as string[]) {
+          if (finalArgs[reqField] === undefined) {
+            const propDef = schema.properties[reqField];
+            if (propDef?.type === "object") {
+              finalArgs[reqField] = {};
+            } else if (propDef?.type === "string" && propDef?.default !== undefined) {
+              finalArgs[reqField] = propDef.default;
+            }
+          }
+        }
+      }
+
       // Call the tool
       try {
         const result = await d.client.callTool({
           name: tool,
-          arguments: args ?? {},
+          arguments: finalArgs,
         });
 
         // Extract content
