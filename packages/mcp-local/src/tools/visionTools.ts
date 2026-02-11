@@ -154,7 +154,7 @@ async function analyzeWithAnthropic(
   const client = new Anthropic();
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 4096,
     messages: [
       {
@@ -266,7 +266,7 @@ export const visionTools: McpTool[] = [
       if (keys.ANTHROPIC_API_KEY && sdks.anthropic) {
         providers.push({
           name: "anthropic",
-          model: "claude-sonnet-4-20250514",
+          model: "claude-haiku-4-5-20251001",
           priority: 3,
           features: ["vision"],
         });
@@ -417,7 +417,7 @@ export const visionTools: McpTool[] = [
                   : selectedProvider === "openai"
                     ? "gpt-5-mini"
                     : selectedProvider === "anthropic"
-                      ? "claude-sonnet-4-20250514"
+                      ? "claude-haiku-4-5-20251001"
                       : "google/gemini-3-flash",
               agenticVision:
                 selectedProvider === "gemini"

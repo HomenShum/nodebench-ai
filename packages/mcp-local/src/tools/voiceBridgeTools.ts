@@ -194,16 +194,6 @@ const LLM_ENGINES: LlmEngine[] = [
     notes: "Fastest Claude model. Good for voice where speed matters. ~300ms TTFT.",
   },
   {
-    name: "Claude Sonnet",
-    key: "claude_sonnet",
-    firstTokenMs: 600,
-    tokensPerSec: 80,
-    costPer1kTokens: 0.003,
-    privacy: "cloud",
-    quality: "high",
-    notes: "Best balance of speed and quality. ~600ms TTFT. Good for complex voice interactions.",
-  },
-  {
     name: "GPT-5-mini",
     key: "gpt5_mini",
     firstTokenMs: 400,
