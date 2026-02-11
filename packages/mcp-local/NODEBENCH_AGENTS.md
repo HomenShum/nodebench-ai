@@ -21,7 +21,7 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
-Restart Claude Code. 163 tools available immediately.
+Restart Claude Code. 175 tools available immediately.
 
 ### Preset Selection
 
@@ -304,7 +304,7 @@ NodeBench MCP supports 4 presets that control which domain toolsets are loaded a
 | **meta** | 0 | 0 | 5 | Discovery-only front door. Agents start here and self-escalate. |
 | **lite** | 8 | 38 | 43 | Lightweight verification-focused workflows. CI bots, quick checks. |
 | **core** | 23 | 105 | 110 | Full development workflow. Most agent sessions. |
-| **full** | 31 | 158 | 163 | Everything enabled. Benchmarking, exploration, advanced use. |
+| **full** | 31 | 170 | 175 | Everything enabled. Benchmarking, exploration, advanced use. |
 
 ### Usage
 

@@ -25,43 +25,16 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import Database from "better-sqlite3";
 import { getDb, genId } from "./db.js";
-import { verificationTools } from "./tools/verificationTools.js";
-import { evalTools } from "./tools/evalTools.js";
-import { qualityGateTools } from "./tools/qualityGateTools.js";
-import { learningTools } from "./tools/learningTools.js";
-import { flywheelTools } from "./tools/flywheelTools.js";
-import { reconTools } from "./tools/reconTools.js";
-import { uiCaptureTools } from "./tools/uiCaptureTools.js";
-import { visionTools } from "./tools/visionTools.js";
-import { webTools } from "./tools/webTools.js";
-import { githubTools } from "./tools/githubTools.js";
-import { documentationTools } from "./tools/documentationTools.js";
-import { agentBootstrapTools } from "./tools/agentBootstrapTools.js";
-import { selfEvalTools } from "./tools/selfEvalTools.js";
-import { parallelAgentTools } from "./tools/parallelAgentTools.js";
-import { llmTools } from "./tools/llmTools.js";
-import { securityTools } from "./tools/securityTools.js";
-import { platformTools } from "./tools/platformTools.js";
-import { researchWritingTools } from "./tools/researchWritingTools.js";
-import { flickerDetectionTools } from "./tools/flickerDetectionTools.js";
-import { figmaFlowTools } from "./tools/figmaFlowTools.js";
+import { getAnalyticsDb, closeAnalyticsDb, clearOldRecords } from "./analytics/index.js";
+import { AnalyticsTracker } from "./analytics/toolTracker.js";
+import { generateSmartPreset, formatPresetRecommendation, listPresets } from "./analytics/index.js";
+import { getProjectUsageSummary, exportUsageStats, formatStatsDisplay } from "./analytics/index.js";
+import { TOOLSET_MAP, TOOL_TO_TOOLSET } from "./toolsetRegistry.js";
 import { createMetaTools } from "./tools/metaTools.js";
-import { localFileTools, gaiaMediaSolvers } from "./tools/localFileTools.js";
 import { createProgressiveDiscoveryTools } from "./tools/progressiveDiscoveryTools.js";
-import { boilerplateTools } from "./tools/boilerplateTools.js";
-import { cCompilerBenchmarkTools } from "./tools/cCompilerBenchmarkTools.js";
-import { sessionMemoryTools } from "./tools/sessionMemoryTools.js";
-import { patternTools } from "./tools/patternTools.js";
-import { gitWorkflowTools } from "./tools/gitWorkflowTools.js";
-import { seoTools } from "./tools/seoTools.js";
-import { voiceBridgeTools } from "./tools/voiceBridgeTools.js";
-import { critterTools } from "./tools/critterTools.js";
-import { emailTools } from "./tools/emailTools.js";
-import { rssTools } from "./tools/rssTools.js";
-import { architectTools } from "./tools/architectTools.js";
-import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, _setDbAccessor } from "./tools/toolRegistry.js";
-import { toonTools } from "./tools/toonTools.js";
+import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, _setDbAccessor, hybridSearch } from "./tools/toolRegistry.js";
 import type { McpTool } from "./types.js";
 
 // TOON format — ~40% token savings on tool responses
@@ -69,87 +42,95 @@ import { encode as toonEncode } from "@toon-format/toon";
 // Embedding provider — neural semantic search
 import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
 
-// ── CLI argument parsing ──────────────────────────────────────────────
-const cliArgs = process.argv.slice(2);
-const useToon = !cliArgs.includes("--no-toon");
-const useEmbedding = !cliArgs.includes("--no-embedding");
+ // ── CLI argument parsing ──────────────────────────────────────────────
+ const cliArgs = process.argv.slice(2);
+ const useToon = !cliArgs.includes("--no-toon");
+ const useEmbedding = !cliArgs.includes("--no-embedding");
+ const useSmartPreset = cliArgs.includes("--smart-preset");
+ const showStats = cliArgs.includes("--stats");
+ const exportStats = cliArgs.includes("--export-stats");
+ const resetStats = cliArgs.includes("--reset-stats");
+ const listPresetsFlag = cliArgs.includes("--list-presets");
 
-const TOOLSET_MAP: Record<string, McpTool[]> = {
-  verification: verificationTools,
-  eval: evalTools,
-  quality_gate: qualityGateTools,
-  learning: learningTools,
-  flywheel: flywheelTools,
-  recon: reconTools,
-  ui_capture: uiCaptureTools,
-  vision: visionTools,
-  local_file: localFileTools,
-  web: webTools,
-  github: githubTools,
-  docs: documentationTools,
-  bootstrap: agentBootstrapTools,
-  self_eval: selfEvalTools,
-  parallel: parallelAgentTools,
-  llm: llmTools,
-  security: securityTools,
-  platform: platformTools,
-  research_writing: researchWritingTools,
-  flicker_detection: flickerDetectionTools,
-  figma_flow: figmaFlowTools,
-  boilerplate: boilerplateTools,
-  benchmark: cCompilerBenchmarkTools,
-  session_memory: sessionMemoryTools,
-  gaia_solvers: gaiaMediaSolvers,
-  toon: toonTools,
-  pattern: patternTools,
-  git_workflow: gitWorkflowTools,
-  seo: seoTools,
-  voice_bridge: voiceBridgeTools,
-  critter: critterTools,
-  email: emailTools,
-  rss: rssTools,
-  architect: architectTools,
-};
+export { TOOLSET_MAP };
+
+const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"];
 
 const PRESETS: Record<string, string[]> = {
-  meta: [],
-  lite: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"],
-  core: ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "bootstrap", "self_eval", "llm", "security", "platform", "research_writing", "flicker_detection", "figma_flow", "boilerplate", "benchmark", "session_memory", "toon", "pattern", "git_workflow", "seo", "voice_bridge", "critter", "email", "rss", "architect"],
+  default: DEFAULT_TOOLSETS,
+  // Themed presets — bridge between default (50 tools) and full (175 tools)
+  web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect"],
+  research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs"],
+  data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web"],
+  devops:       [...DEFAULT_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
+  mobile:       [...DEFAULT_TOOLSETS, "ui_capture", "vision", "flicker_detection"],
+  academic:     [...DEFAULT_TOOLSETS, "research_writing", "llm", "web", "local_file"],
+  multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon"],
+  content:      [...DEFAULT_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect"],
   full: Object.keys(TOOLSET_MAP),
 };
 
-function parseToolsets(): McpTool[] {
-  if (cliArgs.includes("--help")) {
-    const lines = [
-      "nodebench-mcp v2.17.0 — Development Methodology MCP Server",
-      "",
-      "Usage: nodebench-mcp [options]",
-      "",
-      "Options:",
-      "  --toolsets <list>   Comma-separated toolsets to enable (default: all)",
-      "  --exclude <list>    Comma-separated toolsets to exclude",
-      "  --preset <name>     Use a preset: meta, lite, core, or full",
-      "  --no-toon           Disable TOON encoding (TOON is on by default for ~40% token savings)",
-      "  --no-embedding      Disable neural embedding search (uses local HuggingFace model or API keys)",
-      "  --help              Show this help and exit",
-      "",
-      "Available toolsets:",
-      ...Object.entries(TOOLSET_MAP).map(([k, v]) => `  ${k.padEnd(16)} ${v.length} tools`),
-      "",
-      "Presets:",
-      ...Object.entries(PRESETS).map(([k, v]) => `  ${k.padEnd(16)} ${v.join(", ")}`),
-      "",
-      "Examples:",
-      "  npx nodebench-mcp --preset core",
-      "  npx nodebench-mcp --toolsets verification,eval,recon",
-      "  npx nodebench-mcp --exclude vision,ui_capture,parallel",
-      "",
-      "Pro tip: Use findTools and getMethodology at runtime for dynamic tool discovery.",
-      "See: https://www.anthropic.com/engineering/code-execution-with-mcp",
-    ];
-    console.error(lines.join("\n"));
-    process.exit(0);
-  }
+const PRESET_DESCRIPTIONS: Record<string, string> = {
+  default:     "Core AI Flywheel — verification, eval, quality gates, learning, recon",
+  web_dev:     "Web projects — adds visual QA, SEO audit, git workflow, code architecture",
+  research:    "Research workflows — adds web search, LLM calls, RSS feeds, email, docs",
+  data:        "Data analysis — adds CSV/XLSX/PDF/JSON parsing, LLM extraction, web fetch",
+  devops:      "CI/CD & ops — adds git compliance, session memory, benchmarks, pattern mining",
+  mobile:      "Mobile apps — adds screenshot capture, vision analysis, flicker detection",
+  academic:    "Academic papers — adds polish, review, translate, logic check, data analysis",
+  multi_agent: "Multi-agent teams — adds task locking, messaging, roles, oracle testing",
+  content:     "Content & publishing — adds LLM, accountability, email, RSS, platform queue",
+  full:        "Everything — all toolsets for maximum coverage",
+};
+
+   function parseToolsets(): McpTool[] {
+    if (cliArgs.includes("--help")) {
+      const lines = [
+        "nodebench-mcp v2.17.0 — Development Methodology MCP Server",
+        "",
+        "Usage: nodebench-mcp [options]",
+        "",
+        "Options:",
+        "  --toolsets <list>   Comma-separated toolsets to enable (default: default)",
+        "  --exclude <list>    Comma-separated toolsets to exclude",
+        "  --preset <name>     Use a preset: default or full",
+        "  --smart-preset      Generate smart preset recommendation based on project type and usage history",
+        "  --stats             Show usage statistics for current project",
+        "  --export-stats      Export usage statistics to JSON",
+        "  --reset-stats       Clear all usage analytics data",
+        "  --list-presets      List all available presets with descriptions",
+        "  --dynamic           Enable dynamic toolset loading (Search+Load pattern from arxiv 2509.20386)",
+        "  --no-toon           Disable TOON encoding (TOON is on by default for ~40% token savings)",
+        "  --no-embedding      Disable neural embedding search (uses local HuggingFace model or API keys)",
+        "  --help              Show this help and exit",
+        "",
+        "Available toolsets:",
+        ...Object.entries(TOOLSET_MAP).map(([k, v]) => `  ${k.padEnd(16)} ${v.length} tools`),
+        "",
+        "Presets:",
+        ...Object.entries(PRESETS).map(([k, v]) => {
+          const count = v.reduce((s, ts) => s + (TOOLSET_MAP[ts]?.length ?? 0), 0) + 12;
+          return `  ${k.padEnd(14)} ${String(count).padStart(3)} tools  ${PRESET_DESCRIPTIONS[k] ?? ''}`;
+        }),
+        "",
+        "Examples:",
+        "  npx nodebench-mcp                    # Default (50 tools) - core AI Flywheel",
+        "  npx nodebench-mcp --preset web_dev   # Web development (+ vision, SEO, git)",
+        "  npx nodebench-mcp --preset research  # Research workflows (+ web, LLM, RSS, email)",
+        "  npx nodebench-mcp --preset data      # Data analysis (+ local file parsing, LLM)",
+        "  npx nodebench-mcp --preset academic  # Academic writing (+ paper tools, LLM)",
+        "  npx nodebench-mcp --preset full      # All 175 tools",
+        "  npx nodebench-mcp --smart-preset     # Get AI-powered preset recommendation",
+        "  npx nodebench-mcp --stats            # Show usage statistics",
+        "  npx nodebench-mcp --toolsets verification,eval,recon",
+        "  npx nodebench-mcp --exclude vision,ui_capture,parallel",
+        "",
+        "Pro tip: Use findTools and getMethodology at runtime for dynamic tool discovery.",
+        "See: https://www.anthropic.com/engineering/code-execution-with-mcp",
+      ];
+      console.error(lines.join("\n"));
+      process.exit(0);
+    }
 
   const presetIdx = cliArgs.indexOf("--preset");
   if (presetIdx !== -1 && cliArgs[presetIdx + 1]) {
@@ -186,7 +167,42 @@ function parseToolsets(): McpTool[] {
       .flatMap(([, v]) => v);
   }
 
-  return Object.values(TOOLSET_MAP).flat();
+   // Default to default preset (50 tools - complete AI Flywheel)
+   return PRESETS.default.flatMap((k) => TOOLSET_MAP[k] ?? []);
+}
+
+// ── Analytics CLI flag handling ─────────────────────────────────────────
+// Handle --list-presets
+if (listPresetsFlag) {
+  const presets = listPresets(TOOLSET_MAP);
+  console.log(JSON.stringify(presets, null, 2));
+  process.exit(0);
+}
+
+// ── Analytics CLI handlers (run-and-exit) ───────────────────────────────
+if (resetStats || useSmartPreset || showStats || exportStats) {
+  const aDb = getAnalyticsDb();
+  try {
+    if (resetStats) {
+      clearOldRecords(aDb, 0);
+      console.error("Usage analytics data cleared (tool_usage + cache). Project context and preset history preserved.");
+    } else if (useSmartPreset) {
+      const recommendation = generateSmartPreset(aDb, TOOLSET_MAP);
+      console.error(formatPresetRecommendation(recommendation, TOOLSET_MAP));
+    } else if (showStats) {
+      const summary = getProjectUsageSummary(aDb, process.cwd(), 30);
+      if (summary) {
+        console.error(formatStatsDisplay(summary, process.cwd()));
+      } else {
+        console.error("No usage data available for this project in the last 30 days.");
+      }
+    } else if (exportStats) {
+      console.log(exportUsageStats(aDb, process.cwd(), 30));
+    }
+  } finally {
+    closeAnalyticsDb(aDb);
+  }
+  process.exit(0);
 }
 
 // Initialize DB (creates ~/.nodebench/ and schema on first run)
@@ -196,14 +212,534 @@ getDb();
 _setDbAccessor(getDb);
 
 // Assemble tools (filtered by --toolsets / --exclude / --preset if provided)
-const domainTools: McpTool[] = parseToolsets();
-const metaTools = createMetaTools(domainTools);
-const allToolsWithoutDiscovery = [...domainTools, ...metaTools];
-// Progressive discovery tools need the full tool list for hybrid search
-const discoveryTools = createProgressiveDiscoveryTools(
-  allToolsWithoutDiscovery.map((t) => ({ name: t.name, description: t.description }))
+let domainTools: McpTool[] = parseToolsets();
+
+// Determine current preset name for analytics
+let currentPreset: string = 'default';
+const presetIdx = cliArgs.indexOf("--preset");
+if (presetIdx !== -1 && cliArgs[presetIdx + 1]) {
+  currentPreset = cliArgs[presetIdx + 1];
+} else if (cliArgs.includes("--toolsets") || cliArgs.includes("--exclude")) {
+  currentPreset = 'custom';
+}
+
+// Dynamic loading: --dynamic flag enables Search+Load architecture
+// (arxiv 2509.20386 "Dynamic ReAct" winning pattern)
+const useDynamicLoading = cliArgs.includes("--dynamic");
+
+// Track which toolsets are currently active (mutable for dynamic loading)
+const initialToolsetNames = new Set(
+  PRESETS[currentPreset] ?? PRESETS.default
 );
-const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
+const activeToolsets = new Set(initialToolsetNames);
+
+// Tools to skip auto-logging (avoid infinite recursion and noise)
+const SKIP_AUTO_LOG = new Set(["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings", "load_toolset", "unload_toolset", "list_available_toolsets"]);
+
+// Initialize analytics tracker singleton (handles DB, project context, retention cleanup)
+const tracker = AnalyticsTracker.init({
+  projectPath: process.cwd(),
+  preset: currentPreset,
+  toolCount: domainTools.length + 6,
+  toolToToolset: TOOL_TO_TOOLSET,
+  skipTools: SKIP_AUTO_LOG,
+});
+const metaTools = createMetaTools(domainTools);
+let allToolsWithoutDiscovery = [...domainTools, ...metaTools];
+// Progressive discovery tools need the full tool list for hybrid search
+// Pass dynamic loading callbacks so discover_tools can suggest load_toolset for unloaded toolsets
+const discoveryTools = createProgressiveDiscoveryTools(
+  allToolsWithoutDiscovery.map((t) => ({ name: t.name, description: t.description })),
+  {
+    getLoadedToolNames: () => new Set(allTools.map(t => t.name)),
+    getToolToToolset: () => TOOL_TO_TOOLSET,
+  },
+);
+
+// ── Dynamic Loading Tools (Search+Load pattern) ────────────────────────
+// Based on Dynamic ReAct (arxiv 2509.20386) — the winning architecture.
+// Agent starts with default preset, discovers tools via discover_tools,
+// then calls load_toolset to activate them. Server sends
+// notifications/tools/list_changed so the client re-fetches the tool list.
+const dynamicLoadingTools: McpTool[] = [
+  {
+    name: "load_toolset",
+    description:
+      'Dynamically load a toolset into the current session. After loading, the tools become immediately available for use. Based on the "Search+Load" architecture from Dynamic ReAct (arxiv 2509.20386) — the winning pattern for scalable MCP tool selection. Use discover_tools first to find which toolset you need, then call this to activate it.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        toolset: {
+          type: "string",
+          description: `Toolset name to load. Available: ${Object.keys(TOOLSET_MAP).filter(k => !activeToolsets.has(k)).join(", ") || "(all loaded)"}`,
+        },
+      },
+      required: ["toolset"],
+    },
+    handler: async (args) => {
+      const { toolset } = args as { toolset: string };
+      if (!TOOLSET_MAP[toolset]) {
+        return { error: true, message: `Unknown toolset: ${toolset}`, available: Object.keys(TOOLSET_MAP) };
+      }
+      if (activeToolsets.has(toolset)) {
+        return { alreadyLoaded: true, toolset, message: `Toolset '${toolset}' is already active.`, activeToolCount: allTools.length };
+      }
+
+      const startMs = Date.now();
+      const toolsBefore = allTools.length;
+
+      // Add toolset to active set
+      activeToolsets.add(toolset);
+      const newTools = TOOLSET_MAP[toolset];
+
+      // Rebuild domain tools from active toolsets
+      domainTools = [...activeToolsets].flatMap(k => TOOLSET_MAP[k] ?? []);
+      const newMetaTools = createMetaTools(domainTools);
+      allToolsWithoutDiscovery = [...domainTools, ...newMetaTools];
+
+      // Rebuild allTools (keep discovery + dynamic loading tools stable)
+      rebuildAllTools();
+
+      // Track A/B event
+      try {
+        const db = getDb();
+        db.prepare(
+          "INSERT INTO ab_tool_events (id, session_id, event_type, toolset_name, tools_before, tools_after, latency_ms, created_at) VALUES (?, ?, 'load', ?, ?, ?, ?, datetime('now'))"
+        ).run(genId("abe"), SESSION_ID, toolset, toolsBefore, allTools.length, Date.now() - startMs);
+      } catch { /* instrumentation must not break tool dispatch */ }
+
+      // Notify client that tool list changed (MCP spec)
+      try {
+        await server.notification({ method: "notifications/tools/list_changed" });
+      } catch { /* client may not support notifications */ }
+
+      return {
+        loaded: true,
+        toolset,
+        toolsAdded: newTools.length,
+        toolNames: newTools.map(t => t.name),
+        activeToolCount: allTools.length,
+        activeToolsets: [...activeToolsets],
+        _hint: `${newTools.length} tools from '${toolset}' are now available. You can use them directly.`,
+      };
+    },
+  },
+  {
+    name: "unload_toolset",
+    description:
+      "Remove a dynamically loaded toolset from the current session to free up context. Cannot unload toolsets from the initial preset.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        toolset: {
+          type: "string",
+          description: "Toolset name to unload.",
+        },
+      },
+      required: ["toolset"],
+    },
+    handler: async (args) => {
+      const { toolset } = args as { toolset: string };
+      if (!activeToolsets.has(toolset)) {
+        return { error: true, message: `Toolset '${toolset}' is not currently loaded.` };
+      }
+      if (initialToolsetNames.has(toolset)) {
+        return { error: true, message: `Cannot unload '${toolset}' — it's part of the initial preset (${currentPreset}).` };
+      }
+
+      const toolsBefore = allTools.length;
+      activeToolsets.delete(toolset);
+
+      // Rebuild
+      domainTools = [...activeToolsets].flatMap(k => TOOLSET_MAP[k] ?? []);
+      const newMetaTools = createMetaTools(domainTools);
+      allToolsWithoutDiscovery = [...domainTools, ...newMetaTools];
+      rebuildAllTools();
+
+      try {
+        const db = getDb();
+        db.prepare(
+          "INSERT INTO ab_tool_events (id, session_id, event_type, toolset_name, tools_before, tools_after, created_at) VALUES (?, ?, 'unload', ?, ?, ?, datetime('now'))"
+        ).run(genId("abe"), SESSION_ID, toolset, toolsBefore, allTools.length);
+      } catch { /* instrumentation */ }
+
+      try {
+        await server.notification({ method: "notifications/tools/list_changed" });
+      } catch { /* client may not support notifications */ }
+
+      return {
+        unloaded: true,
+        toolset,
+        activeToolCount: allTools.length,
+        activeToolsets: [...activeToolsets],
+      };
+    },
+  },
+  {
+    name: "list_available_toolsets",
+    description:
+      "List all available toolsets showing which are currently loaded and which can be dynamically added. Includes tool counts and descriptions for each toolset.",
+    inputSchema: { type: "object", properties: {} },
+    handler: async () => {
+      const toolsets = Object.entries(TOOLSET_MAP).map(([name, tools]) => ({
+        name,
+        toolCount: tools.length,
+        loaded: activeToolsets.has(name),
+        isInitialPreset: initialToolsetNames.has(name),
+        description: PRESET_DESCRIPTIONS[name] ?? null,
+        tools: tools.map(t => t.name),
+      }));
+
+      const loaded = toolsets.filter(t => t.loaded);
+      const available = toolsets.filter(t => !t.loaded);
+
+      return {
+        mode: useDynamicLoading ? "dynamic" : "static",
+        currentPreset,
+        activeToolCount: allTools.length,
+        loaded: { count: loaded.length, toolsets: loaded },
+        available: { count: available.length, toolsets: available },
+        _hint: available.length > 0
+          ? `${available.length} toolsets available to load. Call load_toolset("<name>") to activate.`
+          : "All toolsets are loaded.",
+      };
+    },
+  },
+  {
+    name: "call_loaded_tool",
+    description:
+      'Call a dynamically loaded tool by name. Use this after load_toolset when your client does not automatically refresh the tool list. Pass the tool name and its arguments. Example: call_loaded_tool({ tool: "analyze_screenshot", args: { imagePath: "screenshot.png" } }). This is a fallback — if the loaded tool appears in your tool list directly, call it directly instead.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        tool: {
+          type: "string",
+          description: "Name of the dynamically loaded tool to call.",
+        },
+        args: {
+          type: "object",
+          description: "Arguments to pass to the tool (same as its inputSchema).",
+          additionalProperties: true,
+        },
+      },
+      required: ["tool"],
+    },
+    handler: async (callArgs) => {
+      const { tool: toolName, args: toolArgs } = callArgs as { tool: string; args?: Record<string, unknown> };
+      const target = allTools.find(t => t.name === toolName);
+      if (!target) {
+        return {
+          error: true,
+          message: `Tool '${toolName}' not found. It may not be loaded yet.`,
+          _hint: "Call list_available_toolsets to see what's available, then load_toolset to activate it.",
+          loadedTools: allTools.map(t => t.name),
+        };
+      }
+      // Dispatch to the target tool's handler
+      return target.handler(toolArgs ?? {});
+    },
+  },
+  {
+    name: "smart_select_tools",
+    description:
+      'LLM-powered tool selection: sends your task description + a compact tool catalog to a fast model (Gemini Flash, GPT-4o-mini, or Claude Haiku) to pick the best 5-10 tools. Much more accurate than keyword search for ambiguous queries like "call an AI model" or "analyze my data". Requires GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY. Falls back to heuristic discover_tools if no API key is set.',
+    inputSchema: {
+      type: "object",
+      properties: {
+        task: {
+          type: "string",
+          description: "Describe what you want to accomplish. Be specific. Example: 'I need to parse a PDF, extract tables, and email a summary'",
+        },
+        maxTools: {
+          type: "number",
+          description: "Maximum tools to return (default: 8)",
+        },
+        provider: {
+          type: "string",
+          enum: ["auto", "gemini", "openai", "anthropic"],
+          description: "Which LLM provider to use. 'auto' (default) picks the first available API key.",
+        },
+      },
+      required: ["task"],
+    },
+    handler: async (args) => {
+      const task = args.task as string;
+      const maxTools = (args.maxTools as number) ?? 8;
+      const provider = (args.provider as string) ?? "auto";
+
+      // Build compact tool catalog: name + category + tags (no descriptions — saves tokens)
+      const catalog = ALL_REGISTRY_ENTRIES.map(e =>
+        `${e.name} [${e.category}] ${e.tags.slice(0, 5).join(",")}`
+      ).join("\n");
+
+      const systemPrompt = `You are a tool selection assistant. Given a task description and a catalog of ${ALL_REGISTRY_ENTRIES.length} tools, pick the ${maxTools} most relevant tools. Return ONLY a JSON array of tool names, nothing else. Example: ["tool_a","tool_b"]`;
+      const userPrompt = `Task: ${task}\n\nTool catalog (name [category] tags):\n${catalog}`;
+
+      // Try LLM providers in order
+      const geminiKey = process.env.GEMINI_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+      let selectedProvider = provider;
+      if (selectedProvider === "auto") {
+        if (geminiKey) selectedProvider = "gemini";
+        else if (openaiKey) selectedProvider = "openai";
+        else if (anthropicKey) selectedProvider = "anthropic";
+        else selectedProvider = "none";
+      }
+
+      if (selectedProvider === "none") {
+        // Fallback: run heuristic discover_tools (search full registry for dynamic mode)
+        const heuristicResults = hybridSearch(task, allTools.map(t => ({ name: t.name, description: t.description })), {
+          limit: maxTools,
+          mode: "hybrid",
+          searchFullRegistry: useDynamicLoading,
+        });
+        return {
+          method: "heuristic_fallback",
+          reason: "No API key found. Set GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY for LLM-powered selection.",
+          tools: heuristicResults.map((r: { name: string; category: string; score: number; quickRef: any }) => ({
+            name: r.name,
+            category: r.category,
+            score: r.score,
+            quickRef: r.quickRef,
+          })),
+          _hint: "For better accuracy on ambiguous queries, set an API key to enable LLM-powered selection.",
+        };
+      }
+
+      try {
+        let responseText = "";
+
+        if (selectedProvider === "gemini" && geminiKey) {
+          const resp = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+                generationConfig: { temperature: 0, maxOutputTokens: 512 },
+              }),
+            }
+          );
+          const data = await resp.json() as any;
+          responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        } else if (selectedProvider === "openai" && openaiKey) {
+          const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
+            body: JSON.stringify({
+              model: "gpt-4o-mini",
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt },
+              ],
+              temperature: 0,
+              max_tokens: 512,
+            }),
+          });
+          const data = await resp.json() as any;
+          responseText = data?.choices?.[0]?.message?.content ?? "";
+        } else if (selectedProvider === "anthropic" && anthropicKey) {
+          const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": anthropicKey,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: "claude-3-5-haiku-latest",
+              max_tokens: 512,
+              system: systemPrompt,
+              messages: [{ role: "user", content: userPrompt }],
+            }),
+          });
+          const data = await resp.json() as any;
+          responseText = data?.content?.[0]?.text ?? "";
+        }
+
+        // Parse the JSON array from the response
+        const jsonMatch = responseText.match(/\[[\s\S]*?\]/);
+        if (!jsonMatch) {
+          return { error: true, message: "LLM did not return a valid JSON array", raw: responseText.slice(0, 200) };
+        }
+        const selectedNames: string[] = JSON.parse(jsonMatch[0]);
+
+        // Enrich with registry metadata
+        const enriched = selectedNames
+          .map(name => {
+            const entry = TOOL_REGISTRY.get(name);
+            if (!entry) return null;
+            return {
+              name: entry.name,
+              category: entry.category,
+              phase: entry.phase,
+              tags: entry.tags,
+              quickRef: entry.quickRef,
+              loaded: allTools.some(t => t.name === name),
+            };
+          })
+          .filter(Boolean);
+
+        // Identify toolsets to load
+        const unloadedToolsets = new Map<string, string[]>();
+        for (const tool of enriched) {
+          if (tool && !tool.loaded) {
+            const ts = TOOL_TO_TOOLSET.get(tool.name);
+            if (ts) {
+              const list = unloadedToolsets.get(ts) ?? [];
+              list.push(tool.name);
+              unloadedToolsets.set(ts, list);
+            }
+          }
+        }
+
+        return {
+          method: `llm_${selectedProvider}`,
+          task,
+          selectedTools: enriched,
+          toolCount: enriched.length,
+          ...(unloadedToolsets.size > 0 ? {
+            _loadSuggestions: [...unloadedToolsets.entries()].map(([ts, tools]) => ({
+              toolset: ts,
+              matchingTools: tools,
+              action: `Call load_toolset("${ts}") to activate ${tools.length} tool(s).`,
+            })),
+          } : {}),
+          _hint: enriched.length > 0
+            ? `Top pick: ${enriched[0]!.name}. ${enriched[0]!.quickRef.nextAction}`
+            : "No tools selected. Try rephrasing your task.",
+        };
+      } catch (err: any) {
+        return {
+          error: true,
+          method: `llm_${selectedProvider}`,
+          message: `LLM call failed: ${err.message}`,
+          _hint: "Falling back to heuristic search. Check your API key.",
+        };
+      }
+    },
+  },
+  {
+    name: "get_ab_test_report",
+    description:
+      "Generate an A/B test comparison report for static vs dynamic toolset loading. Shows session counts, tool counts, load events, error rates, and per-toolset load frequency. Use after running sessions in both modes to evaluate the impact of dynamic loading.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        detailed: {
+          type: "boolean",
+          description: "Include per-session breakdown (default: false, summary only)",
+        },
+      },
+    },
+    handler: async (args) => {
+      const db = getDb();
+      const detailed = args.detailed === true;
+
+      // Session-level aggregates by mode
+      const sessionSummary = db.prepare(`
+        SELECT
+          mode,
+          COUNT(*) as sessions,
+          ROUND(AVG(initial_tool_count), 1) as avg_initial_tools,
+          ROUND(AVG(COALESCE(final_tool_count, initial_tool_count)), 1) as avg_final_tools,
+          ROUND(AVG(COALESCE(total_tool_calls, 0)), 1) as avg_tool_calls,
+          ROUND(AVG(COALESCE(total_load_events, 0)), 1) as avg_load_events,
+          ROUND(AVG(COALESCE(session_duration_ms, 0)) / 1000.0, 1) as avg_duration_sec,
+          SUM(COALESCE(total_tool_calls, 0)) as total_calls,
+          SUM(COALESCE(total_load_events, 0)) as total_loads
+        FROM ab_test_sessions
+        GROUP BY mode
+      `).all() as any[];
+
+      // Error rate by mode (join with tool_call_log)
+      const errorRates = db.prepare(`
+        SELECT
+          s.mode,
+          COUNT(CASE WHEN t.result_status = 'error' THEN 1 END) as errors,
+          COUNT(*) as total_calls,
+          ROUND(100.0 * COUNT(CASE WHEN t.result_status = 'error' THEN 1 END) / MAX(COUNT(*), 1), 2) as error_pct
+        FROM tool_call_log t
+        JOIN ab_test_sessions s ON t.session_id = s.id
+        GROUP BY s.mode
+      `).all() as any[];
+
+      // Top loaded toolsets (dynamic mode)
+      const topToolsets = db.prepare(`
+        SELECT
+          toolset_name,
+          COUNT(*) as load_count,
+          ROUND(AVG(latency_ms), 1) as avg_latency_ms
+        FROM ab_tool_events
+        WHERE event_type = 'load'
+        GROUP BY toolset_name
+        ORDER BY load_count DESC
+        LIMIT 10
+      `).all() as any[];
+
+      // Current session info
+      const currentSession = {
+        sessionId: SESSION_ID,
+        mode: useDynamicLoading ? "dynamic" : "static",
+        preset: currentPreset,
+        toolCalls: _abToolCallCount,
+        loadEvents: _abLoadEventCount,
+        activeTools: allTools.length,
+        durationSec: Math.round((Date.now() - _abStartMs) / 1000),
+        dynamicallyLoaded: [...activeToolsets].filter(ts => !initialToolsetNames.has(ts)),
+      };
+
+      // Optional per-session detail
+      let sessions: any[] = [];
+      if (detailed) {
+        sessions = db.prepare(`
+          SELECT id, mode, initial_preset, initial_tool_count, final_tool_count,
+                 toolsets_loaded, total_tool_calls, total_load_events,
+                 session_duration_ms, created_at, ended_at
+          FROM ab_test_sessions
+          ORDER BY created_at DESC
+          LIMIT 50
+        `).all() as any[];
+      }
+
+      // Build verdict
+      const staticSummary = sessionSummary.find((s: any) => s.mode === "static");
+      const dynamicSummary = sessionSummary.find((s: any) => s.mode === "dynamic");
+      let verdict = "Insufficient data. Run sessions in both modes to compare.";
+      if (staticSummary && dynamicSummary) {
+        const toolDiff = (staticSummary.avg_final_tools ?? 0) - (dynamicSummary.avg_final_tools ?? 0);
+        const staticErr = errorRates.find((e: any) => e.mode === "static");
+        const dynamicErr = errorRates.find((e: any) => e.mode === "dynamic");
+        const errDiff = (staticErr?.error_pct ?? 0) - (dynamicErr?.error_pct ?? 0);
+        verdict = [
+          `Static: ${staticSummary.sessions} sessions, avg ${staticSummary.avg_final_tools} tools, ${staticErr?.error_pct ?? "?"}% error rate.`,
+          `Dynamic: ${dynamicSummary.sessions} sessions, avg ${dynamicSummary.avg_final_tools} tools, ${dynamicErr?.error_pct ?? "?"}% error rate.`,
+          toolDiff > 0 ? `Dynamic uses ${toolDiff.toFixed(1)} fewer tools on average.` : "",
+          errDiff > 0 ? `Dynamic has ${errDiff.toFixed(2)}pp lower error rate.` : errDiff < 0 ? `Static has ${(-errDiff).toFixed(2)}pp lower error rate.` : "",
+          dynamicSummary.avg_load_events > 0 ? `Agents loaded ${dynamicSummary.avg_load_events} toolsets per session on average.` : "",
+        ].filter(Boolean).join(" ");
+      }
+
+      return {
+        verdict,
+        sessionSummary,
+        errorRates,
+        topLoadedToolsets: topToolsets,
+        currentSession,
+        ...(detailed ? { sessions } : {}),
+        _hint: sessionSummary.length < 2
+          ? "Run sessions with both `npx nodebench-mcp` (static) and `npx nodebench-mcp --dynamic` (dynamic) to compare."
+          : "Compare avg_final_tools and error_pct between modes to evaluate dynamic loading impact.",
+      };
+    },
+  },
+];
+
+// Combine all tools (mutable for dynamic loading)
+let allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
 
 // Background: initialize embedding index for semantic search (non-blocking)
 // Uses Agent-as-a-Graph bipartite corpus: tool nodes + domain nodes for graph-aware retrieval
@@ -248,17 +784,28 @@ if (useEmbedding) {
   });
 }
 
-// Build a lookup map for fast tool dispatch
-const toolMap = new Map<string, McpTool>();
+// Build a lookup map for fast tool dispatch (mutable for dynamic loading)
+let toolMap = new Map<string, McpTool>();
 for (const tool of allTools) {
   toolMap.set(tool.name, tool);
+}
+
+// Rebuild function for dynamic loading — reconstructs allTools + toolMap
+function rebuildAllTools() {
+  allTools = [...allToolsWithoutDiscovery, ...discoveryTools, ...dynamicLoadingTools];
+  toolMap = new Map<string, McpTool>();
+  for (const tool of allTools) {
+    toolMap.set(tool.name, tool);
+  }
 }
 
 // Auto-instrumentation: generate a session ID per MCP connection
 const SESSION_ID = genId("mcp");
 
-// Tools to skip auto-logging (avoid infinite recursion and noise)
-const SKIP_AUTO_LOG = new Set(["log_tool_call", "get_trajectory_analysis", "get_self_eval_report", "get_improvement_recommendations", "cleanup_stale_runs", "synthesize_recon_to_learnings"]);
+// A/B test session-level counters (mutable, finalized on exit)
+let _abToolCallCount = 0;
+let _abLoadEventCount = 0;
+const _abStartMs = Date.now();
 
 // ── Lightweight hooks: auto-save + attention refresh reminders ─────────
 const _hookState = {
@@ -840,10 +1387,40 @@ artifacts (findings, risks, gaps, tests, evals, gates, learnings) that compound 
   },
 ];
 
+// Server instructions — tells Claude Code Tool Search (and other clients) when to search
+// for NodeBench tools. This is the key integration point for lazy loading compatibility.
+// See: https://www.anthropic.com/engineering/advanced-tool-use
+const SERVER_INSTRUCTIONS = `NodeBench MCP provides structured AI development methodology tools.
+Use NodeBench tools when you need to:
+- Verify implementations (verification cycles, gap tracking, 6-phase flywheel)
+- Run evaluations and quality gates before shipping code
+- Search prior knowledge and record learnings across sessions
+- Assess risk before taking actions
+- Coordinate parallel agents (task locks, roles, context budget)
+- Research with structured recon (web search, GitHub, RSS feeds)
+- Analyze files (CSV, PDF, XLSX, images, audio, ZIP)
+- Run security audits (dependency scanning, code analysis, secrets detection)
+- Write and polish academic papers
+- Audit SEO, analyze Figma flows, detect Android flicker
+- Call LLMs (GPT, Claude, Gemini) for analysis and extraction
+Start with discover_tools("<your task>") to find the right tool.`;
+
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.16.0" },
-  { capabilities: { tools: {}, prompts: {} } }
+  { name: "nodebench-mcp-methodology", version: "2.18.2" },
+  {
+    capabilities: { tools: { listChanged: true }, prompts: {} },
+    instructions: SERVER_INSTRUCTIONS,
+  } as any, // SDK v1 may not type `instructions` but MCP spec supports it
 );
+
+// ── A/B Test Session Tracking ─────────────────────────────────────────
+// Record session start for A/B comparison (static vs dynamic loading)
+try {
+  const db = getDb();
+  db.prepare(
+    "INSERT INTO ab_test_sessions (id, mode, initial_preset, initial_tool_count, created_at) VALUES (?, ?, ?, ?, datetime('now'))"
+  ).run(SESSION_ID, useDynamicLoading ? 'dynamic' : 'static', currentPreset, allTools.length);
+} catch { /* instrumentation must not block server start */ }
 
 // Handle tools/list — return all tools with their JSON Schema inputSchemas
 // Includes MCP 2025-11-25 spec annotations: category, phase, complexity (model tier hint)
@@ -871,6 +1448,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Handle tools/call — dispatch to the matching tool handler (auto-instrumented)
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  _abToolCallCount++;
+  if (name === "load_toolset" || name === "unload_toolset") _abLoadEventCount++;
+
   const tool = toolMap.get(name);
   if (!tool) {
     return {
@@ -892,7 +1472,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       errorMsg = (result as any).message ?? "soft error";
     }
 
-    // Auto-log (skip self-eval tools to avoid recursion/noise)
+    // Auto-log to main DB (skip self-eval tools to avoid recursion/noise)
     if (!SKIP_AUTO_LOG.has(name)) {
       try {
         const db = getDb();
@@ -900,6 +1480,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           "INSERT INTO tool_call_log (id, session_id, tool_name, result_status, duration_ms, error, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))"
         ).run(genId("tcl"), SESSION_ID, name, resultStatus, Date.now() - startMs, errorMsg);
       } catch { /* never let instrumentation break tool dispatch */ }
+    }
+
+    // Auto-log to analytics tracker
+    tracker.record(name, startMs, resultStatus === "success", errorMsg, args as Record<string, unknown>);
+
+    // Inline A/B session counter update (every 5 calls — amortized cost)
+    if (_abToolCallCount % 5 === 0) {
+      try {
+        const db2 = getDb();
+        const dynamicallyLoaded = [...activeToolsets].filter(ts => !initialToolsetNames.has(ts));
+        db2.prepare(
+          "UPDATE ab_test_sessions SET total_tool_calls = ?, total_load_events = ?, final_tool_count = ?, toolsets_loaded = ? WHERE id = ?"
+        ).run(_abToolCallCount, _abLoadEventCount, allTools.length, JSON.stringify(dynamicallyLoaded), SESSION_ID);
+      } catch { /* instrumentation */ }
     }
 
     // Tools with rawContent return ContentBlock[] directly (e.g. image captures)
@@ -946,7 +1540,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     resultStatus = "error";
     errorMsg = err?.message || "Internal error";
 
-    // Auto-log errors
+    // Auto-log errors to main DB
     if (!SKIP_AUTO_LOG.has(name)) {
       try {
         const db = getDb();
@@ -955,6 +1549,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         ).run(genId("tcl"), SESSION_ID, name, resultStatus, Date.now() - startMs, errorMsg);
       } catch { /* never let instrumentation break tool dispatch */ }
     }
+
+    // Auto-log error to analytics tracker
+    tracker.record(name, startMs, false, errorMsg, args as Record<string, unknown>);
 
     return {
       content: [{ type: "text" as const, text: errorMsg }],
@@ -993,6 +1590,34 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
     description: prompt.description,
     messages,
   };
+});
+
+// Graceful shutdown: close analytics tracker + finalize A/B session on exit
+process.on('exit', () => {
+  tracker.close();
+
+  // Finalize A/B test session with aggregate metrics
+  try {
+    const db = getDb();
+    const dynamicallyLoaded = [...activeToolsets].filter(ts => !initialToolsetNames.has(ts));
+    db.prepare(
+      `UPDATE ab_test_sessions SET
+        final_tool_count = ?,
+        toolsets_loaded = ?,
+        total_tool_calls = ?,
+        total_load_events = ?,
+        session_duration_ms = ?,
+        ended_at = datetime('now')
+      WHERE id = ?`
+    ).run(
+      allTools.length,
+      JSON.stringify(dynamicallyLoaded),
+      _abToolCallCount,
+      _abLoadEventCount,
+      Date.now() - _abStartMs,
+      SESSION_ID,
+    );
+  } catch { /* instrumentation must not block shutdown */ }
 });
 
 // Connect via stdio

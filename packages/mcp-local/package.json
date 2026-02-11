@@ -1,7 +1,7 @@
 {
   "name": "nodebench-mcp",
-  "version": "2.17.0",
-  "description": "Make AI agents catch the bugs they normally ship. 175 MCP tools across 34 domains: adaptive architect (structural code analysis + concept verification + implementation planning), email (SMTP/IMAP send+read+draft+setup wizard), RSS/Atom feed monitoring with research digest pipeline scaffolding, Agent-as-a-Graph bipartite embedding search (arxiv:2511.18194) with type-conditioned wRRF, MCP annotations (category/phase/complexity), critter intentionality checkpoint, TOON encoding (~40% token savings), pattern mining, git workflow compliance, SEO audit, voice bridge, agent mailbox, progressive discovery with 8-mode hybrid search + neural embeddings (local HuggingFace / Google / OpenAI fallback), model-tier complexity routing, agent contract (front-door + anti-rationalization), session memory, 6 GAIA media solvers, structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, visual regression, academic writing, local file parsing, flicker detection, Figma flow analysis, and contract compliance scoring. --preset meta (6), lite (44), core (122), or full (175).",
+  "version": "2.18.2",
+  "description": "Make AI agents catch the bugs they normally ship. 175 MCP tools across 34 domains: AI Flywheel methodology (6-phase verification + eval-driven development), structured research, 3-layer testing, quality gates, persistent knowledge, LLM calling, security analysis, visual regression, academic writing, local file parsing, flicker detection, Figma flow analysis, contract compliance scoring, TOON encoding (~40% token savings), pattern mining, git workflow compliance, SEO audit, voice bridge, agent mailbox, progressive discovery with 8-mode hybrid search + neural embeddings (local HuggingFace / Google / OpenAI fallback), model-tier complexity routing, agent contract (front-door + anti-rationalization), session memory, 6 GAIA media solvers, adaptive architect (structural code analysis + concept verification + implementation planning), email (SMTP/IMAP send+read+draft+setup wizard), RSS/Atom feed monitoring with research digest pipeline scaffolding, Agent-as-a-Graph bipartite embedding search (arxiv:2511.18194) with type-conditioned wRRF, MCP annotations (category/phase/complexity), critter intentionality checkpoint. Default: 39 tools (complete AI Flywheel, ~76% fewer). Full: 175 tools.",
   "type": "module",
   "bin": {
     "nodebench-mcp": "./dist/index.js"
@@ -9,6 +9,7 @@
   "main": "./dist/index.js",
   "files": [
     "dist",
+    "LICENSE",
     "README.md",
     "NODEBENCH_AGENTS.md",
     "STYLE_GUIDE.md"
@@ -89,8 +90,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@toon-format/toon": "^2.1.0",
-    "better-sqlite3": "^11.0.0",
-    "nodebench-ai": "file:../.."
+    "better-sqlite3": "^11.0.0"
   },
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

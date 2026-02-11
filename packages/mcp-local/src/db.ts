@@ -326,6 +326,44 @@ CREATE TABLE IF NOT EXISTS agent_mailbox (
 CREATE INDEX IF NOT EXISTS idx_agent_mailbox_recipient ON agent_mailbox(recipient_id);
 CREATE INDEX IF NOT EXISTS idx_agent_mailbox_role ON agent_mailbox(recipient_role);
 CREATE INDEX IF NOT EXISTS idx_agent_mailbox_read ON agent_mailbox(read);
+
+-- ═══════════════════════════════════════════
+-- DYNAMIC LOADING A/B TEST TRACKING
+-- Based on: Dynamic ReAct (arxiv 2509.20386),
+-- Anthropic Tool Search Tool, Tool-to-Agent
+-- Retrieval (arxiv 2511.01854)
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ab_test_sessions (
+  id              TEXT PRIMARY KEY,
+  mode            TEXT NOT NULL,        -- 'static' | 'dynamic'
+  initial_preset  TEXT NOT NULL,        -- preset at session start
+  initial_tool_count INTEGER NOT NULL,
+  final_tool_count   INTEGER,
+  toolsets_loaded TEXT,                  -- JSON array of dynamically loaded toolsets
+  total_tool_calls INTEGER DEFAULT 0,
+  total_load_events INTEGER DEFAULT 0,
+  session_duration_ms INTEGER,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  ended_at        TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ab_tool_events (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL,
+  event_type      TEXT NOT NULL,         -- 'load' | 'unload' | 'miss' | 'discovery_suggestion'
+  toolset_name    TEXT,
+  tool_name       TEXT,
+  tools_before    INTEGER,               -- tool count before event
+  tools_after     INTEGER,               -- tool count after event
+  latency_ms      INTEGER,
+  metadata        TEXT,                   -- JSON extra context
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ab_sessions_mode ON ab_test_sessions(mode);
+CREATE INDEX IF NOT EXISTS idx_ab_events_session ON ab_tool_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_ab_events_type ON ab_tool_events(event_type);
 `;
 
 export function getDb(): Database.Database {

@@ -21,8 +21,14 @@ import {
 import type { SearchMode } from "./toolRegistry.js";
 import { embedQuery, isEmbeddingReady } from "./embeddingProvider.js";
 
+export interface DiscoveryOptions {
+  getLoadedToolNames?: () => Set<string>;
+  getToolToToolset?: () => Map<string, string>;
+}
+
 export function createProgressiveDiscoveryTools(
-  allRegisteredTools: Array<{ name: string; description: string }>
+  allRegisteredTools: Array<{ name: string; description: string }>,
+  options?: DiscoveryOptions,
 ): McpTool[] {
   return [
     // ── discover_tools ─────────────────────────────────────────────────
@@ -74,6 +80,20 @@ export function createProgressiveDiscoveryTools(
             type: "boolean",
             description: "Include matchReasons array showing which search strategies contributed to each result's score (default: false)",
           },
+          intent: {
+            type: "string",
+            enum: [
+              "file_processing", "web_research", "code_quality", "security_audit",
+              "academic_writing", "data_analysis", "llm_interaction", "visual_qa",
+              "devops_ci", "team_coordination", "communication", "seo_audit",
+              "design_review", "voice_ui", "project_setup",
+            ],
+            description: "High-level intent hint. Narrows the search to the most relevant toolsets BEFORE running hybrid search. Use this when you know the domain but not the exact tool. Reduces noise and improves accuracy.",
+          },
+          compact: {
+            type: "boolean",
+            description: "Return compact results with just name, category, and a one-line hint (saves ~60% tokens in the response). Default: false.",
+          },
         },
         required: ["query"],
       },
@@ -83,6 +103,27 @@ export function createProgressiveDiscoveryTools(
         const includeChains = args.includeChains !== false;
         const mode: SearchMode = args.mode ?? "hybrid";
         const explain = args.explain === true;
+        const compact = args.compact === true;
+
+        // Intent-based pre-filter: narrow search scope to relevant categories
+        const INTENT_CATEGORIES: Record<string, string[]> = {
+          file_processing: ["local_file", "documentation"],
+          web_research: ["web", "reconnaissance", "github", "rss"],
+          code_quality: ["verification", "eval", "quality_gate", "flywheel", "pattern"],
+          security_audit: ["security"],
+          academic_writing: ["research_writing", "llm"],
+          data_analysis: ["local_file", "llm", "benchmark"],
+          llm_interaction: ["llm"],
+          visual_qa: ["ui_capture", "vision", "flicker_detection"],
+          devops_ci: ["git_workflow", "boilerplate", "bootstrap", "platform"],
+          team_coordination: ["parallel_agents", "session_memory"],
+          communication: ["email", "rss", "critter"],
+          seo_audit: ["seo", "web"],
+          design_review: ["figma_flow", "vision", "ui_capture"],
+          voice_ui: ["voice_bridge"],
+          project_setup: ["bootstrap", "boilerplate", "self_eval"],
+        };
+        const intentCategories = args.intent ? INTENT_CATEGORIES[args.intent as string] : undefined;
 
         // Pre-compute query embedding (async) before passing to sync hybridSearch
         let embeddingQueryVec: Float32Array | undefined;
@@ -92,14 +133,41 @@ export function createProgressiveDiscoveryTools(
         }
 
         // Multi-modal search with scoring
-        const results = hybridSearch(query, allRegisteredTools, {
-          category: args.category,
-          phase: args.phase,
-          limit,
-          mode,
-          explain,
-          embeddingQueryVec,
-        });
+        // If intent is set, run search once per intent category and merge results
+        let results;
+        if (intentCategories && !args.category) {
+          const perCategoryResults = intentCategories.map(cat =>
+            hybridSearch(query, allRegisteredTools, {
+              category: cat,
+              phase: args.phase,
+              limit: Math.ceil(limit / intentCategories.length) + 2,
+              mode,
+              explain,
+              embeddingQueryVec,
+              searchFullRegistry: !!options?.getLoadedToolNames,
+            })
+          );
+          // Merge, dedupe, re-sort by score
+          const seen = new Set<string>();
+          const merged: typeof perCategoryResults[0] = [];
+          for (const batch of perCategoryResults) {
+            for (const r of batch) {
+              if (!seen.has(r.name)) { seen.add(r.name); merged.push(r); }
+            }
+          }
+          merged.sort((a, b) => b.score - a.score);
+          results = merged.slice(0, limit);
+        } else {
+          results = hybridSearch(query, allRegisteredTools, {
+            category: args.category,
+            phase: args.phase,
+            limit,
+            mode,
+            explain,
+            embeddingQueryVec,
+            searchFullRegistry: !!options?.getLoadedToolNames,
+          });
+        }
 
         // Find matching workflow chains
         let matchingChains: Array<{ name: string; chainKey: string; description: string; stepCount: number }> = [];
@@ -129,19 +197,46 @@ export function createProgressiveDiscoveryTools(
           query,
           searchMode: mode,
           resultCount: results.length,
-          totalToolsSearched: allRegisteredTools.length,
+          totalToolsSearched: options?.getLoadedToolNames ? ALL_REGISTRY_ENTRIES.length : allRegisteredTools.length,
           availableModes: SEARCH_MODES,
-          results: results.map((r) => ({
-            name: r.name,
-            description: r.description,
-            category: r.category,
-            phase: r.phase,
-            relevanceScore: r.score,
-            ...(explain ? { matchReasons: r.matchReasons } : {}),
-            quickRef: r.quickRef,
-          })),
+          results: results.map((r) => compact
+            ? { name: r.name, category: r.category, hint: r.quickRef.nextAction }
+            : {
+              name: r.name,
+              description: r.description,
+              category: r.category,
+              phase: r.phase,
+              relevanceScore: r.score,
+              ...(explain ? { matchReasons: r.matchReasons } : {}),
+              quickRef: r.quickRef,
+            }),
           categorySummary: categoryCounts,
           matchingWorkflows: matchingChains,
+          // Dynamic loading suggestions: when results include tools from unloaded toolsets
+          ...((() => {
+            if (!options?.getLoadedToolNames || !options?.getToolToToolset) return {};
+            const loaded = options.getLoadedToolNames();
+            const t2ts = options.getToolToToolset();
+            const unloadedToolsets = new Map<string, string[]>();
+            for (const r of results) {
+              if (!loaded.has(r.name)) {
+                const ts = t2ts.get(r.name);
+                if (ts) {
+                  const list = unloadedToolsets.get(ts) ?? [];
+                  list.push(r.name);
+                  unloadedToolsets.set(ts, list);
+                }
+              }
+            }
+            if (unloadedToolsets.size === 0) return {};
+            return {
+              _loadSuggestions: [...unloadedToolsets.entries()].map(([ts, tools]) => ({
+                toolset: ts,
+                matchingTools: tools,
+                action: `Call load_toolset("${ts}") to activate ${tools.length} matching tool(s).`,
+              })),
+            };
+          })()),
           _progressiveHint: results.length > 0
             ? `Top match: ${results[0].name}. ${results[0].quickRef.nextAction}`
             : "No matches found. Try broader keywords or call getMethodology('overview') for all available methodologies.",

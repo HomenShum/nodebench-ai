@@ -1148,7 +1148,7 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   {
     name: "call_llm",
     category: "llm",
-    tags: ["llm", "call", "generate", "prompt", "gemini", "openai", "anthropic", "gpt", "claude"],
+    tags: ["llm", "call", "generate", "prompt", "gemini", "openai", "anthropic", "gpt", "claude", "model", "ai", "inference", "completion", "analyze", "text"],
     quickRef: {
       nextAction: "LLM response received. Validate output quality. Use for analysis, generation, or judgment tasks.",
       nextTools: ["extract_structured_data", "record_learning"],
@@ -1158,7 +1158,7 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   {
     name: "extract_structured_data",
     category: "llm",
-    tags: ["extract", "structured", "data", "json", "parse", "schema", "llm"],
+    tags: ["extract", "structured", "data", "json", "parse", "schema", "llm", "model", "ai", "transform", "output"],
     quickRef: {
       nextAction: "Structured data extracted. Validate against expected schema. Use for downstream processing.",
       nextTools: ["record_eval_result", "record_learning"],
@@ -1168,7 +1168,7 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   {
     name: "benchmark_models",
     category: "llm",
-    tags: ["benchmark", "models", "compare", "latency", "quality", "cost", "llm"],
+    tags: ["benchmark", "models", "compare", "latency", "quality", "cost", "llm", "ai", "gpt", "claude", "gemini", "evaluate"],
     quickRef: {
       nextAction: "Benchmark complete. Compare models on quality, latency, and cost. Record winner with record_learning.",
       nextTools: ["record_learning", "call_llm"],
@@ -2208,6 +2208,7 @@ export type SearchMode = "hybrid" | "fuzzy" | "regex" | "prefix" | "semantic" | 
 
 // ── Synonym / semantic expansion map ──────────────────────────────────────
 const SYNONYM_MAP: Record<string, string[]> = {
+  // ── Existing technical synonyms ──
   verify: ["validate", "check", "confirm", "test", "assert", "ensure", "correct"],
   test: ["verify", "validate", "check", "assert", "spec", "expect"],
   search: ["find", "discover", "lookup", "query", "locate", "browse"],
@@ -2216,7 +2217,7 @@ const SYNONYM_MAP: Record<string, string[]> = {
   setup: ["bootstrap", "init", "configure", "scaffold", "create"],
   fix: ["resolve", "repair", "debug", "patch", "correct"],
   deploy: ["ship", "publish", "release", "launch", "ci", "cd", "pipeline"],
-  analyze: ["inspect", "review", "examine", "audit", "scan"],
+  analyze: ["inspect", "review", "examine", "audit", "scan", "screenshot"],
   monitor: ["watch", "observe", "track", "follow"],
   security: ["vulnerability", "audit", "cve", "secret", "credential", "leak", "exposure"],
   benchmark: ["measure", "evaluate", "score", "grade", "performance", "capability"],
@@ -2229,7 +2230,7 @@ const SYNONYM_MAP: Record<string, string[]> = {
   ui: ["frontend", "visual", "screenshot", "responsive", "layout", "css", "component"],
   llm: ["model", "ai", "generate", "prompt", "gpt", "claude", "gemini"],
   migrate: ["upgrade", "update", "port", "convert", "transition", "refactor"],
-  review: ["inspect", "audit", "pr", "pull-request", "feedback", "critique"],
+  review: ["inspect", "audit", "pr", "pull-request", "feedback", "critique", "merge"],
   performance: ["speed", "latency", "optimize", "fast", "slow", "bottleneck"],
   data: ["csv", "xlsx", "json", "pdf", "file", "parse", "extract", "spreadsheet"],
   paper: ["academic", "research", "write", "publish", "neurips", "icml", "arxiv", "section"],
@@ -2245,6 +2246,31 @@ const SYNONYM_MAP: Record<string, string[]> = {
   why: ["purpose", "reason", "intentionality", "motivation", "goal", "critter"],
   purpose: ["why", "reason", "intentionality", "motivation", "goal", "critter"],
   reflect: ["think", "pause", "reconsider", "intentionality", "metacognition", "critter"],
+  // ── New user natural language expansions (ablation-driven) ──
+  website: ["seo", "url", "web", "fetch", "page", "lighthouse", "performance"],
+  webpage: ["seo", "url", "web", "fetch", "page", "html"],
+  fast: ["seo", "performance", "speed", "latency", "lighthouse"],
+  slow: ["seo", "performance", "speed", "latency", "lighthouse", "bottleneck"],
+  inbox: ["email", "read_emails", "send_email", "messages"],
+  email: ["send_email", "read_emails", "inbox", "messages", "smtp", "imap"],
+  ai: ["llm", "model", "prompt", "generate", "gpt", "claude", "gemini", "call_llm"],
+  summarize: ["llm", "extract", "generate", "analyze", "call_llm"],
+  bugs: ["scan", "code", "analysis", "dependencies", "vulnerabilities", "debug"],
+  readme: ["documentation", "generate", "report", "markdown", "document"],
+  compiles: ["closed_loop", "build", "test", "verify", "compile"],
+  works: ["test", "verify", "closed_loop", "flywheel", "quality", "check"],
+  commits: ["git", "commit", "messages", "conventional", "pr"],
+  push: ["git", "commit", "merge", "pr", "deploy"],
+  merge: ["git", "pr", "review", "checklist", "enforce"],
+  open: ["read", "file", "csv", "json", "parse", "load"],
+  look: ["read", "analyze", "inspect", "view", "examine", "fetch"],
+  good: ["quality", "gate", "check", "validate", "analysis"],
+  screenshot: ["analyze", "capture", "vision", "ui", "responsive", "visual"],
+  run: ["test", "execute", "closed_loop", "quality", "cli"],
+  check: ["verify", "validate", "audit", "scan", "review", "gate", "test"],
+  help: ["generate", "create", "scaffold", "analyze", "recommend"],
+  computer: ["llm", "ai", "model", "analyze", "extract"],
+  text: ["extract", "parse", "read", "llm", "structured", "analyze"],
 };
 
 // ── TF-IDF: compute inverse document frequency for tags ───────────────────
@@ -2576,6 +2602,23 @@ export function hybridSearch(
     explain?: boolean;
     /** Pre-computed query embedding vector for semantic search (passed from async caller) */
     embeddingQueryVec?: Float32Array;
+    /** If true, search ALL_REGISTRY_ENTRIES (full 175-tool registry) regardless of loaded preset.
+     *  Needed for dynamic loading: discover_tools must find unloaded tools to suggest load_toolset. */
+    searchFullRegistry?: boolean;
+    /** Ablation flags: disable individual strategies to measure their contribution */
+    ablation?: {
+      disableSynonyms?: boolean;
+      disableFuzzy?: boolean;
+      disableTagCoverage?: boolean;
+      disableTfIdf?: boolean;
+      disableNgram?: boolean;
+      disableBigram?: boolean;
+      disableDense?: boolean;
+      disableDomainBoost?: boolean;
+      disableTraceEdges?: boolean;
+      disablePrefix?: boolean;
+      disableEmbedding?: boolean;
+    };
   }
 ): SearchResult[] {
   const queryLower = query.toLowerCase().trim();
@@ -2584,6 +2627,7 @@ export function hybridSearch(
   const explain = options?.explain ?? false;
   const mode = options?.mode ?? "hybrid";
   const idf = computeIDF();
+  const ab = options?.ablation ?? {};
 
   // Regex mode: compile pattern, match against name+description
   let regexPattern: RegExp | null = null;
@@ -2645,7 +2689,17 @@ export function hybridSearch(
 
   const toolScores = new Map<string, { score: number; reasons: string[] }>();
 
-  for (const tool of tools) {
+  // When searchFullRegistry is enabled, search ALL registry entries (not just loaded tools).
+  // This lets discover_tools find unloaded tools and suggest load_toolset.
+  const toolDescMap = new Map(tools.map(t => [t.name, t.description]));
+  const searchList: Array<{ name: string; description: string }> = options?.searchFullRegistry
+    ? ALL_REGISTRY_ENTRIES.map(e => ({
+        name: e.name,
+        description: toolDescMap.get(e.name) ?? `${e.tags.join(" ")} ${e.category} ${e.phase}`,
+      }))
+    : tools;
+
+  for (const tool of searchList) {
     const entry = TOOL_REGISTRY.get(tool.name);
     if (!entry) continue;
 
@@ -2673,7 +2727,7 @@ export function hybridSearch(
     }
 
     // ── MODE: prefix ──
-    if (mode === "hybrid" || mode === "prefix") {
+    if ((mode === "hybrid" || mode === "prefix") && !ab.disablePrefix) {
       for (const word of queryWords) {
         if (nameLower.startsWith(word)) { score += 20; reasons.push(`prefix:name(${word})`); }
         if (nameParts.some((p) => p.startsWith(word))) { score += 12; reasons.push(`prefix:name_part(${word})`); }
@@ -2692,7 +2746,7 @@ export function hybridSearch(
         // Tag exact match (weighted by TF-IDF)
         if (entry.tags.includes(word)) {
           const idfWeight = idf.get(word) ?? 3;
-          const tagScore = Math.round(10 * (idfWeight / 3));
+          const tagScore = ab.disableTfIdf ? 10 : Math.round(10 * (idfWeight / 3));
           score += tagScore;
           reasons.push(`keyword:tag(${word},idf=${idfWeight.toFixed(1)})`);
         }
@@ -2714,10 +2768,23 @@ export function hybridSearch(
         score += 12;
         reasons.push(`keyword:methodology(${entry.quickRef.methodology})`);
       }
+
+      // ── TAG COVERAGE BONUS: reward tools where many query words hit tags ──
+      // If 60%+ of query words match tags, that's a strong relevance signal.
+      if (queryWords.length >= 3 && !ab.disableTagCoverage) {
+        const tagSet = new Set(entry.tags);
+        const hits = queryWords.filter(w => tagSet.has(w)).length;
+        const coverage = hits / queryWords.length;
+        if (coverage >= 0.6) {
+          const coverageBonus = Math.round(coverage * hits * 5);
+          score += coverageBonus;
+          reasons.push(`tag_coverage:${hits}/${queryWords.length}(${(coverage * 100).toFixed(0)}%,+${coverageBonus})`);
+        }
+      }
     }
 
     // ── SEMANTIC: synonym expansion (only score expanded words, not original) ──
-    if (mode === "hybrid" || mode === "semantic") {
+    if ((mode === "hybrid" || mode === "semantic") && !ab.disableSynonyms) {
       for (const syn of expandedWords) {
         if (queryWords.includes(syn)) continue; // skip original words
         if (entry.tags.includes(syn)) { score += 6; reasons.push(`semantic:tag(${syn})`); }
@@ -2727,7 +2794,7 @@ export function hybridSearch(
     }
 
     // ── FUZZY: Levenshtein distance for typo tolerance ──
-    if (mode === "hybrid" || mode === "fuzzy") {
+    if ((mode === "hybrid" || mode === "fuzzy") && !ab.disableFuzzy) {
       for (const word of queryWords) {
         if (word.length < 4) continue; // skip short words for fuzzy
         // Check against name parts
@@ -2753,7 +2820,7 @@ export function hybridSearch(
     }
 
     // ── N-GRAM: trigram similarity ──
-    if (mode === "hybrid" || mode === "fuzzy") {
+    if ((mode === "hybrid" || mode === "fuzzy") && !ab.disableNgram) {
       for (const word of queryWords) {
         if (word.length < 4) continue;
         const nameSim = ngramSimilarity(word, nameLower);
@@ -2773,7 +2840,7 @@ export function hybridSearch(
     }
 
     // ── BIGRAM: phrase matching ──
-    if (queryBigrams.length > 0) {
+    if (queryBigrams.length > 0 && !ab.disableBigram) {
       for (const bigram of queryBigrams) {
         if (allText.includes(bigram)) {
           score += 15;
@@ -2783,7 +2850,7 @@ export function hybridSearch(
     }
 
     // ── DENSE: TF-IDF cosine similarity (query vec pre-computed above) ──
-    if (denseQueryVec && denseDocVectors) {
+    if (denseQueryVec && denseDocVectors && !ab.disableDense) {
       const docVec = denseDocVectors.get(tool.name);
       if (docVec) {
         const sim = cosineSimilarity(denseQueryVec, docVec);
@@ -2796,7 +2863,7 @@ export function hybridSearch(
     }
 
     // ── EMBEDDING: Agent-as-a-Graph bipartite RRF (ranks pre-computed above) ──
-    if (embToolRanks && embDomainRanks) {
+    if (embToolRanks && embDomainRanks && !ab.disableEmbedding) {
       const toolRank = embToolRanks.get(tool.name);
       if (toolRank) {
         const rrfScore = Math.round(WRRF_ALPHA_T * 1000 / (WRRF_K + toolRank));
@@ -2839,19 +2906,19 @@ export function hybridSearch(
   }
 
   const results: SearchResult[] = [];
-  for (const tool of tools) {
+  for (const tool of searchList) {
     const entry = TOOL_REGISTRY.get(tool.name);
     const scored = toolScores.get(tool.name);
     if (!entry || !scored) continue;
 
-    const domainBoost = getDomainBoost(entry.category, topCategories);
+    const domainBoost = ab.disableDomainBoost ? 0 : getDomainBoost(entry.category, topCategories);
     if (domainBoost > 0) {
       scored.score += domainBoost;
       scored.reasons.push(`domain_boost:+${domainBoost}`);
     }
 
     // Execution trace edge: boost tools that frequently co-occur with top results
-    if (traceBoostTargets.has(tool.name) && !topToolNames.includes(tool.name)) {
+    if (traceBoostTargets.has(tool.name) && !topToolNames.includes(tool.name) && !ab.disableTraceEdges) {
       scored.score += TRACE_EDGE_BOOST;
       scored.reasons.push(`trace_edge:+${TRACE_EDGE_BOOST}`);
     }

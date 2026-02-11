@@ -95,7 +95,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("Static: tool structure", () => {
-  it("should have 172 tools total", () => {
+  it("should have 175 tools total", () => {
     // 169 domain tools + 3 meta tools (findTools, getMethodology, check_mcp_setup) + 3 progressive discovery tools
     expect(allTools.length).toBe(175);
   });

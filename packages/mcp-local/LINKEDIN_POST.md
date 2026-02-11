@@ -249,3 +249,70 @@ github: https://github.com/HomenShum/claude-model-benchmark
 are you benchmarking or guessing?
 
 ---
+
+# LinkedIn Post 7 (v2.15 → v2.18 — Research-Backed Dynamic Loading + 175 Tools)
+
+---
+
+we went from 90 tools to 175. then we spent a week making sure your agent only sees the ones it needs.
+
+here's what happened since v2.15 of nodebench-mcp — and why every change started with a research paper.
+
+**the problem**: Anthropic measured that 58 tools from 5 MCP servers eat ~55K tokens before your agent says a word. at 175 tools we'd consume ~87K tokens — 44% of a 200K context window just on tool metadata. Microsoft Research found LLMs "decline to act at all" when faced with too many tools. Cursor enforces a ~40-tool hard cap for this reason.
+
+**what we built (v2.15 → v2.18)**:
+
+the default preset gives your agent 50 tools in 3 groups:
+
+- **discovery (6)** — "what tool should i use?" — 14-strategy hybrid search, workflow chains, methodology guides. your agent asks `discover_tools("parse this CSV")` and gets the right answer from 175 candidates.
+
+- **dynamic loading (6)** — "add/remove tools from my session" — `load_toolset`, `unload_toolset`, `smart_select_tools`, etc. agents manage their own context budget. need vision? call `load_toolset("vision")`. done with it? `unload_toolset("vision")`. tokens recovered.
+
+- **core methodology (38)** — "do the work" — verification, eval, quality gates, learning, flywheel, recon, security, boilerplate. the AI Flywheel tools that enforce structured research, 3-layer testing, and persistent knowledge.
+
+the other 125 tools (vision, web, GitHub, email, RSS, local files, parallel agents, etc.) are available via `--preset full` or loaded on demand.
+
+now here's what's new under the hood:
+
+1. **dynamic toolset loading** — based on 6 papers including Dynamic ReAct (arxiv 2509.20386) which tested 5 architectures and found Search+Load wins. when your agent needs vision analysis, it calls `load_toolset("vision")`. server adds the tools, sends `notifications/tools/list_changed`, client re-fetches. done in <1ms.
+
+2. **14-strategy hybrid search** — keyword, fuzzy (typo tolerance), synonym expansion (30 word families), TF-IDF, n-gram, bigram, dense cosine, neural embeddings (Agent-as-a-Graph bipartite RRF from arxiv 2511.01854), execution traces, intent pre-filtering. 100% discovery accuracy across 18 domains.
+
+3. **ablation study** — we disabled each search strategy one at a time across 54 queries and 3 user segments. key finding: new users need synonym expansion ("website" maps to SEO, "AI" maps to LLM). power users need nothing beyond keyword matching. the data drove our defaults.
+
+4. **TOON encoding** — token-optimized object notation. ~40% fewer tokens on every tool response. on by default. your context budget stretches further.
+
+5. **smart_select_tools** — for ambiguous queries, sends a compact catalog (~4K tokens) to Gemini Flash / GPT-4o-mini / Claude Haiku for LLM-powered reranking. falls back to heuristic search if no API key.
+
+6. **client compatibility for everyone** — Claude Code and GitHub Copilot handle dynamic tools natively. for Windsurf, Cursor, Claude Desktop, Gemini CLI, LibreChat: a `call_loaded_tool` proxy fallback works on all of them.
+
+7. **7 MCP prompts** — protocol-native agent instructions. onboarding, project setup, UI QA checklist, parallel agent coordination, oracle testing, Claude Code subagent spawning, and the agent contract (front-door pattern + anti-rationalization rules so agents don't skip verification steps).
+
+8. **usage analytics** — `--smart-preset` analyzes your project and usage history to recommend the optimal preset. `--stats` shows what your agents actually use.
+
+9. **34 domain toolsets** — new since v2.15: email (SMTP/IMAP), RSS feed monitoring, SEO audit, git workflow compliance, voice bridge, Figma flow analysis, Android flicker detection, architecture analysis, session memory, pattern mining, research writing. all gated behind presets so you only load what you need.
+
+the numbers:
+
+| what | result |
+|------|--------|
+| discovery accuracy | 18/18 (100%) across all domains |
+| A/B test scenarios | 28 real-world workflows, 100% success rate |
+| unit tests | 266 passing |
+| load latency | <1ms per toolset |
+| token savings | 60-95% depending on layer |
+| GAIA capability eval | 20/20 |
+
+one line to try it:
+
+```
+claude mcp add nodebench -- npx -y nodebench-mcp
+```
+
+full research methodology with citations: https://github.com/HomenShum/nodebench-ai/blob/main/packages/mcp-local/DYNAMIC_LOADING.md
+
+npm: https://www.npmjs.com/package/nodebench-mcp
+
+how many tools does your MCP server load before the agent starts working?
+
+---
