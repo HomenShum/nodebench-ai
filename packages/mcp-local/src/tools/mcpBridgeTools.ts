@@ -19,7 +19,301 @@
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { execSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { McpTool } from "../types.js";
+
+// ── System Probing Helpers ──────────────────────────────────────────────
+
+function tryExec(cmd: string, timeoutMs = 5000): string | null {
+  try {
+    return execSync(cmd, { timeout: timeoutMs, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }).trim();
+  } catch { return null; }
+}
+
+function probeSystem() {
+  const platform = process.platform; // "win32" | "darwin" | "linux"
+  const arch = process.arch;
+  const nodeVersion = process.version;
+
+  // ── Android SDK ────────────────────────────────────────────────
+  const androidHome = process.env.ANDROID_HOME || process.env.ANDROID_SDK_ROOT || null;
+  const adbVersion = tryExec("adb version");
+  const adbAvailable = !!adbVersion;
+  const emulatorAvailable = !!tryExec("emulator -list-avds");
+  const runningDevices = adbAvailable ? (tryExec("adb devices") ?? "").split("\n").filter(l => l.includes("\tdevice")).length : 0;
+
+  // ── iOS Tools ──────────────────────────────────────────────────
+  const goIosVersion = tryExec("ios version") ?? tryExec("go-ios version");
+  const goIosAvailable = !!goIosVersion;
+  const xcodeAvailable = platform === "darwin" ? !!tryExec("xcode-select -p") : false;
+  const xcrunAvailable = platform === "darwin" ? !!tryExec("xcrun simctl help") : false;
+  const bootedSims = platform === "darwin" && xcrunAvailable
+    ? (tryExec("xcrun simctl list devices booted") ?? "").split("\n").filter(l => l.includes("Booted")).length
+    : 0;
+
+  // ── Playwright ─────────────────────────────────────────────────
+  let playwrightInstalled = false;
+  try { require.resolve("playwright"); playwrightInstalled = true; } catch { /* not installed */ }
+  const chromiumExists = playwrightInstalled && existsSync(
+    join(process.env.HOME ?? process.env.USERPROFILE ?? "", ".cache", "ms-playwright")
+  );
+
+  return {
+    platform, arch, nodeVersion,
+    android: {
+      androidHome,
+      adbAvailable,
+      adbVersion: adbVersion?.split("\n")[0] ?? null,
+      emulatorAvailable,
+      runningDevices,
+    },
+    ios: {
+      goIosAvailable,
+      goIosVersion: goIosVersion ?? null,
+      xcodeAvailable,
+      xcrunAvailable,
+      bootedSims,
+      supported: platform === "darwin",
+    },
+    playwright: {
+      installed: playwrightInstalled,
+      browsersInstalled: chromiumExists,
+    },
+  };
+}
+
+type Probe = ReturnType<typeof probeSystem>;
+
+function generateSetupInstructions(probe: Probe) {
+  const steps: Array<{ area: string; status: "ready" | "missing" | "partial" | "unsupported"; steps: string[] }> = [];
+  const p = probe.platform;
+
+  // ── Node.js ────────────────────────────────────────────────────
+  const nodeMajor = parseInt(probe.nodeVersion.slice(1));
+  if (nodeMajor < 18) {
+    steps.push({ area: "Node.js", status: "missing", steps: [
+      `Current: ${probe.nodeVersion}. Mobile MCP and Playwright MCP require Node 18+.`,
+      "Install via: https://nodejs.org/ or use nvm/fnm to upgrade.",
+    ]});
+  }
+
+  // ── Playwright (web) ──────────────────────────────────────────
+  if (!probe.playwright.installed) {
+    steps.push({ area: "Playwright (web automation)", status: "missing", steps: [
+      "The MCP Bridge can auto-download @playwright/mcp via npx (no install needed).",
+      "For the built-in dive driver: npm install playwright && npx playwright install chromium",
+    ]});
+  } else if (!probe.playwright.browsersInstalled) {
+    steps.push({ area: "Playwright browsers", status: "partial", steps: [
+      "Playwright is installed but browsers may be missing.",
+      "Run: npx playwright install chromium",
+    ]});
+  } else {
+    steps.push({ area: "Playwright (web automation)", status: "ready", steps: ["Playwright + Chromium detected. Ready to use."] });
+  }
+
+  // ── Android ───────────────────────────────────────────────────
+  if (!probe.android.adbAvailable) {
+    const androidSteps: string[] = [];
+    if (!probe.android.androidHome) {
+      if (p === "win32") {
+        androidSteps.push(
+          "Option A (Android Studio — full IDE):",
+          "  1. Download: https://developer.android.com/studio",
+          "  2. Install and open Android Studio",
+          "  3. SDK Manager > install 'Android SDK Platform-Tools'",
+          "  4. Set environment variable: ANDROID_HOME = C:\\Users\\<you>\\AppData\\Local\\Android\\Sdk",
+          "  5. Add to PATH: %ANDROID_HOME%\\platform-tools",
+          "",
+          "Option B (Command-line tools only — lighter):",
+          "  1. Download: https://developer.android.com/studio#command-line-tools-only",
+          "  2. Extract to a folder (e.g. C:\\android-sdk)",
+          "  3. Run: sdkmanager --sdk_root=C:\\android-sdk \"platform-tools\" \"emulator\" \"system-images;android-34;google_apis;x86_64\"",
+          "  4. Set ANDROID_HOME=C:\\android-sdk and add platform-tools to PATH",
+          "",
+          "Option C (Chocolatey — one-line):",
+          "  choco install android-sdk",
+          "  Then set ANDROID_HOME and PATH as above.",
+        );
+      } else if (p === "darwin") {
+        androidSteps.push(
+          "Option A (Homebrew — recommended):",
+          "  brew install --cask android-commandlinetools",
+          "  sdkmanager \"platform-tools\" \"emulator\" \"system-images;android-34;google_apis;arm64-v8a\"",
+          "  export ANDROID_HOME=$HOME/Library/Android/sdk",
+          "  export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator",
+          "",
+          "Option B (Android Studio):",
+          "  brew install --cask android-studio",
+          "  Open Android Studio > SDK Manager > install Platform-Tools",
+        );
+      } else {
+        androidSteps.push(
+          "Install via package manager or Android Studio:",
+          "  sudo apt install android-sdk  # Debian/Ubuntu",
+          "  Or download: https://developer.android.com/studio#command-line-tools-only",
+          "  sdkmanager \"platform-tools\" \"emulator\"",
+          "  export ANDROID_HOME=$HOME/Android/Sdk",
+          "  export PATH=$PATH:$ANDROID_HOME/platform-tools",
+        );
+      }
+    } else {
+      androidSteps.push(
+        `ANDROID_HOME is set (${probe.android.androidHome}) but adb is not in PATH.`,
+        p === "win32"
+          ? `Add to PATH: ${probe.android.androidHome}\\platform-tools`
+          : `Add to PATH: ${probe.android.androidHome}/platform-tools`,
+      );
+    }
+    steps.push({ area: "Android SDK (adb)", status: "missing", steps: androidSteps });
+  } else {
+    const status = probe.android.runningDevices > 0 ? "ready" as const : "partial" as const;
+    const info = [`adb: ${probe.android.adbVersion}`, `ANDROID_HOME: ${probe.android.androidHome ?? "(not set, but adb works)"}`];
+    if (probe.android.runningDevices > 0) {
+      info.push(`${probe.android.runningDevices} device(s) connected and ready.`);
+    } else {
+      info.push(
+        "No devices connected. To create/start an emulator:",
+        "  avdmanager create avd -n Pixel_8 -k \"system-images;android-34;google_apis;x86_64\" --device pixel_8",
+        "  emulator -avd Pixel_8",
+        "Or connect a physical device via USB with USB debugging enabled.",
+      );
+    }
+    steps.push({ area: "Android SDK (adb)", status, steps: info });
+  }
+
+  // ── iOS ──────────────────────────────────────────────────────
+  if (p !== "darwin") {
+    // go-ios still works on non-macOS for USB-connected devices
+    if (!probe.ios.goIosAvailable) {
+      steps.push({ area: "iOS (go-ios)", status: "partial", steps: [
+        "iOS Simulators require macOS with Xcode. Physical iOS devices can work on any platform via go-ios.",
+        "Install go-ios: npm install -g go-ios",
+        "Then connect an iOS device via USB and trust the computer on the device.",
+        "Verify: ios list",
+      ]});
+    } else {
+      steps.push({ area: "iOS (go-ios)", status: "ready", steps: [
+        `go-ios: ${probe.ios.goIosVersion}`,
+        "Connect an iOS device via USB for physical device testing.",
+        "iOS Simulators are only available on macOS with Xcode.",
+      ]});
+    }
+  } else {
+    // macOS
+    const iosSteps: string[] = [];
+    if (!probe.ios.xcodeAvailable) {
+      iosSteps.push(
+        "Install Xcode from the Mac App Store (required for iOS Simulators).",
+        "After install: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer",
+        "Then: xcodebuild -runFirstLaunch",
+      );
+    }
+    if (!probe.ios.goIosAvailable) {
+      iosSteps.push(
+        "For physical iOS device support, install go-ios:",
+        "  npm install -g go-ios",
+        "  Verify: ios list",
+      );
+    }
+    if (probe.ios.xcodeAvailable && probe.ios.bootedSims === 0) {
+      iosSteps.push(
+        "Xcode is installed but no simulator is booted.",
+        "Boot one: xcrun simctl boot \"iPhone 16\"",
+        "Or open Simulator.app from Xcode > Open Developer Tool > Simulator",
+      );
+    }
+    if (probe.ios.xcodeAvailable && probe.ios.bootedSims > 0) {
+      iosSteps.push(`${probe.ios.bootedSims} simulator(s) booted and ready.`);
+    }
+    const status = (probe.ios.xcodeAvailable && (probe.ios.bootedSims > 0 || probe.ios.goIosAvailable)) ? "ready" as const : "missing" as const;
+    steps.push({ area: "iOS (Xcode + go-ios)", status, steps: iosSteps.length > 0 ? iosSteps : ["iOS development tools detected and ready."] });
+  }
+
+  return steps;
+}
+
+function generateQuickSetupScript(probe: Probe): string {
+  const lines: string[] = [];
+  const p = probe.platform;
+
+  if (p === "win32") {
+    lines.push("# Windows setup (run in PowerShell as Administrator)");
+    if (!probe.android.adbAvailable) {
+      lines.push("");
+      lines.push("# --- Android SDK (via command-line tools) ---");
+      lines.push("# Download from: https://developer.android.com/studio#command-line-tools-only");
+      lines.push('# After extracting, run:');
+      lines.push('# sdkmanager "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64"');
+      lines.push('[System.Environment]::SetEnvironmentVariable("ANDROID_HOME", "$env:LOCALAPPDATA\\Android\\Sdk", "User")');
+      lines.push('$env:PATH += ";$env:LOCALAPPDATA\\Android\\Sdk\\platform-tools;$env:LOCALAPPDATA\\Android\\Sdk\\emulator"');
+    }
+    if (!probe.ios.goIosAvailable) {
+      lines.push("");
+      lines.push("# --- go-ios (for physical iOS devices over USB) ---");
+      lines.push("npm install -g go-ios");
+    }
+    if (!probe.playwright.installed) {
+      lines.push("");
+      lines.push("# --- Playwright (optional, for built-in dive driver) ---");
+      lines.push("npm install playwright && npx playwright install chromium");
+    }
+  } else if (p === "darwin") {
+    lines.push("#!/bin/bash");
+    lines.push("# macOS setup");
+    if (!probe.android.adbAvailable) {
+      lines.push("");
+      lines.push("# --- Android SDK ---");
+      lines.push("brew install --cask android-commandlinetools");
+      lines.push('sdkmanager "platform-tools" "emulator" "system-images;android-34;google_apis;arm64-v8a"');
+      lines.push('export ANDROID_HOME=$HOME/Library/Android/sdk');
+      lines.push('export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator');
+      lines.push('echo \'export ANDROID_HOME=$HOME/Library/Android/sdk\' >> ~/.zshrc');
+      lines.push('echo \'export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator\' >> ~/.zshrc');
+    }
+    if (!probe.ios.xcodeAvailable) {
+      lines.push("");
+      lines.push("# --- Xcode (required for iOS Simulators) ---");
+      lines.push("# Install from Mac App Store, then:");
+      lines.push("sudo xcode-select -s /Applications/Xcode.app/Contents/Developer");
+      lines.push("xcodebuild -runFirstLaunch");
+    }
+    if (!probe.ios.goIosAvailable) {
+      lines.push("");
+      lines.push("# --- go-ios (for physical iOS devices) ---");
+      lines.push("npm install -g go-ios");
+    }
+    if (!probe.playwright.installed) {
+      lines.push("");
+      lines.push("# --- Playwright ---");
+      lines.push("npm install playwright && npx playwright install chromium");
+    }
+  } else {
+    lines.push("#!/bin/bash");
+    lines.push("# Linux setup");
+    if (!probe.android.adbAvailable) {
+      lines.push("");
+      lines.push("# --- Android SDK ---");
+      lines.push("sudo apt install android-sdk  # or download from developer.android.com");
+      lines.push('export ANDROID_HOME=$HOME/Android/Sdk');
+      lines.push('export PATH=$PATH:$ANDROID_HOME/platform-tools');
+    }
+    if (!probe.ios.goIosAvailable) {
+      lines.push("");
+      lines.push("# --- go-ios ---");
+      lines.push("npm install -g go-ios");
+    }
+    if (!probe.playwright.installed) {
+      lines.push("");
+      lines.push("# --- Playwright ---");
+      lines.push("npm install playwright && npx playwright install chromium");
+    }
+  }
+
+  return lines.join("\n");
+}
 
 // ── Driver Registry ─────────────────────────────────────────────────────
 
@@ -410,59 +704,102 @@ export const mcpBridgeTools: McpTool[] = [
     },
   },
 
-  // 5. Quick setup check for drivers
+  // 5. Setup wizard — probes system and provides platform-specific instructions
   {
     name: "check_dive_drivers",
     description:
-      "Check which MCP drivers are available and provide setup instructions. Tests if playwright-mcp and mobile-mcp can be spawned. Shows connection status for all drivers.",
+      "Setup wizard for MCP automation drivers. Probes the system for Android SDK (ANDROID_HOME, adb, emulator), iOS tools (Xcode, go-ios, simulators), Playwright, and Node.js version. Returns a readiness report with per-area status (ready/partial/missing) and platform-specific setup instructions for Windows, macOS, or Linux. Also generates a copy-paste setup script. Run this first to see what's needed before connecting drivers.",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        generateScript: {
+          type: "boolean",
+          description: "Generate a copy-paste setup script for missing prerequisites (default: true)",
+        },
+      },
     },
-    handler: async () => {
-      const results: Record<string, unknown> = {};
+    handler: async (args) => {
+      const { generateScript } = args as { generateScript?: boolean };
 
-      // Check connected drivers
+      // Probe the system
+      const probe = probeSystem();
+      const setupSteps = generateSetupInstructions(probe);
+
+      // Readiness summary
+      const readyCount = setupSteps.filter(s => s.status === "ready").length;
+      const totalAreas = setupSteps.length;
+      const allReady = setupSteps.every(s => s.status === "ready");
+      const missingAreas = setupSteps.filter(s => s.status === "missing").map(s => s.area);
+      const partialAreas = setupSteps.filter(s => s.status === "partial").map(s => s.area);
+
+      // Connected drivers
       const connected = [..._drivers.entries()].map(([name, d]) => ({
         name,
         toolCount: d.tools.length,
         connectedAt: d.connectedAt,
       }));
 
-      // Check if packages are available (quick npx check)
+      // Driver availability
+      const drivers: Record<string, unknown> = {};
       for (const [name, def] of Object.entries(PREDEFINED_DRIVERS)) {
         const isConnected = _drivers.has(name);
-        results[name] = {
+        drivers[name] = {
           status: isConnected ? "connected" : "available",
-          description: def.description,
+          toolCount: isConnected ? _drivers.get(name)!.tools.length : undefined,
           command: `${def.command} ${def.args.join(" ")}`,
-          installHint: def.installHint,
-          ...(isConnected ? { toolCount: _drivers.get(name)!.tools.length } : {}),
         };
       }
 
-      return {
+      const result: Record<string, unknown> = {
+        system: {
+          platform: probe.platform,
+          arch: probe.arch,
+          nodeVersion: probe.nodeVersion,
+        },
+        readiness: {
+          score: `${readyCount}/${totalAreas}`,
+          allReady,
+          missingAreas,
+          partialAreas,
+        },
+        probeResults: {
+          android: probe.android,
+          ios: probe.ios,
+          playwright: probe.playwright,
+        },
+        setupInstructions: setupSteps,
         connectedDrivers: connected,
-        availableDrivers: results,
+        drivers,
         quickStart: {
           web: 'connect_mcp_driver({ driver: "playwright" })',
+          webNote: "Works immediately — npx auto-downloads @playwright/mcp",
           mobile: 'connect_mcp_driver({ driver: "mobile" })',
-          custom: 'connect_mcp_driver({ driver: "my-server", command: "npx", args: ["my-mcp-server"] })',
-        },
-        ideConfig: {
-          description: "Alternatively, add these servers directly to your IDE's MCP config alongside nodebench-mcp:",
-          playwright: {
-            mcpServers: {
-              playwright: { command: "npx", args: ["@playwright/mcp@latest"] },
-            },
-          },
-          mobile: {
-            mcpServers: {
-              "mobile-mcp": { command: "npx", args: ["-y", "@mobilenext/mobile-mcp@latest"] },
-            },
-          },
+          mobileNote: allReady
+            ? "System ready — mobile driver should connect and find devices."
+            : `Fix missing prerequisites first: ${missingAreas.join(", ")}`,
         },
       };
+
+      // Generate setup script if requested (default: true)
+      if (generateScript !== false && !allReady) {
+        result.setupScript = {
+          description: `Copy-paste ${probe.platform === "win32" ? "PowerShell" : "bash"} script to install missing prerequisites:`,
+          script: generateQuickSetupScript(probe),
+        };
+      }
+
+      // IDE config for alternative approach
+      result.ideConfig = {
+        description: "Alternative: add these MCP servers directly to your IDE config alongside nodebench-mcp:",
+        playwright: { mcpServers: { playwright: { command: "npx", args: ["@playwright/mcp@latest"] } } },
+        mobile: { mcpServers: { "mobile-mcp": { command: "npx", args: ["-y", "@mobilenext/mobile-mcp@latest"] } } },
+      };
+
+      result._hint = allReady
+        ? "All prerequisites detected! Connect a driver: connect_mcp_driver({ driver: 'playwright' }) or connect_mcp_driver({ driver: 'mobile' })"
+        : `${missingAreas.length} area(s) need setup. Follow the setupInstructions above, then re-run check_dive_drivers to verify.`;
+
+      return result;
     },
   },
 ];
