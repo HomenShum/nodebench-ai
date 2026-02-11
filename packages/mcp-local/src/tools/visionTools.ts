@@ -85,7 +85,7 @@ async function analyzeWithGemini(
   const ai = new GoogleGenAI({ apiKey });
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash",
     contents: [
       {
         role: "user" as const,
@@ -127,7 +127,7 @@ async function analyzeWithOpenAI(
   const client = new OpenAI();
 
   const response = await client.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-5-mini",
     messages: [
       {
         role: "user",
@@ -193,7 +193,7 @@ async function analyzeWithOpenRouter(
   });
 
   const response = await client.chat.completions.create({
-    model: "google/gemini-2.5-flash",
+    model: "google/gemini-3-flash",
     messages: [
       {
         role: "user",
@@ -218,7 +218,7 @@ export const visionTools: McpTool[] = [
   {
     name: "discover_vision_env",
     description:
-      "Discover available vision-capable AI SDKs and API keys in the current environment. Returns which providers can be used for screenshot analysis. Call this before analyze_screenshot to know what's available. Checks: GEMINI_API_KEY (agentic vision with code execution), OPENAI_API_KEY (GPT-4o vision), ANTHROPIC_API_KEY (Claude vision), OPENROUTER_API_KEY. Also checks for sharp (image manipulation) and playwright (screenshot capture).",
+      "Discover available vision-capable AI SDKs and API keys in the current environment. Returns which providers can be used for screenshot analysis. Call this before analyze_screenshot to know what's available. Checks: GEMINI_API_KEY (agentic vision with code execution), OPENAI_API_KEY (GPT-5-mini vision), ANTHROPIC_API_KEY (Claude vision), OPENROUTER_API_KEY. Also checks for sharp (image manipulation) and playwright (screenshot capture).",
     inputSchema: {
       type: "object",
       properties: {},
@@ -250,7 +250,7 @@ export const visionTools: McpTool[] = [
       if ((keys.GEMINI_API_KEY || keys.GOOGLE_AI_API_KEY) && sdks.googleGenai) {
         providers.push({
           name: "gemini",
-          model: "gemini-2.5-flash",
+          model: "gemini-3-flash",
           priority: 1,
           features: ["vision", "code_execution", "agentic_vision"],
         });
@@ -258,7 +258,7 @@ export const visionTools: McpTool[] = [
       if (keys.OPENAI_API_KEY && sdks.openai) {
         providers.push({
           name: "openai",
-          model: "gpt-4o",
+          model: "gpt-5-mini",
           priority: 2,
           features: ["vision"],
         });
@@ -274,7 +274,7 @@ export const visionTools: McpTool[] = [
       if (keys.OPENROUTER_API_KEY && sdks.openai) {
         providers.push({
           name: "openrouter",
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash",
           priority: 4,
           features: ["vision"],
         });
@@ -300,7 +300,7 @@ export const visionTools: McpTool[] = [
   {
     name: "analyze_screenshot",
     description:
-      "Send a screenshot to a vision-capable AI model for analysis. Accepts base64 image data (from capture_ui_screenshot) and returns the model's analysis of layout, spacing, typography, accessibility, and visual quality. Auto-selects the best available provider — Gemini with code execution (agentic vision: zoom, crop, annotate, compute) > OpenAI GPT-4o > Anthropic Claude > OpenRouter. Call discover_vision_env first to check availability.",
+      "Send a screenshot to a vision-capable AI model for analysis. Accepts base64 image data (from capture_ui_screenshot) and returns the model's analysis of layout, spacing, typography, accessibility, and visual quality. Auto-selects the best available provider — Gemini with code execution (agentic vision: zoom, crop, annotate, compute) > OpenAI GPT-5-mini > Anthropic Claude > OpenRouter. Call discover_vision_env first to check availability.",
     rawContent: true,
     inputSchema: {
       type: "object",
@@ -413,12 +413,12 @@ export const visionTools: McpTool[] = [
               provider: selectedProvider,
               model:
                 selectedProvider === "gemini"
-                  ? "gemini-2.5-flash"
+                  ? "gemini-3-flash"
                   : selectedProvider === "openai"
-                    ? "gpt-4o"
+                    ? "gpt-5-mini"
                     : selectedProvider === "anthropic"
                       ? "claude-sonnet-4-20250514"
-                      : "google/gemini-2.5-flash",
+                      : "google/gemini-3-flash",
               agenticVision:
                 selectedProvider === "gemini"
                   ? "enabled (code execution active)"

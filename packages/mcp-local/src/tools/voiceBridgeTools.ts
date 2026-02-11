@@ -184,8 +184,8 @@ interface LlmEngine {
 
 const LLM_ENGINES: LlmEngine[] = [
   {
-    name: "Claude Haiku",
-    key: "claude_haiku",
+    name: "Claude Haiku 4.5",
+    key: "claude_haiku_4_5",
     firstTokenMs: 300,
     tokensPerSec: 120,
     costPer1kTokens: 0.00025,
@@ -204,8 +204,8 @@ const LLM_ENGINES: LlmEngine[] = [
     notes: "Best balance of speed and quality. ~600ms TTFT. Good for complex voice interactions.",
   },
   {
-    name: "GPT-4o-mini",
-    key: "gpt4o_mini",
+    name: "GPT-5-mini",
+    key: "gpt5_mini",
     firstTokenMs: 400,
     tokensPerSec: 100,
     costPer1kTokens: 0.00015,
@@ -1243,7 +1243,7 @@ export const voiceBridgeTools: McpTool[] = [
         },
         llm: {
           type: "string",
-          description: "LLM key or name (e.g. 'claude_haiku', 'gpt4o_mini', 'local_llama')",
+          description: "LLM key or name (e.g. 'claude_haiku_4_5', 'gpt5_mini', 'local_llama')",
         },
         targetLatencyMs: {
           type: "number",
@@ -1340,7 +1340,7 @@ export const voiceBridgeTools: McpTool[] = [
         optimizations.push(`TTS (${ttsEngine.name}) does not support streaming — audio is generated in full before playback. Consider Cartesia or Edge TTS for streaming.`);
       }
       if (llmEngine.firstTokenMs > 500) {
-        optimizations.push(`LLM first token is ${llmEngine.firstTokenMs}ms. For lower latency, consider Claude Haiku (300ms) or GPT-4o-mini (400ms).`);
+        optimizations.push(`LLM first token is ${llmEngine.firstTokenMs}ms. For lower latency, consider Claude Haiku 4.5 (300ms) or GPT-5-mini (400ms).`);
       }
       if (latency.perceivedMs > targetLatency) {
         optimizations.push(`Perceived latency (${latency.perceivedMs}ms) exceeds target (${targetLatency}ms). Focus on reducing ${bottleneck}.`);
@@ -1477,7 +1477,7 @@ export const voiceBridgeTools: McpTool[] = [
               },
               llm: {
                 type: "string",
-                description: "LLM key (e.g. 'claude_haiku', 'gpt4o_mini')",
+                description: "LLM key (e.g. 'claude_haiku_4_5', 'gpt5_mini')",
               },
               streamingEnabled: {
                 type: "boolean",

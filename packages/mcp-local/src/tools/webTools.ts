@@ -164,7 +164,7 @@ Requirements:
   for (const prompt of attemptPrompts) {
     // Use Gemini with Google Search grounding
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash",
       contents: [
         {
           role: "user" as const,
@@ -306,7 +306,7 @@ async function searchWithOpenAI(query: string, maxResults: number): Promise<Sear
   // Use OpenAI with web search preview (responses API)
   try {
     const response = await (client as any).responses.create({
-      model: "gpt-4o",
+      model: "gpt-5-mini",
       tools: [{ type: "web_search_preview" }],
       input: `Search for: "${query}". Return the top ${maxResults} most relevant results as JSON array with title, url, snippet fields.`,
     });
@@ -325,7 +325,7 @@ async function searchWithOpenAI(query: string, maxResults: number): Promise<Sear
   } catch {
     // Fall back to standard chat if responses API not available
     const response = await client.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5-mini",
       messages: [
         {
           role: "system",
@@ -455,7 +455,7 @@ export const webTools: McpTool[] = [
             message: "No search provider available. Results will be empty until a provider is configured.",
             options: [
               "Set GEMINI_API_KEY (recommended — Google Search grounding)",
-              "Set OPENAI_API_KEY (GPT-4o web search preview)",
+              "Set OPENAI_API_KEY (GPT-5-mini web search preview)",
               "Set PERPLEXITY_API_KEY (Perplexity sonar)",
             ],
             sdks: "Install: @google/genai or openai",

@@ -282,7 +282,7 @@ now here's what's new under the hood:
 
 4. **TOON encoding** — token-optimized object notation. ~40% fewer tokens on every tool response. on by default. your context budget stretches further.
 
-5. **smart_select_tools** — for ambiguous queries, sends a compact catalog (~4K tokens) to Gemini Flash / GPT-4o-mini / Claude Haiku for LLM-powered reranking. falls back to heuristic search if no API key.
+5. **smart_select_tools** — for ambiguous queries, sends a compact catalog (~4K tokens) to Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5 for LLM-powered reranking. falls back to heuristic search if no API key.
 
 6. **client compatibility for everyone** — Claude Code and GitHub Copilot handle dynamic tools natively. for Windsurf, Cursor, Claude Desktop, Gemini CLI, LibreChat: a `call_loaded_tool` proxy fallback works on all of them.
 

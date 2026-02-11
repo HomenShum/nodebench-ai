@@ -251,7 +251,7 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
   agentic_vision: {
     title: "Agentic Vision (AI-Powered Visual Verification)",
     description:
-      "Use AI vision models to analyze UI screenshots programmatically. The Discover-Capture-Analyze-Manipulate-Iterate-Gate loop provides automated visual QA that goes beyond what rule-based checks can catch. Gemini with code execution provides the richest analysis (zoom, crop, compute within the model). Falls back to GPT-4o, Claude, or OpenRouter vision.",
+      "Use AI vision models to analyze UI screenshots programmatically. The Discover-Capture-Analyze-Manipulate-Iterate-Gate loop provides automated visual QA that goes beyond what rule-based checks can catch. Gemini with code execution provides the richest analysis (zoom, crop, compute within the model). Falls back to GPT-5-mini, Claude, or OpenRouter vision.",
     steps: [
       {
         step: 1,
@@ -314,7 +314,7 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
       gemini:
         "Best choice. Code execution enables agentic vision — model can zoom, crop, measure, annotate within its reasoning loop. Set GEMINI_API_KEY.",
       openai:
-        "GPT-4o provides strong vision analysis without code execution. Set OPENAI_API_KEY.",
+        "GPT-5-mini provides strong vision analysis without code execution. Set OPENAI_API_KEY.",
       anthropic:
         "Claude provides detailed text analysis of visual elements. Set ANTHROPIC_API_KEY.",
       openrouter:
@@ -1534,7 +1534,7 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
           ui_ux_qa:
             "UI/UX QA — frontend verification after UI implementations",
           agentic_vision:
-            "Agentic Vision — AI-powered visual verification using vision models (Gemini code execution, GPT-4o, Claude)",
+            "Agentic Vision — AI-powered visual verification using vision models (Gemini 3 Flash code execution, GPT-5-mini, Claude)",
           closed_loop:
             "Closed Loop — compile/lint/test/debug before presenting work",
           learnings:

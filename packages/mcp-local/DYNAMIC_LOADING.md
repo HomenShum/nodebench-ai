@@ -628,7 +628,7 @@ All tool responses are encoded in TOON format by default, saving ~40% tokens on 
 
 ```
 > smart_select_tools({ task: "I need to parse a PDF, extract tables, and email a summary" })
-# Calls Gemini Flash / GPT-4o-mini / Claude Haiku with the 175-tool catalog
+# Calls Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5 with the 175-tool catalog
 # Returns: [parse_local_file, extract_structured_data, send_email, ...]
 # Includes _loadSuggestions for any tools in unloaded toolsets
 ```

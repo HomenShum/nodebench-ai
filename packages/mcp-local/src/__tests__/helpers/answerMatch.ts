@@ -101,7 +101,7 @@ export type AnswerJudgeResult = {
  * These require an OPENROUTER_API_KEY but cost $0.
  */
 const OPENROUTER_FREE_MODELS = [
-  "google/gemini-2.0-flash-exp:free",
+  "google/gemini-3-flash:free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "qwen/qwen-2.5-72b-instruct:free",
   "mistralai/mistral-small-3.1-24b-instruct:free",

@@ -32,7 +32,7 @@ async function getGeminiProvider(): Promise<LlmProvider | null> {
       name: "gemini",
       available: true,
       call: async ({ system, prompt, maxTokens, temperature }) => {
-        const model = "gemini-2.0-flash";
+        const model = "gemini-3-flash";
         const result = await ai.models.generateContent({
           model,
           contents: [{ role: "user", parts: [{ text: system ? `${system}\n\n${prompt}` : prompt }] }],
@@ -67,7 +67,7 @@ async function getOpenAIProvider(): Promise<LlmProvider | null> {
       name: "openai",
       available: true,
       call: async ({ system, prompt, maxTokens, temperature }) => {
-        const model = "gpt-4o-mini";
+        const model = "gpt-5-mini";
         const messages: Array<{ role: "system" | "user"; content: string }> = [];
         if (system) messages.push({ role: "system", content: system });
         messages.push({ role: "user", content: prompt });

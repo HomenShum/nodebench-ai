@@ -251,7 +251,7 @@ This approach minimizes token overhead while ensuring agents have access to the 
 | Search the web | `web_search` | Gemini/OpenAI/Perplexity — latest docs and updates | `full` |
 | Fetch a URL | `fetch_url` | Read any page as clean markdown | `full` |
 | Find GitHub repos | `search_github` + `analyze_repo` | Discover and evaluate libraries and patterns | `full` |
-| Analyze screenshots | `analyze_screenshot` | AI vision (Gemini/GPT-4o/Claude) for UI QA | `full` |
+| Analyze screenshots | `analyze_screenshot` | AI vision (Gemini 3 Flash/GPT-5-mini/Claude) for UI QA | `full` |
 
 **Note:** Web search, GitHub, and vision tools are only available in the `full` preset. The `default` preset focuses on the core AI Flywheel methodology (verification, eval, learning, recon, flywheel, security, boilerplate).
 
@@ -505,7 +505,7 @@ MCP tool servers face 5 systemic problems documented across Anthropic, Microsoft
 | Execution traces | Co-occurrence mining from `tool_call_log` | Tools frequently used together boost each other |
 | Intent pre-filter | Narrow to relevant categories before search | `intent: "data_analysis"` → only local_file, llm, benchmark |
 
-Plus `smart_select_tools` for ambiguous queries — sends the catalog to Gemini Flash / GPT-4o-mini / Claude Haiku for LLM-powered reranking.
+Plus `smart_select_tools` for ambiguous queries — sends the catalog to Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5 for LLM-powered reranking.
 
 **How we tested**: 28 scenarios with expected-toolset ground truth. The harness checks if `_loadSuggestions` points to the correct toolset for each domain query.
 
@@ -611,7 +611,7 @@ tools/list AFTER UNLOAD: 95 tools (-4)   ← tools removed
 ```
 > smart_select_tools({ task: "parse a PDF, extract tables, email a summary" })
 # Sends compact catalog (~4K tokens: name + category + 5 tags per tool) to
-# Gemini Flash / GPT-4o-mini / Claude Haiku
+# Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5
 # Returns the 8 best tools + _loadSuggestions for unloaded toolsets
 # Falls back to heuristic search if no API key is set
 ```

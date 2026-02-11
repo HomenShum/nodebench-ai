@@ -718,7 +718,7 @@ Capture responsive suite for http://localhost:3000/pricing — mobile, tablet, a
 
 ## 10. vision (4 tools)
 
-AI-powered visual analysis using Gemini, GPT-4o, or Claude.
+AI-powered visual analysis using Gemini 3 Flash, GPT-5-mini, or Claude.
 
 ### `discover_vision_env`
 Check which vision providers are available.

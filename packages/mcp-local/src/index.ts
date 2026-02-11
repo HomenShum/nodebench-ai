@@ -442,7 +442,7 @@ const dynamicLoadingTools: McpTool[] = [
   {
     name: "smart_select_tools",
     description:
-      'LLM-powered tool selection: sends your task description + a compact tool catalog to a fast model (Gemini Flash, GPT-4o-mini, or Claude Haiku) to pick the best 5-10 tools. Much more accurate than keyword search for ambiguous queries like "call an AI model" or "analyze my data". Requires GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY. Falls back to heuristic discover_tools if no API key is set.',
+      'LLM-powered tool selection: sends your task description + a compact tool catalog to a fast model (Gemini 3 Flash, GPT-5-mini, or Claude Haiku 4.5) to pick the best 5-10 tools. Much more accurate than keyword search for ambiguous queries like "call an AI model" or "analyze my data". Requires GEMINI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY. Falls back to heuristic discover_tools if no API key is set.',
     inputSchema: {
       type: "object",
       properties: {
@@ -513,7 +513,7 @@ const dynamicLoadingTools: McpTool[] = [
 
         if (selectedProvider === "gemini" && geminiKey) {
           const resp = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${geminiKey}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -530,7 +530,7 @@ const dynamicLoadingTools: McpTool[] = [
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${openaiKey}` },
             body: JSON.stringify({
-              model: "gpt-4o-mini",
+              model: "gpt-5-mini",
               messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
@@ -1406,7 +1406,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.18.2" },
+  { name: "nodebench-mcp-methodology", version: "2.18.3" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
