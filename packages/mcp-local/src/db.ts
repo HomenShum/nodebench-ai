@@ -437,6 +437,115 @@ CREATE INDEX IF NOT EXISTS idx_dive_components_parent ON ui_dive_components(pare
 CREATE INDEX IF NOT EXISTS idx_dive_interactions_component ON ui_dive_interactions(component_id);
 CREATE INDEX IF NOT EXISTS idx_dive_bugs_component ON ui_dive_bugs(component_id);
 CREATE INDEX IF NOT EXISTS idx_dive_bugs_severity ON ui_dive_bugs(severity);
+
+-- ═══════════════════════════════════════════
+-- UI/UX FULL DIVE v2 — Deep interaction
+-- testing, screenshots, design auditing,
+-- backend linking, and changelog tracking.
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ui_dive_screenshots (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT,
+  interaction_id  TEXT,
+  test_id         TEXT,
+  step_index      INTEGER,
+  label           TEXT NOT NULL,
+  route           TEXT,
+  file_path       TEXT,
+  base64_thumbnail TEXT,
+  width           INTEGER,
+  height          INTEGER,
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_interaction_tests (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT NOT NULL REFERENCES ui_dive_components(id) ON DELETE CASCADE,
+  test_name       TEXT NOT NULL,
+  description     TEXT,
+  preconditions   TEXT,
+  status          TEXT NOT NULL DEFAULT 'pending',
+  steps_total     INTEGER DEFAULT 0,
+  steps_passed    INTEGER DEFAULT 0,
+  steps_failed    INTEGER DEFAULT 0,
+  duration_ms     INTEGER,
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_test_steps (
+  id              TEXT PRIMARY KEY,
+  test_id         TEXT NOT NULL REFERENCES ui_dive_interaction_tests(id) ON DELETE CASCADE,
+  step_index      INTEGER NOT NULL,
+  action          TEXT NOT NULL,
+  target          TEXT,
+  input_value     TEXT,
+  expected        TEXT,
+  actual          TEXT,
+  status          TEXT NOT NULL DEFAULT 'pending',
+  screenshot_id   TEXT,
+  observation     TEXT,
+  duration_ms     INTEGER,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_design_issues (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT,
+  issue_type      TEXT NOT NULL,
+  severity        TEXT NOT NULL DEFAULT 'medium',
+  title           TEXT NOT NULL,
+  description     TEXT,
+  element_selector TEXT,
+  expected_value  TEXT,
+  actual_value    TEXT,
+  screenshot_id   TEXT,
+  route           TEXT,
+  status          TEXT NOT NULL DEFAULT 'open',
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_backend_links (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT NOT NULL REFERENCES ui_dive_components(id) ON DELETE CASCADE,
+  link_type       TEXT NOT NULL,
+  path            TEXT NOT NULL,
+  description     TEXT,
+  method          TEXT,
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_changelogs (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT,
+  change_type     TEXT NOT NULL,
+  description     TEXT NOT NULL,
+  before_screenshot_id TEXT,
+  after_screenshot_id  TEXT,
+  files_changed   TEXT,
+  git_commit      TEXT,
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_dive_screenshots_session ON ui_dive_screenshots(session_id);
+CREATE INDEX IF NOT EXISTS idx_dive_screenshots_component ON ui_dive_screenshots(component_id);
+CREATE INDEX IF NOT EXISTS idx_dive_tests_session ON ui_dive_interaction_tests(session_id);
+CREATE INDEX IF NOT EXISTS idx_dive_tests_component ON ui_dive_interaction_tests(component_id);
+CREATE INDEX IF NOT EXISTS idx_dive_test_steps_test ON ui_dive_test_steps(test_id);
+CREATE INDEX IF NOT EXISTS idx_dive_design_issues_session ON ui_dive_design_issues(session_id);
+CREATE INDEX IF NOT EXISTS idx_dive_backend_links_component ON ui_dive_backend_links(component_id);
+CREATE INDEX IF NOT EXISTS idx_dive_changelogs_session ON ui_dive_changelogs(session_id);
 `;
 
 export function getDb(): Database.Database {

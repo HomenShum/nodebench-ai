@@ -65,7 +65,7 @@
       "kpis": [
         { "label": "Verification Speedup", "value": 800, "unit": "%", "color": "bg-green-600" },
         { "label": "False Positive Reduction", "value": 87, "unit": "%", "color": "bg-blue-600" },
-        { "label": "Annual Savings (per customer)", "value": 2, "unit": "M", "color": "bg-emerald-500", "prefix": "$" }
+        { "label": "Annual Savings (per customer)", "value": 2, "unit": "M", "color": "bg-green-500", "prefix": "$" }
       ],
       "roiChart": {
         "currentCost": 2000000,

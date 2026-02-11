@@ -2144,6 +2144,96 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   },
 
   // ═══════════════════════════════════════════
+  // UI/UX DIVE V2 — Deep interaction testing,
+  // screenshots, design audit, backend links,
+  // changelog, and walkthrough generation
+  // ═══════════════════════════════════════════
+  {
+    name: "dive_save_screenshot",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "screenshot", "save", "evidence", "visual", "capture", "base64", "image", "dive"],
+    quickRef: {
+      nextAction: "Screenshot saved. Reference the screenshotId in bugs, test steps, design issues, or changelogs.",
+      nextTools: ["dive_interaction_test", "dive_record_test_step", "tag_ui_bug", "dive_design_issue", "dive_changelog"],
+      methodology: "agentic_vision",
+      tip: "Pass base64Data from bridge's browser_take_screenshot. Screenshots are saved to ~/.nodebench/dive-screenshots/.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_interaction_test",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "test", "interaction", "steps", "preconditions", "expected", "actual", "pass", "fail", "walkthrough", "dive"],
+    quickRef: {
+      nextAction: "Test created. Execute each step via bridge (browser_click, browser_type), take screenshots, then record results with dive_record_test_step.",
+      nextTools: ["dive_record_test_step", "dive_save_screenshot", "call_driver_tool"],
+      methodology: "agentic_vision",
+      tip: "Define preconditions and steps upfront. The agent executes steps via bridge and records actual results. Each step gets pass/fail.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_record_test_step",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "test", "step", "result", "pass", "fail", "actual", "expected", "screenshot", "dive"],
+    quickRef: {
+      nextAction: "Step recorded. Continue with next step or check if test is complete.",
+      nextTools: ["dive_save_screenshot", "dive_record_test_step", "tag_ui_bug", "dive_walkthrough"],
+      methodology: "agentic_vision",
+      tip: "Auto-completes the test when all steps are recorded. Failed steps generate a useful expected vs actual comparison.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_design_issue",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "design", "inconsistency", "color", "spacing", "font", "alignment", "contrast", "responsive", "audit", "visual", "dive"],
+    quickRef: {
+      nextAction: "Design issue tagged. Fix it and track with dive_changelog. View all issues in dive_walkthrough.",
+      nextTools: ["dive_changelog", "dive_save_screenshot", "dive_walkthrough"],
+      methodology: "agentic_vision",
+      tip: "Use bridge's browser_evaluate to extract computed styles, then compare across components to find deviations.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_link_backend",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "backend", "link", "api", "convex", "query", "mutation", "endpoint", "database", "fullstack", "traceability", "dive"],
+    quickRef: {
+      nextAction: "Backend links created. When a UI bug is found, the report shows which backend code is involved.",
+      nextTools: ["tag_ui_bug", "dive_walkthrough", "register_component"],
+      methodology: "agentic_vision",
+      tip: "Link types: convex_query, convex_mutation, convex_action, api_endpoint, db_table, auth_guard, websocket, external_service, env_var, cron_job.",
+    },
+    phase: "research",
+  },
+  {
+    name: "dive_changelog",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "changelog", "change", "fix", "before", "after", "screenshot", "diff", "git", "commit", "audit", "dive"],
+    quickRef: {
+      nextAction: "Changelog entry recorded. Re-run the dive to verify fixes. The walkthrough shows before/after comparison.",
+      nextTools: ["dive_save_screenshot", "dive_walkthrough", "dive_interaction_test"],
+      methodology: "agentic_vision",
+      tip: "Link before/after screenshots for visual diff. Reference git commits and changed files for full audit trail.",
+    },
+    phase: "ship",
+  },
+  {
+    name: "dive_walkthrough",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "walkthrough", "report", "document", "qa", "page", "component", "test", "bug", "design", "backend", "changelog", "comprehensive", "dive"],
+    quickRef: {
+      nextAction: "Walkthrough generated. Share with stakeholders or use as QA baseline. Re-run after fixes to update.",
+      nextTools: ["get_dive_report", "dive_changelog"],
+      methodology: "agentic_vision",
+      tip: "format='json' for programmatic use, 'markdown' for human-readable, 'summary' for condensed version.",
+    },
+    phase: "ship",
+  },
+
+  // ═══════════════════════════════════════════
   // MCP BRIDGE — Connect external MCP servers
   // ═══════════════════════════════════════════
   {

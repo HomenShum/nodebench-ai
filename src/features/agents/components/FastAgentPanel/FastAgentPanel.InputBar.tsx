@@ -1026,7 +1026,20 @@ export function FastAgentInputBar({
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              // Detect @mentions
+              const val = e.target.value;
+              const cursorPos = e.target.selectionStart || 0;
+              const textBefore = val.slice(0, cursorPos);
+              const atMatch = textBefore.match(/@(\w*)$/);
+              if (atMatch) {
+                setShowMentions(true);
+                setMentionQuery(atMatch[1]);
+              } else {
+                setShowMentions(false);
+              }
+            }}
             onKeyDown={handleKeyDown}
             onPaste={(e) => {
               // Image paste handling
@@ -1062,19 +1075,6 @@ export function FastAgentInputBar({
             maxLength={maxLength}
             className="flex-1 max-h-[200px] py-2 bg-transparent border-none focus:ring-0 p-0 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none leading-relaxed"
             rows={1}
-            onChange={(e) => {
-              // Detect @mentions
-              const val = e.target.value;
-              const cursorPos = e.target.selectionStart || 0;
-              const textBefore = val.slice(0, cursorPos);
-              const atMatch = textBefore.match(/@(\w*)$/);
-              if (atMatch) {
-                setShowMentions(true);
-                setMentionQuery(atMatch[1]);
-              } else {
-                setShowMentions(false);
-              }
-            }}
           />
 
           {/* @Mentions Autocomplete Popup */}

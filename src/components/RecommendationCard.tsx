@@ -132,7 +132,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-3 p-2 bg-white/50 rounded border border-gray-200"
+              className="mt-3 p-2 bg-white/50 dark:bg-white/[0.03] rounded border border-gray-200 dark:border-white/[0.06]"
             >
               <p className="text-xs text-gray-600 mb-2">How helpful was this suggestion?</p>
               <div className="flex items-center gap-1 mb-2">

@@ -168,7 +168,7 @@ export default function FiltersToolsBar(props: Props) {
 
         {/* Bulk selection actions */}
         {selectedCount > 0 && (
-          <div className="flex items-center gap-1 ml-1 pl-3 border-l border-gray-200">
+          <div className="flex items-center gap-1 ml-1 pl-3 border-l border-gray-200 dark:border-white/[0.06]">
             <span className="text-xs font-medium text-gray-500 mr-2">{selectedCount} selected</span>
             <button
               type="button"

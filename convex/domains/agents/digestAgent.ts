@@ -22,6 +22,8 @@ import { z } from "zod";
 import {
   getLanguageModelSafe,
   normalizeModelInput,
+  FALLBACK_MODEL,
+  getFreeModels,
   type ApprovedModel
 } from "./mcp_tools/models";
 
@@ -2234,19 +2236,73 @@ export const generateDigestWithFactChecks = internalAction({
       console.warn("[digestAgent] Failed to fetch funding rounds:", e instanceof Error ? e.message : String(e));
     }
 
-    // 3. Generate digest
-    const result = await ctx.runAction(internal.domains.agents.digestAgent.generateAgentDigest, {
-      feedItems,
-      persona,
-      model,
-      outputMode: "structured",
-      useCache: false, // Don't cache since we're adding fact-checks
-    });
+    // 3. Generate digest (with model fallback)
+    // Strategy: try ALL free models first, then paid models
+    const allFreeModels = getFreeModels();
+    const paidFallbacks: ApprovedModel[] = [FALLBACK_MODEL, "gemini-2.5-flash" as ApprovedModel, "claude-haiku-4.5" as ApprovedModel];
 
-    if (result.error || !result.digest) {
+    // Build chain: requested model first, then remaining free models, then paid
+    const modelsToTry: string[] = [model];
+    for (const fm of allFreeModels) {
+      if (!modelsToTry.includes(fm)) modelsToTry.push(fm);
+    }
+    for (const pm of paidFallbacks) {
+      if (!modelsToTry.includes(pm)) modelsToTry.push(pm);
+    }
+    console.log(`[digestAgent] Fallback chain (${modelsToTry.length} models): ${modelsToTry.join(" -> ")}`);
+
+    let result: { digest: AgentDigestOutput | null; rawText: string; usage: { inputTokens: number; outputTokens: number; model: string }; error?: string; cache?: { hit: boolean; id: any } } | null = null;
+    let lastError = "";
+    const MAX_RETRIES_PER_MODEL = 2;
+    const BASE_DELAY_MS = 2000; // 2s, 4s exponential backoff
+
+    for (const tryModel of modelsToTry) {
+      let succeeded = false;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES_PER_MODEL; attempt++) {
+        if (attempt > 0) {
+          const delayMs = BASE_DELAY_MS * Math.pow(2, attempt - 1);
+          console.log(`[digestAgent] Retry ${attempt}/${MAX_RETRIES_PER_MODEL} for ${tryModel} after ${delayMs}ms...`);
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        } else {
+          console.log(`[digestAgent] Trying model=${tryModel} for digest generation...`);
+        }
+
+        try {
+          result = await ctx.runAction(internal.domains.agents.digestAgent.generateAgentDigest, {
+            feedItems,
+            persona,
+            model: tryModel,
+            outputMode: "structured",
+            useCache: false,
+          });
+
+          if (result && result.digest && !result.error) {
+            if (tryModel !== model) {
+              console.log(`[digestAgent] Primary model ${model} failed, succeeded with fallback ${tryModel} (attempt ${attempt + 1})`);
+            }
+            succeeded = true;
+            break;
+          } else {
+            lastError = result?.error || "No digest returned";
+            console.warn(`[digestAgent] Model ${tryModel} attempt ${attempt + 1} returned error: ${lastError}`);
+            result = null;
+          }
+        } catch (e) {
+          lastError = e instanceof Error ? e.message : String(e);
+          console.warn(`[digestAgent] Model ${tryModel} attempt ${attempt + 1} threw: ${lastError}`);
+          result = null;
+        }
+      }
+
+      if (succeeded) break;
+      console.warn(`[digestAgent] Model ${tryModel} exhausted ${MAX_RETRIES_PER_MODEL + 1} attempts, moving to next model`);
+    }
+
+    if (!result || !result.digest) {
       return {
         success: false,
-        error: result.error || "Failed to generate digest",
+        error: `All models failed. Last error: ${lastError}`,
         digest: null,
         factCheckCount: 0,
       };

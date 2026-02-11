@@ -80,7 +80,7 @@ export function PersonalDashboard({ className = '', onNavigate }: PersonalDashbo
   }, [tasks, documents, events, behaviorSummary]);
 
   return (
-    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 ${className}`}>
+    <div className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] shadow-sm p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">

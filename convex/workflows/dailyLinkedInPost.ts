@@ -24,251 +24,221 @@ import type { MicroBranchResult } from "../domains/agents/dueDiligence/microBran
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Format the digest for LinkedIn posting.
- * LinkedIn posts have a 3000 character limit.
- * Uses clean plain-text formatting without emojis for better rendering.
+ * Format the digest for LinkedIn posting as a multi-post thread.
+ * Returns an array of 2-3 posts, each under 1450 chars.
  *
- * IMPORTANT: Target post length is 1500-2500+ characters for optimal engagement.
+ * Post structure:
+ * - Post 1 (The Signal): Hook + key developments. What's actually happening.
+ * - Post 2 (The Analysis): Fact-checks, deeper context, cut through noise.
+ * - Post 3 (The Agency): Actionable steps, skills to build, what's under your control.
  *
- * Format matches user preference:
- * - Clean header with date
- * - Lead story with source and why it matters
- * - Key signals with nested details
- * - Action items as numbered list
- * - Entities to watch with links
- * - Footer with # format
+ * Content philosophy:
+ * - Cut through noise and distraction narratives
+ * - Highlight what's actionable vs what's just spectacle
+ * - Provoke reader agency -- their own ability to explore, read, and resolve
+ * - Help people focus on things under their control rather than despair
+ *
+ * Engagement gate requirements (each post):
+ * - Lead with a hook/claim, NOT a report header
+ * - Include at least one opinion/take ("This signals...", "Watch for...")
+ * - Include at least one question
+ * - Stay under 1500 characters
+ * - Use content-specific hashtags (not just generic #AI)
  */
 function formatDigestForLinkedIn(
   digest: AgentDigestOutput,
-  options: {
+  _options: {
     maxLength?: number;
     minLength?: number;
   } = {}
-): string {
-  const maxLength = options.maxLength || 2900; // LinkedIn hard limit is 3000, use 2900 for safety
-  const minLength = options.minLength || 2000; // Target minimum for depth
-  const dateString = digest.dateString;
+): string[] {
+  const maxPerPost = 1450;
+  const signals = digest.signals ?? [];
+  const entities = digest.entitySpotlight ?? [];
+  const findings = digest.factCheckFindings ?? [];
+  const actions = digest.actionItems ?? [];
+  const specificTags = buildContentSpecificHashtags(digest);
+  const domain = extractDomain(digest.leadStory?.title || signals[0]?.title || "tech");
+  const totalPosts = (findings.length > 0 || actions.length > 0) ? 3 : 2;
 
-  // Helper: format a publish date from ISO string
-  const fmtDate = (iso?: string): string => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      const mon = d.toLocaleString("en-US", { month: "short" });
-      return ` (Published: ${mon} ${d.getDate()}, ${d.getFullYear()})`;
-    } catch { return ""; }
-  };
-
-  const parts: string[] = [];
-
-  // Hook opening - use lead story insight, not a report header
-  if (digest.leadStory?.whyItMatters) {
-    parts.push(digest.leadStory.whyItMatters);
-    parts.push("");
-    if ((digest.leadStory as any).summary) {
-      parts.push((digest.leadStory as any).summary);
-      parts.push("");
-    }
-  } else if (digest.narrativeThesis) {
-    parts.push(digest.narrativeThesis);
-    parts.push("");
+  function capPost(text: string): string {
+    if (text.length <= maxPerPost) return text;
+    return text.slice(0, maxPerPost - 3).trimEnd() + "...";
   }
 
-  // Brief header with date
-  parts.push(`NodeBench AI Daily Intelligence Brief`);
-  parts.push(`Date: ${dateString}`);
-  parts.push("");
+  // ── Post 1: WHAT'S HAPPENING ──
+  // Factual lead. Data. Key developments. No fluff.
+  const p1: string[] = [];
 
-  // Lead story as key signal
-  if (digest.leadStory) {
-    parts.push(`TODAY'S KEY SIGNAL:`);
-    parts.push(digest.leadStory.title);
-    if (digest.leadStory.url) {
-      parts.push(`${digest.leadStory.url}${fmtDate((digest.leadStory as any).publishedAt)}`);
+  const leadHook = digest.leadStory?.whyItMatters
+    || digest.narrativeThesis
+    || signals[0]?.summary
+    || `Key developments in ${domain} today that aren't getting enough attention.`;
+  p1.push(truncateAtSentenceBoundary(leadHook, 220));
+  p1.push("");
+
+  const signalCount = Math.min(signals.length, 4);
+  if (signalCount > 0) {
+    for (let i = 0; i < signalCount; i++) {
+      const s = signals[i];
+      let line = `${i + 1}. ${s.title}`;
+      if (s.hardNumbers) line += ` -- ${s.hardNumbers}`;
+      p1.push(truncateAtSentenceBoundary(line, 200));
+      if (s.summary && i < 2) {
+        p1.push(`   ${truncateAtSentenceBoundary(s.summary, 150)}`);
+      }
+      if (s.url && i < 2) p1.push(`   ${s.url}`);
     }
-    parts.push("");
+    p1.push("");
   }
 
-  // Key Signals with publish dates
-  if (digest.signals && digest.signals.length > 0) {
-    parts.push(`KEY SIGNALS:`);
-    parts.push("");
-    for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
-      const signal = digest.signals[i];
-      parts.push(`${i + 1}. ${signal.title}`);
-      if (signal.summary) {
-        parts.push(`   ${signal.summary}`);
-      }
-      if (signal.hardNumbers) {
-        parts.push(`   Key data: ${signal.hardNumbers}`);
-      }
-      if (signal.url) {
-        parts.push(`   ${signal.url}${fmtDate((signal as any).publishedAt)}`);
-      }
-      parts.push("");
-    }
+  for (const entity of entities.slice(0, 2)) {
+    const stage = entity.fundingStage ? ` [${entity.fundingStage}]` : "";
+    p1.push(`${entity.name}${stage}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
   }
+  if (entities.length > 0) p1.push("");
 
-  // Fact-Check Findings - Expanded with more context
-  if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
-    parts.push(`FACT-CHECKED CLAIMS:`);
-    parts.push("");
-    for (const finding of digest.factCheckFindings.slice(0, 5)) {
-      const status = finding.status === "verified" ? "VERIFIED" :
-                     finding.status === "false" ? "FALSE" :
-                     finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
-      parts.push(`[${status}] ${finding.claim}`);
+  // Guide framing -- connect the dots, don't just list
+  p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+  p1.push("");
+  p1.push(`Which of these are you tracking?`);
+  p1.push("");
+  p1.push(`[1/${totalPosts}] ${specificTags}`);
+
+  // ── Post 2: WHAT IT MEANS ──
+  // Fact-checks, context, signal vs noise. Researched analysis.
+  const p2: string[] = [];
+
+  p2.push(`Verification and context on today's ${domain} developments:`);
+  p2.push("");
+
+  if (findings.length > 0) {
+    for (const finding of findings.slice(0, 4)) {
+      const badge = finding.status === "verified" ? "VERIFIED"
+        : finding.status === "false" ? "FALSE"
+        : finding.status === "partially_verified" ? "PARTIAL"
+        : "UNVERIFIED";
+      p2.push(`[${badge}] ${truncateAtSentenceBoundary(finding.claim, 150)}`);
       if (finding.explanation) {
-        parts.push(`   Analysis: ${finding.explanation}`);
+        p2.push(`  ${truncateAtSentenceBoundary(finding.explanation, 140)}`);
       }
-      if (finding.sourceUrl) {
-        parts.push(`   Source: ${finding.sourceUrl}`);
-      }
-      parts.push("");
+      // Source attribution with URL
+      const srcParts: string[] = [];
+      if (finding.source) srcParts.push(`Source: ${finding.source}`);
+      if (finding.sourceUrl) srcParts.push(finding.sourceUrl);
+      if (srcParts.length > 0) p2.push(`  ${srcParts.join(" | ")}`);
+      p2.push("");
     }
-  }
-
-  // Action Items (Act III) - Expanded numbered list
-  if (digest.actionItems && digest.actionItems.length > 0) {
-    parts.push(`RECOMMENDED ACTIONS:`);
-    parts.push("");
-    for (let i = 0; i < Math.min(digest.actionItems.length, 5); i++) {
-      const action = digest.actionItems[i];
-      parts.push(`${i + 1}. ${action.action}`);
-    }
-    parts.push("");
-  }
-
-  // Entity Spotlight - Expanded format with links and more detail
-  if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
-    parts.push(`COMPANIES AND PEOPLE TO WATCH:`);
-    parts.push("");
-    for (const entity of digest.entitySpotlight.slice(0, 5)) {
-      const typeLabel = entity.type ? `[${entity.type.toUpperCase()}]` : "";
-      const stage = entity.fundingStage ? ` - ${entity.fundingStage}` : "";
-      parts.push(`>> ${entity.name} ${typeLabel}${stage}`);
-      parts.push(`   ${entity.keyInsight}`);
-      // Add search links for research
-      if (entity.type === "company" || entity.type === "person") {
-        const searchQuery = encodeURIComponent(`${entity.name} latest news`);
-        parts.push(`   News: https://news.google.com/search?q=${searchQuery}`);
-        if (entity.type === "company") {
-          const cbQuery = encodeURIComponent(entity.name);
-          parts.push(`   Crunchbase: https://www.crunchbase.com/textsearch?q=${cbQuery}`);
-        }
-      }
-      parts.push("");
-    }
-  }
-
-  // Market Context section - Add if content is too short
-  let content = parts.join("\n");
-
-  // If under minimum length, add market context section
-  if (content.length < minLength && digest.signals && digest.signals.length > 0) {
-    const contextParts: string[] = [];
-    contextParts.push(`MARKET CONTEXT:`);
-    contextParts.push("");
-    contextParts.push(`Today's intelligence spans multiple domains including AI/ML advancements, startup funding, and technology infrastructure. Our autonomous agents continuously monitor HackerNews, ArXiv, Reddit, and premium RSS feeds to surface the most impactful signals.`);
-    contextParts.push("");
-
-    const categories = Array.isArray(digest.topCategories)
-      ? digest.topCategories.filter((c) => typeof c === "string" && c.trim().length > 0).slice(0, 8)
-      : [];
-    if (categories.length > 0) {
-      contextParts.push(`Today's coverage includes: ${categories.join(", ")}`);
-      contextParts.push("");
-    }
-
-    // Insert before footer
-    const footerIndex = parts.findIndex(p => p === "---");
-    if (footerIndex > -1) {
-      parts.splice(footerIndex, 0, ...contextParts);
-    } else {
-      parts.push(...contextParts);
-    }
-
-    content = parts.join("\n");
-  }
-
-  // Engagement question before footer
-  if (!content.includes("?")) {
-    parts.push("What signal are you tracking most closely this week?");
-    parts.push("");
-  }
-
-  // Footer with # format (LinkedIn-friendly)
-  if (!content.includes("---")) {
-    parts.push("---");
-    parts.push("Powered by NodeBench AI");
-    parts.push("#AI #TechIntelligence #DailyBrief #NodeBenchAI #Startups");
-    content = parts.join("\n");
-  }
-
-  // Final length check - expand if still too short by adding more signal detail
-  if (content.length < minLength && digest.signals && digest.signals.length > 0) {
-    const extraParts: string[] = [];
-    extraParts.push("MARKET CONTEXT:");
-    extraParts.push("This intelligence spans AI/ML, startup funding, and tech infrastructure. Our agents continuously monitor HackerNews, ArXiv, Reddit, and premium feeds to surface impactful signals.");
-    extraParts.push("");
-    const footerStart = content.indexOf("---");
-    if (footerStart > -1) {
-      content = content.substring(0, footerStart) + extraParts.join("\n") + "\n" + content.substring(footerStart);
-    } else {
-      content = content + "\n" + extraParts.join("\n");
-    }
-  }
-
-  // If too long, intelligently truncate while maintaining minimum
-  if (content.length > maxLength) {
-    const shortParts: string[] = [];
-    shortParts.push(`NodeBench AI Daily Intelligence Brief`);
-    shortParts.push(`Date: ${dateString}`);
-    shortParts.push("");
-
-    if (digest.leadStory) {
-      shortParts.push(`TODAY'S KEY SIGNAL:`);
-      shortParts.push(digest.leadStory.title);
-      if (digest.leadStory.url) {
-        shortParts.push(`Source: ${digest.leadStory.url}`);
-      }
-      if (digest.leadStory.whyItMatters) {
-        shortParts.push(`Why it matters: ${digest.leadStory.whyItMatters}`);
-      }
-      shortParts.push("");
-    }
-
-    if (digest.signals && digest.signals.length > 0) {
-      shortParts.push(`KEY SIGNALS:`);
-      shortParts.push("");
-      for (let i = 0; i < Math.min(digest.signals.length, 4); i++) {
-        const signal = digest.signals[i];
-        shortParts.push(`${i + 1}. ${signal.title}`);
-        if (signal.summary) {
-          shortParts.push(`   ${signal.summary}`);
-        }
-        if (signal.url) shortParts.push(`   ${signal.url}`);
-        shortParts.push("");
+  } else {
+    // Fallback: use signals with URLs when no fact-checks available
+    for (let i = 0; i < Math.min(signals.length, 3); i++) {
+      const s = signals[i];
+      if (s.summary) {
+        p2.push(`${s.title}`);
+        p2.push(`  ${truncateAtSentenceBoundary(s.summary, 180)}`);
+        if (s.url) p2.push(`  ${s.url}`);
+        p2.push("");
       }
     }
-
-    if (digest.actionItems && digest.actionItems.length > 0) {
-      shortParts.push(`ACTIONS:`);
-      for (let i = 0; i < Math.min(digest.actionItems.length, 3); i++) {
-        shortParts.push(`${i + 1}. ${digest.actionItems[i].action}`);
-      }
-      shortParts.push("");
-    }
-
-    shortParts.push("---");
-    shortParts.push("Powered by NodeBench AI - Autonomous Intelligence Platform");
-    shortParts.push("#AI #TechIntelligence #DailyBrief #NodeBenchAI #Startups");
-
-    content = shortParts.join("\n");
   }
 
-  console.log(`[formatDigestForLinkedIn] Final content length: ${content.length} chars (target: ${minLength}-${maxLength})`);
-  return content;
+  // Connect dots -- what's the real story behind the noise
+  p2.push(`High-volume news cycles often bury the developments that affect your career and decisions the most. This is the context that matters.`);
+  p2.push("");
+  p2.push(`What's one claim you've seen this week that you'd want fact-checked?`);
+  p2.push("");
+  p2.push(`[2/${totalPosts}] ${specificTags}`);
+
+  // ── Post 3: PRACTICAL GUIDE ──
+  // Specific actions. Skills to learn. Resources. Things within your control.
+  const p3: string[] = [];
+
+  p3.push(`Based on today's research -- here's a practical guide on what to focus on:`);
+  p3.push("");
+
+  if (actions.length > 0) {
+    for (let i = 0; i < Math.min(actions.length, 4); i++) {
+      p3.push(`${i + 1}. ${truncateAtSentenceBoundary(actions[i].action, 180)}`);
+    }
+    p3.push("");
+  }
+
+  // Skills and tools -- concrete, not motivational
+  const skillSignals = signals.filter(s =>
+    /skill|learn|tool|framework|open.?source|developer|build|create|opportunity|hiring|job|course|certif/i.test(
+      `${s.title} ${s.summary || ""}`
+    )
+  ).slice(0, 3);
+
+  if (skillSignals.length > 0) {
+    p3.push("Relevant skills and tools to look into:");
+    for (const s of skillSignals) {
+      p3.push(`- ${truncateAtSentenceBoundary(s.title, 140)}`);
+      if (s.summary) p3.push(`  ${truncateAtSentenceBoundary(s.summary, 120)}`);
+    }
+    p3.push("");
+  }
+
+  // Grounded closer -- direct, not preachy
+  p3.push(`Focus on what you can control: the skills you develop, the projects you ship, the information you verify before acting on.`);
+  p3.push("");
+  p3.push(`What are you working on or learning this week?`);
+  p3.push("");
+  p3.push(`[3/3] ${specificTags}`);
+
+  const posts = totalPosts === 3
+    ? [capPost(p1.join("\n")), capPost(p2.join("\n")), capPost(p3.join("\n"))]
+    : [capPost(p1.join("\n")), capPost(p2.join("\n"))];
+  for (let i = 0; i < posts.length; i++) {
+    console.log(`[formatDigestForLinkedIn] Post ${i + 1}/${posts.length}: ${posts[i].length} chars`);
+  }
+  return posts;
+}
+
+/**
+ * Extract a short domain/topic keyword from a signal title for opinion statements.
+ */
+function extractDomain(title: string): string {
+  const keywords = ["AI", "ML", "funding", "security", "cloud", "infrastructure", "open source", "agents", "LLM", "robotics", "biotech", "fintech", "healthcare", "crypto", "blockchain"];
+  const lower = title.toLowerCase();
+  for (const kw of keywords) {
+    if (lower.includes(kw.toLowerCase())) return kw;
+  }
+  // Fall back to first few words
+  return title.split(/\s+/).slice(0, 3).join(" ").replace(/[^a-zA-Z0-9\s]/g, "").trim() || "tech";
+}
+
+/**
+ * Build content-specific hashtags from digest data.
+ * Avoids using ONLY generic tags (engagement gate rejects those).
+ */
+function buildContentSpecificHashtags(digest: AgentDigestOutput): string {
+  const tags: string[] = [];
+
+  // Extract entity names as hashtags
+  for (const entity of (digest.entitySpotlight ?? []).slice(0, 2)) {
+    const tag = entity.name.replace(/[^a-zA-Z0-9]/g, "");
+    if (tag.length >= 3 && tag.length <= 30) tags.push(`#${tag}`);
+  }
+
+  // Extract category-based tags
+  for (const cat of (digest.topCategories ?? []).slice(0, 2)) {
+    if (typeof cat === "string" && cat.trim()) {
+      const tag = cat.trim().replace(/[\s/]+/g, "").replace(/[^a-zA-Z0-9]/g, "");
+      if (tag.length >= 2 && tag.length <= 30) tags.push(`#${tag}`);
+    }
+  }
+
+  // Add 1-2 general tags to round out
+  tags.push("#AI");
+  if (digest.fundingRounds && digest.fundingRounds.length > 0) {
+    tags.push("#StartupFunding");
+  } else {
+    tags.push("#TechIntelligence");
+  }
+
+  // Deduplicate
+  return [...new Set(tags)].slice(0, 5).join(" ");
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -334,8 +304,10 @@ export const postDailyDigestToLinkedIn = internalAction({
 
     console.log(`[dailyLinkedInPost] Digest generated with ${digestResult.factCheckCount} fact-checks`);
 
-    // Step 2: Format for LinkedIn
-    let linkedInContent = formatDigestForLinkedIn(digestResult.digest);
+    // Step 2: Format for LinkedIn (multi-post thread)
+    const linkedInPosts = formatDigestForLinkedIn(digestResult.digest);
+
+    // Optionally prepend didYouKnow to the first post
     const didYouKnowUrls =
       Array.isArray(args.didYouKnowUrls) && args.didYouKnowUrls.length > 0
         ? args.didYouKnowUrls
@@ -349,25 +321,31 @@ export const postDailyDigestToLinkedIn = internalAction({
       ctx,
       workflowId: didYouKnowWorkflowId,
       urls: didYouKnowUrls,
-      baseContent: linkedInContent,
+      baseContent: linkedInPosts[0],
       tonePreset: args.didYouKnowTonePreset ?? "casual_concise",
     });
-    linkedInContent = didYouKnow.content;
-    console.log(`[dailyLinkedInPost] LinkedIn content formatted (${linkedInContent.length} chars)`);
+    linkedInPosts[0] = didYouKnow.content;
+
+    const totalContent = linkedInPosts.join("\n\n---\n\n");
+    console.log(`[dailyLinkedInPost] Formatted ${linkedInPosts.length} posts (total ${totalContent.length} chars)`);
 
     // Step 3: Post to LinkedIn (unless dry run)
     if (dryRun) {
-      console.log(`[dailyLinkedInPost] DRY RUN - would post:\n${linkedInContent}`);
+      for (let i = 0; i < linkedInPosts.length; i++) {
+        console.log(`[dailyLinkedInPost] DRY RUN - Post ${i + 1}/${linkedInPosts.length} (${linkedInPosts[i].length} chars):\n${linkedInPosts[i]}`);
+      }
       return {
         success: true,
         posted: false,
         dryRun: true,
-        content: linkedInContent,
+        content: totalContent,
+        postCount: linkedInPosts.length,
         factCheckCount: digestResult.factCheckCount,
         didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
       };
     }
 
+    // Dedup check (skip if any daily_digest already archived today)
     if (!forcePost) {
       const match = await ctx.runQuery(
         internal.workflows.dailyLinkedInPostMutations.findArchiveMatchForDatePersonaType,
@@ -375,7 +353,7 @@ export const postDailyDigestToLinkedIn = internalAction({
           dateString: digestResult.digest.dateString,
           persona,
           postType: "daily_digest",
-          content: linkedInContent,
+          content: linkedInPosts[0],
         },
       );
       if (match.anyForType) {
@@ -387,61 +365,76 @@ export const postDailyDigestToLinkedIn = internalAction({
           posted: false,
           skipped: true,
           reason: match.exactMatchId ? "duplicate_content" : "already_posted_today",
-          content: linkedInContent,
+          content: totalContent,
           factCheckCount: digestResult.factCheckCount,
           didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
         };
       }
     }
 
-    let postResult;
-    try {
-      postResult = await ctx.runAction(
-        internal.domains.social.linkedinPosting.createTargetedTextPost,
-        { text: linkedInContent, target: "organization" as const }
-      );
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      console.error(`[dailyLinkedInPost] Failed to post to LinkedIn: ${errorMsg}`);
-      return {
-        success: false,
-        error: `LinkedIn post failed: ${errorMsg}`,
-        posted: false,
-        content: linkedInContent,
-      };
+    // Post each part with 30s delay between posts (LinkedIn rate limit)
+    const postUrls: string[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < linkedInPosts.length; i++) {
+      if (i > 0) {
+        console.log(`[dailyLinkedInPost] Waiting 30s before posting part ${i + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, 30000));
+      }
+
+      try {
+        const postResult = await ctx.runAction(
+          internal.domains.social.linkedinPosting.createTargetedTextPost,
+          {
+            text: linkedInPosts[i],
+            target: "organization" as const,
+            postType: "daily_digest",
+            persona,
+            dateString: digestResult.digest.dateString,
+          }
+        );
+
+        if (postResult.success) {
+          postUrls.push(postResult.postUrl || "");
+          console.log(`[dailyLinkedInPost] Posted part ${i + 1}/${linkedInPosts.length}: ${postResult.postUrl}`);
+
+          // Archive each part
+          await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+            dateString: digestResult.digest.dateString,
+            persona,
+            postId: postResult.postUrn,
+            postUrl: postResult.postUrl,
+            content: linkedInPosts[i],
+            factCheckCount: i === 0 ? digestResult.factCheckCount : 0,
+            postType: "daily_digest",
+            metadata: {
+              part: i + 1,
+              totalParts: linkedInPosts.length,
+              ...(i === 0 && didYouKnow.didYouKnowMetadata ? { didYouKnow: didYouKnow.didYouKnowMetadata } : {}),
+            },
+            target: "organization",
+          });
+        } else {
+          errors.push(`Part ${i + 1}: ${postResult.error || "Unknown error"}`);
+          console.error(`[dailyLinkedInPost] Failed to post part ${i + 1}:`, postResult.error);
+        }
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : String(e);
+        errors.push(`Part ${i + 1}: ${errorMsg}`);
+        console.error(`[dailyLinkedInPost] Exception posting part ${i + 1}:`, errorMsg);
+      }
     }
 
-    if (!postResult.success) {
-      console.error(`[dailyLinkedInPost] LinkedIn post failed: ${postResult.error}`);
-      return {
-        success: false,
-        error: postResult.error,
-        posted: false,
-        content: linkedInContent,
-      };
-    }
-
-    // Step 4: Log success (mutation in separate file - no "use node")
-    await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
-      dateString: digestResult.digest.dateString,
-      persona,
-      postId: postResult.postUrn,
-      postUrl: postResult.postUrl,
-      content: linkedInContent,
-      factCheckCount: digestResult.factCheckCount,
-      postType: "daily_digest",
-      metadata: didYouKnow.didYouKnowMetadata ? { didYouKnow: didYouKnow.didYouKnowMetadata } : undefined,
-      target: "organization",
-    });
-
-    console.log(`[dailyLinkedInPost] Successfully posted to LinkedIn, postUrl=${postResult.postUrl}`);
+    console.log(`[dailyLinkedInPost] Posted ${postUrls.length}/${linkedInPosts.length} parts`);
 
     return {
-      success: true,
-      posted: true,
-      postId: postResult.postUrn,
-      postUrl: postResult.postUrl,
-      content: linkedInContent,
+      success: postUrls.length > 0,
+      posted: postUrls.length > 0,
+      postCount: postUrls.length,
+      totalParts: linkedInPosts.length,
+      postUrls,
+      errors: errors.length > 0 ? errors : undefined,
+      content: totalContent,
       factCheckCount: digestResult.factCheckCount,
       didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
       usage: digestResult.usage,
@@ -555,7 +548,13 @@ export const postDidYouKnowToLinkedIn = internalAction({
 
     const postResult = await ctx.runAction(
       internal.domains.social.linkedinPosting.createTargetedTextPost,
-      { text: content, target: "organization" as const }
+      {
+        text: content,
+        target: "organization" as const,
+        postType: "did_you_know",
+        persona,
+        dateString,
+      }
     );
     if (!postResult.success) {
       return { success: false, posted: false, error: postResult.error || "LinkedIn post failed", content };
@@ -612,78 +611,82 @@ export const testLinkedInWorkflow = internalAction({
 
 /**
  * Format funding rounds for a dedicated LinkedIn post.
- * This is a SEPARATE post from the main digest, focused only on funding news.
- * Uses clean plain-text formatting without emojis.
+ *
+ * Engagement gate requirements:
+ * - Lead with a hook, NOT a report header
+ * - Include opinion/take and a question
+ * - Stay under 1500 characters
+ * - Use content-specific hashtags
  */
 function formatFundingForLinkedIn(
   fundingRounds: NonNullable<AgentDigestOutput["fundingRounds"]>,
-  dateString: string
+  _dateString: string
 ): string {
+  const maxLength = 1450;
   const parts: string[] = [];
+  const topRounds = fundingRounds.slice(0, 3);
 
-  // Clean header
-  parts.push(`NodeBench AI Startup Funding Tracker`);
-  parts.push(`Date: ${dateString}`);
-  parts.push(`Top ${Math.min(fundingRounds.length, 5)} Raises Today (Ranked by Amount)`);
+  // 1. Hook: lead with the biggest raise as a claim
+  const biggest = topRounds[0];
+  if (biggest) {
+    const roundLabel = (biggest.roundType || "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "Undisclosed";
+    parts.push(`${biggest.companyName} just raised ${biggest.amountRaw} in a ${roundLabel} round.`);
+  } else {
+    parts.push("New startup funding rounds dropped today.");
+  }
   parts.push("");
 
-  for (const funding of fundingRounds.slice(0, 5)) {
-    // Format round type nicely
+  // 2. Compact list of top raises
+  for (const funding of topRounds) {
     const roundTypeRaw = typeof funding.roundType === "string" ? funding.roundType.trim() : "";
     const roundLabel =
       !roundTypeRaw || roundTypeRaw.toLowerCase() === "unknown"
         ? "Undisclosed"
         : roundTypeRaw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 
-    // Main entry with rank
-    parts.push(`${funding.rank}. ${funding.companyName}`);
-    parts.push(` Amount: ${funding.amountRaw}`);
-    parts.push(` Round: ${roundLabel}`);
+    let line = `${funding.rank}. ${funding.companyName} -- ${funding.amountRaw} [${roundLabel}]`;
+    if (funding.sector) line += ` -- ${funding.sector}`;
+    parts.push(line);
 
     if (funding.leadInvestors && funding.leadInvestors.length > 0) {
-      const investors = funding.leadInvestors.slice(0, 3).join(", ");
-      parts.push(` Investors: ${investors}`);
+      parts.push(`   Lead: ${funding.leadInvestors.slice(0, 2).join(", ")}`);
     }
-
-    if (funding.sector) {
-      parts.push(` Sector: ${funding.sector}`);
-    }
-
-    if (funding.productDescription) {
-      parts.push(` Product: ${funding.productDescription}`);
-    }
-
-    // Add links
-    const companyQuery = encodeURIComponent(funding.companyName);
-    parts.push(` Crunchbase: https://www.crunchbase.com/textsearch?q=${companyQuery}`);
-
-    if (funding.sourceUrl) {
-      parts.push(` Source: ${funding.sourceUrl}`);
-    }
-
-    parts.push("");
   }
+  parts.push("");
 
-  // Summary stats if available
-  const totalRaised = fundingRounds
-    .slice(0, 5)
-    .reduce((sum, f) => sum + (f.amountUsd || 0), 0);
+  // 3. Total raised summary
+  const totalRaised = topRounds.reduce((sum, f) => sum + (f.amountUsd || 0), 0);
   if (totalRaised > 0) {
     const formattedTotal = totalRaised >= 1_000_000_000
       ? `$${(totalRaised / 1_000_000_000).toFixed(1)}B`
       : totalRaised >= 1_000_000
         ? `$${(totalRaised / 1_000_000).toFixed(1)}M`
         : `$${totalRaised.toLocaleString()}`;
-    parts.push(`TOTAL RAISED TODAY: ${formattedTotal} across top 5 rounds`);
+    parts.push(`${formattedTotal} raised across these rounds today.`);
     parts.push("");
   }
 
-  // Footer with # format
-  parts.push("---");
-  parts.push("Powered by NodeBench AI - Startup Intelligence Platform");
-  parts.push("#Startups #Funding #VentureCapital #AI #SeedRound #SeriesA");
+  // 4. Opinion + question (required by engagement gate)
+  parts.push(`Watch for follow-on rounds from these companies -- early traction here signals sector momentum.`);
+  parts.push("");
+  parts.push(`Which of these raises caught your attention?`);
+  parts.push("");
 
-  return parts.join("\n");
+  // 5. Content-specific hashtags
+  const tags: string[] = [];
+  for (const f of topRounds.slice(0, 2)) {
+    const tag = f.companyName.replace(/[^a-zA-Z0-9]/g, "");
+    if (tag.length >= 3 && tag.length <= 30) tags.push(`#${tag}`);
+  }
+  tags.push("#StartupFunding", "#VentureCapital");
+  parts.push([...new Set(tags)].slice(0, 5).join(" "));
+
+  let content = parts.join("\n");
+  if (content.length > maxLength) {
+    content = content.slice(0, maxLength - 3).trimEnd() + "...";
+  }
+
+  return content;
 }
 
 /**
@@ -798,7 +801,13 @@ export const postDailyFundingToLinkedIn = internalAction({
     try {
       postResult = await ctx.runAction(
         internal.domains.social.linkedinPosting.createTargetedTextPost,
-        { text: linkedInContent, target: "organization" as const }
+        {
+          text: linkedInContent,
+          target: "organization" as const,
+          postType: "funding_tracker",
+          persona: "FUNDING",
+          dateString,
+        }
       );
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
@@ -888,356 +897,232 @@ const LINKEDIN_PERSONAS = {
 type PersonaId = keyof typeof LINKEDIN_PERSONAS;
 
 /**
- * Format digest content tailored to a specific persona.
- * Each persona has a RADICALLY DIFFERENT format optimized for their audience.
+ * Format digest content tailored to a specific persona as a multi-post thread.
+ * Returns string[] (2-3 posts), each under 1450 chars.
  *
- * IMPORTANT: Target post length is 1500-2500+ characters for optimal engagement.
+ * Post structure per persona:
+ * - Post 1: What's happening (persona-specific lens on key developments)
+ * - Post 2: What it means (verification, context, signal vs noise)
+ * - Post 3: Practical guide (specific actions, skills, resources)
+ *
+ * Content approach: researched, reasoned, guide-like. No motivational language.
  */
 function formatDigestForPersona(
   digest: AgentDigestOutput,
   personaId: PersonaId,
-  options: { maxLength?: number; minLength?: number } = {}
-): string {
-  const maxLength = options.maxLength || 2900;
-  const minLength = options.minLength || 2000; // Target minimum for depth
-  const dateString = digest.dateString;
-  const parts: string[] = [];
+  _options: { maxLength?: number; minLength?: number } = {}
+): string[] {
+  const maxPerPost = 1450;
+  const signals = digest.signals ?? [];
+  const entities = digest.entitySpotlight ?? [];
+  const findings = digest.factCheckFindings ?? [];
+  const actions = digest.actionItems ?? [];
+  const totalPosts = (findings.length > 0 || actions.length > 0) ? 3 : 2;
 
-  // Helper: format a publish date from ISO string
-  const fmtDate = (iso?: string): string => {
-    if (!iso) return "";
-    try {
-      const d = new Date(iso);
-      const mon = d.toLocaleString("en-US", { month: "short" });
-      return ` (Published: ${mon} ${d.getDate()}, ${d.getFullYear()})`;
-    } catch { return ""; }
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VC_INVESTOR: Deal Memo Style - Investment thesis, market dynamics, exit paths
-  // Format: Like a mini investment memo with clear thesis and company deep-dives
-  // ═══════════════════════════════════════════════════════════════════════════
-  if (personaId === "VC_INVESTOR") {
-    // Hook opening - use lead story investment angle
-    if (digest.leadStory?.whyItMatters) {
-      parts.push(digest.leadStory.whyItMatters);
-      parts.push("");
+  function personaTags(): string {
+    const tags: string[] = [];
+    for (const e of entities.slice(0, 2)) {
+      const tag = e.name.replace(/[^a-zA-Z0-9]/g, "");
+      if (tag.length >= 3 && tag.length <= 30) tags.push(`#${tag}`);
     }
-    parts.push(`NodeBench AI VC Deal Flow Intelligence`);
-    parts.push(`Date: ${dateString}`);
-    parts.push("");
-
-    // Investment Thesis of the Day
-    if (digest.leadStory) {
-      parts.push(`INVESTMENT THESIS:`);
-      parts.push(`"${digest.leadStory.title}"`);
-      parts.push("");
-      if (digest.leadStory.whyItMatters) {
-        parts.push(`Market Impact: ${digest.leadStory.whyItMatters}`);
-      }
-      if ((digest.leadStory as any).summary) {
-        parts.push(`Analysis: ${(digest.leadStory as any).summary}`);
-      }
-      if (digest.leadStory.url) {
-        parts.push(`Source: ${digest.leadStory.url}${fmtDate((digest.leadStory as any).publishedAt)}`);
-      }
-      parts.push("");
-    }
-
-    // Company Deep Dives - Most important for VCs - expanded
-    if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
-      parts.push(`COMPANY DEEP DIVES:`);
-      parts.push("");
-      for (const entity of digest.entitySpotlight.slice(0, 5)) {
-        const stage = entity.fundingStage || "Unknown Stage";
-        parts.push(`>> ${entity.name.toUpperCase()}`);
-        parts.push(`   Stage: ${stage}`);
-        parts.push(`   Type: ${entity.type || "Company"}`);
-        parts.push(`   Thesis: ${entity.keyInsight}`);
-        // Add search links for due diligence
-        const cbQuery = encodeURIComponent(entity.name);
-        parts.push(`   Crunchbase: https://www.crunchbase.com/textsearch?q=${cbQuery}`);
-        const newsQuery = encodeURIComponent(`${entity.name} funding news`);
-        parts.push(`   News: https://news.google.com/search?q=${newsQuery}`);
-        const linkedinQuery = encodeURIComponent(`${entity.name} company`);
-        parts.push(`   LinkedIn: https://www.linkedin.com/search/results/companies/?keywords=${linkedinQuery}`);
-        parts.push("");
-      }
-    }
-
-    // Deal Flow Signals - expanded
-    if (digest.signals && digest.signals.length > 0) {
-      parts.push(`DEAL FLOW SIGNALS:`);
-      parts.push("");
-      for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
-        const signal = digest.signals[i];
-        parts.push(`${i + 1}. ${signal.title}`);
-        if (signal.summary) {
-          parts.push(`   >> ${signal.summary}`);
-        }
-        if (signal.hardNumbers) {
-          parts.push(`   Data: ${signal.hardNumbers}`);
-        }
-        if (signal.url) {
-          parts.push(`   ${signal.url}${fmtDate((signal as any).publishedAt)}`);
-        }
-        parts.push("");
-      }
-    }
-
-    // Fact-Check Findings for VCs
-    if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
-      parts.push(`DUE DILIGENCE FINDINGS:`);
-      parts.push("");
-      for (const finding of digest.factCheckFindings.slice(0, 3)) {
-        const status = finding.status === "verified" ? "VERIFIED" :
-                       finding.status === "false" ? "FALSE" :
-                       finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
-        parts.push(`[${status}] ${finding.claim}`);
-        if (finding.explanation) {
-          parts.push(`   ${finding.explanation}`);
-        }
-        parts.push("");
-      }
-    }
-
-    // Portfolio Action Items
-    if (digest.actionItems && digest.actionItems.length > 0) {
-      parts.push(`PORTFOLIO ACTIONS:`);
-      parts.push("");
-      for (let i = 0; i < Math.min(digest.actionItems.length, 4); i++) {
-        parts.push(`${i + 1}. ${digest.actionItems[i].action}`);
-      }
-      parts.push("");
-    }
-
-    parts.push(`---`);
-    parts.push("");
-    parts.push(`NodeBench AI - VC Intelligence Platform`);
-    parts.push(`Autonomous deal flow powered by multi-agent research`);
-    parts.push("");
-    parts.push(`#VentureCapital #Startups #DealFlow #SeriesA #SeedFunding #AngelInvesting #FundingNews`);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // TECH_BUILDER: Engineering Newsletter Style - Code, architecture, tools
-  // Format: Like a technical newsletter with code implications and stack decisions
-  // ═══════════════════════════════════════════════════════════════════════════
-  else if (personaId === "TECH_BUILDER") {
-    // Hook opening - use lead story engineering angle
-    if (digest.leadStory?.whyItMatters) {
-      parts.push(digest.leadStory.whyItMatters);
-      parts.push("");
-    }
-    parts.push(`NodeBench AI Engineering Intelligence`);
-    parts.push(`Date: ${dateString}`);
-    parts.push("");
-
-    // Architecture Alert - Lead with technical implications
-    if (digest.leadStory) {
-      parts.push(`ARCHITECTURE ALERT:`);
-      parts.push(digest.leadStory.title);
-      parts.push("");
-      if (digest.leadStory.whyItMatters) {
-        parts.push(`Engineering Impact:`);
-        parts.push(digest.leadStory.whyItMatters);
-      }
-      if ((digest.leadStory as any).summary) {
-        parts.push(`Technical Context:`);
-        parts.push((digest.leadStory as any).summary);
-      }
-      if (digest.leadStory.url) {
-        parts.push(`${digest.leadStory.url}${fmtDate((digest.leadStory as any).publishedAt)}`);
-      }
-      parts.push("");
-    }
-
-    // Tech Stack Signals - Detailed with metrics
-    if (digest.signals && digest.signals.length > 0) {
-      parts.push(`KEY SIGNALS:`);
-      parts.push("");
-      for (let i = 0; i < Math.min(digest.signals.length, 5); i++) {
-        const signal = digest.signals[i];
-        parts.push(`${i + 1}. ${signal.title}`);
-        if (signal.summary) {
-          parts.push(`   ${signal.summary}`);
-        }
-        if (signal.hardNumbers) {
-          parts.push(`   Metrics: ${signal.hardNumbers}`);
-        }
-        if (signal.url) {
-          parts.push(`   ${signal.url}${fmtDate((signal as any).publishedAt)}`);
-        }
-        parts.push("");
-      }
-    }
-
-    // Fact-Check Findings for Tech
-    if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
-      parts.push(`VERIFIED CLAIMS:`);
-      parts.push("");
-      for (const finding of digest.factCheckFindings.slice(0, 3)) {
-        const status = finding.status === "verified" ? "VERIFIED" :
-                       finding.status === "false" ? "FALSE" :
-                       finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
-        parts.push(`[${status}] ${finding.claim}`);
-        if (finding.explanation) {
-          parts.push(`   ${finding.explanation}`);
-        }
-        parts.push("");
-      }
-    }
-
-    // Tech Companies/Tools to Evaluate - expanded
-    if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
-      parts.push(`TOOLS & TECH TO EVALUATE:`);
-      parts.push("");
-      for (const entity of digest.entitySpotlight.slice(0, 4)) {
-        parts.push(`>> ${entity.name}`);
-        parts.push(`   ${entity.keyInsight}`);
-        const ghQuery = encodeURIComponent(entity.name);
-        parts.push(`   GitHub: https://github.com/search?q=${ghQuery}`);
-        const hnQuery = encodeURIComponent(entity.name);
-        parts.push(`   HackerNews: https://hn.algolia.com/?q=${hnQuery}`);
-        parts.push("");
-      }
-    }
-
-    // Engineering Action Items
-    if (digest.actionItems && digest.actionItems.length > 0) {
-      parts.push(`ENGINEERING BACKLOG:`);
-      parts.push("");
-      for (let i = 0; i < Math.min(digest.actionItems.length, 5); i++) {
-        parts.push(`[ ] ${digest.actionItems[i].action}`);
-      }
-      parts.push("");
-    }
-
-    parts.push(`---`);
-    parts.push("");
-    parts.push(`NodeBench AI - Engineering Intelligence`);
-    parts.push(`AI-powered tech signal detection for builders`);
-    parts.push("");
-    parts.push(`#Engineering #DevOps #Architecture #OpenSource #AI #TechStack #SoftwareEngineering`);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GENERAL: Executive Summary Style - Balanced overview for business leaders
-  // ═══════════════════════════════════════════════════════════════════════════
-  else {
-    parts.push(`NodeBench AI Daily Intelligence Brief`);
-    parts.push(`Date: ${dateString}`);
-    parts.push(`Curated insights from across the tech ecosystem`);
-    parts.push("");
-
-    if (digest.leadStory) {
-      parts.push(`TODAY'S KEY SIGNAL:`);
-      parts.push(digest.leadStory.title);
-      if (digest.leadStory.url) {
-        parts.push(`Source: ${digest.leadStory.url}`);
-      }
-      if (digest.leadStory.whyItMatters) {
-        parts.push(`Why it matters: ${digest.leadStory.whyItMatters}`);
-      }
-      parts.push("");
-    }
-
-    if (digest.signals && digest.signals.length > 0) {
-      parts.push(`KEY SIGNALS:`);
-      parts.push("");
-      for (let i = 0; i < Math.min(digest.signals.length, 6); i++) {
-        const signal = digest.signals[i];
-        parts.push(`${i + 1}. ${signal.title}`);
-        if (signal.summary) {
-          parts.push(`   ${signal.summary}`);
-        }
-        if (signal.hardNumbers) {
-          parts.push(`   Key data: ${signal.hardNumbers}`);
-        }
-        if (signal.url) {
-          parts.push(`   Read more: ${signal.url}`);
-        }
-        parts.push("");
-      }
-    }
-
-    // Fact-Check Findings
-    if (digest.factCheckFindings && digest.factCheckFindings.length > 0) {
-      parts.push(`FACT-CHECKED CLAIMS:`);
-      parts.push("");
-      for (const finding of digest.factCheckFindings.slice(0, 4)) {
-        const status = finding.status === "verified" ? "VERIFIED" :
-                       finding.status === "false" ? "FALSE" :
-                       finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
-        parts.push(`[${status}] ${finding.claim}`);
-        if (finding.explanation) {
-          parts.push(`   ${finding.explanation}`);
-        }
-        parts.push("");
-      }
-    }
-
-    if (digest.entitySpotlight && digest.entitySpotlight.length > 0) {
-      parts.push(`COMPANIES AND PEOPLE TO WATCH:`);
-      parts.push("");
-      for (const entity of digest.entitySpotlight.slice(0, 5)) {
-        const typeLabel = entity.type ? `[${entity.type.toUpperCase()}]` : "";
-        const stage = entity.fundingStage ? ` - ${entity.fundingStage}` : "";
-        parts.push(`>> ${entity.name} ${typeLabel}${stage}`);
-        parts.push(`   ${entity.keyInsight}`);
-        if (entity.type === "company") {
-          const newsQuery = encodeURIComponent(`${entity.name} latest news`);
-          parts.push(`   News: https://news.google.com/search?q=${newsQuery}`);
-          const cbQuery = encodeURIComponent(entity.name);
-          parts.push(`   Crunchbase: https://www.crunchbase.com/textsearch?q=${cbQuery}`);
-        }
-        parts.push("");
-      }
-    }
-
-    if (digest.actionItems && digest.actionItems.length > 0) {
-      parts.push(`RECOMMENDED ACTIONS:`);
-      parts.push("");
-      for (let i = 0; i < Math.min(digest.actionItems.length, 5); i++) {
-        parts.push(`${i + 1}. ${digest.actionItems[i].action}`);
-      }
-      parts.push("");
-    }
-
-    parts.push(`---`);
-    parts.push("");
-    parts.push(`Powered by NodeBench AI - Autonomous Intelligence Platform`);
-    parts.push(`Zero-human-input continuous intelligence for investors and builders`);
-    parts.push("");
-    parts.push(`#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI #Startups #VentureCapital`);
-  }
-
-  let content = parts.join("\n");
-
-  // If under minimum length, add expanded "about" section
-  if (content.length < minLength) {
-    const paddingParts: string[] = [];
-    paddingParts.push("");
-    paddingParts.push("ABOUT THIS BRIEF:");
-    paddingParts.push("This intelligence brief is generated autonomously by NodeBench AI's multi-agent system. Our platform ingests signals from HackerNews, ArXiv, Reddit, and premium RSS feeds, fact-checks claims using multiple sources, and surfaces actionable insights for investors, founders, and technology leaders.");
-    paddingParts.push("");
-
-    // Insert before the footer
-    const footerIndex = content.indexOf("---");
-    if (footerIndex > -1) {
-      content = content.substring(0, footerIndex) + paddingParts.join("\n") + content.substring(footerIndex);
+    if (personaId === "VC_INVESTOR") {
+      tags.push("#VentureCapital", "#StartupFunding");
+    } else if (personaId === "TECH_BUILDER") {
+      tags.push("#Engineering", "#OpenSource");
     } else {
-      content = content + paddingParts.join("\n");
+      tags.push(...buildContentSpecificHashtags(digest).split(" ").filter(Boolean));
+    }
+    return [...new Set(tags)].slice(0, 5).join(" ");
+  }
+
+  const tags = personaTags();
+  const domain = extractDomain(digest.leadStory?.title || signals[0]?.title || "tech");
+
+  function capPost(text: string): string {
+    if (text.length <= maxPerPost) return text;
+    return text.slice(0, maxPerPost - 3).trimEnd() + "...";
+  }
+
+  // ── Post 1: WHAT'S HAPPENING (persona-specific lens) ──
+  const p1: string[] = [];
+
+  if (personaId === "VC_INVESTOR") {
+    const hook = digest.leadStory?.whyItMatters || digest.narrativeThesis || signals[0]?.summary
+      || `Key deal flow and capital movement in ${domain} today.`;
+    p1.push(truncateAtSentenceBoundary(hook, 220));
+    p1.push("");
+    for (let i = 0; i < Math.min(signals.length, 4); i++) {
+      let line = `${i + 1}. ${signals[i].title}`;
+      if (signals[i].hardNumbers) line += ` -- ${signals[i].hardNumbers}`;
+      p1.push(truncateAtSentenceBoundary(line, 200));
+      if (signals[i].summary && i < 2) p1.push(`   ${truncateAtSentenceBoundary(signals[i].summary!, 140)}`);
+      if (signals[i].url && i < 2) p1.push(`   ${signals[i].url}`);
+    }
+    if (signals.length > 0) p1.push("");
+    for (const entity of entities.slice(0, 2)) {
+      const stage = entity.fundingStage ? ` [${entity.fundingStage}]` : "";
+      p1.push(`${entity.name}${stage}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
+    }
+    if (entities.length > 0) p1.push("");
+    p1.push(`Watch how these ${domain} signals connect -- the pattern across deals matters more than any single round.`);
+    p1.push("");
+    p1.push("Which of these are you tracking for your portfolio?");
+    p1.push("");
+    p1.push(`[1/${totalPosts}] ${tags}`);
+  } else if (personaId === "TECH_BUILDER") {
+    const hook = digest.leadStory?.whyItMatters || digest.narrativeThesis || signals[0]?.summary
+      || `Technical developments in ${domain} worth evaluating today.`;
+    p1.push(truncateAtSentenceBoundary(hook, 220));
+    p1.push("");
+    for (let i = 0; i < Math.min(signals.length, 4); i++) {
+      let line = `${i + 1}. ${signals[i].title}`;
+      if (signals[i].hardNumbers) line += ` -- ${signals[i].hardNumbers}`;
+      p1.push(truncateAtSentenceBoundary(line, 200));
+      if (signals[i].summary && i < 2) p1.push(`   ${truncateAtSentenceBoundary(signals[i].summary!, 140)}`);
+      if (signals[i].url && i < 2) p1.push(`   ${signals[i].url}`);
+    }
+    if (signals.length > 0) p1.push("");
+    for (const entity of entities.slice(0, 2)) {
+      p1.push(`${entity.name}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
+    }
+    if (entities.length > 0) p1.push("");
+    p1.push(`Watch how these ${domain} releases and shifts connect -- they point to where the stack is heading.`);
+    p1.push("");
+    p1.push("Which of these have you evaluated?");
+    p1.push("");
+    p1.push(`[1/${totalPosts}] ${tags}`);
+  } else {
+    // GENERAL
+    const hook = digest.leadStory?.whyItMatters || digest.narrativeThesis || signals[0]?.summary
+      || `Key developments in ${domain} today that aren't getting enough attention.`;
+    p1.push(truncateAtSentenceBoundary(hook, 220));
+    p1.push("");
+    for (let i = 0; i < Math.min(signals.length, 4); i++) {
+      let line = `${i + 1}. ${signals[i].title}`;
+      if (signals[i].hardNumbers) line += ` -- ${signals[i].hardNumbers}`;
+      p1.push(truncateAtSentenceBoundary(line, 200));
+      if (signals[i].summary && i < 2) p1.push(`   ${truncateAtSentenceBoundary(signals[i].summary!, 140)}`);
+      if (signals[i].url && i < 2) p1.push(`   ${signals[i].url}`);
+    }
+    if (signals.length > 0) p1.push("");
+    for (const entity of entities.slice(0, 2)) {
+      const stage = entity.fundingStage ? ` [${entity.fundingStage}]` : "";
+      p1.push(`${entity.name}${stage}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
+    }
+    if (entities.length > 0) p1.push("");
+    p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+    p1.push("");
+    p1.push("Which of these are you tracking?");
+    p1.push("");
+    p1.push(`[1/${totalPosts}] ${tags}`);
+  }
+
+  // ── Post 2: WHAT IT MEANS (verification, context, signal vs noise) ──
+  const p2: string[] = [];
+
+  if (personaId === "VC_INVESTOR") {
+    p2.push(`Verification and context on today's ${domain} deal flow:`);
+  } else if (personaId === "TECH_BUILDER") {
+    p2.push(`Verification and context on today's ${domain} technical developments:`);
+  } else {
+    p2.push(`Verification and context on today's ${domain} developments:`);
+  }
+  p2.push("");
+
+  if (findings.length > 0) {
+    for (const finding of findings.slice(0, 4)) {
+      const badge = finding.status === "verified" ? "VERIFIED"
+        : finding.status === "false" ? "FALSE"
+        : finding.status === "partially_verified" ? "PARTIAL" : "UNVERIFIED";
+      p2.push(`[${badge}] ${truncateAtSentenceBoundary(finding.claim, 150)}`);
+      if (finding.explanation) p2.push(`  ${truncateAtSentenceBoundary(finding.explanation, 140)}`);
+      const srcParts: string[] = [];
+      if (finding.source) srcParts.push(`Source: ${finding.source}`);
+      if (finding.sourceUrl) srcParts.push(finding.sourceUrl);
+      if (srcParts.length > 0) p2.push(`  ${srcParts.join(" | ")}`);
+      p2.push("");
+    }
+  } else {
+    for (let i = 0; i < Math.min(signals.length, 3); i++) {
+      const s = signals[i];
+      if (s.summary) {
+        p2.push(`${s.title}`);
+        p2.push(`  ${truncateAtSentenceBoundary(s.summary, 180)}`);
+        if (s.url) p2.push(`  ${s.url}`);
+        p2.push("");
+      }
     }
   }
 
-  // Truncate if too long - but ensure we keep minimum
-  if (content.length > maxLength) {
-    content = content.slice(0, maxLength - 80) + "\n\n---\nPowered by NodeBench AI - Autonomous Intelligence\n#AI #TechIntelligence #NodeBenchAI";
+  p2.push(`High-volume news cycles often bury the developments that affect your decisions the most. This is the context that matters.`);
+  p2.push("");
+  p2.push("What's one claim you've seen this week that you'd want fact-checked?");
+  p2.push("");
+  p2.push(`[2/${totalPosts}] ${tags}`);
+
+  // ── Post 3: PRACTICAL GUIDE (specific actions, skills, resources) ──
+  const p3: string[] = [];
+
+  if (personaId === "VC_INVESTOR") {
+    p3.push(`Based on today's research -- a practical guide for investors:`);
+  } else if (personaId === "TECH_BUILDER") {
+    p3.push(`Based on today's research -- a practical guide for builders:`);
+  } else {
+    p3.push(`Based on today's research -- here's a practical guide on what to focus on:`);
+  }
+  p3.push("");
+
+  if (actions.length > 0) {
+    for (let i = 0; i < Math.min(actions.length, 4); i++) {
+      p3.push(`${i + 1}. ${truncateAtSentenceBoundary(actions[i].action, 180)}`);
+    }
+    p3.push("");
   }
 
-  console.log(`[formatDigestForPersona] ${personaId} content length: ${content.length} chars (target: ${minLength}-${maxLength})`);
-  return content;
+  const skillSignals = signals.filter(s =>
+    /skill|learn|tool|framework|open.?source|developer|build|create|opportunity|hiring|job|course|certif/i.test(
+      `${s.title} ${s.summary || ""}`
+    )
+  ).slice(0, 3);
+
+  if (skillSignals.length > 0) {
+    if (personaId === "VC_INVESTOR") {
+      p3.push("Sectors and tools worth diligence:");
+    } else if (personaId === "TECH_BUILDER") {
+      p3.push("Tools and frameworks to evaluate:");
+    } else {
+      p3.push("Relevant skills and tools to look into:");
+    }
+    for (const s of skillSignals) {
+      p3.push(`- ${truncateAtSentenceBoundary(s.title, 140)}`);
+      if (s.summary) p3.push(`  ${truncateAtSentenceBoundary(s.summary, 120)}`);
+    }
+    p3.push("");
+  }
+
+  if (personaId === "VC_INVESTOR") {
+    p3.push(`Focus on what you can verify: the data behind the round, the team's track record, the market timing.`);
+    p3.push("");
+    p3.push("What deal or sector are you doing diligence on right now?");
+  } else if (personaId === "TECH_BUILDER") {
+    p3.push(`Focus on what you can control: the tools you evaluate, the architectures you test, the prototypes you ship.`);
+    p3.push("");
+    p3.push("What are you building or evaluating this week?");
+  } else {
+    p3.push(`Focus on what you can control: the skills you develop, the projects you ship, the information you verify before acting on.`);
+    p3.push("");
+    p3.push("What are you working on or learning this week?");
+  }
+  p3.push("");
+  p3.push(`[3/3] ${tags}`);
+
+  const posts = totalPosts === 3
+    ? [capPost(p1.join("\n")), capPost(p2.join("\n")), capPost(p3.join("\n"))]
+    : [capPost(p1.join("\n")), capPost(p2.join("\n"))];
+  for (let i = 0; i < posts.length; i++) {
+    console.log(`[formatDigestForPersona] ${personaId} Post ${i + 1}/${posts.length}: ${posts[i].length} chars`);
+  }
+  return posts;
 }
 
 /**
@@ -1272,6 +1157,9 @@ export const postMultiPersonaDigest = internalAction({
       persona: string;
       success: boolean;
       postUrl?: string;
+      postUrls?: string[];
+      postCount?: number;
+      totalParts?: number;
       error?: string;
       content?: string;
       didYouKnow?: any;
@@ -1338,20 +1226,25 @@ export const postMultiPersonaDigest = internalAction({
         continue;
       }
 
-      // Format content for this persona
-      let linkedInContent = formatDigestForPersona(digestResult.digest, personaId);
+      // Format content for this persona (multi-post thread)
+      const linkedInPosts = formatDigestForPersona(digestResult.digest, personaId);
+      // Optionally prepend didYouKnow to the first post
       if (didYouKnowText) {
-        linkedInContent = truncateForLinkedIn(`${didYouKnowText}\n\n${linkedInContent}`, 2900);
+        linkedInPosts[0] = truncateForLinkedIn(`${didYouKnowText}\n\n${linkedInPosts[0]}`, 1450);
       }
 
-      console.log(`[multiPersonaDigest] Formatted content for ${personaId} (${linkedInContent.length} chars)`);
+      const totalContent = linkedInPosts.join("\n\n---\n\n");
+      console.log(`[multiPersonaDigest] Formatted ${linkedInPosts.length} posts for ${personaId} (total ${totalContent.length} chars)`);
 
       if (dryRun) {
-        console.log(`[multiPersonaDigest] DRY RUN - would post for ${personaId}:\n${linkedInContent}`);
+        for (let p = 0; p < linkedInPosts.length; p++) {
+          console.log(`[multiPersonaDigest] DRY RUN - ${personaId} Post ${p + 1}/${linkedInPosts.length} (${linkedInPosts[p].length} chars):\n${linkedInPosts[p]}`);
+        }
         results.push({
           persona: personaId,
           success: true,
-          content: linkedInContent,
+          content: totalContent,
+          postCount: linkedInPosts.length,
           didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
         });
         continue;
@@ -1364,7 +1257,7 @@ export const postMultiPersonaDigest = internalAction({
             dateString,
             persona: personaId,
             postType: "daily_digest",
-            content: linkedInContent,
+            content: linkedInPosts[0],
           },
         );
         if (match.anyForType) {
@@ -1372,63 +1265,78 @@ export const postMultiPersonaDigest = internalAction({
           results.push({
             persona: personaId,
             success: true,
-            content: linkedInContent,
+            content: totalContent,
             didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
           });
           continue;
         }
       }
 
-      // Post to LinkedIn
-      try {
-        const postResult = await ctx.runAction(
-          internal.domains.social.linkedinPosting.createTargetedTextPost,
-          { text: linkedInContent }
-        );
+      // Post each part to LinkedIn with delay between parts
+      const personaPostUrls: string[] = [];
+      let personaError: string | undefined;
 
-        if (postResult.success) {
-          console.log(`[multiPersonaDigest] Posted ${personaId} to LinkedIn: ${postResult.postUrl}`);
-
-          // Archive the post
-          await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
-            dateString,
-            persona: personaId,
-            postId: postResult.postUrn,
-            postUrl: postResult.postUrl,
-            content: linkedInContent,
-            factCheckCount: 0,
-            postType: "daily_digest",
-            metadata: didYouKnowPreface.didYouKnowMetadata ? { didYouKnow: didYouKnowPreface.didYouKnowMetadata } : undefined,
-            target: "organization",
-          });
-
-          results.push({
-            persona: personaId,
-            success: true,
-            postUrl: postResult.postUrl,
-            content: linkedInContent,
-            didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
-          });
-        } else {
-          results.push({
-            persona: personaId,
-            success: false,
-            error: postResult.error,
-            content: linkedInContent,
-          });
+      for (let p = 0; p < linkedInPosts.length; p++) {
+        if (p > 0) {
+          console.log(`[multiPersonaDigest] Waiting 30s before posting ${personaId} part ${p + 1}...`);
+          await new Promise(resolve => setTimeout(resolve, 30000));
         }
-      } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : String(e);
-        results.push({
-          persona: personaId,
-          success: false,
-          error: errorMsg,
-          content: linkedInContent,
-        });
+
+        try {
+          const postResult = await ctx.runAction(
+            internal.domains.social.linkedinPosting.createTargetedTextPost,
+            {
+              text: linkedInPosts[p],
+              target: "organization" as const,
+              postType: "daily_digest",
+              persona: personaId,
+              dateString,
+            }
+          );
+
+          if (postResult.success) {
+            personaPostUrls.push(postResult.postUrl || "");
+            console.log(`[multiPersonaDigest] Posted ${personaId} part ${p + 1}/${linkedInPosts.length}: ${postResult.postUrl}`);
+
+            // Archive each part
+            await ctx.runMutation(internal.workflows.dailyLinkedInPostMutations.logLinkedInPost, {
+              dateString,
+              persona: personaId,
+              postId: postResult.postUrn,
+              postUrl: postResult.postUrl,
+              content: linkedInPosts[p],
+              factCheckCount: p === 0 ? digestResult.factCheckCount : 0,
+              postType: "daily_digest",
+              metadata: {
+                part: p + 1,
+                totalParts: linkedInPosts.length,
+                ...(p === 0 && didYouKnowPreface.didYouKnowMetadata ? { didYouKnow: didYouKnowPreface.didYouKnowMetadata } : {}),
+              },
+              target: "organization",
+            });
+          } else {
+            personaError = postResult.error || "Unknown error";
+            console.error(`[multiPersonaDigest] Failed ${personaId} part ${p + 1}:`, personaError);
+          }
+        } catch (e) {
+          personaError = e instanceof Error ? e.message : String(e);
+          console.error(`[multiPersonaDigest] Exception ${personaId} part ${p + 1}:`, personaError);
+        }
       }
 
-      // Delay between posts (except for last one)
-      if (!dryRun && i < requestedPersonas.length - 1) {
+      results.push({
+        persona: personaId,
+        success: personaPostUrls.length > 0,
+        postUrls: personaPostUrls,
+        postCount: personaPostUrls.length,
+        totalParts: linkedInPosts.length,
+        error: personaError,
+        content: totalContent,
+        didYouKnow: didYouKnowPreface.didYouKnowMetadata ?? null,
+      });
+
+      // Delay between personas (except for last one)
+      if (i < requestedPersonas.length - 1) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
@@ -1628,7 +1536,7 @@ async function maybePrependDidYouKnowToLinkedInContent(args: {
     const preface = truncateAtSentenceBoundary(sanitizeForLinkedIn(didYouKnow.output.messageText), 420).trim();
     if (!preface) return { content: args.baseContent };
 
-    const combined = truncateForLinkedIn(`${preface}\n\n${args.baseContent}`, 2900);
+    const combined = truncateForLinkedIn(`${preface}\n\n${args.baseContent}`, 1450);
 	    return {
 	      content: combined,
 	      didYouKnowMetadata: {
@@ -2892,7 +2800,13 @@ export const postStartupFundingBrief = internalAction({
       try {
         const postResult = await ctx.runAction(
           internal.domains.social.linkedinPosting.createTargetedTextPost,
-          { text: linkedInPosts[i], target: "organization" as const }
+          {
+            text: linkedInPosts[i],
+            target: "organization" as const,
+            postType: "funding_brief",
+            persona: "FUNDING",
+            dateString,
+          }
         );
 
         if (postResult.success && postResult.postUrl) {

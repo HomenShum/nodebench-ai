@@ -55,7 +55,7 @@ interface AnimatedCardProps {
 export function AnimatedCard({ children, className = '', onClick }: AnimatedCardProps) {
   return (
     <motion.div
-      className={`bg-white rounded-xl border border-gray-200 p-4 cursor-pointer ${className}`}
+      className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4 cursor-pointer ${className}`}
       variants={cardHoverVariants}
       initial="idle"
       whileHover="hover"

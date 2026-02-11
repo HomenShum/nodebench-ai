@@ -94,7 +94,7 @@ for (const tool of ALL_TOOLS) {
 const server = new Server(
   {
     name: "convex-mcp-nodebench",
-    version: "0.9.3",
+    version: "0.9.4",
   },
   {
     capabilities: {

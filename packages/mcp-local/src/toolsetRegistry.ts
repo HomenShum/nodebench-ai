@@ -41,6 +41,7 @@ import { architectTools } from "./tools/architectTools.js";
 import { toonTools } from "./tools/toonTools.js";
 import { uiUxDiveTools } from "./tools/uiUxDiveTools.js";
 import { mcpBridgeTools } from "./tools/mcpBridgeTools.js";
+import { uiUxDiveAdvancedTools } from "./tools/uiUxDiveAdvancedTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -80,6 +81,7 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   architect: architectTools,
   ui_ux_dive: uiUxDiveTools,
   mcp_bridge: mcpBridgeTools,
+  ui_ux_dive_v2: uiUxDiveAdvancedTools,
 };
 
 // Pre-computed tool name → toolset name lookup

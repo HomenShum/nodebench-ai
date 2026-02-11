@@ -22,6 +22,8 @@ export {
   MODEL_SPECS,
   LEGACY_ALIASES,
   DEFAULT_MODEL,
+  FALLBACK_MODEL,
+  MODEL_PRIORITY_ORDER,
 
   // Core resolver functions
   getLanguageModel,
@@ -39,6 +41,10 @@ export {
   // Normalization
   normalizeModelInput,
   isApprovedModel,
+
+  // Free model helpers
+  isFreeModel,
+  getFreeModels,
 } from "./modelResolver";
 
 // Healthcheck exports

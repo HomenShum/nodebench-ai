@@ -115,7 +115,7 @@ function buildSarif(
       tool: {
         driver: {
           name: "convex-mcp-nodebench",
-          version: "0.9.3",
+          version: "0.9.4",
           informationUri: "https://www.npmjs.com/package/@homenshum/convex-mcp-nodebench",
           rules: [...rulesMap.values()],
         },
