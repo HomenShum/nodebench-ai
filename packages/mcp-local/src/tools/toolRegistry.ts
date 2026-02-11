@@ -2144,6 +2144,69 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   },
 
   // ═══════════════════════════════════════════
+  // MCP BRIDGE — Connect external MCP servers
+  // ═══════════════════════════════════════════
+  {
+    name: "connect_mcp_driver",
+    category: "mcp_bridge",
+    tags: ["mcp", "bridge", "driver", "playwright", "mobile", "connect", "spawn", "external", "server", "proxy"],
+    quickRef: {
+      nextAction: "Driver connected. Use list_driver_tools to see available tools, then call_driver_tool to invoke them.",
+      nextTools: ["list_driver_tools", "call_driver_tool", "start_ui_dive"],
+      methodology: "agentic_vision",
+      tip: "Predefined drivers: 'playwright' (browser automation) and 'mobile' (iOS/Android). Add extraArgs like ['--headless'] for Playwright.",
+    },
+    phase: "research",
+  },
+  {
+    name: "list_driver_tools",
+    category: "mcp_bridge",
+    tags: ["mcp", "bridge", "driver", "tools", "list", "discover", "playwright", "mobile"],
+    quickRef: {
+      nextAction: "Review available tools and their parameters. Use call_driver_tool to invoke the one you need.",
+      nextTools: ["call_driver_tool", "connect_mcp_driver"],
+      methodology: "agentic_vision",
+      tip: "Use verbose=true to see full input schemas. Useful for understanding what parameters each tool accepts.",
+    },
+    phase: "research",
+  },
+  {
+    name: "call_driver_tool",
+    category: "mcp_bridge",
+    tags: ["mcp", "bridge", "driver", "call", "invoke", "proxy", "playwright", "mobile", "browser", "device"],
+    quickRef: {
+      nextAction: "Tool result returned. Continue with more tool calls, or use log_interaction to record the result in a dive session.",
+      nextTools: ["call_driver_tool", "log_interaction", "tag_ui_bug", "dive_snapshot"],
+      methodology: "agentic_vision",
+      tip: "Combines well with UI/UX Full Dive: use call_driver_tool for browser/mobile actions, log_interaction to record results.",
+    },
+    phase: "test",
+  },
+  {
+    name: "disconnect_driver",
+    category: "mcp_bridge",
+    tags: ["mcp", "bridge", "driver", "disconnect", "cleanup", "shutdown"],
+    quickRef: {
+      nextAction: "Driver disconnected. Reconnect with connect_mcp_driver if needed.",
+      nextTools: ["connect_mcp_driver", "get_dive_report"],
+      methodology: "agentic_vision",
+    },
+    phase: "utility",
+  },
+  {
+    name: "check_dive_drivers",
+    category: "mcp_bridge",
+    tags: ["mcp", "bridge", "driver", "check", "setup", "status", "playwright", "mobile", "config", "ide"],
+    quickRef: {
+      nextAction: "Review driver status. Connect available drivers with connect_mcp_driver.",
+      nextTools: ["connect_mcp_driver", "start_ui_dive"],
+      methodology: "agentic_vision",
+      tip: "Also shows IDE config snippets for adding these MCP servers directly to Windsurf/Claude Code/Cursor.",
+    },
+    phase: "research",
+  },
+
+  // ═══════════════════════════════════════════
   // ARCHITECT — Structural code analysis
   // ═══════════════════════════════════════════
   {
