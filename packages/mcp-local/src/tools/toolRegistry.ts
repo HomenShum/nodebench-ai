@@ -2118,6 +2118,30 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "ship",
   },
+  {
+    name: "dive_snapshot",
+    category: "ui_ux_dive",
+    tags: ["ui", "screenshot", "snapshot", "accessibility", "a11y", "capture", "visual", "evidence", "image"],
+    quickRef: {
+      nextAction: "Screenshot captured. Use it as visual evidence for bugs (tag_ui_bug) or to document current state. Use mode='accessibility' for a11y tree.",
+      nextTools: ["tag_ui_bug", "log_interaction", "end_component_flow"],
+      methodology: "agentic_vision",
+      tip: "Use selector to screenshot specific elements. Use mode='accessibility' for a11y tree inspection without vision models.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_auto_discover",
+    category: "ui_ux_dive",
+    tags: ["ui", "discover", "scan", "dom", "components", "landmarks", "auto", "register", "navigate"],
+    quickRef: {
+      nextAction: "Components auto-registered from DOM. Claim them with start_component_flow for testing.",
+      nextTools: ["start_component_flow", "register_component", "get_dive_tree"],
+      methodology: "agentic_vision",
+      tip: "Use navigateUrl to discover components on a different page. Use parentId to nest under an existing component.",
+    },
+    phase: "research",
+  },
 
   // ═══════════════════════════════════════════
   // ARCHITECT — Structural code analysis

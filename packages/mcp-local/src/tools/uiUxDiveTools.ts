@@ -16,7 +16,164 @@
  */
 
 import { getDb, genId } from "../db.js";
-import type { McpTool } from "../types.js";
+import type { McpTool, ContentBlock } from "../types.js";
+
+// ── Browser Session Management (Built-in Playwright) ────────────────────
+// Singleton browser/page per dive session. Auto-detects Playwright.
+// Falls back gracefully to manual/logging-only mode if not installed.
+
+let _browser: any = null;
+let _page: any = null;
+let _activeSessionId: string | null = null;
+
+async function getPlaywright(): Promise<any> {
+  try {
+    return await import("playwright");
+  } catch {
+    return null;
+  }
+}
+
+async function ensureBrowser(
+  url: string,
+  sessionId: string,
+  headless = true,
+): Promise<{ page: any; launched: boolean; error?: string }> {
+  if (_page && _activeSessionId === sessionId) {
+    return { page: _page, launched: false };
+  }
+  await closeBrowser();
+  const pw = await getPlaywright();
+  if (!pw) {
+    return {
+      page: null,
+      launched: false,
+      error:
+        "Playwright not installed. Install for zero-friction browser automation:\n  npm install playwright && npx playwright install chromium\nFalling back to manual logging mode.",
+    };
+  }
+  try {
+    _browser = await pw.chromium.launch({ headless });
+    _page = await _browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await _page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+    _activeSessionId = sessionId;
+    return { page: _page, launched: true };
+  } catch (e: any) {
+    await closeBrowser();
+    return {
+      page: null,
+      launched: false,
+      error: `Browser launch failed: ${e.message}. Try: npx playwright install chromium`,
+    };
+  }
+}
+
+async function closeBrowser(): Promise<void> {
+  try {
+    if (_browser) await _browser.close();
+  } catch {
+    /* ignore close errors */
+  }
+  _browser = null;
+  _page = null;
+  _activeSessionId = null;
+}
+
+async function executeAction(
+  page: any,
+  action: string,
+  target?: string,
+  inputValue?: string,
+): Promise<{ success: boolean; observation: string; durationMs: number }> {
+  const start = Date.now();
+  try {
+    switch (action) {
+      case "click":
+        if (!target) return { success: false, observation: "No target selector for click", durationMs: Date.now() - start };
+        await page.click(target, { timeout: 10000 });
+        break;
+      case "type":
+        if (!target || !inputValue) return { success: false, observation: "Need target and inputValue for type", durationMs: Date.now() - start };
+        await page.fill(target, inputValue, { timeout: 10000 });
+        break;
+      case "hover":
+        if (!target) return { success: false, observation: "No target selector for hover", durationMs: Date.now() - start };
+        await page.hover(target, { timeout: 10000 });
+        break;
+      case "navigate":
+        if (!inputValue) return { success: false, observation: "No URL for navigate (use inputValue)", durationMs: Date.now() - start };
+        await page.goto(inputValue, { waitUntil: "domcontentloaded", timeout: 30000 });
+        break;
+      case "scroll":
+        await page.evaluate(`window.scrollBy(0, ${parseInt(inputValue ?? "500", 10)})`);
+        break;
+      case "submit":
+        if (target) await page.press(target, "Enter", { timeout: 10000 });
+        else await page.keyboard.press("Enter");
+        break;
+      case "keypress":
+        await page.keyboard.press(inputValue ?? "Enter");
+        break;
+      case "focus":
+        if (target) await page.focus(target, { timeout: 10000 });
+        break;
+      case "wait":
+        await page.waitForTimeout(parseInt(inputValue ?? "1000", 10));
+        break;
+      case "assert": {
+        if (!target) return { success: true, observation: "No target for assert — skipped", durationMs: Date.now() - start };
+        const visible = await page.isVisible(target);
+        if (!visible) return { success: false, observation: `Element not visible: ${target}`, durationMs: Date.now() - start };
+        break;
+      }
+      default:
+        return { success: true, observation: `Action '${action}' not auto-executable — logged only`, durationMs: Date.now() - start };
+    }
+    await page.waitForTimeout(300);
+    const title = await page.title();
+    const url = page.url();
+    return { success: true, observation: `Executed. Page: "${title}" (${url})`, durationMs: Date.now() - start };
+  } catch (e: any) {
+    return { success: false, observation: `Action failed: ${e.message}`, durationMs: Date.now() - start };
+  }
+}
+
+async function autoDiscoverComponents(
+  page: any,
+): Promise<Array<{ name: string; type: string; selector: string; children: number }>> {
+  // Runs in the browser context via page.evaluate — passed as a string
+  // to avoid TypeScript DOM type errors in the Node compilation target.
+  const script = `(() => {
+    const found = [];
+    const landmarks = {
+      nav: "menu", header: "header", footer: "footer", main: "section",
+      aside: "sidebar", form: "form", dialog: "modal", table: "table",
+    };
+    for (const [tag, type] of Object.entries(landmarks)) {
+      document.querySelectorAll(tag).forEach((el, i) => {
+        const label = el.getAttribute("aria-label") || el.getAttribute("id") || tag + "_" + i;
+        const selector = el.id ? "#" + el.id : tag + ":nth-of-type(" + (i + 1) + ")";
+        found.push({
+          name: label, type, selector,
+          children: el.querySelectorAll("a, button, input, select, textarea, [role='button'], [role='link']").length,
+        });
+      });
+    }
+    const interSel = "button, [role='button'], a[href], input, select, textarea";
+    const insideLandmark = new Set();
+    for (const tag of Object.keys(landmarks)) {
+      document.querySelectorAll(tag).forEach(parent => {
+        parent.querySelectorAll(interSel).forEach(child => insideLandmark.add(child));
+      });
+    }
+    const orphans = [...document.querySelectorAll(interSel)].filter(el => !insideLandmark.has(el));
+    if (orphans.length > 0) {
+      found.push({ name: "Ungrouped Interactive Elements", type: "section", selector: "body", children: orphans.length });
+    }
+    return found;
+  })()`;
+  return page.evaluate(script);
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -146,7 +303,7 @@ export const uiUxDiveTools: McpTool[] = [
   {
     name: "start_ui_dive",
     description:
-      "Initialize a UI/UX Full Dive session for comprehensive app traversal. Creates a session that tracks all components, interactions, and bugs. The main agent should call this first, then register_component for each top-level page/section discovered. Subagents can then claim individual components via start_component_flow for isolated parallel traversal. Returns the session_id needed by all subsequent tools.",
+      "Initialize a UI/UX Full Dive session. Auto-launches a headless Playwright browser if installed (zero setup). Navigates to the app URL and optionally auto-discovers page components from the DOM. If Playwright is not installed, falls back to manual logging mode where you drive the browser yourself (via playwright-mcp, mobile-mcp, or manual browsing) and just use the dive tools for structured logging. Returns the session_id needed by all subsequent tools.",
     inputSchema: {
       type: "object",
       properties: {
@@ -162,6 +319,14 @@ export const uiUxDiveTools: McpTool[] = [
           type: "number",
           description: "Number of parallel subagents planned (default: 1, set higher for parallel swarm)",
         },
+        headless: {
+          type: "boolean",
+          description: "Run browser in headless mode (default: true). Set false to see the browser window.",
+        },
+        autoDiscover: {
+          type: "boolean",
+          description: "Auto-discover and register page components from the DOM (default: true). Scans for nav, header, footer, forms, modals, tables, sidebars, and interactive elements.",
+        },
         metadata: {
           type: "object",
           description: "Optional JSON metadata (e.g. { viewport: '1280x720', auth: 'guest' })",
@@ -170,10 +335,12 @@ export const uiUxDiveTools: McpTool[] = [
       required: ["appUrl"],
     },
     handler: async (args) => {
-      const { appUrl, appName, agentCount, metadata } = args as {
+      const { appUrl, appName, agentCount, metadata, headless, autoDiscover } = args as {
         appUrl: string;
         appName?: string;
         agentCount?: number;
+        headless?: boolean;
+        autoDiscover?: boolean;
         metadata?: Record<string, unknown>;
       };
 
@@ -184,21 +351,65 @@ export const uiUxDiveTools: McpTool[] = [
         "INSERT INTO ui_dive_sessions (id, app_url, app_name, agent_count, metadata) VALUES (?, ?, ?, ?, ?)"
       ).run(id, appUrl, appName ?? null, agentCount ?? 1, metadata ? JSON.stringify(metadata) : null);
 
+      // Try to launch browser
+      const browserResult = await ensureBrowser(appUrl, id, headless !== false);
+
+      // Auto-discover components if browser is active
+      let discoveredComponents: Array<{ name: string; type: string; selector: string; children: number }> = [];
+      const registeredIds: string[] = [];
+
+      if (browserResult.page && autoDiscover !== false) {
+        try {
+          discoveredComponents = await autoDiscoverComponents(browserResult.page);
+
+          // Auto-register discovered components
+          for (const comp of discoveredComponents) {
+            const compId = genId("comp");
+            db.prepare(
+              "INSERT INTO ui_dive_components (id, session_id, parent_id, name, component_type, selector, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            ).run(compId, id, null, comp.name, comp.type, comp.selector, JSON.stringify({ autoDiscovered: true, interactiveChildren: comp.children }));
+            registeredIds.push(compId);
+          }
+
+          // Set first as root
+          if (registeredIds.length > 0) {
+            db.prepare("UPDATE ui_dive_sessions SET root_component_id = ? WHERE id = ?").run(registeredIds[0], id);
+          }
+        } catch {
+          /* auto-discover is best-effort */
+        }
+      }
+
       return {
         sessionId: id,
         appUrl,
         appName: appName ?? null,
         agentCount: agentCount ?? 1,
         status: "active",
-        _hint: `Session created. Now register top-level components with register_component({ sessionId: "${id}", name: "...", componentType: "page" }). For parallel swarm: assign each subagent a component via start_component_flow.`,
+        browser: {
+          active: !!browserResult.page,
+          launched: browserResult.launched,
+          mode: browserResult.page ? "auto" : "manual",
+          ...(browserResult.error ? { setupHint: browserResult.error } : {}),
+        },
+        autoDiscovery: {
+          componentsFound: discoveredComponents.length,
+          components: discoveredComponents.map((c, i) => ({
+            componentId: registeredIds[i],
+            ...c,
+          })),
+        },
+        _hint: browserResult.page
+          ? `Browser launched and ${discoveredComponents.length} components auto-discovered. Use log_interaction with CSS selectors in 'target' — actions will auto-execute in the browser. Call dive_snapshot for screenshots.`
+          : `Manual mode: drive the browser yourself and use log_interaction to record what you observe. Install Playwright for auto-execution: npm install playwright && npx playwright install chromium`,
         _workflow: [
-          "1. Navigate to appUrl and identify top-level pages/sections",
-          "2. register_component for each (componentType: 'page')",
-          "3. For each page, register child sections/forms/modals",
-          "4. Assign subagents: start_component_flow({ componentId, agentId })",
-          "5. Each subagent: log_interaction + tag_ui_bug within their component",
-          "6. Each subagent: end_component_flow when done",
-          "7. Main agent: get_dive_tree for full overview, get_dive_report for final report",
+          "1. Components auto-discovered (or register manually with register_component)",
+          "2. Assign subagents: start_component_flow({ componentId, agentId })",
+          "3. Each subagent: log_interaction (auto-executes clicks/types if browser active)",
+          "4. Tag bugs: tag_ui_bug for any issues found",
+          "5. dive_snapshot for visual evidence at any point",
+          "6. end_component_flow when each component is done",
+          "7. get_dive_report for final comprehensive report",
         ],
       };
     },
@@ -332,42 +543,47 @@ export const uiUxDiveTools: McpTool[] = [
     },
   },
 
-  // 4. Log an interaction
+  // 4. Log an interaction (auto-executes when browser is active)
   {
     name: "log_interaction",
     description:
-      "Log a single interaction step within a component flow. Each interaction records what action was taken, what happened, and any observations. Actions: click, type, hover, scroll, navigate, submit, drag, keypress, swipe, focus, blur, resize, wait, assert. Interactions are auto-numbered sequentially within each component.",
+      "Log and optionally auto-execute an interaction step. If the built-in Playwright browser is active (launched by start_ui_dive), the action is automatically executed in the browser — just provide a CSS selector in 'target' and the result/observation are filled in for you. If no browser is active (manual mode), this logs your observation as-is. Actions: click, type, hover, scroll, navigate, submit, keypress, focus, wait, assert.",
     inputSchema: {
       type: "object",
       properties: {
         componentId: { type: "string", description: "Component ID being tested" },
         action: {
           type: "string",
-          description: "Interaction type: click, type, hover, scroll, navigate, submit, drag, keypress, swipe, focus, blur, resize, wait, assert",
+          description: "Interaction type: click, type, hover, scroll, navigate, submit, keypress, focus, wait, assert",
         },
-        target: { type: "string", description: "What was interacted with (e.g. 'Submit button', 'Email input field', 'Dropdown menu')" },
-        inputValue: { type: "string", description: "What was typed/selected/entered (for type, submit, select actions)" },
+        target: { type: "string", description: "CSS selector for auto-execution (e.g. '#submit-btn', '[data-testid=email]', 'button:has-text(\"Login\")'), or human-readable description in manual mode" },
+        inputValue: { type: "string", description: "Value to type/enter (for type, submit actions), URL (for navigate), pixels (for scroll), key name (for keypress)" },
         result: {
           type: "string",
-          description: "Outcome: success, error, unexpected, timeout, crash, no_response, partial",
+          description: "Outcome (auto-filled if browser active): success, error, unexpected, timeout, crash, no_response, partial",
         },
         observation: {
           type: "string",
-          description: "What happened after the interaction (e.g. 'Form submitted, redirected to dashboard', 'Error toast appeared: Invalid email')",
+          description: "What happened (auto-filled if browser active). Manual mode: describe what you observed.",
         },
-        durationMs: { type: "number", description: "How long the interaction took in ms (optional)" },
+        autoExecute: {
+          type: "boolean",
+          description: "Auto-execute the action in the browser (default: true). Set false to log-only even when browser is active.",
+        },
+        durationMs: { type: "number", description: "How long the interaction took in ms (auto-filled if browser active)" },
         screenshotRef: { type: "string", description: "Reference to a screenshot capture (optional)" },
       },
-      required: ["componentId", "action", "result"],
+      required: ["componentId", "action"],
     },
     handler: async (args) => {
-      const { componentId, action, target, inputValue, result, observation, durationMs, screenshotRef } = args as {
+      const { componentId, action, target, inputValue, result, observation, autoExecute, durationMs, screenshotRef } = args as {
         componentId: string;
         action: string;
         target?: string;
         inputValue?: string;
-        result: string;
+        result?: string;
         observation?: string;
+        autoExecute?: boolean;
         durationMs?: number;
         screenshotRef?: string;
       };
@@ -379,13 +595,27 @@ export const uiUxDiveTools: McpTool[] = [
       ).get(componentId) as any;
       if (!comp) return { error: true, message: `Component not found: ${componentId}` };
 
+      // Auto-execute if browser is active
+      let finalResult = result ?? "success";
+      let finalObservation = observation ?? "";
+      let finalDuration = durationMs ?? null;
+      let autoExecuted = false;
+
+      if (_page && _activeSessionId === comp.session_id && autoExecute !== false) {
+        const execResult = await executeAction(_page, action, target, inputValue);
+        finalResult = execResult.success ? "success" : "error";
+        finalObservation = execResult.observation + (observation ? ` | ${observation}` : "");
+        finalDuration = execResult.durationMs;
+        autoExecuted = true;
+      }
+
       const seqNum = comp.interaction_count + 1;
       const id = genId("int");
 
       db.prepare(
         `INSERT INTO ui_dive_interactions (id, session_id, component_id, action, target, input_value, result, observation, screenshot_ref, duration_ms, sequence_num)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(id, comp.session_id, componentId, action, target ?? null, inputValue ?? null, result, observation ?? null, screenshotRef ?? null, durationMs ?? null, seqNum);
+      ).run(id, comp.session_id, componentId, action, target ?? null, inputValue ?? null, finalResult, finalObservation || null, screenshotRef ?? null, finalDuration, seqNum);
 
       db.prepare("UPDATE ui_dive_components SET interaction_count = ? WHERE id = ?").run(seqNum, componentId);
 
@@ -394,9 +624,12 @@ export const uiUxDiveTools: McpTool[] = [
         sequenceNum: seqNum,
         action,
         target: target ?? null,
-        result,
-        _hint: result !== "success"
-          ? `Non-success result (${result}). Consider tagging a bug: tag_ui_bug({ componentId: "${componentId}", interactionId: "${id}", severity: "...", category: "functional", title: "..." })`
+        result: finalResult,
+        observation: finalObservation || null,
+        autoExecuted,
+        durationMs: finalDuration,
+        _hint: finalResult !== "success"
+          ? `Non-success result (${finalResult}). Consider tagging a bug: tag_ui_bug({ componentId: "${componentId}", interactionId: "${id}", severity: "...", category: "functional", title: "..." })`
           : `Interaction #${seqNum} logged. Continue testing or call end_component_flow when done.`,
       };
     },
@@ -625,9 +858,12 @@ export const uiUxDiveTools: McpTool[] = [
         "SELECT i.*, c.name as component_name FROM ui_dive_interactions i JOIN ui_dive_components c ON i.component_id = c.id WHERE i.session_id = ? ORDER BY c.id, i.sequence_num"
       ).all(sessionId) as any[];
 
-      // Mark session complete
+      // Mark session complete and close browser
       if (completeSession !== false) {
         db.prepare("UPDATE ui_dive_sessions SET status = 'completed', completed_at = datetime('now') WHERE id = ?").run(sessionId);
+        if (_activeSessionId === sessionId) {
+          await closeBrowser();
+        }
       }
 
       // Build per-component summaries
@@ -713,6 +949,185 @@ export const uiUxDiveTools: McpTool[] = [
           ...(bugs.some((b: any) => b.category === "responsive") ? ["Responsive issues found — test with capture_responsive_suite across breakpoints."] : []),
         ],
       };
+    },
+  },
+
+  // 9. Take a screenshot / accessibility snapshot
+  {
+    name: "dive_snapshot",
+    description:
+      "Capture a screenshot or accessibility snapshot of the current page during a dive session. Requires the built-in Playwright browser to be active (launched by start_ui_dive). Returns the screenshot as an inline image for multimodal agents, or an accessibility tree as text. Use this to capture visual evidence of bugs or document the current state of a component.",
+    rawContent: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID (verifies browser belongs to this session)" },
+        mode: {
+          type: "string",
+          description: "Capture mode: 'screenshot' (default — full page PNG), 'viewport' (visible area only), 'accessibility' (a11y tree as text)",
+        },
+        selector: { type: "string", description: "CSS selector to screenshot a specific element (optional — screenshots the element only)" },
+        label: { type: "string", description: "Label for this snapshot (e.g. 'after-login', 'error-state', 'mobile-nav-open')" },
+      },
+      required: ["sessionId"],
+    },
+    handler: async (args): Promise<ContentBlock[]> => {
+      const { sessionId, mode, selector, label } = args as {
+        sessionId: string;
+        mode?: string;
+        selector?: string;
+        label?: string;
+      };
+
+      if (!_page || _activeSessionId !== sessionId) {
+        return [{
+          type: "text",
+          text: JSON.stringify({
+            error: true,
+            message: "No active browser for this session. Start a dive with start_ui_dive first, or install Playwright: npm install playwright && npx playwright install chromium",
+          }),
+        }];
+      }
+
+      const captureMode = mode ?? "screenshot";
+
+      if (captureMode === "accessibility") {
+        try {
+          const snapshot = await _page.accessibility.snapshot();
+          return [{
+            type: "text",
+            text: JSON.stringify({
+              label: label ?? "accessibility-snapshot",
+              pageTitle: await _page.title(),
+              pageUrl: _page.url(),
+              accessibilityTree: snapshot,
+            }, null, 2),
+          }];
+        } catch (e: any) {
+          return [{ type: "text", text: JSON.stringify({ error: true, message: `Accessibility snapshot failed: ${e.message}` }) }];
+        }
+      }
+
+      // Screenshot mode
+      try {
+        const screenshotOpts: Record<string, unknown> = {
+          type: "png" as const,
+          fullPage: captureMode !== "viewport",
+        };
+
+        let screenshotBuf: Buffer;
+        if (selector) {
+          const el = await _page.$(selector);
+          if (!el) {
+            return [{ type: "text", text: JSON.stringify({ error: true, message: `Element not found: ${selector}` }) }];
+          }
+          screenshotBuf = await el.screenshot({ type: "png" });
+        } else {
+          screenshotBuf = await _page.screenshot(screenshotOpts);
+        }
+
+        const base64 = screenshotBuf.toString("base64");
+        const title = await _page.title();
+        const url = _page.url();
+
+        return [
+          {
+            type: "text",
+            text: JSON.stringify({
+              label: label ?? `dive-snapshot-${Date.now()}`,
+              pageTitle: title,
+              pageUrl: url,
+              captureMode,
+              selector: selector ?? "full page",
+              sizeBytes: screenshotBuf.length,
+            }),
+          },
+          {
+            type: "image",
+            data: base64,
+            mimeType: "image/png",
+          },
+        ];
+      } catch (e: any) {
+        return [{ type: "text", text: JSON.stringify({ error: true, message: `Screenshot failed: ${e.message}` }) }];
+      }
+    },
+  },
+
+  // 10. Auto-discover components from the current page DOM
+  {
+    name: "dive_auto_discover",
+    description:
+      "Scan the current page DOM and auto-register components in the dive tree. Discovers semantic landmarks (nav, header, footer, forms, modals, tables, sidebars) and counts interactive elements within each. Useful after navigating to a new page during a dive session. Requires the built-in Playwright browser to be active.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID" },
+        parentId: { type: "string", description: "Parent component ID to nest discovered components under (optional — null for top-level)" },
+        navigateUrl: { type: "string", description: "Navigate to this URL before discovering (optional — discovers current page if omitted)" },
+      },
+      required: ["sessionId"],
+    },
+    handler: async (args) => {
+      const { sessionId, parentId, navigateUrl } = args as {
+        sessionId: string;
+        parentId?: string;
+        navigateUrl?: string;
+      };
+
+      if (!_page || _activeSessionId !== sessionId) {
+        return {
+          error: true,
+          message: "No active browser for this session. Start a dive with start_ui_dive first.",
+          setupHint: "npm install playwright && npx playwright install chromium",
+        };
+      }
+
+      const db = getDb();
+      const session = db.prepare("SELECT id, status FROM ui_dive_sessions WHERE id = ?").get(sessionId) as any;
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+      if (session.status !== "active") return { error: true, message: `Session is ${session.status}, not active` };
+
+      // Navigate if URL provided
+      if (navigateUrl) {
+        try {
+          await _page.goto(navigateUrl, { waitUntil: "domcontentloaded", timeout: 30000 });
+        } catch (e: any) {
+          return { error: true, message: `Navigation failed: ${e.message}` };
+        }
+      }
+
+      const pageTitle = await _page.title();
+      const pageUrl = _page.url();
+
+      try {
+        const discovered = await autoDiscoverComponents(_page);
+        const registeredIds: string[] = [];
+
+        for (const comp of discovered) {
+          const compId = genId("comp");
+          db.prepare(
+            "INSERT INTO ui_dive_components (id, session_id, parent_id, name, component_type, selector, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)"
+          ).run(compId, sessionId, parentId ?? null, comp.name, comp.type, comp.selector, JSON.stringify({ autoDiscovered: true, interactiveChildren: comp.children, pageUrl, pageTitle }));
+          registeredIds.push(compId);
+        }
+
+        return {
+          pageTitle,
+          pageUrl,
+          componentsDiscovered: discovered.length,
+          components: discovered.map((c, i) => ({
+            componentId: registeredIds[i],
+            ...c,
+          })),
+          parentId: parentId ?? null,
+          _hint: discovered.length > 0
+            ? `${discovered.length} components auto-registered. Claim them for testing with start_component_flow.`
+            : "No semantic landmarks found. Register components manually with register_component.",
+        };
+      } catch (e: any) {
+        return { error: true, message: `Auto-discover failed: ${e.message}` };
+      }
     },
   },
 ];
