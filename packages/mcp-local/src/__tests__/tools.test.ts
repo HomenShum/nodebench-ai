@@ -43,6 +43,7 @@ import { critterTools } from "../tools/critterTools.js";
 import { emailTools } from "../tools/emailTools.js";
 import { rssTools } from "../tools/rssTools.js";
 import { architectTools } from "../tools/architectTools.js";
+import { uiUxDiveTools } from "../tools/uiUxDiveTools.js";
 import { getQuickRef, hybridSearch, TOOL_REGISTRY, SEARCH_MODES, ALL_REGISTRY_ENTRIES, WORKFLOW_CHAINS, tokenize, buildDenseIndex, getToolComplexity } from "../tools/toolRegistry.js";
 import type { McpTool } from "../types.js";
 
@@ -82,6 +83,7 @@ const domainTools: McpTool[] = [
   ...emailTools,
   ...rssTools,
   ...architectTools,
+  ...uiUxDiveTools,
 ];
 const metaTools = createMetaTools(domainTools);
 const allToolsWithoutDiscovery = [...domainTools, ...metaTools];
@@ -97,7 +99,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 describe("Static: tool structure", () => {
   it("should have 175 tools total", () => {
     // 169 domain tools + 3 meta tools (findTools, getMethodology, check_mcp_setup) + 3 progressive discovery tools
-    expect(allTools.length).toBe(175);
+    expect(allTools.length).toBe(183);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {
@@ -2061,7 +2063,7 @@ describe("Integration: full benchmark lifecycle", () => {
 const toolDescs = allTools.map((t) => ({ name: t.name, description: t.description }));
 
 describe("Search engine: registry coverage", () => {
-  it("should have a registry entry for every tool (175/175)", () => {
+  it("should have a registry entry for every tool (183/183)", () => {
     const missing = allTools.filter((t) => !TOOL_REGISTRY.has(t.name));
     expect(missing.map((t) => t.name)).toEqual([]);
     expect(TOOL_REGISTRY.size).toBe(allTools.length);

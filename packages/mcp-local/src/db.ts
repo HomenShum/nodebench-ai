@@ -364,6 +364,79 @@ CREATE TABLE IF NOT EXISTS ab_tool_events (
 CREATE INDEX IF NOT EXISTS idx_ab_sessions_mode ON ab_test_sessions(mode);
 CREATE INDEX IF NOT EXISTS idx_ab_events_session ON ab_tool_events(session_id);
 CREATE INDEX IF NOT EXISTS idx_ab_events_type ON ab_tool_events(event_type);
+
+-- ═══════════════════════════════════════════
+-- UI/UX FULL DIVE — Parallel subagent swarm
+-- for comprehensive UI traversal, component
+-- tree building, interaction logging, and
+-- bug tagging.
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ui_dive_sessions (
+  id              TEXT PRIMARY KEY,
+  app_url         TEXT NOT NULL,
+  app_name        TEXT,
+  status          TEXT NOT NULL DEFAULT 'active',
+  root_component_id TEXT,
+  agent_count     INTEGER DEFAULT 1,
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_components (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  parent_id       TEXT,
+  name            TEXT NOT NULL,
+  component_type  TEXT NOT NULL,
+  selector        TEXT,
+  agent_id        TEXT,
+  status          TEXT NOT NULL DEFAULT 'pending',
+  interaction_count INTEGER DEFAULT 0,
+  bug_count       INTEGER DEFAULT 0,
+  summary         TEXT,
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_interactions (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT NOT NULL REFERENCES ui_dive_components(id) ON DELETE CASCADE,
+  action          TEXT NOT NULL,
+  target          TEXT,
+  input_value     TEXT,
+  result          TEXT NOT NULL,
+  observation     TEXT,
+  screenshot_ref  TEXT,
+  duration_ms     INTEGER,
+  sequence_num    INTEGER NOT NULL,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_bugs (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  component_id    TEXT NOT NULL REFERENCES ui_dive_components(id) ON DELETE CASCADE,
+  interaction_id  TEXT,
+  severity        TEXT NOT NULL,
+  category        TEXT NOT NULL,
+  title           TEXT NOT NULL,
+  description     TEXT,
+  expected        TEXT,
+  actual          TEXT,
+  screenshot_ref  TEXT,
+  status          TEXT NOT NULL DEFAULT 'open',
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_dive_components_session ON ui_dive_components(session_id);
+CREATE INDEX IF NOT EXISTS idx_dive_components_parent ON ui_dive_components(parent_id);
+CREATE INDEX IF NOT EXISTS idx_dive_interactions_component ON ui_dive_interactions(component_id);
+CREATE INDEX IF NOT EXISTS idx_dive_bugs_component ON ui_dive_bugs(component_id);
+CREATE INDEX IF NOT EXISTS idx_dive_bugs_severity ON ui_dive_bugs(severity);
 `;
 
 export function getDb(): Database.Database {

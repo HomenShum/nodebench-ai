@@ -39,6 +39,7 @@ import { emailTools } from "./tools/emailTools.js";
 import { rssTools } from "./tools/rssTools.js";
 import { architectTools } from "./tools/architectTools.js";
 import { toonTools } from "./tools/toonTools.js";
+import { uiUxDiveTools } from "./tools/uiUxDiveTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -76,6 +77,7 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   email: emailTools,
   rss: rssTools,
   architect: architectTools,
+  ui_ux_dive: uiUxDiveTools,
 };
 
 // Pre-computed tool name → toolset name lookup

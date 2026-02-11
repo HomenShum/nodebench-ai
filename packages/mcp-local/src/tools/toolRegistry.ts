@@ -2021,6 +2021,105 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   },
 
   // ═══════════════════════════════════════════
+  // UI/UX FULL DIVE — Parallel subagent swarm
+  // ═══════════════════════════════════════════
+  {
+    name: "start_ui_dive",
+    category: "ui_ux_dive",
+    tags: ["ui", "ux", "dive", "session", "traversal", "swarm", "parallel", "subagent", "app", "start"],
+    quickRef: {
+      nextAction: "Session created. Navigate to the app URL, identify top-level pages, and register each with register_component.",
+      nextTools: ["register_component", "start_component_flow", "get_dive_tree"],
+      methodology: "agentic_vision",
+      tip: "Set agentCount to the number of parallel subagents you plan to use. Each subagent gets isolated context.",
+    },
+    phase: "research",
+  },
+  {
+    name: "register_component",
+    category: "ui_ux_dive",
+    tags: ["ui", "component", "register", "tree", "hierarchy", "page", "section", "form", "modal", "menu"],
+    quickRef: {
+      nextAction: "Component registered in the tree. Claim it for traversal with start_component_flow, or register child components under it.",
+      nextTools: ["start_component_flow", "register_component", "get_dive_tree"],
+      methodology: "agentic_vision",
+      tip: "Build the tree top-down: pages first, then sections, then interactive elements. Use parentId to nest.",
+    },
+    phase: "research",
+  },
+  {
+    name: "start_component_flow",
+    category: "ui_ux_dive",
+    tags: ["ui", "component", "claim", "flow", "agent", "subagent", "context", "isolation", "start"],
+    quickRef: {
+      nextAction: "Component claimed. Interact with it: log_interaction for each step, tag_ui_bug for issues. Call end_component_flow when done.",
+      nextTools: ["log_interaction", "tag_ui_bug", "end_component_flow", "register_component"],
+      methodology: "agentic_vision",
+      tip: "Each subagent should claim one component at a time for context isolation. Register child components as you discover them.",
+    },
+    phase: "test",
+  },
+  {
+    name: "log_interaction",
+    category: "ui_ux_dive",
+    tags: ["ui", "interaction", "click", "type", "navigate", "submit", "scroll", "hover", "test", "trace"],
+    quickRef: {
+      nextAction: "Interaction logged. If result is not 'success', consider tagging a bug. Continue testing or end_component_flow when done.",
+      nextTools: ["tag_ui_bug", "log_interaction", "end_component_flow"],
+      methodology: "agentic_vision",
+      tip: "Log every meaningful interaction for a complete trace. The sequence builds an interaction timeline per component.",
+    },
+    phase: "test",
+  },
+  {
+    name: "end_component_flow",
+    category: "ui_ux_dive",
+    tags: ["ui", "component", "complete", "flow", "summary", "done", "finish"],
+    quickRef: {
+      nextAction: "Component completed. Pick up the next unclaimed component or generate the final report with get_dive_report.",
+      nextTools: ["start_component_flow", "get_dive_tree", "get_dive_report"],
+      methodology: "agentic_vision",
+    },
+    phase: "test",
+  },
+  {
+    name: "tag_ui_bug",
+    category: "ui_ux_dive",
+    tags: ["ui", "bug", "issue", "visual", "functional", "accessibility", "performance", "responsive", "ux", "tag"],
+    quickRef: {
+      nextAction: "Bug tagged to the component tree. Continue testing or end_component_flow when done.",
+      nextTools: ["log_interaction", "end_component_flow", "get_dive_tree"],
+      methodology: "agentic_vision",
+      tip: "Link bugs to specific interactions via interactionId for precise root-cause mapping in the final report.",
+    },
+    phase: "test",
+  },
+  {
+    name: "get_dive_tree",
+    category: "ui_ux_dive",
+    tags: ["ui", "tree", "xml", "overview", "structure", "mermaid", "diagram", "components", "hierarchy"],
+    quickRef: {
+      nextAction: "Review the component tree. Check for unclaimed components and bug hotspots. Use get_dive_report for the full report.",
+      nextTools: ["start_component_flow", "get_dive_report", "register_component"],
+      methodology: "agentic_vision",
+      tip: "Use format='mermaid' for visual rendering. The XML tree gives a quick structural overview of any complex app.",
+    },
+    phase: "verify",
+  },
+  {
+    name: "get_dive_report",
+    category: "ui_ux_dive",
+    tags: ["ui", "report", "final", "summary", "bugs", "health", "score", "mermaid", "recommendations"],
+    quickRef: {
+      nextAction: "Report generated. Fix critical/high bugs first. Record patterns with record_learning. Share the Mermaid diagram for stakeholder review.",
+      nextTools: ["record_learning", "log_gap", "run_quality_gate"],
+      methodology: "agentic_vision",
+      tip: "The health score (0-100) gives a quick app quality indicator. Grade A (90+) means production-ready.",
+    },
+    phase: "ship",
+  },
+
+  // ═══════════════════════════════════════════
   // ARCHITECT — Structural code analysis
   // ═══════════════════════════════════════════
   {
