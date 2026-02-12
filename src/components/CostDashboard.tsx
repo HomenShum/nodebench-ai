@@ -249,7 +249,7 @@ export function CostDashboard() {
               {metrics.totalInputTokens.toLocaleString()}
             </div>
             <div className="text-xs text-[var(--text-secondary)] mt-1">
-              {((metrics.totalInputTokens / metrics.totalTokens) * 100).toFixed(1)}% of total
+              {metrics.totalTokens > 0 ? ((metrics.totalInputTokens / metrics.totalTokens) * 100).toFixed(1) : '0.0'}% of total
             </div>
           </div>
           <div>
@@ -260,7 +260,7 @@ export function CostDashboard() {
               {metrics.totalOutputTokens.toLocaleString()}
             </div>
             <div className="text-xs text-[var(--text-secondary)] mt-1">
-              {((metrics.totalOutputTokens / metrics.totalTokens) * 100).toFixed(1)}% of total
+              {metrics.totalTokens > 0 ? ((metrics.totalOutputTokens / metrics.totalTokens) * 100).toFixed(1) : '0.0'}% of total
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@ export function CostDashboard() {
               {metrics.successfulRequests.toLocaleString()}
             </div>
             <div className="text-xs text-[var(--text-secondary)] mt-1">
-              {((metrics.successfulRequests / metrics.totalRequests) * 100).toFixed(1)}% success rate
+              {metrics.totalRequests > 0 ? ((metrics.successfulRequests / metrics.totalRequests) * 100).toFixed(1) : '0.0'}% success rate
             </div>
           </div>
           <div>
@@ -291,7 +291,7 @@ export function CostDashboard() {
               {metrics.failedRequests.toLocaleString()}
             </div>
             <div className="text-xs text-[var(--text-secondary)] mt-1">
-              {((metrics.failedRequests / metrics.totalRequests) * 100).toFixed(1)}% failure rate
+              {metrics.totalRequests > 0 ? ((metrics.failedRequests / metrics.totalRequests) * 100).toFixed(1) : '0.0'}% failure rate
             </div>
           </div>
           <div>

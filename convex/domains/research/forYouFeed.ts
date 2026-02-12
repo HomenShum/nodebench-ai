@@ -1166,12 +1166,13 @@ export const getForYouFeed = query({
       };
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
-      )
-      .unique();
+    // Look up user by email (users table uses Convex Auth, no by_token index)
+    const user = identity.email
+      ? await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("email"), identity.email))
+          .first()
+      : null;
 
     if (!user) {
       return {
@@ -1307,36 +1308,6 @@ export const getPublicForYouFeed = query({
   },
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STORAGE MUTATIONS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Save feed snapshot for caching
- */
-export const saveFeedSnapshot = internalMutation({
-  args: {
-    userId: v.id("users"),
-    items: v.array(v.any()),
-    dateGroups: v.array(v.any()),
-    mixRatio: v.object({
-      inNetwork: v.number(),
-      outOfNetwork: v.number(),
-      trending: v.number(),
-    }),
-  },
-  handler: async (ctx, { userId, items, dateGroups, mixRatio }) => {
-    await ctx.db.insert("forYouFeedSnapshots", {
-      userId,
-      items,
-      dateGroups,
-      mixRatio,
-      totalCandidates: items.length,
-      generatedAt: Date.now(),
-    });
-  },
-});
-
 /**
  * Record engagement event
  */
@@ -1356,16 +1327,15 @@ export const recordEngagement = mutation({
       throw new Error("Not authenticated");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
-      )
-      .unique();
+    // Look up user by email (users table uses Convex Auth, no by_token index)
+    const user = identity.email
+      ? await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("email"), identity.email))
+          .first()
+      : null;
 
-    if (!user) {
-      throw new Error("User not found");
-    }
+    if (!user) return;
 
     await ctx.db.insert("feedEngagements", {
       userId: user._id,
