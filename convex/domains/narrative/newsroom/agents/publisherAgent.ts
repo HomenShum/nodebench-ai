@@ -196,6 +196,9 @@ function extractAtomicClaims(text: string, max = 6): string[] {
   return claims;
 }
 
+/**
+ * Regex-based claim classification (fast synchronous fallback).
+ */
 function classifyClaimKind(claim: string, hasEvidence = false): {
   kind: "verifiable" | "interpretation" | "prediction";
   uncertainty?: number;
@@ -230,6 +233,87 @@ function classifyClaimKind(claim: string, hasEvidence = false): {
     speculativeRisk: hasEvidence ? "grounded" : "mixed",
     entailmentVerdict: hasEvidence ? "entailed" : "neutral",
   };
+}
+
+type ClaimClassification = {
+  kind: "verifiable" | "interpretation" | "prediction";
+  uncertainty?: number;
+  speculativeRisk: "grounded" | "mixed" | "speculative";
+  entailmentVerdict: "entailed" | "neutral" | "contradicted";
+};
+
+/**
+ * LLM-based batch claim classification (Phase 7 upgrade).
+ *
+ * Classifies all claims in a single LLM call for efficiency.
+ * Falls back to regex classification on failure.
+ */
+async function classifyClaimsBatchLLM(
+  claims: string[],
+  hasEvidence: boolean,
+  model: string
+): Promise<ClaimClassification[]> {
+  if (claims.length === 0) return [];
+
+  try {
+    const llm = await getLanguageModelSafe(model);
+    const claimBlock = claims.map((c, i) => `[${i + 1}] ${c}`).join("\n");
+
+    const { text } = await generateText({
+      model: llm,
+      prompt: `Classify each claim below. For each, determine:
+- kind: "verifiable" (can be checked against facts), "interpretation" (subjective analysis), or "prediction" (forward-looking)
+- speculativeRisk: "grounded" (backed by evidence), "mixed" (partially supported), or "speculative" (no direct evidence)
+- entailmentVerdict: "entailed" (follows from evidence), "neutral" (neither supported nor contradicted), or "contradicted" (conflicts with evidence)
+- uncertainty: 0.0-1.0 (how uncertain is this claim)
+
+Evidence available: ${hasEvidence ? "YES - source artifacts exist" : "NO - no direct evidence artifacts"}
+
+CLAIMS:
+${claimBlock}
+
+Respond ONLY with a JSON array, one object per claim in order:
+[{"kind":"...","speculativeRisk":"...","entailmentVerdict":"...","uncertainty":0.0}, ...]`,
+      temperature: 0.1,
+    });
+
+    let jsonStr = text;
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) jsonStr = jsonMatch[1].trim();
+    // Also try extracting array from surrounding text
+    const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
+    if (arrMatch) jsonStr = arrMatch[0];
+
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed) || parsed.length !== claims.length) {
+      throw new Error(`Expected ${claims.length} classifications, got ${Array.isArray(parsed) ? parsed.length : "non-array"}`);
+    }
+
+    const validKinds = new Set(["verifiable", "interpretation", "prediction"]);
+    const validRisks = new Set(["grounded", "mixed", "speculative"]);
+    const validVerdicts = new Set(["entailed", "neutral", "contradicted"]);
+
+    return parsed.map((c: any, i: number) => {
+      // Validate each field, fall back to regex on invalid
+      if (
+        !c || typeof c !== "object" ||
+        !validKinds.has(c.kind) ||
+        !validRisks.has(c.speculativeRisk) ||
+        !validVerdicts.has(c.entailmentVerdict)
+      ) {
+        return classifyClaimKind(claims[i], hasEvidence);
+      }
+      return {
+        kind: c.kind as ClaimClassification["kind"],
+        speculativeRisk: c.speculativeRisk as ClaimClassification["speculativeRisk"],
+        entailmentVerdict: c.entailmentVerdict as ClaimClassification["entailmentVerdict"],
+        uncertainty: typeof c.uncertainty === "number" ? Math.min(1, Math.max(0, c.uncertainty)) : undefined,
+      };
+    });
+  } catch (e) {
+    console.warn("[PublisherAgent] LLM claim classification failed, using regex fallback:", e);
+    return claims.map((c) => classifyClaimKind(c, hasEvidence));
+  }
 }
 
 /**
@@ -559,11 +643,16 @@ export async function runPublisherAgent(
       }
 
       const hasEvidence = evidenceArtifactIds.length > 0;
-      const claimSet = extractAtomicClaims(summary).map((claim) => ({
+      const atomicClaims = extractAtomicClaims(summary);
+      // Use LLM batch classification when summaries are enabled, regex fallback otherwise
+      const classifications = cfg.generateSummaries
+        ? await classifyClaimsBatchLLM(atomicClaims, hasEvidence, cfg.model)
+        : atomicClaims.map((c) => classifyClaimKind(c, hasEvidence));
+      const claimSet = atomicClaims.map((claim, i) => ({
         claim,
         confidence: shift.confidence,
         evidenceArtifactIds,
-        ...classifyClaimKind(claim, hasEvidence),
+        ...classifications[i],
       }));
 
       // Create initial event for the thread
@@ -759,11 +848,15 @@ export async function runPublisherAgent(
         }
 
         const hasEvidence = evidenceArtifactIds.length > 0;
-        const claimSet = extractAtomicClaims(summary).map((claim) => ({
+        const updateAtomicClaims = extractAtomicClaims(summary);
+        const updateClassifications = cfg.generateSummaries
+          ? await classifyClaimsBatchLLM(updateAtomicClaims, hasEvidence, cfg.model)
+          : updateAtomicClaims.map((c) => classifyClaimKind(c, hasEvidence));
+        const claimSet = updateAtomicClaims.map((claim, i) => ({
           claim,
           confidence: shift.confidence,
           evidenceArtifactIds,
-          ...classifyClaimKind(claim, hasEvidence),
+          ...updateClassifications[i],
         }));
 
         // Add event to existing thread (dedup-aware)

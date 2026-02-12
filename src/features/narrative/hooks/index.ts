@@ -30,3 +30,20 @@ export {
   type UseTemporalFactsOptions,
   type UseTemporalFactsResult,
 } from "./useCorrelations";
+
+export {
+  useHypotheses,
+  useHypothesis,
+  useHypothesisScorecard,
+  type HypothesisStatus,
+  type HypothesisScorecard,
+} from "./useHypotheses";
+
+export {
+  useSignalMetrics,
+  useSignalMetricsByDomain,
+  useThreadSignalSummary,
+  type SignalDomain,
+  type DomainSignalSummary,
+  type ThreadSignalSummary,
+} from "./useSignalMetrics";

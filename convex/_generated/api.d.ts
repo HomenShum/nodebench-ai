@@ -537,6 +537,7 @@ import type * as domains_models_modelRouterQueries from "../domains/models/model
 import type * as domains_monitoring_industryUpdates from "../domains/monitoring/industryUpdates.js";
 import type * as domains_monitoring_industryUpdatesEnhanced from "../domains/monitoring/industryUpdatesEnhanced.js";
 import type * as domains_monitoring_integrationHelpers from "../domains/monitoring/integrationHelpers.js";
+import type * as domains_narrative_actions_hypothesisLifecycle from "../domains/narrative/actions/hypothesisLifecycle.js";
 import type * as domains_narrative_adapters_briefAdapter from "../domains/narrative/adapters/briefAdapter.js";
 import type * as domains_narrative_adapters_feedAdapter from "../domains/narrative/adapters/feedAdapter.js";
 import type * as domains_narrative_adapters_index from "../domains/narrative/adapters/index.js";
@@ -583,6 +584,7 @@ import type * as domains_narrative_newsroom_agents_historianAgent from "../domai
 import type * as domains_narrative_newsroom_agents_index from "../domains/narrative/newsroom/agents/index.js";
 import type * as domains_narrative_newsroom_agents_publisherAgent from "../domains/narrative/newsroom/agents/publisherAgent.js";
 import type * as domains_narrative_newsroom_agents_scoutAgent from "../domains/narrative/newsroom/agents/scoutAgent.js";
+import type * as domains_narrative_newsroom_agents_signalCollectorAgent from "../domains/narrative/newsroom/agents/signalCollectorAgent.js";
 import type * as domains_narrative_newsroom_recordReplayLane from "../domains/narrative/newsroom/recordReplayLane.js";
 import type * as domains_narrative_newsroom_state from "../domains/narrative/newsroom/state.js";
 import type * as domains_narrative_newsroom_workflow from "../domains/narrative/newsroom/workflow.js";
@@ -1512,6 +1514,7 @@ declare const fullApi: ApiFromModules<{
   "domains/monitoring/industryUpdates": typeof domains_monitoring_industryUpdates;
   "domains/monitoring/industryUpdatesEnhanced": typeof domains_monitoring_industryUpdatesEnhanced;
   "domains/monitoring/integrationHelpers": typeof domains_monitoring_integrationHelpers;
+  "domains/narrative/actions/hypothesisLifecycle": typeof domains_narrative_actions_hypothesisLifecycle;
   "domains/narrative/adapters/briefAdapter": typeof domains_narrative_adapters_briefAdapter;
   "domains/narrative/adapters/feedAdapter": typeof domains_narrative_adapters_feedAdapter;
   "domains/narrative/adapters/index": typeof domains_narrative_adapters_index;
@@ -1558,6 +1561,7 @@ declare const fullApi: ApiFromModules<{
   "domains/narrative/newsroom/agents/index": typeof domains_narrative_newsroom_agents_index;
   "domains/narrative/newsroom/agents/publisherAgent": typeof domains_narrative_newsroom_agents_publisherAgent;
   "domains/narrative/newsroom/agents/scoutAgent": typeof domains_narrative_newsroom_agents_scoutAgent;
+  "domains/narrative/newsroom/agents/signalCollectorAgent": typeof domains_narrative_newsroom_agents_signalCollectorAgent;
   "domains/narrative/newsroom/recordReplayLane": typeof domains_narrative_newsroom_recordReplayLane;
   "domains/narrative/newsroom/state": typeof domains_narrative_newsroom_state;
   "domains/narrative/newsroom/workflow": typeof domains_narrative_newsroom_workflow;

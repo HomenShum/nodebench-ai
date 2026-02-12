@@ -47,3 +47,9 @@ export {
   commentHarvesterTool,
   type CommentHarvesterConfig,
 } from "./commentHarvester";
+
+export {
+  runSignalCollectorAgent,
+  signalCollectorAgentTool,
+  type SignalCollectorConfig,
+} from "./signalCollectorAgent";
