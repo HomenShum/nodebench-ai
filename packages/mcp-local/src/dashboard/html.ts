@@ -185,13 +185,13 @@ export function getDashboardHtml(): string {
         h += '<div class="compare-grid">';
         if (pair.left) {
           const src = pair.left.base64_thumbnail ? 'data:image/png;base64,'+pair.left.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(pair.left.id)+'/image';
-          h += '<div class="compare-col"><img src="'+src+'" alt="'+esc(r)+'" loading="lazy" style="cursor:pointer" onclick="openLightbox(\''+src.replace(/'/g,"\\'")+"','Left: "+esc(r)+"')\"></div>";
+          h += '<div class="compare-col"><img src="'+src+'" alt="'+esc(r)+'" loading="lazy" style="cursor:pointer" data-lb-src="'+esc(src)+'" data-lb-label="Left: '+esc(r)+'"></div>';
         } else {
           h += '<div class="compare-col" style="display:flex;align-items:center;justify-content:center;min-height:120px;color:#52525b;font-size:11px">No screenshot</div>';
         }
         if (pair.right) {
           const src = pair.right.base64_thumbnail ? 'data:image/png;base64,'+pair.right.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(pair.right.id)+'/image';
-          h += '<div class="compare-col"><img src="'+src+'" alt="'+esc(r)+'" loading="lazy" style="cursor:pointer" onclick="openLightbox(\''+src.replace(/'/g,"\\'")+"','Right: "+esc(r)+"')\"></div>";
+          h += '<div class="compare-col"><img src="'+src+'" alt="'+esc(r)+'" loading="lazy" style="cursor:pointer" data-lb-src="'+esc(src)+'" data-lb-label="Right: '+esc(r)+'"></div>';
         } else {
           h += '<div class="compare-col" style="display:flex;align-items:center;justify-content:center;min-height:120px;color:#52525b;font-size:11px">No screenshot</div>';
         }
@@ -356,8 +356,7 @@ export function getDashboardHtml(): string {
         const src = ss.base64_thumbnail ? 'data:image/png;base64,'+ss.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(ss.id)+'/image';
         const lbl = esc(ss.label||'screenshot');
         const rt = ss.route ? ' \u2014 '+esc(ss.route) : '';
-        let meta = {}; try { meta = ss.metadata ? JSON.parse(ss.metadata) : {}; } catch{}
-        h += '<div class="ss-card ring-glow fade-up" onclick="openLightbox(\''+src.replace(/'/g,"\\'")+"','"+lbl+rt+"')\">';
+        h += '<div class="ss-card ring-glow fade-up" data-lb-src="'+esc(src)+'" data-lb-label="'+lbl+rt+'">';
         h += '<img src="'+src+'" alt="'+lbl+'" loading="lazy">';
         h += '<div class="ss-meta"><div class="text-[11px] text-zinc-300 truncate" title="'+lbl+'">'+lbl+'</div>';
         h += '<div class="text-[10px] text-zinc-500">'+esc(ss.created_at?.slice(5,16)||'')+(rt?rt:'')+'</div>';
@@ -383,11 +382,11 @@ export function getDashboardHtml(): string {
           h += '<div class="compare-grid mt-2">';
           if (bef) {
             const bSrc = bef.base64_thumbnail ? 'data:image/png;base64,'+bef.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(bef.id)+'/image';
-            h += '<div class="compare-col"><div class="ch">Before</div><img src="'+bSrc+'" alt="Before" loading="lazy" onclick="openLightbox(\''+bSrc.replace(/'/g,"\\'")+"','Before')\" style=\"cursor:pointer\"></div>";
+            h += '<div class="compare-col"><div class="ch">Before</div><img src="'+bSrc+'" alt="Before" loading="lazy" data-lb-src="'+esc(bSrc)+'" data-lb-label="Before" style="cursor:pointer"></div>';
           }
           if (aft) {
             const aSrc = aft.base64_thumbnail ? 'data:image/png;base64,'+aft.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(aft.id)+'/image';
-            h += '<div class="compare-col"><div class="ch">After</div><img src="'+aSrc+'" alt="After" loading="lazy" onclick="openLightbox(\''+aSrc.replace(/'/g,"\\'")+"','After')\" style=\"cursor:pointer\"></div>";
+            h += '<div class="compare-col"><div class="ch">After</div><img src="'+aSrc+'" alt="After" loading="lazy" data-lb-src="'+esc(aSrc)+'" data-lb-label="After" style="cursor:pointer"></div>';
           }
           h += '</div>';
         }
@@ -462,6 +461,12 @@ export function getDashboardHtml(): string {
     document.getElementById('lb-label').textContent = label || '';
     lb.classList.add('open');
   }
+
+  // Event delegation for lightbox clicks via data attributes
+  document.addEventListener('click', e => {
+    const el = e.target.closest('[data-lb-src]');
+    if (el) openLightbox(el.dataset.lbSrc, el.dataset.lbLabel || '');
+  });
 
   // ── Helpers ─────────────────────────────────────────────────
   function met(v, label, cls) {
