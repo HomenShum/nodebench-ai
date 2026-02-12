@@ -216,7 +216,7 @@ export const extractAndIndexFile = action({
     let response;
     try {
       response = await ai.models.generateContent({
-        model: getLlmModel("analysis", "gemini"),
+        model: getLlmModel("analysis", "gemini", "gemini-2.5-flash"),
         contents,
         config: {
           responseMimeType: "application/json",
@@ -231,7 +231,7 @@ export const extractAndIndexFile = action({
           e,
         );
         response = await ai.models.generateContent({
-          model: getLlmModel("analysis", "gemini"),
+          model: getLlmModel("analysis", "gemini", "gemini-2.5-flash"),
           contents,
           config: {
             responseMimeType: "application/json",

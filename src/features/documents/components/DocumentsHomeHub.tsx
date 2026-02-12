@@ -525,6 +525,7 @@ export function DocumentsHomeHub({
   // const compileAaplModel = useAction(api.aiAgents.compileAaplModel);
 
   const analyzeFileWithGenAI = useAction(api.domains.documents.fileAnalysis.analyzeFileWithGenAI);
+  const extractAndIndexFile = useAction(api.domains.ai.genai.extractAndIndexFile);
 
   const createDocumentWithContent = useMutation(
     api.domains.documents.documents.createWithContent,
@@ -1316,7 +1317,15 @@ export function DocumentsHomeHub({
           fileSize: file.size,
         });
 
-        // Do NOT auto-analyze. Offer an action button to analyze on demand.
+        // Auto-extract chunks + embeddings (creates meta.page for PDFs)
+        // This runs in the background and enables RAG indexing with page references
+        extractAndIndexFile({ fileId, force: true }).then((res) => {
+          if (res.inserted > 0) {
+            toast.success(`Indexed ${res.inserted} chunks for ${file.name}`);
+          }
+        }).catch((err) => {
+          console.warn(`[upload] extractAndIndexFile failed for ${file.name}:`, err);
+        });
 
         toast.success(`Uploaded ${file.name}`, {
           // @ts-expect-error sonner supports action for interactive toasts
@@ -1383,6 +1392,7 @@ export function DocumentsHomeHub({
       ensureMimeType,
       getAnalysisType,
       analyzeFileWithGenAI,
+      extractAndIndexFile,
       createDocument,
       onDocumentSelect,
     ],
