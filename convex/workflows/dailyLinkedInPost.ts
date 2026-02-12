@@ -348,6 +348,53 @@ export const postDailyDigestToLinkedIn = internalAction({
 
     console.log(`[dailyLinkedInPost] Digest generated with ${digestResult.factCheckCount} fact-checks`);
 
+    // Step 1b: Generate competing explanations (agentic — LLM grades with boolean evidence checklist)
+    try {
+      const explanationsResult = await ctx.runAction(
+        internal.domains.narrative.actions.competingExplanations.generateCompetingExplanations,
+        {
+          signals: (digestResult.digest.signals ?? []).slice(0, 6).map((s: any) => ({
+            title: String(s.title || ""),
+            summary: s.summary ? String(s.summary) : undefined,
+            hardNumbers: s.hardNumbers ? String(s.hardNumbers) : undefined,
+            url: s.url ? String(s.url) : undefined,
+          })),
+          factChecks: (digestResult.digest.factCheckFindings ?? []).slice(0, 4).map((f: any) => ({
+            claim: String(f.claim || ""),
+            status: String(f.status || "unverified"),
+            source: f.source ? String(f.source) : undefined,
+          })),
+          entities: (digestResult.digest.entitySpotlight ?? []).slice(0, 3).map((e: any) => ({
+            name: String(e.name || ""),
+            keyInsight: String(e.keyInsight || ""),
+          })),
+          narrativeThesis: digestResult.digest.narrativeThesis,
+          model,
+        }
+      );
+
+      if (explanationsResult.explanations.length > 0) {
+        digestResult.digest.competingExplanations = explanationsResult.explanations.map((e: any) => ({
+          title: e.title,
+          explanation: e.explanation,
+          evidenceLevel: e.evidenceLevel,
+          measurementApproach: e.measurementApproach,
+          falsificationCriteria: e.falsificationCriteria,
+        }));
+        console.log(`[dailyLinkedInPost] Generated ${explanationsResult.explanations.length} competing explanations`);
+        for (const e of explanationsResult.explanations) {
+          console.log(`  "${e.title}" -> ${e.evidenceLevel} (${e.checksPassing}/${e.checksTotal} boolean checks)`);
+        }
+      }
+
+      if (explanationsResult.framing) {
+        digestResult.digest.narrativeFraming = explanationsResult.framing;
+        console.log(`[dailyLinkedInPost] Narrative framing: "${explanationsResult.framing.dominantStory}" (${explanationsResult.framing.attentionShare})`);
+      }
+    } catch (e) {
+      console.warn(`[dailyLinkedInPost] Competing explanations failed (non-fatal):`, e instanceof Error ? e.message : String(e));
+    }
+
     // Step 2: Format for LinkedIn (multi-post thread)
     const linkedInPosts = formatDigestForLinkedIn(digestResult.digest);
 

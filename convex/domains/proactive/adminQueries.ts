@@ -23,7 +23,7 @@ export const checkAdminAccess = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -75,7 +75,7 @@ export const getAllFeedback = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -149,7 +149,7 @@ export const getDetectorFeedback = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {

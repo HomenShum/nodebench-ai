@@ -25,7 +25,7 @@ export const grantConsent = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -126,7 +126,7 @@ export const revokeConsent = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -229,7 +229,7 @@ export const checkConsent = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {

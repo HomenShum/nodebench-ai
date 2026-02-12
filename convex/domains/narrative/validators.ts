@@ -82,6 +82,70 @@ export const sourceTierValidator = v.union(
 
 export type SourceTier = "tier1" | "tier2" | "tier3" | "tier4";
 
+// ─── Evidence Checklist (Deterministic Boolean Confidence) ──────────────────
+//
+// Replaces arbitrary 0.0-1.0 confidence floats with explainable boolean gates.
+// Each check is independently verifiable. Confidence = passing checks / total.
+// Evidence level derived deterministically:
+//   grounded:    ≥ 4 of 6 checks pass
+//   mixed:       2-3 of 6 checks pass
+//   speculative: 0-1 of 6 checks pass
+
+export const evidenceChecklistValidator = v.object({
+  hasPrimarySource: v.boolean(),    // tier1/tier2 source (gov filing, court doc, wire service)
+  hasCorroboration: v.boolean(),    // 2+ independent sources agree on core claim
+  hasFalsifiableClaim: v.boolean(), // a defined way to disprove this exists
+  hasQuantitativeData: v.boolean(), // hard numbers, not just qualitative assertion
+  hasNamedAttribution: v.boolean(), // named expert, official, or org (not "sources say")
+  isReproducible: v.boolean(),      // someone could independently verify by following sources
+});
+
+export interface EvidenceChecklist {
+  hasPrimarySource: boolean;
+  hasCorroboration: boolean;
+  hasFalsifiableClaim: boolean;
+  hasQuantitativeData: boolean;
+  hasNamedAttribution: boolean;
+  isReproducible: boolean;
+}
+
+const CHECKLIST_KEYS: (keyof EvidenceChecklist)[] = [
+  "hasPrimarySource",
+  "hasCorroboration",
+  "hasFalsifiableClaim",
+  "hasQuantitativeData",
+  "hasNamedAttribution",
+  "isReproducible",
+];
+
+/** Count how many boolean checks pass */
+export function countPassingChecks(checklist: EvidenceChecklist): number {
+  return CHECKLIST_KEYS.filter((k) => checklist[k]).length;
+}
+
+/** Deterministic confidence: passing / total (0.0 - 1.0) */
+export function deterministicConfidence(checklist: EvidenceChecklist): number {
+  return countPassingChecks(checklist) / CHECKLIST_KEYS.length;
+}
+
+/** Derive evidence level from boolean count — no arbitrary thresholds */
+export function deriveEvidenceLevel(checklist: EvidenceChecklist): SpeculativeRisk {
+  const passing = countPassingChecks(checklist);
+  if (passing >= 4) return "grounded";
+  if (passing >= 2) return "mixed";
+  return "speculative";
+}
+
+/** Human-readable explanation of what passed and what didn't */
+export function explainChecklist(checklist: EvidenceChecklist): string {
+  const passing = CHECKLIST_KEYS.filter((k) => checklist[k]);
+  const failing = CHECKLIST_KEYS.filter((k) => !checklist[k]);
+  const parts: string[] = [];
+  if (passing.length > 0) parts.push(`Passes: ${passing.join(", ")}`);
+  if (failing.length > 0) parts.push(`Missing: ${failing.join(", ")}`);
+  return `${passing.length}/${CHECKLIST_KEYS.length} checks. ${parts.join(". ")}`;
+}
+
 // ─── Hypothesis Candidate (shared between Analyst agent and NewsroomState) ───
 export interface HypothesisCandidate {
   label: string;
@@ -90,4 +154,5 @@ export interface HypothesisCandidate {
   measurementApproach: string;
   speculativeRisk: SpeculativeRisk;
   falsificationCriteria?: string;
+  evidenceChecklist?: EvidenceChecklist;
 }

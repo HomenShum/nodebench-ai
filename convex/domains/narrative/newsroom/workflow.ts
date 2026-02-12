@@ -963,11 +963,13 @@ export const runNewsroomPipeline = action({
       };
     }
 
-    // Get user ID from identity
-    const users = await ctx.runQuery(
-      "users:getByTokenIdentifier" as any,
-      { tokenIdentifier: identity.tokenIdentifier }
-    );
+    // Get user ID from identity (users table uses Convex Auth, lookup by email)
+    const users = identity.email
+      ? await ctx.runQuery(
+          internal.domains.auth.users.getUserByEmail,
+          { email: identity.email }
+        )
+      : null;
 
     if (!users) {
       return {

@@ -88,7 +88,7 @@ export const createCustomDetector = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -198,7 +198,7 @@ export const updateCustomDetector = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -284,7 +284,7 @@ export const deleteCustomDetector = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -350,7 +350,7 @@ export const testCustomDetector = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -411,7 +411,7 @@ export const updateProactiveSettings = mutation({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {

@@ -537,6 +537,7 @@ import type * as domains_models_modelRouterQueries from "../domains/models/model
 import type * as domains_monitoring_industryUpdates from "../domains/monitoring/industryUpdates.js";
 import type * as domains_monitoring_industryUpdatesEnhanced from "../domains/monitoring/industryUpdatesEnhanced.js";
 import type * as domains_monitoring_integrationHelpers from "../domains/monitoring/integrationHelpers.js";
+import type * as domains_narrative_actions_competingExplanations from "../domains/narrative/actions/competingExplanations.js";
 import type * as domains_narrative_actions_hypothesisLifecycle from "../domains/narrative/actions/hypothesisLifecycle.js";
 import type * as domains_narrative_adapters_briefAdapter from "../domains/narrative/adapters/briefAdapter.js";
 import type * as domains_narrative_adapters_feedAdapter from "../domains/narrative/adapters/feedAdapter.js";
@@ -1514,6 +1515,7 @@ declare const fullApi: ApiFromModules<{
   "domains/monitoring/industryUpdates": typeof domains_monitoring_industryUpdates;
   "domains/monitoring/industryUpdatesEnhanced": typeof domains_monitoring_industryUpdatesEnhanced;
   "domains/monitoring/integrationHelpers": typeof domains_monitoring_integrationHelpers;
+  "domains/narrative/actions/competingExplanations": typeof domains_narrative_actions_competingExplanations;
   "domains/narrative/actions/hypothesisLifecycle": typeof domains_narrative_actions_hypothesisLifecycle;
   "domains/narrative/adapters/briefAdapter": typeof domains_narrative_adapters_briefAdapter;
   "domains/narrative/adapters/feedAdapter": typeof domains_narrative_adapters_feedAdapter;

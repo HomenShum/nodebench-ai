@@ -58,8 +58,10 @@ const ragEnhanced = new RAG<DocumentFilters, DocumentMetadata>(components.rag, {
 /* ------------------------------------------------------------------ */
 
 /**
- * Smart chunker that preserves context and adds overlap
- * Based on defaultChunker but with improvements
+ * Smart chunker that preserves context, adds overlap, and respects [PAGE N] boundaries.
+ * If the text contains [PAGE N] markers (from PDF extraction), chunks are split at
+ * page boundaries so each chunk retains its page marker for downstream page indexing.
+ * Falls back to defaultChunker for non-paged content.
  */
 function smartChunker(text: string, options?: {
   maxChunkSize?: number;
@@ -68,8 +70,44 @@ function smartChunker(text: string, options?: {
   const maxChunkSize = options?.maxChunkSize || 1000;
   const overlapSize = options?.overlapSize || 100;
 
-  // Use default chunker as base
-  const baseChunks = defaultChunker(text);
+  // Check for [PAGE N] markers — if present, split on page boundaries first
+  const pagePattern = /(?=\[PAGE\s+\d+\])/gi;
+  const pageParts = text.split(pagePattern).map((s) => s.trim()).filter(Boolean);
+  const hasPages = pageParts.length > 1;
+
+  // Base chunks: page-aware if page markers exist, otherwise default
+  let baseChunks: string[];
+  if (hasPages) {
+    // Each pagePart starts with [PAGE N]. If a page is too long, sub-chunk it
+    // while keeping the [PAGE N] prefix on the first sub-chunk.
+    baseChunks = [];
+    for (const part of pageParts) {
+      if (part.length <= maxChunkSize) {
+        baseChunks.push(part);
+      } else {
+        // Extract page marker prefix for sub-chunks
+        const markerMatch = part.match(/^\[PAGE\s+\d+\]/i);
+        const marker = markerMatch ? markerMatch[0] : "";
+        const body = marker ? part.slice(marker.length).trim() : part;
+        // Sub-chunk the body by paragraphs
+        const subParts = body.split(/\n\n+/).filter((s) => s.trim().length > 0);
+        let buffer = marker;
+        for (const sub of subParts) {
+          if (buffer.length + sub.length + 2 > maxChunkSize && buffer.length > marker.length) {
+            baseChunks.push(buffer.trim());
+            buffer = `${marker} (cont.) ${sub}`;
+          } else {
+            buffer += (buffer.length > 0 ? "\n\n" : "") + sub;
+          }
+        }
+        if (buffer.trim().length > 0) {
+          baseChunks.push(buffer.trim());
+        }
+      }
+    }
+  } else {
+    baseChunks = defaultChunker(text);
+  }
 
   // Add overlap between chunks for better context
   const chunksWithOverlap: string[] = [];
@@ -148,7 +186,9 @@ export const addDocumentToEnhancedRag = internalAction({
       }
 
       // If this is a file document, include extracted file summaries/analysis if available
+      // Also include raw page-marked text from chunks table for page-level provenance
       let fileMetaText = "";
+      let fileChunksText = "";
       if ((doc).documentType === "file" && (doc).fileId) {
         const file = await ctx.runQuery(internal.domains.documents.files.getFile, { fileId: (doc).fileId });
 
@@ -157,10 +197,28 @@ export const addDocumentToEnhancedRag = internalAction({
             .filter(Boolean)
             .join("\n");
         }
+
+        // Include raw chunks with page markers for page-aware RAG
+        try {
+          const fileChunks: Array<{ text: string; meta?: any }> = await ctx.runQuery(
+            internal.domains.documents.chunks.listChunksByFile,
+            { fileId: (doc).fileId },
+          );
+          if (fileChunks.length > 0) {
+            fileChunksText = fileChunks
+              .map((c) => {
+                const pagePrefix = c.meta?.page ? `[PAGE ${c.meta.page}] ` : "";
+                return `${pagePrefix}${c.text}`;
+              })
+              .join("\n\n");
+          }
+        } catch {
+          // Chunks not available — continue with summaries only
+        }
       }
 
-      // Combine all textual signals
-      const fullText = `${(doc).title}\n\n${plainText}\n\n${nodesText}\n\n${quickNotesText}\n\n${fileMetaText}`.trim();
+      // Combine all textual signals (page-marked chunks take priority over summaries)
+      const fullText = `${(doc).title}\n\n${plainText}\n\n${nodesText}\n\n${quickNotesText}\n\n${fileChunksText || fileMetaText}`.trim();
 
       // Smart chunking with overlap
       const chunks = smartChunker(fullText, {

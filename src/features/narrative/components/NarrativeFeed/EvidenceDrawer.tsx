@@ -51,6 +51,7 @@ export interface EvidenceArtifact {
   publishedAt?: number;
   fetchedAt: number;
   contentHash: string;
+  pageIndex?: number;
   extractedQuotes: Array<{
     text: string;
     context?: string;
@@ -193,7 +194,7 @@ function ArtifactCard({ artifact }: { artifact: EvidenceArtifact }) {
           </div>
         </div>
 
-        {/* Dates */}
+        {/* Dates and Page */}
         <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
           {artifact.publishedAt && (
             <span className="flex items-center gap-1">
@@ -205,6 +206,12 @@ function ArtifactCard({ artifact }: { artifact: EvidenceArtifact }) {
             <Clock className="w-3 h-3" />
             Fetched {formatTimeAgo(artifact.fetchedAt)}
           </span>
+          {artifact.pageIndex != null && (
+            <span className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium">
+              <FileText className="w-3 h-3" />
+              p. {artifact.pageIndex}
+            </span>
+          )}
         </div>
       </div>
 

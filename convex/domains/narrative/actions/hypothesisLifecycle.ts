@@ -27,6 +27,31 @@ import type { HypothesisStatus } from "../validators";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+/**
+ * Boolean evidence gates for hypothesis scoring.
+ * Each gate is independently verifiable. No arbitrary numbers.
+ *
+ * Confidence = passing gates / total gates (deterministic).
+ * Status transitions use gate counts, not float thresholds.
+ */
+interface HypothesisEvidenceGates {
+  hasSupportingEvidence: boolean;     // at least 1 piece of supporting evidence
+  hasMultipleSources: boolean;        // 2+ independent sources
+  hasNoContradictions: boolean;       // no contradicting evidence exists
+  hasSignalMetrics: boolean;          // quantitative signal data backs this
+  isNotStale: boolean;                // evidence activity within 30 days
+  supportOutweighsContradict: boolean; // supporting > contradicting
+}
+
+const GATE_KEYS: (keyof HypothesisEvidenceGates)[] = [
+  "hasSupportingEvidence",
+  "hasMultipleSources",
+  "hasNoContradictions",
+  "hasSignalMetrics",
+  "isNotStale",
+  "supportOutweighsContradict",
+];
+
 interface HypothesisScoreResult {
   hypothesisDocId: Id<"narrativeHypotheses">;
   hypothesisId: string;
@@ -37,65 +62,78 @@ interface HypothesisScoreResult {
   newConfidence: number;
   reason: string;
   changed: boolean;
+  gates: HypothesisEvidenceGates;
 }
 
-// ─── Scoring Logic ───────────────────────────────────────────────────────────
+// ─── Scoring Logic (Boolean Gates) ──────────────────────────────────────────
 
 const STALENESS_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-function computeConfidence(
+function evaluateGates(
   supporting: number,
   contradicting: number,
-  signalMetricCount: number
-): number {
-  const total = supporting + contradicting;
-  if (total === 0) return 0.5; // No evidence → neutral
+  signalMetricCount: number,
+  isStale: boolean
+): HypothesisEvidenceGates {
+  return {
+    hasSupportingEvidence: supporting >= 1,
+    hasMultipleSources: supporting >= 2,
+    hasNoContradictions: contradicting === 0,
+    hasSignalMetrics: signalMetricCount >= 1,
+    isNotStale: !isStale,
+    supportOutweighsContradict: supporting > contradicting,
+  };
+}
 
-  const base = supporting / (total + 1);
-  // Small boost for having signal metrics backing
-  const metricBoost = Math.min(signalMetricCount * 0.02, 0.1);
-  return Math.min(1, Math.max(0, base * 0.85 + metricBoost + 0.1));
+function countGates(gates: HypothesisEvidenceGates): number {
+  return GATE_KEYS.filter((k) => gates[k]).length;
+}
+
+function gateConfidence(gates: HypothesisEvidenceGates): number {
+  return countGates(gates) / GATE_KEYS.length;
 }
 
 function determineStatus(
   current: HypothesisStatus,
-  confidence: number,
+  gates: HypothesisEvidenceGates,
   supporting: number,
-  contradicting: number,
-  isStale: boolean
+  contradicting: number
 ): { status: HypothesisStatus; reason: string } {
+  const passing = countGates(gates);
+  const failing = GATE_KEYS.filter((k) => !gates[k]);
+
   // Retired hypotheses stay retired unless manually reactivated
   if (current === "retired") {
     return { status: "retired", reason: "Hypothesis is retired" };
   }
 
-  // Stale check: no new evidence in 30 days
-  if (isStale && supporting === 0 && contradicting === 0) {
+  // Stale + no evidence → inconclusive
+  if (!gates.isNotStale && !gates.hasSupportingEvidence) {
     return { status: "inconclusive", reason: "No evidence activity in 30+ days" };
   }
 
-  // Strong support
-  if (confidence >= 0.75 && supporting > contradicting) {
-    return { status: "supported", reason: `Confidence ${(confidence * 100).toFixed(0)}%, ${supporting} supporting vs ${contradicting} contradicting` };
+  // Strong support: ≥5 of 6 gates pass
+  if (passing >= 5) {
+    return { status: "supported", reason: `${passing}/6 evidence gates pass. ${supporting} supporting, ${contradicting} contradicting` };
   }
 
-  // Strong contradiction
+  // Retired: contradicting >= 3x supporting
   if (contradicting >= 3 * Math.max(supporting, 1)) {
-    return { status: "retired", reason: `Contradicting evidence (${contradicting}) >= 3x supporting (${supporting})` };
+    return { status: "retired", reason: `Contradicting evidence (${contradicting}) >= 3x supporting (${supporting}). Failing: ${failing.join(", ")}` };
   }
 
-  // Weakened
-  if (confidence < 0.4 && contradicting > supporting) {
-    return { status: "weakened", reason: `Low confidence ${(confidence * 100).toFixed(0)}%, more contradicting than supporting evidence` };
+  // Weakened: ≤2 gates pass AND contradicting > supporting
+  if (passing <= 2 && !gates.supportOutweighsContradict) {
+    return { status: "weakened", reason: `Only ${passing}/6 gates pass. Failing: ${failing.join(", ")}` };
   }
 
-  // Re-activate if previously supported but new contradicting evidence
-  if (current === "supported" && contradicting > 0 && confidence < 0.7) {
-    return { status: "active", reason: "New contradicting evidence reduced confidence below 70%" };
+  // Re-activate if previously supported but gates dropped
+  if (current === "supported" && passing < 4) {
+    return { status: "active", reason: `Dropped from supported: ${passing}/6 gates now passing. Failing: ${failing.join(", ")}` };
   }
 
   // Default: stay active
-  return { status: "active", reason: "Monitoring - insufficient evidence for status change" };
+  return { status: "active", reason: `${passing}/6 gates pass. Monitoring. Failing: ${failing.join(", ")}` };
 }
 
 // ─── Internal Action: Score All Active Hypotheses ────────────────────────────
@@ -158,13 +196,13 @@ export const scoreThreadHypotheses = internalAction({
       );
 
       const isStale = (now - (hyp.updatedAt ?? hyp.createdAt)) > STALENESS_THRESHOLD_MS;
-      const newConfidence = computeConfidence(supporting, contradicting, linkedMetrics.length);
+      const gates = evaluateGates(supporting, contradicting, linkedMetrics.length, isStale);
+      const newConfidence = gateConfidence(gates);
       const { status: newStatus, reason } = determineStatus(
         hyp.status as HypothesisStatus,
-        newConfidence,
+        gates,
         supporting,
-        contradicting,
-        isStale
+        contradicting
       );
 
       const changed = newStatus !== hyp.status || Math.abs(newConfidence - (hyp.confidence ?? 0.5)) > 0.05;
@@ -179,6 +217,7 @@ export const scoreThreadHypotheses = internalAction({
         newConfidence,
         reason,
         changed,
+        gates,
       });
 
       // 4. Apply changes if not dry run
@@ -192,7 +231,8 @@ export const scoreThreadHypotheses = internalAction({
             reviewedBy: "hypothesis_lifecycle",
           }
         );
-        console.log(`[HypothesisLifecycle] ${hyp.label}: ${hyp.status} → ${newStatus} (${(newConfidence * 100).toFixed(0)}%)`);
+        const passing = countGates(gates);
+        console.log(`[HypothesisLifecycle] ${hyp.label}: ${hyp.status} → ${newStatus} (${passing}/6 gates)`);
       }
     }
 

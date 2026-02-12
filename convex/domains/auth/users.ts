@@ -1,6 +1,23 @@
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { query, internalQuery } from "../../_generated/server";
 import type { Id } from "../../_generated/dataModel";
+
+/**
+ * Internal helper: look up a user by email.
+ * Used by action files that need a user._id but can't access ctx.db directly.
+ */
+export const getUserByEmail = internalQuery({
+  args: { email: v.string() },
+  returns: v.union(v.object({ _id: v.id("users") }), v.null()),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("email"), args.email))
+      .first();
+    if (!user) return null;
+    return { _id: user._id };
+  },
+});
 
 // List users for typeahead assignment. This is intentionally simple and unscoped.
 // In a team/workspace setup, you would likely filter to teammates.

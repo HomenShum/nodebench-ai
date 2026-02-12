@@ -31,7 +31,7 @@ export const getUserOpportunities = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -70,7 +70,7 @@ export const getOpportunity = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -105,7 +105,7 @@ export const getUserSettings = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -134,7 +134,7 @@ export const getUserUsage = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -183,7 +183,7 @@ export const getConsentStatus = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {
@@ -222,7 +222,7 @@ export const getOpportunitiesSummary = query({
 
     const user = await ctx.db
       .query("users")
-      .filter((q) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+      .filter((q) => q.eq(q.field("email"), identity.email))
       .first();
 
     if (!user) {

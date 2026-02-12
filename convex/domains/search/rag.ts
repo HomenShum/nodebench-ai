@@ -41,6 +41,7 @@ export const candidateDocValidator = v.object({
   highlights: v.optional(v.array(v.string())),
   rank: v.optional(v.number()),
   reasons: v.optional(v.array(v.string())),
+  pageIndex: v.optional(v.number()),
 });
 
 // Public wrapper to allow adding context from the client if desired
@@ -86,6 +87,28 @@ export const addContext = internalAction({
 });
 
 /* ------------------------------------------------------------------ */
+/* Page-aware chunking helper                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Split text into chunks while preserving [PAGE N] markers with their content.
+ * If no page markers exist, falls back to splitting on double newlines.
+ */
+function pageAwareChunks(text: string): string[] {
+  // Split on page boundaries: each [PAGE N] marker starts a new chunk
+  const pagePattern = /(?=\[PAGE\s+\d+\])/gi;
+  const parts = text.split(pagePattern).map((s) => s.trim()).filter(Boolean);
+
+  if (parts.length <= 1) {
+    // No page markers found — fall back to paragraph splitting
+    return text.split(/\n\n+/).filter((s) => s.trim().length > 0);
+  }
+
+  // Each part now starts with [PAGE N] followed by its content
+  return parts;
+}
+
+/* ------------------------------------------------------------------ */
 /* Action: addDocumentToRag                                           */
 /* ------------------------------------------------------------------ */
 export const addDocumentToRag = internalAction({
@@ -109,11 +132,33 @@ export const addDocumentToRag = internalAction({
       plain = String((doc).content ?? "");
     }
 
-    const text = `${(doc).title}\n\n${plain}`;
+    // For file-type documents, try to include raw page-marked text from chunks
+    let fileChunksText = "";
+    if ((doc as any).documentType === "file" && (doc as any).fileId) {
+      try {
+        const fileChunks: Array<{ text: string; meta?: any }> = await ctx.runQuery(
+          internal.domains.documents.chunks.listChunksByFile,
+          { fileId: (doc as any).fileId },
+        );
+        if (fileChunks.length > 0) {
+          // Reconstruct text with page markers from chunk meta
+          fileChunksText = fileChunks
+            .map((c) => {
+              const pagePrefix = c.meta?.page ? `[PAGE ${c.meta.page}] ` : "";
+              return `${pagePrefix}${c.text}`;
+            })
+            .join("\n\n");
+        }
+      } catch {
+        // Chunks not available — continue with document content only
+      }
+    }
+
+    const text = `${(doc).title}\n\n${plain}${fileChunksText ? `\n\n${fileChunksText}` : ""}`;
     await rag.add(ctx, {
       namespace: "global",
       key: documentId, // unique key
-      chunks: text.split(/\n\n+/),
+      chunks: pageAwareChunks(text),
     });
     return null;
   },
@@ -132,7 +177,7 @@ export const answerQuestionViaRAG = internalAction({
     candidateDocs: v.array(candidateDocValidator),
   }),
   handler: async (ctx, { prompt }): Promise<{ answer: string; contextText: string; candidateDocs: Array<{
-    documentId: Id<"documents">; title: string; snippet?: string; score?: number; source?: "vector"|"keyword"|"hybrid"; nodeId?: Id<"nodes">; highlights?: string[]; rank?: number; reasons?: string[];
+    documentId: Id<"documents">; title: string; snippet?: string; score?: number; source?: "vector"|"keyword"|"hybrid"; nodeId?: Id<"nodes">; highlights?: string[]; rank?: number; reasons?: string[]; pageIndex?: number;
   }> }> => {
     // 1) Vector search via RAG
     const vector = await rag.search(ctx, {
@@ -168,6 +213,7 @@ export const answerQuestionViaRAG = internalAction({
       highlights?: string[];
       rank?: number;
       reasons?: string[];
+      pageIndex?: number;
     };
 
     const byDoc: Map<string, Cand> = new Map();
@@ -208,6 +254,13 @@ export const answerQuestionViaRAG = internalAction({
           snippet = e.text.slice(0, 320);
         }
 
+        // Extract pageIndex from [PAGE N] marker in snippet if present
+        let pageIndex: number | undefined;
+        if (snippet) {
+          const pageMatch = snippet.match(/\[PAGE\s+(\d+)\]/i);
+          if (pageMatch) pageIndex = parseInt(pageMatch[1], 10);
+        }
+
         const existing = byDoc.get(String(docId));
         const score = scoreByEntry[entryId];
         const cand: Cand = {
@@ -216,6 +269,7 @@ export const answerQuestionViaRAG = internalAction({
           snippet,
           score,
           source: existing ? "hybrid" : "vector",
+          pageIndex,
         };
         byDoc.set(String(docId), existing ? { ...existing, ...cand, score: Math.max(existing.score ?? 0, score) } : cand);
       }

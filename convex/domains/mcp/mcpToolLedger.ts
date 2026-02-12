@@ -548,7 +548,7 @@ async function requireAdmin(ctx: any): Promise<Id<"users">> {
 
   const user = await ctx.db
     .query("users")
-    .filter((q: any) => q.eq(q.field("tokenIdentifier"), identity.tokenIdentifier))
+    .filter((q: any) => q.eq(q.field("email"), identity.email))
     .first();
   if (!user) throw new Error("User not found");
 
