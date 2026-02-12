@@ -32,6 +32,7 @@ export interface FactCitation {
   artifactId: string;
   chunkId: string;
   quote: string;
+  pageIndex?: number;
   anchor: string;  // {{fact:distilled:factId:chunkId}}
 }
 
@@ -124,6 +125,7 @@ export const getChunksForArtifacts = internalQuery({
     sourceUrl: v.optional(v.string()),
     startOffset: v.optional(v.number()),
     endOffset: v.optional(v.number()),
+    pageIndex: v.optional(v.number()),
   })),
   handler: async (ctx, args) => {
     const maxPerArtifact = Math.min(args.maxChunksPerArtifact ?? 5, 10);
@@ -134,6 +136,7 @@ export const getChunksForArtifacts = internalQuery({
       sourceUrl?: string;
       startOffset?: number;
       endOffset?: number;
+      pageIndex?: number;
     }> = [];
 
     for (const artifactId of args.artifactIds.slice(0, 10)) {
@@ -152,6 +155,7 @@ export const getChunksForArtifacts = internalQuery({
           sourceUrl: chunk.sourceUrl,
           startOffset: chunk.startOffset,
           endOffset: chunk.endOffset,
+          pageIndex: chunk.pageIndex,
         });
       }
     }
@@ -219,6 +223,7 @@ export const distillArtifacts = action({
         artifactId: v.string(),
         chunkId: v.string(),
         quote: v.string(),
+        pageIndex: v.optional(v.number()),
         anchor: v.string(),
       })),
       category: v.optional(v.string()),
@@ -264,6 +269,7 @@ export const distillArtifacts = action({
       sourceUrl?: string;
       startOffset?: number;
       endOffset?: number;
+      pageIndex?: number;
     }>;
 
     if (chunks.length === 0) {
@@ -348,6 +354,7 @@ export const distillArtifacts = action({
             artifactId: String(firstChunk.artifactId),
             chunkId: String(firstChunk.chunkId),
             quote: citation.quote,
+            pageIndex: firstChunk.pageIndex,
             anchor: generateCitationAnchor(fact.id, String(firstChunk.chunkId)),
           };
         }
@@ -355,6 +362,7 @@ export const distillArtifacts = action({
           artifactId: String(chunk.artifactId),
           chunkId: String(chunk.chunkId),
           quote: citation.quote,
+          pageIndex: chunk.pageIndex,
           anchor: generateCitationAnchor(fact.id, String(chunk.chunkId)),
         };
       });
@@ -407,6 +415,7 @@ export const distillSingleArtifact = action({
         artifactId: v.string(),
         chunkId: v.string(),
         quote: v.string(),
+        pageIndex: v.optional(v.number()),
         anchor: v.string(),
       })),
       category: v.optional(v.string()),
@@ -453,6 +462,7 @@ export const distillWithModel = action({
         artifactId: v.string(),
         chunkId: v.string(),
         quote: v.string(),
+        pageIndex: v.optional(v.number()),
         anchor: v.string(),
       })),
       category: v.optional(v.string()),

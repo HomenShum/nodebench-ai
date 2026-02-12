@@ -129,6 +129,22 @@ export type AgentDigestOutput = {
     confidence: number;
   }>;
 
+  // DRANE Phase 7: Competing Explanations (optional, injected when narrative threads exist)
+  competingExplanations?: Array<{
+    title: string;
+    explanation: string;
+    evidenceLevel: "grounded" | "mixed" | "speculative";
+    measurementApproach: string;
+    falsificationCriteria: string;
+  }>;
+
+  // DRANE Phase 7: Narrative context framing (optional)
+  narrativeFraming?: {
+    dominantStory: string;
+    attentionShare: string;
+    underReportedAngle: string;
+  };
+
   // Metadata
   storyCount: number;
   topSources: string[];

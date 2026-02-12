@@ -47,6 +47,7 @@ const citationValidator = v.object({
   artifactId: v.id("sourceArtifacts"),
   chunkId: v.optional(v.id("artifactChunks")),
   quote: v.optional(v.string()),
+  pageIndex: v.optional(v.number()),
   publishedAt: v.optional(v.number()),
 });
 

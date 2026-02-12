@@ -23,6 +23,7 @@ export interface ArtifactExcerpt {
     sourceUrl?: string;
     startOffset?: number;
     endOffset?: number;
+    pageIndex?: number;
     anchor: string;  // Citation anchor: {{cite:artifactId:chunkId}}
   };
 }
@@ -145,6 +146,7 @@ export const searchArtifactChunks = internalQuery({
       text: v.string(),
       startOffset: v.optional(v.number()),
       endOffset: v.optional(v.number()),
+      pageIndex: v.optional(v.number()),
       sourceUrl: v.optional(v.string()),
     })
   ),
@@ -166,6 +168,7 @@ export const searchArtifactChunks = internalQuery({
       text: chunk.text,
       startOffset: chunk.startOffset,
       endOffset: chunk.endOffset,
+      pageIndex: chunk.pageIndex,
       sourceUrl: chunk.sourceUrl,
     }));
   },
@@ -185,6 +188,7 @@ export const getArtifactChunks = internalQuery({
       text: v.string(),
       startOffset: v.optional(v.number()),
       endOffset: v.optional(v.number()),
+      pageIndex: v.optional(v.number()),
       sourceUrl: v.optional(v.string()),
     })
   ),
@@ -203,6 +207,7 @@ export const getArtifactChunks = internalQuery({
       text: chunk.text,
       startOffset: chunk.startOffset,
       endOffset: chunk.endOffset,
+      pageIndex: chunk.pageIndex,
       sourceUrl: chunk.sourceUrl,
     }));
   },
@@ -260,6 +265,7 @@ export const retrieveArtifact = action({
         sourceUrl: v.optional(v.string()),
         startOffset: v.optional(v.number()),
         endOffset: v.optional(v.number()),
+        pageIndex: v.optional(v.number()),
         anchor: v.string(),
       }),
     })),
@@ -353,6 +359,7 @@ export const retrieveArtifact = action({
               sourceUrl: chunk.sourceUrl,
               startOffset: chunk.startOffset,
               endOffset: chunk.endOffset,
+              pageIndex: chunk.pageIndex,
               anchor: generateCitationAnchor(args.artifactId, chunk.chunkId),
             },
           });
@@ -370,6 +377,7 @@ export const retrieveArtifact = action({
           sourceUrl: chunk.sourceUrl,
           startOffset: chunk.startOffset,
           endOffset: chunk.endOffset,
+          pageIndex: chunk.pageIndex,
           anchor: generateCitationAnchor(args.artifactId, chunk.chunkId),
         },
       });
@@ -486,6 +494,7 @@ export const retrieveMultipleArtifacts = action({
           sourceUrl: v.optional(v.string()),
           startOffset: v.optional(v.number()),
           endOffset: v.optional(v.number()),
+          pageIndex: v.optional(v.number()),
           anchor: v.string(),
         }),
       })),

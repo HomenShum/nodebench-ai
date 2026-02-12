@@ -66,15 +66,26 @@ function formatDigestForLinkedIn(
     return text.slice(0, maxPerPost - 3).trimEnd() + "...";
   }
 
+  const explanations = digest.competingExplanations ?? [];
+  const framing = digest.narrativeFraming;
+
   // ── Post 1: WHAT'S HAPPENING ──
-  // Factual lead. Data. Key developments. No fluff.
+  // Factual lead. Data. Key developments. Competing explanations as prose.
   const p1: string[] = [];
 
-  const leadHook = digest.leadStory?.whyItMatters
-    || digest.narrativeThesis
-    || signals[0]?.summary
-    || `Key developments in ${domain} today that aren't getting enough attention.`;
-  p1.push(truncateAtSentenceBoundary(leadHook, 220));
+  // Hook: use narrative framing if DRANE data is available
+  if (framing) {
+    p1.push(truncateAtSentenceBoundary(
+      `While ${framing.dominantStory} dominates ${framing.attentionShare} of social feeds this week, ${framing.underReportedAngle}.`,
+      280
+    ));
+  } else {
+    const leadHook = digest.leadStory?.whyItMatters
+      || digest.narrativeThesis
+      || signals[0]?.summary
+      || `Key developments in ${domain} today that aren't getting enough attention.`;
+    p1.push(truncateAtSentenceBoundary(leadHook, 220));
+  }
   p1.push("");
 
   const signalCount = Math.min(signals.length, 4);
@@ -98,15 +109,24 @@ function formatDigestForLinkedIn(
   }
   if (entities.length > 0) p1.push("");
 
-  // Guide framing -- connect the dots, don't just list
-  p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+  // Competing explanations as natural prose (Phase 7)
+  if (explanations.length >= 2) {
+    p1.push(`There are ${explanations.length} ways to read the dominant story right now:`);
+    for (const e of explanations.slice(0, 3)) {
+      p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 160)}`);
+    }
+    p1.push("");
+    p1.push(`Each leads to a different conclusion about what you should pay attention to.`);
+  } else {
+    p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+  }
   p1.push("");
   p1.push(`Which of these are you tracking?`);
   p1.push("");
   p1.push(`[1/${totalPosts}] ${specificTags}`);
 
   // ── Post 2: WHAT IT MEANS ──
-  // Fact-checks, context, signal vs noise. Researched analysis.
+  // Fact-checks with evidence grades, context, signal vs noise.
   const p2: string[] = [];
 
   p2.push(`Verification and context on today's ${domain} developments:`);
@@ -142,6 +162,21 @@ function formatDigestForLinkedIn(
     }
   }
 
+  // Evidence grade summary from competing explanations (Phase 7)
+  if (explanations.length > 0) {
+    const grounded = explanations.filter(e => e.evidenceLevel === "grounded").length;
+    const mixed = explanations.filter(e => e.evidenceLevel === "mixed").length;
+    const speculative = explanations.filter(e => e.evidenceLevel === "speculative").length;
+    const parts: string[] = [];
+    if (grounded > 0) parts.push(`${grounded} backed by primary sources`);
+    if (mixed > 0) parts.push(`${mixed} partly supported`);
+    if (speculative > 0) parts.push(`${speculative} still interpretive`);
+    if (parts.length > 0) {
+      p2.push(`Of the competing explanations: ${parts.join(", ")}.`);
+      p2.push("");
+    }
+  }
+
   // Connect dots -- what's the real story behind the noise
   p2.push(`High-volume news cycles often bury the developments that affect your career and decisions the most. This is the context that matters.`);
   p2.push("");
@@ -150,7 +185,7 @@ function formatDigestForLinkedIn(
   p2.push(`[2/${totalPosts}] ${specificTags}`);
 
   // ── Post 3: PRACTICAL GUIDE ──
-  // Specific actions. Skills to learn. Resources. Things within your control.
+  // Specific actions. Skills to learn. Falsification criteria as reader empowerment.
   const p3: string[] = [];
 
   p3.push(`Based on today's research -- here's a practical guide on what to focus on:`);
@@ -175,6 +210,15 @@ function formatDigestForLinkedIn(
     for (const s of skillSignals) {
       p3.push(`- ${truncateAtSentenceBoundary(s.title, 140)}`);
       if (s.summary) p3.push(`  ${truncateAtSentenceBoundary(s.summary, 120)}`);
+    }
+    p3.push("");
+  }
+
+  // Falsification criteria as reader empowerment (Phase 7)
+  if (explanations.length >= 2) {
+    p3.push(`How to evaluate each explanation yourself:`);
+    for (const e of explanations.slice(0, 3)) {
+      p3.push(`- ${truncateAtSentenceBoundary(e.title, 40)}: ${truncateAtSentenceBoundary(e.falsificationCriteria, 140)}`);
     }
     p3.push("");
   }
@@ -937,6 +981,8 @@ function formatDigestForPersona(
 
   const tags = personaTags();
   const domain = extractDomain(digest.leadStory?.title || signals[0]?.title || "tech");
+  const explanations = digest.competingExplanations ?? [];
+  const framing = digest.narrativeFraming;
 
   function capPost(text: string): string {
     if (text.length <= maxPerPost) return text;
@@ -964,7 +1010,16 @@ function formatDigestForPersona(
       p1.push(`${entity.name}${stage}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
     }
     if (entities.length > 0) p1.push("");
-    p1.push(`Watch how these ${domain} signals connect -- the pattern across deals matters more than any single round.`);
+    if (explanations.length >= 2) {
+      p1.push(`There are ${explanations.length} ways to read the dominant deal flow narrative:`);
+      for (const e of explanations.slice(0, 3)) {
+        p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 150)}`);
+      }
+      p1.push("");
+      p1.push(`Each explanation leads to a different portfolio strategy.`);
+    } else {
+      p1.push(`Watch how these ${domain} signals connect -- the pattern across deals matters more than any single round.`);
+    }
     p1.push("");
     p1.push("Which of these are you tracking for your portfolio?");
     p1.push("");
@@ -986,7 +1041,16 @@ function formatDigestForPersona(
       p1.push(`${entity.name}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
     }
     if (entities.length > 0) p1.push("");
-    p1.push(`Watch how these ${domain} releases and shifts connect -- they point to where the stack is heading.`);
+    if (explanations.length >= 2) {
+      p1.push(`There are ${explanations.length} ways to read where the stack is heading:`);
+      for (const e of explanations.slice(0, 3)) {
+        p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 150)}`);
+      }
+      p1.push("");
+      p1.push(`Each points to different architectural bets worth evaluating.`);
+    } else {
+      p1.push(`Watch how these ${domain} releases and shifts connect -- they point to where the stack is heading.`);
+    }
     p1.push("");
     p1.push("Which of these have you evaluated?");
     p1.push("");
@@ -1010,7 +1074,16 @@ function formatDigestForPersona(
       p1.push(`${entity.name}${stage}: ${truncateAtSentenceBoundary(entity.keyInsight, 120)}`);
     }
     if (entities.length > 0) p1.push("");
-    p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+    if (explanations.length >= 2) {
+      p1.push(`There are ${explanations.length} ways to read the dominant story right now:`);
+      for (const e of explanations.slice(0, 3)) {
+        p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 160)}`);
+      }
+      p1.push("");
+      p1.push(`Each leads to a different conclusion about what you should pay attention to.`);
+    } else {
+      p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+    }
     p1.push("");
     p1.push("Which of these are you tracking?");
     p1.push("");
@@ -1051,6 +1124,21 @@ function formatDigestForPersona(
         if (s.url) p2.push(`  ${s.url}`);
         p2.push("");
       }
+    }
+  }
+
+  // Evidence grade summary from competing explanations (Phase 7)
+  if (explanations.length > 0) {
+    const grounded = explanations.filter(e => e.evidenceLevel === "grounded").length;
+    const mixed = explanations.filter(e => e.evidenceLevel === "mixed").length;
+    const speculative = explanations.filter(e => e.evidenceLevel === "speculative").length;
+    const parts: string[] = [];
+    if (grounded > 0) parts.push(`${grounded} backed by primary sources`);
+    if (mixed > 0) parts.push(`${mixed} partly supported`);
+    if (speculative > 0) parts.push(`${speculative} still interpretive`);
+    if (parts.length > 0) {
+      p2.push(`Of the competing explanations: ${parts.join(", ")}.`);
+      p2.push("");
     }
   }
 
@@ -1096,6 +1184,15 @@ function formatDigestForPersona(
     for (const s of skillSignals) {
       p3.push(`- ${truncateAtSentenceBoundary(s.title, 140)}`);
       if (s.summary) p3.push(`  ${truncateAtSentenceBoundary(s.summary, 120)}`);
+    }
+    p3.push("");
+  }
+
+  // Falsification criteria as reader empowerment (Phase 7)
+  if (explanations.length >= 2) {
+    p3.push(`How to evaluate each explanation yourself:`);
+    for (const e of explanations.slice(0, 3)) {
+      p3.push(`- ${truncateAtSentenceBoundary(e.title, 40)}: ${truncateAtSentenceBoundary(e.falsificationCriteria, 140)}`);
     }
     p3.push("");
   }

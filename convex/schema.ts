@@ -586,6 +586,7 @@ const artifactChunks = defineTable({
   chunkKey: v.string(), // deterministic key: artifactId:start-end:vN
   startOffset: v.optional(v.number()),
   endOffset: v.optional(v.number()),
+  pageIndex: v.optional(v.number()), // 1-based page number from financial docs / PDFs
   timestampStart: v.optional(v.number()),
   timestampEnd: v.optional(v.number()),
   headingPath: v.optional(v.array(v.string())),
@@ -11345,6 +11346,7 @@ export default defineSchema({
       artifactId: v.id("sourceArtifacts"),
       chunkId: v.optional(v.id("artifactChunks")),
       quote: v.optional(v.string()),
+      pageIndex: v.optional(v.number()),
       publishedAt: v.optional(v.number()),
     })),
     supersedes: v.optional(v.id("narrativePosts")),

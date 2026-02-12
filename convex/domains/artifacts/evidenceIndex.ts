@@ -78,6 +78,7 @@ export const replaceArtifactChunks = internalMutation({
         chunkKey: v.string(),
         startOffset: v.optional(v.number()),
         endOffset: v.optional(v.number()),
+        pageIndex: v.optional(v.number()),
         text: v.string(),
         chunkHash: v.string(),
       })
@@ -109,6 +110,7 @@ export const replaceArtifactChunks = internalMutation({
         chunkKey: chunk.chunkKey,
         startOffset: chunk.startOffset,
         endOffset: chunk.endOffset,
+        pageIndex: chunk.pageIndex,
         text: chunk.text,
         chunkHash: chunk.chunkHash,
         createdAt: now,
