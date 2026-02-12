@@ -2149,6 +2149,18 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   // changelog, and walkthrough generation
   // ═══════════════════════════════════════════
   {
+    name: "dive_preflight",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "preflight", "setup", "project", "scan", "framework", "routes", "ports", "services", "launch", "dive", "step0"],
+    quickRef: {
+      nextAction: "Review the launch plan. Start any services that aren't running, then proceed with start_ui_dive.",
+      nextTools: ["start_ui_dive", "connect_mcp_driver"],
+      methodology: "agentic_vision",
+      tip: "Always run this first. It detects framework, finds dev scripts, checks ports, scans routes, and builds a launch plan. Saves time and prevents ERR_CONNECTION_REFUSED.",
+    },
+    phase: "research",
+  },
+  {
     name: "dive_save_screenshot",
     category: "ui_ux_dive_v2",
     tags: ["ui", "screenshot", "save", "evidence", "visual", "capture", "base64", "image", "dive"],

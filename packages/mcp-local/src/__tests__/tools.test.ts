@@ -103,7 +103,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 describe("Static: tool structure", () => {
   it("should have 175 tools total", () => {
     // 169 domain tools + 3 meta tools (findTools, getMethodology, check_mcp_setup) + 3 progressive discovery tools
-    expect(allTools.length).toBe(197);
+    expect(allTools.length).toBe(198);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {
@@ -2067,7 +2067,7 @@ describe("Integration: full benchmark lifecycle", () => {
 const toolDescs = allTools.map((t) => ({ name: t.name, description: t.description }));
 
 describe("Search engine: registry coverage", () => {
-  it("should have a registry entry for every tool (197/197)", () => {
+  it("should have a registry entry for every tool (198/198)", () => {
     const missing = allTools.filter((t) => !TOOL_REGISTRY.has(t.name));
     expect(missing.map((t) => t.name)).toEqual([]);
     expect(TOOL_REGISTRY.size).toBe(allTools.length);
