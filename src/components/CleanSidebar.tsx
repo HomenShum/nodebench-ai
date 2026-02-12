@@ -101,19 +101,19 @@ interface CleanSidebarProps {
 
 // Dashboard items
 const dashboardItems = [
-  { icon: DollarSign, label: 'Cost Dashboard', view: 'cost-dashboard' as const },
-  { icon: TrendingUp, label: 'Industry Updates', view: 'industry-updates' as const },
-  { icon: Shield, label: 'MCP Ledger', view: 'mcp-ledger' as const },
+  { icon: DollarSign, label: 'Cost Dashboard', view: 'cost-dashboard' as const, subtitle: 'LLM Spend & Usage' },
+  { icon: TrendingUp, label: 'Industry Updates', view: 'industry-updates' as const, subtitle: 'Signals & Trends' },
+  { icon: Shield, label: 'MCP Ledger', view: 'mcp-ledger' as const, subtitle: 'Tool Audit Trail' },
 ];
 
 // Discovery items
 const discoveryItems = [
-  { icon: Sparkles, label: 'For You', view: 'for-you-feed' as const },
-  { icon: BookOpen, label: 'Recommendations', view: 'document-recommendations' as const },
-  { icon: Zap, label: 'Agent Marketplace', view: 'agent-marketplace' as const },
-  { icon: Github, label: 'GitHub Explorer', view: 'github-explorer' as const },
-  { icon: GitPullRequest, label: 'PR Suggestions', view: 'pr-suggestions' as const },
-  { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const },
+  { icon: Sparkles, label: 'For You', view: 'for-you-feed' as const, subtitle: 'Personalized Feed' },
+  { icon: BookOpen, label: 'Recommendations', view: 'document-recommendations' as const, subtitle: 'Suggested Reads' },
+  { icon: Zap, label: 'Agent Marketplace', view: 'agent-marketplace' as const, subtitle: 'Browse Agents' },
+  { icon: Github, label: 'GitHub Explorer', view: 'github-explorer' as const, subtitle: 'Repos & Trends' },
+  { icon: GitPullRequest, label: 'PR Suggestions', view: 'pr-suggestions' as const, subtitle: 'Code Reviews' },
+  { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const, subtitle: 'Post Archive' },
 ];
 
 export function CleanSidebar({
@@ -247,6 +247,7 @@ export function CleanSidebar({
                 key={item.view}
                 icon={<item.icon />}
                 label={item.label}
+                subtitle={item.subtitle}
                 onClick={() => onViewChange?.(item.view)}
                 isActive={currentView === item.view}
               />
@@ -271,6 +272,7 @@ export function CleanSidebar({
                 key={item.view}
                 icon={<item.icon />}
                 label={item.label}
+                subtitle={item.subtitle}
                 onClick={() => onViewChange?.(item.view)}
                 isActive={currentView === item.view}
               />

@@ -154,7 +154,7 @@ function FundingCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-[color:var(--text-primary)] truncate">
-              {event.companyName}
+              {/^unknown\s*company/i.test(event.companyName) ? 'Undisclosed' : event.companyName}
             </h3>
             <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
               {ROUND_TYPE_LABELS[event.roundType] || event.roundType}

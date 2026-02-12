@@ -34,7 +34,7 @@ export function parseDossiersFromOutput(
         // LinkUp/funding tool structured output
         for (const announcement of result.announcements) {
           dossiers.push({
-            company: announcement.companyName || announcement.company || 'Unknown Company',
+            company: announcement.companyName || announcement.company || 'Undisclosed',
             round: announcement.fundingStage || announcement.round || 'Unknown',
             amount_usd: parseAmount(announcement.amountRaised || announcement.amount_usd),
             date: announcement.announcementDate || announcement.date,
