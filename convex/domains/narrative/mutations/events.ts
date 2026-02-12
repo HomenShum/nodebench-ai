@@ -9,6 +9,7 @@ import { v } from "convex/values";
 import { mutation, internalMutation } from "../../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { internal } from "../../../_generated/api";
+import { claimSetValidator } from "../validators";
 
 /**
  * FNV-1a 32-bit hash for stable ID generation
@@ -129,6 +130,7 @@ export const addEventInternal = internalMutation({
     agentConfidence: v.number(),
     claimIds: v.optional(v.array(v.id("graphClaims"))),
     artifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
+    claimSet: claimSetValidator,
   },
   returns: v.id("narrativeEvents"),
   handler: async (ctx, args) => {
@@ -152,6 +154,7 @@ export const addEventInternal = internalMutation({
       citationIds,
       claimIds: args.claimIds,
       artifactIds: args.artifactIds,
+      claimSet: args.claimSet,
       discoveredByAgent: args.discoveredByAgent,
       agentConfidence: args.agentConfidence,
       isVerified: false,

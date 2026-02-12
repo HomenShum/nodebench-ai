@@ -13,6 +13,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, internalAction } from "../../../_generated/server";
 import { internal } from "../../../_generated/api";
+import { claimSetValidator } from "../validators";
 import type { Id } from "../../../_generated/dataModel";
 import { fnv1a32Hex } from "../adapters/types";
 import { makeWebSourceCitationId } from "../../../../shared/citations/webSourceCitations";
@@ -697,23 +698,7 @@ export const createEventWithDedup = internalAction({
     ),
     /** Override timestamps for deterministic runs. */
     createdAtOverride: v.optional(v.number()),
-    claimSet: v.optional(
-      v.array(
-        v.object({
-          claim: v.string(),
-          confidence: v.number(),
-          evidenceArtifactIds: v.array(v.string()),
-          kind: v.optional(
-            v.union(
-              v.literal("verifiable"),
-              v.literal("interpretation"),
-              v.literal("prediction")
-            )
-          ),
-          uncertainty: v.optional(v.number()),
-        })
-      )
-    ),
+    claimSet: claimSetValidator,
   },
   returns: v.object({
     created: v.boolean(),
@@ -832,23 +817,7 @@ export const createEventInternal = internalMutation({
     supersedesEventId: v.optional(v.id("narrativeEvents")),
     changeSummary: v.optional(v.string()),
     createdAtOverride: v.optional(v.number()),
-    claimSet: v.optional(
-      v.array(
-        v.object({
-          claim: v.string(),
-          confidence: v.number(),
-          evidenceArtifactIds: v.array(v.string()),
-          kind: v.optional(
-            v.union(
-              v.literal("verifiable"),
-              v.literal("interpretation"),
-              v.literal("prediction")
-            )
-          ),
-          uncertainty: v.optional(v.number()),
-        })
-      )
-    ),
+    claimSet: claimSetValidator,
   },
   returns: v.object({
     docId: v.id("narrativeEvents"),

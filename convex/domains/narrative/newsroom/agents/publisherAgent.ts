@@ -195,7 +195,12 @@ function extractAtomicClaims(text: string, max = 6): string[] {
   return claims;
 }
 
-function classifyClaimKind(claim: string): { kind: "verifiable" | "interpretation" | "prediction"; uncertainty?: number } {
+function classifyClaimKind(claim: string, hasEvidence = false): {
+  kind: "verifiable" | "interpretation" | "prediction";
+  uncertainty?: number;
+  speculativeRisk: "grounded" | "mixed" | "speculative";
+  entailmentVerdict: "entailed" | "neutral" | "contradicted";
+} {
   const c = claim.toLowerCase();
   // Predictions / forward-looking language
   if (
@@ -203,13 +208,27 @@ function classifyClaimKind(claim: string): { kind: "verifiable" | "interpretatio
       c
     )
   ) {
-    return { kind: "prediction", uncertainty: 0.5 };
+    return {
+      kind: "prediction",
+      uncertainty: 0.5,
+      speculativeRisk: "speculative",
+      entailmentVerdict: "neutral",
+    };
   }
   // Interpretive / implication language
   if (/\b(suggests|implies|indicates|signals|appears|seems|means|reflects)\b/.test(c)) {
-    return { kind: "interpretation" };
+    return {
+      kind: "interpretation",
+      speculativeRisk: hasEvidence ? "mixed" : "speculative",
+      entailmentVerdict: hasEvidence ? "neutral" : "neutral",
+    };
   }
-  return { kind: "verifiable" };
+  // Verifiable claims — grounded only if we have evidence artifacts backing them
+  return {
+    kind: "verifiable",
+    speculativeRisk: hasEvidence ? "grounded" : "mixed",
+    entailmentVerdict: hasEvidence ? "entailed" : "neutral",
+  };
 }
 
 /**
@@ -494,11 +513,12 @@ export async function runPublisherAgent(
         }
       }
 
+      const hasEvidence = evidenceArtifactIds.length > 0;
       const claimSet = extractAtomicClaims(summary).map((claim) => ({
         claim,
         confidence: shift.confidence,
         evidenceArtifactIds,
-        ...classifyClaimKind(claim),
+        ...classifyClaimKind(claim, hasEvidence),
       }));
 
       // Create initial event for the thread
@@ -684,11 +704,12 @@ export async function runPublisherAgent(
           }
         }
 
+        const hasEvidence = evidenceArtifactIds.length > 0;
         const claimSet = extractAtomicClaims(summary).map((claim) => ({
           claim,
           confidence: shift.confidence,
           evidenceArtifactIds,
-          ...classifyClaimKind(claim),
+          ...classifyClaimKind(claim, hasEvidence),
         }));
 
         // Add event to existing thread (dedup-aware)

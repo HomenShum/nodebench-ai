@@ -11885,8 +11885,7 @@ export default defineSchema({
   })
     .index("by_thread", ["threadId", "status"])
     .index("by_hypothesis_id", ["hypothesisId"])
-    .index("by_status", ["status", "updatedAt"])
-    .index("by_speculative_risk", ["speculativeRisk", "status"]),
+    .index("by_status", ["status", "updatedAt"]),
 
   /**
    * Narrative Signal Metrics - Quantitative data products for hypothesis evaluation
@@ -11933,10 +11932,7 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_domain", ["domain", "measuredAt"])
-    .index("by_thread", ["threadId", "domain", "measuredAt"])
-    .index("by_hypothesis", ["hypothesisId", "domain", "measuredAt"])
-    .index("by_metric", ["metricName", "measuredAt"])
-    .index("by_topic", ["topic", "measuredAt"]),
+    .index("by_thread", ["threadId", "domain", "measuredAt"]),
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GROUND TRUTH & VERIFICATION AUDIT TABLES

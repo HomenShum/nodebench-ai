@@ -589,8 +589,10 @@ import type * as domains_narrative_newsroom_workflow from "../domains/narrative/
 import type * as domains_narrative_policies_contentRights from "../domains/narrative/policies/contentRights.js";
 import type * as domains_narrative_queries_disputes from "../domains/narrative/queries/disputes.js";
 import type * as domains_narrative_queries_events from "../domains/narrative/queries/events.js";
+import type * as domains_narrative_queries_hypotheses from "../domains/narrative/queries/hypotheses.js";
 import type * as domains_narrative_queries_posts from "../domains/narrative/queries/posts.js";
 import type * as domains_narrative_queries_searchLog from "../domains/narrative/queries/searchLog.js";
+import type * as domains_narrative_queries_signalMetrics from "../domains/narrative/queries/signalMetrics.js";
 import type * as domains_narrative_queries_threads from "../domains/narrative/queries/threads.js";
 import type * as domains_narrative_safety_abuseResistance from "../domains/narrative/safety/abuseResistance.js";
 import type * as domains_narrative_tests_goldenSets_generatedCases from "../domains/narrative/tests/goldenSets/generatedCases.js";
@@ -598,6 +600,7 @@ import type * as domains_narrative_tests_goldenSets_types from "../domains/narra
 import type * as domains_narrative_tests_qaFramework from "../domains/narrative/tests/qaFramework.js";
 import type * as domains_narrative_tests_validatePipeline from "../domains/narrative/tests/validatePipeline.js";
 import type * as domains_narrative_truth_truthStateManager from "../domains/narrative/truth/truthStateManager.js";
+import type * as domains_narrative_validators from "../domains/narrative/validators.js";
 import type * as domains_observability_dashboardData from "../domains/observability/dashboardData.js";
 import type * as domains_observability_healthMonitor from "../domains/observability/healthMonitor.js";
 import type * as domains_observability_index from "../domains/observability/index.js";
@@ -1560,8 +1563,10 @@ declare const fullApi: ApiFromModules<{
   "domains/narrative/policies/contentRights": typeof domains_narrative_policies_contentRights;
   "domains/narrative/queries/disputes": typeof domains_narrative_queries_disputes;
   "domains/narrative/queries/events": typeof domains_narrative_queries_events;
+  "domains/narrative/queries/hypotheses": typeof domains_narrative_queries_hypotheses;
   "domains/narrative/queries/posts": typeof domains_narrative_queries_posts;
   "domains/narrative/queries/searchLog": typeof domains_narrative_queries_searchLog;
+  "domains/narrative/queries/signalMetrics": typeof domains_narrative_queries_signalMetrics;
   "domains/narrative/queries/threads": typeof domains_narrative_queries_threads;
   "domains/narrative/safety/abuseResistance": typeof domains_narrative_safety_abuseResistance;
   "domains/narrative/tests/goldenSets/generatedCases": typeof domains_narrative_tests_goldenSets_generatedCases;
@@ -1569,6 +1574,7 @@ declare const fullApi: ApiFromModules<{
   "domains/narrative/tests/qaFramework": typeof domains_narrative_tests_qaFramework;
   "domains/narrative/tests/validatePipeline": typeof domains_narrative_tests_validatePipeline;
   "domains/narrative/truth/truthStateManager": typeof domains_narrative_truth_truthStateManager;
+  "domains/narrative/validators": typeof domains_narrative_validators;
   "domains/observability/dashboardData": typeof domains_observability_dashboardData;
   "domains/observability/healthMonitor": typeof domains_observability_healthMonitor;
   "domains/observability/index": typeof domains_observability_index;

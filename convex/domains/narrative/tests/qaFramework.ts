@@ -127,12 +127,17 @@ export interface WorkflowValidationResult {
     claimCoverage: number;
     unsupportedClaimRate: number;
     evidenceArtifactHitRate: number;
+    // Phase 7: hypothesis-aware metrics
+    speculativeClaimRate: number;
+    contradictedClaimCount: number;
+    entailmentBreakdown: { entailed: number; neutral: number; contradicted: number };
   };
   checks?: {
     citationCoveragePass: boolean;
     claimCoveragePass: boolean;
     unsupportedClaimRatePass: boolean;
     evidenceArtifactHitRatePass: boolean;
+    speculativeClaimRatePass: boolean;
   };
   counts: {
     threads: number;
@@ -189,7 +194,7 @@ export const validateWorkflowRun = action({
       return {
         workflowId: args.workflowId,
         passed: false,
-        metrics: { citationCoverage: 0, claimCoverage: 0, unsupportedClaimRate: 1, evidenceArtifactHitRate: 0 },
+        metrics: { citationCoverage: 0, claimCoverage: 0, unsupportedClaimRate: 1, evidenceArtifactHitRate: 0, speculativeClaimRate: 1, contradictedClaimCount: 0, entailmentBreakdown: { entailed: 0, neutral: 0, contradicted: 0 } },
         counts: { threads: 0, events: 0, posts: 0, claims: 0, verifiableClaims: 0, evidenceArtifactsReferenced: 0 },
         snapshot: { hasSnapshot: false },
         errors: ["Missing workflow snapshot (expected checkpoints entry)"],
@@ -262,6 +267,25 @@ export const validateWorkflowRun = action({
     let evidenceRefs = 0;
     let evidenceHits = 0;
 
+    // Phase 7: track speculative risk and entailment verdicts
+    let speculativeClaims = 0;
+    let contradictedClaims = 0;
+    const entailmentBreakdown = { entailed: 0, neutral: 0, contradicted: 0 };
+
+    for (const e of eventsPresent) {
+      const claimSet = Array.isArray(e.claimSet) ? e.claimSet : [];
+      for (const c of claimSet) {
+        const risk = (c as any).speculativeRisk;
+        if (risk === "speculative") speculativeClaims++;
+        const verdict = (c as any).entailmentVerdict;
+        if (verdict === "entailed") entailmentBreakdown.entailed++;
+        else if (verdict === "contradicted") {
+          entailmentBreakdown.contradicted++;
+          contradictedClaims++;
+        } else entailmentBreakdown.neutral++;
+      }
+    }
+
     for (const c of verifiableClaims) {
       if (c.evidenceArtifactIds.length === 0) {
         claimsWithoutEvidence++;
@@ -275,9 +299,12 @@ export const validateWorkflowRun = action({
     }
 
     const totalVerifiableClaims = verifiableClaims.length;
+    const totalAllClaims = eventsPresent.reduce((sum: number, e: any) => sum + (Array.isArray(e.claimSet) ? e.claimSet.length : 0), 0);
     const claimCoverage = totalVerifiableClaims > 0 ? claimsWithEvidence / totalVerifiableClaims : 1;
     const unsupportedClaimRate = totalVerifiableClaims > 0 ? claimsWithoutEvidence / totalVerifiableClaims : 0;
     const evidenceArtifactHitRate = evidenceRefs > 0 ? evidenceHits / evidenceRefs : 1;
+    const speculativeClaimRate = totalAllClaims > 0 ? speculativeClaims / totalAllClaims : 0;
+    const maxSpeculativeClaimRate = 0.4; // At most 40% of claims can be speculative
 
     if (citationCoverage < minCitationCoverage) {
       errors.push(`Citation coverage ${citationCoverage.toFixed(3)} < ${minCitationCoverage}`);
@@ -287,6 +314,12 @@ export const validateWorkflowRun = action({
     }
     if (unsupportedClaimRate > maxUnsupportedClaimRate) {
       errors.push(`Unsupported claim rate ${unsupportedClaimRate.toFixed(3)} > ${maxUnsupportedClaimRate}`);
+    }
+    if (speculativeClaimRate > maxSpeculativeClaimRate) {
+      warnings.push(`Speculative claim rate ${speculativeClaimRate.toFixed(3)} > ${maxSpeculativeClaimRate} — consider adding evidence or downgrading claims`);
+    }
+    if (contradictedClaims > 0) {
+      warnings.push(`${contradictedClaims} claim(s) marked as contradicted by evidence — review before publishing`);
     }
     if (eventsPresent.length === 0 && postsPresent.length === 0) {
       warnings.push("No events or posts were found for this workflow snapshot.");
@@ -299,6 +332,7 @@ export const validateWorkflowRun = action({
       // This isn't currently a gate for `passed`, but exposing it as a boolean makes
       // downstream reporting cleaner and audit-friendly.
       evidenceArtifactHitRatePass: evidenceArtifactHitRate >= 0.95,
+      speculativeClaimRatePass: speculativeClaimRate <= maxSpeculativeClaimRate,
     };
 
     const passed = errors.length === 0;
@@ -423,7 +457,7 @@ export const validateWorkflowRun = action({
     return {
       workflowId: args.workflowId,
       passed,
-      metrics: { citationCoverage, claimCoverage, unsupportedClaimRate, evidenceArtifactHitRate },
+      metrics: { citationCoverage, claimCoverage, unsupportedClaimRate, evidenceArtifactHitRate, speculativeClaimRate, contradictedClaimCount: contradictedClaims, entailmentBreakdown },
       checks,
       counts: {
         threads: threadsPresent.length,

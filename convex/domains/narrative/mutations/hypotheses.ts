@@ -20,6 +20,7 @@
 import { v } from "convex/values";
 import { mutation, internalMutation } from "../../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { speculativeRiskValidator, hypothesisStatusValidator } from "../validators";
 
 /**
  * FNV-1a 32-bit hash for stable ID generation
@@ -33,19 +34,7 @@ function fnv1a32Hex(str: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-const speculativeRiskValidator = v.union(
-  v.literal("grounded"),
-  v.literal("mixed"),
-  v.literal("speculative")
-);
-
-const statusValidator = v.union(
-  v.literal("active"),
-  v.literal("supported"),
-  v.literal("weakened"),
-  v.literal("inconclusive"),
-  v.literal("retired")
-);
+const statusValidator = hypothesisStatusValidator;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PUBLIC MUTATIONS (User-facing, require auth)

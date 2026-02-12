@@ -188,6 +188,14 @@ For each shift detected, provide:
 - affectedThreadId: (if updating existing thread)
 - newThreadProposal: { name, thesis, entityKeys, topicTags } (if new thread)
 
+Additionally, if there are competing explanations for what the news means, output them as **hypotheses**. Each hypothesis should be:
+- label: "H1", "H2", etc.
+- title: Short name (e.g. "Attention displacement")
+- claimForm: Testable claim statement
+- measurementApproach: How to evaluate this hypothesis with data
+- speculativeRisk: "grounded" (tier1/2 evidence supports) | "mixed" (partly supported) | "speculative" (mostly interpretive)
+- falsificationCriteria: What evidence would disprove this hypothesis
+
 Respond in JSON format:
 {
   "shifts": [
@@ -203,19 +211,42 @@ Respond in JSON format:
       }
     }
   ],
+  "hypotheses": [
+    {
+      "label": "H1",
+      "title": "Short hypothesis name",
+      "claimForm": "Testable claim: X correlates with Y because Z",
+      "measurementApproach": "Compare metric A vs metric B over time window",
+      "speculativeRisk": "mixed",
+      "falsificationCriteria": "If X does not correlate with Y within 30 days, this is falsified"
+    }
+  ],
   "summary": "Brief overview of this week's narrative developments"
 }
 
-Only detect shifts with confidence >= 0.6. Be specific and cite evidence from the news.`;
+Only detect shifts with confidence >= 0.6. Be specific and cite evidence from the news.
+Only output hypotheses when there are genuinely competing explanations. Do not force hypotheses.`;
 }
 
 /**
  * Parse LLM response to extract narrative shifts
  */
+/**
+ * Parsed hypothesis candidate from LLM analysis
+ */
+interface HypothesisCandidate {
+  label: string;
+  title: string;
+  claimForm: string;
+  measurementApproach: string;
+  speculativeRisk: "grounded" | "mixed" | "speculative";
+  falsificationCriteria?: string;
+}
+
 function parseAnalysisResponse(
   response: string,
   minConfidence: number
-): { shifts: NarrativeShift[]; summary: string } {
+): { shifts: NarrativeShift[]; hypotheses: HypothesisCandidate[]; summary: string } {
   try {
     // Extract JSON from response (handle markdown code blocks)
     let jsonStr = response;
@@ -256,13 +287,28 @@ function parseAnalysisResponse(
           : undefined,
       }));
 
+    // Parse hypothesis candidates (Phase 7)
+    const rawHypotheses = parsed.hypotheses || [];
+    const validRisks = new Set(["grounded", "mixed", "speculative"]);
+    const hypotheses: HypothesisCandidate[] = rawHypotheses
+      .filter((h: any) => h.label && h.title && h.claimForm && h.measurementApproach)
+      .map((h: any) => ({
+        label: String(h.label),
+        title: String(h.title),
+        claimForm: String(h.claimForm),
+        measurementApproach: String(h.measurementApproach),
+        speculativeRisk: validRisks.has(h.speculativeRisk) ? h.speculativeRisk : "speculative",
+        falsificationCriteria: h.falsificationCriteria ? String(h.falsificationCriteria) : undefined,
+      }));
+
     return {
       shifts: validShifts,
+      hypotheses,
       summary: parsed.summary || "",
     };
   } catch (error) {
     console.error("[AnalystAgent] Failed to parse response:", error);
-    return { shifts: [], summary: "" };
+    return { shifts: [], hypotheses: [], summary: "" };
   }
 }
 
@@ -339,6 +385,7 @@ export async function runAnalystAgent(
   console.log(`[AnalystAgent] Model: ${cfg.model}, Min confidence: ${cfg.minConfidence}`);
 
   const allShifts: NarrativeShift[] = [];
+  const allHypothesisCandidates: HypothesisCandidate[] = [];
   const errors: string[] = [];
 
   try {
@@ -414,16 +461,52 @@ export async function runAnalystAgent(
     }
 
     // Parse LLM response
-    const { shifts: llmShifts, summary } = parseAnalysisResponse(
+    const { shifts: llmShifts, hypotheses: llmHypotheses, summary } = parseAnalysisResponse(
       result.text,
       cfg.minConfidence
     );
 
     allShifts.push(...llmShifts);
-    console.log(`[AnalystAgent] LLM detected ${llmShifts.length} shifts`);
+    console.log(`[AnalystAgent] LLM detected ${llmShifts.length} shifts, ${llmHypotheses.length} hypotheses`);
 
     if (summary) {
       console.log(`[AnalystAgent] Summary: ${summary.slice(0, 200)}...`);
+    }
+
+    // Persist hypothesis candidates to narrativeHypotheses (Phase 7)
+    if (llmHypotheses.length > 0) {
+      const targetThreadId = state.existingThreads[0]?.threadId;
+      if (targetThreadId) {
+        const competingIds: string[] = [];
+        for (const h of llmHypotheses) {
+          try {
+            const hypothesisId = await ctx.runMutation(
+              internal.domains.narrative.mutations.hypotheses.createHypothesisInternal,
+              {
+                threadId: targetThreadId as any,
+                label: h.label,
+                title: h.title,
+                claimForm: h.claimForm,
+                measurementApproach: h.measurementApproach,
+                speculativeRisk: h.speculativeRisk,
+                confidence: 0.5,
+                falsificationCriteria: h.falsificationCriteria,
+                createdByAgent: "analyst",
+              }
+            );
+            competingIds.push(String(hypothesisId));
+            console.log(`[AnalystAgent] Created hypothesis ${h.label}: ${h.title}`);
+          } catch (e) {
+            console.warn(`[AnalystAgent] Hypothesis creation failed (non-fatal):`, e);
+          }
+        }
+        // Store hypothesis candidates on the state so publisher can link claims
+        allHypothesisCandidates.push(...llmHypotheses);
+      } else {
+        // No thread yet — stash candidates for publisher to persist after thread creation
+        allHypothesisCandidates.push(...llmHypotheses);
+        console.log(`[AnalystAgent] Deferred ${llmHypotheses.length} hypothesis(es) — no thread yet`);
+      }
     }
 
     // Add heuristic plot twist detection
@@ -481,10 +564,11 @@ export async function runAnalystAgent(
   );
   console.log(`[AnalystAgent] Breakdown:`, shiftCounts);
 
-  // Return updated state
+  // Return updated state with hypothesis candidates for publisher
   return {
     ...state,
     narrativeShifts: topShifts,
+    hypothesisCandidates: allHypothesisCandidates.length > 0 ? allHypothesisCandidates : undefined,
     errors: [...state.errors, ...errors],
     currentStep: "publisher", // Advance to next step
   };
