@@ -35,7 +35,7 @@ export interface SignalCollectorConfig {
 }
 
 const DEFAULT_CONFIG: Required<SignalCollectorConfig> = {
-  model: "gpt-5-nano",
+  model: "qwen3-coder-free",
   minConfidence: 0.5,
   maxMetricsPerDomain: 5,
 };

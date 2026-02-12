@@ -57,7 +57,7 @@ export interface AnalystConfig {
 }
 
 const DEFAULT_CONFIG: Required<AnalystConfig> = {
-  model: "gpt-5-nano",
+  model: "qwen3-coder-free",
   minConfidence: 0.6,
   maxShifts: 10,
   detectPlotTwists: true,

@@ -39,7 +39,7 @@ export interface CuratorConfig {
 }
 
 const DEFAULT_CONFIG: Required<CuratorConfig> = {
-  model: "gpt-5-nano",
+  model: "qwen3-coder-free",
   minCitationCoverage: 0.8,
   maxPostLength: 2000,
   minUniqueSources: 2,

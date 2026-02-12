@@ -57,7 +57,7 @@ export interface PublisherConfig {
 }
 
 const DEFAULT_CONFIG: Required<PublisherConfig> = {
-  model: "gpt-5-nano",
+  model: "qwen3-coder-free",
   generateSummaries: true,
   autoVerifyThreshold: 0.85,
   deterministicMode: false,
