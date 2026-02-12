@@ -80,10 +80,12 @@ describe("Dynamic Loading: hybridSearch searchFullRegistry", () => {
       explain: true,
     });
     expect(results.length).toBeGreaterThan(0);
-    // Top results should have positive scores and include verification tools
+    // Top results should have positive scores and include verification or dive/review tools
     expect(results[0].score).toBeGreaterThan(0);
     const categories = results.map(r => r.category);
-    expect(categories).toContain("verification");
+    // "verify code changes" may match verification tools or ui_ux_dive_v2 flywheel tools (dive_fix_verify, dive_reexplore, dive_code_review)
+    const hasRelevantCategory = categories.includes("verification") || categories.includes("ui_ux_dive_v2");
+    expect(hasRelevantCategory).toBe(true);
   });
 });
 

@@ -1406,7 +1406,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.21.1" },
+  { name: "nodebench-mcp-methodology", version: "2.22.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,

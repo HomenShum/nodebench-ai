@@ -11452,7 +11452,7 @@ export default defineSchema({
     // Update linking (Phase 6)
     supersedesEventId: v.optional(v.id("narrativeEvents")),
     changeSummary: v.optional(v.string()),
-    // Claim structure (Phase 6)
+    // Claim structure (Phase 6, extended Phase 7)
     claimSet: v.optional(v.array(v.object({
       claim: v.string(),
       kind: v.optional(v.union(
@@ -11463,6 +11463,20 @@ export default defineSchema({
       confidence: v.number(),
       uncertainty: v.optional(v.number()),
       evidenceArtifactIds: v.array(v.string()),
+      // Phase 7: Narrative manipulation risk label
+      speculativeRisk: v.optional(v.union(
+        v.literal("grounded"),      // tier1/2 sources directly support
+        v.literal("mixed"),         // partly supported, partly interpretive
+        v.literal("speculative")    // mostly interpretive, missing direct evidence
+      )),
+      // Phase 7: Entailment verdict — does evidence support the claim?
+      entailmentVerdict: v.optional(v.union(
+        v.literal("entailed"),      // evidence directly supports
+        v.literal("neutral"),       // evidence neither supports nor contradicts
+        v.literal("contradicted")   // evidence contradicts
+      )),
+      // Phase 7: Link claim to a structured hypothesis
+      hypothesisId: v.optional(v.string()),
     }))),
     // Agent metadata
     discoveredByAgent: v.string(),
@@ -11723,12 +11737,25 @@ export default defineSchema({
     linkedFactIds: v.optional(v.array(v.id("temporalFacts"))),
     linkedArtifactIds: v.optional(v.array(v.id("sourceArtifacts"))),
     verificationNote: v.optional(v.string()),
+    // Phase 7: Narrative manipulation risk + entailment
+    speculativeRisk: v.optional(v.union(
+      v.literal("grounded"),
+      v.literal("mixed"),
+      v.literal("speculative")
+    )),
+    entailmentVerdict: v.optional(v.union(
+      v.literal("entailed"),
+      v.literal("neutral"),
+      v.literal("contradicted")
+    )),
+    hypothesisId: v.optional(v.string()),
     classifiedAt: v.number(),
     classifiedBy: v.string(),
   })
     .index("by_post", ["postId", "sentenceIndex"])
     .index("by_type", ["claimType", "isVerified"])
-    .index("by_unverified", ["isVerified", "claimType"]),
+    .index("by_unverified", ["isVerified", "claimType"])
+    .index("by_hypothesis", ["hypothesisId", "entailmentVerdict"]),
 
   /**
    * Truth State - Contested fact display semantics
@@ -11808,6 +11835,108 @@ export default defineSchema({
     .index("by_status", ["status", "createdAt"])
     .index("by_content", ["contentType", "contentId"])
     .index("by_author", ["authorId", "createdAt"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 7: HYPOTHESIS TESTING & SIGNAL METRICS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Narrative Hypotheses - Structured testable sub-claims within a thread
+   * Supports competing explanations (H1..Hn) that can all be "live" at once.
+   * Each hypothesis has a claim form, measurement approach, and evidence binding.
+   * Claims in claimSet and claimClassifications link to these via hypothesisId.
+   */
+  narrativeHypotheses: defineTable({
+    hypothesisId: v.string(),
+    threadId: v.id("narrativeThreads"),
+    label: v.string(),                    // e.g. "H1", "H2"
+    title: v.string(),                    // e.g. "Attention displacement"
+    claimForm: v.string(),                // Testable claim statement
+    measurementApproach: v.string(),      // How to evaluate this hypothesis
+    // Evidence summary
+    supportingEvidenceCount: v.number(),
+    contradictingEvidenceCount: v.number(),
+    evidenceArtifactIds: v.array(v.string()),
+    // Status
+    status: v.union(
+      v.literal("active"),               // Still being evaluated
+      v.literal("supported"),            // Preponderance of evidence supports
+      v.literal("weakened"),             // Evidence mostly contradicts
+      v.literal("inconclusive"),         // Not enough evidence either way
+      v.literal("retired")              // Superseded or no longer relevant
+    ),
+    // Confidence and risk
+    confidence: v.number(),              // 0-1 confidence in this hypothesis
+    speculativeRisk: v.union(
+      v.literal("grounded"),
+      v.literal("mixed"),
+      v.literal("speculative")
+    ),
+    // Falsification criteria -- what would change our mind
+    falsificationCriteria: v.optional(v.string()),
+    // Competing hypothesis links
+    competingHypothesisIds: v.optional(v.array(v.string())),
+    // Metadata
+    createdByAgent: v.string(),
+    reviewedBy: v.optional(v.string()),
+    reviewedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_thread", ["threadId", "status"])
+    .index("by_hypothesis_id", ["hypothesisId"])
+    .index("by_status", ["status", "updatedAt"])
+    .index("by_speculative_risk", ["speculativeRisk", "status"]),
+
+  /**
+   * Narrative Signal Metrics - Quantitative data products for hypothesis evaluation
+   * Stores time-series measurements for attention, policy, labor, and market signals.
+   * These feed directly into hypothesis scoring and narrative generation.
+   */
+  narrativeSignalMetrics: defineTable({
+    metricId: v.string(),
+    threadId: v.optional(v.id("narrativeThreads")),
+    hypothesisId: v.optional(v.string()),
+    // Signal domain
+    domain: v.union(
+      v.literal("attention"),            // News/social/search volume
+      v.literal("policy"),               // EO/memo/procurement activity
+      v.literal("labor"),                // Job postings, layoffs
+      v.literal("market"),               // Insider selling, sector rotation
+      v.literal("sentiment")             // Public opinion / social mood
+    ),
+    // Metric identity
+    metricName: v.string(),              // e.g. "attentionShiftDelta", "policyVelocityScore"
+    topic: v.string(),                   // What this measures, e.g. "AI layoffs", "Epstein coverage"
+    // Value
+    value: v.number(),
+    unit: v.optional(v.string()),        // e.g. "articles/week", "percent", "score"
+    // Time window
+    measuredAt: v.number(),
+    windowStartAt: v.number(),
+    windowEndAt: v.number(),
+    // Source and confidence
+    sourceDescription: v.string(),       // e.g. "GDELT news volume", "Indeed Hiring Lab"
+    sourceUrls: v.array(v.string()),
+    sourceTier: v.union(
+      v.literal("tier1"),                // Primary source (SEC, Federal Register, NEJM)
+      v.literal("tier2"),                // Reputable secondary (Reuters, Bloomberg)
+      v.literal("tier3"),                // Social/aggregated (Reddit, HN mention counts)
+      v.literal("tier4")                 // Unverified / model-derived
+    ),
+    confidence: v.number(),
+    // Comparison baseline
+    baselineValue: v.optional(v.number()),
+    deltaFromBaseline: v.optional(v.number()),
+    // Agent metadata
+    collectedByAgent: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_domain", ["domain", "measuredAt"])
+    .index("by_thread", ["threadId", "domain", "measuredAt"])
+    .index("by_hypothesis", ["hypothesisId", "domain", "measuredAt"])
+    .index("by_metric", ["metricName", "measuredAt"])
+    .index("by_topic", ["topic", "measuredAt"]),
 
   // ═══════════════════════════════════════════════════════════════════════════
   // GROUND TRUTH & VERIFICATION AUDIT TABLES

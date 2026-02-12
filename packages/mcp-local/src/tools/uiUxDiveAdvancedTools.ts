@@ -1042,4 +1042,757 @@ export const uiUxDiveAdvancedTools: McpTool[] = [
       };
     },
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // v3 FLYWHEEL TOOLS — Bug→Code→Fix→Verify→Reexplore→Test→Review
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // ── 8. Locate bug/component in codebase ────────────────────────────────
+  {
+    name: "dive_code_locate",
+    description:
+      "Find the exact source code location for a bug, component, or design issue. Uses grep/ripgrep to search the project codebase for the relevant code. Maps UI bugs to file:line so you know exactly where to fix. Stores the location in the DB linked to the bug/component for the full traceability chain: UI element → bug → source file:line → fix → verify.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID" },
+        projectPath: { type: "string", description: "Absolute path to the project root" },
+        bugId: { type: "string", description: "Bug to locate code for (optional)" },
+        componentId: { type: "string", description: "Component to locate code for (optional)" },
+        designIssueId: { type: "string", description: "Design issue to locate (optional)" },
+        searchQueries: {
+          type: "array",
+          description: "Strings to grep for in the codebase (e.g. ['NaN%', 'tokenUsage', 'CostDashboard']). Multiple queries are tried in order; first match wins.",
+          items: { type: "string" },
+        },
+        filePatterns: {
+          type: "array",
+          description: "Glob patterns to limit search scope (e.g. ['*.tsx', '*.ts']). Default: ['*.tsx', '*.ts', '*.jsx', '*.js']",
+          items: { type: "string" },
+        },
+        contextLines: { type: "number", description: "Lines of context around match (default: 3)" },
+      },
+      required: ["sessionId", "projectPath", "searchQueries"],
+    },
+    handler: async (args) => {
+      const {
+        sessionId, projectPath, bugId, componentId, designIssueId,
+        searchQueries, filePatterns, contextLines,
+      } = args as {
+        sessionId: string;
+        projectPath: string;
+        bugId?: string;
+        componentId?: string;
+        designIssueId?: string;
+        searchQueries: string[];
+        filePatterns?: string[];
+        contextLines?: number;
+      };
+
+      const db = getDb();
+      const session = db.prepare("SELECT id FROM ui_dive_sessions WHERE id = ?").get(sessionId);
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+
+      if (!existsSync(projectPath)) return { error: true, message: `Project path not found: ${projectPath}` };
+
+      const exts = filePatterns ?? ["*.tsx", "*.ts", "*.jsx", "*.js"];
+      const ctx = contextLines ?? 3;
+      const locations: Array<{ file: string; lineStart: number; lineEnd: number; snippet: string; query: string; confidence: string }> = [];
+
+      for (const query of searchQueries) {
+        if (locations.length >= 10) break; // cap results
+
+        // Try ripgrep first, fall back to findstr on Windows
+        const includeFlags = exts.map(e => `--include="${e}"`).join(" ");
+        const cmd = process.platform === "win32"
+          ? `rg -n -C ${ctx} --no-heading ${includeFlags} "${query.replace(/"/g, '\\"')}" "${projectPath}" 2>nul || findstr /s /n /c:"${query.replace(/"/g, "")}" "${projectPath}\\src\\*.ts" "${projectPath}\\src\\*.tsx" 2>nul`
+          : `rg -n -C ${ctx} --no-heading ${includeFlags} "${query.replace(/"/g, '\\"')}" "${projectPath}" 2>/dev/null || grep -rnH --include='*.ts' --include='*.tsx' "${query}" "${projectPath}/src" 2>/dev/null`;
+
+        try {
+          const output = execSync(cmd, { encoding: "utf-8", maxBuffer: 1024 * 1024, timeout: 15000 }).trim();
+          if (!output) continue;
+
+          // Parse ripgrep output: filename:lineNum:content or filename-lineNum-content (context)
+          const fileMatches = new Map<string, { lines: number[]; content: string[] }>();
+          for (const line of output.split("\n").slice(0, 100)) {
+            const m = line.match(/^(.+?)[:\-](\d+)[:\-](.*)$/);
+            if (m) {
+              const [, file, lineStr, content] = m;
+              const lineNum = parseInt(lineStr, 10);
+              const normalized = file.replace(/\\/g, "/");
+              if (!fileMatches.has(normalized)) fileMatches.set(normalized, { lines: [], content: [] });
+              const entry = fileMatches.get(normalized)!;
+              entry.lines.push(lineNum);
+              entry.content.push(`${lineNum}: ${content}`);
+            }
+          }
+
+          for (const [file, { lines: lineNums, content }] of fileMatches) {
+            if (locations.length >= 10) break;
+            const lineStart = Math.min(...lineNums);
+            const lineEnd = Math.max(...lineNums);
+            const snippet = content.slice(0, 15).join("\n");
+            locations.push({
+              file,
+              lineStart,
+              lineEnd,
+              snippet,
+              query,
+              confidence: "high",
+            });
+          }
+        } catch {
+          // grep/rg failed or timed out — try next query
+          continue;
+        }
+      }
+
+      // Store in DB
+      const storedIds: string[] = [];
+      for (const loc of locations) {
+        const id = genId("cloc");
+        db.prepare(
+          `INSERT INTO ui_dive_code_locations (id, session_id, bug_id, component_id, design_issue_id, file_path, line_start, line_end, code_snippet, search_query, confidence)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).run(id, sessionId, bugId ?? null, componentId ?? null, designIssueId ?? null, loc.file, loc.lineStart, loc.lineEnd, loc.snippet, loc.query, loc.confidence);
+        storedIds.push(id);
+      }
+
+      return {
+        locationsFound: locations.length,
+        locations: locations.map((l, i) => ({
+          id: storedIds[i],
+          file: l.file,
+          lines: `${l.lineStart}-${l.lineEnd}`,
+          query: l.query,
+          confidence: l.confidence,
+          snippet: l.snippet.slice(0, 500),
+        })),
+        linkedTo: { bugId: bugId ?? null, componentId: componentId ?? null, designIssueId: designIssueId ?? null },
+        _hint: locations.length > 0
+          ? `Found ${locations.length} code location(s). Fix the code, then verify with dive_fix_verify({ bugId, route, fixDescription }).`
+          : `No matches found. Try different search queries or broader file patterns.`,
+        _workflow: [
+          "1. Review the code snippets above to understand the root cause",
+          "2. Fix the code in your editor",
+          "3. Verify: dive_fix_verify({ sessionId, bugId, route, fixDescription, filesChanged })",
+          "4. Generate regression test: dive_generate_tests({ sessionId, bugId })",
+          "5. Re-explore: dive_reexplore({ sessionId, route }) to check for regressions",
+        ],
+      };
+    },
+  },
+
+  // ── 9. Fix + Verify flywheel ───────────────────────────────────────────
+  {
+    name: "dive_fix_verify",
+    description:
+      "After fixing a bug, verify the fix by re-navigating to the affected route, comparing before/after state, and updating the bug status + changelog. This is the core flywheel step: Bug tagged → Code located → Code fixed → Fix verified → Changelog updated → Bug marked resolved. The agent should navigate to the route via Playwright, take a new screenshot, and pass the results here.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID" },
+        bugId: { type: "string", description: "Bug ID being fixed" },
+        route: { type: "string", description: "Route to re-navigate to for verification" },
+        fixDescription: { type: "string", description: "What was changed to fix the bug" },
+        filesChanged: {
+          type: "array",
+          description: "Files that were modified",
+          items: { type: "string" },
+        },
+        gitCommit: { type: "string", description: "Git commit hash for the fix (optional)" },
+        beforeScreenshotId: { type: "string", description: "Screenshot ID from before the fix (optional)" },
+        afterScreenshotId: { type: "string", description: "Screenshot ID from after the fix (optional)" },
+        verified: {
+          type: "boolean",
+          description: "Whether the fix was visually/functionally verified (default: false until agent confirms)",
+        },
+        verificationNotes: { type: "string", description: "Notes from the verification (what the agent observed)" },
+      },
+      required: ["sessionId", "bugId", "fixDescription"],
+    },
+    handler: async (args) => {
+      const {
+        sessionId, bugId, route, fixDescription, filesChanged,
+        gitCommit, beforeScreenshotId, afterScreenshotId, verified, verificationNotes,
+      } = args as {
+        sessionId: string;
+        bugId: string;
+        route?: string;
+        fixDescription: string;
+        filesChanged?: string[];
+        gitCommit?: string;
+        beforeScreenshotId?: string;
+        afterScreenshotId?: string;
+        verified?: boolean;
+        verificationNotes?: string;
+      };
+
+      const db = getDb();
+      const session = db.prepare("SELECT id FROM ui_dive_sessions WHERE id = ?").get(sessionId);
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+
+      const bug = db.prepare("SELECT id, title, severity, component_id, status FROM ui_dive_bugs WHERE id = ?").get(bugId) as any;
+      if (!bug) return { error: true, message: `Bug not found: ${bugId}` };
+
+      // Create fix verification record
+      const verifyId = genId("fxv");
+      db.prepare(
+        `INSERT INTO ui_dive_fix_verifications (id, session_id, bug_id, route, before_screenshot_id, after_screenshot_id, fix_description, files_changed, git_commit, verified, verification_notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(verifyId, sessionId, bugId, route ?? null, beforeScreenshotId ?? null, afterScreenshotId ?? null, fixDescription, filesChanged ? JSON.stringify(filesChanged) : null, gitCommit ?? null, verified ? 1 : 0, verificationNotes ?? null);
+
+      // Auto-create changelog entry
+      const changelogId = genId("chg");
+      db.prepare(
+        `INSERT INTO ui_dive_changelogs (id, session_id, component_id, change_type, description, before_screenshot_id, after_screenshot_id, files_changed, git_commit, metadata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(changelogId, sessionId, bug.component_id ?? null, "bugfix", `[${bug.severity}] ${bug.title}: ${fixDescription}`, beforeScreenshotId ?? null, afterScreenshotId ?? null, filesChanged ? JSON.stringify(filesChanged) : null, gitCommit ?? null, JSON.stringify({ bugId, verificationId: verifyId }));
+
+      // Update fix verification with changelog link
+      db.prepare("UPDATE ui_dive_fix_verifications SET changelog_id = ? WHERE id = ?").run(changelogId, verifyId);
+
+      // If verified, update bug status
+      if (verified) {
+        db.prepare("UPDATE ui_dive_bugs SET status = 'resolved' WHERE id = ?").run(bugId);
+      }
+
+      return {
+        verificationId: verifyId,
+        bugId,
+        bugTitle: bug.title,
+        bugSeverity: bug.severity,
+        verified: verified ?? false,
+        changelogId,
+        filesChanged: filesChanged ?? [],
+        gitCommit: gitCommit ?? null,
+        bugStatus: verified ? "resolved" : "pending_verification",
+        _hint: verified
+          ? `Bug "${bug.title}" marked as RESOLVED. Changelog entry created. Next: dive_reexplore to check for regressions, then dive_generate_tests for a regression test.`
+          : `Fix recorded but NOT yet verified. Navigate to ${route ?? "the affected route"} and confirm the fix, then call again with verified: true.`,
+        _flywheel: [
+          "✅ Bug tagged",
+          "✅ Code located",
+          "✅ Code fixed",
+          verified ? "✅ Fix verified" : "⏳ Fix pending verification",
+          "✅ Changelog updated",
+          verified ? "✅ Bug resolved" : "⏳ Bug pending",
+          "→ Next: dive_reexplore({ route }) to check for regressions",
+          "→ Next: dive_generate_tests({ bugId }) for regression test",
+          "→ Next: dive_code_review({ sessionId }) for full review",
+        ],
+      };
+    },
+  },
+
+  // ── 10. Re-explore a route after changes ───────────────────────────────
+  {
+    name: "dive_reexplore",
+    description:
+      "Re-traverse a route after code changes to detect regressions and verify fixes. Compares the current state against previously registered components, bugs, and test results for that route. The agent should navigate to the route first (via Playwright), take a fresh snapshot/screenshot, then call this tool with what they observe. It diffs against the prior state and flags any new issues or confirms fixes.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID" },
+        route: { type: "string", description: "Route being re-explored (e.g. '/cost')" },
+        currentState: {
+          type: "object",
+          description: "What the agent currently observes",
+          properties: {
+            componentsVisible: {
+              type: "array",
+              description: "Component names still visible on the page",
+              items: { type: "string" },
+            },
+            newIssues: {
+              type: "array",
+              description: "Any new issues noticed (regressions)",
+              items: { type: "string" },
+            },
+            fixedIssues: {
+              type: "array",
+              description: "Previously tagged bugs/issues that are now fixed",
+              items: { type: "string" },
+            },
+            consoleErrors: {
+              type: "array",
+              description: "Console errors observed",
+              items: { type: "string" },
+            },
+            notes: { type: "string", description: "General observations" },
+          },
+        },
+        afterScreenshotId: { type: "string", description: "Screenshot taken during re-exploration" },
+      },
+      required: ["sessionId", "route", "currentState"],
+    },
+    handler: async (args) => {
+      const { sessionId, route, currentState, afterScreenshotId } = args as {
+        sessionId: string;
+        route: string;
+        currentState: {
+          componentsVisible?: string[];
+          newIssues?: string[];
+          fixedIssues?: string[];
+          consoleErrors?: string[];
+          notes?: string;
+        };
+        afterScreenshotId?: string;
+      };
+
+      const db = getDb();
+      const session = db.prepare("SELECT id FROM ui_dive_sessions WHERE id = ?").get(sessionId);
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+
+      // Find components on this route
+      const allComponents = db.prepare("SELECT * FROM ui_dive_components WHERE session_id = ?").all(sessionId) as any[];
+      const routeComponents = allComponents.filter(c => {
+        const meta = c.metadata ? JSON.parse(c.metadata) : {};
+        return meta.route === route;
+      });
+
+      // Find bugs on this route
+      const routeComponentIds = routeComponents.map(c => c.id);
+      const routeBugs = routeComponentIds.length > 0
+        ? db.prepare(
+            `SELECT * FROM ui_dive_bugs WHERE component_id IN (${routeComponentIds.map(() => "?").join(",")}) ORDER BY severity`
+          ).all(...routeComponentIds) as any[]
+        : [];
+
+      // Find design issues on this route
+      const routeDesignIssues = db.prepare(
+        "SELECT * FROM ui_dive_design_issues WHERE session_id = ? AND route = ?"
+      ).all(sessionId, route) as any[];
+
+      // Previous fix verifications for bugs on this route
+      const bugIds = routeBugs.map(b => b.id);
+      const verifications = bugIds.length > 0
+        ? db.prepare(
+            `SELECT * FROM ui_dive_fix_verifications WHERE bug_id IN (${bugIds.map(() => "?").join(",")}) ORDER BY created_at DESC`
+          ).all(...bugIds) as any[]
+        : [];
+
+      // Diff analysis
+      const previousComponents = routeComponents.map(c => c.name);
+      const missingComponents = previousComponents.filter(
+        name => !(currentState.componentsVisible ?? []).includes(name)
+      );
+      const newComponents = (currentState.componentsVisible ?? []).filter(
+        name => !previousComponents.includes(name)
+      );
+
+      const openBugs = routeBugs.filter(b => b.status !== "resolved");
+      const resolvedBugs = routeBugs.filter(b => b.status === "resolved");
+
+      const regressions: string[] = [];
+      if (missingComponents.length > 0) {
+        regressions.push(`${missingComponents.length} component(s) disappeared: ${missingComponents.join(", ")}`);
+      }
+      if ((currentState.consoleErrors ?? []).length > 0) {
+        regressions.push(`${currentState.consoleErrors!.length} console error(s) detected`);
+      }
+      if ((currentState.newIssues ?? []).length > 0) {
+        regressions.push(...(currentState.newIssues ?? []).map(i => `New issue: ${i}`));
+      }
+
+      const regressionFree = regressions.length === 0;
+
+      return {
+        route,
+        diff: {
+          previousComponents: previousComponents.length,
+          currentComponents: (currentState.componentsVisible ?? []).length,
+          missingComponents,
+          newComponents,
+          openBugs: openBugs.length,
+          resolvedBugs: resolvedBugs.length,
+          designIssues: routeDesignIssues.length,
+          fixVerifications: verifications.length,
+        },
+        regressions,
+        regressionFree,
+        fixedIssues: currentState.fixedIssues ?? [],
+        consoleErrors: currentState.consoleErrors ?? [],
+        afterScreenshotId: afterScreenshotId ?? null,
+        _status: regressionFree
+          ? `✅ Route ${route} is regression-free. ${openBugs.length} open bug(s) remain.`
+          : `⚠️ ${regressions.length} regression(s) detected on ${route}. Investigate before proceeding.`,
+        _hint: regressionFree
+          ? openBugs.length > 0
+            ? `Route clean but ${openBugs.length} bug(s) still open: ${openBugs.map(b => b.title).join("; ")}. Fix them and re-verify.`
+            : `Route fully clean! Generate a regression test: dive_generate_tests({ sessionId, route: "${route}" })`
+          : `Regressions found — fix them before generating tests. Tag new bugs with tag_ui_bug.`,
+      };
+    },
+  },
+
+  // ── 11. Generate regression tests from bugs/interactions ───────────────
+  {
+    name: "dive_generate_tests",
+    description:
+      "Generate Playwright regression test code from dive findings. Creates test cases from: bugs (verify the fix holds), interaction tests (replay the sequence), design issues (visual regression checks), and component assertions (verify component presence). The generated code can be saved to a test file and run with 'npx playwright test'. This closes the quality loop: UI bug → fix → regression test → CI protection.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID" },
+        bugId: { type: "string", description: "Generate test for a specific bug fix (optional)" },
+        componentId: { type: "string", description: "Generate tests for a specific component (optional)" },
+        testId: { type: "string", description: "Generate from an existing interaction test (optional)" },
+        route: { type: "string", description: "Generate tests for all findings on a route (optional)" },
+        appUrl: { type: "string", description: "App URL for the test (default: session's app_url)" },
+        outputPath: { type: "string", description: "File path to save the generated test (optional)" },
+        framework: {
+          type: "string",
+          description: "Test framework: playwright (default), cypress, vitest",
+          enum: ["playwright", "cypress", "vitest"],
+        },
+      },
+      required: ["sessionId"],
+    },
+    handler: async (args) => {
+      const { sessionId, bugId, componentId, testId, route, appUrl, outputPath, framework } = args as {
+        sessionId: string;
+        bugId?: string;
+        componentId?: string;
+        testId?: string;
+        route?: string;
+        appUrl?: string;
+        outputPath?: string;
+        framework?: string;
+      };
+
+      const db = getDb();
+      const session = db.prepare("SELECT * FROM ui_dive_sessions WHERE id = ?").get(sessionId) as any;
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+
+      const baseUrl = appUrl ?? session.app_url;
+      const fw = framework ?? "playwright";
+      const testBlocks: string[] = [];
+      const covers: string[] = [];
+
+      // Gather bugs to cover
+      let bugs: any[] = [];
+      if (bugId) {
+        const bug = db.prepare("SELECT * FROM ui_dive_bugs WHERE id = ?").get(bugId);
+        if (bug) bugs = [bug];
+      } else if (componentId) {
+        bugs = db.prepare("SELECT * FROM ui_dive_bugs WHERE component_id = ?").all(componentId) as any[];
+      } else if (route) {
+        const comps = db.prepare("SELECT * FROM ui_dive_components WHERE session_id = ?").all(sessionId) as any[];
+        const routeCompIds = comps.filter(c => {
+          const meta = c.metadata ? JSON.parse(c.metadata) : {};
+          return meta.route === route;
+        }).map(c => c.id);
+        if (routeCompIds.length > 0) {
+          bugs = db.prepare(
+            `SELECT * FROM ui_dive_bugs WHERE component_id IN (${routeCompIds.map(() => "?").join(",")})`
+          ).all(...routeCompIds) as any[];
+        }
+      } else {
+        bugs = db.prepare("SELECT * FROM ui_dive_bugs WHERE session_id = ?").all(sessionId) as any[];
+      }
+
+      // Generate bug regression tests
+      for (const bug of bugs) {
+        const comp = db.prepare("SELECT * FROM ui_dive_components WHERE id = ?").get(bug.component_id) as any;
+        const meta = comp?.metadata ? JSON.parse(comp.metadata) : {};
+        const bugRoute = meta.route ?? "/";
+
+        testBlocks.push(`  test('regression: ${bug.title.replace(/'/g, "\\'")}', async ({ page }) => {
+    await page.goto('${baseUrl}${bugRoute}');
+    await page.waitForLoadState('networkidle');
+
+    // Bug: ${bug.description ?? bug.title}
+    // Severity: ${bug.severity} | Category: ${bug.category}
+    ${bug.expected ? `// Expected: ${bug.expected}` : ""}
+    ${bug.actual ? `// Was: ${bug.actual}` : ""}
+
+    // TODO: Add specific assertions to verify the fix holds
+    // Example: await expect(page.locator('.token-percentage')).not.toContainText('NaN');
+    await expect(page).not.toContainText('Something went wrong');
+  });`);
+        covers.push(`bug:${bug.id}:${bug.title}`);
+      }
+
+      // Generate from interaction tests
+      let interactionTests: any[] = [];
+      if (testId) {
+        const t = db.prepare("SELECT * FROM ui_dive_interaction_tests WHERE id = ?").get(testId);
+        if (t) interactionTests = [t];
+      } else if (!bugId && !componentId) {
+        interactionTests = db.prepare("SELECT * FROM ui_dive_interaction_tests WHERE session_id = ?").all(sessionId) as any[];
+      }
+
+      for (const test of interactionTests) {
+        const steps = db.prepare("SELECT * FROM ui_dive_test_steps WHERE test_id = ? ORDER BY step_index").all(test.id) as any[];
+        const comp = db.prepare("SELECT * FROM ui_dive_components WHERE id = ?").get(test.component_id) as any;
+        const meta = comp?.metadata ? JSON.parse(comp.metadata) : {};
+        const testRoute = meta.route ?? "/";
+
+        const stepCode = steps.map(s => {
+          const comment = `    // Step ${s.step_index}: ${s.action} ${s.target ?? ""} → ${s.expected}`;
+          const assertion = s.status === "failed"
+            ? `    // FAILED: ${s.actual ?? "no actual recorded"}\n    // TODO: Verify this step now passes`
+            : `    // PASSED: ${s.actual ?? ""}`;
+          return `${comment}\n${assertion}`;
+        }).join("\n\n");
+
+        testBlocks.push(`  test('interaction: ${test.test_name.replace(/'/g, "\\'")}', async ({ page }) => {
+    await page.goto('${baseUrl}${testRoute}');
+    await page.waitForLoadState('networkidle');
+
+${stepCode}
+  });`);
+        covers.push(`test:${test.id}:${test.test_name}`);
+      }
+
+      // Assemble full test file
+      const testCode = fw === "playwright"
+        ? `import { test, expect } from '@playwright/test';
+
+test.describe('UI Dive Regression Tests — ${session.app_name ?? baseUrl}', () => {
+${testBlocks.join("\n\n")}
+});
+`
+        : `// Generated ${fw} tests — adapt as needed\n${testBlocks.join("\n\n")}`;
+
+      // Save to file if requested
+      if (outputPath) {
+        try {
+          mkdirSync(join(outputPath, ".."), { recursive: true });
+          writeFileSync(outputPath, testCode, "utf-8");
+        } catch (e: any) {
+          return { error: true, message: `Failed to write test file: ${e.message}` };
+        }
+      }
+
+      // Store in DB
+      const genTestId = genId("gtest");
+      db.prepare(
+        `INSERT INTO ui_dive_generated_tests (id, session_id, bug_id, component_id, test_id, test_framework, test_code, test_file_path, description, covers)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(genTestId, sessionId, bugId ?? null, componentId ?? null, testId ?? null, fw, testCode, outputPath ?? null,
+        `Generated ${testBlocks.length} test(s) from dive findings`, JSON.stringify(covers));
+
+      return {
+        generatedTestId: genTestId,
+        framework: fw,
+        testCount: testBlocks.length,
+        covers,
+        outputPath: outputPath ?? null,
+        testCode: testCode.length > 5000 ? testCode.slice(0, 5000) + "\n// ... truncated" : testCode,
+        _hint: outputPath
+          ? `Test file saved to ${outputPath}. Run with: npx playwright test ${outputPath}`
+          : `Test code generated (${testBlocks.length} tests). Save to a file with outputPath parameter, or copy the testCode above.`,
+      };
+    },
+  },
+
+  // ── 12. Produce structured code review from dive findings ──────────────
+  {
+    name: "dive_code_review",
+    description:
+      "Generate a structured code review report from all dive findings — similar to CodeRabbit or Augment Code Review. Aggregates bugs, design issues, interaction test failures, console errors, missing components, and backend link gaps into a prioritized review with severity, location, impact, and suggested fixes. Produces a score and recommendations. This is the quality gate: the dive findings become actionable review comments that can be posted to PRs or tracked as issues.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string", description: "Dive session ID" },
+        reviewType: {
+          type: "string",
+          description: "Review scope: dive_findings (all), bugs_only, design_only, accessibility, performance",
+          enum: ["dive_findings", "bugs_only", "design_only", "accessibility", "performance"],
+        },
+        includeCodeLocations: {
+          type: "boolean",
+          description: "Include code locations in review comments (default: true)",
+        },
+        format: {
+          type: "string",
+          description: "Output: markdown (readable), json (structured), github_comments (PR comment format)",
+          enum: ["markdown", "json", "github_comments"],
+        },
+      },
+      required: ["sessionId"],
+    },
+    handler: async (args) => {
+      const { sessionId, reviewType, includeCodeLocations, format } = args as {
+        sessionId: string;
+        reviewType?: string;
+        includeCodeLocations?: boolean;
+        format?: string;
+      };
+
+      const db = getDb();
+      const session = db.prepare("SELECT * FROM ui_dive_sessions WHERE id = ?").get(sessionId) as any;
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+
+      const bugs = db.prepare("SELECT * FROM ui_dive_bugs WHERE session_id = ? ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END").all(sessionId) as any[];
+      const designIssues = db.prepare("SELECT * FROM ui_dive_design_issues WHERE session_id = ? ORDER BY severity").all(sessionId) as any[];
+      const tests = db.prepare("SELECT * FROM ui_dive_interaction_tests WHERE session_id = ?").all(sessionId) as any[];
+      const components = db.prepare("SELECT * FROM ui_dive_components WHERE session_id = ?").all(sessionId) as any[];
+      const codeLocations = (includeCodeLocations !== false)
+        ? db.prepare("SELECT * FROM ui_dive_code_locations WHERE session_id = ?").all(sessionId) as any[]
+        : [];
+      const verifications = db.prepare("SELECT * FROM ui_dive_fix_verifications WHERE session_id = ?").all(sessionId) as any[];
+      const changelogs = db.prepare("SELECT * FROM ui_dive_changelogs WHERE session_id = ?").all(sessionId) as any[];
+
+      // Build findings
+      const findings: Array<{
+        type: string;
+        severity: string;
+        title: string;
+        description: string;
+        location?: string;
+        codeFile?: string;
+        codeLine?: string;
+        impact: string;
+        suggestedFix: string;
+        status: string;
+      }> = [];
+
+      const type = reviewType ?? "dive_findings";
+
+      if (type === "dive_findings" || type === "bugs_only") {
+        for (const bug of bugs) {
+          const comp = components.find(c => c.id === bug.component_id);
+          const meta = comp?.metadata ? JSON.parse(comp.metadata) : {};
+          const loc = codeLocations.find(cl => cl.bug_id === bug.id);
+          const verification = verifications.find(v => v.bug_id === bug.id);
+
+          findings.push({
+            type: "bug",
+            severity: bug.severity,
+            title: bug.title,
+            description: bug.description ?? "",
+            location: meta.route ? `Route: ${meta.route}, Component: ${comp?.name ?? "unknown"}` : undefined,
+            codeFile: loc?.file_path ?? meta.sourceFiles?.[0],
+            codeLine: loc ? `L${loc.line_start}-${loc.line_end}` : undefined,
+            impact: bug.severity === "critical" ? "Blocks user flow entirely"
+              : bug.severity === "high" ? "Major degraded experience"
+              : bug.severity === "medium" ? "Noticeable quality issue"
+              : "Minor polish item",
+            suggestedFix: bug.expected ? `Change from "${bug.actual ?? "current"}" to "${bug.expected}"` : "See description",
+            status: verification?.verified ? "resolved" : (bug.status ?? "open"),
+          });
+        }
+      }
+
+      if (type === "dive_findings" || type === "design_only") {
+        for (const issue of designIssues) {
+          findings.push({
+            type: "design",
+            severity: issue.severity,
+            title: issue.title,
+            description: issue.description ?? "",
+            location: issue.route ? `Route: ${issue.route}` : undefined,
+            codeFile: issue.element_selector,
+            impact: issue.severity === "critical" ? "Broken user experience" : "Visual inconsistency",
+            suggestedFix: issue.expected_value ? `Expected: ${issue.expected_value}, Got: ${issue.actual_value}` : "See description",
+            status: "open",
+          });
+        }
+      }
+
+      // Failed tests
+      if (type === "dive_findings") {
+        const failedTests = tests.filter(t => t.status === "failed");
+        for (const test of failedTests) {
+          const failedSteps = db.prepare(
+            "SELECT * FROM ui_dive_test_steps WHERE test_id = ? AND status = 'failed'"
+          ).all(test.id) as any[];
+
+          findings.push({
+            type: "test_failure",
+            severity: "high",
+            title: `Test failed: ${test.test_name}`,
+            description: failedSteps.map(s => `Step ${s.step_index}: Expected "${s.expected}", Got "${s.actual}"`).join("; "),
+            impact: "Interaction flow broken",
+            suggestedFix: "Fix the underlying component behavior, then re-run the test",
+            status: "open",
+          });
+        }
+      }
+
+      // Severity counts
+      const severityCounts = {
+        critical: findings.filter(f => f.severity === "critical").length,
+        high: findings.filter(f => f.severity === "high").length,
+        medium: findings.filter(f => f.severity === "medium").length,
+        low: findings.filter(f => f.severity === "low").length,
+      };
+
+      // Score: 100 - (critical*25 + high*10 + medium*5 + low*1)
+      const rawScore = 100 - (severityCounts.critical * 25 + severityCounts.high * 10 + severityCounts.medium * 5 + severityCounts.low * 1);
+      const score = Math.max(0, Math.min(100, rawScore));
+      const grade = score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 60 ? "D" : "F";
+
+      // Recommendations
+      const recommendations: string[] = [];
+      if (severityCounts.critical > 0) recommendations.push(`🔴 FIX IMMEDIATELY: ${severityCounts.critical} critical issue(s) blocking users`);
+      if (severityCounts.high > 0) recommendations.push(`🟠 HIGH PRIORITY: ${severityCounts.high} high-severity issue(s)`);
+      const openFindings = findings.filter(f => f.status === "open");
+      const resolvedFindings = findings.filter(f => f.status === "resolved");
+      if (resolvedFindings.length > 0) recommendations.push(`✅ ${resolvedFindings.length} issue(s) already resolved`);
+      if (changelogs.length > 0) recommendations.push(`📋 ${changelogs.length} change(s) tracked in changelog`);
+      const untested = components.filter(c => c.interaction_count === 0);
+      if (untested.length > 0) recommendations.push(`🧪 ${untested.length} component(s) have zero interactions — consider adding tests`);
+
+      // Build output
+      let reviewOutput: string;
+      if (format === "github_comments") {
+        reviewOutput = findings.map(f => {
+          const fileRef = f.codeFile ? `\`${f.codeFile}${f.codeLine ? `:${f.codeLine}` : ""}\`` : "";
+          return `### [${f.severity.toUpperCase()}] ${f.title}\n${f.description}\n${fileRef ? `**File:** ${fileRef}` : ""}\n**Impact:** ${f.impact}\n**Suggested fix:** ${f.suggestedFix}\n**Status:** ${f.status}`;
+        }).join("\n\n---\n\n");
+      } else {
+        const lines: string[] = [];
+        lines.push(`# Code Review: ${session.app_name ?? session.app_url}`);
+        lines.push(`**Score:** ${score}/100 (${grade})`);
+        lines.push(`**Findings:** ${findings.length} (${openFindings.length} open, ${resolvedFindings.length} resolved)`);
+        lines.push(`**Severity:** ${severityCounts.critical} critical, ${severityCounts.high} high, ${severityCounts.medium} medium, ${severityCounts.low} low\n`);
+
+        if (recommendations.length > 0) {
+          lines.push("## Recommendations\n");
+          for (const r of recommendations) lines.push(`- ${r}`);
+          lines.push("");
+        }
+
+        lines.push("## Findings\n");
+        for (const f of findings) {
+          const icon = f.severity === "critical" ? "🔴" : f.severity === "high" ? "🟠" : f.severity === "medium" ? "🟡" : "🔵";
+          lines.push(`### ${icon} [${f.severity.toUpperCase()}] ${f.title}`);
+          lines.push(`- **Type:** ${f.type}`);
+          if (f.location) lines.push(`- **Location:** ${f.location}`);
+          if (f.codeFile) lines.push(`- **File:** \`${f.codeFile}${f.codeLine ? `:${f.codeLine}` : ""}\``);
+          lines.push(`- **Impact:** ${f.impact}`);
+          if (f.description) lines.push(`- **Details:** ${f.description}`);
+          lines.push(`- **Suggested fix:** ${f.suggestedFix}`);
+          lines.push(`- **Status:** ${f.status}\n`);
+        }
+
+        reviewOutput = lines.join("\n");
+      }
+
+      // Store in DB
+      const reviewId = genId("rev");
+      db.prepare(
+        `INSERT INTO ui_dive_code_reviews (id, session_id, review_type, severity_counts, findings, summary, recommendations, score)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).run(reviewId, sessionId, type, JSON.stringify(severityCounts), JSON.stringify(findings), `Score: ${score}/100 (${grade}). ${findings.length} findings.`, JSON.stringify(recommendations), score);
+
+      return {
+        reviewId,
+        score,
+        grade,
+        severityCounts,
+        findingsCount: findings.length,
+        openCount: openFindings.length,
+        resolvedCount: resolvedFindings.length,
+        recommendations,
+        review: format === "json" ? undefined : reviewOutput,
+        findings: format === "json" ? findings : undefined,
+        _hint: `Code review complete: ${score}/100 (${grade}). ${openFindings.length} open finding(s). ${recommendations[0] ?? ""}`,
+      };
+    },
+  },
 ];

@@ -2246,6 +2246,71 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   },
 
   // ═══════════════════════════════════════════
+  // UI/UX DIVE v3 — Flywheel: Bug→Code→Fix→
+  // Verify→Reexplore→Test→Review
+  // ═══════════════════════════════════════════
+  {
+    name: "dive_code_locate",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "code", "locate", "grep", "ripgrep", "bug", "source", "file", "line", "root-cause", "traceability", "dive", "flywheel"],
+    quickRef: {
+      nextAction: "Code located. Review the snippets, fix the code, then verify with dive_fix_verify.",
+      nextTools: ["dive_fix_verify", "dive_generate_tests"],
+      methodology: "agentic_vision",
+      tip: "Pass multiple searchQueries — tries each in order. Links bug→file:line for full traceability. Uses ripgrep with fallback to findstr.",
+    },
+    phase: "research",
+  },
+  {
+    name: "dive_fix_verify",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "fix", "verify", "flywheel", "bug", "resolve", "changelog", "before-after", "screenshot", "regression", "dive"],
+    quickRef: {
+      nextAction: "Fix verified. Re-explore the route to check for regressions, then generate a regression test.",
+      nextTools: ["dive_reexplore", "dive_generate_tests", "dive_code_review"],
+      methodology: "agentic_vision",
+      tip: "Core flywheel step. Auto-creates changelog, updates bug status. Set verified:true only after visually confirming the fix via Playwright.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_reexplore",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "reexplore", "regression", "diff", "route", "verify", "components", "flywheel", "dive"],
+    quickRef: {
+      nextAction: "Route diffed. If regression-free, generate tests. If regressions found, fix and re-verify.",
+      nextTools: ["dive_generate_tests", "tag_ui_bug", "dive_fix_verify"],
+      methodology: "agentic_vision",
+      tip: "Navigate to the route via Playwright first, then pass what you observe. Diffs against previously registered components and flags missing ones.",
+    },
+    phase: "test",
+  },
+  {
+    name: "dive_generate_tests",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "test", "generate", "playwright", "regression", "bug", "interaction", "code", "ci", "flywheel", "dive"],
+    quickRef: {
+      nextAction: "Tests generated. Save to a file and run with 'npx playwright test'. Add to CI for ongoing protection.",
+      nextTools: ["dive_code_review", "dive_reexplore"],
+      methodology: "agentic_vision",
+      tip: "Generates Playwright test code from bugs, interaction tests, and design issues. Use outputPath to save directly to a .spec.ts file.",
+    },
+    phase: "ship",
+  },
+  {
+    name: "dive_code_review",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "code-review", "review", "quality", "score", "grade", "findings", "recommendations", "coderabbit", "augment", "pr", "github", "flywheel", "dive"],
+    quickRef: {
+      nextAction: "Review complete. Address critical/high findings first. Use github_comments format to post to PRs.",
+      nextTools: ["dive_code_locate", "dive_fix_verify", "dive_generate_tests"],
+      methodology: "agentic_vision",
+      tip: "Like CodeRabbit/Augment but from live UI exploration. Produces score, grade, prioritized findings with file:line, and PR-ready comments.",
+    },
+    phase: "ship",
+  },
+
+  // ═══════════════════════════════════════════
   // MCP BRIDGE — Connect external MCP servers
   // ═══════════════════════════════════════════
   {

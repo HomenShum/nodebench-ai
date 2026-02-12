@@ -546,6 +546,76 @@ CREATE INDEX IF NOT EXISTS idx_dive_test_steps_test ON ui_dive_test_steps(test_i
 CREATE INDEX IF NOT EXISTS idx_dive_design_issues_session ON ui_dive_design_issues(session_id);
 CREATE INDEX IF NOT EXISTS idx_dive_backend_links_component ON ui_dive_backend_links(component_id);
 CREATE INDEX IF NOT EXISTS idx_dive_changelogs_session ON ui_dive_changelogs(session_id);
+
+-- ═══════════════════════════════════════════
+-- UI/UX FULL DIVE v3 — Flywheel: locate code,
+-- fix-verify, re-explore, generate tests,
+-- code review.
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ui_dive_code_locations (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  bug_id          TEXT,
+  component_id    TEXT,
+  design_issue_id TEXT,
+  file_path       TEXT NOT NULL,
+  line_start      INTEGER,
+  line_end        INTEGER,
+  code_snippet    TEXT,
+  search_query    TEXT,
+  confidence      TEXT NOT NULL DEFAULT 'high',
+  notes           TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_fix_verifications (
+  id                    TEXT PRIMARY KEY,
+  session_id            TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  bug_id                TEXT NOT NULL,
+  route                 TEXT,
+  before_screenshot_id  TEXT,
+  after_screenshot_id   TEXT,
+  fix_description       TEXT NOT NULL,
+  files_changed         TEXT,
+  git_commit            TEXT,
+  verified              INTEGER NOT NULL DEFAULT 0,
+  verification_notes    TEXT,
+  changelog_id          TEXT,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_generated_tests (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  bug_id          TEXT,
+  component_id    TEXT,
+  test_id         TEXT,
+  test_framework  TEXT NOT NULL DEFAULT 'playwright',
+  test_code       TEXT NOT NULL,
+  test_file_path  TEXT,
+  description     TEXT,
+  covers          TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ui_dive_code_reviews (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL REFERENCES ui_dive_sessions(id) ON DELETE CASCADE,
+  review_type     TEXT NOT NULL DEFAULT 'dive_findings',
+  severity_counts TEXT,
+  findings        TEXT NOT NULL,
+  summary         TEXT,
+  recommendations TEXT,
+  score           INTEGER,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_dive_code_locations_session ON ui_dive_code_locations(session_id);
+CREATE INDEX IF NOT EXISTS idx_dive_code_locations_bug ON ui_dive_code_locations(bug_id);
+CREATE INDEX IF NOT EXISTS idx_dive_fix_verifications_bug ON ui_dive_fix_verifications(bug_id);
+CREATE INDEX IF NOT EXISTS idx_dive_generated_tests_session ON ui_dive_generated_tests(session_id);
+CREATE INDEX IF NOT EXISTS idx_dive_code_reviews_session ON ui_dive_code_reviews(session_id);
 `;
 
 export function getDb(): Database.Database {

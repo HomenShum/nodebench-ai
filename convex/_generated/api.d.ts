@@ -566,10 +566,12 @@ import type * as domains_narrative_mutations_dedup from "../domains/narrative/mu
 import type * as domains_narrative_mutations_disputes from "../domains/narrative/mutations/disputes.js";
 import type * as domains_narrative_mutations_events from "../domains/narrative/mutations/events.js";
 import type * as domains_narrative_mutations_evidence from "../domains/narrative/mutations/evidence.js";
+import type * as domains_narrative_mutations_hypotheses from "../domains/narrative/mutations/hypotheses.js";
 import type * as domains_narrative_mutations_policyEnforcedOps from "../domains/narrative/mutations/policyEnforcedOps.js";
 import type * as domains_narrative_mutations_posts from "../domains/narrative/mutations/posts.js";
 import type * as domains_narrative_mutations_replies from "../domains/narrative/mutations/replies.js";
 import type * as domains_narrative_mutations_searchLog from "../domains/narrative/mutations/searchLog.js";
+import type * as domains_narrative_mutations_signalMetrics from "../domains/narrative/mutations/signalMetrics.js";
 import type * as domains_narrative_mutations_temporalFacts from "../domains/narrative/mutations/temporalFacts.js";
 import type * as domains_narrative_mutations_threads from "../domains/narrative/mutations/threads.js";
 import type * as domains_narrative_mutations_toolReplay from "../domains/narrative/mutations/toolReplay.js";
@@ -1535,10 +1537,12 @@ declare const fullApi: ApiFromModules<{
   "domains/narrative/mutations/disputes": typeof domains_narrative_mutations_disputes;
   "domains/narrative/mutations/events": typeof domains_narrative_mutations_events;
   "domains/narrative/mutations/evidence": typeof domains_narrative_mutations_evidence;
+  "domains/narrative/mutations/hypotheses": typeof domains_narrative_mutations_hypotheses;
   "domains/narrative/mutations/policyEnforcedOps": typeof domains_narrative_mutations_policyEnforcedOps;
   "domains/narrative/mutations/posts": typeof domains_narrative_mutations_posts;
   "domains/narrative/mutations/replies": typeof domains_narrative_mutations_replies;
   "domains/narrative/mutations/searchLog": typeof domains_narrative_mutations_searchLog;
+  "domains/narrative/mutations/signalMetrics": typeof domains_narrative_mutations_signalMetrics;
   "domains/narrative/mutations/temporalFacts": typeof domains_narrative_mutations_temporalFacts;
   "domains/narrative/mutations/threads": typeof domains_narrative_mutations_threads;
   "domains/narrative/mutations/toolReplay": typeof domains_narrative_mutations_toolReplay;
