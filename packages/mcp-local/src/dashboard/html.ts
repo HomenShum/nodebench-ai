@@ -1,9 +1,9 @@
 /**
- * NodeBench MCP — Dashboard HTML
+ * NodeBench MCP — Dashboard HTML v2
  *
- * Single-page dashboard served by the local HTTP server.
- * Uses Tailwind CSS via CDN for zero-build styling.
- * Auto-refreshes every 5s to show live flywheel progress.
+ * Single-scroll, zero-tab dashboard. Everything visible at once.
+ * Linear/Vercel-grade design: Inter font, glassmorphism, gradients.
+ * Auto-refreshes every 5s.
  */
 
 export function getDashboardHtml(): string {
@@ -12,455 +12,328 @@ export function getDashboardHtml(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NodeBench — UI Dive Dashboard</title>
+  <title>NodeBench UI Dive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
           colors: {
-            nb: { bg: '#09090b', card: '#18181b', border: '#2e2e3e', accent: '#6366f1', green: '#22c55e', red: '#ef4444', yellow: '#eab308', blue: '#3b82f6' }
+            surface: { 0: '#09090b', 1: '#111113', 2: '#18181b', 3: '#1f1f23' },
+            border: { DEFAULT: '#27272a', subtle: '#1e1e22', focus: '#6366f1' },
+            accent: { DEFAULT: '#818cf8', bright: '#a5b4fc', dim: '#4f46e5' },
+            ok: '#34d399', warn: '#fbbf24', err: '#f87171',
           }
         }
       }
     }
   </script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    .fade-in { animation: fadeIn 0.3s ease-in; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-    .pulse-dot { animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    pre { white-space: pre-wrap; word-break: break-word; }
-    .tab-active { border-bottom: 2px solid #6366f1; color: #e0e0ff; }
-    .tab-inactive { border-bottom: 2px solid transparent; color: #888; }
-    .tab-inactive:hover { color: #bbb; border-bottom-color: #333; }
-    .severity-critical { background: #7f1d1d; color: #fca5a5; }
-    .severity-high { background: #78350f; color: #fbbf24; }
-    .severity-medium { background: #1e3a5f; color: #93c5fd; }
-    .severity-low { background: #1a2e1a; color: #86efac; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .glass { background: rgba(17,17,19,.72); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    .ring-glow { box-shadow: 0 0 0 1px rgba(99,102,241,.15), 0 1px 3px rgba(0,0,0,.4); }
+    .ring-glow:hover { box-shadow: 0 0 0 1px rgba(99,102,241,.35), 0 4px 12px rgba(0,0,0,.5); }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp .35s ease-out both; }
+    @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .pulse-live { animation: pulse2 2s infinite; }
+    .score-ring { width:72px; height:72px; }
+    .score-ring circle { fill:none; stroke-width:6; stroke-linecap:round; }
+    .score-ring .bg { stroke:#27272a; }
+    .score-ring .fg { transition: stroke-dashoffset .6s ease; }
+    pre { white-space: pre-wrap; word-break: break-word; tab-size: 2; }
+    .sev-critical { background:#450a0a; color:#fca5a5; }
+    .sev-high { background:#451a03; color:#fde68a; }
+    .sev-medium { background:#0c1a3d; color:#93c5fd; }
+    .sev-low { background:#052e16; color:#86efac; }
+    section { scroll-margin-top: 72px; }
+    .section-header { position:sticky; top:56px; z-index:20; }
+    .pipeline-line { position:absolute; top:50%; left:0; right:0; height:2px; background: linear-gradient(90deg,#27272a,#4f46e5,#27272a); z-index:0; }
   </style>
 </head>
-<body class="bg-nb-bg text-gray-200 min-h-screen">
+<body class="bg-surface-0 text-zinc-300 min-h-screen">
 
-  <!-- Header -->
-  <header class="border-b border-nb-border px-6 py-4 flex items-center justify-between sticky top-0 bg-nb-bg/95 backdrop-blur z-50">
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 bg-nb-accent rounded-lg flex items-center justify-center text-white font-bold text-sm">N</div>
-      <div>
-        <h1 class="text-lg font-semibold text-white">NodeBench UI Dive</h1>
-        <p class="text-xs text-gray-500" id="session-subtitle">Loading...</p>
-      </div>
+  <!-- Sticky header -->
+  <header class="glass border-b border-border sticky top-0 z-50 px-5 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-7 h-7 rounded-md bg-gradient-to-br from-accent-dim to-accent flex items-center justify-center text-white text-xs font-bold">N</div>
+      <span class="text-sm font-semibold text-white tracking-tight" id="hdr-title">UI Dive</span>
+      <span class="text-xs text-zinc-500" id="hdr-status"></span>
     </div>
     <div class="flex items-center gap-3">
-      <div id="live-indicator" class="flex items-center gap-1.5 text-xs text-gray-500">
-        <span class="w-2 h-2 rounded-full bg-nb-green pulse-dot"></span>
-        <span>Live</span>
-      </div>
-      <select id="session-picker" class="bg-nb-card border border-nb-border rounded-md px-3 py-1.5 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-nb-accent">
-        <option value="">Loading sessions...</option>
+      <span class="flex items-center gap-1.5 text-[11px] text-zinc-500"><span class="w-1.5 h-1.5 rounded-full bg-ok pulse-live"></span>Live</span>
+      <select id="session-picker" class="bg-surface-2 border border-border rounded-md px-2.5 py-1 text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-accent max-w-[280px]">
+        <option value="">Loading...</option>
       </select>
     </div>
   </header>
 
-  <!-- Stats Bar -->
-  <div id="stats-bar" class="border-b border-nb-border px-6 py-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 text-center"></div>
-
-  <!-- Tabs -->
-  <nav class="border-b border-nb-border px-6 flex gap-1 overflow-x-auto" id="tabs-nav"></nav>
-
-  <!-- Content -->
-  <main class="px-6 py-6 max-w-[1400px] mx-auto" id="content">
-    <div class="text-center text-gray-500 py-20">Loading dashboard...</div>
+  <!-- All content rendered here -->
+  <main id="root" class="max-w-[960px] mx-auto px-5 pt-6 pb-20">
+    <p class="text-zinc-500 text-sm py-20 text-center">Loading...</p>
   </main>
 
   <script>
-  // ── State ──────────────────────────────────────────────────────────
-  let currentSessionId = null;
-  let currentTab = 'overview';
-  let autoRefreshTimer = null;
-  const API = '';
+  let SID = null;
+  let _t = null;
+  const $ = id => document.getElementById(id);
 
-  const TABS = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'bugs', label: 'Bugs', icon: '🐛' },
-    { id: 'fixes', label: 'Fixes', icon: '✅' },
-    { id: 'components', label: 'Components', icon: '🧩' },
-    { id: 'interactions', label: 'Interactions', icon: '👆' },
-    { id: 'code-locations', label: 'Code', icon: '📍' },
-    { id: 'changelogs', label: 'Changelog', icon: '📋' },
-    { id: 'tests', label: 'Tests', icon: '🧪' },
-    { id: 'reviews', label: 'Reviews', icon: '📝' },
-    { id: 'design-issues', label: 'Design', icon: '🎨' },
-  ];
-
-  // ── Init ───────────────────────────────────────────────────────────
   async function init() {
-    renderTabs();
-    await loadSessions();
-    startAutoRefresh();
-  }
-
-  function startAutoRefresh() {
-    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-    autoRefreshTimer = setInterval(() => {
-      if (currentSessionId) loadTabData();
-    }, 5000);
-  }
-
-  // ── Sessions ───────────────────────────────────────────────────────
-  async function loadSessions() {
-    const res = await fetch(API + '/api/sessions');
+    const res = await fetch('/api/sessions');
     const sessions = await res.json();
-    const picker = document.getElementById('session-picker');
-    picker.innerHTML = sessions.map(s =>
-      '<option value="' + s.id + '">' +
-        (s.app_name || 'Dive') + ' — ' + s.created_at.slice(0, 16) +
-        ' (' + s.bug_count + ' bugs, ' + s.bugs_resolved + ' fixed)' +
-      '</option>'
+    const pk = $('session-picker');
+    pk.innerHTML = sessions.map(s =>
+      '<option value="'+s.id+'">'+(s.app_name||'Dive')+' \\u2014 '+s.created_at.slice(5,16)+' ('+s.bug_count+' bugs, '+s.bugs_resolved+' fixed)</option>'
     ).join('');
-
-    if (sessions.length > 0) {
-      currentSessionId = sessions[0].id;
-      picker.value = currentSessionId;
-      await loadTabData();
-    }
-
-    picker.addEventListener('change', async (e) => {
-      currentSessionId = e.target.value;
-      await loadTabData();
-    });
+    if (sessions.length) { SID = sessions[0].id; pk.value = SID; }
+    pk.onchange = e => { SID = e.target.value; load(); };
+    load();
+    _t = setInterval(load, 5000);
   }
 
-  // ── Tabs ───────────────────────────────────────────────────────────
-  function renderTabs() {
-    const nav = document.getElementById('tabs-nav');
-    nav.innerHTML = TABS.map(t =>
-      '<button onclick="switchTab(\\'' + t.id + '\\')" id="tab-' + t.id + '" ' +
-      'class="px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ' +
-      (t.id === currentTab ? 'tab-active' : 'tab-inactive') + '">' +
-      t.icon + ' ' + t.label + '</button>'
-    ).join('');
-  }
-
-  function switchTab(tabId) {
-    currentTab = tabId;
-    renderTabs();
-    loadTabData();
-  }
-
-  // ── Data Loading ───────────────────────────────────────────────────
-  async function loadTabData() {
-    if (!currentSessionId) return;
-    const endpoint = currentTab === 'overview'
-      ? '/api/session/' + currentSessionId + '/overview'
-      : '/api/session/' + currentSessionId + '/' + currentTab;
-
+  async function load() {
+    if (!SID) return;
     try {
-      const res = await fetch(API + endpoint);
-      const data = await res.json();
+      const [ov, bugs, fixes, comps, locs, logs, tests, revs] = await Promise.all([
+        fetch('/api/session/'+SID+'/overview').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/bugs').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/fixes').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/components').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/code-locations').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/changelogs').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/tests').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/reviews').then(r=>r.json()),
+      ]);
+      render(ov, bugs, fixes, comps, locs, logs, tests, revs);
+    } catch(e) { $('root').innerHTML = '<p class="text-err text-sm py-10 text-center">'+esc(e.message)+'</p>'; }
+  }
 
-      if (currentTab === 'overview') {
-        renderOverview(data);
-      } else {
-        renderList(currentTab, data);
+  function render(ov, bugs, fixes, comps, locs, logs, tests, revs) {
+    const s = ov.stats, sess = ov.session;
+    $('hdr-title').textContent = sess.app_name || 'UI Dive';
+    $('hdr-status').textContent = sess.status === 'completed' ? 'Completed' : 'Active';
+
+    let h = '';
+
+    // ── Hero: Score + Metrics ────────────────────────────────
+    const rev = ov.latestReview;
+    const score = rev ? (rev.score??0) : null;
+    const grade = score!==null ? (score>=90?'A':score>=80?'B':score>=70?'C':score>=60?'D':'F') : '—';
+    const gradeClr = score>=80?'text-ok':score>=60?'text-warn':'text-err';
+    const pct = score!==null ? score/100 : 0;
+    const dashOff = 188 - (188 * pct);
+
+    h += '<div class="fade-up grid grid-cols-[auto_1fr] gap-6 items-center mb-8">';
+    // Score ring
+    h += '<div class="relative">';
+    h += '<svg class="score-ring" viewBox="0 0 72 72"><circle class="bg" cx="36" cy="36" r="30"/>';
+    h += '<circle class="fg" cx="36" cy="36" r="30" stroke="'+(score>=80?'#34d399':score>=60?'#fbbf24':'#f87171')+'" stroke-dasharray="188" stroke-dashoffset="'+dashOff+'" transform="rotate(-90 36 36)"/></svg>';
+    h += '<div class="absolute inset-0 flex items-center justify-center"><span class="text-xl font-bold '+gradeClr+'">'+grade+'</span></div>';
+    h += '</div>';
+    // Metrics row
+    h += '<div class="grid grid-cols-4 sm:grid-cols-7 gap-1">';
+    h += met(s.bugs, 'Bugs', s.bugsOpen>0?'text-err':'');
+    h += met(s.bugsResolved, 'Fixed', 'text-ok');
+    h += met(s.fixes, 'Fixes');
+    h += met(s.components, 'Components');
+    h += met(s.codeLocations, 'Code Locs');
+    h += met(s.generatedTests, 'Tests');
+    h += met(s.codeReviews, 'Reviews');
+    h += '</div></div>';
+
+    // ── Pipeline ────────────────────────────────────────────
+    h += '<div class="fade-up relative flex items-center justify-between mb-10 px-2">';
+    h += '<div class="pipeline-line"></div>';
+    h += pipe('Explore', s.components>0, s.components);
+    h += pipe('Tag', s.bugs>0, s.bugs);
+    h += pipe('Locate', s.codeLocations>0, s.codeLocations);
+    h += pipe('Fix', s.fixesVerified>0, s.fixesVerified+'/'+s.fixes);
+    h += pipe('Test', s.generatedTests>0, s.generatedTests);
+    h += pipe('Review', s.codeReviews>0, s.codeReviews);
+    h += '</div>';
+
+    // ── Bugs & Fixes (unified) ──────────────────────────────
+    if (bugs.length || fixes.length) {
+      h += sec('Issues & Resolutions', bugs.length + fixes.length);
+      bugs.forEach(b => {
+        const fix = fixes.find(f => f.bug_id === b.id);
+        h += '<div class="ring-glow rounded-lg p-4 mb-2 bg-surface-1 fade-up">';
+        h += '<div class="flex items-center gap-2 flex-wrap">' + sevBadge(b.severity) + statusBadge(b.status) +
+             '<span class="text-[13px] font-medium text-white leading-snug">'+esc(b.title)+'</span></div>';
+        if (b.description) h += '<p class="text-xs text-zinc-400 mt-2 leading-relaxed">'+esc(b.description)+'</p>';
+        if (b.expected||b.actual) h += '<div class="mt-2 grid grid-cols-2 gap-3 text-[11px]">' +
+          (b.expected?'<div><span class="text-ok font-medium">Expected</span><br>'+esc(b.expected)+'</div>':'') +
+          (b.actual?'<div><span class="text-err font-medium">Actual</span><br>'+esc(b.actual)+'</div>':'') + '</div>';
+        // Inline fix
+        if (fix) {
+          h += '<div class="mt-3 border-t border-border pt-3">';
+          h += '<div class="flex items-center gap-2 mb-1">' +
+               (fix.verified?'<span class="text-[10px] px-1.5 py-0.5 rounded bg-ok/10 text-ok font-medium">Verified</span>':
+                             '<span class="text-[10px] px-1.5 py-0.5 rounded bg-warn/10 text-warn font-medium">Pending</span>') +
+               '<span class="text-[11px] text-zinc-500">Fix</span></div>';
+          h += '<p class="text-xs text-zinc-400 leading-relaxed">'+esc(fix.fix_description)+'</p>';
+          if (fix.files_changed) h += '<div class="mt-1.5 text-[11px] text-zinc-500 font-mono">'+esc(fix.files_changed)+'</div>';
+          if (fix.verification_notes) h += '<div class="mt-1 text-[11px] text-zinc-500 italic">'+esc(fix.verification_notes)+'</div>';
+          h += '</div>';
+        }
+        h += '</div>';
+      });
+      // Orphan fixes (no matching bug)
+      const bugIds = new Set(bugs.map(b=>b.id));
+      fixes.filter(f=>!bugIds.has(f.bug_id)).forEach(f => {
+        h += '<div class="ring-glow rounded-lg p-4 mb-2 bg-surface-1 fade-up">';
+        h += '<div class="flex items-center gap-2">' + sevBadge(f.bug_severity||'medium') +
+             (f.verified?'<span class="text-[10px] px-1.5 py-0.5 rounded bg-ok/10 text-ok font-medium">Verified</span>':
+                         '<span class="text-[10px] px-1.5 py-0.5 rounded bg-warn/10 text-warn font-medium">Pending</span>') +
+             '<span class="text-[13px] font-medium text-white">'+esc(f.bug_title||f.bug_id)+'</span></div>';
+        h += '<p class="text-xs text-zinc-400 mt-2">'+esc(f.fix_description)+'</p>';
+        if (f.files_changed) h += '<div class="mt-1.5 text-[11px] text-zinc-500 font-mono">'+esc(f.files_changed)+'</div>';
+        h += '</div>';
+      });
+    }
+
+    // ── Code Review ──────────────────────────────────────────
+    if (revs.length) {
+      h += sec('Code Review', '');
+      const r = revs[0];
+      const sc = r.score??0;
+      const gr = sc>=90?'A':sc>=80?'B':sc>=70?'C':sc>=60?'D':'F';
+      let sev = {};
+      try { sev = typeof r.severity_counts==='string'?JSON.parse(r.severity_counts):(r.severity_counts||{}); } catch{}
+      let findings = [];
+      try { findings = typeof r.findings==='string'?JSON.parse(r.findings):(r.findings||[]); } catch{}
+
+      h += '<div class="ring-glow rounded-lg bg-surface-1 p-5 fade-up">';
+      h += '<div class="flex items-center justify-between mb-4">';
+      h += '<div class="flex items-center gap-3"><span class="text-2xl font-bold '+(sc>=80?'text-ok':sc>=60?'text-warn':'text-err')+'">'+gr+'</span>';
+      h += '<div><div class="text-sm font-semibold text-white">'+sc+'/100</div><div class="text-[11px] text-zinc-500">'+findings.length+' findings</div></div></div>';
+      h += '<div class="flex gap-3 text-center text-[11px]">';
+      ['critical','high','medium','low'].forEach(sv => {
+        const v = sev[sv]||0;
+        const c = {critical:'text-err',high:'text-warn',medium:'text-accent',low:'text-ok'}[sv];
+        h += '<div><div class="text-lg font-bold '+c+'">'+v+'</div><div class="text-zinc-500 uppercase">'+sv.slice(0,4)+'</div></div>';
+      });
+      h += '</div></div>';
+      // Inline findings
+      if (findings.length) {
+        h += '<div class="space-y-2 mt-4">';
+        findings.forEach(f => {
+          h += '<div class="flex items-start gap-2.5 text-xs">';
+          h += sevBadge(f.severity);
+          h += '<div class="flex-1 min-w-0">';
+          h += '<div class="font-medium text-zinc-200">'+esc(f.title)+'</div>';
+          h += '<div class="text-zinc-500 mt-0.5 leading-relaxed">'+esc(f.description).slice(0,200)+'</div>';
+          if (f.codeFile) h += '<div class="text-zinc-600 font-mono mt-0.5">'+esc(shortPath(f.codeFile))+(f.codeLine?' '+esc(f.codeLine):'')+'</div>';
+          h += '</div>';
+          h += statusBadge(f.status);
+          h += '</div>';
+        });
+        h += '</div>';
       }
-    } catch (err) {
-      document.getElementById('content').innerHTML =
-        '<div class="text-red-400 py-10 text-center">Error loading data: ' + err.message + '</div>';
-    }
-  }
-
-  // ── Render: Overview ───────────────────────────────────────────────
-  function renderOverview(data) {
-    const s = data.stats;
-    const session = data.session;
-    document.getElementById('session-subtitle').textContent =
-      (session.app_name || session.app_url) + ' · ' + session.status;
-
-    // Stats bar
-    const statsHtml = [
-      stat('Components', s.components, '🧩'),
-      stat('Interactions', s.interactions, '👆'),
-      stat('Bugs', s.bugs, '🐛', s.bugsOpen > 0 ? 'text-nb-red' : ''),
-      stat('Resolved', s.bugsResolved, '✅'),
-      stat('Fixes', s.fixes, '🔧'),
-      stat('Code Locs', s.codeLocations, '📍'),
-      stat('Tests', s.generatedTests, '🧪'),
-      stat('Reviews', s.codeReviews, '📝'),
-    ].join('');
-    document.getElementById('stats-bar').innerHTML = statsHtml;
-
-    // Main content
-    let html = '<div class="fade-in space-y-6">';
-
-    // Score card
-    if (data.latestReview) {
-      const r = data.latestReview;
-      const score = r.score ?? 0;
-      const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-      const gradeColor = score >= 80 ? 'text-nb-green' : score >= 60 ? 'text-nb-yellow' : 'text-nb-red';
-      html += '<div class="bg-nb-card border border-nb-border rounded-xl p-6">' +
-        '<div class="flex items-center justify-between mb-4">' +
-          '<h2 class="text-lg font-semibold text-white">Code Review Score</h2>' +
-          '<div class="text-4xl font-bold ' + gradeColor + '">' + grade + ' <span class="text-lg text-gray-500">(' + score + '/100)</span></div>' +
-        '</div>' +
-        '<div class="grid grid-cols-4 gap-4 mb-4">' + severityCards(r.severity_counts) + '</div>' +
-        (r.summary ? '<p class="text-sm text-gray-400 leading-relaxed">' + escHtml(r.summary).slice(0, 300) + '</p>' : '') +
-      '</div>';
+      h += '</div>';
     }
 
-    // Flywheel progress
-    html += '<div class="bg-nb-card border border-nb-border rounded-xl p-6">' +
-      '<h2 class="text-lg font-semibold text-white mb-4">Flywheel Progress</h2>' +
-      '<div class="grid grid-cols-2 md:grid-cols-5 gap-3">' +
-        flywheelStep('Explore', s.components > 0, s.components + ' components'),
-        flywheelStep('Tag Bugs', s.bugs > 0, s.bugs + ' bugs found'),
-        flywheelStep('Locate Code', s.codeLocations > 0, s.codeLocations + ' locations'),
-        flywheelStep('Fix & Verify', s.fixesVerified > 0, s.fixesVerified + '/' + s.fixes + ' verified'),
-        flywheelStep('Tests & Review', s.generatedTests > 0 || s.codeReviews > 0, s.generatedTests + ' tests, ' + s.codeReviews + ' reviews'),
-      '</div>' +
-    '</div>';
-
-    // Quick links
-    html += '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">' +
-      quickLink('View Bugs', 'bugs', s.bugs, s.bugsOpen > 0 ? 'border-nb-red/30' : 'border-nb-border') +
-      quickLink('View Fixes', 'fixes', s.fixes, 'border-nb-border') +
-      quickLink('View Changelog', 'changelogs', s.changelogs, 'border-nb-border') +
-      quickLink('View Tests', 'tests', s.generatedTests, 'border-nb-border') +
-    '</div>';
-
-    html += '</div>';
-    document.getElementById('content').innerHTML = html;
-  }
-
-  // ── Render: Lists ──────────────────────────────────────────────────
-  function renderList(tab, data) {
-    if (!Array.isArray(data) || data.length === 0) {
-      document.getElementById('content').innerHTML =
-        '<div class="text-gray-500 py-20 text-center">No ' + tab + ' data yet for this session.</div>';
-      return;
+    // ── Changelog ────────────────────────────────────────────
+    if (logs.length) {
+      h += sec('Changelog', logs.length);
+      h += '<div class="relative pl-5 border-l-2 border-border space-y-3">';
+      logs.forEach(c => {
+        h += '<div class="fade-up relative">';
+        h += '<div class="absolute -left-[25px] top-1.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-surface-0"></div>';
+        h += '<div class="text-[11px] text-zinc-500 mb-0.5">'+esc(c.created_at)+'</div>';
+        h += '<div class="text-xs text-zinc-300 leading-relaxed">'+esc(c.description).slice(0,180)+'</div>';
+        if (c.files_changed) h += '<div class="text-[11px] text-zinc-500 font-mono mt-0.5">'+esc(c.files_changed)+'</div>';
+        h += '</div>';
+      });
+      h += '</div>';
     }
 
-    const renderers = {
-      'bugs': renderBugs,
-      'fixes': renderFixes,
-      'components': renderComponents,
-      'interactions': renderInteractions,
-      'code-locations': renderCodeLocations,
-      'changelogs': renderChangelogs,
-      'tests': renderTests,
-      'reviews': renderReviews,
-      'design-issues': renderDesignIssues,
-    };
-
-    const fn = renderers[tab];
-    if (fn) {
-      document.getElementById('content').innerHTML = '<div class="fade-in space-y-3">' + fn(data) + '</div>';
+    // ── Generated Tests ──────────────────────────────────────
+    if (tests.length) {
+      h += sec('Generated Tests', tests.length);
+      tests.forEach(t => {
+        h += '<div class="ring-glow rounded-lg p-4 mb-2 bg-surface-1 fade-up">';
+        h += '<div class="flex items-center gap-2">';
+        h += '<span class="text-[10px] px-1.5 py-0.5 rounded bg-ok/10 text-ok font-medium">'+esc(t.test_framework)+'</span>';
+        h += '<span class="text-xs text-white font-medium">'+esc(t.description||'Regression tests')+'</span></div>';
+        if (t.test_file_path) h += '<div class="text-[11px] text-zinc-500 font-mono mt-1">'+esc(shortPath(t.test_file_path))+'</div>';
+        if (t.test_code) {
+          h += '<details class="mt-2"><summary class="text-[11px] text-accent cursor-pointer select-none">View source</summary>';
+          h += '<pre class="mt-1.5 text-[11px] bg-surface-0 rounded-md p-3 text-zinc-400 max-h-64 overflow-auto leading-relaxed border border-border">'+esc(t.test_code)+'</pre></details>';
+        }
+        h += '</div>';
+      });
     }
+
+    // ── Components ───────────────────────────────────────────
+    if (comps.length) {
+      h += sec('Components', comps.length);
+      h += '<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">';
+      comps.forEach(c => {
+        const hasBugs = (c.bug_count||0) > 0;
+        h += '<div class="ring-glow rounded-md px-3 py-2.5 bg-surface-1 fade-up'+(hasBugs?' border-l-2 border-l-err':'')+'">';
+        h += '<div class="text-[11px] text-zinc-500">'+esc(c.component_type)+'</div>';
+        h += '<div class="text-xs font-medium text-zinc-200 truncate" title="'+esc(c.name)+'">'+esc(c.name)+'</div>';
+        if (hasBugs) h += '<div class="text-[10px] text-err mt-0.5">'+c.bug_count+' bug'+(c.bug_count>1?'s':'')+'</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    // ── Code Locations ───────────────────────────────────────
+    if (locs.length) {
+      h += sec('Code Locations', locs.length);
+      h += '<details class="fade-up"><summary class="text-xs text-accent cursor-pointer select-none mb-2">Show '+locs.length+' traced locations</summary>';
+      h += '<div class="space-y-1.5">';
+      locs.forEach(l => {
+        h += '<div class="flex items-center gap-2 text-[11px] py-1 px-2 rounded bg-surface-1">';
+        h += '<span class="text-zinc-500 font-mono flex-1 min-w-0 truncate" title="'+esc(l.file_path)+'">'+esc(shortPath(l.file_path))+'</span>';
+        if (l.line_start) h += '<span class="text-zinc-600">L'+l.line_start+(l.line_end?'-'+l.line_end:'')+'</span>';
+        if (l.search_query) h += '<span class="text-accent truncate max-w-[120px]" title="'+esc(l.search_query)+'">'+esc(l.search_query)+'</span>';
+        h += '</div>';
+      });
+      h += '</div></details>';
+    }
+
+    $('root').innerHTML = h;
   }
 
-  function renderBugs(data) {
-    return data.map(b => {
-      const sev = b.severity || 'medium';
-      return card(
-        '<div class="flex items-center gap-2">' +
-          severityBadge(sev) +
-          statusBadge(b.status) +
-          '<span class="font-semibold text-white">' + escHtml(b.title) + '</span>' +
-        '</div>' +
-        '<div class="text-xs text-gray-500 mt-1">Component: ' + escHtml(b.component_name || b.component_id || '—') + ' · ' + b.created_at + '</div>' +
-        (b.description ? '<p class="text-sm text-gray-400 mt-2">' + escHtml(b.description) + '</p>' : '') +
-        (b.expected ? '<div class="mt-2 text-xs"><span class="text-nb-green">Expected:</span> ' + escHtml(b.expected) + '</div>' : '') +
-        (b.actual ? '<div class="text-xs"><span class="text-nb-red">Actual:</span> ' + escHtml(b.actual) + '</div>' : '')
-      );
-    }).join('');
+  // ── Helpers ─────────────────────────────────────────────────
+  function met(v, label, cls) {
+    return '<div class="text-center py-1"><div class="text-lg font-bold text-white '+(cls||'')+'">'+v+'</div><div class="text-[10px] text-zinc-500 uppercase tracking-wide">'+label+'</div></div>';
   }
-
-  function renderFixes(data) {
-    return data.map(f => card(
-      '<div class="flex items-center gap-2">' +
-        (f.verified ? '<span class="text-xs px-2 py-0.5 rounded-full bg-green-900/50 text-nb-green">✓ Verified</span>' :
-                      '<span class="text-xs px-2 py-0.5 rounded-full bg-yellow-900/50 text-nb-yellow">Pending</span>') +
-        severityBadge(f.bug_severity || 'medium') +
-        '<span class="font-semibold text-white">' + escHtml(f.bug_title || f.bug_id) + '</span>' +
-      '</div>' +
-      '<p class="text-sm text-gray-400 mt-2">' + escHtml(f.fix_description) + '</p>' +
-      (f.files_changed ? '<div class="mt-2 text-xs text-gray-500">Files: ' + escHtml(f.files_changed) + '</div>' : '') +
-      (f.verification_notes ? '<div class="mt-1 text-xs text-gray-500">Notes: ' + escHtml(f.verification_notes) + '</div>' : '') +
-      '<div class="text-xs text-gray-600 mt-1">' + (f.route ? 'Route: ' + f.route + ' · ' : '') + f.created_at + '</div>'
-    )).join('');
+  function pipe(label, done, count) {
+    return '<div class="relative z-10 flex flex-col items-center">' +
+      '<div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ' +
+      (done?'bg-accent-dim border-accent text-white':'bg-surface-2 border-border text-zinc-500') + '">'+count+'</div>' +
+      '<div class="text-[10px] mt-1 '+(done?'text-accent':'text-zinc-500')+'">'+label+'</div></div>';
   }
-
-  function renderComponents(data) {
-    return data.map(c => card(
-      '<div class="flex items-center gap-2">' +
-        '<span class="text-xs px-2 py-0.5 rounded bg-nb-accent/20 text-indigo-300">' + escHtml(c.component_type) + '</span>' +
-        '<span class="font-semibold text-white">' + escHtml(c.name) + '</span>' +
-        statusBadge(c.status) +
-      '</div>' +
-      '<div class="text-xs text-gray-500 mt-1">' +
-        c.interaction_count + ' interactions · ' + c.bug_count + ' bugs' +
-        (c.selector ? ' · ' + escHtml(c.selector) : '') +
-      '</div>' +
-      (c.summary ? '<p class="text-sm text-gray-400 mt-2">' + escHtml(c.summary) + '</p>' : '')
-    )).join('');
+  function sec(title, count) {
+    return '<div class="section-header glass border-b border-border -mx-5 px-5 py-2.5 mt-10 mb-3 flex items-center justify-between">' +
+      '<h2 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">'+title+'</h2>' +
+      (count!==''?'<span class="text-[11px] text-zinc-600">'+count+'</span>':'') + '</div>';
   }
-
-  function renderInteractions(data) {
-    return data.map(i => card(
-      '<div class="flex items-center gap-2">' +
-        '<span class="text-xs font-mono bg-nb-card px-2 py-0.5 rounded text-gray-300">#' + i.sequence_num + '</span>' +
-        '<span class="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-nb-blue">' + escHtml(i.action) + '</span>' +
-        '<span class="text-sm text-white">' + escHtml(i.component_name || i.component_id) + '</span>' +
-      '</div>' +
-      '<div class="text-xs text-gray-500 mt-1">Result: <span class="text-' + (i.result === 'pass' || i.result === 'success' ? 'nb-green' : i.result === 'fail' ? 'nb-red' : 'gray-300') + '">' + i.result + '</span></div>' +
-      (i.observation ? '<p class="text-sm text-gray-400 mt-1">' + escHtml(i.observation) + '</p>' : '')
-    )).join('');
+  function sevBadge(sev) {
+    const c = {critical:'sev-critical',high:'sev-high',medium:'sev-medium',low:'sev-low'}[sev]||'sev-medium';
+    return '<span class="text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 '+c+'">'+sev+'</span>';
   }
-
-  function renderCodeLocations(data) {
-    return data.map(l => card(
-      '<div class="flex items-center gap-2">' +
-        '<span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-300">' + escHtml(l.confidence) + '</span>' +
-        '<span class="font-mono text-sm text-white">' + escHtml(shortPath(l.file_path)) + '</span>' +
-        (l.line_start ? '<span class="text-xs text-gray-500">L' + l.line_start + (l.line_end ? '-' + l.line_end : '') + '</span>' : '') +
-      '</div>' +
-      (l.search_query ? '<div class="text-xs text-gray-500 mt-1">Query: ' + escHtml(l.search_query) + '</div>' : '') +
-      (l.code_snippet ? '<pre class="mt-2 text-xs bg-black/40 rounded p-3 text-gray-300 max-h-40 overflow-auto">' + escHtml(l.code_snippet) + '</pre>' : '') +
-      (l.notes ? '<div class="text-xs text-gray-500 mt-1">' + escHtml(l.notes) + '</div>' : '')
-    )).join('');
+  function statusBadge(st) {
+    if(st==='resolved') return '<span class="text-[10px] px-1.5 py-0.5 rounded bg-ok/10 text-ok shrink-0">fixed</span>';
+    if(st==='open') return '<span class="text-[10px] px-1.5 py-0.5 rounded bg-err/10 text-err shrink-0">open</span>';
+    return '';
   }
-
-  function renderChangelogs(data) {
-    return data.map(c => card(
-      '<div class="flex items-center gap-2">' +
-        '<span class="text-xs px-2 py-0.5 rounded bg-indigo-900/30 text-indigo-300">' + escHtml(c.change_type) + '</span>' +
-        '<span class="text-sm text-white">' + escHtml(c.description).slice(0, 120) + '</span>' +
-      '</div>' +
-      (c.files_changed ? '<div class="text-xs text-gray-500 mt-1">Files: ' + escHtml(c.files_changed) + '</div>' : '') +
-      (c.git_commit ? '<div class="text-xs text-gray-500 mt-1">Commit: <span class="font-mono">' + escHtml(c.git_commit) + '</span></div>' : '') +
-      '<div class="text-xs text-gray-600 mt-1">' + c.created_at + '</div>'
-    )).join('');
-  }
-
-  function renderTests(data) {
-    return data.map(t => {
-      let covers = '';
-      try { covers = t.covers ? JSON.parse(t.covers).join(', ') : ''; } catch { covers = t.covers || ''; }
-      return card(
-        '<div class="flex items-center gap-2">' +
-          '<span class="text-xs px-2 py-0.5 rounded bg-emerald-900/30 text-emerald-300">' + escHtml(t.test_framework) + '</span>' +
-          '<span class="text-sm text-white">' + escHtml(t.description || t.id) + '</span>' +
-        '</div>' +
-        (covers ? '<div class="text-xs text-gray-500 mt-1">Covers: ' + escHtml(covers) + '</div>' : '') +
-        (t.test_file_path ? '<div class="text-xs text-gray-500 mt-1">File: ' + escHtml(shortPath(t.test_file_path)) + '</div>' : '') +
-        (t.test_code ? '<details class="mt-2"><summary class="text-xs text-nb-accent cursor-pointer">Show test code</summary>' +
-          '<pre class="mt-1 text-xs bg-black/40 rounded p-3 text-gray-300 max-h-60 overflow-auto">' + escHtml(t.test_code) + '</pre></details>' : '')
-      );
-    }).join('');
-  }
-
-  function renderReviews(data) {
-    return data.map(r => {
-      const score = r.score ?? 0;
-      const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-      return card(
-        '<div class="flex items-center justify-between">' +
-          '<span class="text-lg font-bold text-white">Review: ' + grade + ' (' + score + '/100)</span>' +
-          '<span class="text-xs text-gray-500">' + r.created_at + '</span>' +
-        '</div>' +
-        '<div class="mt-2">' + severityCards(r.severity_counts) + '</div>' +
-        (r.summary ? '<div class="mt-3 text-sm text-gray-300 prose prose-sm prose-invert max-w-none">' + simpleMarkdown(r.summary) + '</div>' : '') +
-        (r.findings ? '<details class="mt-3"><summary class="text-xs text-nb-accent cursor-pointer">Show full findings</summary>' +
-          '<div class="mt-2 text-sm text-gray-400 prose prose-sm prose-invert max-w-none">' + simpleMarkdown(r.findings) + '</div></details>' : '')
-      );
-    }).join('');
-  }
-
-  function renderDesignIssues(data) {
-    return data.map(d => card(
-      '<div class="flex items-center gap-2">' +
-        severityBadge(d.severity) +
-        statusBadge(d.status) +
-        '<span class="text-xs px-2 py-0.5 rounded bg-pink-900/30 text-pink-300">' + escHtml(d.issue_type) + '</span>' +
-        '<span class="font-semibold text-white">' + escHtml(d.title) + '</span>' +
-      '</div>' +
-      (d.description ? '<p class="text-sm text-gray-400 mt-2">' + escHtml(d.description) + '</p>' : '') +
-      (d.route ? '<div class="text-xs text-gray-500 mt-1">Route: ' + escHtml(d.route) + '</div>' : '')
-    )).join('');
-  }
-
-  // ── UI Helpers ─────────────────────────────────────────────────────
-  function stat(label, value, icon, extra) {
-    return '<div class="px-2 py-1"><div class="text-2xl font-bold text-white ' + (extra||'') + '">' + icon + ' ' + value + '</div><div class="text-[11px] text-gray-500 uppercase tracking-wider">' + label + '</div></div>';
-  }
-
-  function card(inner) {
-    return '<div class="bg-nb-card border border-nb-border rounded-lg p-4 hover:border-nb-accent/30 transition-colors">' + inner + '</div>';
-  }
-
-  function severityBadge(sev) {
-    const cls = { critical: 'severity-critical', high: 'severity-high', medium: 'severity-medium', low: 'severity-low' }[sev] || 'severity-medium';
-    return '<span class="text-[11px] px-2 py-0.5 rounded-full font-medium ' + cls + '">' + sev + '</span>';
-  }
-
-  function statusBadge(status) {
-    if (status === 'resolved') return '<span class="text-[11px] px-2 py-0.5 rounded-full bg-green-900/40 text-nb-green">resolved</span>';
-    if (status === 'open') return '<span class="text-[11px] px-2 py-0.5 rounded-full bg-red-900/40 text-nb-red">open</span>';
-    return '<span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">' + (status||'') + '</span>';
-  }
-
-  function severityCards(raw) {
-    let counts = {};
-    try { counts = typeof raw === 'string' ? JSON.parse(raw) : (raw || {}); } catch {}
-    return ['critical', 'high', 'medium', 'low'].map(s => {
-      const v = counts[s] || 0;
-      const colors = { critical: 'border-nb-red/40 text-nb-red', high: 'border-nb-yellow/40 text-nb-yellow', medium: 'border-nb-blue/40 text-nb-blue', low: 'border-nb-green/40 text-nb-green' };
-      return '<div class="border rounded-lg p-2 text-center ' + (colors[s]||'') + '"><div class="text-xl font-bold">' + v + '</div><div class="text-[10px] uppercase">' + s + '</div></div>';
-    }).join('');
-  }
-
-  function flywheelStep(label, done, detail) {
-    return '<div class="rounded-lg p-3 text-center border ' +
-      (done ? 'border-nb-green/30 bg-green-950/20' : 'border-nb-border bg-nb-card') + '">' +
-      '<div class="text-lg">' + (done ? '✅' : '⬜') + '</div>' +
-      '<div class="text-sm font-medium ' + (done ? 'text-nb-green' : 'text-gray-500') + '">' + label + '</div>' +
-      '<div class="text-[11px] text-gray-500 mt-0.5">' + detail + '</div>' +
-    '</div>';
-  }
-
-  function quickLink(label, tab, count, borderCls) {
-    return '<button onclick="switchTab(\\'' + tab + '\\')" class="bg-nb-card border ' + borderCls + ' rounded-lg p-4 text-left hover:border-nb-accent/40 transition-colors">' +
-      '<div class="text-2xl font-bold text-white">' + count + '</div>' +
-      '<div class="text-sm text-gray-400">' + label + '</div>' +
-    '</button>';
-  }
-
   function shortPath(p) {
-    if (!p) return '';
-    const parts = p.replace(/\\\\/g, '/').split('/');
-    return parts.length > 3 ? '.../' + parts.slice(-3).join('/') : p;
+    if(!p) return '';
+    const parts = p.replace(/\\\\/g,'/').split('/');
+    return parts.length>3 ? '\\u2026/'+parts.slice(-3).join('/') : p;
   }
+  function esc(s) { return s==null?'':String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  function escHtml(s) {
-    if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function simpleMarkdown(text) {
-    if (!text) return '';
-    return escHtml(text)
-      .replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>')
-      .replace(/### (.+)/g, '<h4 class="font-semibold text-white mt-3 mb-1">$1</h4>')
-      .replace(/## (.+)/g, '<h3 class="font-semibold text-white text-lg mt-4 mb-2">$1</h3>')
-      .replace(/# (.+)/g, '<h2 class="font-bold text-white text-xl mt-4 mb-2">$1</h2>')
-      .replace(/- (.+)/g, '<li class="ml-4">$1</li>')
-      .replace(/\\n/g, '<br>');
-  }
-
-  // ── Boot ───────────────────────────────────────────────────────────
   init();
   </script>
 </body>
