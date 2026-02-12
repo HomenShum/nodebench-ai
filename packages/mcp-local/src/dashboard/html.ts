@@ -52,15 +52,43 @@ export function getDashboardHtml(): string {
     .sev-medium { background:#0c1a3d; color:#93c5fd; }
     .sev-low { background:#052e16; color:#86efac; }
     .file-chip { display:inline-block; padding:2px 8px; margin:2px 3px 2px 0; border-radius:4px; background:#18181b; border:1px solid #27272a; font-size:11px; font-family:'SF Mono',Monaco,monospace; color:#a1a1aa; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .ss-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:10px; }
+    .ss-grid { display:grid; gap:10px; }
+    .ss-grid.sz-sm { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .ss-grid.sz-md { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+    .ss-grid.sz-lg { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
     .ss-card { cursor:pointer; transition: transform .15s, box-shadow .15s; border-radius:8px; overflow:hidden; }
     .ss-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.5); }
-    .ss-card img { width:100%; height:auto; display:block; background:#18181b; }
+    .ss-card img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:#18181b; }
     .ss-meta { padding:6px 10px; background:#111113; }
-    .lightbox { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.88); display:none; align-items:center; justify-content:center; cursor:zoom-out; }
+    .ss-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .ss-search { background:#18181b; border:1px solid #27272a; color:#d4d4d8; padding:5px 10px 5px 30px; border-radius:6px; font-size:12px; width:200px; outline:none; transition:border-color .15s; }
+    .ss-search:focus { border-color:#6366f1; }
+    .ss-search-wrap { position:relative; }
+    .ss-search-wrap::before { content:'\\1F50D'; position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:12px; opacity:.4; }
+    .cat-pill { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; border:1px solid #27272a; color:#a1a1aa; background:transparent; user-select:none; }
+    .cat-pill:hover { background:#18181b; border-color:#3f3f46; }
+    .cat-pill.active { background:#1e1b4b; border-color:#4f46e5; color:#a5b4fc; }
+    .cat-pill .cat-count { background:#27272a; color:#71717a; padding:0 5px; border-radius:9px; font-size:10px; margin-left:2px; }
+    .cat-pill.active .cat-count { background:#4f46e5; color:#c7d2fe; }
+    .sz-btn { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:6px; border:1px solid #27272a; background:transparent; color:#71717a; cursor:pointer; transition:all .15s; font-size:14px; }
+    .sz-btn:hover { background:#18181b; color:#d4d4d8; }
+    .sz-btn.active { background:#1e1b4b; border-color:#4f46e5; color:#a5b4fc; }
+    .ss-group-hdr { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#71717a; padding:12px 0 6px; border-bottom:1px solid #1e1e22; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+    .ss-group-hdr .g-count { font-weight:400; color:#52525b; }
+    .ss-show-more { display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 20px; border-radius:8px; border:1px dashed #27272a; color:#71717a; font-size:12px; cursor:pointer; transition:all .15s; margin-top:6px; }
+    .ss-show-more:hover { border-color:#4f46e5; color:#a5b4fc; background:#1e1b4b20; }
+    .lightbox { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.92); display:none; align-items:center; justify-content:center; }
     .lightbox.open { display:flex; }
-    .lightbox img { max-width:95vw; max-height:92vh; border-radius:8px; box-shadow:0 12px 40px rgba(0,0,0,.6); }
-    .lightbox .lb-label { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(17,17,19,.85); padding:6px 16px; border-radius:6px; font-size:12px; color:#a1a1aa; }
+    .lightbox img { max-width:88vw; max-height:85vh; border-radius:8px; box-shadow:0 12px 40px rgba(0,0,0,.6); cursor:default; }
+    .lb-chrome { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:12px; background:rgba(17,17,19,.9); padding:8px 16px; border-radius:10px; border:1px solid #27272a; }
+    .lb-label { font-size:12px; color:#a1a1aa; max-width:400px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lb-counter { font-size:11px; color:#52525b; white-space:nowrap; }
+    .lb-nav { width:36px; height:36px; border-radius:50%; border:1px solid #3f3f46; background:rgba(17,17,19,.8); color:#d4d4d8; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; transition:all .15s; position:absolute; top:50%; z-index:201; }
+    .lb-nav:hover { background:#4f46e5; border-color:#6366f1; color:#fff; }
+    .lb-nav.prev { left:16px; transform:translateY(-50%); }
+    .lb-nav.next { right:16px; transform:translateY(-50%); }
+    .lb-close { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:1px solid #3f3f46; background:rgba(17,17,19,.8); color:#d4d4d8; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; z-index:201; transition:all .15s; }
+    .lb-close:hover { background:#dc2626; border-color:#ef4444; color:#fff; }
     .compare-bar { display:flex; align-items:center; gap:12px; padding:8px 16px; background:#111113; border-radius:8px; margin-bottom:12px; }
     .compare-bar select { background:#18181b; border:1px solid #27272a; color:#d4d4d8; padding:4px 8px; border-radius:6px; font-size:12px; }
     .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -105,6 +133,11 @@ export function getDashboardHtml(): string {
   let _t = null;
   let _allSessions = [];
   let _compareMode = false;
+  // Persistent gallery state (survives auto-refresh re-renders)
+  let _activeCat = 'all';
+  let _gridSize = 'sm';
+  let _expandedGroups = new Set();
+  let _searchQuery = '';
   const $ = id => document.getElementById(id);
 
   async function init() {
@@ -364,19 +397,84 @@ export function getDashboardHtml(): string {
       h += '</div>';
     }
 
-    // ── Screenshots Gallery ─────────────────────────────────
+    // ── Screenshots Gallery (interactive) ────────────────────
     if (shots && shots.length) {
+      // Store globally for lightbox slideshow
+      window._ssAll = shots.map(ss => ({
+        src: ss.base64_thumbnail ? 'data:image/png;base64,'+ss.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(ss.id)+'/image',
+        label: ss.label||'screenshot',
+        route: ss.route||'',
+        time: ss.created_at?.slice(5,16)||'',
+      }));
+
+      // Auto-categorize by label prefix
+      const catMap = {};
+      shots.forEach((ss, idx) => {
+        const lbl = ss.label||'screenshot';
+        // Extract category: "Trace Qa 01 ..." -> "Trace QA", "Mcp Ledger ..." -> "MCP Ledger"
+        const words = lbl.split(' ');
+        let cat = 'General';
+        if (words.length >= 2) {
+          const w0 = words[0].toLowerCase(), w1 = words[1].toLowerCase();
+          if (w0 === 'trace' && w1 === 'qa') cat = 'Trace QA';
+          else if (w0 === 'trace') cat = 'Trace';
+          else if (w0 === 'mcp') cat = 'MCP Ledger';
+          else if (w0 === 'benchmarks' || w0 === 'benchmark') cat = 'Benchmarks';
+          else if (w0 === 'page' && w1 === 'index') cat = 'Page Index';
+          else if (w0 === 'redesign') cat = 'Redesigns';
+          else if (w0 === 'final') cat = 'Final States';
+          else if (lbl.match(/landing|home|signin|main page/i)) cat = 'Navigation';
+          else if (lbl.match(/fast agent|agent/i)) cat = 'Fast Agent';
+          else cat = 'General';
+        }
+        if (!catMap[cat]) catMap[cat] = [];
+        catMap[cat].push({ ...ss, _idx: idx });
+      });
+      const cats = Object.keys(catMap).sort((a,b) => catMap[b].length - catMap[a].length);
+
       h += sec('Screenshots', shots.length+' captured image'+(shots.length!==1?'s':''));
-      h += '<div class="ss-grid">';
-      shots.forEach(ss => {
-        const src = ss.base64_thumbnail ? 'data:image/png;base64,'+ss.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(ss.id)+'/image';
-        const lbl = esc(ss.label||'screenshot');
-        const rt = ss.route ? ' - '+esc(ss.route) : '';
-        h += '<div class="ss-card ring-glow fade-up" data-lb-src="'+esc(src)+'" data-lb-label="'+lbl+rt+'">';
-        h += '<img src="'+src+'" alt="'+lbl+'" loading="lazy">';
-        h += '<div class="ss-meta"><div class="text-[11px] text-zinc-300 truncate" title="'+lbl+'">'+lbl+'</div>';
-        h += '<div class="text-[10px] text-zinc-500">'+esc(ss.created_at?.slice(5,16)||'')+(rt?rt:'')+'</div>';
-        h += '</div></div>';
+
+      // Toolbar: search + category pills + grid size
+      h += '<div class="ss-toolbar">';
+      h += '<div class="ss-search-wrap"><input type="text" class="ss-search" id="ss-search" placeholder="Filter screenshots..." oninput="filterScreenshots()"></div>';
+      h += '<div class="flex-1"></div>';
+      h += '<button class="sz-btn active" data-sz="sm" onclick="setGridSize(&#39;sm&#39;)" title="Compact">&#9638;</button>';
+      h += '<button class="sz-btn" data-sz="md" onclick="setGridSize(&#39;md&#39;)" title="Medium">&#9638;&#9638;</button>';
+      h += '<button class="sz-btn" data-sz="lg" onclick="setGridSize(&#39;lg&#39;)" title="Large">&#11036;</button>';
+      h += '</div>';
+
+      // Category filter pills
+      h += '<div class="flex flex-wrap gap-1.5 mb-4" id="ss-cat-bar">';
+      h += '<span class="cat-pill active" data-cat="all" onclick="filterCat(&#39;all&#39;)">All<span class="cat-count">'+shots.length+'</span></span>';
+      cats.forEach(cat => {
+        h += '<span class="cat-pill" data-cat="'+esc(cat)+'" onclick="filterCat(&#39;'+esc(cat)+'&#39;)">'+esc(cat)+'<span class="cat-count">'+catMap[cat].length+'</span></span>';
+      });
+      h += '</div>';
+
+      // Grouped grid
+      h += '<div id="ss-gallery">';
+      const INITIAL_SHOW = 8;
+      cats.forEach(cat => {
+        const items = catMap[cat];
+        h += '<div class="ss-group" data-cat="'+esc(cat)+'">';
+        h += '<div class="ss-group-hdr">'+esc(cat)+' <span class="g-count">('+items.length+')</span></div>';
+        h += '<div class="ss-grid sz-sm">';
+        items.forEach((ss, i) => {
+          const src = ss.base64_thumbnail ? 'data:image/png;base64,'+ss.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(ss.id)+'/image';
+          const lbl = esc(ss.label||'screenshot');
+          const rt = ss.route ? ' - '+esc(ss.route) : '';
+          const hidden = i >= INITIAL_SHOW ? ' style="display:none" data-collapsed="1"' : '';
+          h += '<div class="ss-card ring-glow fade-up" data-ss-idx="'+ss._idx+'" data-ss-label="'+lbl.toLowerCase()+'"'+hidden+'>';
+          h += '<img src="'+src+'" alt="'+lbl+'" loading="lazy">';
+          h += '<div class="ss-meta"><div class="text-[11px] text-zinc-300 truncate" title="'+lbl+'">'+lbl+'</div>';
+          h += '<div class="text-[10px] text-zinc-500">'+esc(ss.created_at?.slice(5,16)||'')+(rt?rt:'')+'</div>';
+          h += '</div></div>';
+        });
+        h += '</div>';
+        if (items.length > INITIAL_SHOW) {
+          h += '<div class="ss-show-more" data-cat="'+esc(cat)+'" onclick="toggleGroupExpand(this)">Show '+(items.length - INITIAL_SHOW)+' more</div>';
+        }
+        h += '</div>';
       });
       h += '</div>';
     }
@@ -473,29 +571,191 @@ export function getDashboardHtml(): string {
     }
 
     $('root').innerHTML = h;
+    // Restore persisted gallery state after re-render
+    restoreGalleryState();
   }
 
-  // ── Lightbox ─────────────────────────────────────────────────
-  function openLightbox(src, label) {
-    let lb = document.getElementById('lightbox');
-    if (!lb) {
-      lb = document.createElement('div');
-      lb.id = 'lightbox';
-      lb.className = 'lightbox';
-      lb.innerHTML = '<img id="lb-img" src="" alt=""><div class="lb-label" id="lb-label"></div>';
-      lb.onclick = () => lb.classList.remove('open');
-      document.body.appendChild(lb);
-      document.addEventListener('keydown', e => { if (e.key==='Escape') lb.classList.remove('open'); });
+  function restoreGalleryState() {
+    // Restore grid size
+    if (_gridSize !== 'sm') setGridSize(_gridSize);
+    // Restore category filter
+    if (_activeCat !== 'all') filterCat(_activeCat);
+    // Restore expanded groups
+    _expandedGroups.forEach(cat => {
+      const btn = document.querySelector('.ss-show-more[data-cat="'+cat+'"]');
+      if (btn) toggleGroupExpand(btn);
+    });
+    // Restore search query
+    if (_searchQuery) {
+      const el = document.getElementById('ss-search');
+      if (el) { el.value = _searchQuery; filterScreenshots(); }
     }
-    document.getElementById('lb-img').src = src;
-    document.getElementById('lb-label').textContent = label || '';
+  }
+
+  // ── Slideshow Lightbox ──────────────────────────────────────
+  let _lbIdx = 0;
+  let _lbVisible = []; // indices into window._ssAll currently visible
+
+  function buildLightbox() {
+    let lb = document.getElementById('lightbox');
+    if (lb) return lb;
+    lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.className = 'lightbox';
+    lb.innerHTML = '<div class="lb-nav prev" id="lb-prev" title="Previous (Left arrow)">&lsaquo;</div>' +
+      '<img id="lb-img" src="" alt="">' +
+      '<div class="lb-nav next" id="lb-next" title="Next (Right arrow)">&rsaquo;</div>' +
+      '<div class="lb-close" id="lb-close" title="Close (Esc)">&times;</div>' +
+      '<div class="lb-chrome"><span class="lb-label" id="lb-label"></span><span class="lb-counter" id="lb-counter"></span></div>';
+    lb.addEventListener('click', e => {
+      // Close on backdrop click, not on controls
+      if (e.target === lb) closeLightbox();
+    });
+    document.getElementById('lb-close') || null; // placeholder
+    lb.querySelector('#lb-close').onclick = closeLightbox;
+    lb.querySelector('#lb-prev').onclick = e => { e.stopPropagation(); lbNav(-1); };
+    lb.querySelector('#lb-next').onclick = e => { e.stopPropagation(); lbNav(1); };
+    document.body.appendChild(lb);
+    document.addEventListener('keydown', e => {
+      const lbEl = document.getElementById('lightbox');
+      if (!lbEl || !lbEl.classList.contains('open')) return;
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') lbNav(-1);
+      else if (e.key === 'ArrowRight') lbNav(1);
+    });
+    return lb;
+  }
+
+  function openLightbox(idx) {
+    const lb = buildLightbox();
+    // Build visible list from currently shown cards
+    _lbVisible = [];
+    document.querySelectorAll('.ss-card:not([style*="display:none"]):not([style*="display: none"])').forEach(card => {
+      const i = parseInt(card.dataset.ssIdx);
+      if (!isNaN(i)) _lbVisible.push(i);
+    });
+    if (_lbVisible.length === 0 && window._ssAll) _lbVisible = window._ssAll.map((_, i) => i);
+    _lbIdx = _lbVisible.indexOf(idx);
+    if (_lbIdx === -1) _lbIdx = 0;
+    renderLb();
     lb.classList.add('open');
   }
 
+  function closeLightbox() {
+    const lb = document.getElementById('lightbox');
+    if (lb) lb.classList.remove('open');
+  }
+
+  function lbNav(dir) {
+    _lbIdx = (_lbIdx + dir + _lbVisible.length) % _lbVisible.length;
+    renderLb();
+  }
+
+  function renderLb() {
+    if (!window._ssAll || _lbVisible.length === 0) return;
+    const ss = window._ssAll[_lbVisible[_lbIdx]];
+    if (!ss) return;
+    const img = document.getElementById('lb-img');
+    const lbl = document.getElementById('lb-label');
+    const ctr = document.getElementById('lb-counter');
+    img.src = ss.src;
+    lbl.textContent = ss.label + (ss.route ? ' — ' + ss.route : '');
+    ctr.textContent = (_lbIdx + 1) + ' / ' + _lbVisible.length;
+    // Show/hide nav arrows
+    document.getElementById('lb-prev').style.display = _lbVisible.length > 1 ? '' : 'none';
+    document.getElementById('lb-next').style.display = _lbVisible.length > 1 ? '' : 'none';
+  }
+
+  // Click delegation for screenshot cards
   document.addEventListener('click', e => {
+    const card = e.target.closest('.ss-card[data-ss-idx]');
+    if (card) {
+      openLightbox(parseInt(card.dataset.ssIdx));
+      return;
+    }
+    // Legacy support for compare mode data-lb-src
     const el = e.target.closest('[data-lb-src]');
-    if (el) openLightbox(el.dataset.lbSrc, el.dataset.lbLabel || '');
+    if (el) {
+      const lb = buildLightbox();
+      _lbVisible = [];
+      window._ssAll = window._ssAll || [{ src: el.dataset.lbSrc, label: el.dataset.lbLabel||'', route: '', time: '' }];
+      _lbVisible = [window._ssAll.length - 1];
+      _lbIdx = 0;
+      document.getElementById('lb-img').src = el.dataset.lbSrc;
+      document.getElementById('lb-label').textContent = el.dataset.lbLabel || '';
+      document.getElementById('lb-counter').textContent = '';
+      document.getElementById('lb-prev').style.display = 'none';
+      document.getElementById('lb-next').style.display = 'none';
+      lb.classList.add('open');
+    }
   });
+
+  // ── Gallery interaction functions ─────────────────────────────
+  function filterScreenshots() {
+    const q = (document.getElementById('ss-search')?.value || '').toLowerCase().trim();
+    _searchQuery = q;
+    document.querySelectorAll('.ss-card').forEach(card => {
+      const lbl = card.dataset.ssLabel || '';
+      const match = !q || lbl.includes(q);
+      card.style.display = match ? '' : 'none';
+    });
+    // Show all groups when searching
+    if (q) {
+      document.querySelectorAll('.ss-group').forEach(g => g.style.display = '');
+      document.querySelectorAll('.ss-card[data-collapsed]').forEach(c => {
+        if ((c.dataset.ssLabel||'').includes(q)) c.style.display = '';
+      });
+    }
+  }
+
+  function filterCat(cat) {
+    _activeCat = cat;
+    _searchQuery = '';
+    // Update pills
+    document.querySelectorAll('#ss-cat-bar .cat-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.cat === cat);
+    });
+    // Show/hide groups
+    document.querySelectorAll('.ss-group').forEach(g => {
+      g.style.display = (cat === 'all' || g.dataset.cat === cat) ? '' : 'none';
+    });
+    // Clear search
+    const searchEl = document.getElementById('ss-search');
+    if (searchEl) searchEl.value = '';
+  }
+
+  function setGridSize(sz) {
+    _gridSize = sz;
+    document.querySelectorAll('.sz-btn').forEach(b => b.classList.toggle('active', b.dataset.sz === sz));
+    document.querySelectorAll('.ss-grid').forEach(g => {
+      g.classList.remove('sz-sm', 'sz-md', 'sz-lg');
+      g.classList.add('sz-' + sz);
+    });
+  }
+
+  function toggleGroupExpand(btn) {
+    const group = btn.closest('.ss-group');
+    if (!group) return;
+    const collapsed = group.querySelectorAll('.ss-card[data-collapsed]');
+    if (collapsed.length) {
+      collapsed.forEach(c => { c.style.display = ''; c.removeAttribute('data-collapsed'); });
+      btn.textContent = 'Show less';
+      btn.dataset.expanded = '1';
+      _expandedGroups.add(group.dataset.cat);
+    } else if (btn.dataset.expanded) {
+      // Re-collapse: hide cards beyond initial 8
+      const cards = group.querySelectorAll('.ss-card');
+      let count = 0;
+      cards.forEach(c => {
+        count++;
+        if (count > 8) { c.style.display = 'none'; c.dataset.collapsed = '1'; }
+      });
+      delete btn.dataset.expanded;
+      _expandedGroups.delete(group.dataset.cat);
+      const hidden = cards.length - 8;
+      btn.textContent = 'Show ' + hidden + ' more';
+    }
+  }
 
   // ── Helpers ─────────────────────────────────────────────────
   function sec(title, subtitle) {
