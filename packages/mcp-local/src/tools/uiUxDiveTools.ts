@@ -1143,4 +1143,183 @@ export const uiUxDiveTools: McpTool[] = [
       }
     },
   },
+
+  // 11. Ingest screenshots from disk into the dive DB
+  {
+    name: "ingest_dive_screenshots",
+    description:
+      "Scan a directory for PNG/JPG screenshot files and bulk-import them into the dive session's screenshot gallery. Use this after a deep dive that captured screenshots via external Playwright MCP (which saves to disk but not the DB). Files are read, base64-encoded, and inserted so the dashboard can display them. Supports recursive scan.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "Dive session ID to associate screenshots with. Use 'latest' for the most recent session.",
+        },
+        directory: {
+          type: "string",
+          description: "Absolute path to directory containing screenshot files (PNG/JPG).",
+        },
+        recursive: {
+          type: "boolean",
+          description: "Scan subdirectories too (default: false)",
+        },
+        maxFiles: {
+          type: "number",
+          description: "Maximum number of files to ingest (default: 100)",
+        },
+        maxFileSizeKb: {
+          type: "number",
+          description: "Skip files larger than this (KB). Default: 2048 (2MB). Keeps DB size manageable.",
+        },
+      },
+      required: ["directory"],
+    },
+    handler: async (args) => {
+      const {
+        sessionId: rawSessionId,
+        directory,
+        recursive = false,
+        maxFiles = 100,
+        maxFileSizeKb = 2048,
+      } = args as {
+        sessionId?: string;
+        directory: string;
+        recursive?: boolean;
+        maxFiles?: number;
+        maxFileSizeKb?: number;
+      };
+
+      const fs = await import("fs");
+      const pathMod = await import("path");
+      const db = getDb();
+
+      // Resolve session
+      let sessionId = rawSessionId;
+      if (!sessionId || sessionId === "latest") {
+        const latest = db
+          .prepare("SELECT id FROM ui_dive_sessions ORDER BY created_at DESC LIMIT 1")
+          .get() as any;
+        if (!latest) return { error: true, message: "No dive sessions found." };
+        sessionId = latest.id;
+      }
+
+      const session = db
+        .prepare("SELECT id, app_name FROM ui_dive_sessions WHERE id = ?")
+        .get(sessionId) as any;
+      if (!session) return { error: true, message: `Session not found: ${sessionId}` };
+
+      // Collect files
+      const exts = new Set([".png", ".jpg", ".jpeg", ".webp"]);
+      const files: string[] = [];
+
+      function scan(dir: string) {
+        if (!fs.existsSync(dir)) return;
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          if (entry.isDirectory() && recursive) {
+            scan(pathMod.join(dir, entry.name));
+          } else if (entry.isFile() && exts.has(pathMod.extname(entry.name).toLowerCase())) {
+            files.push(pathMod.join(dir, entry.name));
+          }
+        }
+      }
+      scan(directory);
+
+      if (files.length === 0)
+        return { error: false, message: "No screenshot files found in " + directory, ingested: 0 };
+
+      // Sort by mtime (newest first)
+      files.sort((a, b) => {
+        try {
+          return fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs;
+        } catch {
+          return 0;
+        }
+      });
+
+      const toIngest = files.slice(0, maxFiles);
+      const maxBytes = maxFileSizeKb * 1024;
+      const ins = db.prepare(
+        "INSERT INTO ui_dive_screenshots (id, session_id, label, route, file_path, base64_thumbnail, width, height, metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      );
+
+      // Check for existing file_paths to avoid duplicates
+      const existingPaths = new Set(
+        (
+          db
+            .prepare("SELECT file_path FROM ui_dive_screenshots WHERE session_id = ? AND file_path IS NOT NULL")
+            .all(sessionId) as any[]
+        ).map((r: any) => r.file_path)
+      );
+
+      let ingested = 0;
+      let skippedSize = 0;
+      let skippedDupe = 0;
+      const results: Array<{ file: string; label: string; sizeKb: number }> = [];
+
+      for (const filePath of toIngest) {
+        if (existingPaths.has(filePath)) {
+          skippedDupe++;
+          continue;
+        }
+
+        let stat;
+        try {
+          stat = fs.statSync(filePath);
+        } catch {
+          continue;
+        }
+        if (stat.size > maxBytes) {
+          skippedSize++;
+          continue;
+        }
+
+        const buf = fs.readFileSync(filePath);
+        const b64 = buf.toString("base64");
+        const basename = pathMod.basename(filePath, pathMod.extname(filePath));
+        // Derive label from filename: 01-landing -> "Landing", audit-panel-overview -> "Audit Panel Overview"
+        const label = basename
+          .replace(/^\d+-/, "")
+          .replace(/[-_]/g, " ")
+          .replace(/\b\w/g, (c: string) => c.toUpperCase())
+          .trim() || basename;
+
+        // Try to extract route from filename patterns like "page-index-03-pdf-uploaded"
+        let route: string | null = null;
+        const routeMatch = basename.match(/^(?:page-index-)?\d+-(.+)/);
+        if (routeMatch) route = "/" + routeMatch[1].replace(/[-_]/g, "-");
+
+        const ssId = genId("ss");
+        const mtime = stat.mtime.toISOString().replace("T", " ").slice(0, 19);
+        ins.run(
+          ssId,
+          sessionId,
+          label,
+          route,
+          filePath,
+          b64,
+          null,
+          null,
+          JSON.stringify({ ingestedFrom: filePath, sizeBytes: stat.size }),
+          mtime
+        );
+        ingested++;
+        results.push({ file: pathMod.basename(filePath), label, sizeKb: Math.round(stat.size / 1024) });
+      }
+
+      return {
+        sessionId,
+        sessionName: session.app_name,
+        directory,
+        filesFound: files.length,
+        ingested,
+        skippedDupe,
+        skippedSize,
+        results,
+        _hint: ingested > 0
+          ? `${ingested} screenshots ingested. Open the dashboard to see them in the Screenshots gallery.`
+          : "No new screenshots to ingest.",
+      };
+    },
+  },
 ];
