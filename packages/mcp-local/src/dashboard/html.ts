@@ -95,6 +95,26 @@ export function getDashboardHtml(): string {
     .lb-nav.next { right:16px; transform:translateY(-50%); }
     .lb-close { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:1px solid #3f3f46; background:rgba(17,17,19,.8); color:#d4d4d8; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; z-index:201; transition:all .15s; }
     .lb-close:hover { background:#dc2626; border-color:#ef4444; color:#fff; }
+    /* ── Changelog Carousel ────────────────────────── */
+    .cl-carousel { position:relative; }
+    .cl-track { display:flex; gap:16px; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; padding:4px 0 12px; scrollbar-width:none; }
+    .cl-track::-webkit-scrollbar { display:none; }
+    .cl-card { flex:0 0 min(100%, 420px); scroll-snap-align:start; background:#111113; border:1px solid #27272a; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:10px; transition:border-color .2s, box-shadow .2s; }
+    .cl-card:hover { border-color:#3f3f46; box-shadow:0 4px 20px rgba(0,0,0,.3); }
+    .cl-card:only-child { flex:0 0 100%; }
+    .cl-step { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,#1e1b4b,#312e81); color:#c7d2fe; font-size:11px; font-weight:700; flex-shrink:0; }
+    .cl-time { font-size:11px; color:#52525b; }
+    .cl-desc { font-size:12px; color:#d4d4d8; line-height:1.6; flex:1; }
+    .cl-files { display:flex; flex-wrap:wrap; gap:4px; }
+    .cl-nav-btn { position:absolute; top:50%; transform:translateY(-50%); width:32px; height:32px; border-radius:50%; border:1px solid #27272a; background:rgba(9,9,11,.85); backdrop-filter:blur(8px); color:#a1a1aa; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .15s; z-index:5; }
+    .cl-nav-btn:hover { background:#4f46e5; border-color:#6366f1; color:#fff; }
+    .cl-nav-btn.prev { left:-12px; }
+    .cl-nav-btn.next { right:-12px; }
+    .cl-nav-btn svg { width:14px; height:14px; }
+    .cl-dots { display:flex; justify-content:center; gap:6px; padding-top:8px; }
+    .cl-dot { width:6px; height:6px; border-radius:50%; background:#27272a; transition:all .2s; cursor:pointer; }
+    .cl-dot.active { background:#818cf8; width:18px; border-radius:3px; }
+
     .compare-bar { display:flex; align-items:center; gap:12px; padding:8px 16px; background:#111113; border-radius:8px; margin-bottom:12px; }
     .compare-bar select { background:#18181b; border:1px solid #27272a; color:#d4d4d8; padding:4px 8px; border-radius:6px; font-size:12px; }
     .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -492,20 +512,32 @@ export function getDashboardHtml(): string {
       h += '</div>';
     }
 
-    // ── Changelog ────────────────────────────────────────────
+    // ── Changelog (Carousel) ──────────────────────────────────
     if (logs.length) {
-      h += sec('Changelog', 'What changed during this session');
-      h += '<div class="relative pl-5 border-l-2 border-border space-y-3">';
-      logs.forEach(c => {
-        h += '<div class="fade-up relative">';
-        h += '<div class="absolute -left-[25px] top-1.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-surface-0"></div>';
-        h += '<div class="text-[11px] text-zinc-500 mb-0.5">'+esc(c.created_at)+'</div>';
-        h += '<div class="text-xs text-zinc-300 leading-relaxed">'+truncWords(esc(c.description),220)+'</div>';
-        if (c.files_changed) h += '<div class="mt-1.5 flex flex-wrap">'+fileChips(c.files_changed)+'</div>';
+      h += sec('Changelog', logs.length+' change'+(logs.length!==1?'s':'')+' during this session');
+      h += '<div class="cl-carousel fade-up" id="cl-carousel">';
+      // Nav arrows (hidden if only 1 card)
+      if (logs.length > 1) {
+        h += '<div class="cl-nav-btn prev" onclick="clNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>';
+        h += '<div class="cl-nav-btn next" onclick="clNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>';
+      }
+      h += '<div class="cl-track" id="cl-track">';
+      logs.forEach((c, idx) => {
+        h += '<div class="cl-card">';
+        // Header row: step badge + timestamp
+        h += '<div class="flex items-center gap-3">';
+        h += '<span class="cl-step">'+(idx+1)+'</span>';
+        h += '<span class="cl-time">'+esc(c.created_at)+'</span>';
+        h += '</div>';
+        // Description
+        h += '<div class="cl-desc">'+truncWords(esc(c.description), 280)+'</div>';
+        // File chips
+        if (c.files_changed) h += '<div class="cl-files">'+fileChips(c.files_changed)+'</div>';
+        // Before/After screenshots
         const bef = c.before_screenshot_id ? ssMap[c.before_screenshot_id] : null;
         const aft = c.after_screenshot_id ? ssMap[c.after_screenshot_id] : null;
         if (bef || aft) {
-          h += '<div class="compare-grid mt-2">';
+          h += '<div class="compare-grid mt-1">';
           if (bef) {
             const bSrc = bef.base64_thumbnail ? 'data:image/png;base64,'+bef.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(bef.id)+'/image';
             h += '<div class="compare-col"><div class="ch">Before</div><img src="'+bSrc+'" alt="Before" loading="lazy" data-lb-src="'+esc(bSrc)+'" data-lb-label="Before" style="cursor:pointer"></div>';
@@ -518,6 +550,15 @@ export function getDashboardHtml(): string {
         }
         h += '</div>';
       });
+      h += '</div>';
+      // Dot indicators
+      if (logs.length > 1) {
+        h += '<div class="cl-dots" id="cl-dots">';
+        logs.forEach((_, idx) => {
+          h += '<div class="cl-dot'+(idx===0?' active':'')+'" data-idx="'+idx+'" onclick="clGoTo('+idx+')"></div>';
+        });
+        h += '</div>';
+      }
       h += '</div>';
     }
 
@@ -769,6 +810,45 @@ export function getDashboardHtml(): string {
       btn.textContent = 'Show ' + hidden + ' more';
     }
   }
+
+  // ── Changelog Carousel ─────────────────────────────────────
+  function clNav(dir) {
+    const track = document.getElementById('cl-track');
+    if (!track) return;
+    const card = track.querySelector('.cl-card');
+    if (!card) return;
+    const w = card.offsetWidth + 16; // card width + gap
+    track.scrollBy({ left: dir * w, behavior: 'smooth' });
+  }
+  function clGoTo(idx) {
+    const track = document.getElementById('cl-track');
+    if (!track) return;
+    const card = track.querySelector('.cl-card');
+    if (!card) return;
+    const w = card.offsetWidth + 16;
+    track.scrollTo({ left: idx * w, behavior: 'smooth' });
+  }
+  function clUpdateDots() {
+    const track = document.getElementById('cl-track');
+    const dots = document.getElementById('cl-dots');
+    if (!track || !dots) return;
+    const card = track.querySelector('.cl-card');
+    if (!card) return;
+    const w = card.offsetWidth + 16;
+    const idx = Math.round(track.scrollLeft / w);
+    dots.querySelectorAll('.cl-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === idx);
+    });
+  }
+  // Attach scroll listener after each render
+  const _clObserver = new MutationObserver(() => {
+    const track = document.getElementById('cl-track');
+    if (track && !track._listening) {
+      track._listening = true;
+      track.addEventListener('scroll', clUpdateDots, { passive: true });
+    }
+  });
+  _clObserver.observe(document.body, { childList: true, subtree: true });
 
   // ── Helpers ─────────────────────────────────────────────────
   const SEC_ICONS = {
