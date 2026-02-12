@@ -42,6 +42,8 @@ export interface Citation {
   author?: string;
   /** Publication date */
   publishedAt?: string;
+  /** 1-based page number for PDF/document citations */
+  pageIndex?: number;
   /** Section/paragraph IDs where this citation appears (for back-links) */
   occurrences: CitationOccurrence[];
 }

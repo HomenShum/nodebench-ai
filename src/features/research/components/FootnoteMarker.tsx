@@ -165,12 +165,20 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
             </span>
 
             {/* Source info */}
-            {(citation.author || citation.publishedAt) && (
+            {(citation.author || citation.publishedAt || citation.pageIndex != null) && (
               <span className="flex items-center gap-2 text-[10px] text-[color:var(--text-secondary)] border-t border-[color:var(--border-color)] pt-2">
                 {citation.author && <span>{citation.author}</span>}
                 {citation.author && citation.publishedAt && <span>•</span>}
                 {citation.publishedAt && (
                   <span>{new Date(citation.publishedAt).toLocaleDateString()}</span>
+                )}
+                {citation.pageIndex != null && (
+                  <>
+                    {(citation.author || citation.publishedAt) && <span>•</span>}
+                    <span className="px-1 py-0 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium">
+                      p. {citation.pageIndex}
+                    </span>
+                  </>
                 )}
               </span>
             )}

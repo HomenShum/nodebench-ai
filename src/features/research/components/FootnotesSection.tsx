@@ -131,6 +131,11 @@ const FootnoteEntry: React.FC<{
               <span className="truncate max-w-[200px]">{new URL(citation.url).hostname}</span>
             </button>
           )}
+          {citation.pageIndex != null && (
+            <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium">
+              p. {citation.pageIndex}
+            </span>
+          )}
           {citation.accessedAt && (
             <span className="text-[color:var(--text-secondary)]">
               Accessed {new Date(citation.accessedAt).toLocaleDateString()}

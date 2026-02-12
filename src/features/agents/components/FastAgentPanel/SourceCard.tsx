@@ -13,6 +13,7 @@ interface BaseSource {
   description?: string;
   favicon?: string;
   previewImage?: string;
+  pageIndex?: number;
 }
 
 interface SourceCardProps {
@@ -116,6 +117,11 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
             {isSEC && (
               <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">
                 SEC Filing
+              </span>
+            )}
+            {!isSEC && source.pageIndex != null && (
+              <span className="text-xs px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium">
+                p. {source.pageIndex}
               </span>
             )}
           </div>

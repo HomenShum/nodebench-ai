@@ -19,6 +19,8 @@ import { v } from "convex/values";
 import { generateText } from "ai";
 import { internalAction } from "../../../_generated/server";
 import { getLanguageModelSafe } from "../../agents/mcp_tools/models";
+import { executeWithModelFallback } from "../../agents/mcp_tools/models/modelResolver";
+import type { ApprovedModel } from "../../agents/mcp_tools/models/modelResolver";
 import type { EvidenceChecklist } from "../validators";
 import {
   deriveEvidenceLevel,
@@ -248,24 +250,32 @@ export const generateCompetingExplanations = internalAction({
       return { explanations: [], framing: null, error: "No signals" };
     }
 
-    console.log(`[CompetingExplanations] Generating from ${args.signals.length} signals, ${args.factChecks.length} fact-checks, model=${modelId}`);
+    console.log(`[CompetingExplanations] Generating from ${args.signals.length} signals, ${args.factChecks.length} fact-checks, startModel=${modelId}`);
+
+    const prompt = buildPrompt({
+      signals: args.signals,
+      factChecks: args.factChecks,
+      entities: args.entities,
+      narrativeThesis: args.narrativeThesis,
+    });
 
     try {
-      const model = await getLanguageModelSafe(modelId);
-      const prompt = buildPrompt({
-        signals: args.signals,
-        factChecks: args.factChecks,
-        entities: args.entities,
-        narrativeThesis: args.narrativeThesis,
-      });
+      const { result: text, modelUsed, isFree, fallbacksUsed } = await executeWithModelFallback(
+        async (model) => {
+          const r = await generateText({ model, prompt, temperature: 0.3 });
+          return r.text;
+        },
+        {
+          startModel: modelId as ApprovedModel,
+          onFallback: (from, to, err) => {
+            console.warn(`[CompetingExplanations] Model ${from} failed (${err.message}), falling back to ${to}`);
+          },
+        }
+      );
 
-      const result = await generateText({
-        model,
-        prompt,
-        temperature: 0.3,
-      });
+      console.log(`[CompetingExplanations] LLM responded (model=${modelUsed}, free=${isFree}, fallbacks=${fallbacksUsed})`);
 
-      const parsed = parseResponse(result.text);
+      const parsed = parseResponse(text);
       if (!parsed || parsed.explanations.length === 0) {
         console.warn("[CompetingExplanations] LLM returned no valid explanations");
         return { explanations: [], framing: null, error: "Parse failure" };
@@ -282,7 +292,7 @@ export const generateCompetingExplanations = internalAction({
       };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[CompetingExplanations] LLM call failed:", msg);
+      console.error("[CompetingExplanations] All models failed:", msg);
       return { explanations: [], framing: null, error: msg };
     }
   },

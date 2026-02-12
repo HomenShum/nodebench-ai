@@ -48,6 +48,7 @@ interface InlineCitationProps {
   number: number;
   sourceId: string;
   sourceTitle?: string;
+  pageIndex?: number;
   onScrollToSource?: (sourceId: string) => void;
   className?: string;
 }
@@ -59,6 +60,7 @@ export function InlineCitation({
   number,
   sourceId,
   sourceTitle,
+  pageIndex,
   onScrollToSource,
   className,
 }: InlineCitationProps) {
@@ -102,12 +104,12 @@ export function InlineCitation({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
-      title={sourceTitle || `Source ${number}`}
+      title={`${sourceTitle || `Source ${number}`}${pageIndex != null ? ` (p. ${pageIndex})` : ''}`}
       role="button"
       tabIndex={0}
-      aria-label={`Citation ${number}${sourceTitle ? `: ${sourceTitle}` : ''}`}
+      aria-label={`Citation ${number}${sourceTitle ? `: ${sourceTitle}` : ''}${pageIndex != null ? ` page ${pageIndex}` : ''}`}
     >
-      {number}
+      {number}{pageIndex != null && <span className="text-[8px] ml-0.5 opacity-75">p{pageIndex}</span>}
     </sup>
   );
 }

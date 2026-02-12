@@ -52,6 +52,7 @@ interface Citation {
   citationKey: string;
   url?: string;
   title?: string;
+  pageIndex?: number;
   publishedAt?: number;
 }
 
@@ -274,6 +275,11 @@ export function PostCard({
                 className="flex items-center gap-1 text-xs text-primary hover:underline px-1.5 py-0.5 bg-primary/5 rounded"
               >
                 {citation.citationKey}
+                {citation.pageIndex != null && (
+                  <span className="text-[10px] px-1 py-0 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">
+                    p.{citation.pageIndex}
+                  </span>
+                )}
                 <ExternalLink className="w-3 h-3" />
               </a>
             ))}
