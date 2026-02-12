@@ -55,7 +55,7 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
 
 export { TOOLSET_MAP };
 
-const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate"];
+const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update"];
 
 const PRESETS: Record<string, string[]> = {
   default: DEFAULT_TOOLSETS,
@@ -1407,7 +1407,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.23.0" },
+  { name: "nodebench-mcp-methodology", version: "2.24.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,

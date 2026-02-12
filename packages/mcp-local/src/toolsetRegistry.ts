@@ -42,6 +42,7 @@ import { toonTools } from "./tools/toonTools.js";
 import { uiUxDiveTools } from "./tools/uiUxDiveTools.js";
 import { mcpBridgeTools } from "./tools/mcpBridgeTools.js";
 import { uiUxDiveAdvancedTools } from "./tools/uiUxDiveAdvancedTools.js";
+import { skillUpdateTools } from "./tools/skillUpdateTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -82,6 +83,7 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   ui_ux_dive: uiUxDiveTools,
   mcp_bridge: mcpBridgeTools,
   ui_ux_dive_v2: uiUxDiveAdvancedTools,
+  skill_update: skillUpdateTools,
 };
 
 // Pre-computed tool name → toolset name lookup

@@ -54,7 +54,7 @@ export function createProgressiveDiscoveryTools(
               "research_writing", "flicker_detection", "figma_flow",
               "boilerplate", "benchmark", "session_memory", "gaia_solvers",
               "toon", "pattern", "git_workflow", "seo", "voice_bridge",
-              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "progressive_discovery", "meta",
+              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "progressive_discovery", "meta",
             ],
             description: "Filter by tool category (optional)",
           },

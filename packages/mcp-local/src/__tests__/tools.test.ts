@@ -46,6 +46,7 @@ import { architectTools } from "../tools/architectTools.js";
 import { uiUxDiveTools } from "../tools/uiUxDiveTools.js";
 import { mcpBridgeTools } from "../tools/mcpBridgeTools.js";
 import { uiUxDiveAdvancedTools } from "../tools/uiUxDiveAdvancedTools.js";
+import { skillUpdateTools } from "../tools/skillUpdateTools.js";
 import { getQuickRef, hybridSearch, TOOL_REGISTRY, SEARCH_MODES, ALL_REGISTRY_ENTRIES, WORKFLOW_CHAINS, tokenize, buildDenseIndex, getToolComplexity } from "../tools/toolRegistry.js";
 import type { McpTool } from "../types.js";
 
@@ -88,6 +89,7 @@ const domainTools: McpTool[] = [
   ...uiUxDiveTools,
   ...mcpBridgeTools,
   ...uiUxDiveAdvancedTools,
+  ...skillUpdateTools,
 ];
 const metaTools = createMetaTools(domainTools);
 const allToolsWithoutDiscovery = [...domainTools, ...metaTools];
@@ -103,7 +105,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 describe("Static: tool structure", () => {
   it("should have 175 tools total", () => {
     // 169 domain tools + 3 meta tools (findTools, getMethodology, check_mcp_setup) + 3 progressive discovery tools
-    expect(allTools.length).toBe(204);
+    expect(allTools.length).toBe(208);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {

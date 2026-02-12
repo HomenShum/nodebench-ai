@@ -2324,6 +2324,59 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   },
 
   // ═══════════════════════════════════════════
+  // SKILL SELF-UPDATE PROTOCOL — Track rule
+  // file provenance, staleness, and resync
+  // ═══════════════════════════════════════════
+  {
+    name: "register_skill",
+    category: "skill_update",
+    tags: ["skill", "rule", "register", "source", "hash", "frontmatter", "provenance", "memory", "agents-md", "cursor", "windsurf", "update"],
+    quickRef: {
+      nextAction: "Skill registered. Use check_skill_freshness periodically to detect when source files change.",
+      nextTools: ["check_skill_freshness", "list_skills"],
+      methodology: "self_reinforced_learning",
+      tip: "Register every .md rule file (e.g. .windsurf/rules/, AGENTS.md) with its source files, triggers, and update instructions. Enables automatic staleness detection.",
+    },
+    phase: "verify",
+  },
+  {
+    name: "check_skill_freshness",
+    category: "skill_update",
+    tags: ["skill", "freshness", "stale", "hash", "check", "drift", "source", "detect", "sync", "update", "rule"],
+    quickRef: {
+      nextAction: "If stale skills found, follow their update_instructions then call sync_skill to record the resync.",
+      nextTools: ["sync_skill", "list_skills", "register_skill"],
+      methodology: "self_reinforced_learning",
+      tip: "Run at session start or after big code changes. Compares SHA-256 hashes of source files to detect drift. Auto-updates skill status in DB.",
+    },
+    phase: "verify",
+  },
+  {
+    name: "sync_skill",
+    category: "skill_update",
+    tags: ["skill", "sync", "resync", "update", "hash", "refresh", "frontmatter", "rule", "source", "stale"],
+    quickRef: {
+      nextAction: "Skill synced. Verify the updated skill file is correct, then continue with your task.",
+      nextTools: ["check_skill_freshness", "list_skills"],
+      methodology: "self_reinforced_learning",
+      tip: "Call AFTER you have read the changed source files and updated the skill .md content. This tool records the sync and updates the hash.",
+    },
+    phase: "verify",
+  },
+  {
+    name: "list_skills",
+    category: "skill_update",
+    tags: ["skill", "list", "status", "overview", "rule", "memory", "history", "sync", "fresh", "stale"],
+    quickRef: {
+      nextAction: "Review skill statuses. Register any untracked rule files, check freshness for stale ones.",
+      nextTools: ["register_skill", "check_skill_freshness", "sync_skill"],
+      methodology: "self_reinforced_learning",
+      tip: "Use includeHistory:true to see the full sync timeline for each skill. Filter by status:'stale' to focus on what needs updating.",
+    },
+    phase: "utility",
+  },
+
+  // ═══════════════════════════════════════════
   // MCP BRIDGE — Connect external MCP servers
   // ═══════════════════════════════════════════
   {

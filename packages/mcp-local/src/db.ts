@@ -616,6 +616,44 @@ CREATE INDEX IF NOT EXISTS idx_dive_code_locations_bug ON ui_dive_code_locations
 CREATE INDEX IF NOT EXISTS idx_dive_fix_verifications_bug ON ui_dive_fix_verifications(bug_id);
 CREATE INDEX IF NOT EXISTS idx_dive_generated_tests_session ON ui_dive_generated_tests(session_id);
 CREATE INDEX IF NOT EXISTS idx_dive_code_reviews_session ON ui_dive_code_reviews(session_id);
+
+-- ═══════════════════════════════════════════
+-- SKILL SELF-UPDATE PROTOCOL — Track rule/
+-- memory file provenance, source hashes,
+-- update triggers, sync history.
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS skills (
+  id              TEXT PRIMARY KEY,
+  skill_id        TEXT NOT NULL UNIQUE,
+  name            TEXT NOT NULL,
+  file_path       TEXT NOT NULL,
+  description     TEXT,
+  source_files    TEXT NOT NULL DEFAULT '[]',
+  source_hash     TEXT,
+  update_triggers TEXT NOT NULL DEFAULT '[]',
+  update_instructions TEXT NOT NULL DEFAULT '[]',
+  last_synced_at  TEXT,
+  status          TEXT NOT NULL DEFAULT 'fresh',
+  metadata        TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS skill_sync_history (
+  id              TEXT PRIMARY KEY,
+  skill_id        TEXT NOT NULL,
+  previous_hash   TEXT,
+  new_hash        TEXT NOT NULL,
+  changed_sources TEXT,
+  trigger_reason  TEXT,
+  sync_notes      TEXT,
+  synced_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_skills_skill_id ON skills(skill_id);
+CREATE INDEX IF NOT EXISTS idx_skills_status ON skills(status);
+CREATE INDEX IF NOT EXISTS idx_skill_sync_history_skill ON skill_sync_history(skill_id);
 `;
 
 export function getDb(): Database.Database {
