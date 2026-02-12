@@ -1029,12 +1029,25 @@ export const uiUxDiveTools: McpTool[] = [
         const base64 = screenshotBuf.toString("base64");
         const title = await _page.title();
         const url = _page.url();
+        const snapLabel = label ?? `dive-snapshot-${Date.now()}`;
+
+        // Persist screenshot to DB so dashboard can display it
+        try {
+          const db = getDb();
+          const ssId = genId("ss");
+          // Extract route from URL
+          let route: string | null = null;
+          try { route = new URL(url).pathname; } catch {}
+          db.prepare(
+            "INSERT INTO ui_dive_screenshots (id, session_id, label, route, base64_thumbnail, width, height, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+          ).run(ssId, sessionId, snapLabel, route, base64, null, null, JSON.stringify({ captureMode, selector: selector ?? "full page", pageTitle: title, pageUrl: url, sizeBytes: screenshotBuf.length }));
+        } catch { /* best-effort DB persist */ }
 
         return [
           {
             type: "text",
             text: JSON.stringify({
-              label: label ?? `dive-snapshot-${Date.now()}`,
+              label: snapLabel,
               pageTitle: title,
               pageUrl: url,
               captureMode,

@@ -79,6 +79,9 @@ function handleRequest(db: Database.Database, req: IncomingMessage, res: ServerR
       serveHtml(res);
     } else if (path === "/api/sessions") {
       apiSessions(db, res);
+    } else if (path.startsWith("/api/screenshot/") && path.endsWith("/image")) {
+      const ssId = decodeURIComponent(path.split("/api/screenshot/")[1].split("/image")[0]);
+      apiScreenshotImage(db, ssId, res);
     } else if (path.startsWith("/api/session/")) {
       const sessionId = decodeURIComponent(path.split("/api/session/")[1].split("/")[0]);
       const sub = path.split(sessionId + "/")[1] || "overview";
@@ -229,8 +232,53 @@ function apiInteractions(db: Database.Database, sid: string, res: ServerResponse
 
 function apiScreenshots(db: Database.Database, sid: string, res: ServerResponse) {
   json(res, db.prepare(
-    "SELECT id, session_id, component_id, label, route, file_path, width, height, created_at FROM ui_dive_screenshots WHERE session_id = ? ORDER BY created_at"
+    "SELECT id, session_id, component_id, label, route, file_path, base64_thumbnail, width, height, metadata, created_at FROM ui_dive_screenshots WHERE session_id = ? ORDER BY created_at"
   ).all(sid));
+}
+
+/** Serve a screenshot as an actual PNG image */
+function apiScreenshotImage(db: Database.Database, ssId: string, res: ServerResponse) {
+  const row = db.prepare(
+    "SELECT base64_thumbnail, file_path FROM ui_dive_screenshots WHERE id = ?"
+  ).get(ssId) as { base64_thumbnail?: string; file_path?: string } | undefined;
+
+  if (!row) {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Screenshot not found");
+    return;
+  }
+
+  // Prefer inline base64, fall back to file on disk
+  if (row.base64_thumbnail) {
+    const buf = Buffer.from(row.base64_thumbnail, "base64");
+    res.writeHead(200, {
+      "Content-Type": "image/png",
+      "Content-Length": buf.length.toString(),
+      "Cache-Control": "public, max-age=86400",
+    });
+    res.end(buf);
+    return;
+  }
+
+  if (row.file_path) {
+    try {
+      const fs = require("node:fs");
+      const buf = fs.readFileSync(row.file_path);
+      res.writeHead(200, {
+        "Content-Type": "image/png",
+        "Content-Length": buf.length.toString(),
+        "Cache-Control": "public, max-age=86400",
+      });
+      res.end(buf);
+    } catch {
+      res.writeHead(404, { "Content-Type": "text/plain" });
+      res.end("Screenshot file not found on disk");
+    }
+    return;
+  }
+
+  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.end("No image data available");
 }
 
 function apiCodeLocations(db: Database.Database, sid: string, res: ServerResponse) {

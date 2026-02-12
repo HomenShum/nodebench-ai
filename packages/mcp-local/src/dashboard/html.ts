@@ -54,6 +54,21 @@ export function getDashboardHtml(): string {
     section { scroll-margin-top: 72px; }
     .section-header { position:sticky; top:56px; z-index:20; }
     .pipeline-line { position:absolute; top:50%; left:0; right:0; height:2px; background: linear-gradient(90deg,#27272a,#4f46e5,#27272a); z-index:0; }
+    .ss-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:10px; }
+    .ss-card { cursor:pointer; transition: transform .15s, box-shadow .15s; border-radius:8px; overflow:hidden; }
+    .ss-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.5); }
+    .ss-card img { width:100%; height:auto; display:block; background:#18181b; }
+    .ss-meta { padding:6px 10px; background:#111113; }
+    .lightbox { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.88); display:none; align-items:center; justify-content:center; cursor:zoom-out; }
+    .lightbox.open { display:flex; }
+    .lightbox img { max-width:95vw; max-height:92vh; border-radius:8px; box-shadow:0 12px 40px rgba(0,0,0,.6); }
+    .lightbox .lb-label { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(17,17,19,.85); padding:6px 16px; border-radius:6px; font-size:12px; color:#a1a1aa; }
+    .compare-bar { display:flex; align-items:center; gap:12px; padding:8px 16px; background:#111113; border-radius:8px; margin-bottom:12px; }
+    .compare-bar select { background:#18181b; border:1px solid #27272a; color:#d4d4d8; padding:4px 8px; border-radius:6px; font-size:12px; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .compare-grid .compare-col { border:1px solid #27272a; border-radius:8px; overflow:hidden; }
+    .compare-grid .compare-col .ch { padding:8px 12px; background:#18181b; font-size:11px; color:#a1a1aa; font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+    .compare-grid .compare-col img { width:100%; display:block; }
   </style>
 </head>
 <body class="bg-surface-0 text-zinc-300 min-h-screen">
@@ -70,6 +85,7 @@ export function getDashboardHtml(): string {
       <select id="session-picker" class="bg-surface-2 border border-border rounded-md px-2.5 py-1 text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-accent max-w-[280px]">
         <option value="">Loading...</option>
       </select>
+      <button id="compare-btn" onclick="toggleCompare()" class="text-[11px] px-2.5 py-1 rounded-md border border-border text-zinc-400 hover:text-white hover:border-accent transition-colors" title="Compare sessions side-by-side">Compare</button>
     </div>
   </header>
 
@@ -81,25 +97,115 @@ export function getDashboardHtml(): string {
   <script>
   let SID = null;
   let _t = null;
+  let _allSessions = [];
+  let _compareMode = false;
   const $ = id => document.getElementById(id);
 
   async function init() {
     const res = await fetch('/api/sessions');
-    const sessions = await res.json();
+    _allSessions = await res.json();
     const pk = $('session-picker');
-    pk.innerHTML = sessions.map(s =>
+    pk.innerHTML = _allSessions.map(s =>
       '<option value="'+s.id+'">'+(s.app_name||'Dive')+' \\u2014 '+s.created_at.slice(5,16)+' ('+s.bug_count+' bugs, '+s.bugs_resolved+' fixed)</option>'
     ).join('');
-    if (sessions.length) { SID = sessions[0].id; pk.value = SID; }
-    pk.onchange = e => { SID = e.target.value; load(); };
+    if (_allSessions.length) { SID = _allSessions[0].id; pk.value = SID; }
+    pk.onchange = e => { SID = e.target.value; if(!_compareMode) load(); };
     load();
-    _t = setInterval(load, 5000);
+    _t = setInterval(() => { if(!_compareMode) load(); }, 5000);
+  }
+
+  function toggleCompare() {
+    _compareMode = !_compareMode;
+    const btn = $('compare-btn');
+    btn.textContent = _compareMode ? 'Exit Compare' : 'Compare';
+    btn.style.borderColor = _compareMode ? '#6366f1' : '';
+    btn.style.color = _compareMode ? '#fff' : '';
+    if (_compareMode) {
+      renderCompareMode();
+    } else {
+      load();
+    }
+  }
+
+  async function renderCompareMode() {
+    const opts = _allSessions.map(s =>
+      '<option value="'+s.id+'">'+(s.app_name||'Dive')+' — '+s.created_at.slice(5,16)+'</option>'
+    ).join('');
+    let h = '<div class="fade-up">';
+    h += '<h2 class="text-lg font-bold text-white mb-4">Session Comparison</h2>';
+    h += '<div class="compare-bar">';
+    h += '<span class="text-[11px] text-zinc-400 font-semibold uppercase">Left</span>';
+    h += '<select id="cmp-left" class="flex-1" onchange="loadCompare()">'+opts+'</select>';
+    h += '<span class="text-[11px] text-zinc-400">vs</span>';
+    h += '<span class="text-[11px] text-zinc-400 font-semibold uppercase">Right</span>';
+    h += '<select id="cmp-right" class="flex-1" onchange="loadCompare()">'+opts+'</select>';
+    h += '</div>';
+    h += '<div id="cmp-content"><p class="text-zinc-500 text-sm py-10 text-center">Select two sessions to compare</p></div>';
+    h += '</div>';
+    $('root').innerHTML = h;
+    // Default: latest vs second-latest
+    if (_allSessions.length >= 2) {
+      $('cmp-left').value = _allSessions[1].id;
+      $('cmp-right').value = _allSessions[0].id;
+      loadCompare();
+    }
+  }
+
+  async function loadCompare() {
+    const leftId = $('cmp-left').value;
+    const rightId = $('cmp-right').value;
+    if (!leftId || !rightId) return;
+    const [lShots, rShots, lOv, rOv] = await Promise.all([
+      fetch('/api/session/'+leftId+'/screenshots').then(r=>r.json()),
+      fetch('/api/session/'+rightId+'/screenshots').then(r=>r.json()),
+      fetch('/api/session/'+leftId+'/overview').then(r=>r.json()),
+      fetch('/api/session/'+rightId+'/overview').then(r=>r.json()),
+    ]);
+    let h = '';
+    // Score comparison
+    const lRev = lOv.latestReview, rRev = rOv.latestReview;
+    const lScore = lRev?(lRev.score??0):null, rScore = rRev?(rRev.score??0):null;
+    const gradeOf = s => s===null?'—':s>=90?'A':s>=80?'B':s>=70?'C':s>=60?'D':'F';
+    h += '<div class="compare-grid mb-6">';
+    h += '<div class="ring-glow rounded-lg p-4 bg-surface-1 text-center"><div class="text-[10px] text-zinc-500 uppercase mb-1">Score</div><div class="text-3xl font-bold '+(lScore>=80?'text-ok':lScore>=60?'text-warn':'text-err')+'">'+gradeOf(lScore)+'</div><div class="text-sm text-zinc-400">'+(lScore??'—')+'/100</div><div class="text-[10px] text-zinc-600 mt-1">'+lOv.stats.bugs+' bugs · '+lOv.stats.components+' comps</div></div>';
+    h += '<div class="ring-glow rounded-lg p-4 bg-surface-1 text-center"><div class="text-[10px] text-zinc-500 uppercase mb-1">Score</div><div class="text-3xl font-bold '+(rScore>=80?'text-ok':rScore>=60?'text-warn':'text-err')+'">'+gradeOf(rScore)+'</div><div class="text-sm text-zinc-400">'+(rScore??'—')+'/100</div><div class="text-[10px] text-zinc-600 mt-1">'+rOv.stats.bugs+' bugs · '+rOv.stats.components+' comps</div></div>';
+    h += '</div>';
+    // Match screenshots by route for side-by-side
+    const routeMap = {};
+    lShots.forEach(s => { const r = s.route||s.label; if(!routeMap[r]) routeMap[r]={left:null,right:null}; routeMap[r].left = s; });
+    rShots.forEach(s => { const r = s.route||s.label; if(!routeMap[r]) routeMap[r]={left:null,right:null}; routeMap[r].right = s; });
+    const routes = Object.keys(routeMap);
+    if (routes.length === 0) {
+      h += '<p class="text-zinc-500 text-sm py-8 text-center">No screenshots to compare. Use dive_snapshot to capture screenshots during dive sessions.</p>';
+    } else {
+      h += '<div class="space-y-4">';
+      routes.forEach(r => {
+        const pair = routeMap[r];
+        h += '<div class="fade-up"><div class="text-[11px] text-zinc-400 font-medium mb-1.5 font-mono">'+esc(r)+'</div>';
+        h += '<div class="compare-grid">';
+        if (pair.left) {
+          const src = pair.left.base64_thumbnail ? 'data:image/png;base64,'+pair.left.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(pair.left.id)+'/image';
+          h += '<div class="compare-col"><img src="'+src+'" alt="'+esc(r)+'" loading="lazy" style="cursor:pointer" onclick="openLightbox(\''+src.replace(/'/g,"\\'")+"','Left: "+esc(r)+"')\"></div>";
+        } else {
+          h += '<div class="compare-col" style="display:flex;align-items:center;justify-content:center;min-height:120px;color:#52525b;font-size:11px">No screenshot</div>';
+        }
+        if (pair.right) {
+          const src = pair.right.base64_thumbnail ? 'data:image/png;base64,'+pair.right.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(pair.right.id)+'/image';
+          h += '<div class="compare-col"><img src="'+src+'" alt="'+esc(r)+'" loading="lazy" style="cursor:pointer" onclick="openLightbox(\''+src.replace(/'/g,"\\'")+"','Right: "+esc(r)+"')\"></div>";
+        } else {
+          h += '<div class="compare-col" style="display:flex;align-items:center;justify-content:center;min-height:120px;color:#52525b;font-size:11px">No screenshot</div>';
+        }
+        h += '</div></div>';
+      });
+      h += '</div>';
+    }
+    $('cmp-content').innerHTML = h;
   }
 
   async function load() {
     if (!SID) return;
     try {
-      const [ov, bugs, fixes, comps, locs, logs, tests, revs] = await Promise.all([
+      const [ov, bugs, fixes, comps, locs, logs, tests, revs, shots] = await Promise.all([
         fetch('/api/session/'+SID+'/overview').then(r=>r.json()),
         fetch('/api/session/'+SID+'/bugs').then(r=>r.json()),
         fetch('/api/session/'+SID+'/fixes').then(r=>r.json()),
@@ -108,15 +214,19 @@ export function getDashboardHtml(): string {
         fetch('/api/session/'+SID+'/changelogs').then(r=>r.json()),
         fetch('/api/session/'+SID+'/tests').then(r=>r.json()),
         fetch('/api/session/'+SID+'/reviews').then(r=>r.json()),
+        fetch('/api/session/'+SID+'/screenshots').then(r=>r.json()),
       ]);
-      render(ov, bugs, fixes, comps, locs, logs, tests, revs);
+      render(ov, bugs, fixes, comps, locs, logs, tests, revs, shots);
     } catch(e) { $('root').innerHTML = '<p class="text-err text-sm py-10 text-center">'+esc(e.message)+'</p>'; }
   }
 
-  function render(ov, bugs, fixes, comps, locs, logs, tests, revs) {
+  function render(ov, bugs, fixes, comps, locs, logs, tests, revs, shots) {
     const s = ov.stats, sess = ov.session;
     $('hdr-title').textContent = sess.app_name || 'UI Dive';
     $('hdr-status').textContent = sess.status === 'completed' ? 'Completed' : 'Active';
+    // Build screenshot lookup for changelogs
+    const ssMap = {};
+    (shots||[]).forEach(ss => { ssMap[ss.id] = ss; });
 
     let h = '';
 
@@ -238,6 +348,24 @@ export function getDashboardHtml(): string {
       h += '</div>';
     }
 
+    // ── Screenshots Gallery ─────────────────────────────────
+    if (shots && shots.length) {
+      h += sec('Screenshots', shots.length);
+      h += '<div class="ss-grid">';
+      shots.forEach(ss => {
+        const src = ss.base64_thumbnail ? 'data:image/png;base64,'+ss.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(ss.id)+'/image';
+        const lbl = esc(ss.label||'screenshot');
+        const rt = ss.route ? ' \u2014 '+esc(ss.route) : '';
+        let meta = {}; try { meta = ss.metadata ? JSON.parse(ss.metadata) : {}; } catch{}
+        h += '<div class="ss-card ring-glow fade-up" onclick="openLightbox(\''+src.replace(/'/g,"\\'")+"','"+lbl+rt+"')\">';
+        h += '<img src="'+src+'" alt="'+lbl+'" loading="lazy">';
+        h += '<div class="ss-meta"><div class="text-[11px] text-zinc-300 truncate" title="'+lbl+'">'+lbl+'</div>';
+        h += '<div class="text-[10px] text-zinc-500">'+esc(ss.created_at?.slice(5,16)||'')+(rt?rt:'')+'</div>';
+        h += '</div></div>';
+      });
+      h += '</div>';
+    }
+
     // ── Changelog ────────────────────────────────────────────
     if (logs.length) {
       h += sec('Changelog', logs.length);
@@ -248,6 +376,21 @@ export function getDashboardHtml(): string {
         h += '<div class="text-[11px] text-zinc-500 mb-0.5">'+esc(c.created_at)+'</div>';
         h += '<div class="text-xs text-zinc-300 leading-relaxed">'+esc(c.description).slice(0,180)+'</div>';
         if (c.files_changed) h += '<div class="text-[11px] text-zinc-500 font-mono mt-0.5">'+esc(c.files_changed)+'</div>';
+        // Before / After screenshots
+        const bef = c.before_screenshot_id ? ssMap[c.before_screenshot_id] : null;
+        const aft = c.after_screenshot_id ? ssMap[c.after_screenshot_id] : null;
+        if (bef || aft) {
+          h += '<div class="compare-grid mt-2">';
+          if (bef) {
+            const bSrc = bef.base64_thumbnail ? 'data:image/png;base64,'+bef.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(bef.id)+'/image';
+            h += '<div class="compare-col"><div class="ch">Before</div><img src="'+bSrc+'" alt="Before" loading="lazy" onclick="openLightbox(\''+bSrc.replace(/'/g,"\\'")+"','Before')\" style=\"cursor:pointer\"></div>";
+          }
+          if (aft) {
+            const aSrc = aft.base64_thumbnail ? 'data:image/png;base64,'+aft.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(aft.id)+'/image';
+            h += '<div class="compare-col"><div class="ch">After</div><img src="'+aSrc+'" alt="After" loading="lazy" onclick="openLightbox(\''+aSrc.replace(/'/g,"\\'")+"','After')\" style=\"cursor:pointer\"></div>";
+          }
+          h += '</div>';
+        }
         h += '</div>';
       });
       h += '</div>';
@@ -301,6 +444,23 @@ export function getDashboardHtml(): string {
     }
 
     $('root').innerHTML = h;
+  }
+
+  // ── Lightbox ─────────────────────────────────────────────────
+  function openLightbox(src, label) {
+    let lb = document.getElementById('lightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'lightbox';
+      lb.className = 'lightbox';
+      lb.innerHTML = '<img id="lb-img" src="" alt=""><div class="lb-label" id="lb-label"></div>';
+      lb.onclick = () => lb.classList.remove('open');
+      document.body.appendChild(lb);
+      document.addEventListener('keydown', e => { if (e.key==='Escape') lb.classList.remove('open'); });
+    }
+    document.getElementById('lb-img').src = src;
+    document.getElementById('lb-label').textContent = label || '';
+    lb.classList.add('open');
   }
 
   // ── Helpers ─────────────────────────────────────────────────

@@ -358,16 +358,19 @@ export const postDailyDigestToLinkedIn = internalAction({
             summary: s.summary ? String(s.summary) : undefined,
             hardNumbers: s.hardNumbers ? String(s.hardNumbers) : undefined,
             url: s.url ? String(s.url) : undefined,
+            directQuote: s.directQuote ? String(s.directQuote) : undefined,
           })),
           factChecks: (digestResult.digest.factCheckFindings ?? []).slice(0, 4).map((f: any) => ({
             claim: String(f.claim || ""),
             status: String(f.status || "unverified"),
             source: f.source ? String(f.source) : undefined,
+            sourceUrl: f.sourceUrl ? String(f.sourceUrl) : undefined,
           })),
           entities: (digestResult.digest.entitySpotlight ?? []).slice(0, 3).map((e: any) => ({
             name: String(e.name || ""),
             keyInsight: String(e.keyInsight || ""),
           })),
+          hasFundingRounds: (digestResult.digest.fundingRounds ?? []).length > 0,
           narrativeThesis: digestResult.digest.narrativeThesis,
           model,
         }
