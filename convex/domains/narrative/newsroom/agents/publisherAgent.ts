@@ -317,22 +317,42 @@ Respond ONLY with a JSON array, one object per claim in order:
 }
 
 /**
- * Render a markdown section for competing hypotheses (Phase 7).
+ * Render the three-part hypothesis block per DRANE design principle:
+ *   Part 1: Competing Explanations — the hypotheses themselves
+ *   Part 2: Evidence for Each — speculative risk and measurement approach
+ *   Part 3: What Would Change My Mind — falsification criteria
+ *
  * Only called when hypothesisCandidates are present on state.
  */
 function renderHypothesisSection(candidates: HypothesisCandidate[]): string {
   if (candidates.length === 0) return "";
-  const lines = ["## Competing Hypotheses"];
+
+  // Part 1: Competing Explanations
+  const part1 = ["## Competing Explanations"];
   for (const h of candidates) {
-    const risk = h.speculativeRisk === "grounded" ? "grounded"
-      : h.speculativeRisk === "mixed" ? "partly supported"
-      : "interpretive";
-    lines.push(`- **${h.label} (${risk})**: ${h.title} -- ${h.claimForm}`);
+    part1.push(`- **${h.label}**: ${h.title} -- ${h.claimForm}`);
+  }
+
+  // Part 2: Evidence for Each
+  const part2 = ["## Evidence for Each"];
+  for (const h of candidates) {
+    const risk = h.speculativeRisk === "grounded" ? "Grounded"
+      : h.speculativeRisk === "mixed" ? "Partly supported"
+      : "Interpretive";
+    part2.push(`- **${h.label}** [${risk}]: ${h.measurementApproach}`);
+  }
+
+  // Part 3: What Would Change My Mind
+  const part3 = ["## What Would Change My Mind"];
+  for (const h of candidates) {
     if (h.falsificationCriteria) {
-      lines.push(`  Falsified if: ${h.falsificationCriteria}`);
+      part3.push(`- **${h.label}**: ${h.falsificationCriteria}`);
+    } else {
+      part3.push(`- **${h.label}**: No falsification criteria defined`);
     }
   }
-  return lines.join("\n");
+
+  return [part1.join("\n"), part2.join("\n"), part3.join("\n")].join("\n\n");
 }
 
 /**
