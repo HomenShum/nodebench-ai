@@ -21,6 +21,7 @@ import { v } from "convex/values";
 import { mutation, internalMutation } from "../../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "../../../_generated/dataModel";
+import { signalDomainValidator, sourceTierValidator as sharedSourceTierValidator } from "../validators";
 
 /**
  * FNV-1a 32-bit hash for stable ID generation
@@ -34,20 +35,9 @@ function fnv1a32Hex(str: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-const domainValidator = v.union(
-  v.literal("attention"),
-  v.literal("policy"),
-  v.literal("labor"),
-  v.literal("market"),
-  v.literal("sentiment")
-);
+const domainValidator = signalDomainValidator;
 
-const sourceTierValidator = v.union(
-  v.literal("tier1"),
-  v.literal("tier2"),
-  v.literal("tier3"),
-  v.literal("tier4")
-);
+const sourceTierValidator = sharedSourceTierValidator;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PUBLIC MUTATIONS (User-facing, require auth)

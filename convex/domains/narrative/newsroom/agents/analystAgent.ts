@@ -24,6 +24,7 @@ import type {
   HistoricalClaim,
   ExistingThread,
 } from "../state";
+import type { HypothesisCandidate } from "../../validators";
 
 /**
  * Configuration for Analyst Agent
@@ -229,20 +230,8 @@ Only output hypotheses when there are genuinely competing explanations. Do not f
 }
 
 /**
- * Parse LLM response to extract narrative shifts
+ * Parse LLM response to extract narrative shifts and hypothesis candidates
  */
-/**
- * Parsed hypothesis candidate from LLM analysis
- */
-interface HypothesisCandidate {
-  label: string;
-  title: string;
-  claimForm: string;
-  measurementApproach: string;
-  speculativeRisk: "grounded" | "mixed" | "speculative";
-  falsificationCriteria?: string;
-}
-
 function parseAnalysisResponse(
   response: string,
   minConfidence: number
