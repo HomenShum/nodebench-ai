@@ -587,6 +587,7 @@ import type * as domains_narrative_newsroom_recordReplayLane from "../domains/na
 import type * as domains_narrative_newsroom_state from "../domains/narrative/newsroom/state.js";
 import type * as domains_narrative_newsroom_workflow from "../domains/narrative/newsroom/workflow.js";
 import type * as domains_narrative_policies_contentRights from "../domains/narrative/policies/contentRights.js";
+import type * as domains_narrative_queries_correlations from "../domains/narrative/queries/correlations.js";
 import type * as domains_narrative_queries_disputes from "../domains/narrative/queries/disputes.js";
 import type * as domains_narrative_queries_events from "../domains/narrative/queries/events.js";
 import type * as domains_narrative_queries_hypotheses from "../domains/narrative/queries/hypotheses.js";
@@ -1561,6 +1562,7 @@ declare const fullApi: ApiFromModules<{
   "domains/narrative/newsroom/state": typeof domains_narrative_newsroom_state;
   "domains/narrative/newsroom/workflow": typeof domains_narrative_newsroom_workflow;
   "domains/narrative/policies/contentRights": typeof domains_narrative_policies_contentRights;
+  "domains/narrative/queries/correlations": typeof domains_narrative_queries_correlations;
   "domains/narrative/queries/disputes": typeof domains_narrative_queries_disputes;
   "domains/narrative/queries/events": typeof domains_narrative_queries_events;
   "domains/narrative/queries/hypotheses": typeof domains_narrative_queries_hypotheses;

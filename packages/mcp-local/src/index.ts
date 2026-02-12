@@ -27,6 +27,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import Database from "better-sqlite3";
 import { getDb, genId } from "./db.js";
+import { startDashboardServer, getDashboardUrl, stopDashboardServer } from "./dashboard/server.js";
 import { getAnalyticsDb, closeAnalyticsDb, clearOldRecords } from "./analytics/index.js";
 import { AnalyticsTracker } from "./analytics/toolTracker.js";
 import { generateSmartPreset, formatPresetRecommendation, listPresets } from "./analytics/index.js";
@@ -1406,7 +1407,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.22.0" },
+  { name: "nodebench-mcp-methodology", version: "2.23.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
@@ -1624,7 +1625,14 @@ process.on('exit', () => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
+// Start local dashboard server (non-blocking, best-effort)
+let dashboardPort = 0;
+try {
+  dashboardPort = await startDashboardServer(getDb(), 6274);
+} catch { /* dashboard is optional — don't block MCP */ }
+
 const toolsetInfo = cliArgs.includes("--toolsets") || cliArgs.includes("--exclude") || cliArgs.includes("--preset")
   ? ` [gated: ${domainTools.length} domain + 2 meta]`
   : "";
-console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/)`);
+const dashInfo = dashboardPort ? ` dashboard at http://127.0.0.1:${dashboardPort}` : "";
+console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo})`);

@@ -2310,6 +2310,19 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "ship",
   },
 
+  {
+    name: "open_dive_dashboard",
+    category: "ui_ux_dive_v2",
+    tags: ["ui", "dashboard", "dive", "flywheel", "browser", "local", "report", "overview", "session", "open", "visualization"],
+    quickRef: {
+      nextAction: "Dashboard is open. Continue the dive — the dashboard auto-refreshes every 5s to show live progress.",
+      nextTools: ["start_ui_dive", "dive_auto_discover", "dive_code_locate", "dive_fix_verify"],
+      methodology: "agentic_vision",
+      tip: "Opens a local web dashboard (port 6274) showing the full flywheel cycle: routes, components, bugs, fixes, tests, reviews. Like Serena MCP's local page but for UI dives.",
+    },
+    phase: "utility",
+  },
+
   // ═══════════════════════════════════════════
   // MCP BRIDGE — Connect external MCP servers
   // ═══════════════════════════════════════════

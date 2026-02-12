@@ -67,6 +67,35 @@ export interface NarrativeThread {
 /**
  * Narrative event for display
  */
+/**
+ * Speculative risk level for a claim (Phase 7)
+ */
+export type SpeculativeRisk = "grounded" | "mixed" | "speculative";
+
+/**
+ * Entailment verdict for a claim (Phase 7)
+ */
+export type EntailmentVerdict = "entailed" | "neutral" | "contradicted";
+
+/**
+ * Claim kind classification
+ */
+export type ClaimKind = "verifiable" | "interpretation" | "prediction";
+
+/**
+ * Individual claim within a claimSet (Phase 7)
+ */
+export interface ClaimSetItem {
+  claim: string;
+  confidence: number;
+  evidenceArtifactIds: string[];
+  kind?: ClaimKind;
+  uncertainty?: number;
+  speculativeRisk?: SpeculativeRisk;
+  entailmentVerdict?: EntailmentVerdict;
+  hypothesisId?: string;
+}
+
 export interface NarrativeEvent {
   _id: Id<"narrativeEvents">;
   eventId: string;
@@ -82,6 +111,8 @@ export interface NarrativeEvent {
   citationIds: string[];
   isVerified: boolean;
   hasContradictions: boolean;
+  // Phase 7: Claim-level evidence grading
+  claimSet?: ClaimSetItem[];
 }
 
 /**

@@ -23,6 +23,7 @@ import { homedir } from "node:os";
 import { execSync } from "node:child_process";
 import { createConnection } from "node:net";
 import { getDb } from "../db.js";
+import { getDashboardUrl } from "../dashboard/server.js";
 import type { McpTool } from "../types.js";
 
 function genId(prefix: string): string {
@@ -1792,6 +1793,68 @@ ${testBlocks.join("\n\n")}
         review: format === "json" ? undefined : reviewOutput,
         findings: format === "json" ? findings : undefined,
         _hint: `Code review complete: ${score}/100 (${grade}). ${openFindings.length} open finding(s). ${recommendations[0] ?? ""}`,
+      };
+    },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // TOOL: open_dive_dashboard — Open the local dashboard in a browser
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    name: "open_dive_dashboard",
+    description:
+      "Open the NodeBench UI Dive dashboard in a browser. Shows the full flywheel cycle: " +
+      "explored routes, components, interactions, screenshots, bugs, code locations, fixes, " +
+      "changelogs, generated tests, and code reviews. The dashboard auto-refreshes every 5s " +
+      "so you can watch progress live as the dive runs. Pass a sessionId to deep-link to a " +
+      "specific session, or omit to show the latest.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "Optional session ID to deep-link to. Omit for latest session.",
+        },
+        openBrowser: {
+          type: "boolean",
+          description: "Whether to auto-open the URL in the default browser (default: true).",
+          default: true,
+        },
+      },
+    },
+    handler: async (args: { sessionId?: string; openBrowser?: boolean }) => {
+      const url = getDashboardUrl();
+      if (!url) {
+        return {
+          error: "Dashboard server is not running. It starts automatically with the MCP server on port 6274.",
+          _hint: "Restart the MCP server to start the dashboard.",
+        };
+      }
+
+      const fullUrl = args.sessionId
+        ? `${url}#session=${encodeURIComponent(args.sessionId)}`
+        : url;
+
+      // Try to open in default browser
+      if (args.openBrowser !== false) {
+        try {
+          const platform = process.platform;
+          if (platform === "win32") {
+            execSync(`start "" "${fullUrl}"`, { stdio: "ignore" });
+          } else if (platform === "darwin") {
+            execSync(`open "${fullUrl}"`, { stdio: "ignore" });
+          } else {
+            execSync(`xdg-open "${fullUrl}"`, { stdio: "ignore" });
+          }
+        } catch {
+          // Browser open is best-effort
+        }
+      }
+
+      return {
+        url: fullUrl,
+        dashboardPort: url.split(":").pop(),
+        _hint: `Dashboard is live at ${fullUrl}. It auto-refreshes every 5 seconds.`,
       };
     },
   },

@@ -31,6 +31,7 @@ import type {
   CitationMetadata,
 } from "../state";
 import { getWeekNumber } from "../state";
+import type { HypothesisCandidate } from "../../validators";
 
 /**
  * Configuration for Publisher Agent
@@ -229,6 +230,50 @@ function classifyClaimKind(claim: string, hasEvidence = false): {
     speculativeRisk: hasEvidence ? "grounded" : "mixed",
     entailmentVerdict: hasEvidence ? "entailed" : "neutral",
   };
+}
+
+/**
+ * Render a markdown section for competing hypotheses (Phase 7).
+ * Only called when hypothesisCandidates are present on state.
+ */
+function renderHypothesisSection(candidates: HypothesisCandidate[]): string {
+  if (candidates.length === 0) return "";
+  const lines = ["## Competing Hypotheses"];
+  for (const h of candidates) {
+    const risk = h.speculativeRisk === "grounded" ? "grounded"
+      : h.speculativeRisk === "mixed" ? "partly supported"
+      : "interpretive";
+    lines.push(`- **${h.label} (${risk})**: ${h.title} -- ${h.claimForm}`);
+    if (h.falsificationCriteria) {
+      lines.push(`  Falsified if: ${h.falsificationCriteria}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Render a markdown evidence grade block from a claimSet (Phase 7).
+ */
+function renderEvidenceGrade(claimSet: Array<{
+  speculativeRisk?: string;
+  entailmentVerdict?: string;
+}>): string {
+  if (claimSet.length === 0) return "";
+  const counts = { grounded: 0, mixed: 0, speculative: 0 };
+  const verdicts = { entailed: 0, neutral: 0, contradicted: 0 };
+  for (const c of claimSet) {
+    const r = c.speculativeRisk as keyof typeof counts;
+    if (r && r in counts) counts[r]++;
+    const v = c.entailmentVerdict as keyof typeof verdicts;
+    if (v && v in verdicts) verdicts[v]++;
+  }
+  const parts: string[] = [];
+  if (counts.grounded > 0) parts.push(`${counts.grounded} grounded`);
+  if (counts.mixed > 0) parts.push(`${counts.mixed} mixed`);
+  if (counts.speculative > 0) parts.push(`${counts.speculative} speculative`);
+  if (verdicts.contradicted > 0) parts.push(`${verdicts.contradicted} contradicted`);
+  if (parts.length === 0) return "";
+  return `\n\n## Evidence Grade\n${parts.join(" | ")} (${claimSet.length} claims total)`;
 }
 
 /**
@@ -586,13 +631,22 @@ export async function runPublisherAgent(
           publishedAt: parsePublishedAtToMs(n.publishedAt) ?? undefined,
         })).filter(c => c.artifactId);
 
+        // Build post content with Phase 7 hypothesis + evidence grade sections
+        const hypothesisSection = state.hypothesisCandidates?.length
+          ? "\n\n" + renderHypothesisSection(state.hypothesisCandidates)
+          : "";
+        const evidenceGradeSection = claimSet.length > 0
+          ? renderEvidenceGrade(claimSet)
+          : "";
+        const postContent = `## Thesis\n${proposal.thesis}\n\n## Summary\n${summary}${hypothesisSection}${evidenceGradeSection}`;
+
         const createdPostId = await ctx.runMutation(
           internal.domains.narrative.mutations.posts.createPostInternal,
           {
             threadId: createdThreadId as Id<"narrativeThreads">,
             postType: "delta_update",
             title: `New Thread: ${proposal.name}`,
-            content: `## Thesis\n${proposal.thesis}\n\n## Summary\n${summary}`,
+            content: postContent,
             changeSummary: [
               `New narrative thread created`,
               `Thesis: ${proposal.thesis.slice(0, 100)}`,
@@ -789,13 +843,19 @@ export async function runPublisherAgent(
               publishedAt: parsePublishedAtToMs(n.publishedAt) ?? undefined,
             })).filter(c => c.artifactId);
 
+            // Append evidence grade section if claims were generated
+            const updateEvidenceGrade = claimSet.length > 0
+              ? renderEvidenceGrade(claimSet)
+              : "";
+            const updatePostContent = summary + updateEvidenceGrade;
+
             const createdPostId = await ctx.runMutation(
               internal.domains.narrative.mutations.posts.createPostInternal,
               {
                 threadId: targetThreadId as Id<"narrativeThreads">,
                 postType,
                 title: shift.description.slice(0, 100),
-                content: summary,
+                content: updatePostContent,
                 changeSummary,
                 citations: postCitations,
                 agentName: "publisher",
