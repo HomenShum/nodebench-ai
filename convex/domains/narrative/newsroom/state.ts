@@ -10,6 +10,7 @@
 
 import type { Id } from "../../../_generated/dataModel";
 import type { NarrativeEventInput } from "../adapters/types";
+import type { HypothesisCandidate } from "../validators";
 
 /**
  * Raw news item discovered by Scout Agent
@@ -144,14 +145,7 @@ export interface NewsroomState {
   // Analyst Agent outputs
   narrativeShifts: NarrativeShift[];
   /** Phase 7: Hypothesis candidates from Analyst for Publisher to link claims to */
-  hypothesisCandidates?: Array<{
-    label: string;
-    title: string;
-    claimForm: string;
-    measurementApproach: string;
-    speculativeRisk: "grounded" | "mixed" | "speculative";
-    falsificationCriteria?: string;
-  }>;
+  hypothesisCandidates?: HypothesisCandidate[];
 
   // Publisher Agent outputs
   generatedNarratives: GeneratedNarrative[];
