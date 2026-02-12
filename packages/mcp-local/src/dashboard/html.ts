@@ -423,6 +423,78 @@ export function getDashboardHtml(): string {
       h += '</div>';
     }
 
+    // ── Changelog (Carousel) — shown BEFORE screenshots ──────
+    if (logs.length) {
+      // Helper: find the closest screenshot by timestamp to a changelog entry
+      function nearestShot(changeTs) {
+        if (!shots || !shots.length || !changeTs) return null;
+        let best = null, bestDiff = Infinity;
+        const ct = new Date(changeTs).getTime();
+        if (isNaN(ct)) return null;
+        shots.forEach(ss => {
+          const st = new Date(ss.created_at).getTime();
+          if (isNaN(st)) return;
+          const diff = Math.abs(ct - st);
+          if (diff < bestDiff) { bestDiff = diff; best = ss; }
+        });
+        return best;
+      }
+
+      h += sec('Changelog', logs.length+' change'+(logs.length!==1?'s':'')+' during this session');
+      h += '<div class="cl-carousel fade-up" id="cl-carousel">';
+      if (logs.length > 1) {
+        h += '<div class="cl-nav-btn prev" onclick="clNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>';
+        h += '<div class="cl-nav-btn next" onclick="clNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>';
+      }
+      h += '<div class="cl-track" id="cl-track">';
+      logs.forEach((c, idx) => {
+        h += '<div class="cl-card">';
+        h += '<div class="flex items-center gap-3">';
+        h += '<span class="cl-step">'+(idx+1)+'</span>';
+        h += '<span class="cl-time">'+esc(c.created_at)+'</span>';
+        h += '</div>';
+        h += '<div class="cl-desc">'+truncWords(esc(c.description), 280)+'</div>';
+        if (c.files_changed) h += '<div class="cl-files">'+fileChips(c.files_changed)+'</div>';
+        // Before/After screenshots (explicit IDs or nearest by timestamp)
+        const bef = c.before_screenshot_id ? ssMap[c.before_screenshot_id] : null;
+        const aft = c.after_screenshot_id ? ssMap[c.after_screenshot_id] : null;
+        if (bef || aft) {
+          h += '<div class="compare-grid mt-1">';
+          if (bef) {
+            const bSrc = bef.base64_thumbnail ? 'data:image/png;base64,'+bef.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(bef.id)+'/image';
+            h += '<div class="compare-col"><div class="ch">Before</div><img src="'+bSrc+'" alt="Before" loading="lazy" data-lb-src="'+esc(bSrc)+'" data-lb-label="Before" style="cursor:pointer"></div>';
+          }
+          if (aft) {
+            const aSrc = aft.base64_thumbnail ? 'data:image/png;base64,'+aft.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(aft.id)+'/image';
+            h += '<div class="compare-col"><div class="ch">After</div><img src="'+aSrc+'" alt="After" loading="lazy" data-lb-src="'+esc(aSrc)+'" data-lb-label="After" style="cursor:pointer"></div>';
+          }
+          h += '</div>';
+        } else {
+          // No explicit before/after — show nearest screenshot as visual context
+          const nearest = nearestShot(c.created_at);
+          if (nearest) {
+            const nSrc = nearest.base64_thumbnail ? 'data:image/png;base64,'+nearest.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(nearest.id)+'/image';
+            h += '<div class="mt-2 rounded-lg overflow-hidden border border-zinc-800">';
+            h += '<div class="text-[10px] text-zinc-500 px-3 py-1.5 bg-zinc-900/50 flex items-center gap-1.5">';
+            h += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"/></svg>';
+            h += 'Nearest capture: '+esc(nearest.label||'screenshot')+'</div>';
+            h += '<img src="'+nSrc+'" alt="'+esc(nearest.label||'')+'" loading="lazy" style="width:100%;display:block;max-height:200px;object-fit:cover;cursor:pointer" data-lb-src="'+esc(nSrc)+'" data-lb-label="'+esc(nearest.label||'')+'">';
+            h += '</div>';
+          }
+        }
+        h += '</div>';
+      });
+      h += '</div>';
+      if (logs.length > 1) {
+        h += '<div class="cl-dots" id="cl-dots">';
+        logs.forEach((_, idx) => {
+          h += '<div class="cl-dot'+(idx===0?' active':'')+'" data-idx="'+idx+'" onclick="clGoTo('+idx+')"></div>';
+        });
+        h += '</div>';
+      }
+      h += '</div>';
+    }
+
     // ── Screenshots Gallery (interactive) ────────────────────
     if (shots && shots.length) {
       // Store globally for lightbox slideshow
@@ -437,7 +509,6 @@ export function getDashboardHtml(): string {
       const catMap = {};
       shots.forEach((ss, idx) => {
         const lbl = ss.label||'screenshot';
-        // Extract category: "Trace Qa 01 ..." -> "Trace QA", "Mcp Ledger ..." -> "MCP Ledger"
         const words = lbl.split(' ');
         let cat = 'General';
         if (words.length >= 2) {
@@ -456,7 +527,6 @@ export function getDashboardHtml(): string {
         if (!catMap[cat]) catMap[cat] = [];
         catMap[cat].push({ ...ss, _idx: idx });
       });
-      // Merge tiny categories (<=2 items) into "Other" to reduce pill clutter
       const MIN_CAT_SIZE = 3;
       const tinyKeys = Object.keys(catMap).filter(k => catMap[k].length < MIN_CAT_SIZE && k !== 'General');
       if (tinyKeys.length > 1) {
@@ -467,7 +537,6 @@ export function getDashboardHtml(): string {
 
       h += sec('Screenshots', shots.length+' captured image'+(shots.length!==1?'s':''));
 
-      // Toolbar: search + category pills + grid size
       h += '<div class="ss-toolbar">';
       h += '<div class="ss-search-wrap"><svg class="ss-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="ss-search" id="ss-search" placeholder="Filter screenshots..." oninput="filterScreenshots()"></div>';
       h += '<div class="flex-1"></div>';
@@ -476,7 +545,6 @@ export function getDashboardHtml(): string {
       h += '<button class="sz-btn" data-sz="lg" onclick="setGridSize(&#39;lg&#39;)" title="Large"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="6.5" rx="1.5"/><rect x="1" y="8.5" width="14" height="6.5" rx="1.5"/></svg></button>';
       h += '</div>';
 
-      // Category filter pills
       h += '<div class="flex flex-wrap gap-1.5 mb-4" id="ss-cat-bar">';
       h += '<span class="cat-pill active" data-cat="all" onclick="filterCat(&#39;all&#39;)">All<span class="cat-count">'+shots.length+'</span></span>';
       cats.forEach(cat => {
@@ -484,7 +552,6 @@ export function getDashboardHtml(): string {
       });
       h += '</div>';
 
-      // Grouped grid
       h += '<div id="ss-gallery">';
       const INITIAL_SHOW = 8;
       cats.forEach(cat => {
@@ -509,56 +576,6 @@ export function getDashboardHtml(): string {
         }
         h += '</div>';
       });
-      h += '</div>';
-    }
-
-    // ── Changelog (Carousel) ──────────────────────────────────
-    if (logs.length) {
-      h += sec('Changelog', logs.length+' change'+(logs.length!==1?'s':'')+' during this session');
-      h += '<div class="cl-carousel fade-up" id="cl-carousel">';
-      // Nav arrows (hidden if only 1 card)
-      if (logs.length > 1) {
-        h += '<div class="cl-nav-btn prev" onclick="clNav(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>';
-        h += '<div class="cl-nav-btn next" onclick="clNav(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></div>';
-      }
-      h += '<div class="cl-track" id="cl-track">';
-      logs.forEach((c, idx) => {
-        h += '<div class="cl-card">';
-        // Header row: step badge + timestamp
-        h += '<div class="flex items-center gap-3">';
-        h += '<span class="cl-step">'+(idx+1)+'</span>';
-        h += '<span class="cl-time">'+esc(c.created_at)+'</span>';
-        h += '</div>';
-        // Description
-        h += '<div class="cl-desc">'+truncWords(esc(c.description), 280)+'</div>';
-        // File chips
-        if (c.files_changed) h += '<div class="cl-files">'+fileChips(c.files_changed)+'</div>';
-        // Before/After screenshots
-        const bef = c.before_screenshot_id ? ssMap[c.before_screenshot_id] : null;
-        const aft = c.after_screenshot_id ? ssMap[c.after_screenshot_id] : null;
-        if (bef || aft) {
-          h += '<div class="compare-grid mt-1">';
-          if (bef) {
-            const bSrc = bef.base64_thumbnail ? 'data:image/png;base64,'+bef.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(bef.id)+'/image';
-            h += '<div class="compare-col"><div class="ch">Before</div><img src="'+bSrc+'" alt="Before" loading="lazy" data-lb-src="'+esc(bSrc)+'" data-lb-label="Before" style="cursor:pointer"></div>';
-          }
-          if (aft) {
-            const aSrc = aft.base64_thumbnail ? 'data:image/png;base64,'+aft.base64_thumbnail : '/api/screenshot/'+encodeURIComponent(aft.id)+'/image';
-            h += '<div class="compare-col"><div class="ch">After</div><img src="'+aSrc+'" alt="After" loading="lazy" data-lb-src="'+esc(aSrc)+'" data-lb-label="After" style="cursor:pointer"></div>';
-          }
-          h += '</div>';
-        }
-        h += '</div>';
-      });
-      h += '</div>';
-      // Dot indicators
-      if (logs.length > 1) {
-        h += '<div class="cl-dots" id="cl-dots">';
-        logs.forEach((_, idx) => {
-          h += '<div class="cl-dot'+(idx===0?' active':'')+'" data-idx="'+idx+'" onclick="clGoTo('+idx+')"></div>';
-        });
-        h += '</div>';
-      }
       h += '</div>';
     }
 
