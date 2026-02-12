@@ -573,12 +573,13 @@ export const getDocumentRecommendations = query({
       return [];
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
-      )
-      .unique();
+    // Look up user by email (users table uses Convex Auth, no by_token index)
+    const user = identity.email
+      ? await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("email"), identity.email))
+          .first()
+      : null;
 
     if (!user) {
       return [];
@@ -626,12 +627,13 @@ export const recordRecommendationEngagement = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return;
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
-      )
-      .unique();
+    // Look up user by email (users table uses Convex Auth, no by_token index)
+    const user = identity.email
+      ? await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("email"), identity.email))
+          .first()
+      : null;
 
     if (!user) return;
 

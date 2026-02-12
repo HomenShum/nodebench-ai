@@ -67,6 +67,7 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
             const id = match ? decodeURIComponent(match[1]) : null;
             return { view: 'spreadsheets', entityName: null, spreadsheetId: id, showResearchDossier: false, researchTab: "overview" };
         }
+        if (pathname.startsWith('/workspace')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/documents') || pathname.startsWith('/docs')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/showcase') || pathname.startsWith('/demo')) return { view: 'showcase', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/footnotes') || pathname.startsWith('/sources')) return { view: 'footnotes', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
