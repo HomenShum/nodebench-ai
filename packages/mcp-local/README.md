@@ -5,10 +5,12 @@
 One command gives your agent structured research, risk assessment, 3-layer testing, quality gates, and a persistent knowledge base — so every fix is thorough and every insight compounds into future work.
 
 ```bash
-# Default (50 tools) - complete AI Flywheel methodology
+# Claude Code — AI Flywheel core (50 tools, recommended)
 claude mcp add nodebench -- npx -y nodebench-mcp
 
-# Full (175 tools) - everything including vision, web, files, etc.
+# Windsurf / Cursor — same tools, add to your MCP config (see setup below)
+
+# Need everything? Vision, web, files, parallel agents, etc.
 claude mcp add nodebench -- npx -y nodebench-mcp --preset full
 ```
 
@@ -37,16 +39,6 @@ Every additional tool call produces a concrete artifact — an issue found, a ri
 
 ---
 
-## Who's Using It
-
-**Vision engineer** — Built agentic vision analysis using GPT 5.2 with Set-of-Mark (SoM) for boundary boxing, similar to Google Gemini 3 Flash's agentic code execution approach. Uses NodeBench's verification pipeline to validate detection accuracy across screenshot variants before shipping model changes. (Uses `full` preset for vision tools)
-
-**QA engineer** — Transitioned a manual QA workflow website into an AI agent-driven app for a pet care messaging platform. Uses NodeBench's quality gates, verification cycles, and eval runs to ensure the AI agent handles edge cases that manual QA caught but bare AI agents miss. (Uses `default` preset — all core AI Flywheel tools)
-
-Both found different subsets of the tools useful — which is why NodeBench ships with just 2 `--preset` levels. The `default` preset (50 tools) covers the complete AI Flywheel methodology with ~76% fewer tools. Add `--preset full` for specialized tools (vision, web, files, parallel agents, security).
-
----
-
 ## How It Works — 3 Real Examples
 
 ### Example 1: Bug fix
@@ -68,7 +60,7 @@ You type: *"I launched 3 Claude Code subagents but they keep overwriting each ot
 
 **Without NodeBench:** Both agents see the same bug and both implement a fix. The third agent re-investigates what agent 1 already solved. Agent 2 hits context limit mid-fix and loses work.
 
-**With NodeBench MCP:** Each subagent calls `claim_agent_task` to lock its work. Roles are assigned so they don't overlap. Context budget is tracked. Progress notes ensure handoff without starting from scratch.
+**With NodeBench MCP:** Each subagent calls `claim_agent_task` to lock its work. Roles are assigned so they don't overlap. Context budget is tracked. Progress notes ensure handoff without starting from scratch. (Requires `--preset multi_agent` or `--preset full`.)
 
 ### Example 3: Knowledge compounding
 
@@ -78,14 +70,16 @@ Tasks 1-3 start with zero prior knowledge. By task 9, the agent finds 2+ relevan
 
 ## Quick Start
 
-### Install (30 seconds)
+### Claude Code (CLI)
 
 ```bash
-# Default (50 tools) - complete AI Flywheel methodology
+# Recommended — AI Flywheel core (50 tools)
 claude mcp add nodebench -- npx -y nodebench-mcp
 
-# Full (175 tools) - everything including vision, UI capture, web, GitHub, docs, parallel, local files, GAIA solvers
-claude mcp add nodebench -- npx -y nodebench-mcp --preset full
+# Or pick a themed preset for your workflow
+claude mcp add nodebench -- npx -y nodebench-mcp --preset web_dev
+claude mcp add nodebench -- npx -y nodebench-mcp --preset research
+claude mcp add nodebench -- npx -y nodebench-mcp --preset data
 ```
 
 Or add to `~/.claude/settings.json` or `.claude.json`:
@@ -101,11 +95,54 @@ Or add to `~/.claude/settings.json` or `.claude.json`:
 }
 ```
 
-### First prompts to try
+### Windsurf
+
+Add to `~/.codeium/windsurf/mcp_config.json` (or open Settings → MCP → View raw config):
+
+```json
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json` in your project root (or open Settings → MCP):
+
+```json
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp"]
+    }
+  }
+}
+```
+
+### Other MCP Clients
+
+Any MCP-compatible client works. The config format is the same — point `command` to `npx` and `args` to `["-y", "nodebench-mcp"]`. Add `"--preset", "<name>"` to the args array for themed presets.
+
+### First Prompts to Try
 
 ```
 # See what's available
 > Use discover_tools("verify my implementation") to find relevant tools
+
+# Page through results
+> Use discover_tools({ query: "verify", limit: 5, offset: 5 }) for page 2
+
+# Expand results via conceptual neighbors
+> Use discover_tools({ query: "deploy changes", expand: 3 }) for broader discovery
+
+# Explore a tool's neighborhood (multi-hop)
+> Use get_tool_quick_ref({ tool_name: "run_recon", depth: 2 }) to see 2-hop graph
 
 # Get methodology guidance
 > Use getMethodology("overview") to see all workflows
@@ -117,82 +154,49 @@ Or add to `~/.claude/settings.json` or `.claude.json`:
 > Use getMethodology("mandatory_flywheel") and follow the 6 steps
 ```
 
-### Usage Analytics & Smart Presets
-
-NodeBench MCP tracks tool usage locally and can recommend optimal presets based on your project type and usage patterns.
-
-**Get smart preset recommendation:**
-```bash
-npx nodebench-mcp --smart-preset
-```
-
-This analyzes your project (detects language, framework, project type) and usage history to recommend the best preset.
-
-**View usage statistics:**
-```bash
-npx nodebench-mcp --stats
-```
-
-Shows tool usage patterns, most used toolsets, and success rates for the last 30 days.
-
-**Export usage data:**
-```bash
-npx nodebench-mcp --export-stats > usage-stats.json
-```
-
-**List all available presets:**
-```bash
-npx nodebench-mcp --list-presets
-```
-
-**Clear analytics data:**
-```bash
-npx nodebench-mcp --reset-stats
-```
-
-All analytics data is stored locally in `~/.nodebench/analytics.db` and never leaves your machine.
-
-### Optional: API keys for web search and vision
+### Optional: API Keys
 
 ```bash
 export GEMINI_API_KEY="your-key"        # Web search + vision (recommended)
 export GITHUB_TOKEN="your-token"        # GitHub (higher rate limits)
 ```
 
-### Capability benchmarking (GAIA, gated)
+Set these as environment variables, or add them to the `env` block in your MCP config:
 
-NodeBench MCP treats tools as "Access". To measure real capability lift, we benchmark baseline (LLM-only) vs tool-augmented accuracy on GAIA (gated).
-
-Notes:
-- GAIA fixtures and attachments are written under `.cache/gaia` (gitignored). Do not commit GAIA content.
-- Fixture generation requires `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN`.
-
-Web lane (web_search + fetch_url):
-```bash
-npm run mcp:dataset:gaia:capability:refresh
-NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test
+```json
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp"],
+      "env": {
+        "GEMINI_API_KEY": "your-key",
+        "GITHUB_TOKEN": "your-token"
+      }
+    }
+  }
+}
 ```
 
-File-backed lane (PDF / XLSX / CSV / DOCX / PPTX / JSON / JSONL / TXT / ZIP via `local_file` tools):
+### Usage Analytics & Smart Presets
+
+NodeBench MCP tracks tool usage locally and can recommend optimal presets based on your project type and usage patterns.
+
 ```bash
-npm run mcp:dataset:gaia:capability:files:refresh
-NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:files:test
+npx nodebench-mcp --smart-preset       # Get AI-powered preset recommendation
+npx nodebench-mcp --stats              # Show usage statistics (last 30 days)
+npx nodebench-mcp --export-stats       # Export usage data to JSON
+npx nodebench-mcp --list-presets       # List all available presets
+npx nodebench-mcp --reset-stats        # Clear analytics data
 ```
 
-Modes:
-- Stable: `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag`
-- More realistic: `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent`
-
-Notes:
-- ZIP attachments require `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (multi-step extract -> parse).
+All analytics data is stored locally in `~/.nodebench/analytics.db` and never leaves your machine.
 
 ---
 
-## What You Get
+## What You Get — The AI Flywheel
 
-### The AI Flywheel — Core Methodology
-
-The `default` preset (50 tools) gives you the complete AI Flywheel methodology from [AI_FLYWHEEL.md](https://github.com/HomenShum/nodebench-ai/blob/main/AI_FLYWHEEL.md):
+The default setup (no `--preset` flag) gives you **50 tools** that implement the complete [AI Flywheel](https://github.com/HomenShum/nodebench-ai/blob/main/AI_FLYWHEEL.md) methodology — two interlocking loops that compound quality over time:
 
 ```
 Research → Risk → Implement → Test (3 layers) → Eval → Gate → Learn → Ship
@@ -203,21 +207,50 @@ Research → Risk → Implement → Test (3 layers) → Eval → Gate → Learn 
 **Inner loop** (per change): 6-phase verification ensures correctness.
 **Outer loop** (over time): Eval-driven development ensures improvement.
 
-### Recommended Workflow: Start with Default
+### What's in the Default Preset (50 Tools)
 
-The `default` preset includes 50 tools in 3 groups:
+The default preset has 3 layers:
 
-1. **Discovery tools (6)** — *"What tool should I use?"* — `findTools`, `getMethodology`, `check_mcp_setup`, `discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`. These help agents find the right tool via keyword search, 14-strategy hybrid search, workflow chains, and methodology guides.
+**Layer 1 — Discovery (6 tools):** *"What tool should I use?"*
 
-2. **Dynamic loading tools (6)** — *"Add/remove tools from my session"* — `load_toolset`, `unload_toolset`, `list_available_toolsets`, `call_loaded_tool`, `smart_select_tools`, `get_ab_test_report`. These let agents manage their own context budget by loading toolsets on demand and unloading them when done.
+| Tool | Purpose |
+|---|---|
+| `findTools` | Keyword search across all tools |
+| `getMethodology` | Access methodology guides (20 topics) |
+| `check_mcp_setup` | Diagnostic wizard — checks env vars, API keys, optional deps |
+| `discover_tools` | 14-strategy hybrid search with pagination (`offset`), result expansion (`expand`), and `relatedTools` neighbors |
+| `get_tool_quick_ref` | Quick reference with multi-hop BFS traversal (`depth` 1-3) — discovers tools 2-3 hops away |
+| `get_workflow_chain` | Step-by-step recipes for 28 common workflows |
 
-3. **Core methodology (38)** — *"Do the work"* — verification (8), eval (6), quality_gate (4), learning (4), flywheel (4), recon (7), security (3), boilerplate (2). These are the AI Flywheel tools that enforce structured research, risk assessment, 3-layer testing, quality gates, and persistent knowledge.
+**Layer 2 — Dynamic Loading (6 tools):** *"Add/remove tools from my session"*
 
-**Self-escalate**: Add `--preset full` when you need vision, web, files, or parallel agents.
+| Tool | Purpose |
+|---|---|
+| `load_toolset` | Add a toolset to the current session on demand |
+| `unload_toolset` | Remove a toolset to recover context budget |
+| `list_available_toolsets` | See all 39 toolsets with tool counts |
+| `call_loaded_tool` | Proxy for clients that don't support dynamic tool updates |
+| `smart_select_tools` | LLM-powered tool selection (sends compact catalog to fast model) |
+| `get_ab_test_report` | Compare static vs dynamic loading performance |
 
-This approach minimizes token overhead while ensuring agents have access to the complete methodology when needed.
+**Layer 3 — AI Flywheel Core Methodology (38 tools):** *"Do the work"*
 
-### Core workflow (use these every session)
+| Domain | Tools | What You Get |
+|---|---|---|
+| **verification** | 8 | `start_verification_cycle`, `log_gap`, `resolve_gap`, `get_cycle_status`, `triple_verify`, `run_closed_loop`, `compare_cycles`, `list_cycles` |
+| **eval** | 6 | `start_eval_run`, `record_eval_result`, `get_eval_summary`, `compare_eval_runs`, `get_eval_diff`, `list_eval_runs` |
+| **quality_gate** | 4 | `run_quality_gate`, `create_gate_preset`, `get_gate_history`, `list_gate_presets` |
+| **learning** | 4 | `record_learning`, `search_all_knowledge`, `get_knowledge_stats`, `list_recent_learnings` |
+| **flywheel** | 4 | `run_mandatory_flywheel`, `promote_to_eval`, `investigate_blind_spot`, `get_flywheel_status` |
+| **recon** | 7 | `run_recon`, `log_recon_finding`, `assess_risk`, `get_recon_summary`, `list_recon_sessions`, `check_framework_version`, `search_recon_findings` |
+| **security** | 3 | `scan_dependencies`, `analyze_code_security`, `scan_terminal_output` |
+| **boilerplate** | 2 | `scaffold_nodebench_project`, `get_boilerplate_status` |
+
+> **Note:** `skill_update` (4 tools for rule file freshness tracking) is available via `load_toolset("skill_update")` when needed.
+
+### Core Workflow — Use These Every Session
+
+These are the AI Flywheel tools documented in [AI_FLYWHEEL.md](https://github.com/HomenShum/nodebench-ai/blob/main/AI_FLYWHEEL.md):
 
 | When you... | Use this | Impact |
 |---|---|---|
@@ -230,30 +263,59 @@ This approach minimizes token overhead while ensuring agents have access to the 
 | Gate before deploy | `run_quality_gate` | Boolean rules enforced — violations block deploy |
 | Bank knowledge | `record_learning` | Persisted findings compound across future sessions |
 | Verify completeness | `run_mandatory_flywheel` | 6-step minimum — catches dead code and intent mismatches |
+| Re-examine for 11/10 | Fresh-eyes review | After completing, re-examine for exceptional quality — a11y, resilience, polish |
 
-### When running parallel agents (Claude Code subagents, worktrees)
+### Mandatory After Any Non-Trivial Change
 
-| When you... | Use this | Impact | Preset |
+1. **Static analysis**: `tsc --noEmit` and linter checks
+2. **Happy-path test**: Run the changed functionality with valid inputs
+3. **Failure-path test**: Validate expected error handling + edge cases
+4. **Gap analysis**: Dead code, unused vars, missing integrations, intent mismatch
+5. **Fix and re-verify**: Rerun steps 1-3 from scratch after any fix
+6. **Deploy and document**: Ship + write down what changed and why
+7. **Re-examine for 11/10**: Re-examine the completed work with fresh eyes. Not "does it work?" but "is this the best it can be?" Check: prefers-reduced-motion, color-blind safety, print stylesheet, error resilience (partial failures, retry with backoff), keyboard efficiency (skip links, Ctrl+K search), skeleton loading, staggered animations, progressive disclosure for large datasets. Fix what you find, then re-examine your fixes.
+
+---
+
+## Themed Presets — Choose Your Workflow
+
+The default preset covers the AI Flywheel. For specialized workflows, pick a themed preset that adds domain-specific tools on top:
+
+| Preset | Tools | What it adds to the default | Use case |
 |---|---|---|---|
-| Prevent duplicate work | `claim_agent_task` / `release_agent_task` | Task locks — each task owned by exactly one agent | `full` |
-| Specialize agents | `assign_agent_role` | 7 roles: implementer, test_writer, critic, etc. | `full` |
-| Track context usage | `log_context_budget` | Prevents context exhaustion mid-fix | `full` |
-| Validate against reference | `run_oracle_comparison` | Compare output against known-good oracle | `full` |
-| Orient new sessions | `get_parallel_status` | See what all agents are doing and what's blocked | `full` |
-| Bootstrap any repo | `bootstrap_parallel_agents` | Auto-detect gaps, scaffold coordination infra | `full` |
+| **default** ⭐ | **50** | — | Bug fixes, features, refactoring, code review |
+| `web_dev` | 102 | + vision, UI capture, SEO, git workflow, architect, UI/UX dive, MCP bridge, PR reports | Web projects with visual QA |
+| `mobile` | 91 | + vision, UI capture, flicker detection, UI/UX dive, MCP bridge | Mobile apps with screenshot analysis |
+| `academic` | 82 | + research writing, LLM, web, local file parsing | Academic papers and research |
+| `multi_agent` | 79 | + parallel agents, self-eval, session memory, pattern mining, TOON | Multi-agent coordination |
+| `data` | 74 | + local file parsing (CSV/XLSX/PDF/DOCX/JSON), LLM, web | Data analysis and file processing |
+| `content` | 69 | + LLM, critter, email, RSS, platform queue, architect | Content pipelines and publishing |
+| `research` | 67 | + web search, LLM, RSS feeds, email, docs | Research workflows |
+| `devops` | 64 | + git compliance, session memory, benchmarks, pattern mining, PR reports | CI/CD and operations |
+| `full` | 218 | + everything (all 39 toolsets) | Maximum coverage |
 
-**Note:** Parallel agent coordination tools are only available in the `full` preset. For single-agent workflows, the `default` preset provides all the core AI Flywheel tools you need.
+```bash
+# Claude Code
+claude mcp add nodebench -- npx -y nodebench-mcp --preset web_dev
 
-### Research and discovery
+# Windsurf / Cursor — add --preset to args
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp", "--preset", "web_dev"]
+    }
+  }
+}
+```
 
-| When you... | Use this | Impact | Preset |
-|---|---|---|---|
-| Search the web | `web_search` | Gemini/OpenAI/Perplexity — latest docs and updates | `full` |
-| Fetch a URL | `fetch_url` | Read any page as clean markdown | `full` |
-| Find GitHub repos | `search_github` + `analyze_repo` | Discover and evaluate libraries and patterns | `full` |
-| Analyze screenshots | `analyze_screenshot` | AI vision (Gemini 3 Flash/GPT-5-mini/Claude) for UI QA | `full` |
+### Let AI Pick Your Preset
 
-**Note:** Web search, GitHub, and vision tools are only available in the `full` preset. The `default` preset focuses on the core AI Flywheel methodology (verification, eval, learning, recon, flywheel, security, boilerplate).
+```bash
+npx nodebench-mcp --smart-preset
+```
+
+Analyzes your project (language, framework, project type) and usage history to recommend the best preset.
 
 ---
 
@@ -280,9 +342,135 @@ The comparative benchmark validates this with 9 real production scenarios:
 
 ---
 
-## Progressive Discovery
+## Governance Model — What Your Agent Can and Can't Do
 
-The `default` preset (50 tools) provides the complete AI Flywheel methodology with discovery built in. The progressive disclosure system helps agents find exactly what they need:
+NodeBench enforces decision rights so you know exactly what your agent does autonomously vs what requires your approval. This is the "King Mode" layer — you delegate outcomes, not tasks, and the governance model ensures the agent stays within bounds.
+
+### Autonomous (agent acts without asking)
+
+These actions are safe for the agent to perform without human confirmation:
+
+- Run tests and fix failing assertions
+- Refactor within existing patterns (no new dependencies)
+- Add logging, comments, and documentation
+- Update type definitions to match implementation
+- Fix lint errors and format code
+
+### Requires Confirmation (agent asks before acting)
+
+These actions trigger a confirmation prompt because they have broader impact:
+
+- Changes to auth, security, or permissions logic
+- Database migrations or schema changes
+- API contract changes (new endpoints, changed signatures)
+- Adding or removing dependencies
+- Deleting code, files, or features
+- Changes to CI/CD configuration
+
+### Quality Gates (enforced before any deploy)
+
+Every change must pass these gates before the agent can consider the work done:
+
+| Gate | What it checks | Failure behavior |
+|------|---------------|------------------|
+| Static analysis | `tsc --noEmit`, lint passes | Agent must fix before proceeding |
+| Unit tests | All tests pass | Agent must fix or explain why skipped |
+| Integration tests | E2E scenarios pass | Agent must fix or flag as known issue |
+| Verification cycle | No unresolved HIGH gaps | Agent must resolve or escalate |
+| Knowledge banked | Learning recorded for future | Agent must document what it learned |
+
+### How this works in practice
+
+**With Claude Code:**
+```
+> "Fix the LinkedIn posting bug"
+
+Agent runs recon → finds 3 related issues
+Agent logs gaps → 2 HIGH, 1 MEDIUM
+Agent fixes all 3 → runs tests → all pass
+Agent hits quality gate → knowledge not banked
+Agent records learning → gate passes
+Agent: "Fixed. 3 issues resolved, knowledge banked."
+```
+
+**With Cursor Agent:**
+```
+> "Add rate limiting to the API"
+
+Agent runs risk assessment → HIGH (auth-adjacent)
+Agent: "This touches auth middleware. Confirm?"
+You: "Yes, proceed"
+Agent implements → tests pass → gate passes
+Agent: "Done. Added rate limiting with tests."
+```
+
+---
+
+## Case Studies
+
+### Case Study 1: Bug Fix with Knowledge Compounding
+
+**Context:** Solo founder using Claude Code to fix a recurring bug in their SaaS.
+
+**Before NodeBench:**
+- Agent fixes the immediate bug
+- Runs tests once, passes
+- Ships
+- 3 days later, related bug appears in production
+- Agent re-investigates from scratch
+
+**With NodeBench:**
+- Agent runs `run_recon` → finds 2 related issues
+- Agent runs `log_gap` → tracks all 3 issues
+- Agent fixes all 3 → runs 3-layer tests
+- Agent runs `run_quality_gate` → passes
+- Agent runs `record_learning` → banks the pattern
+- Next similar bug: agent finds the prior learning in `search_all_knowledge` and fixes in half the time
+
+**Result:** Time to fix similar bugs decreased 50% over 30 days.
+
+### Case Study 2: Parallel Agents Without Conflicts
+
+**Context:** Developer spawns 3 Claude Code subagents to fix different bugs in the same codebase.
+
+**Before NodeBench:**
+- Agent 1 and Agent 2 both see the same bug
+- Both implement a fix
+- Agent 2's fix overwrites Agent 1's fix
+- Agent 3 re-investigates what Agent 1 already solved
+- Agent 2 hits context limit mid-fix, loses work
+
+**With NodeBench:**
+- Each agent calls `claim_agent_task` → locks its work
+- Roles assigned via `assign_agent_role` → no overlap
+- Context budget tracked via `log_context_budget`
+- Progress notes shared via `release_agent_task`
+- All 3 bugs fixed without conflict
+
+**Result:** Parallel agent success rate increased from 60% to 95%.
+
+### Case Study 3: Security-Sensitive Change
+
+**Context:** Small team using Cursor Agent to add a new API endpoint.
+
+**Before NodeBench:**
+- Agent implements the endpoint
+- Tests pass
+- Ships
+- 2 weeks later, security audit finds auth bypass
+
+**With NodeBench:**
+- Agent runs `assess_risk` → HIGH (auth-adjacent)
+- Agent prompts for confirmation before proceeding
+- Human reviews the planned changes
+- Security issue caught before code is written
+- Agent implements with security constraints
+
+**Result:** Security-related incidents from AI code reduced to zero.
+
+---
+
+## Progressive Discovery
 
 ### Multi-modal search engine
 
@@ -309,19 +497,71 @@ The `discover_tools` search engine scores tools using **14 parallel strategies**
 
 Pass `explain: true` to see exactly which strategies contributed to each score.
 
-### Quick refs — what to do next
+### Cursor pagination
+
+Page through large result sets with `offset` and `limit`:
+
+```
+> discover_tools({ query: "verify", limit: 5 })
+# Returns: { results: [...5 tools], totalMatches: 76, hasMore: true, offset: 0 }
+
+> discover_tools({ query: "verify", limit: 5, offset: 5 })
+# Returns: { results: [...next 5 tools], totalMatches: 76, hasMore: true, offset: 5 }
+```
+
+`totalMatches` is stable across pages. `hasMore` tells you whether another page exists.
+
+### Result expansion via relatedTools
+
+Broaden results by following conceptual neighbors:
+
+```
+> discover_tools({ query: "deploy and ship changes", expand: 3 })
+# Top 3 results' relatedTools neighbors are added at 50% parent score
+# "deploy" finds git_workflow tools → expansion adds quality_gate, flywheel tools
+# Expanded results include depth: 1 and expandedFrom fields
+```
+
+Dogfood A/B results: 5/8 queries gained recall lift (+2 to +8 new tools per query). "deploy and ship changes" went from 82 → 90 matches.
+
+### Quick refs — what to do next (with multi-hop)
 
 Every tool response auto-appends a `_quickRef` with:
 - **nextAction**: What to do immediately after this tool
-- **nextTools**: Recommended follow-up tools
+- **nextTools**: Recommended follow-up tools (workflow-sequential)
+- **relatedTools**: Conceptually adjacent tools (same domain, shared tags — 949 connections across 218 tools)
 - **methodology**: Which methodology guide to consult
 - **tip**: Practical usage advice
 
-Call `get_tool_quick_ref("tool_name")` for any tool's guidance.
+Call `get_tool_quick_ref("tool_name")` for any tool's guidance — or use **multi-hop BFS traversal** to discover tools 2-3 hops away:
+
+```
+> get_tool_quick_ref({ tool_name: "start_verification_cycle", depth: 1 })
+# Returns: direct neighbors via nextTools + relatedTools (hopDistance: 1)
+
+> get_tool_quick_ref({ tool_name: "start_verification_cycle", depth: 2 })
+# Returns: direct neighbors + their neighbors (hopDistance: 1 and 2)
+# Discovers 34 additional tools reachable in 2 hops
+
+> get_tool_quick_ref({ tool_name: "start_verification_cycle", depth: 3 })
+# Returns: 3-hop BFS traversal — full neighborhood graph
+```
+
+Each discovered tool includes `hopDistance` (1-3) and `reachedVia` (which parent tool led to it). BFS prevents cycles — no tool appears at multiple depths.
+
+### `nextTools` vs `relatedTools`
+
+| | `nextTools` | `relatedTools` |
+|---|---|---|
+| **Meaning** | Workflow-sequential ("do X then Y") | Conceptually adjacent ("if doing X, consider Y") |
+| **Example** | `run_recon` → `log_recon_finding` | `run_recon` → `search_all_knowledge`, `bootstrap_project` |
+| **Total connections** | 498 | 949 (191% amplification) |
+| **Overlap** | — | 0% (all net-new connections) |
+| **Cross-domain** | Mostly same-domain | 90% bridge different domains |
 
 ### Workflow chains — step-by-step recipes
 
-24 pre-built chains for common workflows:
+28 pre-built chains for common workflows:
 
 | Chain | Steps | Use case |
 |---|---|---|
@@ -349,6 +589,10 @@ Call `get_tool_quick_ref("tool_name")` for any tool's guidance.
 | `pr_review` | 5 | Pull request review |
 | `seo_audit` | 6 | Full SEO audit |
 | `voice_pipeline` | 6 | Voice pipeline implementation |
+| `intentionality_check` | 4 | Verify agent intent before action |
+| `research_digest` | 6 | Summarize research across sessions |
+| `email_assistant` | 5 | Email triage and response |
+| `pr_creation` | 6 | Visual PR creation from UI Dive sessions |
 
 Call `get_workflow_chain("new_feature")` to get the step-by-step sequence.
 
@@ -365,120 +609,21 @@ Or use the scaffold tool: `scaffold_nodebench_project` creates AGENTS.md, .mcp.j
 
 ---
 
-## The Methodology Pipeline
+## Scaling MCP: How We Solved the 5 Biggest Industry Problems
 
-NodeBench MCP isn't just a bag of tools — it's a pipeline. Each step feeds the next:
-
-```
-Research → Risk → Implement → Test (3 layers) → Eval → Gate → Learn → Ship
-    ↑                                                              │
-    └──────────── knowledge compounds ─────────────────────────────┘
-```
-
-**Inner loop** (per change): 6-phase verification ensures correctness.
-**Outer loop** (over time): Eval-driven development ensures improvement.
-**Together**: The AI Flywheel — every verification produces eval artifacts, every regression triggers verification.
-
-### The 6-Phase Verification Process (Inner Loop)
-
-Every non-trivial change should go through these 6 steps:
-
-1. **Context Gathering** — Parallel subagent deep dive into SDK specs, implementation patterns, dispatcher/backend audit, external API research
-2. **Gap Analysis** — Compare findings against current implementation, categorize gaps (CRITICAL/HIGH/MEDIUM/LOW)
-3. **Implementation** — Apply fixes following production patterns exactly
-4. **Testing & Validation** — 5 layers: static analysis, unit tests, integration tests, manual verification, live end-to-end
-5. **Self-Closed-Loop Verification** — Parallel verification subagents check spec compliance, functional correctness, argument compatibility
-6. **Document Learnings** — Update documentation with edge cases and key learnings
-
-### The Eval-Driven Development Loop (Outer Loop)
-
-1. **Run Eval Batch** — Send test cases through the target workflow
-2. **Capture Telemetry** — Collect complete agent execution trace
-3. **LLM-as-Judge Analysis** — Score goal alignment, tool efficiency, output quality
-4. **Retrieve Results** — Aggregate pass/fail rates and improvement suggestions
-5. **Fix, Optimize, Enhance** — Apply changes based on judge feedback
-6. **Re-run Evals** — Deploy only if scores improve
-
-**Rule: No change ships without an eval improvement.**
-
-Ask the agent: `Use getMethodology("overview")` to see all 20 methodology topics.
+MCP tool servers face 5 systemic problems documented across Anthropic, Microsoft Research, and the open-source community. We researched each one, built solutions, and tested them with automated eval harnesses.
 
 ---
 
-## Parallel Agents with Claude Code
+### Problem 1: Context Bloat (too many tool definitions eat the context window)
 
-Based on Anthropic's ["Building a C Compiler with Parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler) (Feb 2026).
-
-**When to use:** Only when running 2+ agent sessions. Single-agent workflows use the standard pipeline above.
-
-**How it works with Claude Code's Task tool:**
-
-1. **COORDINATOR** (your main session) breaks work into independent tasks
-2. Each **Task tool** call spawns a subagent with instructions to:
-   - `claim_agent_task` — lock the task
-   - `assign_agent_role` — specialize (implementer, test_writer, critic, etc.)
-   - Do the work
-   - `release_agent_task` — handoff with progress note
-3. Coordinator calls `get_parallel_status` to monitor all subagents
-4. Coordinator runs `run_quality_gate` on the aggregate result
-
-**MCP Prompts available:**
-- `claude-code-parallel` — Step-by-step Claude Code subagent coordination
-- `parallel-agent-team` — Full team setup with role assignment
-- `oracle-test-harness` — Validate outputs against known-good reference
-- `bootstrap-parallel-agents` — Scaffold parallel infra for any repo
-
-**Note:** Parallel agent coordination tools are only available in the `full` preset. For single-agent workflows, the `default` preset provides all the core AI Flywheel tools you need.
-
----
-
-## Toolset Gating
-
-The default preset (50 tools) gives you the complete AI Flywheel methodology with ~78% fewer tools compared to the full suite (175 tools).
-
-### Presets — Choose What You Need
-
-| Preset | Tools | Domains | Use case |
-|---|---|---|---|
-| **default** ⭐ | **50** | 7 | **Recommended** — Complete AI Flywheel: verification, eval, quality_gate, learning, flywheel, recon, boilerplate + discovery + dynamic loading |
-| `full` | 175 | 34 | Everything — vision, UI capture, web, GitHub, docs, parallel, local files, GAIA solvers, security, email, RSS, architect |
-
-```bash
-# ⭐ Recommended: Default (50 tools) - complete AI Flywheel
-claude mcp add nodebench -- npx -y nodebench-mcp
-
-# Everything: All 175 tools
-claude mcp add nodebench -- npx -y nodebench-mcp --preset full
-```
-
-Or in config:
-
-```json
-{
-  "mcpServers": {
-    "nodebench": {
-      "command": "npx",
-      "args": ["-y", "nodebench-mcp"]
-    }
-  }
-}
-```
-
-### Scaling MCP: How We Solved the 5 Biggest Industry Problems
-
-MCP tool servers face 5 systemic problems documented across Anthropic, Microsoft Research, and the open-source community. We researched each one, built solutions, and tested them with automated eval harnesses. Here's the full breakdown — problem by problem.
-
----
-
-#### Problem 1: Context Bloat (too many tool definitions eat the context window)
-
-**The research**: Anthropic measured that 58 tools from 5 MCP servers consume **~55K tokens** before the conversation starts. At 175 tools, NodeBench would consume ~87K tokens — up to 44% of a 200K context window just on tool metadata. [Microsoft Research](https://www.microsoft.com/en-us/research/blog/tool-space-interference-in-the-mcp-era-designing-for-agent-compatibility-at-scale/) found LLMs "decline to act at all when faced with ambiguous or excessive tool options." [Cursor enforces a ~40-tool hard cap](https://www.lunar.dev/post/why-is-there-mcp-tool-overload-and-how-to-solve-it-for-your-ai-agents) for this reason.
+**The research**: Anthropic measured that 58 tools from 5 MCP servers consume **~55K tokens** before the conversation starts. At 218 tools, NodeBench would consume ~109K tokens — over half a 200K context window just on tool metadata. [Microsoft Research](https://www.microsoft.com/en-us/research/blog/tool-space-interference-in-the-mcp-era-designing-for-agent-compatibility-at-scale/) found LLMs "decline to act at all when faced with ambiguous or excessive tool options." [Cursor enforces a ~40-tool hard cap](https://www.lunar.dev/post/why-is-there-mcp-tool-overload-and-how-to-solve-it-for-your-ai-agents) for this reason.
 
 **Our solutions** (layered, each independent):
 
 | Layer | What it does | Token savings | Requires |
 |---|---|---|---|
-| Themed presets (`--preset web_dev`) | Load only relevant toolsets (44-60 tools vs 175) | **60-75%** | Nothing |
+| Themed presets (`--preset web_dev`) | Load only relevant toolsets (54-106 tools vs 218) | **50-75%** | Nothing |
 | TOON encoding (on by default) | Encode all tool responses in token-optimized format | **~40%** on responses | Nothing |
 | `discover_tools({ compact: true })` | Return `{ name, category, hint }` only | **~60%** on search results | Nothing |
 | `instructions` field (Claude Code) | Claude Code defers tool loading, searches on demand | **~85%** | Claude Code client |
@@ -488,11 +633,11 @@ MCP tool servers face 5 systemic problems documented across Anthropic, Microsoft
 
 ---
 
-#### Problem 2: Tool Selection Degradation (LLMs pick the wrong tool as count increases)
+### Problem 2: Tool Selection Degradation (LLMs pick the wrong tool as count increases)
 
 **The research**: [Anthropic's Tool Search Tool](https://www.anthropic.com/engineering/advanced-tool-use) improved accuracy from **49% → 74%** (Opus 4) and **79.5% → 88.1%** (Opus 4.5) by switching from all-tools-upfront to on-demand discovery. The [Dynamic ReAct paper (arxiv 2509.20386)](https://arxiv.org/html/2509.20386v1) tested 5 architectures and found **Search + Load** wins — flat search + deliberate loading beats hierarchical app→tool search.
 
-**Our solution**: `discover_tools` — a 14-strategy hybrid search engine that finds the right tool from 175 candidates:
+**Our solution**: `discover_tools` — a 14-strategy hybrid search engine that finds the right tool from 218 candidates, with **cursor pagination**, **result expansion**, and **multi-hop traversal**:
 
 | Strategy | What it does | Example |
 |---|---|---|
@@ -502,8 +647,11 @@ MCP tool servers face 5 systemic problems documented across Anthropic, Microsoft
 | N-gram + Bigram | Partial words and phrases | "screen" → `capture_ui_screenshot` |
 | Dense (TF-IDF cosine) | Vector-like ranking | "audit compliance" surfaces related tools |
 | Embedding (neural) | Agent-as-a-Graph bipartite RRF | Based on [arxiv 2511.01854](https://arxiv.org/html/2511.01854v1) |
-| Execution traces | Co-occurrence mining from `tool_call_log` | Tools frequently used together boost each other |
+| Execution traces | Co-occurrence mining from `tool_call_log` (direct + transitive A→B→C) | Tools frequently used together boost each other |
 | Intent pre-filter | Narrow to relevant categories before search | `intent: "data_analysis"` → only local_file, llm, benchmark |
+| **Pagination** | `offset` + `limit` with stable `totalMatches` and `hasMore` | Page through 76+ results 5 at a time |
+| **Expansion** | Top N results' `relatedTools` neighbors added at 50% parent score | `expand: 3` adds 2-8 new tools per query |
+| **Multi-hop BFS** | `get_tool_quick_ref` depth 1-3 with `hopDistance` + `reachedVia` | depth=2 discovers 24-40 additional tools |
 
 Plus `smart_select_tools` for ambiguous queries — sends the catalog to Gemini 3 Flash / GPT-5-mini / Claude Haiku 4.5 for LLM-powered reranking.
 
@@ -518,7 +666,7 @@ Plus `smart_select_tools` for ambiguous queries — sends the catalog to Gemini 
 
 ---
 
-#### Problem 3: Static Loading (all tools loaded upfront, even if unused)
+### Problem 3: Static Loading (all tools loaded upfront, even if unused)
 
 **The research**: The Dynamic ReAct paper found that **Search + Load with 2 meta tools** beats all other architectures. Hierarchical search (search apps → search tools → load) adds overhead without improving accuracy. [ToolScope (arxiv 2510.20036)](https://arxiv.org/html/2510.20036) showed **+34.6%** tool selection accuracy with hybrid retrieval + tool deduplication.
 
@@ -542,7 +690,7 @@ npx nodebench-mcp --dynamic
 Key design decisions from the research:
 - **No hierarchical search** — Dynamic ReAct Section 3.4: "search_apps introduces an additional call without significantly improving accuracy"
 - **Direct tool binding** — Dynamic ReAct Section 3.5: LLMs perform best with directly bound tools; `call_tool` indirection degrades in long conversations
-- **Full-registry search** — `discover_tools` searches all 175 tools even with 44 loaded, so it can suggest what to load
+- **Full-registry search** — `discover_tools` searches all 218 tools even with 54 loaded, so it can suggest what to load
 
 **How we tested**: Automated A/B harness + live IDE session.
 
@@ -559,7 +707,7 @@ Key design decisions from the research:
 
 ---
 
-#### Problem 4: Client Fragmentation (not all clients handle dynamic tool updates)
+### Problem 4: Client Fragmentation (not all clients handle dynamic tool updates)
 
 **The research**: The MCP spec defines `notifications/tools/list_changed` for servers to tell clients to re-fetch the tool list. But [Cursor hasn't implemented it](https://forum.cursor.com/t/enhance-mcp-integration-in-cursor-dynamic-tool-updates-roots-support-progress-tokens-streamable-http/99903), [Claude Desktop didn't support it](https://github.com/orgs/modelcontextprotocol/discussions/76) (as of Dec 2024), and [Gemini CLI has an open issue](https://github.com/google-gemini/gemini-cli/issues/13850).
 
@@ -592,7 +740,7 @@ tools/list AFTER UNLOAD: 95 tools (-4)   ← tools removed
 
 ---
 
-#### Problem 5: Aggressive Filtering (over-filtering means the right tool isn't found)
+### Problem 5: Aggressive Filtering (over-filtering means the right tool isn't found)
 
 **The research**: This is the flip side of Problem 1. If you reduce context aggressively (e.g., keyword-only search), ambiguous queries like "call an AI model" fail to match the `llm` toolset because every tool mentions "AI" in its description. [SynapticLabs' Bounded Context Packs](https://blog.synapticlabs.ai/bounded-context-packs-tool-bloat-tipping-point) addresses this with progressive disclosure. [SEP-1576](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1576) proposes adaptive granularity at the protocol level.
 
@@ -623,11 +771,11 @@ Neural bipartite graph search (tool nodes + domain nodes) based on [Agent-as-a-G
 
 ---
 
-#### Summary: research → solution → eval for each problem
+### Summary: research → solution → eval for each problem
 
 | Problem | Research Source | Our Solution | Eval Method | Result |
 |---|---|---|---|---|
-| **Context bloat** (87K tokens) | Anthropic (85% reduction), Lunar.dev (~40-tool cap), SEP-1576 | Presets, TOON, compact mode, `instructions`, `smart_select_tools` | A/B harness token measurement | 60-95% reduction depending on layer |
+| **Context bloat** (107K tokens) | Anthropic (85% reduction), Lunar.dev (~40-tool cap), SEP-1576 | Presets, TOON, compact mode, `instructions`, `smart_select_tools` | A/B harness token measurement | 50-95% reduction depending on layer |
 | **Selection degradation** | Anthropic (+25pp), Dynamic ReAct (Search+Load wins) | 14-strategy hybrid search, intent pre-filter, LLM reranking | 28-scenario discovery accuracy | **100% accuracy** (18/18 domains) |
 | **Static loading** | Dynamic ReAct, ToolScope (+34.6%), MCP spec | `--dynamic` flag, `load_toolset` / `unload_toolset` | A/B harness + live IDE test | **100% success**, <1ms load latency |
 | **Client fragmentation** | MCP discussions, client bug trackers | `list_changed` + `call_loaded_tool` proxy | Server-side `tools/list` verification | Works on **all clients** |
@@ -637,15 +785,17 @@ Neural bipartite graph search (tool nodes + domain nodes) based on [Agent-as-a-G
 
 | Segment | R@5 Baseline | Most Critical Strategy | Impact When Removed |
 |---|---|---|---|
-| **New user** (vague, natural language) | 67% | Synonym expansion | 🔴 -17pp R@5 |
-| **Experienced** (domain keywords) | 72% | All robust | ⚪ No single strategy >5pp |
-| **Power user** (exact tool names) | 100% | None needed | ⚪ Keyword alone = 100% |
+| **New user** (vague, natural language) | 67% | Synonym expansion | -17pp R@5 |
+| **Experienced** (domain keywords) | 72% | All robust | No single strategy >5pp |
+| **Power user** (exact tool names) | 100% | None needed | Keyword alone = 100% |
 
 Key insight: new users need synonym expansion ("website" → seo, "AI" → llm) and fuzzy matching (typo tolerance). Power users need nothing beyond keyword matching. The remaining 33% new user gap is filled by `smart_select_tools` (LLM-powered).
 
 Full methodology, per-scenario breakdown, ablation data, and research citations: [DYNAMIC_LOADING.md](./DYNAMIC_LOADING.md)
 
-### Fine-grained control
+---
+
+## Fine-Grained Control
 
 ```bash
 # Include only specific toolsets
@@ -654,11 +804,14 @@ npx nodebench-mcp --toolsets verification,eval,recon
 # Exclude heavy optional-dep toolsets
 npx nodebench-mcp --exclude vision,ui_capture,parallel
 
+# Dynamic loading — start with 12 tools, load on demand
+npx nodebench-mcp --dynamic
+
 # See all toolsets and presets
 npx nodebench-mcp --help
 ```
 
-### Available toolsets
+### All 39 Toolsets
 
 | Toolset | Tools | What it covers | In `default` |
 |---|---|---|---|
@@ -666,11 +819,12 @@ npx nodebench-mcp --help
 | eval | 6 | Eval runs, results, comparison, diff | ✅ |
 | quality_gate | 4 | Gates, presets, history | ✅ |
 | learning | 4 | Knowledge, search, record | ✅ |
-| recon | 7 | Research, findings, framework checks, risk | ✅ |
 | flywheel | 4 | Mandatory flywheel, promote, investigate | ✅ |
+| recon | 7 | Research, findings, framework checks, risk | ✅ |
 | security | 3 | Dependency scanning, code analysis, terminal security scanning | ✅ |
-| **Total** | **44** | **Complete AI Flywheel** |
 | boilerplate | 2 | Scaffold NodeBench projects + status | ✅ |
+| skill_update | 4 | Skill tracking, freshness checks, sync | ✅ |
+| **Subtotal** | **42** | **AI Flywheel core** | |
 | bootstrap | 11 | Project setup, agents.md, self-implement, autonomous, test runner | — |
 | self_eval | 9 | Trajectory analysis, health reports, task banks, grading, contract compliance | — |
 | parallel | 13 | Task locks, roles, context budget, oracle, agent mailbox | — |
@@ -693,19 +847,22 @@ npx nodebench-mcp --help
 | git_workflow | 3 | Branch compliance, PR checklist review, merge gate | — |
 | seo | 5 | Technical SEO audit, page performance, content analysis | — |
 | voice_bridge | 4 | Voice pipeline design, config analysis, scaffold | — |
+| critter | 1 | Accountability checkpoint with calibrated scoring | — |
 | email | 4 | SMTP/IMAP email ingestion, search, delivery | — |
 | rss | 4 | RSS feed parsing and monitoring | — |
-| architect | 3 | Architecture analysis and decision logging | — |
+| architect | 3 | Structural analysis, concept verification, implementation planning | — |
+| ui_ux_dive | 11 | UI/UX deep analysis sessions, component reviews, flow audits | — |
+| mcp_bridge | 5 | Connect external MCP servers, proxy tool calls, manage sessions | — |
+| ui_ux_dive_v2 | 14 | Advanced UI/UX analysis with preflight, scoring, heuristic evaluation | — |
+| pr_report | 3 | Visual PR creation with screenshot comparisons, timelines, past session links | — |
 
-**Always included** — these 12 tools are always available:
+**Always included** — these 12 tools are available regardless of preset:
 - **Meta/discovery (6):** `findTools`, `getMethodology`, `check_mcp_setup`, `discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`
 - **Dynamic loading (6):** `load_toolset`, `unload_toolset`, `list_available_toolsets`, `call_loaded_tool`, `smart_select_tools`, `get_ab_test_report`
 
-The `default` preset includes 50 tools (38 domain + 6 meta/discovery + 6 dynamic loading).
-
 ### TOON Format — Token Savings
 
-TOON (Token-Oriented Object Notation) is **on by default** for all presets since v2.14.1. Every tool response is TOON-encoded for ~40% fewer tokens vs JSON. Disable with `--no-toon` if your client can't handle non-JSON responses.
+TOON (Token-Oriented Object Notation) is **on by default** for all presets. Every tool response is TOON-encoded for ~40% fewer tokens vs JSON. Disable with `--no-toon` if your client can't handle non-JSON responses.
 
 ```bash
 # TOON on (default, all presets)
@@ -715,20 +872,13 @@ claude mcp add nodebench -- npx -y nodebench-mcp
 claude mcp add nodebench -- npx -y nodebench-mcp --no-toon
 ```
 
-Use the `toon_encode` and `toon_decode` tools to convert between TOON and JSON in your own workflows.
-
-### When to Use Each Preset
-
-| Preset | Use when... | Example |
-|---|---|---|
-| **default** ⭐ | You want the complete AI Flywheel methodology with minimal token overhead | Most users — bug fixes, features, refactoring, code review |
-| `full` | You need vision, UI capture, web search, GitHub, local file parsing, or GAIA solvers | Vision QA, web scraping, file processing, parallel agents, capability benchmarking |
+Use the `toon_encode` and `toon_decode` tools (in the `toon` toolset) to convert between TOON and JSON in your own workflows.
 
 ---
 
-## AI Flywheel — Complete Methodology
+## The AI Flywheel — Complete Methodology
 
-The AI Flywheel is documented in detail in [AI_FLYWHEEL.md](https://github.com/HomenShum/nodebench-ai/blob/main/AI_FLYWHEEL.md). Here's a summary:
+The AI Flywheel is documented in detail in [AI_FLYWHEEL.md](https://github.com/HomenShum/nodebench-ai/blob/main/AI_FLYWHEEL.md).
 
 ### Two Loops That Compound
 
@@ -780,6 +930,62 @@ The AI Flywheel is documented in detail in [AI_FLYWHEEL.md](https://github.com/H
 
 ---
 
+## Parallel Agents with Claude Code
+
+Based on Anthropic's ["Building a C Compiler with Parallel Claudes"](https://www.anthropic.com/engineering/building-c-compiler) (Feb 2026).
+
+**When to use:** Only when running 2+ agent sessions. Single-agent workflows use the standard pipeline above.
+
+**How it works with Claude Code's Task tool:**
+
+1. **COORDINATOR** (your main session) breaks work into independent tasks
+2. Each **Task tool** call spawns a subagent with instructions to:
+   - `claim_agent_task` — lock the task
+   - `assign_agent_role` — specialize (implementer, test_writer, critic, etc.)
+   - Do the work
+   - `release_agent_task` — handoff with progress note
+3. Coordinator calls `get_parallel_status` to monitor all subagents
+4. Coordinator runs `run_quality_gate` on the aggregate result
+
+**MCP Prompts available:**
+- `claude-code-parallel` — Step-by-step Claude Code subagent coordination
+- `parallel-agent-team` — Full team setup with role assignment
+- `oracle-test-harness` — Validate outputs against known-good reference
+- `bootstrap-parallel-agents` — Scaffold parallel infra for any repo
+
+**Note:** Parallel agent coordination tools require `--preset multi_agent` or `--preset full`.
+
+---
+
+## Capability Benchmarking (GAIA, Gated)
+
+NodeBench MCP treats tools as "Access". To measure real capability lift, we benchmark baseline (LLM-only) vs tool-augmented accuracy on GAIA (gated).
+
+Notes:
+- GAIA fixtures and attachments are written under `.cache/gaia` (gitignored). Do not commit GAIA content.
+- Fixture generation requires `HF_TOKEN` or `HUGGINGFACE_HUB_TOKEN`.
+
+Web lane (web_search + fetch_url):
+```bash
+npm run mcp:dataset:gaia:capability:refresh
+NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:test
+```
+
+File-backed lane (PDF / XLSX / CSV / DOCX / PPTX / JSON / JSONL / TXT / ZIP via `local_file` tools):
+```bash
+npm run mcp:dataset:gaia:capability:files:refresh
+NODEBENCH_GAIA_CAPABILITY_TASK_LIMIT=6 NODEBENCH_GAIA_CAPABILITY_CONCURRENCY=1 npm run mcp:dataset:gaia:capability:files:test
+```
+
+Modes:
+- Stable: `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=rag`
+- More realistic: `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent`
+
+Notes:
+- ZIP attachments require `NODEBENCH_GAIA_CAPABILITY_TOOLS_MODE=agent` (multi-step extract -> parse).
+
+---
+
 ## Build from Source
 
 ```bash
@@ -805,51 +1011,54 @@ Then use absolute path:
 
 ## Quick Reference
 
-### Recommended Setup for Most Users
+### Recommended Setup
 
 ```bash
-# Claude Code / Windsurf — AI Flywheel core tools (50 tools, default)
+# Claude Code — AI Flywheel core (50 tools, default)
 claude mcp add nodebench -- npx -y nodebench-mcp
+
+# Windsurf — add to ~/.codeium/windsurf/mcp_config.json
+# Cursor — add to .cursor/mcp.json
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp"]
+    }
+  }
+}
 ```
 
-### What's in the default preset?
+### What's in the Default?
 
-| Domain | Tools | What you get |
+| Category | Tools | What you get |
 |---|---|---|
-| verification | 8 | Cycles, gaps, triple-verify, status |
-| eval | 6 | Eval runs, results, comparison, diff |
-| quality_gate | 4 | Gates, presets, history |
-| learning | 4 | Knowledge, search, record |
-| recon | 7 | Research, findings, framework checks, risk |
-| flywheel | 4 | Mandatory flywheel, promote, investigate |
-| security | 3 | Dependency scanning, code analysis, terminal security scanning |
-| boilerplate | 2 | Scaffold NodeBench projects + status |
-| meta + discovery | 6 | findTools, getMethodology, check_mcp_setup, discover_tools, get_tool_quick_ref, get_workflow_chain |
-| dynamic loading | 6 | load_toolset, unload_toolset, list_available_toolsets, call_loaded_tool, smart_select_tools, get_ab_test_report |
+| Discovery | 6 | findTools, getMethodology, check_mcp_setup, discover_tools (pagination + expansion), get_tool_quick_ref (multi-hop BFS), get_workflow_chain |
+| Dynamic loading | 6 | load_toolset, unload_toolset, list_available_toolsets, call_loaded_tool, smart_select_tools, get_ab_test_report |
+| Verification | 8 | Cycles, gaps, triple-verify, status |
+| Eval | 6 | Eval runs, results, comparison, diff |
+| Quality gate | 4 | Gates, presets, history |
+| Learning | 4 | Knowledge, search, record |
+| Flywheel | 4 | Mandatory flywheel, promote, investigate |
+| Recon | 7 | Research, findings, framework checks, risk |
+| Security | 3 | Dependency scanning, code analysis, terminal security scanning |
+| Boilerplate | 2 | Scaffold NodeBench projects + status |
+| Skill update | 4 | Skill tracking, freshness checks, sync |
+| **Total** | **54** | **Complete AI Flywheel methodology** |
 
-**Total: 50 tools** — Complete AI Flywheel methodology with ~70% less token overhead.
+### When to Use a Themed Preset
 
-### When to Upgrade Presets
-
-| Need | Upgrade to |
-|---|---|
-| Everything: vision, UI capture, web search, GitHub, local file parsing, GAIA solvers | `--preset full` (175 tools) |
-
-### First Prompts to Try
-
-```
-# See what's available
-> Use getMethodology("overview") to see all workflows
-
-# Before your next task — search for prior knowledge
-> Use search_all_knowledge("what I'm about to work on")
-
-# Run the full verification pipeline on a change
-> Use getMethodology("mandatory_flywheel") and follow the 6 steps
-
-# Find tools for a specific task
-> Use discover_tools("verify my implementation")
-```
+| Need | Preset | Tools |
+|---|---|---|
+| Web development with visual QA | `--preset web_dev` | 106 |
+| Mobile apps with flicker detection | `--preset mobile` | 95 |
+| Academic papers and research writing | `--preset academic` | 86 |
+| Multi-agent coordination | `--preset multi_agent` | 83 |
+| Data analysis and file processing | `--preset data` | 78 |
+| Content pipelines and publishing | `--preset content` | 73 |
+| Research with web search and RSS | `--preset research` | 71 |
+| CI/CD and DevOps | `--preset devops` | 68 |
+| Everything | `--preset full` | 218 |
 
 ### Key Methodology Topics
 
@@ -872,8 +1081,8 @@ NodeBench MCP runs locally on your machine. Here's what it can and cannot access
 - Analytics data never leaves your machine
 
 ### File system access
-- The `local_file` toolset (`--preset full` only) can **read files anywhere on your filesystem** that the Node.js process has permission to access. This includes CSV, PDF, XLSX, DOCX, PPTX, JSON, TXT, and ZIP files
-- The `security` toolset runs static analysis on files you point it at
+- The `local_file` toolset (in `data`, `academic`, `full` presets) can **read files anywhere on your filesystem** that the Node.js process has permission to access. This includes CSV, PDF, XLSX, DOCX, PPTX, JSON, TXT, and ZIP files
+- The `security` toolset (in all presets) runs static analysis on files you point it at
 - Session notes and project bootstrapping write to the current working directory or `~/.nodebench/`
 - **Trust boundary**: If you grant an AI agent access to NodeBench MCP with `--preset full`, that agent can read any file your user account can read. Use the `default` preset if you want to restrict file system access
 
@@ -896,6 +1105,12 @@ NodeBench MCP runs locally on your machine. Here's what it can and cannot access
 **"Cannot find module"** — Run `npm run build` in the mcp-local directory
 
 **MCP not connecting** — Check path is absolute, run `claude --mcp-debug`, ensure Node.js >= 18
+
+**Windsurf not finding tools** — Verify `~/.codeium/windsurf/mcp_config.json` has the correct JSON structure. Open Settings → MCP → View raw config to edit directly.
+
+**Cursor tools not loading** — Ensure `.cursor/mcp.json` exists in the project root. Restart Cursor after config changes.
+
+**Dynamic loading not working** — Claude Code and GitHub Copilot support native dynamic loading. For Windsurf/Cursor, use `call_loaded_tool` as a fallback (it's always available).
 
 ---
 

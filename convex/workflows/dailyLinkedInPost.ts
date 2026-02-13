@@ -111,14 +111,14 @@ function formatDigestForLinkedIn(
 
   // Competing explanations as natural prose (Phase 7)
   if (explanations.length >= 2) {
-    p1.push(`There are ${explanations.length} ways to read the dominant story right now:`);
+    p1.push(`When I ran these through my research pipeline, ${explanations.length} competing explanations emerged:`);
     for (const e of explanations.slice(0, 3)) {
       p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 160)}`);
     }
     p1.push("");
-    p1.push(`Each leads to a different conclusion about what you should pay attention to.`);
+    p1.push(`Each one implies a different set of decisions.`);
   } else {
-    p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+    p1.push(`These ${domain} developments connect in ways the headlines don't surface.`);
   }
   p1.push("");
   p1.push(`Which of these are you tracking?`);
@@ -162,23 +162,17 @@ function formatDigestForLinkedIn(
     }
   }
 
-  // Evidence grade summary from competing explanations (Phase 7)
+  // Evidence breakdown from competing explanations (Phase 7)
   if (explanations.length > 0) {
-    const grounded = explanations.filter(e => e.evidenceLevel === "grounded").length;
-    const mixed = explanations.filter(e => e.evidenceLevel === "mixed").length;
-    const speculative = explanations.filter(e => e.evidenceLevel === "speculative").length;
-    const parts: string[] = [];
-    if (grounded > 0) parts.push(`${grounded} backed by primary sources`);
-    if (mixed > 0) parts.push(`${mixed} partly supported`);
-    if (speculative > 0) parts.push(`${speculative} still interpretive`);
-    if (parts.length > 0) {
-      p2.push(`Of the competing explanations: ${parts.join(", ")}.`);
-      p2.push("");
+    p2.push(`Evidence breakdown:`);
+    for (const e of explanations.slice(0, 3)) {
+      p2.push(renderEvidenceLine(e));
     }
+    p2.push("");
   }
 
   // Connect dots -- what's the real story behind the noise
-  p2.push(`High-volume news cycles often bury the developments that affect your career and decisions the most. This is the context that matters.`);
+  p2.push(`I built a research pipeline that fact-checks and grades evidence automatically. Above is what it found today.`);
   p2.push("");
   p2.push(`What's one claim you've seen this week that you'd want fact-checked?`);
   p2.push("");
@@ -216,17 +210,20 @@ function formatDigestForLinkedIn(
 
   // Falsification criteria as reader empowerment (Phase 7)
   if (explanations.length >= 2) {
-    p3.push(`How to evaluate each explanation yourself:`);
+    p3.push(`How to stress-test each explanation:`);
     for (const e of explanations.slice(0, 3)) {
-      p3.push(`- ${truncateAtSentenceBoundary(e.title, 40)}: ${truncateAtSentenceBoundary(e.falsificationCriteria, 140)}`);
+      const badge = e.checksPassing != null && e.checksTotal != null
+        ? ` [${e.checksPassing}/${e.checksTotal}]`
+        : "";
+      p3.push(`- ${truncateAtSentenceBoundary(e.title, 40)}${badge}: ${truncateAtSentenceBoundary(e.falsificationCriteria, 130)}`);
     }
     p3.push("");
   }
 
-  // Grounded closer -- direct, not preachy
-  p3.push(`Focus on what you can control: the skills you develop, the projects you ship, the information you verify before acting on.`);
+  // Builder closer -- practitioner voice, not motivational poster
+  p3.push(`The pipeline runs daily. I'll keep publishing what it finds. If you spot a claim worth checking, drop it below.`);
   p3.push("");
-  p3.push(`What are you working on or learning this week?`);
+  p3.push(`What are you building or investigating this week?`);
   p3.push("");
   p3.push(`[3/3] ${specificTags}`);
 
@@ -237,6 +234,51 @@ function formatDigestForLinkedIn(
     console.log(`[formatDigestForLinkedIn] Post ${i + 1}/${posts.length}: ${posts[i].length} chars`);
   }
   return posts;
+}
+
+/**
+ * Render a concise per-explanation evidence line from the checklist.
+ * E.g. "Regulatory Shift (5/6): gov source, corroborated, quantitative, attributed, verifiable"
+ * Falls back to the old generic label when checklist isn't available.
+ */
+function renderEvidenceLine(e: {
+  title: string;
+  evidenceLevel: string;
+  evidenceChecklist?: {
+    hasPrimarySource: boolean;
+    hasCorroboration: boolean;
+    hasFalsifiableClaim: boolean;
+    hasQuantitativeData: boolean;
+    hasNamedAttribution: boolean;
+    isReproducible: boolean;
+  };
+  checksPassing?: number;
+  checksTotal?: number;
+}): string {
+  const cl = e.evidenceChecklist;
+  if (!cl || e.checksPassing == null || e.checksTotal == null) {
+    // Fallback: no checklist data (legacy digests)
+    const label = e.evidenceLevel === "grounded" ? "backed by primary sources"
+      : e.evidenceLevel === "mixed" ? "partly supported"
+      : "still interpretive";
+    return `- ${truncateAtSentenceBoundary(e.title, 40)}: ${label}`;
+  }
+
+  const passing: string[] = [];
+  const gaps: string[] = [];
+  if (cl.hasPrimarySource) passing.push("gov/primary source"); else gaps.push("primary source");
+  if (cl.hasCorroboration) passing.push("corroborated"); else gaps.push("corroboration");
+  if (cl.hasQuantitativeData) passing.push("hard numbers"); else gaps.push("hard numbers");
+  if (cl.hasNamedAttribution) passing.push("named attribution"); else gaps.push("named attribution");
+  if (cl.isReproducible) passing.push("verifiable links"); else gaps.push("verifiable links");
+  if (cl.hasFalsifiableClaim) passing.push("falsifiable"); else gaps.push("falsifiability");
+
+  // Grounded: show strengths. Mixed/speculative: show what's missing.
+  const score = `${e.checksPassing}/${e.checksTotal}`;
+  if (e.evidenceLevel === "grounded") {
+    return `- ${truncateAtSentenceBoundary(e.title, 40)} [${score}]: ${passing.join(", ")}`;
+  }
+  return `- ${truncateAtSentenceBoundary(e.title, 40)} [${score}]: needs ${gaps.join(", ")}`;
 }
 
 /**
@@ -381,6 +423,9 @@ export const postDailyDigestToLinkedIn = internalAction({
           title: e.title,
           explanation: e.explanation,
           evidenceLevel: e.evidenceLevel,
+          evidenceChecklist: e.evidenceChecklist,
+          checksPassing: e.checksPassing,
+          checksTotal: e.checksTotal,
           measurementApproach: e.measurementApproach,
           falsificationCriteria: e.falsificationCriteria,
         }));
@@ -1125,14 +1170,14 @@ function formatDigestForPersona(
     }
     if (entities.length > 0) p1.push("");
     if (explanations.length >= 2) {
-      p1.push(`There are ${explanations.length} ways to read the dominant story right now:`);
+      p1.push(`When I ran these through my research pipeline, ${explanations.length} competing explanations emerged:`);
       for (const e of explanations.slice(0, 3)) {
         p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 160)}`);
       }
       p1.push("");
-      p1.push(`Each leads to a different conclusion about what you should pay attention to.`);
+      p1.push(`Each one implies a different set of decisions.`);
     } else {
-      p1.push(`Watch how these ${domain} developments connect -- the pattern matters more than any single headline.`);
+      p1.push(`These ${domain} developments connect in ways the headlines don't surface.`);
     }
     p1.push("");
     p1.push("Which of these are you tracking?");
@@ -1177,22 +1222,16 @@ function formatDigestForPersona(
     }
   }
 
-  // Evidence grade summary from competing explanations (Phase 7)
+  // Evidence breakdown from competing explanations (Phase 7)
   if (explanations.length > 0) {
-    const grounded = explanations.filter(e => e.evidenceLevel === "grounded").length;
-    const mixed = explanations.filter(e => e.evidenceLevel === "mixed").length;
-    const speculative = explanations.filter(e => e.evidenceLevel === "speculative").length;
-    const parts: string[] = [];
-    if (grounded > 0) parts.push(`${grounded} backed by primary sources`);
-    if (mixed > 0) parts.push(`${mixed} partly supported`);
-    if (speculative > 0) parts.push(`${speculative} still interpretive`);
-    if (parts.length > 0) {
-      p2.push(`Of the competing explanations: ${parts.join(", ")}.`);
-      p2.push("");
+    p2.push(`Evidence breakdown:`);
+    for (const e of explanations.slice(0, 3)) {
+      p2.push(renderEvidenceLine(e));
     }
+    p2.push("");
   }
 
-  p2.push(`High-volume news cycles often bury the developments that affect your decisions the most. This is the context that matters.`);
+  p2.push(`I built a research pipeline that fact-checks and grades evidence automatically. Above is what it found today.`);
   p2.push("");
   p2.push("What's one claim you've seen this week that you'd want fact-checked?");
   p2.push("");
@@ -1240,25 +1279,28 @@ function formatDigestForPersona(
 
   // Falsification criteria as reader empowerment (Phase 7)
   if (explanations.length >= 2) {
-    p3.push(`How to evaluate each explanation yourself:`);
+    p3.push(`How to stress-test each explanation:`);
     for (const e of explanations.slice(0, 3)) {
-      p3.push(`- ${truncateAtSentenceBoundary(e.title, 40)}: ${truncateAtSentenceBoundary(e.falsificationCriteria, 140)}`);
+      const badge = e.checksPassing != null && e.checksTotal != null
+        ? ` [${e.checksPassing}/${e.checksTotal}]`
+        : "";
+      p3.push(`- ${truncateAtSentenceBoundary(e.title, 40)}${badge}: ${truncateAtSentenceBoundary(e.falsificationCriteria, 130)}`);
     }
     p3.push("");
   }
 
   if (personaId === "VC_INVESTOR") {
-    p3.push(`Focus on what you can verify: the data behind the round, the team's track record, the market timing.`);
+    p3.push(`This pipeline runs daily. If you want a specific deal or sector fact-checked, drop it below.`);
     p3.push("");
-    p3.push("What deal or sector are you doing diligence on right now?");
+    p3.push("What deal or thesis are you doing diligence on right now?");
   } else if (personaId === "TECH_BUILDER") {
-    p3.push(`Focus on what you can control: the tools you evaluate, the architectures you test, the prototypes you ship.`);
+    p3.push(`This pipeline runs daily and the evidence grading is open. If you spot something worth verifying, drop it below.`);
     p3.push("");
-    p3.push("What are you building or evaluating this week?");
+    p3.push("What are you building or stress-testing this week?");
   } else {
-    p3.push(`Focus on what you can control: the skills you develop, the projects you ship, the information you verify before acting on.`);
+    p3.push(`The pipeline runs daily. I'll keep publishing what it finds. If you spot a claim worth checking, drop it below.`);
     p3.push("");
-    p3.push("What are you working on or learning this week?");
+    p3.push("What are you building or investigating this week?");
   }
   p3.push("");
   p3.push(`[3/3] ${tags}`);

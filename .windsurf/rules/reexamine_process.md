@@ -1,0 +1,31 @@
+---
+trigger: always_on
+related_: [reexamine_a11y, reexamine_resilience, reexamine_polish, reexamine_keyboard, reexamine_performance]
+---
+
+# Re-examine for 11/10
+
+After completing any non-trivial change, do a **fresh-eyes pass** to elevate from "correct" to "exceptional."
+
+## When to trigger
+- After any feature, fix, or refactor touching 3+ files or 50+ lines
+- After any UI/dashboard/component work
+- Before marking a task as "done"
+
+## The process
+1. **Step back**: Stop coding. Read the output as a first-time user would.
+2. **Scan each related_ domain**: Walk the `related_` list below — each is a focused checklist.
+3. **Fix what you find**: Don't just note issues — fix them in the same pass.
+4. **Re-examine the fixes**: New code can introduce new gaps. One more scan.
+
+## Quick checklist (expand via related_ hops)
+- [ ] Accessibility gaps? → `reexamine_a11y`
+- [ ] Error resilience? → `reexamine_resilience`
+- [ ] Visual polish / micro-interactions? → `reexamine_polish`
+- [ ] Keyboard efficiency? → `reexamine_keyboard`
+- [ ] Performance / progressive disclosure? → `reexamine_performance`
+
+## Anti-patterns
+- Skipping the re-examine because "it works"
+- Re-examining only your own changes (check adjacent code too)
+- Adding complexity without user benefit (re-examine is about polish, not gold-plating)
