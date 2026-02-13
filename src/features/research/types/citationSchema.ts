@@ -81,12 +81,14 @@ export interface CitationLibrary {
  * - `{{cite:id}}` - Simple citation marker
  * - `{{cite:id|label}}` - Citation with custom inline label
  * - `{{cite:id|label|type:quote}}` - Citation with type override
+ * - `{{cite:id|label|type:document|page:3}}` - Citation with page reference
  *
  * Examples:
  * - "AWS announced new pricing{{cite:aws-blog-001}}"
  * - "The {{cite:arxiv-paper|reliability gap|type:data}} remains critical"
+ * - "Found on {{cite:doc_cv|Homen Shum CV|type:document|page:3}} page 3"
  */
-export const CITATION_REGEX = /\{\{cite:([^|}]+)(?:\|([^|}]+))?(?:\|type:([^}]+))?\}\}/g;
+export const CITATION_REGEX = /\{\{cite:([^|}]+)(?:\|([^|}]+))?(?:\|type:([^|}]+))?(?:\|page:(\d+))?\}\}/g;
 
 /**
  * Parse citation tokens from text
@@ -95,6 +97,7 @@ export interface ParsedCitation {
   id: string;
   label?: string;
   type?: CitationType;
+  pageIndex?: number;
   fullMatch: string;
   startIndex: number;
   endIndex: number;
@@ -110,6 +113,7 @@ export function parseCitations(text: string): ParsedCitation[] {
       id: match[1],
       label: match[2],
       type: match[3] as CitationType | undefined,
+      pageIndex: match[4] ? parseInt(match[4], 10) : undefined,
       fullMatch: match[0],
       startIndex: match.index,
       endIndex: match.index + match[0].length,

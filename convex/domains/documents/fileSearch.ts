@@ -204,6 +204,7 @@ export const uploadFileToSearch = internalAction({
 export const searchUserFiles = internalAction({
   args: {
     query: v.string(),
+    userId: v.optional(v.id("users")),
   },
   returns: v.object({
     results: v.array(v.object({
@@ -213,10 +214,16 @@ export const searchUserFiles = internalAction({
     })),
     summary: v.string(),
   }),
-  handler: async (ctx, { query }) => {
-    const userId = await getAuthUserId(ctx);
+  handler: async (ctx, args) => {
+    const { query } = args;
+    // Accept explicit userId (from agent tool context) or fall back to auth
+    const userId = args.userId ?? (await getAuthUserId(ctx));
     if (!userId) {
-      throw new Error("Not authenticated");
+      console.warn("[fileSearch.searchUserFiles] No userId from args or auth — returning empty");
+      return {
+        results: [],
+        summary: "Not authenticated. Please sign in to search your files.",
+      };
     }
 
     // Get the user's file search store

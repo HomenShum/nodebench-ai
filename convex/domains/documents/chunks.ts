@@ -118,6 +118,32 @@ export const listChunksByFiles = internalQuery({
   },
 });
 
+export const listChunksPublic = query({
+  args: { fileId: v.id("files") },
+  returns: v.array(
+    v.object({
+      _id: v.id("chunks"),
+      fileId: v.id("files"),
+      text: v.string(),
+      meta: v.optional(v.any()),
+    })
+  ),
+  handler: async (ctx, { fileId }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const rows = await ctx.db
+      .query("chunks")
+      .withIndex("by_file", (q) => q.eq("fileId", fileId))
+      .collect();
+    return rows.map((r) => ({
+      _id: r._id,
+      fileId: r.fileId,
+      text: r.text.slice(0, 200),
+      meta: r.meta,
+    }));
+  },
+});
+
 export const getFilesBasic = internalQuery({
   args: { fileIds: v.array(v.id("files")) },
   returns: v.array(

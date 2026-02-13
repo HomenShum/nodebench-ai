@@ -2008,6 +2008,8 @@ export function FastAgentUIMessageBubble({
           publishedAt: base?.publishedAt,
           // Ensure we always show a deterministic date, even for citations that only exist as inline tokens.
           accessedAt: base?.accessedAt ?? accessedAt,
+          // Page-indexed document citations: {{cite:id|label|type:document|page:3}}
+          pageIndex: token?.pageIndex ?? base?.pageIndex,
         });
       }
     }

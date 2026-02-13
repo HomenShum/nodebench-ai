@@ -8,7 +8,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { api } from "../../_generated/api";
 
 type PlannerTask = { description: string; agent?: string };
 
@@ -28,37 +27,40 @@ function mapTasksToFeatures(tasks: PlannerTask[] | null, prompt: string) {
   }));
 }
 
-async function generatePlanForThread(ctx: any, prompt: string, model?: string): Promise<{ mode: string; tasks: PlannerTask[]; raw: string }> {
-  const { createPlannerAgent } = await import("./fastAgentPanelStreaming");
-  const planner = createPlannerAgent(model || "gpt-5.2");
+/**
+ * Generate a plan for a thread.
+ *
+ * NOTE: This function is called from a MUTATION handler (V8 runtime) where
+ * dynamic `import()` is unsupported. We use a lightweight heuristic plan
+ * generator instead of importing the full fastAgentPanelStreaming module.
+ * The actual LLM-based planning happens later during the streaming action.
+ */
+function generatePlanForThread(_ctx: any, prompt: string, _model?: string): { mode: string; tasks: PlannerTask[]; raw: string } {
+  // Heuristic: break prompt into sentences and treat each as a task
+  const sentences = prompt
+    .split(/[.!?\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 10);
 
-  try {
-    const res = await planner.generateText(
-      ctx,
-      {},
-      { prompt }
-    );
-
-    // Expect JSON-ish with "tasks" array; best-effort parse.
-    const text = res.text || "";
-    const match = text.match(/```json\s*([\s\S]*?)```/i);
-    const jsonRaw = match ? match[1] : text;
-    const parsed = JSON.parse(jsonRaw);
-    const tasks = Array.isArray(parsed.tasks) ? parsed.tasks : parsed?.plan?.tasks;
-
+  if (sentences.length <= 1) {
+    // Simple single-task request
     return {
-      mode: parsed.mode || "complex",
-      tasks: Array.isArray(tasks) ? tasks as PlannerTask[] : [],
-      raw: text,
-    };
-  } catch (err) {
-    console.warn("[generatePlanForThread] planner failed, using fallback", err);
-    return {
-      mode: "complex",
-      tasks: [],
+      mode: "simple",
+      tasks: [{ description: prompt.slice(0, 200) }],
       raw: prompt,
     };
   }
+
+  // Multi-sentence → treat as multiple tasks
+  const tasks = sentences.slice(0, 5).map((s) => ({
+    description: s.slice(0, 200),
+  }));
+
+  return {
+    mode: "complex",
+    tasks,
+    raw: prompt,
+  };
 }
 
 /**
@@ -94,7 +96,7 @@ export const initializeThread = (mutation as any)({
     }
 
     // Generate plan via planner agent
-    const planResult = await generatePlanForThread(ctx, args.prompt, args.model ?? undefined);
+    const planResult = generatePlanForThread(ctx, args.prompt, args.model ?? undefined);
     const features = mapTasksToFeatures(planResult.tasks, args.prompt);
 
     const now = Date.now();

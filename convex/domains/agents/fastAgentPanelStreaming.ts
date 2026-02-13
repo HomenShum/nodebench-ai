@@ -2597,6 +2597,7 @@ export const streamAsync = internalAction({
       "- Add inline citations as `{{cite:<resultId>|<label>|type:source}}` immediately after factual claims when you used search tools.",
       "- Search result IDs come from `fusionSearch` / `quickSearch` tool outputs (each result includes `Id:`).",
       "- If you used `linkupSearch`, include citations by referencing the provided sources; the system will auto-inject a few {{cite:websrc_...}} tokens when `SOURCE_GALLERY_DATA` is present.",
+      "- DOCUMENT CITATIONS: When `searchFiles` returns results with `Citation token:` lines, copy those `{{cite:doc_N|...|type:document|page:N}}` tokens VERBATIM into your response text after relevant claims. The UI renders them as interactive page badges (e.g., [1]p3).",
       "- Tag notable entities with hover tokens like `@@entity:<slug>|<Display Name>|type:company@@` (types: company, person, product, technology, topic, region, event, metric, document).",
       "- Never include or quote any internal context blocks (e.g., LOCAL CONTEXT / PROJECT CONTEXT) in the final answer.",
       "- Prefer returning a clean user-facing answer; keep tool/process details out unless asked.",
