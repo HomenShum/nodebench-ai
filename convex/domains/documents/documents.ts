@@ -41,6 +41,16 @@ export const getDocumentById = internalQuery({
   },
 });
 
+// Internal: find document linked to a file (for RAG indexing after chunk extraction)
+export const getDocumentByFileId = internalQuery({
+  args: { fileId: v.id("files") },
+  handler: async (ctx, { fileId }) => {
+    // documents.fileId is optional — filter scan (no index needed, rare call)
+    const docs = await ctx.db.query("documents").collect();
+    return docs.find((d) => (d as any).fileId === fileId) ?? null;
+  },
+});
+
 import {
   type TipTapNode,
   type MediaAsset,

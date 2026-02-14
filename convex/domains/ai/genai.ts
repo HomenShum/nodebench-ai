@@ -296,6 +296,22 @@ export const extractAndIndexFile = action({
     if (json.summary !== undefined) patchData.contentSummary = json.summary;
     await ctx.runMutation(internal.domains.documents.chunks.updateFileCache, { fileId, patch: patchData });
 
+    // Auto-index into RAG vector store so page-indexed search works immediately
+    try {
+      const doc = await ctx.runQuery(
+        internal.domains.documents.documents.getDocumentByFileId,
+        { fileId },
+      );
+      if (doc) {
+        await ctx.runAction(internal.domains.search.rag.addDocumentToRag, {
+          documentId: doc._id,
+        });
+        console.log(`[extractAndIndexFile] RAG indexed document ${doc._id} for file ${fileId}`);
+      }
+    } catch (ragErr) {
+      console.warn("[extractAndIndexFile] RAG indexing failed (non-fatal):", ragErr);
+    }
+
     // Cleanup uploaded temp file reference best-effort
     if (uploadedName) {
       try {
