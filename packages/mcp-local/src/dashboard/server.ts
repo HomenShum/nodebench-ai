@@ -88,6 +88,12 @@ function handleRequest(db: Database.Database, req: IncomingMessage, res: ServerR
       apiSessionDetail(db, sessionId, sub, res);
     } else if (path === "/api/latest") {
       apiLatestSession(db, res);
+    } else if (path === "/api/agents/status") {
+      apiAgentStatus(db, res);
+    } else if (path === "/api/agents/activity") {
+      apiAgentActivity(db, res);
+    } else if (path === "/api/agents/mailbox") {
+      apiAgentMailbox(db, res);
     } else {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Not found" }));
@@ -319,6 +325,101 @@ function apiDesignIssues(db: Database.Database, sid: string, res: ServerResponse
   json(res, db.prepare(
     "SELECT * FROM ui_dive_design_issues WHERE session_id = ? ORDER BY created_at"
   ).all(sid));
+}
+
+// ── API: Agent Monitor ──────────────────────────────────────────────
+
+function apiAgentStatus(db: Database.Database, res: ServerResponse) {
+  // Active agents with roles
+  const roles = db.prepare(`
+    SELECT r.session_id, r.role, r.focus_area, r.created_at
+    FROM agent_roles r
+    ORDER BY r.created_at DESC
+  `).all() as Array<{ session_id: string; role: string; focus_area: string | null; created_at: string }>;
+
+  const agents = roles.map(r => {
+    // Current claimed task
+    const task = db.prepare(`
+      SELECT task_key, description, claimed_at
+      FROM agent_tasks
+      WHERE session_id = ? AND status = 'claimed'
+      ORDER BY claimed_at DESC LIMIT 1
+    `).get(r.session_id) as { task_key: string; description: string | null; claimed_at: string } | undefined;
+
+    // Tool call count (last 30 min)
+    const callCount = db.prepare(`
+      SELECT COUNT(*) as c FROM tool_call_log
+      WHERE session_id = ? AND created_at >= datetime('now', '-30 minutes')
+    `).get(r.session_id) as { c: number };
+
+    // Latest tool call time (for stale detection)
+    const lastCall = db.prepare(`
+      SELECT created_at FROM tool_call_log
+      WHERE session_id = ? ORDER BY created_at DESC LIMIT 1
+    `).get(r.session_id) as { created_at: string } | undefined;
+
+    // Token budget (latest entry)
+    const budget = db.prepare(`
+      SELECT tokens_used, tokens_limit FROM context_budget_log
+      WHERE session_id = ? ORDER BY created_at DESC LIMIT 1
+    `).get(r.session_id) as { tokens_used: number; tokens_limit: number } | undefined;
+
+    // Unread mailbox messages
+    const unread = db.prepare(`
+      SELECT COUNT(*) as c FROM agent_mailbox
+      WHERE (recipient_id = ? OR recipient_role = ?) AND read = 0
+    `).get(r.session_id, r.role) as { c: number };
+
+    return {
+      sessionId: r.session_id,
+      role: r.role,
+      focusArea: r.focus_area,
+      assignedAt: r.created_at,
+      currentTask: task ? { key: task.task_key, description: task.description, claimedAt: task.claimed_at } : null,
+      toolCallCount: callCount.c,
+      lastCallAt: lastCall?.created_at ?? null,
+      tokenBudget: budget
+        ? { used: budget.tokens_used, limit: budget.tokens_limit, percent: Math.round((budget.tokens_used / budget.tokens_limit) * 100) }
+        : { used: 0, limit: 200000, percent: 0 },
+      unreadMessages: unread.c,
+    };
+  });
+
+  // Recently completed tasks
+  const completed = db.prepare(`
+    SELECT task_key, session_id, description, progress_note, released_at
+    FROM agent_tasks
+    WHERE status = 'released' AND released_at >= datetime('now', '-1 hour')
+    ORDER BY released_at DESC LIMIT 20
+  `).all();
+
+  json(res, { agents, completedTasks: completed });
+}
+
+function apiAgentActivity(db: Database.Database, res: ServerResponse) {
+  const calls = db.prepare(`
+    SELECT tool_name, session_id, result_status, duration_ms, created_at
+    FROM tool_call_log
+    ORDER BY created_at DESC LIMIT 50
+  `).all();
+
+  const total = db.prepare("SELECT COUNT(*) as c FROM tool_call_log").get() as { c: number };
+
+  json(res, { calls, totalCalls: total.c });
+}
+
+function apiAgentMailbox(db: Database.Database, res: ServerResponse) {
+  const messages = db.prepare(`
+    SELECT id, sender_id, recipient_id, recipient_role, category, priority, subject, body, created_at
+    FROM agent_mailbox
+    WHERE read = 0
+    ORDER BY
+      CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
+      created_at DESC
+    LIMIT 20
+  `).all();
+
+  json(res, { messages });
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

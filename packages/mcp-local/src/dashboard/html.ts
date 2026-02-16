@@ -93,6 +93,19 @@ export function getDashboardHtml(): string {
     .fade-up:nth-child(n+4) { animation-delay: 150ms; }
     @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.35} }
     .pulse-live { animation: pulse2 2s infinite; }
+    @keyframes pulseAgent { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(52,211,153,.4)} 50%{opacity:.7;box-shadow:0 0 0 4px rgba(52,211,153,0)} }
+    .pulse-agent { animation: pulseAgent 2s ease-in-out infinite; }
+
+    /* ── Agent Monitor ────────────────────────────────────── */
+    .agent-lane { border-left: 3px solid var(--border-accent); transition: border-color var(--transition-base); }
+    .agent-lane:hover { border-left-color: #818cf8; }
+    .agent-budget-bar { height:4px; border-radius:2px; background:var(--surface-2); overflow:hidden; }
+    .agent-budget-fill { height:100%; border-radius:2px; transition: width var(--transition-base); }
+    .activity-feed { max-height:400px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border-base) transparent; }
+    .activity-feed::-webkit-scrollbar { width:6px; }
+    .activity-feed::-webkit-scrollbar-track { background:transparent; }
+    .activity-feed::-webkit-scrollbar-thumb { background:var(--border-base); border-radius:3px; }
+    .activity-feed::-webkit-scrollbar-thumb:hover { background:var(--border-hover); }
 
     /* ── Skeleton Loading ──────────────────────────────────── */
     .skeleton { border-radius: var(--radius-lg); background: linear-gradient(90deg, var(--surface-2) 25%, #1f1f23 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s ease-in-out infinite; }
@@ -103,6 +116,7 @@ export function getDashboardHtml(): string {
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
       .fade-up { animation: none; opacity: 1; transform: none; }
       .pulse-live { animation: none; }
+      .pulse-agent { animation: none; }
       .skeleton { animation: none; }
       .ss-card:hover { transform: none; }
       .score-ring .fg { transition: none; }
@@ -345,8 +359,11 @@ export function getDashboardHtml(): string {
     <a href="#root" style="background:#4f46e5;color:#fff;padding:8px 16px;display:block" onfocus="this.parentElement.style.position='fixed';this.parentElement.classList.remove('sr-only')" onblur="this.parentElement.classList.add('sr-only')">Skip to main content</a>
   </nav>
 
+  <!-- Agent Monitor (independent refresh cycle) -->
+  <div id="agent-monitor" class="max-w-[960px] mx-auto px-5 pt-6" aria-label="Parallel agent monitor" role="region"></div>
+
   <!-- All content rendered here -->
-  <main id="root" class="max-w-[960px] mx-auto px-5 pt-6 pb-20">
+  <main id="root" class="max-w-[960px] mx-auto px-5 pb-20">
     <div class="space-y-4" aria-busy="true" aria-label="Loading dashboard">
       <div class="skeleton" style="height:120px"></div>
       <div class="skeleton" style="height:14px;width:180px;margin-top:24px;border-radius:4px"></div>
@@ -361,6 +378,8 @@ export function getDashboardHtml(): string {
   let _allSessions = [];
   let _compareMode = false;
   let _lastDataHash = '';
+  let _agentHash = '';
+  let _agentTimer = null;
   let _failCount = 0;
   let _backoff = 5000;
   // Persistent gallery state (survives auto-refresh re-renders)
@@ -382,7 +401,9 @@ export function getDashboardHtml(): string {
     if (_allSessions.length) { SID = _allSessions[0].id; pk.value = SID; }
     pk.onchange = e => { SID = e.target.value; if(!_compareMode) load(); };
     load();
+    loadAgents();
     _t = setInterval(() => { if(!_compareMode) load(); }, 5000);
+    _agentTimer = setInterval(() => { loadAgents(); }, 2500);
   }
 
   function toggleCompare() {
@@ -524,6 +545,172 @@ export function getDashboardHtml(): string {
       dot.style.background = '';
       label.textContent = 'Auto-refresh';
     }
+  }
+
+  // ── Agent Monitor ──────────────────────────────────────────────
+
+  function timeSince(iso) {
+    const diff = Math.floor((Date.now() - new Date(iso+'Z').getTime()) / 1000);
+    if (diff < 0) return 'now';
+    if (diff < 60) return diff + 's';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+    return Math.floor(diff / 86400) + 'd';
+  }
+
+  async function loadAgents() {
+    try {
+      const [status, activity, mail] = await Promise.all([
+        fetch('/api/agents/status').then(r => r.json()),
+        fetch('/api/agents/activity').then(r => r.json()),
+        fetch('/api/agents/mailbox').then(r => r.json()),
+      ]);
+      const hash = simpleHash(JSON.stringify([status, activity, mail]));
+      if (hash === _agentHash) return;
+      _agentHash = hash;
+      const el = $('agent-monitor');
+      if (el) el.innerHTML = renderAgentMonitor(status, activity, mail);
+    } catch(e) {
+      // Agent endpoints may not have data yet — silently ignore
+    }
+  }
+
+  function renderAgentMonitor(status, activity, mail) {
+    const h = [];
+    const agents = status.agents || [];
+    const calls = (activity.calls || []).slice(0, 20);
+    const msgs = mail.messages || [];
+    const hasContent = agents.length > 0 || calls.length > 0;
+
+    if (!hasContent) {
+      h.push('<div class="fade-up ring-glow rounded-xl bg-surface-1 p-5 mb-6">');
+      h.push('<div style="text-align:center;padding:12px 0">');
+      h.push('<div style="font-size:28px;opacity:.25;filter:grayscale(1);margin-bottom:8px" aria-hidden="true">&#129302;</div>');
+      h.push('<div class="text-zinc-500 text-sm font-medium">No parallel agents active</div>');
+      h.push('<div class="text-zinc-600 text-xs mt-1">Start a multi-agent session to see live activity here.</div>');
+      h.push('</div></div>');
+      return h.join('');
+    }
+
+    // ── Swim Lanes ──────────────────────────────────────
+    if (agents.length > 0) {
+      h.push('<div class="fade-up mb-5">');
+      h.push('<div class="flex items-center gap-2.5 mb-3">');
+      h.push('<div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--gradient-accent)">');
+      h.push('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#c7d2fe"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>');
+      h.push('</div>');
+      h.push('<div><div class="text-sm font-semibold text-white">Parallel Agents</div>');
+      h.push('<div class="text-[11px] text-zinc-500">'+agents.length+' agent'+(agents.length!==1?'s':'')+' working</div></div>');
+      h.push('</div>');
+
+      agents.forEach(function(ag, idx) {
+        var pct = ag.tokenBudget.percent;
+        var budgetClr = pct >= 80 ? '#f87171' : pct >= 60 ? '#fbbf24' : '#34d399';
+        var isStale = ag.lastCallAt && (Date.now() - new Date(ag.lastCallAt+'Z').getTime()) > 7200000;
+
+        h.push('<div class="agent-lane ring-glow rounded-lg bg-surface-1 p-4 mb-2 fade-up" style="animation-delay:'+(idx*50)+'ms">');
+
+        // Header
+        h.push('<div class="flex items-center justify-between mb-2">');
+        h.push('<div class="flex items-center gap-2">');
+        if (isStale) {
+          h.push('<span class="w-2 h-2 rounded-full" style="background:#fbbf24" title="No activity for 2+ hours" aria-label="Stale agent"></span>');
+        } else {
+          h.push('<span class="w-2 h-2 rounded-full pulse-agent" style="background:#34d399" aria-label="Active agent"></span>');
+        }
+        h.push('<span class="text-sm font-semibold text-white">'+esc(ag.role)+'</span>');
+        if (ag.focusArea) h.push('<span class="text-xs text-zinc-500"> &middot; '+esc(ag.focusArea)+'</span>');
+        h.push('</div>');
+        h.push('<span class="text-[10px] text-zinc-600 font-mono">'+esc(ag.sessionId.slice(-8))+'</span>');
+        h.push('</div>');
+
+        // Task
+        if (ag.currentTask) {
+          h.push('<div class="flex items-start gap-2 mb-2">');
+          h.push('<span class="text-[10px] px-1.5 py-0.5 rounded font-medium" style="background:rgba(99,102,241,.12);color:#a5b4fc">Task</span>');
+          h.push('<div class="flex-1 min-w-0">');
+          h.push('<div class="text-xs text-zinc-300 font-medium">'+esc(ag.currentTask.key)+'</div>');
+          if (ag.currentTask.description) h.push('<div class="text-[11px] text-zinc-500 mt-0.5">'+esc(ag.currentTask.description)+'</div>');
+          h.push('</div>');
+          h.push('<span class="text-[10px] text-zinc-500 shrink-0">'+timeSince(ag.currentTask.claimedAt)+'</span>');
+          h.push('</div>');
+        }
+
+        // Stats row
+        h.push('<div class="flex items-center gap-4 text-[11px] text-zinc-400 mb-2">');
+        h.push('<span title="Tool calls in last 30 minutes">'+ag.toolCallCount+' calls</span>');
+        h.push('<span title="Context budget usage" style="color:'+budgetClr+'">'+pct+'% budget</span>');
+        if (ag.unreadMessages > 0) h.push('<span style="color:#818cf8" title="Unread messages">'+ag.unreadMessages+' msg</span>');
+        h.push('</div>');
+
+        // Budget bar
+        h.push('<div class="agent-budget-bar"><div class="agent-budget-fill" style="width:'+Math.min(pct,100)+'%;background:'+budgetClr+'"></div></div>');
+
+        h.push('</div>');
+      });
+
+      h.push('</div>');
+    }
+
+    // ── Activity Feed ───────────────────────────────────
+    if (calls.length > 0) {
+      h.push('<div class="fade-up mb-5">');
+      h.push('<div class="flex items-center gap-2.5 mb-3">');
+      h.push('<div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#1e1b4b">');
+      h.push('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>');
+      h.push('</div>');
+      h.push('<div><div class="text-sm font-semibold text-white">Recent Activity</div>');
+      h.push('<div class="text-[11px] text-zinc-500">'+(activity.totalCalls||calls.length)+' total calls</div></div>');
+      h.push('</div>');
+
+      h.push('<div class="ring-glow rounded-lg bg-surface-1 activity-feed" role="log" aria-label="Recent tool call activity">');
+      calls.forEach(function(c) {
+        var elapsed = timeSince(c.created_at);
+        var icon = c.result_status === 'success'
+          ? '<span style="color:#34d399" aria-label="Success">&#10003;</span>'
+          : '<span style="color:#f87171" aria-label="Error">&#10007;</span>';
+        var dur = c.duration_ms >= 1000 ? (c.duration_ms/1000).toFixed(1)+'s' : c.duration_ms+'ms';
+
+        h.push('<div class="flex items-center gap-2.5 px-4 py-2 text-xs" style="border-bottom:1px solid rgba(39,39,42,.4)">');
+        h.push('<span class="text-zinc-600 font-mono text-[10px] w-10 text-right shrink-0">'+elapsed+'</span>');
+        h.push('<span class="text-zinc-600 font-mono text-[10px] w-12 shrink-0">'+esc(c.session_id.slice(-6))+'</span>');
+        h.push('<span class="font-mono flex-1 min-w-0 truncate" style="color:#a5b4fc">'+esc(c.tool_name)+'</span>');
+        h.push('<span class="text-zinc-500 text-[10px] shrink-0">'+dur+'</span>');
+        h.push(icon);
+        h.push('</div>');
+      });
+      h.push('</div></div>');
+    }
+
+    // ── Mailbox ─────────────────────────────────────────
+    if (msgs.length > 0) {
+      h.push('<div class="fade-up mb-5">');
+      h.push('<div class="flex items-center gap-2.5 mb-3">');
+      h.push('<div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:#7c2d12">');
+      h.push('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fdba74" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>');
+      h.push('</div>');
+      h.push('<div><div class="text-sm font-semibold text-white">Agent Messages</div>');
+      h.push('<div class="text-[11px] text-zinc-500">'+msgs.length+' unread</div></div>');
+      h.push('</div>');
+
+      msgs.forEach(function(m) {
+        h.push('<div class="ring-glow rounded-lg bg-surface-1 p-4 mb-2 fade-up">');
+        h.push('<div class="flex items-center gap-2 mb-1.5">');
+        if (m.priority === 'critical') h.push('<span class="sev-critical text-[10px] px-1.5 py-0.5 rounded font-medium">CRITICAL</span>');
+        else if (m.priority === 'high') h.push('<span class="sev-high text-[10px] px-1.5 py-0.5 rounded font-medium">HIGH</span>');
+        h.push('<span class="text-[10px] px-1.5 py-0.5 rounded font-medium" style="background:var(--surface-2);color:#a1a1aa">'+esc(m.category)+'</span>');
+        h.push('<span class="text-[10px] text-zinc-600 font-mono">from '+esc(m.sender_id.slice(-8))+'</span>');
+        h.push('</div>');
+        h.push('<div class="text-[13px] font-medium text-white mb-1">'+esc(m.subject)+'</div>');
+        var body = m.body.length > 200 ? m.body.slice(0,200)+'\\u2026' : m.body;
+        h.push('<div class="text-xs text-zinc-400 leading-relaxed">'+esc(body)+'</div>');
+        h.push('</div>');
+      });
+
+      h.push('</div>');
+    }
+
+    return h.join('');
   }
 
   function render(ov, bugs, fixes, comps, locs, logs, tests, revs, shots) {
