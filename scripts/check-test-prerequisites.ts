@@ -6,6 +6,7 @@
  */
 
 import * as http from 'http';
+import { existsSync, readFileSync } from 'fs';
 
 interface PrerequisiteCheck {
   name: string;
@@ -14,43 +15,47 @@ interface PrerequisiteCheck {
   help: string;
 }
 
+function httpGetText(url: string, timeoutMs: number): Promise<{ ok: boolean; status?: number; text?: string }> {
+  return new Promise((resolve) => {
+    const req = http.get(url, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => resolve({ ok: res.statusCode === 200, status: res.statusCode, text: data }));
+    });
+    req.on('error', () => resolve({ ok: false }));
+    req.setTimeout(timeoutMs, () => {
+      req.destroy();
+      resolve({ ok: false });
+    });
+  });
+}
+
+function hasConvexUrlConfigured(): boolean {
+  if (process.env.VITE_CONVEX_URL && process.env.VITE_CONVEX_URL.trim().length > 0) return true;
+
+  if (!existsSync('.env.local')) return false;
+  const raw = readFileSync('.env.local', 'utf8');
+  const match = raw.match(/^\s*VITE_CONVEX_URL\s*=\s*("?)(.+?)\1\s*$/m);
+  return !!match?.[2]?.trim();
+}
+
 const checks: PrerequisiteCheck[] = [
   {
     name: 'Frontend Dev Server',
     check: async () => {
-      return new Promise((resolve) => {
-        const req = http.get('http://localhost:5173', (res) => {
-          resolve(res.statusCode === 200);
-        });
-        req.on('error', () => resolve(false));
-        req.setTimeout(2000, () => {
-          req.destroy();
-          resolve(false);
-        });
-      });
+      const res = await httpGetText('http://localhost:5173', 2000);
+      return res.ok;
     },
     required: true,
     help: 'Run: npm run dev'
   },
   {
-    name: 'Convex Backend',
+    name: 'Convex Config (VITE_CONVEX_URL)',
     check: async () => {
-      // Check if convex dev is running by looking for the typical process
-      // This is a simplified check - we're checking if the frontend can connect
-      return new Promise((resolve) => {
-        const req = http.get('http://localhost:5173', (res) => {
-          // If frontend is up, convex is likely connected
-          resolve(res.statusCode === 200);
-        });
-        req.on('error', () => resolve(false));
-        req.setTimeout(2000, () => {
-          req.destroy();
-          resolve(false);
-        });
-      });
+      return hasConvexUrlConfigured();
     },
     required: true,
-    help: 'Run: npx convex dev (in another terminal)'
+    help: 'Set VITE_CONVEX_URL in .env.local, then restart dev server'
   },
 ];
 

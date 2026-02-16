@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search,
@@ -30,7 +30,7 @@ export interface CommandAction {
     id: string;
     label: string;
     description?: string;
-    icon: React.ReactNode;
+    icon: ReactNode;
     keywords: string[];
     section: 'navigation' | 'create' | 'search' | 'ai' | 'recent' | 'settings';
     shortcut?: string;

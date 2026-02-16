@@ -9,9 +9,8 @@ import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 import { AnimatePresence, motion } from "framer-motion";
 
-import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight } from "lucide-react";
+import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
-import { SettingsModal } from "./SettingsModal";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
@@ -162,6 +161,7 @@ const McpToolLedgerView = lazy(() =>
     default: mod.McpToolLedgerView,
   })),
 );
+const SettingsModal = lazy(() => import("./SettingsModal"));
 
 const viewFallback = <ViewSkeleton variant="default" />;
 
@@ -307,6 +307,10 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   // Command Palette state with global Cmd/Ctrl+K shortcut
   const commandPalette = useCommandPalette();
+  const commandShortcutLabel =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+      ? "⌘K"
+      : "Ctrl+K";
 
   // Sync Fast Agent panel state with global context
   const { registerExternalState, options: fastAgentOpenOptions, clearOptions: clearFastAgentOptions } = useFastAgent();
@@ -468,12 +472,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={commandPalette.toggle}
+                aria-label="Open command palette"
+                data-testid="open-command-palette"
                 className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-[13px]">Search...</span>
                 <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
-                  {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl+'}K
+                  {commandShortcutLabel}
                 </kbd>
               </button>
             </div>
@@ -525,22 +531,29 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               {/* Divider */}
               <div className="w-px h-5 bg-gray-200/60 dark:bg-white/[0.06] mx-0.5" />
 
-              {/* User Avatar */}
-              {user && (
-                <button
-                  onClick={() => openSettings('profile')}
-                  className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
-                  title={user.name || user.email || 'Profile'}
-                >
-                  {user.image ? (
+              {/* Settings / Profile */}
+              <button
+                type="button"
+                onClick={() => openSettings(user ? "profile" : "usage")}
+                className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                title="Open settings"
+                aria-label="Settings"
+                data-testid="open-settings"
+              >
+                {user ? (
+                  user.image ? (
                     <img src={user.image} alt="" className="h-6 w-6 rounded-full" />
                   ) : (
                     <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
                       {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
                     </div>
-                  )}
-                </button>
-              )}
+                  )
+                ) : (
+                  <div className="h-6 w-6 rounded-full bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-gray-500 dark:text-gray-300">
+                    <SettingsIcon className="h-4 w-4" />
+                  </div>
+                )}
+              </button>
             </div>
           </div>
 
@@ -831,14 +844,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         )}
       </div>
 
-      {showSettingsModal && (
-        <SettingsModal
-          isOpen={showSettingsModal}
-          onClose={() => setShowSettingsModal(false)}
-          initialTab={settingsInitialTab}
-        />
-      )}
-
       {/* Command Palette - Global Cmd/Ctrl+K */}
       <CommandPalette
         isOpen={commandPalette.isOpen}
@@ -879,11 +884,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
       {/* Quick Capture Widget - Floating FAB */}
       {isAuthenticated && <QuickCaptureWidget />}
-      <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-        initialTab={settingsInitialTab}
-      />
+      {showSettingsModal && (
+        <Suspense fallback={null}>
+          <SettingsModal
+            isOpen={showSettingsModal}
+            onClose={() => setShowSettingsModal(false)}
+            initialTab={settingsInitialTab}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

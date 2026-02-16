@@ -39,10 +39,50 @@ if (import.meta.env?.DEV) {
   }, true);
 }
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+function MissingConvexUrlScreen() {
+  const example = `VITE_CONVEX_URL="https://your-deployment.convex.cloud"`;
+  return (
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+      <div className="w-full max-w-2xl rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="text-sm font-semibold text-muted-foreground">Setup required</div>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Convex backend not configured</h1>
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+          This UI needs <code className="font-mono">VITE_CONVEX_URL</code> to connect to Convex. Without it,
+          the app cannot load data or sign in.
+        </p>
+
+        <div className="mt-5 rounded-lg bg-muted/40 p-4">
+          <div className="text-xs font-semibold text-muted-foreground">Create or update</div>
+          <div className="mt-2 text-xs font-mono whitespace-pre-wrap select-text">{example}</div>
+          <div className="mt-2 text-xs text-muted-foreground">
+            Put this in <code className="font-mono">.env.local</code> (not committed), then restart the dev server.
+          </div>
+        </div>
+
+        <div className="mt-5 text-sm text-muted-foreground">
+          Quick start:
+          <ol className="mt-2 list-decimal list-inside space-y-1">
+            <li>
+              Run <code className="font-mono">npx convex dev</code> and copy the deployment URL.
+            </li>
+            <li>
+              Set <code className="font-mono">VITE_CONVEX_URL</code> in <code className="font-mono">.env.local</code>.
+            </li>
+            <li>
+              Run <code className="font-mono">npm run dev</code>.
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const convexUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
+const convex = convexUrl ? new ConvexReactClient(convexUrl) : null;
 
 // Prod: capture global errors into a deduped bug-card workflow (Ralph loop substrate).
-if (import.meta.env.PROD) {
+if (import.meta.env.PROD && convex) {
   const lastSentBySig = new Map<string, number>();
   const send = (args: { message: string; stack?: string; route?: string; section?: string; url?: string; userAgent?: string }) => {
     try {
@@ -114,11 +154,15 @@ if (import.meta.env.PROD) {
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    <ConvexAuthProvider client={convex}>
-      <ToastProvider>
-        <App />
-      </ToastProvider>
-    </ConvexAuthProvider>
+    {convex ? (
+      <ConvexAuthProvider client={convex}>
+        <ToastProvider>
+          <App />
+        </ToastProvider>
+      </ConvexAuthProvider>
+    ) : (
+      <MissingConvexUrlScreen />
+    )}
   </BrowserRouter>,
 );
 
