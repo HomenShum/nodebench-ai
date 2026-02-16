@@ -107,6 +107,21 @@ export function getDashboardHtml(): string {
     .activity-feed::-webkit-scrollbar-thumb { background:var(--border-base); border-radius:3px; }
     .activity-feed::-webkit-scrollbar-thumb:hover { background:var(--border-hover); }
 
+    /* ── Back to Top ─────────────────────────────────────── */
+    .back-to-top {
+      position: fixed; bottom: 24px; right: 24px; z-index: 90;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--gradient-accent); border: 1px solid var(--border-accent);
+      color: #c7d2fe; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(12px); pointer-events: none;
+      transition: opacity var(--transition-base), transform var(--transition-base);
+      box-shadow: 0 4px 12px rgba(99,102,241,.3);
+    }
+    .back-to-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .back-to-top:hover { box-shadow: 0 6px 20px rgba(99,102,241,.5); }
+    .back-to-top:focus-visible { outline: 2px solid var(--border-accent); outline-offset: 2px; }
+
     /* ── Skeleton Loading ──────────────────────────────────── */
     .skeleton { border-radius: var(--radius-lg); background: linear-gradient(90deg, var(--surface-2) 25%, #1f1f23 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.5s ease-in-out infinite; }
     @keyframes skeleton-shimmer { 0%, 100% { background-position: 200% 0; } 50% { background-position: 0% 0; } }
@@ -154,7 +169,8 @@ export function getDashboardHtml(): string {
     }
     .ss-card:hover { transform:translateY(-3px); box-shadow: var(--shadow-lift); border-color:#4f46e5; }
     .ss-card:focus-visible { box-shadow: var(--shadow-lift); border-color:#4f46e5; }
-    .ss-card img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:linear-gradient(135deg,#18181b 0%,#1f1f23 100%); }
+    .ss-card img { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:linear-gradient(135deg,#18181b 0%,#1f1f23 100%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.06); }
+    .ss-card { border-color: #3f3f46; }
     .ss-meta { padding: var(--sp-2) var(--sp-3); border-top:1px solid #1e1e22; }
     .ss-toolbar {
       display:flex; align-items:center; gap: var(--sp-3); flex-wrap:wrap;
@@ -336,15 +352,15 @@ export function getDashboardHtml(): string {
 <body class="bg-surface-0 text-zinc-300 min-h-screen">
 
   <!-- Sticky header -->
-  <header class="glass border-b border-border sticky top-0 z-50 px-5 h-14 flex items-center justify-between">
+  <header class="glass border-b border-border sticky top-0 z-50 px-5 py-2 flex items-center justify-between flex-wrap gap-2 min-h-[3.5rem]">
     <div class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-md bg-gradient-to-br from-accent-dim to-accent flex items-center justify-center text-white text-xs font-bold">N</div>
+      <div class="w-7 h-7 rounded-md bg-gradient-to-br from-accent-dim to-accent flex items-center justify-center text-white text-xs font-bold shrink-0">N</div>
       <div>
         <span class="text-sm font-semibold text-white tracking-tight" id="hdr-title">UI Review</span>
         <span class="text-[10px] text-zinc-500 ml-1.5" id="hdr-status"></span>
       </div>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 flex-wrap">
       <span class="flex items-center gap-1.5 text-[10px] text-zinc-500"><span class="w-1.5 h-1.5 rounded-full bg-ok pulse-live" aria-hidden="true"></span><span aria-live="polite">Auto-refresh</span></span>
       <label for="session-picker" class="sr-only">Select session</label>
       <select id="session-picker" class="bg-surface-2 border border-border rounded-md px-2.5 py-1 text-xs text-zinc-300 focus:outline-none focus:ring-1 focus:ring-accent max-w-[300px]">
@@ -361,6 +377,11 @@ export function getDashboardHtml(): string {
 
   <!-- Agent Monitor (independent refresh cycle) -->
   <div id="agent-monitor" class="max-w-[960px] mx-auto px-5 pt-6" aria-label="Parallel agent monitor" role="region"></div>
+
+  <!-- Back to Top -->
+  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top" title="Back to top">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
 
   <!-- All content rendered here -->
   <main id="root" class="max-w-[960px] mx-auto px-5 pb-20">
@@ -404,6 +425,14 @@ export function getDashboardHtml(): string {
     loadAgents();
     _t = setInterval(() => { if(!_compareMode) load(); }, 5000);
     _agentTimer = setInterval(() => { loadAgents(); }, 2500);
+
+    // Back-to-top visibility
+    var btt = $('back-to-top');
+    if (btt) {
+      window.addEventListener('scroll', function() {
+        btt.classList.toggle('visible', window.scrollY > 600);
+      }, { passive: true });
+    }
   }
 
   function toggleCompare() {
@@ -670,7 +699,8 @@ export function getDashboardHtml(): string {
       h.push('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>');
       h.push('</div>');
       h.push('<div><div class="text-sm font-semibold text-white">Recent Activity</div>');
-      h.push('<div class="text-[11px] text-zinc-500">'+(activity.totalCalls||calls.length)+' total calls</div></div>');
+      var totalC = sum.totalCalls || activity.totalCalls || calls.length;
+      h.push('<div class="text-[11px] text-zinc-500">Latest '+calls.length+(totalC > calls.length ? ' of '+totalC : '')+' calls</div></div>');
       h.push('</div>');
 
       h.push('<div class="ring-glow rounded-lg bg-surface-1 activity-feed" role="log" aria-label="Recent tool call activity">');
@@ -822,36 +852,47 @@ export function getDashboardHtml(): string {
       const bugTitles = new Set(bugs.map(b=>(b.title||'').toLowerCase().trim()));
       const uniqueFindings = findings.filter(f => !bugTitles.has((f.title||'').toLowerCase().trim()));
 
+      const hasFindings = sev.critical || sev.high || sev.medium || sev.low;
       h.push(sec('Code Review', sc+'/100 quality score'+(uniqueFindings.length>0?' &middot; '+uniqueFindings.length+' additional finding'+(uniqueFindings.length!==1?'s':''):'')));
-      h.push('<div class="ring-glow rounded-lg bg-surface-1 p-5 fade-up">');
-      h.push('<div class="flex items-center justify-between">');
-      h.push('<div class="flex items-center gap-3"><span class="text-2xl font-bold '+(sc>=80?'text-ok':sc>=60?'text-warn':'text-err')+'">'+gr+'</span>');
-      h.push('<div><div class="text-sm font-semibold text-white">'+sc+'/100</div><div class="text-[11px] text-zinc-500">Overall quality</div></div></div>');
-      h.push('<div class="flex gap-4 text-center text-[11px]">');
-      ['critical','high','medium','low'].forEach(sv => {
-        const v = sev[sv]||0;
-        if(v===0) return;
-        const c = {critical:'text-err',high:'text-warn',medium:'text-accent',low:'text-ok'}[sv];
-        h.push('<div><div class="text-base font-bold '+c+'">'+v+'</div><div class="text-zinc-500 capitalize">'+sv+'</div></div>');
-      });
-      if(!sev.critical && !sev.high && !sev.medium && !sev.low) h.push('<div class="text-[11px] text-zinc-500">No findings</div>');
-      h.push('</div></div>');
-      if (uniqueFindings.length) {
-        h.push('<div class="space-y-2 mt-4">');
-        uniqueFindings.forEach(f => {
-          h.push('<div class="flex items-start gap-2.5 text-xs">');
-          h.push(sevBadge(f.severity));
-          h.push('<div class="flex-1 min-w-0">');
-          h.push('<div class="font-medium text-zinc-200">'+esc(f.title)+'</div>');
-          h.push('<div class="text-zinc-500 mt-0.5 leading-relaxed">'+truncWords(esc(f.description),200)+'</div>');
-          if (f.codeFile) h.push('<span class="file-chip mt-1">'+esc(shortPath(f.codeFile))+(f.codeLine?' '+esc(f.codeLine):'')+'</span>');
-          h.push('</div>');
-          h.push(statusBadge(f.status));
-          h.push('</div>');
+
+      if (!hasFindings && uniqueFindings.length === 0) {
+        // Compact single-line for clean reviews
+        h.push('<div class="ring-glow rounded-lg bg-surface-1 px-5 py-3 fade-up">');
+        h.push('<div class="flex items-center gap-3">');
+        h.push('<span class="text-lg font-bold text-ok">'+gr+'</span>');
+        h.push('<span class="text-sm font-semibold text-white">'+sc+'/100</span>');
+        h.push('<span class="text-[11px] text-zinc-500">No findings</span>');
+        h.push('</div></div>');
+      } else {
+        h.push('<div class="ring-glow rounded-lg bg-surface-1 p-5 fade-up">');
+        h.push('<div class="flex items-center justify-between">');
+        h.push('<div class="flex items-center gap-3"><span class="text-2xl font-bold '+(sc>=80?'text-ok':sc>=60?'text-warn':'text-err')+'">'+gr+'</span>');
+        h.push('<div><div class="text-sm font-semibold text-white">'+sc+'/100</div><div class="text-[11px] text-zinc-500">Overall quality</div></div></div>');
+        h.push('<div class="flex gap-4 text-center text-[11px]">');
+        ['critical','high','medium','low'].forEach(sv => {
+          const v = sev[sv]||0;
+          if(v===0) return;
+          const c = {critical:'text-err',high:'text-warn',medium:'text-accent',low:'text-ok'}[sv];
+          h.push('<div><div class="text-base font-bold '+c+'">'+v+'</div><div class="text-zinc-500 capitalize">'+sv+'</div></div>');
         });
+        h.push('</div></div>');
+        if (uniqueFindings.length) {
+          h.push('<div class="space-y-2 mt-4">');
+          uniqueFindings.forEach(f => {
+            h.push('<div class="flex items-start gap-2.5 text-xs">');
+            h.push(sevBadge(f.severity));
+            h.push('<div class="flex-1 min-w-0">');
+            h.push('<div class="font-medium text-zinc-200">'+esc(f.title)+'</div>');
+            h.push('<div class="text-zinc-500 mt-0.5 leading-relaxed">'+truncWords(esc(f.description),200)+'</div>');
+            if (f.codeFile) h.push('<span class="file-chip mt-1">'+esc(shortPath(f.codeFile))+(f.codeLine?' '+esc(f.codeLine):'')+'</span>');
+            h.push('</div>');
+            h.push(statusBadge(f.status));
+            h.push('</div>');
+          });
+          h.push('</div>');
+        }
         h.push('</div>');
       }
-      h.push('</div>');
     }
 
     // ── Changelog (Carousel) — shown BEFORE screenshots ──────

@@ -26,20 +26,26 @@ export function startDashboardServer(db: Database.Database, preferredPort = 6274
 
     _server = createServer((req, res) => handleRequest(db, req, res));
 
+    let attempts = 0;
+    const maxAttempts = 10;
+
+    function tryListen(port: number) {
+      _server!.listen(port, "127.0.0.1", () => {
+        _port = port;
+        resolve(_port);
+      });
+    }
+
     _server.on("error", (err: NodeJS.ErrnoException) => {
-      if (err.code === "EADDRINUSE") {
-        // Try next port
-        _server!.listen(preferredPort + 1, "127.0.0.1");
-        _port = preferredPort + 1;
+      if (err.code === "EADDRINUSE" && attempts < maxAttempts) {
+        attempts++;
+        tryListen(preferredPort + attempts);
       } else {
         reject(err);
       }
     });
 
-    _server.listen(preferredPort, "127.0.0.1", () => {
-      _port = preferredPort;
-      resolve(_port);
-    });
+    tryListen(preferredPort);
   });
 }
 
