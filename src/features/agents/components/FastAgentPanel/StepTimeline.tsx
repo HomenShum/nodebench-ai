@@ -189,6 +189,7 @@ export function StepTimeline({
                       </div>
                       {step.toolName && (
                         <button
+                          type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedToolResult({
@@ -199,6 +200,7 @@ export function StepTimeline({
                             });
                           }}
                           className="text-xs text-[var(--text-secondary)] mt-0.5 hover:text-blue-600 transition-colors"
+                          aria-label={`View ${step.toolName} result`}
                         >
                           Tool: <code className="bg-[var(--bg-hover)] px-1 rounded hover:bg-blue-100 cursor-pointer">{step.toolName}</code>
                         </button>

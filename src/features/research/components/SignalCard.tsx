@@ -86,6 +86,7 @@ export function SignalCard({
           onSignalClick?.(signal);
         }}
         className="w-full text-left pl-5 pr-4 py-4 flex items-start gap-3"
+        aria-expanded={isExpanded}
       >
         {/* Signal Number */}
         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 text-indigo-700

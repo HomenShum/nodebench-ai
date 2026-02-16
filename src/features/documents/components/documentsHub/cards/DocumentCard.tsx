@@ -581,7 +581,7 @@ export function DocumentCard({
             {persistedTags.slice(0, 3).map((tag) => {
               // Semantic color coding by tag kind
               const kindColors: Record<string, string> = {
-                entity: 'bg-purple-50 text-purple-600 border-purple-100',
+                entity: 'bg-purple-50 text-purple-600 border-purple-100', // code key unchanged
                 topic: 'bg-blue-50 text-blue-600 border-blue-100',
                 community: 'bg-green-50 text-green-600 border-green-100',
                 relationship: 'bg-orange-50 text-orange-600 border-orange-100',
@@ -592,7 +592,7 @@ export function DocumentCard({
                 <span
                   key={tag._id}
                   className={`px-1.5 py-0.5 text-[8px] font-medium rounded border whitespace-nowrap ${colorClass}`}
-                  title={tag.kind ? `${tag.kind}: ${tag.name}` : tag.name}
+                  title={tag.kind ? `${tag.kind === 'entity' ? 'topic' : tag.kind}: ${tag.name}` : tag.name}
                 >
                   #{tag.name}
                 </span>
@@ -685,7 +685,7 @@ export function DocumentCard({
           <div className="absolute bottom-2 left-2">
             {isDossier && (
               <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100">
-                Dossier
+                Report
               </span>
             )}
             {isLinkedAsset && !isDossier && (

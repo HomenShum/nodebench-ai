@@ -85,6 +85,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
           onChange={(e) => setStageFilter(e.target.value)}
           onFocus={() => setFocusedSelect("stage")}
           onBlur={() => setFocusedSelect(null)}
+          aria-label="Filter by stage"
           className={`flex-1 text-sm border rounded-lg px-3 py-2 bg-[color:var(--bg-secondary)] focus:outline-none focus:ring-2 ${
             focusedSelect === "stage" ? "border-[color:var(--border-color)] ring-[color:var(--border-color)]" : "border-[color:var(--border-color)] ring-[color:var(--border-color)]"
           }`}
@@ -101,6 +102,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
           onChange={(e) => setSectorFilter(e.target.value)}
           onFocus={() => setFocusedSelect("sector")}
           onBlur={() => setFocusedSelect(null)}
+          aria-label="Filter by sector"
           className={`flex-1 text-sm border rounded-lg px-3 py-2 bg-[color:var(--bg-secondary)] focus:outline-none focus:ring-2 ${
             focusedSelect === "sector" ? "border-[color:var(--border-color)] ring-[color:var(--border-color)]" : "border-[color:var(--border-color)] ring-[color:var(--border-color)]"
           }`}

@@ -131,7 +131,7 @@ export default function FiltersToolsBar(props: Props) {
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-gray-900 dark:text-gray-100 bg-white dark:bg-white/[0.1] shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-white/60"}`}
             title="Show grouped sections"
           >
-            Segmented
+            Grouped
           </button>
         </div>
 

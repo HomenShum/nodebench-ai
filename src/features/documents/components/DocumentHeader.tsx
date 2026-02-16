@@ -317,14 +317,17 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             {isOwner && (
               <div className="relative">
                 <button
+                  type="button"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
                   title="More options"
+                  aria-label="More options"
+                  aria-expanded={isMenuOpen}
                 >
                   <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-color)] z-50 overflow-hidden ring-1 ring-black/5">
+                  <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-color)] z-50 overflow-hidden ring-1 ring-black/5" role="dialog" aria-label="Document options">
                     <div className="py-1">
                       {!document.isPublic ? (
                         <>
@@ -414,13 +417,13 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                     <span
                       key={t._id}
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${kindPillClass(t.kind)}`}
-                      title={t.kind ? `${t.name} · ${t.kind}${typeof t.importance === 'number' ? ` · ${t.importance.toFixed(2)}` : ''}` : (typeof t.importance === 'number' ? `${t.name} · ${t.importance.toFixed(2)}` : t.name)}
+                      title={t.kind ? `${t.name} · ${t.kind === 'entity' ? 'topic' : t.kind}${typeof t.importance === 'number' ? ` · ${t.importance.toFixed(2)}` : ''}` : (typeof t.importance === 'number' ? `${t.name} · ${t.importance.toFixed(2)}` : t.name)}
                     >
                       {/* Left kind strip (click to cycle kind) */}
                       <button
                         onClick={() => void handleCycleKind(t)}
                         className={`${kindStripClass(t.kind)} w-1.5 h-3 rounded-sm`}
-                        title={`Kind: ${t.kind ?? 'unknown'} (click to change)`}
+                        title={`Kind: ${t.kind === 'entity' ? 'topic' : (t.kind ?? 'unknown')} (click to change)`}
                         aria-label={`Change kind for ${t.name}`}
                       />
 
@@ -508,6 +511,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                   </span>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => { setAdding(true); setEditingValue(""); }}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                     title="Add tag"
@@ -520,6 +524,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
           </div>
           <div className="flex items-center">
             <button
+              type="button"
               onClick={() => void handleGenerateTags()}
               disabled={isGenerating || !canGenerateTags}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${isGenerating || !canGenerateTags

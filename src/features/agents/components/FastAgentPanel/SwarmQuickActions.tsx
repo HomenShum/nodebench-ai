@@ -241,7 +241,7 @@ export function SwarmQuickActions({
         <code className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded-md text-[10px] font-mono border border-[var(--border-color)]">
           /spawn
         </code>{" "}
-        in the chat to customize which agents to use
+        in the chat to choose which agents to use
       </p>
     </div>
   );

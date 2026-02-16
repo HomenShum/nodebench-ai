@@ -17,12 +17,18 @@ interface ExportMenuProps {
 export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
   const [isExporting, setIsExporting] = useState(false);
   
+  // Extract the first user message as "original request" for traceability
+  const originalRequest = messages.find(m => m.role === 'user')?.content;
+
   const exportAsMarkdown = () => {
     setIsExporting(true);
-    
+
     try {
       let markdown = `# ${thread.title}\n\n`;
       markdown += `*Exported on ${new Date().toLocaleString()}*\n\n`;
+      if (originalRequest) {
+        markdown += `> **Original Request:** ${originalRequest.length > 300 ? originalRequest.slice(0, 300) + '...' : originalRequest}\n\n`;
+      }
       markdown += `---\n\n`;
       
       messages.forEach((msg, index) => {
@@ -66,6 +72,7 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
           createdAt: thread.createdAt,
           updatedAt: thread.updatedAt,
           pinned: thread.pinned,
+          originalRequest: originalRequest || null,
         },
         messages: messages.map(msg => ({
           id: msg.id,
@@ -97,6 +104,10 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
       let text = `${thread.title}\n`;
       text += `${'='.repeat(thread.title.length)}\n\n`;
       text += `Exported on ${new Date().toLocaleString()}\n\n`;
+      if (originalRequest) {
+        text += `Original Request: ${originalRequest.length > 300 ? originalRequest.slice(0, 300) + '...' : originalRequest}\n\n`;
+        text += `${'-'.repeat(60)}\n\n`;
+      }
       
       messages.forEach((msg, index) => {
         const role = msg.role === 'user' ? 'You' : 'Assistant';
@@ -117,11 +128,11 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
   };
   
   return (
-    <div className="export-menu-overlay" onClick={onClose}>
-      <div className="export-menu" onClick={(e) => e.stopPropagation()}>
+    <div className="export-menu-overlay" onClick={onClose} role="presentation">
+      <div className="export-menu" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Export conversation">
         <div className="export-menu-header">
           <h3 className="export-menu-title">Export Conversation</h3>
-          <button onClick={onClose} className="export-menu-close">
+          <button type="button" onClick={onClose} className="export-menu-close" aria-label="Close export menu">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -133,6 +144,7 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
           
           <div className="export-options">
             <button
+              type="button"
               onClick={exportAsMarkdown}
               disabled={isExporting}
               className="export-option"
@@ -145,6 +157,7 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
             </button>
             
             <button
+              type="button"
               onClick={exportAsJSON}
               disabled={isExporting}
               className="export-option"
@@ -157,6 +170,7 @@ export function ExportMenu({ thread, messages, onClose }: ExportMenuProps) {
             </button>
             
             <button
+              type="button"
               onClick={exportAsText}
               disabled={isExporting}
               className="export-option"

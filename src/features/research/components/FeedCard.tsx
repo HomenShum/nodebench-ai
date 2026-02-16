@@ -234,7 +234,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
       <div className="px-5 pb-4 flex items-center justify-between gap-3">
         <div className="text-xs text-[color:var(--text-secondary)] flex items-center gap-1">
           <ArrowUpRight className="w-3 h-3 text-[color:var(--border-color)]" />
-          {isSignal ? "View Signal" : isDossier ? "Read Dossier" : "Open"}
+          {isSignal ? "View Signal" : isDossier ? "Read Report" : "Open"}
         </div>
         <div className="flex items-center gap-2">
           {onAnalyze && (
@@ -252,6 +252,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
             onClick={handleBookmark}
             className={`p-2 rounded-lg border text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:border-[color:var(--border-color)] ${isBookmarked ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-[color:var(--border-color)] bg-[color:var(--bg-primary)]'}`}
             title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+            aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this item'}
           >
             {isBookmarked ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
           </button>

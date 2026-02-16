@@ -591,15 +591,15 @@ export function FastAgentPanel({
 
   // ========== TIER 15: AGENT + PERF + A11Y + POLISH ==========
 
-  // Tool approval UI (HITL)
+  // Tool approval UI (review needed)
   const [pendingApprovals, setPendingApprovals] = useState<Array<{ id: string; toolName: string; args: any; riskLevel: 'low' | 'medium' | 'high'; createdAt: number }>>([]);
   const approveToolCall = useCallback((id: string) => {
     setPendingApprovals(prev => prev.filter(a => a.id !== id));
-    toast.success('Tool call approved');
+    toast.success('Action approved');
   }, []);
   const rejectToolCall = useCallback((id: string) => {
     setPendingApprovals(prev => prev.filter(a => a.id !== id));
-    toast.info('Tool call rejected');
+    toast.info('Action rejected');
   }, []);
 
   // Multi-agent handoff visualization
@@ -764,7 +764,7 @@ export function FastAgentPanel({
   const [disclosureEvents, setDisclosureEvents] = useState<DisclosureEvent[]>([]);
   const [showDisclosureTrace, setShowDisclosureTrace] = useState(false);
 
-  // Tab state - Chat, Sources, and Telemetry (Task History)
+  // Tab state - Chat, Sources, and Activity (Task History)
   const [activeTab, setActiveTab] = useState<'chat' | 'sources' | 'telemetry' | 'trace'>('chat');
   const [isThreadDropdownOpen, setIsThreadDropdownOpen] = useState(false);
 
@@ -2129,7 +2129,7 @@ export function FastAgentPanel({
           <div className="flex items-center gap-2 min-w-0">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isStreaming || isSwarmActive ? 'bg-violet-500 animate-pulse' : 'bg-green-500'}`} />
             <span className="text-sm font-semibold text-[var(--text-primary)] truncate tracking-[-0.02em]">
-              {isSwarmActive ? `Swarm ${swarmTasks.filter(t => t.status === 'completed').length}/${swarmTasks.length}` :
+              {isSwarmActive ? `Team ${swarmTasks.filter(t => t.status === 'completed').length}/${swarmTasks.length}` :
                isStreaming ? 'Thinking...' : 'Chat'}
             </span>
             {/* Auto-detected conversation topic */}
@@ -2462,13 +2462,11 @@ export function FastAgentPanel({
           </div>
         )}
 
-        {/* Tab Bar - Chat, Sources, and Telemetry (hidden in focus mode) */}
+        {/* Tab Bar - Primary tabs visible, power-user tabs behind overflow (hidden in focus mode) */}
         <div className={`flex items-center px-3 border-b border-[var(--border-color)]/50 ${isFocusMode ? 'hidden' : ''}`}>
           {([
             { id: 'chat', label: 'Chat' },
             { id: 'sources', label: 'Sources' },
-            { id: 'trace', label: 'Trace' },
-            { id: 'telemetry', label: 'Telemetry' },
           ] as const).map((tab) => (
             <button
               type="button"
@@ -2482,6 +2480,34 @@ export function FastAgentPanel({
               {tab.label}
             </button>
           ))}
+          {/* Overflow menu for power-user tabs */}
+          <div className="relative ml-auto group">
+            <button
+              type="button"
+              className="px-2 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+              title="More views"
+            >
+              ···
+            </button>
+            <div className="absolute right-0 top-full mt-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg py-1 min-w-[120px] hidden group-hover:block z-50">
+              {([
+                { id: 'trace', label: 'Activity' },
+                { id: 'telemetry', label: 'Performance' },
+              ] as const).map((tab) => (
+                <button
+                  type="button"
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full px-3 py-1.5 text-xs text-left transition-colors ${activeTab === tab.id
+                    ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/5'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Swarm Lanes View - Shows when thread has active swarm */}
@@ -2808,14 +2834,14 @@ export function FastAgentPanel({
                       <SwarmQuickActions
                         onSpawn={async (query, agents) => {
                           try {
-                            toast.info(`Spawning swarm with ${agents.length} agents...`);
+                            toast.info(`Starting team with ${agents.length} agents...`);
                             const result = await spawnSwarm({
                               query,
                               agents,
                               model: selectedModel,
                             });
                             setActiveThreadId(result.threadId);
-                            toast.success(`Swarm created with ${result.taskCount} agents`);
+                            toast.success(`Team started with ${result.taskCount} agents`);
                           } catch (error: any) {
                             console.error('[FastAgentPanel] Swarm spawn failed:', error);
                             toast.error(error.message || 'Failed to spawn swarm');
@@ -2826,9 +2852,9 @@ export function FastAgentPanel({
                     </div>
                   )}
 
-                  {/* Tool Approval Banner (HITL) */}
+                  {/* Waiting for Approval */}
                   {pendingApprovals.length > 0 && (
-                    <div className="mx-2 mb-2 space-y-1.5" role="alert" aria-label="Pending tool approvals">
+                    <div className="mx-2 mb-2 space-y-1.5" role="alert" aria-label="Actions waiting for your approval">
                       {pendingApprovals.map(approval => (
                         <div key={approval.id} className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] ${
                           approval.riskLevel === 'high' ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' :
@@ -3271,86 +3297,33 @@ export function FastAgentPanel({
                 onResponseLengthChange={setResponseLength}
                 onSpawn={async (query, agents) => {
                   try {
-                    toast.info(`Spawning swarm with ${agents.length} agents...`);
+                    toast.info(`Starting team with ${agents.length} agents...`);
                     const result = await spawnSwarm({
                       query,
                       agents,
                       model: selectedModel,
                     });
-                    // Switch to the new swarm thread
+                    // Switch to the new team thread
                     setActiveThreadId(result.threadId);
-                    toast.success(`Swarm created with ${result.taskCount} agents`);
+                    toast.success(`Team started with ${result.taskCount} agents`);
                   } catch (error: any) {
                     console.error('[FastAgentPanel] Swarm spawn failed:', error);
-                    toast.error(error.message || 'Failed to spawn swarm');
+                    toast.error(error.message || 'Failed to start team');
                   }
                 }}
               />
             </div>
 
-            {/* Persistent Status Bar */}
+            {/* Simplified Status Bar */}
             <div className="status-bar">
               <div className={`status-dot ${isAuthenticated ? 'connected' : 'disconnected'}`} />
-              <span>{isAuthenticated ? 'Connected' : 'Offline'}</span>
-              <span className="opacity-50">|</span>
-              <span className="tabular-nums">{selectedModel}</span>
-              {messagesToRender && messagesToRender.length > 0 && (() => {
-                const totalChars = messagesToRender.reduce((sum: number, m: any) => sum + (m.text || m.content || '').length, 0);
-                const tokensUsed = Math.ceil(totalChars / 4);
-                const pct = Math.min((tokensUsed / contextLimit) * 100, 100);
-                const color = pct > 85 ? '#ef4444' : pct > 60 ? '#f59e0b' : '#22c55e';
-                return (
-                  <>
-                    <span className="opacity-50">|</span>
-                    <span className="tabular-nums">{messagesToRender.length} msgs</span>
-                    <span className="opacity-50">|</span>
-                    {/* Context Window Meter */}
-                    <button
-                      type="button"
-                      onClick={() => setShowContextPruning(p => !p)}
-                      className="flex items-center gap-1 hover:opacity-80 transition-opacity"
-                      title={`Context: ~${tokensUsed.toLocaleString()} / ${(contextLimit / 1000).toFixed(0)}K tokens (${pct.toFixed(0)}%)\nClick to manage context`}
-                    >
-                      <div className="w-[40px] h-[4px] bg-[var(--border-color)] rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
-                      </div>
-                      <span className="tabular-nums" style={{ color }}>{pct.toFixed(0)}%</span>
-                    </button>
-                  </>
-                );
-              })()}
-              {isBusy && (
-                <>
-                  <span className="opacity-50">|</span>
-                  <span className="text-violet-500 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
-                    Generating
-                    {streamingStats.tokensPerSec > 0 && (
-                      <span className="text-[8px] tabular-nums ml-0.5">{streamingStats.tokensPerSec} tok/s</span>
-                    )}
-                  </span>
-                  {streamingStats.firstTokenTime && streamingStats.startTime > 0 && (
-                    <span className="text-[8px] text-[var(--text-muted)] tabular-nums">
-                      TTFT: {streamingStats.firstTokenTime - streamingStats.startTime}ms
-                    </span>
-                  )}
-                </>
-              )}
-              {!isBusy && perfMetrics.avgLatency > 0 && (
-                <>
-                  <span className="opacity-50">|</span>
-                  <span className="text-[8px] text-[var(--text-muted)] tabular-nums" title={`Avg: ${perfMetrics.avgLatency}ms, P95: ${perfMetrics.p95Latency}ms (${perfMetrics.responseTimes.length} samples)`}>
-                    avg {(perfMetrics.avgLatency / 1000).toFixed(1)}s
-                  </span>
-                </>
-              )}
-              {messagesToRender && messagesToRender.length > 0 && contextWindowMsgs.total > contextWindowMsgs.inContext && (
-                <>
-                  <span className="opacity-50">|</span>
-                  <span className="text-orange-500 text-[9px]" title={`${contextWindowMsgs.inContext}/${contextWindowMsgs.total} messages in context window`}>
-                    {contextWindowMsgs.inContext}/{contextWindowMsgs.total} in ctx
-                  </span>
-                </>
+              {isBusy ? (
+                <span className="text-violet-500 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-violet-500 rounded-full animate-pulse" />
+                  Working...
+                </span>
+              ) : (
+                <span className="text-[var(--text-muted)]">{isAuthenticated ? 'Ready' : 'Offline'}</span>
               )}
               <span className="flex items-center gap-2 ml-auto">
                 <button
@@ -3369,7 +3342,6 @@ export function FastAgentPanel({
                 >
                   Timeline
                 </button>
-                <span className="opacity-40 text-[9px]">Ctrl+K</span>
               </span>
             </div>
           </div>

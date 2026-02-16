@@ -89,7 +89,7 @@ interface SlashCommand {
 const SLASH_COMMANDS: SlashCommand[] = [
   {
     command: "/spawn",
-    label: "Spawn Swarm",
+    label: "Start Team",
     description: "Run multiple AI agents in parallel",
     example: '/spawn "Tesla analysis" --agents=doc,media,sec',
     icon: <Zap className="w-4 h-4" />,
@@ -981,10 +981,12 @@ export function FastAgentInputBar({
         <div className="p-3 flex items-end gap-1.5">
           {/* Attachment Button */}
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isStreaming}
             className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
             title="Attach file"
+            aria-label="Attach file"
           >
             <Paperclip className="w-4.5 h-4.5" />
           </button>
@@ -1010,6 +1012,7 @@ export function FastAgentInputBar({
             disabled={isStreaming || isRecording}
             className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
             title="Record video"
+            aria-label="Record video"
           >
             <Video className="w-4.5 h-4.5" />
           </button>
@@ -1158,6 +1161,7 @@ export function FastAgentInputBar({
               onClick={onStop}
               className="press-scale group relative p-2.5 bg-red-500 text-white hover:bg-red-600 rounded-xl shadow-md shadow-red-500/20 transition-all duration-200"
               title="Stop generating"
+              aria-label="Stop generating"
             >
               <div className="absolute inset-0 rounded-xl bg-red-400 animate-ping opacity-20" />
               <StopCircle className="w-5 h-5 relative z-10" />
@@ -1173,6 +1177,7 @@ export function FastAgentInputBar({
                   : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
               )}
               title="Send message"
+              aria-label="Send message"
             >
               <Send className="w-5 h-5" />
             </button>

@@ -134,7 +134,7 @@ export function Sidebar({
             {/* Dossier View */}
             {appMode === 'dossier' && (
                 <div className="flex-1 overflow-auto p-4">
-                    <div className="text-sm text-gray-600">Dossier view</div>
+                    <div className="text-sm text-gray-600">Report view</div>
                 </div>
             )}
 

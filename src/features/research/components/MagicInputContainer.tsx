@@ -113,7 +113,7 @@ export default function MagicInputContainer({ onRun, onDeepRun, compact = false,
                     <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-[10px] font-semibold">⌘</kbd>
                     <span>+</span>
                     <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-[10px] font-semibold">Enter</kbd>
-                    <span className="ml-1">Deep Dossier</span>
+                    <span className="ml-1">Deep Report</span>
                 </span>
             </div>
         </div>

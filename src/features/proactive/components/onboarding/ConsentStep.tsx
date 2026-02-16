@@ -75,7 +75,7 @@ export function ConsentStep({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-semibold text-[var(--text-primary)]">
-                I consent to proactive features
+                I consent to smart alerts
               </span>
               {consentGranted && (
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -87,7 +87,7 @@ export function ConsentStep({
             <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
               <li>• Access and analyze my connected accounts</li>
               <li>• Detect opportunities and generate suggestions</li>
-              <li>• Send proactive notifications</li>
+              <li>• Send notifications and alerts</li>
               <li>• Store activity data for 90 days (then anonymize)</li>
             </ul>
             <p className="mt-3 text-xs text-[var(--text-muted)]">
@@ -107,7 +107,7 @@ export function ConsentStep({
 
       {!consentGranted && (
         <div className="mt-4 text-center text-sm text-amber-600">
-          <p>⚠️ You must grant consent to use proactive features</p>
+          <p>⚠️ You must grant consent to use smart alerts</p>
         </div>
       )}
     </div>

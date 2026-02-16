@@ -189,12 +189,15 @@ export function FastAgentThreadList({
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(-1); }}
             onKeyDown={handleKeyNav}
+            aria-label="Search conversations"
             className="w-full pl-8 pr-8 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 rounded-lg text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-[var(--accent-primary)]/50 transition-all"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              aria-label="Clear search"
             >
               <X className="w-3 h-3" />
             </button>
@@ -255,6 +258,7 @@ export function FastAgentThreadList({
                         <div className="flex items-center gap-1 thread-actions">
                           {onPinThread && (
                             <button
+                              type="button"
                               onClick={(e) => { e.stopPropagation(); onPinThread(thread._id); }}
                               className={cn(
                                 "p-1 rounded transition-colors",
@@ -263,14 +267,17 @@ export function FastAgentThreadList({
                                   : "text-[var(--text-muted)] hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                               )}
                               title={thread.pinned ? "Unpin" : "Pin to top"}
+                              aria-label={thread.pinned ? "Unpin conversation" : "Pin conversation to top"}
                             >
                               <Pin className={cn("w-3 h-3", thread.pinned && "fill-current")} />
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={(e) => handleDelete(thread._id, e)}
                             className="p-1 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Delete"
+                            aria-label="Delete conversation"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -299,6 +306,7 @@ export function FastAgentThreadList({
         {(hasMore || hasMoreLocal) && (
           <div className="px-2 py-3">
             <button
+              type="button"
               onClick={handleLoadMore}
               disabled={isLoadingMore}
               className={cn(
@@ -342,18 +350,20 @@ export function FastAgentThreadList({
 
       {/* Delete Modal */}
       {deletingThreadId && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-xl rounded-xl p-4 w-full max-w-[240px]">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="presentation">
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-xl rounded-xl p-4 w-full max-w-[240px]" role="dialog" aria-label="Delete conversation">
             <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Delete chat?</h3>
             <p className="text-xs text-[var(--text-secondary)] mb-3">This cannot be undone.</p>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setDeletingThreadId(null)}
                 className="flex-1 px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={confirmDelete}
                 className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
               >

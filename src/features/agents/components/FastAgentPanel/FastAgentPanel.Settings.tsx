@@ -110,11 +110,11 @@ export function Settings({
   };
   
   return (
-    <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="settings-overlay" onClick={onClose} role="presentation">
+      <div className="settings-panel" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Agent settings">
         <div className="settings-header">
-          <h3 className="settings-title">Fast Agent Settings</h3>
-          <button onClick={onClose} className="settings-close">
+          <h3 className="settings-title">Settings</h3>
+          <button type="button" onClick={onClose} className="settings-close" aria-label="Close settings">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -131,6 +131,7 @@ export function Settings({
                 type="checkbox"
                 checked={fastMode}
                 onChange={(e) => onFastModeChange(e.target.checked)}
+                aria-label="Toggle Fast Mode"
               />
               <span className="toggle-slider"></span>
             </label>
@@ -197,7 +198,7 @@ export function Settings({
           <div className="setting-group">
             <div className="setting-label">
               <Hash className="h-4 w-4" />
-              <span>Max Tokens</span>
+              <span>Response Length</span>
               <span className="setting-value">{maxTokens}</span>
             </div>
             <input
@@ -211,7 +212,7 @@ export function Settings({
             />
           </div>
           <p className="setting-description">
-            Maximum length of the response (higher = longer responses)
+            Maximum response length (higher = longer, more detailed answers)
           </p>
           
           {/* System Prompt */}
@@ -374,7 +375,7 @@ export function Settings({
         </div>
 
         <div className="settings-footer">
-          <button onClick={onClose} className="btn-primary">
+          <button type="button" onClick={onClose} className="btn-primary">
             Done
           </button>
         </div>

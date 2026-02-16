@@ -74,7 +74,7 @@ export function FeaturesStep({
           Choose Your Features
         </h3>
         <p className="text-[var(--text-secondary)]">
-          Select which proactive features you'd like to enable. You can change these anytime.
+          Select which features you'd like to enable. You can change these anytime.
         </p>
       </div>
 
@@ -136,7 +136,7 @@ export function FeaturesStep({
       <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
         <p className="text-sm text-[var(--text-secondary)]">
           <span className="font-medium text-[var(--text-primary)]">💡 Tip:</span>{" "}
-          Start with the recommended features and enable more as you get comfortable. You can always add custom detectors later!
+          Start with the recommended features and enable more as you get comfortable. You can always add custom alert rules later.
         </p>
       </div>
 

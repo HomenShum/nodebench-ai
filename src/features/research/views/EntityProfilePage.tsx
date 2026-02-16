@@ -170,6 +170,7 @@ const CollapsibleSection: React.FC<{
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
           <span className="text-gray-400">{icon}</span>
@@ -313,12 +314,13 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               type="button"
               onClick={handleBack}
               className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
-                Entity Profile
+                Topic Profile
               </p>
               <h1 className="text-xl font-bold text-[color:var(--text-primary)]">
                 {decodeURIComponent(entityName)}
@@ -344,7 +346,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               <div className="animate-spin">
                 <RefreshCw className="w-6 h-6 text-gray-400" />
               </div>
-              <p className="text-gray-500">Loading entity information...</p>
+              <p className="text-gray-500">Loading profile information...</p>
             </div>
           </div>
         ) : entityContext ? (
@@ -967,7 +969,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
                 >
                   <FileText className="w-5 h-5" />
-                  View Full Dossier
+                  View Full Report
                 </button>
               ) : (
                 <button
@@ -987,7 +989,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   className="flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-indigo-600 transition-colors"
                 >
                   <Sparkles className="w-5 h-5" />
-                  Create Dossier
+                  Create Report
                 </button>
               )}
 
@@ -1006,11 +1008,11 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-6" />
             <h3 className="text-2xl font-bold text-[color:var(--text-primary)] mb-3">
-              Entity Not Yet Enriched
+              Not Yet Researched
             </h3>
             <p className="text-gray-500 mb-8 max-w-md mx-auto">
               We don't have detailed information about "{decodeURIComponent(entityName)}" yet.
-              Create a dossier to start building intelligence on this entity.
+              Create a report to start researching this topic.
             </p>
             <div className="flex items-center justify-center gap-4">
               <button
@@ -1030,7 +1032,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 className="flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-indigo-600 transition-colors"
               >
                 <Sparkles className="w-5 h-5" />
-                Create Dossier
+                Create Report
               </button>
               <button
                 type="button"

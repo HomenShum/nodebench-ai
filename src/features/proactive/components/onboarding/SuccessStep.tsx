@@ -29,7 +29,7 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
           You're All Set!
         </h3>
         <p className="text-[var(--text-secondary)]">
-          Proactive features are ready to start working for you
+          Smart alerts are ready to start working for you
         </p>
       </div>
 
@@ -79,7 +79,7 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
               </li>
             )}
             <li>
-              <span className="font-medium">Confidence Threshold:</span>{" "}
+              <span className="font-medium">Relevance Filter:</span>{" "}
               {Math.round(state.minimumConfidence * 100)}%
             </li>
           </ul>

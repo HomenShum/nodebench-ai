@@ -125,6 +125,7 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
         type="button"
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-hover)] transition-colors text-left"
+        aria-label={expanded ? `Collapse ${call.toolName.replace(/^convex_/, '').replace(/_/g, ' ')} details` : `Expand ${call.toolName.replace(/^convex_/, '').replace(/_/g, ' ')} details`}
       >
         {expanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
         <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">

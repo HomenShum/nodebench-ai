@@ -31,7 +31,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         <span className="text-[color:var(--text-primary)]">{todayFormatted}</span>
                         <span className="text-[color:var(--bg-tertiary)]">|</span>
                         <span className="text-[color:var(--text-primary)] font-bold tracking-wide uppercase text-xs">
-                            Daily Intelligence
+                            Daily Brief
                         </span>
                     </div>
                 </motion.div>
@@ -46,7 +46,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     The Morning
                     <br />
                     <span className="text-[color:var(--text-secondary)]">
-                        Dossier
+                        Report
                     </span>
                 </motion.h1>
 

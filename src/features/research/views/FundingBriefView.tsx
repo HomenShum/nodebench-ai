@@ -238,8 +238,10 @@ function FundingCard({
       {/* Expandable Details */}
       {(event.description || (event.coInvestors && event.coInvestors.length > 0) || (event.sourceUrls && event.sourceUrls.length > 0)) && (
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-1 mt-3 text-xs text-blue-600 hover:text-blue-700"
+          aria-expanded={expanded}
         >
           <ChevronDown
             className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -528,7 +530,7 @@ export function FundingBriefView() {
               Startup Funding Brief
             </h1>
             <p className="text-[color:var(--text-secondary)]">
-              Real-time funding intelligence from verified sources
+              Real-time funding insights from verified sources
             </p>
           </div>
 
@@ -536,6 +538,7 @@ export function FundingBriefView() {
           <div className="flex items-center gap-2">
             {/* Save to Documents Button */}
             <button
+              type="button"
               onClick={handleSaveToDocuments}
               disabled={isGenerating || isSaving || isGeneratingInsights || !data?.events?.length}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
@@ -565,6 +568,7 @@ export function FundingBriefView() {
 
             {/* PDF Export Button */}
             <button
+              type="button"
               onClick={handleExportPDF}
               disabled={isGenerating || isSaving || isGeneratingInsights || !data?.events?.length}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
@@ -596,6 +600,7 @@ export function FundingBriefView() {
               PDF generation failed: {pdfError.message}
             </span>
             <button
+              type="button"
               onClick={clearError}
               className="text-red-500 hover:text-red-700 text-sm font-medium"
             >
@@ -615,6 +620,7 @@ export function FundingBriefView() {
             value={lookbackDays}
             onChange={(e) => setLookbackDays(Number(e.target.value))}
             className="text-sm border border-[color:var(--border-color)] rounded-md px-3 py-1.5 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]"
+            aria-label="Time range"
           >
             <option value={7}>Last 7 days</option>
             <option value={14}>Last 14 days</option>
@@ -630,6 +636,7 @@ export function FundingBriefView() {
             value={roundTypeFilter}
             onChange={(e) => setRoundTypeFilter(e.target.value)}
             className="text-sm border border-[color:var(--border-color)] rounded-md px-3 py-1.5 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]"
+            aria-label="Round type"
           >
             <option value="">All Rounds</option>
             {roundTypes.map((rt) => (
@@ -645,6 +652,7 @@ export function FundingBriefView() {
             value={sectorFilter}
             onChange={(e) => setSectorFilter(e.target.value)}
             className="text-sm border border-[color:var(--border-color)] rounded-md px-3 py-1.5 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] placeholder:text-[color:var(--text-secondary)]"
+            aria-label="Filter by sector"
           />
         </div>
 

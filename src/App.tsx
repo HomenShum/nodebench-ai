@@ -64,6 +64,16 @@ function App() {
   const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
   const didEnsureRef = useRef(false);
 
+  // Deep link: ?doc=ID auto-opens a shared document
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const docId = params.get('doc');
+    if (docId) {
+      setSelectedDocumentId(docId as Id<"documents">);
+      setShowTutorial(false);
+    }
+  }, [location.search]);
+
   // Listen for location changes to switch between tutorial and main app
   useEffect(() => {
     const pathname = location.pathname.toLowerCase();

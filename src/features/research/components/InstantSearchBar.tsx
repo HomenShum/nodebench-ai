@@ -277,7 +277,7 @@ function ResultItem({ doc, onClick }: { doc: SearchResult; onClick: () => void }
         </p>
         {isDossier && (
           <span className="inline-flex items-center mt-2 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">
-            Dossier
+            Report
           </span>
         )}
       </div>

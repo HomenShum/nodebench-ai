@@ -24,7 +24,7 @@ export function MemoryPreview({ runId }: MemoryProps) {
 
   return (
     <div className="memory-preview">
-      <button className="toggle" onClick={() => setOpen((v) => !v)}>
+      <button type="button" className="toggle" onClick={() => setOpen((v) => !v)} aria-label={open ? "Hide memory entries" : "Show memory entries"}>
         {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <Archive className="h-3.5 w-3.5" />
         <span className="label">Memory</span>

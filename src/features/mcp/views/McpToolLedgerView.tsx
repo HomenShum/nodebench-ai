@@ -106,15 +106,15 @@ export const McpToolLedgerView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-gray-700" />
-              <h1 className="text-xl font-semibold text-gray-900">MCP Tool Call Ledger</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Activity Log</h1>
             </div>
             <p className="text-sm text-gray-600 mt-1">
-              Deterministic audit trail for NodeBench MCP calls (policy, budgets, args/result previews).
+              See every tool request — who ran it, when, and what happened.
             </p>
           </div>
           {policyAndUsage && (
             <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <div className="text-[11px] uppercase tracking-widest text-gray-500">Policy</div>
+              <div className="text-xs font-medium text-gray-500">Safety Rules</div>
               <div className="mt-1 text-sm text-gray-900">
                 {policyAndUsage.config.name}{" "}
                 <span
@@ -124,11 +124,11 @@ export const McpToolLedgerView: React.FC = () => {
                       : "bg-indigo-100 text-gray-900"
                   }`}
                 >
-                  {policyAndUsage.config.enforce ? "ENFORCING" : "LOG ONLY"}
+                  {policyAndUsage.config.enforce ? "Active" : "Monitoring"}
                 </span>
               </div>
               <div className="mt-1 text-xs text-gray-600">
-                DateKey: <span className="font-mono">{policyAndUsage.dateKey}</span>
+                Date: <span className="font-mono">{policyAndUsage.dateKey}</span>
               </div>
             </div>
           )}

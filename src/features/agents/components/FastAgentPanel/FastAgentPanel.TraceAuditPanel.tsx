@@ -62,6 +62,8 @@ interface AuditEntry {
     intendedState?: string;
     actualState?: string;
     correctionApplied?: boolean;
+    originalRequest?: string;
+    deliverySummary?: string;
   };
   description: string;
   createdAt: number;
@@ -166,8 +168,10 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
       <div className="border border-[var(--border-color)] rounded-lg bg-[var(--bg-secondary)]">
         {/* Header */}
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between px-3 py-2 hover:bg-[var(--bg-tertiary)] transition-colors rounded-t-lg"
+          aria-label={isExpanded ? "Collapse execution trace" : "Expand execution trace"}
         >
           <div className="flex items-center gap-2">
             {isExpanded ? (
@@ -231,8 +235,10 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
                 <div key={entry._id}>
                   {/* Entry Row */}
                   <button
+                    type="button"
                     onClick={() => toggleDetail(entry.seq)}
                     className="w-full flex items-start gap-2 px-3 py-2 text-xs text-left hover:bg-[var(--bg-tertiary)] transition-colors"
+                    aria-label={`Step ${entry.seq + 1}: ${entry.toolName}`}
                   >
                     {/* Sequence Number */}
                     <span className="text-[var(--text-muted)] font-mono w-4 flex-shrink-0 text-right tabular-nums">
@@ -340,6 +346,23 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
                             <div className="text-[11px] text-[var(--text-muted)]">
                               <span className="font-medium text-[var(--text-secondary)]">Actual:</span>{" "}
                               {entry.metadata.actualState}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Completion Traceability */}
+                      {entry.choiceType === "finalize" && entry.metadata.originalRequest && (
+                        <div className="p-2 bg-indigo-50 dark:bg-indigo-900/10 rounded-md border border-indigo-200 dark:border-indigo-900/20">
+                          <div className="text-[11px] font-medium text-indigo-700 dark:text-indigo-400 mb-1">
+                            Original Request
+                          </div>
+                          <div className="text-[11px] text-[var(--text-secondary)] line-clamp-3">
+                            {entry.metadata.originalRequest}
+                          </div>
+                          {entry.metadata.deliverySummary && (
+                            <div className="text-[10px] text-[var(--text-muted)] mt-1 pt-1 border-t border-indigo-100 dark:border-indigo-900/20">
+                              Delivered: {entry.metadata.deliverySummary}
                             </div>
                           )}
                         </div>

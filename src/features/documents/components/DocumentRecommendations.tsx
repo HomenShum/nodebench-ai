@@ -1,6 +1,6 @@
 /**
  * Document Recommendations Component
- * Smart document discovery using Phoenix ML
+ * Smart document discovery
  */
 
 import React from "react";
@@ -48,7 +48,7 @@ export function DocumentRecommendations() {
           Recommended for You
         </h2>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Personalized document suggestions using Phoenix ML
+          Personalized document suggestions
         </p>
       </div>
 
@@ -95,7 +95,7 @@ function RecommendationCard({ recommendation, onClick }: RecommendationCardProps
         <FileText className="w-5 h-5 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className={`px-2 py-0.5 ${sourceColors[recommendation.source as keyof typeof sourceColors]} text-white text-xs font-medium rounded`}>
-            {recommendation.phoenixScore}
+            {sourceLabels[recommendation.source as keyof typeof sourceLabels] || "Suggested"}
           </span>
         </div>
       </div>
@@ -114,12 +114,12 @@ function RecommendationCard({ recommendation, onClick }: RecommendationCardProps
         </div>
       </div>
 
-      {/* Engagement Prediction */}
-      {recommendation.engagementPrediction && (
+      {/* Source context */}
+      {recommendation.relevanceReason && (
         <div className="flex items-center gap-3 pt-2 border-t border-[var(--border-color)] text-xs">
           <div className="flex items-center gap-1 text-[var(--text-secondary)]">
             <ThumbsUp className="w-3 h-3" />
-            <span>{Math.round(recommendation.engagementPrediction.click * 100)}% likely to open</span>
+            <span>Relevant to your recent work</span>
           </div>
         </div>
       )}

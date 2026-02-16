@@ -144,14 +144,14 @@ export function ProactiveOnboarding({ onComplete }: { onComplete: () => void }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-label="Enable Smart Alerts">
       <div className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)]">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                Enable Proactive Features
+                Enable Smart Alerts
               </h2>
               <p className="text-sm text-[var(--text-secondary)] mt-1">
                 Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].name}
@@ -254,7 +254,7 @@ export function ProactiveOnboarding({ onComplete }: { onComplete: () => void }) 
                 className="flex items-center gap-2 px-6 py-2 rounded bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                {isSubmitting ? "Enabling..." : "Enable Proactive Features"}
+                {isSubmitting ? "Enabling..." : "Enable Smart Alerts"}
               </button>
             )}
           </div>

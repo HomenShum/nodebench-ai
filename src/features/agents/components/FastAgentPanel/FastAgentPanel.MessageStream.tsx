@@ -106,6 +106,14 @@ export function MessageStream({
     }
   }, [isStreaming]);
 
+  // Extract original request for completion traceability
+  const originalRequest = useMemo(() => {
+    if (isStreaming || messages.length < 5) return null;
+    const first = messages.find((m) => m.role === 'user');
+    if (!first?.content) return null;
+    return first.content.length > 200 ? first.content.slice(0, 200) + '...' : first.content;
+  }, [messages, isStreaming]);
+
   // Generate follow-up suggestions based on the last exchange
   const followUps = useMemo(() => {
     if (isStreaming || messages.length < 2) return [];
@@ -163,6 +171,7 @@ export function MessageStream({
           <div className="flex flex-wrap gap-2 mt-1 mb-4 pl-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {followUps.map((suggestion) => (
               <button
+                type="button"
                 key={suggestion}
                 onClick={() => onSendFollowUp(suggestion)}
                 className={cn(
@@ -177,6 +186,13 @@ export function MessageStream({
                 <ArrowRight className="w-3 h-3" />
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Completion traceability — remind user of original request in long threads */}
+        {originalRequest && !isStreaming && (
+          <div className="mt-2 mb-4 pl-10 text-[11px] text-[var(--text-muted)] italic">
+            Re: &ldquo;{originalRequest}&rdquo;
           </div>
         )}
       </div>

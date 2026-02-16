@@ -675,8 +675,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       prompt: `Scan the alerts and highlight the top 3 risk exposures to monitor.`,
     },
     {
-      label: 'Deep agent: dossier build',
-      prompt: `Build a concise dossier on the top signals and why they matter.`,
+      label: 'Deep agent: report build',
+      prompt: `Build a concise report on the top signals and why they matter.`,
     },
     {
       label: 'Deep agent: topic watchlist',
@@ -715,7 +715,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   const densityStats = [
     { label: 'Signals', value: digestTotals.totalSignals, hint: 'market + topics + alerts' },
     { label: 'Sources', value: digestTotals.sourceCount, hint: 'linked citations' },
-    { label: 'Entities', value: digestTotals.entityCount, hint: 'detected names' },
+    { label: 'Topics', value: digestTotals.entityCount, hint: 'detected names' },
     { label: 'Topics', value: digestTotals.trackedCount, hint: 'tracked hashtags' },
     { label: 'Alerts', value: digestTotals.alertCount, hint: 'risk flags' },
     { label: 'Priority', value: digestTotals.priorityCount, hint: 'internal focus' },
@@ -786,6 +786,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               onClick={handleRefresh}
               className="p-2.5 rounded-xl text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
               title="Refresh digest"
+              aria-label="Refresh digest"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -794,6 +795,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-2.5 rounded-xl text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
               title={isExpanded ? 'Collapse' : 'Expand'}
+              aria-expanded={isExpanded}
             >
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -815,7 +817,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <BarChart3 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">AI Intelligence Brief</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">AI Research Brief</span>
                     <p className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
                   </div>
                 </div>
@@ -975,7 +977,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <div className="p-1.5 rounded-lg bg-gray-200/50 border border-gray-300/50">
                     <Building2 className="w-3.5 h-3.5 text-gray-600" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Key Entities</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Key Topics</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topEntities.slice(0, 6).map((entity, idx) => (
@@ -1024,7 +1026,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 <Sparkles className="w-4 h-4 text-gray-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-700">Sample Intelligence Feed</p>
+                <p className="text-sm font-semibold text-gray-700">Sample Research Feed</p>
                 <p className="text-xs text-gray-500 mt-0.5">Connect data sources or track hashtags to see real-time signals.</p>
               </div>
             </div>
@@ -1065,6 +1067,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     type="button"
                     onClick={() => toggleSection(section.id)}
                     className="p-2.5 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-200/50 transition-all duration-200"
+                    aria-expanded={expandedSections.has(section.id)}
+                    aria-label={`${expandedSections.has(section.id) ? 'Collapse' : 'Expand'} ${section.title}`}
                   >
                     {expandedSections.has(section.id) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
@@ -1101,7 +1105,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                               type="button"
                               onClick={() => onEntityClick?.(item.linkedEntity, "company")}
                               className="inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold font-mono text-gray-500 bg-gray-100 border border-gray-200 uppercase tracking-tight hover:text-gray-800 hover:border-gray-400 transition-all"
-                              title={`Open entity: ${item.linkedEntity}`}
+                              title={`Open topic: ${item.linkedEntity}`}
                             >
                               {item.linkedEntity}
                             </button>
@@ -1147,7 +1151,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             >
               <div className="absolute inset-0 bg-gradient-to-r from-gray-400/0 via-gray-400/10 to-gray-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <Newspaper className="w-5 h-5" />
-              <span>Full Dossier</span>
+              <span>Full Report</span>
             </button>
           </div>
         </div>

@@ -26,7 +26,7 @@ interface FootnotesPageProps {
  */
 export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   library,
-  briefTitle = "Latest Intelligence Brief",
+  briefTitle = "Latest Research Brief",
   briefDate,
   onBack,
 }) => {
@@ -72,8 +72,10 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
             <div className="flex items-center gap-4">
               {onBack && (
                 <button
+                  type="button"
                   onClick={onBack}
                   className="flex items-center gap-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
+                  aria-label="Back to brief"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span className="text-sm">Back to Brief</span>
@@ -110,6 +112,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-sm border border-[color:var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Search sources"
             />
           </div>
         </div>

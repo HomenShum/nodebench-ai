@@ -58,7 +58,7 @@ export function CostDashboard() {
             Cost Dashboard
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Real-time LLM cost tracking and optimization insights
+            See what you're spending and where you can save
           </p>
         </div>
 

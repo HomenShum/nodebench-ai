@@ -558,7 +558,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                       if (ev.key.toLowerCase() === 'e') { ev.preventDefault(); setSelectedEventId(e._id); }
                       if (ev.key === 'Delete') { ev.preventDefault(); void onDelete(e._id); }
                     }}
-                    title={`${e.title} - Drag to Fast Agent to prepare dossier`}
+                    title={`${e.title} - Drag to AI assistant to create a report`}
                   >
                     {isEditing ? (
                       <input
@@ -1034,7 +1034,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                         backgroundColor: "#e0f2fe",
                         borderLeft: "3px solid #0284c7",
                       }}
-                      title={`${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} - Drag to Fast Agent to prepare dossier`}
+                      title={`${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} - Drag to AI assistant to create a report`}
                       data-event-block
                       tabIndex={0}
                       role="button"

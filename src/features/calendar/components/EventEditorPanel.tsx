@@ -420,7 +420,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
   ) : (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={handleClose} />
-      <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl flex flex-col">
+      <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl flex flex-col" role="dialog" aria-label="Edit event">
         {/* Header */}
         <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate inline-flex items-center gap-2">
@@ -428,16 +428,20 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           </h3>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => void handleDelete()}
               className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500"
               title="Delete event"
+              aria-label="Delete event"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
+              type="button"
               onClick={handleClose}
               className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
               title="Close"
+              aria-label="Close event editor"
             >
               <X className="w-4 h-4" />
             </button>
@@ -551,6 +555,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   value={startStr}
                   onChange={(e) => setStartStr(e.target.value)}
                   disabled={allDay}
+                  aria-label="Event start time"
                   className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
                 />
               )}
@@ -560,6 +565,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   value={endStr}
                   onChange={(e) => setEndStr(e.target.value)}
                   disabled={allDay}
+                  aria-label="Event end time"
                   className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
                 />
               )}
@@ -589,6 +595,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                     c === "blue" ? "bg-blue-500" : c === "green" ? "bg-indigo-500" : c === "amber" ? "bg-amber-500" : c === "red" ? "bg-red-500" : c === "purple" ? "bg-purple-500" : "bg-gray-400"
                   } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
                   title={c}
+                  aria-label={`Set color to ${c}`}
                 />
               ))}
               <button
@@ -612,6 +619,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                     onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
                     className="text-[10px] opacity-70 hover:opacity-100"
                     title="Remove tag"
+                    aria-label={`Remove tag ${t}`}
                   >
                     ×
                   </button>
@@ -642,12 +650,14 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
         {/* Footer */}
         <div className="p-4 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
           <button
+            type="button"
             onClick={handleClose}
             className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
           >
             Close
           </button>
           <button
+            type="button"
             onClick={() => void handleSave()}
             disabled={isSaving}
             className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}

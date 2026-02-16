@@ -152,6 +152,7 @@ function Reply({
         {/* Evidence links */}
         {reply.evidenceArtifactIds && reply.evidenceArtifactIds.length > 0 && (
           <button
+            type="button"
             onClick={() => onViewEvidence?.(reply.evidenceArtifactIds!)}
             className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
           >
@@ -165,7 +166,9 @@ function Reply({
       {hasChildren && (
         <>
           <button
+            type="button"
             onClick={() => setCollapsed(!collapsed)}
+            aria-expanded={!collapsed}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
           >
             {collapsed ? (

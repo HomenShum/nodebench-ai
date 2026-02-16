@@ -101,7 +101,7 @@ function getPostTypeDisplay(type: PostType): { icon: React.ReactNode; label: str
     case "thesis_revision":
       return {
         icon: <Zap className="w-4 h-4" />,
-        label: "Thesis Revision",
+        label: "Revised Prediction",
         color: "text-amber-500 bg-amber-500/10",
       };
     case "evidence_addition":
@@ -187,6 +187,7 @@ export function PostCard({
           {/* Thread name */}
           {post.threadName && (
             <button
+              type="button"
               onClick={onViewThread}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -231,6 +232,7 @@ export function PostCard({
           ))}
           {!expanded && post.changeSummary.length > 3 && (
             <button
+              type="button"
               onClick={() => setExpanded(true)}
               className="text-xs text-primary hover:underline mt-1"
             >
@@ -245,6 +247,7 @@ export function PostCard({
         <p className={cn(!expanded && "line-clamp-3")}>{post.content}</p>
         {post.content.length > 200 && (
           <button
+            type="button"
             onClick={() => setExpanded(!expanded)}
             className="flex items-center gap-1 text-xs text-primary hover:underline mt-1"
           >
@@ -285,6 +288,7 @@ export function PostCard({
             ))}
             {post.citations.length > 3 && (
               <button
+                type="button"
                 onClick={() => onViewEvidence?.(post.citations)}
                 className="text-xs text-muted-foreground hover:text-foreground"
               >
@@ -317,7 +321,9 @@ export function PostCard({
         {/* Actions */}
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={onReply}
+            aria-label="Reply to post"
             className="flex items-center gap-1 hover:text-foreground transition-colors"
           >
             <MessageSquare className="w-3.5 h-3.5" />

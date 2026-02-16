@@ -261,19 +261,19 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               style={{ width: `${progressInfo.phasePercentages.future}%` }}
             />
           </div>
-          {/* Progress indicator */}
+          {/* Progress indicator — skip animation on mount to avoid initial jank */}
           <motion.div
             className="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-500 via-blue-500 to-blue-600 rounded-full"
-            initial={{ width: 0 }}
+            initial={false}
             animate={{ width: `${progressInfo.percentage}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           />
           {/* Current position marker */}
           <motion.div
             className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-600 rounded-full shadow-sm"
-            initial={{ left: 0 }}
+            initial={false}
             animate={{ left: `calc(${progressInfo.percentage}% - 6px)` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
           />
         </div>
 

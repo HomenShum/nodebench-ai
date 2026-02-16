@@ -44,17 +44,17 @@ const getCitationIcon = (type: CitationType) => {
 const getTypeBadgeColors = (type: CitationType) => {
   switch (type) {
     case "source":
-      return "bg-blue-50 text-blue-600 border-blue-200";
+      return "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800/40";
     case "data":
-      return "bg-indigo-50 text-indigo-600 border-indigo-200";
+      return "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/40";
     case "quote":
-      return "bg-amber-50 text-amber-600 border-amber-200";
+      return "bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800/40";
     case "analysis":
-      return "bg-purple-50 text-purple-600 border-purple-200";
+      return "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800/40";
     case "internal":
       return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]";
     default:
-      return "bg-blue-50 text-blue-600 border-blue-200";
+      return "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800/40";
   }
 };
 
@@ -112,6 +112,7 @@ const FootnoteEntry: React.FC<{
           )}
           {citation.url && (
             <button
+              type="button"
               onClick={() => {
                 if (onOpenReader) {
                   onOpenReader({
@@ -150,6 +151,7 @@ const FootnoteEntry: React.FC<{
             {citation.occurrences.map((occ, idx) => (
               <button
                 key={occ.id}
+                type="button"
                 onClick={() => handleBackLinkClick(occ.id)}
                 className="flex items-center gap-0.5 text-xs text-blue-500 hover:text-blue-600 hover:underline"
               >

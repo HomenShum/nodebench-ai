@@ -233,7 +233,7 @@ const SwarmProgressBar = memo(function SwarmProgressBar({
       <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
         {isActive ? (
           <>
-            {progress.completed}/{progress.total} agents
+            {progress.completed} of {progress.total}
           </>
         ) : status === "completed" ? (
           "Complete"
@@ -275,7 +275,7 @@ export function SwarmLanesView({
       <div className={cn("px-3 py-2", className)}>
         <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
           <Zap className="w-3.5 h-3.5 text-green-500" />
-          <span>Swarm completed: {tasks.length} agents</span>
+          <span>Team completed: {tasks.length} agents</span>
           {swarm.confidence && (
             <span className="text-[10px]">
               ({Math.round(swarm.confidence * 100)}% confidence)

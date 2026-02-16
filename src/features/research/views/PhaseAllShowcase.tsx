@@ -93,7 +93,7 @@ sampleEntities = addEntity(sampleEntities, {
 const sampleTimelineEvents: TimelineEvent[] = [
   { id: '1', date: '2024-01-15', label: 'GPT-4 Turbo Launch', phase: 'past' },
   { id: '2', date: '2024-06-01', label: 'Sora Video Model', phase: 'past' },
-  { id: '3', date: '2024-12-21', label: 'Current Analysis', description: 'Today\'s intelligence brief', phase: 'present', isCurrent: true },
+  { id: '3', date: '2024-12-21', label: 'Current Analysis', description: 'Today\'s research brief', phase: 'present', isCurrent: true },
   { id: '4', date: '2025-03-01', label: 'GPT-5 Expected', description: 'Projected release window', phase: 'future' },
   { id: '5', date: '2025-06-01', label: 'AGI Milestone?', description: 'Industry speculation', phase: 'future' },
 ];
@@ -169,7 +169,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (
-              <button type="button" onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button type="button" onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Go back">
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
             )}
@@ -215,11 +215,11 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         {/* Phase 1: Citations */}
         {(activeSection === 'all' || activeSection === 'citations') && (
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-white/[0.06] pb-2">
               Phase 1: Citation & Provenance
             </h2>
-            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-              <p className="text-gray-700 leading-relaxed">
+            <div className="bg-white dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] p-6 space-y-4">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Inline footnote markers: Research shows <FootnoteMarker citation={sampleCitations.citations['arxiv-001']} />
                 that AI development is accelerating. Financial data <FootnoteMarker citation={sampleCitations.citations['sec-10k']} />
                 confirms market growth. Industry leaders <FootnoteMarker citation={sampleCitations.citations['quote-altman']} />

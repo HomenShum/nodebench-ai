@@ -149,7 +149,7 @@ export function ExecutiveBriefHeader({
 }: ExecutiveBriefHeaderProps) {
   // Merge alternative prop names
   const effectiveThesis = thesis ?? dayThesis ?? "AI-synthesized briefing on trends, deals, and deep dives.";
-  const effectiveHeadline = headline ?? "Morning Dossier";
+  const effectiveHeadline = headline ?? "Morning Brief";
   const effectiveDate = date ?? new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const effectiveTopics = topicTags.length > 0 ? topicTags : topics;
   const effectiveSources = sourceTypes.length > 0 ? sourceTypes : sources;

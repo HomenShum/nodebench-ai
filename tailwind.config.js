@@ -1,6 +1,7 @@
 const { fontFamily } = require("tailwindcss/defaultTheme");
 
 module.exports = {
+  darkMode: 'class',
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx,mdx}"],
   theme: {
     extend: {
@@ -123,8 +124,8 @@ module.exports = {
           '50%': { transform: 'scale(1.02)' },
         },
         'skeleton-shimmer': {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
         'spring-in': {
           '0%': { transform: 'scale(0.95)', opacity: '0' },

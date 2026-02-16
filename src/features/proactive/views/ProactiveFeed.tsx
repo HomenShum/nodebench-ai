@@ -49,13 +49,14 @@ export function ProactiveFeed() {
               <Sparkles className="w-8 h-8 text-blue-500" />
             </div>
             <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
-              Enable Proactive Features
+              Enable Smart Alerts
             </h1>
             <p className="text-[var(--text-secondary)] mb-6 max-w-md mx-auto">
               Let NodeBench work for you. Get meeting prep, follow-up reminders, and daily
               briefs automatically.
             </p>
             <button
+              type="button"
               onClick={() => setShowOnboarding(true)}
               className="px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-medium"
             >
@@ -89,10 +90,10 @@ export function ProactiveFeed() {
             <div>
               <h1 className="text-3xl font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Sparkles className="w-8 h-8 text-blue-500" />
-                Proactive Feed
+                Alerts & Insights
               </h1>
               <p className="text-[var(--text-secondary)] mt-1">
-                Your personalized opportunities and insights
+                Your personalized opportunities and recommendations
               </p>
             </div>
             <a
@@ -149,6 +150,7 @@ export function ProactiveFeed() {
             { label: "Dismissed", value: "dismissed" },
           ].map((filter) => (
             <button
+              type="button"
               key={filter.label}
               onClick={() => setStatusFilter(filter.value)}
               className={cn(
@@ -283,15 +285,15 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
           )}
 
           <div className="flex items-center gap-4 mt-4">
-            <button className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 text-sm font-medium">
+            <button type="button" className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 text-sm font-medium">
               View Details
             </button>
             {opportunity.status !== "completed" && opportunity.status !== "dismissed" && (
               <>
-                <button className="px-4 py-2 rounded bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)] text-sm font-medium">
+                <button type="button" className="px-4 py-2 rounded bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)] text-sm font-medium">
                   Mark Complete
                 </button>
-                <button className="px-4 py-2 rounded bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-quaternary)] text-sm font-medium">
+                <button type="button" className="px-4 py-2 rounded bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-quaternary)] text-sm font-medium">
                   Dismiss
                 </button>
               </>

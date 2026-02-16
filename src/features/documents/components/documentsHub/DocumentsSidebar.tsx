@@ -47,6 +47,7 @@ export function DocumentsSidebar({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={onAddTask}
               className="flex items-center gap-2 px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors text-sm"
               disabled={!loggedInUser}
@@ -65,6 +66,7 @@ export function DocumentsSidebar({
               <p className="text-[var(--text-secondary)] mb-3">No recent tasks</p>
 
               <button
+                type="button"
                 onClick={onAddTask}
                 className="text-xs px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors"
                 disabled={!loggedInUser}
@@ -146,6 +148,7 @@ export function DocumentsSidebar({
 
         <div className="grid grid-cols-2 gap-2">
           <button
+            type="button"
             onClick={() => onCreateDocument("text")}
             className="text-xs px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors"
           >
@@ -153,6 +156,7 @@ export function DocumentsSidebar({
           </button>
 
           <button
+            type="button"
             onClick={() => onCreateDocument("calendar")}
             className="text-xs px-3 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] transition-colors"
           >
@@ -160,6 +164,7 @@ export function DocumentsSidebar({
           </button>
 
           <button
+            type="button"
             onClick={onCompileAaplModel}
             disabled={isCompiling}
             className={compileButtonClass}

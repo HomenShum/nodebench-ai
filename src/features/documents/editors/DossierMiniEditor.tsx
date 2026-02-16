@@ -98,7 +98,7 @@ export default function DossierMiniEditor({
   if (!dossier) {
     return (
       <div className="mt-1 rounded-md p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60">
-        <div className="text-sm text-[var(--text-secondary)]">Dossier not found</div>
+        <div className="text-sm text-[var(--text-secondary)]">Report not found</div>
       </div>
     );
   }
@@ -144,9 +144,11 @@ export default function DossierMiniEditor({
           </div>
         </div>
         <button
+          type="button"
           onClick={onClose}
           className="flex-shrink-0 p-1 hover:bg-[var(--bg-secondary)] rounded transition-colors"
           title="Close"
+          aria-label="Close report preview"
         >
           <X className="w-4 h-4 text-[var(--text-secondary)]" />
         </button>
@@ -156,7 +158,7 @@ export default function DossierMiniEditor({
       {linkedAssets && linkedAssets.length > 0 && (
         <div className="mb-3">
           <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">
-            Linked Assets
+            Attachments
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[var(--border-color)] scrollbar-track-transparent">
             {linkedAssets.map((asset) => (
@@ -222,6 +224,7 @@ export default function DossierMiniEditor({
       {/* Quick Actions */}
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={handleCopyTranscript}
           className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-md transition-colors"
         >
@@ -230,6 +233,7 @@ export default function DossierMiniEditor({
         </button>
         {onOpenFull && (
           <button
+            type="button"
             onClick={onOpenFull}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-md transition-colors"
           >

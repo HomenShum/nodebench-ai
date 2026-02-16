@@ -58,7 +58,7 @@ export function IndustryUpdatesPanel() {
             Industry Updates
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Latest patterns from AI industry leaders • Updated daily
+            What's new from AI leaders — refreshed daily
           </p>
         </div>
 

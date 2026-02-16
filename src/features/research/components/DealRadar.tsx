@@ -67,6 +67,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                     return (
                         <button
                             key={option.value}
+                            type="button"
                             onClick={() => setActiveTab(option.value as typeof activeTab)}
                             className={`px-4 py-2 text-xs font-bold uppercase tracking-tight transition-all ${activeTab === option.value
                                     ? 'bg-gray-900 text-white'
@@ -92,6 +93,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                 <select
                     value={sectorFilter}
                     onChange={(e) => setSectorFilter(e.target.value as typeof sectorFilter)}
+                    aria-label="Filter by sector"
                     className="px-3 py-1.5 text-xs font-medium border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                     {SECTOR_OPTIONS.map((option) => (
@@ -117,6 +119,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
 
                 {(sectorFilter !== 'all' || minScore > 0) && (
                     <button
+                        type="button"
                         onClick={() => {
                             setSectorFilter('all');
                             setMinScore(0);

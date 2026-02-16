@@ -486,7 +486,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       <div className="h-full flex items-center justify-center">
         <div className="text-center space-y-3">
           <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)] mx-auto" />
-          <p className="text-sm text-[var(--text-secondary)]">Loading dossier...</p>
+          <p className="text-sm text-[var(--text-secondary)]">Loading report...</p>
         </div>
       </div>
     );
@@ -502,9 +502,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="border-b-4 border-black px-8 pt-6 pb-3">
               <div className="text-center border-b border-[color:var(--border-color)] pb-3 mb-2">
                 <h1 className="text-5xl font-black tracking-tight text-black mb-1">
-                  THE DAILY DOSSIER
+                  TODAY'S REPORT
                 </h1>
-                <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-widest">Research Intelligence Report</p>
+                <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-widest">Research Report</p>
               </div>
               <div className="flex items-center justify-between text-xs text-[color:var(--text-primary)]">
                 <span className="uppercase tracking-wide">Vol. 1, No. 1</span>
@@ -565,7 +565,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                {document?.title || 'Untitled Dossier'}
+                {document?.title || 'Untitled Report'}
               </h2>
               <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
                 <span>{mediaCounts.total} media assets</span>
@@ -609,10 +609,10 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--text-secondary)]">
             <Home className="h-3.5 w-3.5 text-[var(--text-muted)]" />
             <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />
-            <span className="text-[var(--text-muted)] hidden sm:inline">Dossiers</span>
+            <span className="text-[var(--text-muted)] hidden sm:inline">Reports</span>
             <ChevronRight className="h-3 w-3 text-[var(--text-muted)] hidden sm:inline" />
             <span className="text-[var(--text-primary)] font-semibold truncate max-w-[200px] sm:max-w-xs">
-              {document?.title || 'Untitled Dossier'}
+              {document?.title || 'Untitled Report'}
             </span>
           </div>
 
@@ -651,8 +651,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
               type="button"
               onClick={() => handleDossierAnalysis()}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-              title="Ask AI about this dossier"
-              aria-label="Ask AI about this dossier"
+              title="Ask AI about this report"
+              aria-label="Ask AI about this report"
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Ask AI</span>
@@ -995,16 +995,18 @@ function AnalysisPopover({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-label="Analyze report files">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-[var(--bg-primary)] rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-[var(--border-color)]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
-          <h3 className="font-semibold text-[var(--text-primary)]">Analyze Dossier Files</h3>
+          <h3 className="font-semibold text-[var(--text-primary)]">Analyze Report Files</h3>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
             title="Close"
+            aria-label="Close dialog"
           >
             <ChevronRight className="h-5 w-5 rotate-45" />
           </button>
@@ -1019,6 +1021,7 @@ function AnalysisPopover({
                 Select Files ({selectedFiles.size} of {files.length})
               </label>
               <button
+                type="button"
                 onClick={onToggleAll}
                 className="text-xs text-[var(--accent-primary)] hover:underline"
               >
@@ -1097,6 +1100,7 @@ function AnalysisPopover({
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border-color)]">
           <button
+            type="button"
             onClick={onClose}
             disabled={isAnalyzing}
             className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1104,6 +1108,7 @@ function AnalysisPopover({
             Cancel
           </button>
           <button
+            type="button"
             onClick={onAnalyze}
             disabled={isAnalyzing || selectedFiles.size === 0}
             className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"

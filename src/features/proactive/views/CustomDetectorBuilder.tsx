@@ -145,12 +145,12 @@ export function CustomDetectorBuilder({
             detectorId: config.detectorId,
             ...finalConfig,
           });
-          toast.success(`Detector "${config.name}" updated`);
+          toast.success(`Alert rule "${config.name}" updated`);
         } else {
           // Create new
           const detectorId = await createDetector(finalConfig);
           setConfig({ ...finalConfig, detectorId });
-          toast.success(`Detector "${config.name}" created`);
+          toast.success(`Alert rule "${config.name}" created`);
         }
 
         if (enableImmediately) {
@@ -208,21 +208,23 @@ export function CustomDetectorBuilder({
   }, [currentStep, config]);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" role="dialog" aria-label="Custom Alert Rule Builder">
       <div className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-[var(--border-color)]">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                {config.detectorId ? "Edit" : "Create"} Custom Detector
+                {config.detectorId ? "Edit" : "Create"} Custom Alert Rule
               </h2>
               <p className="text-sm text-[var(--text-secondary)] mt-1">
                 Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].name}
               </p>
             </div>
             <button
+              type="button"
               onClick={onClose}
+              aria-label="Close"
               className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               ✕

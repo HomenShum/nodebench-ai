@@ -127,6 +127,8 @@ export function ToolResultPopover({
         <div
           className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-label={`${displayToolName} result`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
@@ -135,9 +137,10 @@ export function ToolResultPopover({
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">{displayToolName}</h2>
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="p-1 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
-              aria-label="Close"
+              aria-label="Close result details"
             >
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
@@ -146,6 +149,7 @@ export function ToolResultPopover({
           {/* Tabs */}
           <div className="flex border-b border-[var(--border-color)] px-6 bg-[var(--bg-primary)]">
             <button
+              type="button"
               onClick={() => setActiveTab('result')}
               className={cn(
                 'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
@@ -153,11 +157,13 @@ export function ToolResultPopover({
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
+              aria-current={activeTab === 'result' ? 'page' : undefined}
             >
               Result
             </button>
             {args && (
               <button
+                type="button"
                 onClick={() => setActiveTab('args')}
                 className={cn(
                   'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
@@ -165,12 +171,14 @@ export function ToolResultPopover({
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
+                aria-current={activeTab === 'args' ? 'page' : undefined}
               >
                 Arguments
               </button>
             )}
             {error && (
               <button
+                type="button"
                 onClick={() => setActiveTab('error')}
                 className={cn(
                   'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
@@ -178,6 +186,7 @@ export function ToolResultPopover({
                     ? 'border-red-600 text-red-600'
                     : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
+                aria-current={activeTab === 'error' ? 'page' : undefined}
               >
                 Error
               </button>
@@ -286,7 +295,9 @@ export function ToolResultPopover({
           {(activeTab === 'result' || activeTab === 'args') && (
             <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-secondary)] flex justify-end">
               <button
+                type="button"
                 onClick={handleCopy}
+                aria-label="Copy to clipboard"
                 className={cn(
                   'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                   copied

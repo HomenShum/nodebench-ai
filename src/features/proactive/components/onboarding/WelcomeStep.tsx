@@ -13,10 +13,10 @@ export function WelcomeStep() {
           <Sparkles className="w-8 h-8 text-blue-500" />
         </div>
         <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-          Welcome to Proactive Intelligence
+          Welcome to Smart Alerts
         </h3>
         <p className="text-[var(--text-secondary)] text-lg">
-          Let NodeBench work for you - automatically detect opportunities and take action
+          Let NodeBench work for you -- automatically find opportunities and take action
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export function WelcomeStep() {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-medium text-blue-500">2.</span>
-              <span>Detectors identify opportunities (upcoming meetings, pending follow-ups, etc.)</span>
+              <span>Monitors identify opportunities (upcoming meetings, pending follow-ups, etc.)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-medium text-blue-500">3.</span>

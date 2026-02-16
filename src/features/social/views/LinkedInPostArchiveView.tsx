@@ -19,10 +19,10 @@ const POST_TYPE_FILTERS = [
   { key: "daily_digest", label: "Daily Digest" },
   { key: "funding_tracker", label: "Funding Tracker" },
   { key: "funding_brief", label: "Funding Brief" },
-  { key: "fda", label: "FDA" },
-  { key: "clinical", label: "Clinical" },
+  { key: "fda", label: "FDA Updates" },
+  { key: "clinical", label: "Clinical Trials" },
   { key: "research", label: "Research" },
-  { key: "ma", label: "M&A" },
+  { key: "ma", label: "Deals" },
 ];
 
 export const LinkedInPostArchiveView: React.FC = () => {
@@ -116,7 +116,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
                 <Linkedin className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">LinkedIn Post Archive</h1>
+                <h1 className="text-lg font-semibold text-gray-900">LinkedIn Posts</h1>
                 <p className="text-xs text-gray-500">
                   {stats
                     ? `${stats.totalPosts} posts across ${stats.recentDates.length} days`
@@ -129,7 +129,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
               <div className="hidden sm:flex items-center gap-3">
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <BarChart3 className="w-3.5 h-3.5" />
-                  <span>{stats.byType.length} categories</span>
+                  <span>{stats.byType.length} post types</span>
                 </div>
               </div>
             )}

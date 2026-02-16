@@ -30,21 +30,21 @@ const POST_TYPE_CONFIG: Record<string, { label: string; color: string; icon: Rea
   daily_digest: { label: "Daily Digest", color: "bg-indigo-100 text-indigo-700", icon: Newspaper },
   funding_tracker: { label: "Funding Tracker", color: "bg-indigo-100 text-gray-700", icon: TrendingUp },
   funding_brief: { label: "Funding Brief", color: "bg-green-100 text-green-700", icon: DollarSign },
-  fda: { label: "FDA Update", color: "bg-red-100 text-red-700", icon: Shield },
-  clinical: { label: "Clinical Trial", color: "bg-purple-100 text-purple-700", icon: FlaskConical },
+  fda: { label: "FDA Updates", color: "bg-red-100 text-red-700", icon: Shield },
+  clinical: { label: "Clinical Trials", color: "bg-purple-100 text-purple-700", icon: FlaskConical },
   research: { label: "Research", color: "bg-blue-100 text-blue-700", icon: Microscope },
-  ma: { label: "M&A", color: "bg-amber-100 text-amber-700", icon: Handshake },
+  ma: { label: "Deals", color: "bg-amber-100 text-amber-700", icon: Handshake },
 };
 
 const PERSONA_CONFIG: Record<string, { label: string; color: string }> = {
   GENERAL: { label: "General", color: "bg-gray-100 text-gray-600" },
-  VC_INVESTOR: { label: "VC Investor", color: "bg-violet-100 text-violet-600" },
+  VC_INVESTOR: { label: "Investor", color: "bg-violet-100 text-violet-600" },
   TECH_BUILDER: { label: "Tech Builder", color: "bg-cyan-100 text-cyan-600" },
   FUNDING: { label: "Funding", color: "bg-indigo-100 text-indigo-600" },
-  FDA: { label: "FDA", color: "bg-red-100 text-red-600" },
-  CLINICAL: { label: "Clinical", color: "bg-purple-100 text-purple-600" },
+  FDA: { label: "FDA Updates", color: "bg-red-100 text-red-600" },
+  CLINICAL: { label: "Clinical Trials", color: "bg-purple-100 text-purple-600" },
   RESEARCH: { label: "Research", color: "bg-blue-100 text-blue-600" },
-  MA: { label: "M&A", color: "bg-amber-100 text-amber-600" },
+  MA: { label: "Deals", color: "bg-amber-100 text-amber-600" },
 };
 
 const CONTENT_PREVIEW_LENGTH = 400;
@@ -133,7 +133,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
           {factCheckCount != null && factCheckCount > 0 && (
             <span>{factCheckCount} fact checks</span>
           )}
-          <span>{content.length} chars</span>
+          <span>{content.length} characters</span>
         </div>
         <div className="flex items-center gap-2">
           <button

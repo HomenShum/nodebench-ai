@@ -132,8 +132,8 @@ export function useFeedData(options: UseFeedDataOptions = {}) {
         items.push({
           id: doc._id,
           type: 'dossier',
-          title: doc.title || 'Untitled Dossier',
-          subtitle: doc.summary || 'AI-powered research dossier with comprehensive analysis.',
+          title: doc.title || 'Untitled Report',
+          subtitle: doc.summary || 'AI-powered research report with comprehensive analysis.',
           timestamp: updatedAt ? formatRelativeTime(updatedAt) : 'Recently',
           tags: extractTags(doc.title || ''),
           source: 'Workspace',

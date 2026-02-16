@@ -220,6 +220,7 @@ export function CalendarDatePopover({
                           {evt.proposed && evt._id && (
                             <>
                               <button
+                                type="button"
                                 className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-indigo-200 bg-indigo-50 text-gray-700 hover:bg-indigo-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -230,6 +231,7 @@ export function CalendarDatePopover({
                                 Accept
                               </button>
                               <button
+                                type="button"
                                 className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -243,6 +245,7 @@ export function CalendarDatePopover({
                           )}
                           {/* Ask Agent button for email events */}
                           <button
+                            type="button"
                             className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -330,6 +333,7 @@ export function CalendarDatePopover({
       {/* Footer actions */}
       <div className="p-3 bg-[var(--bg-secondary)]/60 border-t border-[var(--border-color)] grid grid-cols-2 gap-2">
         <button
+          type="button"
           onClick={() => onAddEvent?.(dateMs)}
           className="flex items-center justify-center gap-2 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-sm rounded-lg text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)] transition-all"
         >
@@ -337,6 +341,7 @@ export function CalendarDatePopover({
           Add Event
         </button>
         <button
+          type="button"
           onClick={() => onPrepDay?.(dateMs)}
           className="flex items-center justify-center gap-2 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-200 rounded-lg text-xs font-medium hover:opacity-90 transition-all"
         >
@@ -344,6 +349,7 @@ export function CalendarDatePopover({
           Prep Day
         </button>
         <button
+          type="button"
           onClick={() => onTimeBlock?.(dateMs)}
           className="col-span-2 flex items-center justify-center gap-2 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all"
         >

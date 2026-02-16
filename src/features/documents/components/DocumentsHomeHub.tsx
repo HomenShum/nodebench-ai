@@ -6942,8 +6942,8 @@ export function DocumentsHomeHub({
 
                 <PageHeroHeader
                   icon={<FileText className="w-6 h-6" />}
-                  title={"Documents Hub"}
-                  subtitle={"Manage your documents, files, and research assets"}
+                  title={"My Documents"}
+                  subtitle={"Upload, organize, and search your files"}
                   date={todayLabel}
                   accent
                   className="mb-6"
@@ -7057,10 +7057,21 @@ export function DocumentsHomeHub({
 
                     {(docViewMode === "list" || docViewMode === "cards") &&
                       filteredDocuments.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                          <p className="text-[var(--text-muted)] text-sm">No documents found</p>
-                          <p className="text-[var(--text-muted)] text-xs mt-1">Upload or create a document to get started</p>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => open()}
+                          className="w-full flex flex-col items-center justify-center py-20 text-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-white/[0.08] hover:border-indigo-300 dark:hover:border-indigo-500/30 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-indigo-50/50 dark:hover:bg-indigo-500/[0.04] transition-all duration-300 cursor-pointer group"
+                        >
+                          <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
+                            <FileText className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+                          </div>
+                          <p className="text-lg font-semibold text-[var(--text-primary)] mb-1">
+                            Drop a PDF and I'll read it for you
+                          </p>
+                          <p className="text-sm text-[var(--text-muted)] max-w-xs">
+                            Drag any file here, or click to browse. I'll extract the key points automatically.
+                          </p>
+                        </button>
                       )}
 
                     {docViewMode === "list" ? (

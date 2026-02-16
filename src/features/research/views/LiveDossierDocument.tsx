@@ -76,7 +76,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     const followUps = useMemo(() => {
         if (isCompany && entityName) {
             return [
-                { icon: <TrendingUp className="w-4 h-4" />, label: "Full Enrichment Dossier", query: `Run the full enrichment dossier for ${entityName} including founders, investors, corporate details, and competitive analysis.` },
+                { icon: <TrendingUp className="w-4 h-4" />, label: "Full Report", query: `Run the full enrichment report for ${entityName} including founders, investors, corporate details, and competitive analysis.` },
                 { icon: <Users className="w-4 h-4" />, label: "Founder Deep Dive", query: `Tell me about the founders of ${entityName} - their backgrounds, education, previous ventures, and expertise.` },
                 { icon: <Briefcase className="w-4 h-4" />, label: "Client & Partner Analysis", query: `Who are the major clients and partners of ${entityName}? Include case studies if available.` },
                 { icon: <FileText className="w-4 h-4" />, label: "IP & Patents", query: `What intellectual property, patents, and proprietary technology does ${entityName} have?` },
@@ -107,7 +107,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
                 </h3>
             </div>
             <p className="text-sm text-[color:var(--text-primary)] dark:text-[color:var(--text-secondary)] mb-6 flex items-center gap-2 flex-wrap">
-                <span>Run a focused follow-up and append results to this live dossier.</span>
+                <span>Run a focused follow-up and append results to this live report.</span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full text-xs font-medium">
                     <span className="h-1.5 w-1.5 rounded-full bg-white dark:bg-gray-900"></span>
                     No refresh needed
@@ -344,7 +344,7 @@ function LiveDossierDocumentInner({
     const entityName = useMemo(() => {
         const match = combinedContent.match(/^#\s+(.+?)(?:\n|$)/m) ||
             combinedContent.match(/^##\s+(.+?)(?:\n|$)/m);
-        return match ? match[1].trim() : 'Research Dossier';
+        return match ? match[1].trim() : 'Research Report';
     }, [combinedContent]);
 
     const observationStep = useMemo(() => {
@@ -435,7 +435,7 @@ function LiveDossierDocumentInner({
         if (!onRunFollowUp) return;
 
         // Extract label from query for display
-        const label = query.includes("full enrichment") ? "Full Enrichment Dossier" :
+        const label = query.includes("full enrichment") ? "Full Research Report" :
             query.includes("Synthesize") ? "Synthesizing Final Report" :
                 query.includes("founders") ? "Founder Deep Dive" :
                     query.includes("clients") || query.includes("partners") ? "Client & Partner Analysis" :
@@ -633,7 +633,7 @@ function LiveDossierDocumentInner({
 
                     {/* Masthead Title - Serif font for newspaper feel */}
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground text-center mb-4">
-                        The Daily Dossier
+                        Today's Report
                     </h1>
 
                     {/* Decorative divider */}
@@ -862,13 +862,13 @@ function EmptyState() {
 
                 {/* Heading */}
                 <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
-                    Your Live Dossier Awaits
+                    Your Live Report Awaits
                 </h2>
 
                 {/* Description */}
                 <p className="text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
-                    Start a research query to generate a comprehensive live dossier with verified sources,
-                    rich media, and actionable insights—all updated in real-time.
+                    Start a research query to generate a comprehensive live report with verified sources,
+                    rich media, and actionable insights -- all updated in real-time.
                 </p>
 
                 {/* Feature hints */}
@@ -933,6 +933,7 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[color:var(--bg-hover)]/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
@@ -994,6 +995,7 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[color:var(--bg-hover)]/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-500/10">

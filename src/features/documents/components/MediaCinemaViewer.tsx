@@ -86,9 +86,9 @@ export function MediaCinemaViewer({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200" role="dialog" aria-label={`Media viewer: ${doc.title}`}>
       {/* Dark Backdrop with Blur */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/90 backdrop-blur-md cursor-pointer"
         onClick={onClose}
       />
@@ -99,18 +99,22 @@ export function MediaCinemaViewer({
         {/* Top Toolbar */}
         <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
           {mediaUrl && (
-            <button 
+            <button
+              type="button"
               onClick={handleDownload}
               className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-white/10"
               title="Download"
+              aria-label="Download media"
             >
               <Download className="w-5 h-5" />
             </button>
           )}
-          <button 
+          <button
+            type="button"
             onClick={onClose}
             className="p-2.5 rounded-full bg-white/10 hover:bg-red-500/30 text-white hover:text-red-300 transition-all duration-200 backdrop-blur-sm border border-white/10"
             title="Close (Esc)"
+            aria-label="Close media viewer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,18 +123,22 @@ export function MediaCinemaViewer({
         {/* Navigation Arrows */}
         {hasPrev && (
           <button
+            type="button"
             onClick={onPrev}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-white/10 z-20"
             title="Previous"
+            aria-label="Previous media"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
         )}
         {hasNext && (
           <button
+            type="button"
             onClick={onNext}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-white/10 z-20"
             title="Next"
+            aria-label="Next media"
           >
             <ChevronRight className="w-6 h-6" />
           </button>

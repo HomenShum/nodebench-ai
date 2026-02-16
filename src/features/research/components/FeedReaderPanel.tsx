@@ -106,7 +106,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
       case 'signal':
         return { bg: 'bg-green-500', text: 'text-white', label: 'Signal' };
       case 'dossier':
-        return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Dossier' };
+        return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Report' };
       case 'repo':
         return { bg: 'bg-gray-800', text: 'text-white', label: 'GitHub' };
       case 'product':
@@ -148,6 +148,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                 onClick={handleBackToOriginal}
                 className="p-1.5 -ml-1 mr-1 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors"
                 title="Back to original"
+                aria-label="Back to original item"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -174,9 +175,11 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
           
           <div className="flex items-center gap-1">
             {/* Bookmark */}
-            <button 
+            <button
+              type="button"
               onClick={() => setIsBookmarked(!isBookmarked)}
               className={`p-2 rounded-lg transition-colors ${isBookmarked ? 'text-yellow-500 bg-yellow-50' : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)]'}`}
+              aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this item'}
             >
               <Bookmark className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} />
             </button>
@@ -186,6 +189,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
               type="button"
               onClick={() => navigator.clipboard.writeText(displayItem.url || displayItem.title)}
               className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors"
+              aria-label="Copy link"
             >
               <Share2 className="w-4 h-4" />
             </button>
@@ -196,6 +200,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                 type="button"
                 onClick={() => window.open(displayItem.url, '_blank', 'noopener,noreferrer')}
                 className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors"
+                aria-label="Open in new tab"
               >
                 <ExternalLink className="w-4 h-4" />
               </button>
@@ -203,8 +208,10 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             
             {/* Close */}
             <button
+              type="button"
               onClick={onClose}
               className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors ml-1"
+              aria-label="Close panel"
             >
               <X className="w-4 h-4" />
             </button>
@@ -358,19 +365,22 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                   
                   {/* Quick Action Buttons */}
                   <div className="flex flex-wrap gap-2 mt-4">
-                    <button 
+                    <button
+                      type="button"
                       onClick={handleSummarize}
                       className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-xl transition-colors"
                     >
                       📝 Summarize
                     </button>
-                    <button 
+                    <button
+                      type="button"
                       onClick={handleMarketImpact}
                       className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-xl transition-colors"
                     >
                       📈 Market Impact
                     </button>
-                    <button 
+                    <button
+                      type="button"
                       onClick={handleCompetitiveAnalysis}
                       className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-xl transition-colors"
                     >
@@ -380,6 +390,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                   
                   {/* Custom Ask */}
                   <button
+                    type="button"
                     onClick={handleAskCustom}
                     className="mt-3 w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                   >
