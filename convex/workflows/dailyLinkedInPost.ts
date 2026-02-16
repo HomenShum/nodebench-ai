@@ -19,6 +19,24 @@ import type { FastVerifyResult } from "../domains/verification/fastVerification"
 import { calculateRiskScore, detectRiskSignals, selectDDTierWithRisk } from "../domains/agents/dueDiligence/riskScoring";
 import type { MicroBranchResult } from "../domains/agents/dueDiligence/microBranches";
 
+type LinkedInCompetingExplanation = {
+  title: string;
+  explanation: string;
+  evidenceLevel: "grounded" | "mixed" | "speculative";
+  measurementApproach: string;
+  falsificationCriteria: string;
+  evidenceChecklist?: {
+    hasPrimarySource: boolean;
+    hasCorroboration: boolean;
+    hasFalsifiableClaim: boolean;
+    hasQuantitativeData: boolean;
+    hasNamedAttribution: boolean;
+    isReproducible: boolean;
+  };
+  checksPassing?: number;
+  checksTotal?: number;
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // LINKEDIN POST FORMATTING
 // ═══════════════════════════════════════════════════════════════════════════
@@ -66,7 +84,7 @@ function formatDigestForLinkedIn(
     return text.slice(0, maxPerPost - 3).trimEnd() + "...";
   }
 
-  const explanations = digest.competingExplanations ?? [];
+  const explanations = (digest.competingExplanations ?? []) as LinkedInCompetingExplanation[];
   const framing = digest.narrativeFraming;
 
   // ── Post 1: WHAT'S HAPPENING ──
@@ -1076,7 +1094,7 @@ function formatDigestForPersona(
 
   const tags = personaTags();
   const domain = extractDomain(digest.leadStory?.title || signals[0]?.title || "tech");
-  const explanations = digest.competingExplanations ?? [];
+  const explanations = (digest.competingExplanations ?? []) as LinkedInCompetingExplanation[];
   const framing = digest.narrativeFraming;
 
   function capPost(text: string): string {

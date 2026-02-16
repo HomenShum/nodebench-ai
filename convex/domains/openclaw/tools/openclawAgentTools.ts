@@ -24,7 +24,7 @@ export const spawnOpenClawSession = tool({
     "Create a sandboxed OpenClaw session with policy enforcement. " +
     "Supports local, openclawd, and tensol deployments. " +
     "Returns session ID for subsequent skill invocations.",
-  parameters: z.object({
+  inputSchema: z.object({
     deployment: z
       .enum(["local", "openclawd", "tensol"])
       .describe("Deployment target (local, openclawd, or tensol)"),
@@ -53,7 +53,7 @@ export const executeOpenClawSkill = tool({
     "Invoke an OpenClaw skill through the sandbox proxy. " +
     "The skill must be in the policy allowlist. " +
     "Every call is logged to the audit trail.",
-  parameters: z.object({
+  inputSchema: z.object({
     skillName: z.string().describe("Name of the OpenClaw skill to invoke"),
     skillArgs: z.record(z.any()).optional().describe("Arguments for the skill"),
     justification: z
@@ -78,7 +78,7 @@ export const getOpenClawResults = tool({
   description:
     "Retrieve execution results and audit summary for an OpenClaw session. " +
     "Shows total calls, violations, compliance grade, and skill breakdown.",
-  parameters: z.object({
+  inputSchema: z.object({
     sessionId: z
       .string()
       .describe("Session ID to query (use 'latest' for most recent)"),
@@ -99,7 +99,7 @@ export const endOpenClawSession = tool({
   description:
     "Disconnect from an OpenClaw session and generate compliance summary. " +
     "Returns A-F grade, violation breakdown, and recommendations.",
-  parameters: z.object({
+  inputSchema: z.object({
     reason: z
       .string()
       .describe("Reason for ending the session (e.g., 'task_complete', 'user_request', 'error')"),
