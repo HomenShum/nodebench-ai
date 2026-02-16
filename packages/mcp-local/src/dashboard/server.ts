@@ -330,15 +330,23 @@ function apiDesignIssues(db: Database.Database, sid: string, res: ServerResponse
 // ── API: Agent Monitor ──────────────────────────────────────────────
 
 function apiAgentStatus(db: Database.Database, res: ServerResponse) {
-  // Active agents with roles
+  // Only agents active in the last 2 hours (has recent calls OR a claimed task)
   const roles = db.prepare(`
     SELECT r.session_id, r.role, r.focus_area, r.created_at
     FROM agent_roles r
+    WHERE EXISTS (
+      SELECT 1 FROM tool_call_log t
+      WHERE t.session_id = r.session_id AND t.created_at >= datetime('now', '-2 hours')
+    ) OR EXISTS (
+      SELECT 1 FROM agent_tasks a
+      WHERE a.session_id = r.session_id AND a.status = 'claimed'
+        AND a.claimed_at >= datetime('now', '-4 hours')
+    )
     ORDER BY r.created_at DESC
+    LIMIT 20
   `).all() as Array<{ session_id: string; role: string; focus_area: string | null; created_at: string }>;
 
   const agents = roles.map(r => {
-    // Current claimed task
     const task = db.prepare(`
       SELECT task_key, description, claimed_at
       FROM agent_tasks
@@ -346,25 +354,21 @@ function apiAgentStatus(db: Database.Database, res: ServerResponse) {
       ORDER BY claimed_at DESC LIMIT 1
     `).get(r.session_id) as { task_key: string; description: string | null; claimed_at: string } | undefined;
 
-    // Tool call count (last 30 min)
     const callCount = db.prepare(`
       SELECT COUNT(*) as c FROM tool_call_log
       WHERE session_id = ? AND created_at >= datetime('now', '-30 minutes')
     `).get(r.session_id) as { c: number };
 
-    // Latest tool call time (for stale detection)
     const lastCall = db.prepare(`
       SELECT created_at FROM tool_call_log
       WHERE session_id = ? ORDER BY created_at DESC LIMIT 1
     `).get(r.session_id) as { created_at: string } | undefined;
 
-    // Token budget (latest entry)
     const budget = db.prepare(`
       SELECT tokens_used, tokens_limit FROM context_budget_log
       WHERE session_id = ? ORDER BY created_at DESC LIMIT 1
     `).get(r.session_id) as { tokens_used: number; tokens_limit: number } | undefined;
 
-    // Unread mailbox messages
     const unread = db.prepare(`
       SELECT COUNT(*) as c FROM agent_mailbox
       WHERE (recipient_id = ? OR recipient_role = ?) AND read = 0
@@ -385,38 +389,65 @@ function apiAgentStatus(db: Database.Database, res: ServerResponse) {
     };
   });
 
-  // Recently completed tasks
-  const completed = db.prepare(`
+  // Summary stats
+  const activeSessions = agents.map(a => a.sessionId);
+  const totalCalls = activeSessions.length > 0
+    ? (db.prepare(`SELECT COUNT(*) as c FROM tool_call_log WHERE session_id IN (${activeSessions.map(() => "?").join(",")})`)
+        .get(...activeSessions) as { c: number }).c
+    : 0;
+  const claimedCount = agents.filter(a => a.currentTask).length;
+  const completedTasks = db.prepare(`
     SELECT task_key, session_id, description, progress_note, released_at
     FROM agent_tasks
     WHERE status = 'released' AND released_at >= datetime('now', '-1 hour')
     ORDER BY released_at DESC LIMIT 20
-  `).all();
+  `).all() as Array<{ task_key: string; session_id: string; description: string | null; progress_note: string | null; released_at: string }>;
 
-  json(res, { agents, completedTasks: completed });
+  json(res, {
+    agents,
+    completedTasks,
+    summary: {
+      activeAgents: agents.length,
+      activeTasks: claimedCount,
+      completedTasks: completedTasks.length,
+      totalCalls,
+    },
+  });
 }
 
 function apiAgentActivity(db: Database.Database, res: ServerResponse) {
+  // Only show calls from agents active in last 2 hours
   const calls = db.prepare(`
-    SELECT tool_name, session_id, result_status, duration_ms, created_at
-    FROM tool_call_log
-    ORDER BY created_at DESC LIMIT 50
+    SELECT t.tool_name, t.session_id, t.result_status, t.duration_ms, t.created_at
+    FROM tool_call_log t
+    WHERE EXISTS (
+      SELECT 1 FROM agent_roles r
+      WHERE r.session_id = t.session_id AND (
+        EXISTS (SELECT 1 FROM tool_call_log t2 WHERE t2.session_id = r.session_id AND t2.created_at >= datetime('now', '-2 hours'))
+        OR EXISTS (SELECT 1 FROM agent_tasks a WHERE a.session_id = r.session_id AND a.status = 'claimed')
+      )
+    )
+    ORDER BY t.created_at DESC LIMIT 30
   `).all();
 
-  const total = db.prepare("SELECT COUNT(*) as c FROM tool_call_log").get() as { c: number };
-
-  json(res, { calls, totalCalls: total.c });
+  json(res, { calls, totalCalls: calls.length });
 }
 
 function apiAgentMailbox(db: Database.Database, res: ServerResponse) {
+  // Deduplicate by subject+sender — keep only the latest of each
   const messages = db.prepare(`
     SELECT id, sender_id, recipient_id, recipient_role, category, priority, subject, body, created_at
     FROM agent_mailbox
-    WHERE read = 0
+    WHERE read = 0 AND id IN (
+      SELECT id FROM (
+        SELECT id, ROW_NUMBER() OVER (PARTITION BY sender_id, subject ORDER BY created_at DESC) as rn
+        FROM agent_mailbox WHERE read = 0
+      ) WHERE rn = 1
+    )
     ORDER BY
       CASE priority WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,
       created_at DESC
-    LIMIT 20
+    LIMIT 10
   `).all();
 
   json(res, { messages });

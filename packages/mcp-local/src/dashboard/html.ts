@@ -580,6 +580,7 @@ export function getDashboardHtml(): string {
     const agents = status.agents || [];
     const calls = (activity.calls || []).slice(0, 20);
     const msgs = mail.messages || [];
+    const sum = status.summary || {};
     const hasContent = agents.length > 0 || calls.length > 0;
 
     if (!hasContent) {
@@ -592,16 +593,25 @@ export function getDashboardHtml(): string {
       return h.join('');
     }
 
+    // ── Summary Bar ─────────────────────────────────────
+    h.push('<div class="fade-up ring-glow rounded-xl bg-surface-1 p-4 mb-4">');
+    h.push('<div class="flex items-center justify-between flex-wrap gap-3">');
+    h.push('<div class="flex items-center gap-2">');
+    h.push('<span class="w-2 h-2 rounded-full pulse-agent" style="background:#34d399" aria-label="Live"></span>');
+    h.push('<span class="text-sm font-semibold text-white">Parallel Agents</span>');
+    h.push('</div>');
+    h.push('<div class="flex items-center gap-4 text-[11px] text-zinc-400">');
+    h.push('<span><span class="text-white font-semibold">'+(sum.activeAgents||agents.length)+'</span> agents</span>');
+    h.push('<span><span class="text-white font-semibold">'+(sum.activeTasks||0)+'</span> active tasks</span>');
+    if (sum.completedTasks > 0) h.push('<span><span class="text-ok font-semibold">'+sum.completedTasks+'</span> completed</span>');
+    h.push('<span><span class="text-white font-semibold">'+(sum.totalCalls||0)+'</span> total calls</span>');
+    if (msgs.length > 0) h.push('<span style="color:#818cf8"><span class="font-semibold">'+msgs.length+'</span> messages</span>');
+    h.push('</div>');
+    h.push('</div></div>');
+
     // ── Swim Lanes ──────────────────────────────────────
     if (agents.length > 0) {
       h.push('<div class="fade-up mb-5">');
-      h.push('<div class="flex items-center gap-2.5 mb-3">');
-      h.push('<div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:var(--gradient-accent)">');
-      h.push('<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#c7d2fe"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>');
-      h.push('</div>');
-      h.push('<div><div class="text-sm font-semibold text-white">Parallel Agents</div>');
-      h.push('<div class="text-[11px] text-zinc-500">'+agents.length+' agent'+(agents.length!==1?'s':'')+' working</div></div>');
-      h.push('</div>');
 
       agents.forEach(function(ag, idx) {
         var pct = ag.tokenBudget.percent;
