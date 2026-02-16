@@ -167,31 +167,31 @@ const viewFallback = <ViewSkeleton variant="default" />;
 
 const VIEW_TITLES: Record<string, string> = {
   research: 'Home',
-  public: 'Public Documents',
+  public: 'Shared with You',
   spreadsheets: 'Spreadsheets',
   'for-you-feed': 'For You',
-  'document-recommendations': 'Recommendations',
-  'agent-marketplace': 'Agent Marketplace',
-  'github-explorer': 'GitHub Explorer',
-  'pr-suggestions': 'PR Suggestions',
+  'document-recommendations': 'Suggestions',
+  'agent-marketplace': 'Agent Templates',
+  'github-explorer': 'GitHub',
+  'pr-suggestions': 'Pull Requests',
   calendar: 'Calendar',
   roadmap: 'Roadmap',
   timeline: 'Timeline',
   signals: 'Signals',
-  benchmarks: 'Model Benchmarks',
-  funding: 'Funding Brief',
-  'analytics-hitl': 'HITL Analytics',
-  'analytics-components': 'Component Metrics',
-  'analytics-recommendations': 'Recommendation Feedback',
-  'cost-dashboard': 'Cost Dashboard',
-  'industry-updates': 'Industry Updates',
+  benchmarks: 'Benchmarks',
+  funding: 'Funding',
+  'analytics-hitl': 'Review Queue',
+  'analytics-components': 'Usage Stats',
+  'analytics-recommendations': 'Feedback',
+  'cost-dashboard': 'Usage & Costs',
+  'industry-updates': 'Industry News',
   'linkedin-posts': 'LinkedIn Posts',
-  'mcp-ledger': 'MCP Ledger',
+  'mcp-ledger': 'Tool Usage',
   documents: 'My Workspace',
-  agents: 'Agents',
+  agents: 'Assistants',
   activity: 'Activity',
-  showcase: 'Showcase',
-  footnotes: 'Footnotes',
+  showcase: 'Demo',
+  footnotes: 'Sources',
 };
 
 interface MainLayoutProps {
@@ -351,19 +351,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     openSettings,
   });
 
-  // Sync main view with URL pathname for primary hubs
+  // Deep link: ?doc=ID switches to documents view and selects the document
   useEffect(() => {
-    try {
-      const next = parsePathname(location.pathname || '/');
-      setEntityName(next.entityName);
-      setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as any) : null);
-      setResearchHubInitialTab(next.researchTab);
-      setShowResearchDossier(next.showResearchDossier);
-      setCurrentView(next.view);
-    } catch {
-      // ignore
+    const params = new URLSearchParams(location.search);
+    const docId = params.get('doc');
+    if (docId) {
+      setCurrentView('documents');
+      onDocumentSelect(docId as Id<"documents">);
     }
-  }, [location.pathname]);
+  }, [location.search, setCurrentView, onDocumentSelect]);
 
 
   return (
@@ -476,7 +472,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-[13px]">Search...</span>
-                <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300">
+                <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
                   {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl+'}K
                 </kbd>
               </button>
@@ -520,7 +516,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 }`}
               >
                 <Zap className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Agent</span>
+                <span className="hidden sm:inline">Assistant</span>
                 {!showFastAgent && (
                   <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
                 )}
@@ -551,7 +547,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           {showGuestWorkspaceCta && (
             <div className="px-4 sm:px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
               <div className="text-sm text-amber-900">
-                You&apos;re in guest preview. Sign in anonymously to create and save workspace data.
+                You&apos;re in preview mode. Sign in to save your work.
               </div>
               <button
                 type="button"
@@ -559,7 +555,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 disabled={isAnonSigningIn}
                 className="ml-auto px-3 py-1.5 text-sm font-semibold rounded-md bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isAnonSigningIn ? "Signing in..." : "Sign in anonymously"}
+                {isAnonSigningIn ? "Signing in..." : "Sign in"}
               </button>
             </div>
           )}
@@ -652,7 +648,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               ) : currentView === 'roadmap' ? (
                 <TimelineRoadmapView />
               ) : currentView === 'showcase' ? (
-                <PhaseAllShowcase onBack={() => setCurrentView('research')} />
+                <Suspense fallback={viewFallback}>
+                  <PhaseAllShowcase onBack={() => setCurrentView('research')} />
+                </Suspense>
               ) : currentView === 'footnotes' ? (
                 <FootnotesPage
                   library={{

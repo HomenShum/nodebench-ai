@@ -11,9 +11,9 @@ interface ActProgressIndicatorProps {
 }
 
 const ACTS: { id: ActId; label: string; subtitle: string }[] = [
-  { id: "actI", label: "Act I", subtitle: "Composition" },
-  { id: "actII", label: "Act II", subtitle: "Change" },
-  { id: "actIII", label: "Act III", subtitle: "Decision" },
+  { id: "actI", label: "Quick Pulse", subtitle: "Composition" },
+  { id: "actII", label: "Analysis", subtitle: "Change" },
+  { id: "actIII", label: "Deep Dive", subtitle: "Decision" },
 ];
 
 const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
@@ -32,10 +32,10 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
     >
       <div className="flex items-center justify-between gap-2 mb-1">
         <span className="text-[11px] font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
-          Story Acts
+          Research Depth
         </span>
         <span className="text-[11px] text-[color:var(--text-secondary)]">
-          {ACTS[safeIndex]?.label ?? "Act I"}
+          {ACTS[safeIndex]?.label ?? "Quick Pulse"}
         </span>
       </div>
       <div className="mt-1">

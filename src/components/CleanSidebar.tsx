@@ -28,7 +28,7 @@ import {
   Github,
   GitPullRequest,
   Linkedin,
-  Shield,
+  Activity,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 import { SidebarButton } from "./ui";
@@ -41,7 +41,7 @@ interface CleanSidebarProps {
   activeSources: string[];
   onToggleSource: (sourceId: string) => void;
   onOpenSettings?: (
-    tab?: 'profile' | 'account' | 'usage' | 'integrations' | 'billing' | 'reminders'
+    tab?: 'profile' | 'account' | 'usage' | 'integrations'
   ) => void;
   onGoHome?: () => void;
   onEnterResearchHub?: () => void;
@@ -101,16 +101,16 @@ interface CleanSidebarProps {
 
 // Dashboard items
 const dashboardItems = [
-  { icon: DollarSign, label: 'Cost Dashboard', view: 'cost-dashboard' as const, subtitle: 'LLM Spend & Usage' },
+  { icon: DollarSign, label: 'Cost Dashboard', view: 'cost-dashboard' as const, subtitle: 'Spend & Usage' },
   { icon: TrendingUp, label: 'Industry Updates', view: 'industry-updates' as const, subtitle: 'Signals & Trends' },
-  { icon: Shield, label: 'MCP Ledger', view: 'mcp-ledger' as const, subtitle: 'Tool Audit Trail' },
+  { icon: Activity, label: 'Tool Usage', view: 'mcp-ledger' as const, subtitle: 'What tools were used' },
 ];
 
 // Discovery items
 const discoveryItems = [
   { icon: Sparkles, label: 'For You', view: 'for-you-feed' as const, subtitle: 'Personalized Feed' },
   { icon: BookOpen, label: 'Recommendations', view: 'document-recommendations' as const, subtitle: 'Suggested Reads' },
-  { icon: Zap, label: 'Agent Marketplace', view: 'agent-marketplace' as const, subtitle: 'Browse Agents' },
+  { icon: Zap, label: 'Agent Templates', view: 'agent-marketplace' as const, subtitle: 'Ready-made workflows' },
   { icon: Github, label: 'GitHub Explorer', view: 'github-explorer' as const, subtitle: 'Repos & Trends' },
   { icon: GitPullRequest, label: 'PR Suggestions', view: 'pr-suggestions' as const, subtitle: 'Code Reviews' },
   { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const, subtitle: 'Post Archive' },
@@ -132,6 +132,7 @@ export function CleanSidebar({
   onToggleCollapse,
 }: CleanSidebarProps) {
   const [isDocsOpen, setIsDocsOpen] = useState(true);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const user = useQuery(api.domains.auth.auth.loggedInUser);
   const { signIn } = useAuthActions();
   const trash = useQuery(api.domains.documents.documents.getTrash);
@@ -153,7 +154,7 @@ export function CleanSidebar({
       .slice(0, 5)
       .map((doc: any) => ({
         id: doc._id,
-        title: doc.title || 'Untitled Dossier',
+        title: doc.title || 'Untitled Report',
         updatedAt: doc.updatedAt ? new Date(doc.updatedAt) : undefined,
         isAgentUpdating: false,
       }));
@@ -188,6 +189,7 @@ export function CleanSidebar({
     <button
       type="button"
       title={label}
+      aria-label={label}
       onClick={() => onViewChange?.(view as any)}
       className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 ${
         currentView === view
@@ -200,7 +202,7 @@ export function CleanSidebar({
   );
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 dark:bg-[#18181B]">
+    <aside aria-label="Sidebar navigation" className="h-full flex flex-col bg-gray-50 dark:bg-[#18181B]">
       {/* Logo */}
       <div className={`h-14 flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} border-b border-gray-200/60 dark:border-white/[0.06]`}>
         <div className="flex items-center gap-2.5 min-w-0">
@@ -209,6 +211,7 @@ export function CleanSidebar({
             onClick={onToggleCollapse}
             className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-gray-800 transition-colors"
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <span className="text-white font-bold text-sm">N</span>
           </button>
@@ -231,54 +234,55 @@ export function CleanSidebar({
         />
       </div>
 
-      {/* Dashboard Links */}
+      {/* More — Dashboards & Discovery collapsed by default */}
       <div className={`${isCollapsed ? 'px-1' : 'px-3'} mt-4 mb-2`}>
-        {!isCollapsed && (
-          <div className="px-2 mb-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-            Dashboards
+        {!isCollapsed ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsMoreOpen(!isMoreOpen)}
+              className="w-full flex items-center justify-between px-2 mb-2 text-[11px] font-medium uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            >
+              <span>More</span>
+              {isMoreOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            </button>
+            {isMoreOpen && (
+              <div className="space-y-3">
+                <div className="space-y-0.5">
+                  {dashboardItems.map((item) => (
+                    <SidebarButton
+                      key={item.view}
+                      icon={<item.icon />}
+                      label={item.label}
+                      subtitle={item.subtitle}
+                      onClick={() => onViewChange?.(item.view)}
+                      isActive={currentView === item.view}
+                    />
+                  ))}
+                </div>
+                <div className="space-y-0.5">
+                  {discoveryItems.map((item) => (
+                    <SidebarButton
+                      key={item.view}
+                      icon={<item.icon />}
+                      label={item.label}
+                      subtitle={item.subtitle}
+                      onClick={() => onViewChange?.(item.view)}
+                      isActive={currentView === item.view}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Collapsed: show just icons for dashboards + discovery */
+          <div className="space-y-0.5">
+            {[...dashboardItems, ...discoveryItems].map((item) => (
+              <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
+            ))}
           </div>
         )}
-        <div className="space-y-0.5">
-          {dashboardItems.map((item) =>
-            isCollapsed ? (
-              <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
-            ) : (
-              <SidebarButton
-                key={item.view}
-                icon={<item.icon />}
-                label={item.label}
-                subtitle={item.subtitle}
-                onClick={() => onViewChange?.(item.view)}
-                isActive={currentView === item.view}
-              />
-            )
-          )}
-        </div>
-      </div>
-
-      {/* Discovery Links */}
-      <div className={`${isCollapsed ? 'px-1' : 'px-3'} mt-4 mb-2`}>
-        {!isCollapsed && (
-          <div className="px-2 mb-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-            Discovery
-          </div>
-        )}
-        <div className="space-y-0.5">
-          {discoveryItems.map((item) =>
-            isCollapsed ? (
-              <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
-            ) : (
-              <SidebarButton
-                key={item.view}
-                icon={<item.icon />}
-                label={item.label}
-                subtitle={item.subtitle}
-                onClick={() => onViewChange?.(item.view)}
-                isActive={currentView === item.view}
-              />
-            )
-          )}
-        </div>
       </div>
 
       {/* Divider */}
@@ -427,7 +431,7 @@ export function CleanSidebar({
           </button>
         )}
       </div>
-    </div>
+    </aside>
   );
 }
 

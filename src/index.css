@@ -23,8 +23,8 @@
     --secondary-foreground: 0 0% 4%;
     --muted: 220 14% 96%;
     /* #F3F4F6 */
-    --muted-foreground: 220 9% 46%;
-    /* #6B7280 - WCAG AA */
+    --muted-foreground: 220 9% 36%;
+    /* #4B5563 - WCAG AA ≥ 4.6:1 on white */
     --accent: 220 14% 96%;
     --accent-foreground: 234 56% 58%;
     --destructive: 0 84% 60%;
@@ -164,6 +164,18 @@
   border: 1px solid rgba(94, 106, 210, 0.12);
 }
 
+/* Dark mode: elevate with subtle inset border instead of box-shadow */
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md {
+  --tw-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.dark .shadow-lg,
+.dark .shadow-xl,
+.dark .shadow-2xl {
+  --tw-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
 /* Stagger utility — cascade children with 50ms delays */
 .stagger > * { animation-fill-mode: both; }
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
@@ -239,22 +251,45 @@
    MODERN SAAS STREAMING ANIMATIONS
    ═══════════════════════════════════════════════════════════════ */
 
-/* Shimmer effect for skeleton loaders */
+/* Shimmer effect for skeleton loaders — uses transform instead of background-position
+   for GPU-composited animation (no layout recalculation) */
 .shimmer-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background: linear-gradient(90deg,
       rgba(255, 255, 255, 0) 0%,
       rgba(255, 255, 255, 0.1) 50%,
       rgba(255, 255, 255, 0) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2s ease-in-out infinite;
+  transform: translateX(-100%);
+  animation: shimmer-slide 2s ease-in-out infinite;
+  will-change: transform;
 }
 
-/* Glass morphism container */
+@keyframes shimmer-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Glass morphism container — blur(8px) balances visual effect vs GPU cost */
 .glass-container {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-container {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.12);
+  }
 }
 
 /* Animated gradient border */
@@ -563,4 +598,72 @@
 
 .feedback-error-shake {
   animation: feedback-error-shake 0.5s ease-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REDUCED MOTION — disable non-essential animation
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-bg::after,
+  .section-skeleton,
+  .gradient-border::before,
+  .flowing-gradient,
+  .live-dot::after {
+    animation: none;
+  }
+
+  .agent-avatar.active::after {
+    animation: none;
+    border-color: #8b5cf6;
+  }
+
+  .stagger > *,
+  .stagger-children > * {
+    animation: none;
+    opacity: 1;
+  }
+
+  .tool-chip {
+    animation: none;
+    opacity: 1;
+  }
+
+  .animate-cursor,
+  .typewriter-cursor {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE SCROLLBAR PARITY
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Firefox light mode scrollbar */
+* {
+  scrollbar-color: rgba(0, 0, 0, 0.12) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.10) transparent;
+}
+
+/* Light mode focus ring parity */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Screen-reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

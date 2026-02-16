@@ -172,8 +172,8 @@ function BriefingSectionInner({
     const sourceCount = sourceSummary?.totalItems ?? actI?.totalItems ?? 0;
     const confidence = executiveBrief?.meta?.confidence ?? null;
     return [
-      { label: 'Signals', value: resolveMetricValue(signalCount), hint: 'Act II' },
-      { label: 'Actions', value: resolveMetricValue(actionCount), hint: 'Act III' },
+      { label: 'Signals', value: resolveMetricValue(signalCount), hint: 'Analysis' },
+      { label: 'Actions', value: resolveMetricValue(actionCount), hint: 'Deep Dive' },
       { label: 'Sources', value: resolveMetricValue(sourceCount), hint: 'coverage' },
       { label: 'Confidence', value: confidence !== null ? `${confidence}%` : 'N/A', hint: 'model' },
     ];

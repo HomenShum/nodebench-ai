@@ -252,7 +252,7 @@ export function buildResearchStreamViewModel(args: {
         deepDives: [],
       },
       dashboard: {
-        phaseLabel: "Act I",
+        phaseLabel: "Quick Pulse",
         kpis: [
           { label: "Items", value: brief.actI.totalItems, unit: "", color: "bg-slate-900" },
           { label: "Sources", value: sourceCount, unit: "", color: "bg-slate-600" },
@@ -272,7 +272,7 @@ export function buildResearchStreamViewModel(args: {
         signals: brief.actII.signals,
       },
       dashboard: {
-        phaseLabel: "Act II",
+        phaseLabel: "Analysis",
         kpis: [
           { label: "Signals", value: brief.actII.signals.length, unit: "", color: "bg-slate-900" },
         ],
@@ -290,7 +290,7 @@ export function buildResearchStreamViewModel(args: {
         actions: visibleActions,
       },
       dashboard: {
-        phaseLabel: "Act III",
+        phaseLabel: "Deep Dive",
         kpis: [
           { label: "Actions", value: visibleActions.length, unit: "", color: "bg-slate-900" },
         ],

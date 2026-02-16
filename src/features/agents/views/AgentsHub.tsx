@@ -89,7 +89,7 @@ function QuickStatsBar() {
   const statItems = [
     {
       value: stats.totalAgents,
-      label: "Total Agents",
+      label: "AI Assistants",
       icon: Bot,
       color: "text-[var(--accent-primary)]",
     },
@@ -112,12 +112,6 @@ function QuickStatsBar() {
       color: "text-purple-600",
     },
     {
-      value: costMetrics?.freeRunsToday ?? 0,
-      label: "Free Runs Today",
-      icon: Cpu,
-      color: "text-cyan-600",
-    },
-    {
       value: costMetrics ? `$${costMetrics.dollarsSaved.toFixed(2)}` : "$0.00",
       label: "Cost Saved (24h)",
       icon: DollarSign,
@@ -126,7 +120,7 @@ function QuickStatsBar() {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
       {statItems.map((item) => {
         const Icon = item.icon;
         return (
@@ -257,7 +251,7 @@ function ActiveSwarmsSection() {
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-            Active Swarms
+            Running Tasks
           </h3>
           <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-600 border border-green-500/20">
             {runningSwarms.length}
@@ -336,8 +330,8 @@ export function AgentsHub() {
             {/* Hero Header */}
             <PageHeroHeader
               icon={<Bot className="w-6 h-6" />}
-              title="Agents Hub"
-              subtitle="Orchestrate AI agents for research, analysis, and automation"
+              title="AI Assistants"
+              subtitle="Direct AI to research, analyze, and automate tasks for you"
               accent
               className="mb-6"
             />
@@ -409,13 +403,13 @@ export function AgentsHub() {
               <div className="flex items-center gap-3 mb-2">
                 <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
                 <h3 className="font-semibold text-[var(--text-primary)]">
-                  Autonomous Research System LIVE
+                  Background Research Active
                 </h3>
               </div>
               <p className="text-sm text-[var(--text-secondary)]">
-                The autonomous research loop is now operational. Free OpenRouter models
-                handle background signal ingestion, processing, and publishing at $0/month.
-                Premium models are reserved for user-initiated deep research.
+                AI is continuously researching in the background — scanning news, processing signals,
+                and publishing updates at no extra cost.
+                More powerful analysis runs when you ask for deep research.
               </p>
             </div>
           </div>

@@ -1,58 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import {
-    Zap,
-    ChevronRight,
-    Activity,
-    Globe,
-    Shield,
-    Cpu,
-    Terminal,
     ArrowRight,
     Sparkles,
-    FileText,
-    CheckCircle2,
-    TrendingUp,
-    Plus,
-    Clock,
-    Bell
+    Upload,
+    Send,
+    Shield,
 } from 'lucide-react';
-import NumberFlow from '@number-flow/react';
-import { useConvexAuth, useMutation, useQuery } from 'convex/react';
+import { useConvexAuth, useQuery } from 'convex/react';
+import { prefersReducedMotion } from '../../../utils/a11y';
 import { api } from '../../../../convex/_generated/api';
-import { toast } from 'sonner';
 
 interface CinematicHomeProps {
-    onEnterHub: (tab?: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog") => void;
+    onEnterHub: (tab?: "overview" | "signals" | "briefing" | "forecasts") => void;
     onEnterWorkspace: () => void;
     onOpenFastAgent: () => void;
 }
 
 export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFastAgent }: CinematicHomeProps) {
-    const [isHovered, setIsHovered] = useState(false);
+    const [inputValue, setInputValue] = useState('');
+    const [isDragOver, setIsDragOver] = useState(false);
+    const reduceMotion = useMemo(() => prefersReducedMotion(), []);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    // Fetch user activity stats
     const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
     const greeting = useQuery(api.domains.auth.userStats.getGreetingMessage);
     const insights = useQuery(api.domains.auth.userStats.getProductivityInsights);
 
     const { isAuthenticated } = useConvexAuth();
-    const createDossier = useMutation(api.domains.documents.documents.createDossier);
 
-    const handleCreateDossier = async () => {
-        if (!isAuthenticated) {
-            toast.info("Sign in to create a dossier.");
-            return;
-        }
+    // hasActivity check removed — stat boxes removed (vanity metrics)
 
-        try {
-            const documentId = await createDossier({ title: "New Dossier" });
-            window.dispatchEvent(new CustomEvent('nodebench:openDocument', { detail: { documentId } }));
-        } catch (err: any) {
-            console.error("[CinematicHome] Failed to create dossier:", err);
-            toast.error(err?.message || "Failed to create dossier");
+    const handleSubmit = useCallback(() => {
+        // Open the agent panel — the input value will be picked up by the panel
+        onOpenFastAgent();
+    }, [onOpenFastAgent]);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
         }
-    };
+    }, [handleSubmit]);
+
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(true);
+    }, []);
+
+    const handleDragLeave = useCallback(() => {
+        setIsDragOver(false);
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        // Open agent panel for file processing
+        onOpenFastAgent();
+    }, [onOpenFastAgent]);
 
     return (
         <div className="min-h-full bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -63,301 +68,168 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100/20 dark:bg-indigo-500/[0.06] rounded-full blur-[120px]" />
             </div>
 
-            {/* Welcome Banner */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="absolute top-6 left-6 right-6 flex justify-between items-start z-10"
-            >
-                <div className="flex items-center gap-3">
-                    <span className="text-3xl">{greeting?.emoji || "👋"}</span>
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-950 dark:text-gray-50">
-                            {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
-                        </h1>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            {userStats?.lastActivityTime ? (
-                                <span>Last active {new Date(userStats.lastActivityTime).toLocaleDateString()}</span>
-                            ) : (
-                                <span>Start your journey today</span>
-                            )}
-                            {userStats && userStats.streakDays > 0 && (
-                                <>
-                                    <span className="mx-2">•</span>
-                                    <span className="flex items-center gap-1">
-                                        <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
-                                        {userStats.streakDays} day streak
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <StartHereButton
-                                icon={<Zap className="w-3.5 h-3.5" />}
-                                label="Open Fast Agent"
-                                onClick={onOpenFastAgent}
-                            />
-                            <StartHereButton
-                                icon={<FileText className="w-3.5 h-3.5" />}
-                                label="Create Dossier"
-                                onClick={handleCreateDossier}
-                            />
-                            <StartHereButton
-                                icon={<Bell className="w-3.5 h-3.5" />}
-                                label="View What Changed"
-                                onClick={() => onEnterHub("changes")}
-                            />
-                        </div>
-                    </div>
-                </div>
+            {/* Main Content — Centered */}
+            <div className="relative z-10 flex flex-col items-center w-full max-w-2xl">
 
-                {/* Quick Action Buttons */}
-                <div className="flex gap-2">
-                    <QuickActionButton
-                        icon={<Plus className="w-4 h-4" />}
-                        label="New Document"
-                        onClick={onEnterWorkspace}
-                        variant="secondary"
-                    />
-                    <QuickActionButton
-                        icon={<Sparkles className="w-4 h-4" />}
-                        label="Research Hub"
-                        onClick={() => onEnterHub()}
-                        badge={userStats?.unreadBriefings}
-                        variant="primary"
-                    />
-                </div>
-            </motion.div>
-
-            {/* Productivity Insights Banner */}
-            {insights && insights.length > 0 && (
+                {/* Greeting */}
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="absolute top-24 right-6 max-w-sm space-y-2 z-10"
+                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-center mb-6"
                 >
-                    {insights.slice(0, 3).map((insight, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 + idx * 0.1 }}
-                            className={`
-                                p-3 rounded-lg border backdrop-blur-md text-sm flex items-start gap-2
-                                ${insight.priority === 'high'
-                                    ? 'bg-red-50/80 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-900 dark:text-red-300'
-                                    : insight.priority === 'medium'
-                                        ? 'bg-amber-50/80 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-900 dark:text-amber-300'
-                                        : 'bg-indigo-50/80 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20 text-gray-900 dark:text-gray-200'
-                                }
-                            `}
-                        >
-                            <span className="text-lg">{insight.icon}</span>
-                            <span className="flex-1">{insight.message}</span>
-                        </motion.div>
-                    ))}
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-950 dark:text-gray-50 tracking-tight">
+                        {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
+                    </h1>
+                    {/* Streak badge removed — vanity metric */}
                 </motion.div>
-            )}
 
-            {/* 1. THE NEURAL ORB (Centerpiece) */}
-            <div className="relative mb-10 group cursor-pointer" onClick={() => onEnterHub()}>
-                {/* Container for the orb - fixed size */}
-                <div className="w-80 h-80 relative flex items-center justify-center">
-                    {/* Rotating outer rings only - CSS animation for better performance */}
-                    <div className="absolute inset-0 animate-spin-slow will-change-transform">
-                        {/* Subtle Outer Rings */}
-                        <div className="absolute inset-0 rounded-full border border-gray-200/60 dark:border-white/[0.06] scale-110" />
-                        <div className="absolute inset-0 rounded-full border border-gray-200/30 dark:border-white/[0.04] scale-125" />
-                    </div>
-
-                    {/* Pulsing Core - CSS animation for smoother performance */}
-                    <div className="w-64 h-64 rounded-full bg-white dark:bg-[#18181B] shadow-[0_0_80px_rgba(0,0,0,0.05)] dark:shadow-[0_0_80px_rgba(99,102,241,0.06)] border border-gray-100 dark:border-white/[0.06] flex items-center justify-center relative overflow-hidden animate-pulse-subtle">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-indigo-50/50 via-white to-indigo-50/50 dark:from-indigo-500/[0.06] dark:via-transparent dark:to-indigo-500/[0.06] opacity-40" />
-
-                        {/* Inner Glowing Content - Static */}
-                        <div className="z-10 flex flex-col items-center text-center">
-                            <Zap className="w-12 h-12 text-gray-950 dark:text-gray-100 mb-4 animate-pulse" />
-                            <div className="text-[10px] font-black text-gray-900/40 dark:text-gray-500 uppercase tracking-[0.4em] mb-1">System Core</div>
-                            <div className="text-2xl font-bold text-gray-950 dark:text-gray-100">Active</div>
+                {/* Signature Orb — The visual identity, prominent above the input */}
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="relative mb-8 flex items-center justify-center"
+                >
+                    <div className="w-44 h-44 md:w-56 md:h-56 relative flex items-center justify-center">
+                        {/* Rotating outer rings — reduced from 4 to 2 for lower motion budget */}
+                        <div className={`absolute inset-0 will-change-transform ${reduceMotion ? '' : 'animate-spin-slow'}`}>
+                            <div className="absolute inset-0 rounded-full border border-gray-300/80 dark:border-white/[0.1] scale-100" />
+                            <div className="absolute inset-0 rounded-full border border-indigo-300/30 dark:border-indigo-500/[0.1] scale-[1.3]" />
                         </div>
-
-                        {/* Scanning Effect */}
-                        <motion.div
-                            animate={{ y: [-150, 300] }}
-                            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                            className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"
-                        />
+                        {/* Glow halo */}
+                        <div className="absolute inset-0 rounded-full bg-indigo-200/20 dark:bg-indigo-500/[0.08] blur-2xl scale-[1.3]" />
+                        {/* Pulsing core */}
+                        <div className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-white dark:bg-[#1a1a1f] shadow-[0_0_80px_rgba(99,102,241,0.15)] dark:shadow-[0_0_80px_rgba(99,102,241,0.12)] border border-gray-200/80 dark:border-white/[0.08] overflow-hidden ${reduceMotion ? '' : 'animate-pulse-subtle'}`}>
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/60 via-white to-violet-100/40 dark:from-indigo-500/[0.12] dark:via-transparent dark:to-violet-500/[0.08] rounded-full" />
+                            {/* Inner dot — brand mark */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-3 h-3 rounded-full bg-indigo-500/60 dark:bg-indigo-400/50 shadow-[0_0_20px_rgba(99,102,241,0.4)]" />
+                            </div>
+                            {/* Scanning line removed — decoration without meaning */}
+                        </div>
                     </div>
-                </div>
+                </motion.div>
 
+                {/* Hero Input — The ONE action */}
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.15 }}
+                    className="w-full relative z-10"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    <div className={`
+                        relative flex items-center gap-3 px-5 py-4 rounded-2xl border-2 transition-all duration-200
+                        bg-white/90 dark:bg-white/[0.06] backdrop-blur-xl shadow-lg dark:shadow-none
+                        ${isDragOver
+                            ? 'border-indigo-400 dark:border-indigo-500 shadow-indigo-100 dark:shadow-none ring-4 ring-indigo-100 dark:ring-indigo-500/10'
+                            : 'border-gray-200 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-xl'
+                        }
+                    `}>
+                        {isDragOver ? (
+                            <div className="flex items-center gap-3 w-full py-1">
+                                <Upload className="w-5 h-5 text-indigo-500 animate-bounce" />
+                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">Drop your file here...</span>
+                            </div>
+                        ) : (
+                            <>
+                                <Sparkles className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                                <label htmlFor="cinematic-home-input" className="sr-only">Ask anything or drop a file</label>
+                                <input
+                                    id="cinematic-home-input"
+                                    ref={inputRef}
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Ask anything or drop a file..."
+                                    className="flex-1 bg-transparent text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                    autoFocus
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleSubmit}
+                                    className="flex-shrink-0 p-2 rounded-xl bg-gray-900 dark:bg-indigo-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                                    aria-label="Send"
+                                >
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Subtle navigation link */}
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="mt-4 flex items-center gap-4 text-sm text-gray-400 dark:text-gray-500"
+                >
+                    <button
+                        type="button"
+                        onClick={() => onEnterHub()}
+                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1"
+                    >
+                        Browse What's New <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-gray-300 dark:text-gray-600">|</span>
+                    <button
+                        type="button"
+                        onClick={onEnterWorkspace}
+                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                        Your Workspace
+                    </button>
+                </motion.div>
+
+                {/* Single insight hint — max 1, subtle */}
+                {insights && insights.length > 0 && (
+                    <motion.p
+                        initial={reduceMotion ? false : { opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.5 }}
+                        className="mt-6 text-sm text-gray-400 dark:text-gray-500 text-center max-w-md"
+                    >
+                        {insights[0].icon} {insights[0].message}
+                    </motion.p>
+                )}
+
+                {/* Stat boxes removed — vanity metrics that don't drive action. Single insight hint above is sufficient. */}
+
+                {/* Discovery Cards — renamed to plain language */}
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-10"
+                >
+                    <DiscoveryCard
+                        title="What's New"
+                        desc="See today's signals, briefings, and trends."
+                        btnText="Open"
+                        onClick={() => onEnterHub()}
+                        variant="dark"
+                        icon={<Sparkles className="w-5 h-5" />}
+                    />
+                    <DiscoveryCard
+                        title="Your Workspace"
+                        desc="Documents, tasks, and reports."
+                        btnText="Open"
+                        onClick={onEnterWorkspace}
+                        variant="light"
+                        icon={<Shield className="w-5 h-5" />}
+                    />
+                </motion.div>
             </div>
-
-            {/* 2. PERSONALIZED STATS HORIZON */}
-            <div className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-                <StatusBox
-                    icon={<FileText className="w-4 h-4" />}
-                    label="Documents This Week"
-                    value={userStats?.documentsThisWeek || 0}
-                    suffix="created"
-                    color="text-gray-900 dark:text-gray-100"
-                />
-                <StatusBox
-                    icon={<CheckCircle2 className="w-4 h-4" />}
-                    label="Tasks Completed"
-                    value={userStats?.completedTasksThisWeek || 0}
-                    suffix="this week"
-                    color="text-gray-900 dark:text-gray-100"
-                />
-                <StatusBox
-                    icon={<Activity className="w-4 h-4" />}
-                    label="Active Tasks"
-                    value={userStats?.activeTasks || 0}
-                    suffix="pending"
-                    color="text-gray-900 dark:text-gray-100"
-                />
-                <StatusBox
-                    icon={<Globe className="w-4 h-4" />}
-                    label="Total Knowledge"
-                    value={userStats?.totalDocuments || 0}
-                    suffix="documents"
-                    color="text-gray-900 dark:text-gray-100"
-                />
-            </div>
-
-            {/* 3. DISCOVERY CARDS */}
-            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-5 relative z-10">
-
-                {/* RESEARCH HUB CARD */}
-                <DiscoveryCard
-                    title="The Research Hub"
-                    desc="Access the full editorial dossier. Deep-dive into Act-based narratives, market signals, and live telemetry."
-                    btnText="Open Research Hub"
-                    onClick={() => onEnterHub()}
-                    variant="dark"
-                    icon={<Sparkles className="w-5 h-5" />}
-                />
-
-                {/* WORKSPACE CARD */}
-                <DiscoveryCard
-                    title="Strategic Workspace"
-                    desc="Interface with your personal library. Organize documents, track tasks, and manage institutional agents."
-                    btnText="Open Workspace"
-                    onClick={onEnterWorkspace}
-                    variant="light"
-                    icon={<Shield className="w-5 h-5" />}
-                />
-
-            </div>
-
-
-
         </div>
     );
 }
 
 // --- SUB-COMPONENTS ---
-
-function MetricTag({ label, value, color, className }: { label: string, value: string, color: string, className: string }) {
-    return (
-        <div className={`absolute p-2 bg-white/40 backdrop-blur-md border border-white/60 shadow-sm flex flex-col animate-in fade-in zoom-in duration-1000 ${className}`}>
-            <span className="text-[7px] font-black text-gray-400 tracking-[0.2em] mb-0.5">{label}</span>
-            <span className={`text-[10px] font-mono font-bold ${color}`}>{value}</span>
-        </div>
-    );
-}
-
-function StatusBox({ icon, label, value, suffix, color = "text-gray-950" }: {
-    icon: React.ReactNode,
-    label: string,
-    value: number,
-    suffix: string,
-    color?: string
-}) {
-    return (
-        <motion.div 
-            whileHover={{ y: -2 }}
-            transition={{ type: "tween", duration: 0.15 }}
-            className="flex flex-col items-center text-center group p-4 rounded-xl bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border border-gray-200/50 dark:border-white/[0.06] shadow-sm hover:shadow-md dark:hover:shadow-none dark:hover:border-white/[0.1] transition-all will-change-transform"
-        >
-            <div className={`p-2.5 bg-gray-50 dark:bg-white/[0.06] rounded-xl mb-3 border border-gray-200/30 dark:border-white/[0.04] text-gray-500 dark:text-gray-400`}>
-                {icon}
-            </div>
-            <div className="text-[9px] font-bold text-gray-400 uppercase tracking-[0.15em] mb-2">{label}</div>
-            <div className="flex items-baseline gap-1.5 overflow-hidden">
-                <NumberFlow value={value} className={`text-2xl font-bold ${color}`} />
-                <span className="text-[10px] font-medium text-gray-400">{suffix}</span>
-            </div>
-        </motion.div>
-    );
-}
-
-function QuickActionButton({
-    icon,
-    label,
-    onClick,
-    badge,
-    variant = "default"
-}: {
-    icon: React.ReactNode,
-    label: string,
-    onClick: () => void,
-    badge?: number,
-    variant?: "default" | "primary" | "secondary"
-}) {
-    const isPrimary = variant === "primary";
-    const isSecondary = variant === "secondary";
-
-    return (
-        <motion.button
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "tween", duration: 0.12 }}
-            onClick={onClick}
-            title={label}
-            className={`relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all duration-200 text-[13px] font-semibold ${isPrimary
-                ? "bg-gradient-to-r from-gray-700 to-gray-800 text-white border-gray-700 hover:from-indigo-600 hover:to-gray-700 shadow-md hover:shadow-lg shadow-gray-900/20"
-                : isSecondary
-                    ? "px-3 bg-white/60 dark:bg-white/[0.04] backdrop-blur-sm border-gray-200/80 dark:border-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-white/[0.1] shadow-sm"
-                    : "bg-white/90 dark:bg-white/[0.04] backdrop-blur-md border-gray-200 dark:border-white/[0.06] text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/[0.08] hover:shadow-md dark:hover:shadow-none hover:text-gray-950 dark:hover:text-gray-100"
-                }`}
-        >
-            {icon}
-            <span className={isSecondary ? "hidden" : ""}>{label}</span>
-            {badge !== undefined && badge > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm">
-                    {badge > 9 ? '9+' : badge}
-                </span>
-            )}
-        </motion.button>
-    );
-}
-
-function StartHereButton({
-    icon,
-    label,
-    onClick,
-}: {
-    icon: React.ReactNode,
-    label: string,
-    onClick: () => void,
-}) {
-    return (
-        <motion.button
-            type="button"
-            whileHover={{ y: -1 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "tween", duration: 0.1 }}
-            onClick={onClick}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-200/80 dark:border-white/[0.06] bg-white/70 dark:bg-white/[0.04] backdrop-blur-md text-[12px] font-semibold text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-white/[0.08] hover:text-gray-800 dark:hover:text-gray-200 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-sm dark:hover:shadow-none transition-all duration-200 group"
-        >
-            <span className="text-gray-400 group-hover:text-indigo-600 transition-colors">{icon}</span>
-            <span className="whitespace-nowrap">{label}</span>
-        </motion.button>
-    );
-}
 
 function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
     title: string,
@@ -373,41 +245,36 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
         <div
             onClick={onClick}
             className={`
-        group relative p-6 md:p-8 cursor-pointer overflow-hidden border rounded-2xl transition-all duration-500
-        ${isDark
+                group relative p-6 cursor-pointer overflow-hidden border rounded-2xl transition-all duration-300
+                ${isDark
                     ? 'bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:from-black hover:to-gray-900 shadow-lg hover:shadow-xl'
                     : 'bg-white/80 dark:bg-white/[0.04] backdrop-blur-sm border-gray-200/60 dark:border-white/[0.06] text-gray-900 dark:text-gray-100 hover:bg-white dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/[0.1] shadow-sm hover:shadow-lg dark:hover:shadow-none'
                 }
-      `}
+            `}
         >
-            {/* Hover Background Accent */}
-            <div className={`absolute top-0 right-0 w-32 h-32 blur-[80px] transition-opacity duration-700 opacity-20 group-hover:opacity-40 pointer-events-none
-        ${isDark ? 'bg-indigo-400' : 'bg-indigo-400'}
-      `} />
-
             <div className="relative z-10 flex flex-col h-full">
-                <div className={`w-10 h-10 mb-5 flex items-center justify-center rounded-xl border
-          ${isDark ? 'bg-white/10 border-white/10 text-indigo-400' : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100 text-indigo-600'}
-        `}>
+                <div className={`w-9 h-9 mb-4 flex items-center justify-center rounded-xl border
+                    ${isDark ? 'bg-white/10 border-white/10 text-indigo-400' : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-800/30 text-indigo-600 dark:text-indigo-400'}
+                `}>
                     {icon}
                 </div>
 
-                <h3 className="text-xl font-bold mb-3 tracking-tight">{title}</h3>
-                <p className={`text-sm leading-relaxed mb-8
-          ${isDark ? 'text-gray-400' : 'text-gray-500'}
-        `}>
+                <h3 className="text-lg font-bold mb-1.5 tracking-tight">{title}</h3>
+                <p className={`text-sm leading-relaxed mb-5
+                    ${isDark ? 'text-gray-400' : 'text-gray-500'}
+                `}>
                     {desc}
                 </p>
 
-                <div className="mt-auto flex items-center gap-3">
-                    <span className={`text-[11px] font-black uppercase tracking-[0.3em] transition-all duration-300 group-hover:tracking-[0.4em]
-            ${isDark ? 'text-white' : 'text-gray-900'}
-          `}>
+                <div className="mt-auto flex items-center gap-2">
+                    <span className={`text-sm font-semibold transition-all duration-200
+                        ${isDark ? 'text-white' : 'text-gray-900 dark:text-gray-100'}
+                    `}>
                         {btnText}
                     </span>
-                    <ArrowRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-2
-            ${isDark ? 'text-indigo-400' : 'text-indigo-600'}
-          `} />
+                    <ArrowRight className={`w-4 h-4 transition-transform duration-200 group-hover:translate-x-1
+                        ${isDark ? 'text-indigo-400' : 'text-indigo-600 dark:text-indigo-400'}
+                    `} />
                 </div>
             </div>
         </div>

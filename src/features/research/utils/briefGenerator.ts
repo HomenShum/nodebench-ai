@@ -232,7 +232,7 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
       deepDives: []
     },
     dashboard: {
-      phaseLabel: "Act I",
+      phaseLabel: "Quick Pulse",
       kpis: [
         { label: "Items", value: brief.actI.totalItems, unit: "", color: "bg-slate-900" },
         { label: "Sources", value: brief.actI.sourcesCount, unit: "", color: "bg-slate-600" }
@@ -252,7 +252,7 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
     id: `brief-${brief.meta.date}-act-2`,
     meta: {
       date: "Signals",
-      title: "Act II — Rising Action: What's New Today"
+      title: "Analysis — What's New Today"
     },
     content: {
       body: signalBodies,
@@ -269,7 +269,7 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
       }))
     },
     dashboard: {
-      phaseLabel: "Act II",
+      phaseLabel: "Analysis",
       kpis: [
         {
           label: "Signals",
@@ -298,7 +298,7 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
     id: `brief-${brief.meta.date}-act-3`,
     meta: {
       date: "Actions",
-      title: "Act III — Deep Dives: Turn Signals Into Moves"
+      title: "Deep Dive — Turn Signals Into Moves"
     },
     content: {
       body: [
@@ -314,7 +314,7 @@ export function briefToScrollySections(brief: DailyBriefPayload): Array<{
       }))
     },
     dashboard: {
-      phaseLabel: "Act III",
+      phaseLabel: "Deep Dive",
       kpis: [
         { label: "Actions", value: brief.actIII.actions.length, unit: "", color: "bg-slate-900" },
         { label: "Proposed", value: proposedActions.length, unit: "", color: "bg-indigo-600" }

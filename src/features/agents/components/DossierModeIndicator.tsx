@@ -32,7 +32,7 @@ interface DossierModeIndicatorProps {
 
 const ACT_CONFIG = {
   actI: {
-    label: "Act I",
+    label: "Quick Pulse",
     description: "Overview",
     icon: BookOpen,
     color: "text-blue-600",
@@ -40,7 +40,7 @@ const ACT_CONFIG = {
     borderColor: "border-blue-200",
   },
   actII: {
-    label: "Act II",
+    label: "Analysis",
     description: "Deep Dive",
     icon: Target,
     color: "text-purple-600",
@@ -48,7 +48,7 @@ const ACT_CONFIG = {
     borderColor: "border-purple-200",
   },
   actIII: {
-    label: "Act III",
+    label: "Deep Dive",
     description: "Implications",
     icon: Lightbulb,
     color: "text-amber-600",

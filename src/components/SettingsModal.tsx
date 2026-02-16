@@ -29,6 +29,7 @@ import {
 import { ApiUsageDisplay } from "./ApiUsageDisplay";
 import { NotificationActivityPanel } from "./NotificationActivityPanel";
 import { ThemeCustomizer } from "./ThemeCustomizer";
+// ChannelPreferencesTab, OperatorProfileWizard, BatchAutopilotTab — moved to standalone Autopilot view
 
 // SMS Usage Stats Component
 function SmsUsageStats() {
@@ -56,8 +57,8 @@ function SmsUsageStats() {
             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalSegments}</div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">Segments</div>
           </div>
-          <div className="bg-green-50 rounded p-2 text-center">
-            <div className="text-lg font-bold text-green-700">${smsUsage.totals.estimatedCostDollars}</div>
+          <div className="bg-green-50 dark:bg-green-900/20 rounded p-2 text-center">
+            <div className="text-lg font-bold text-green-700 dark:text-green-400">${smsUsage.totals.estimatedCostDollars}</div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">Est. Cost</div>
           </div>
         </div>
@@ -67,7 +68,7 @@ function SmsUsageStats() {
         <div className="text-[10px] text-gray-500 dark:text-gray-400 space-y-1">
           <div className="flex justify-between">
             <span>Success rate:</span>
-            <span className="font-medium text-green-600">{smsUsage.totals.successRate}</span>
+            <span className="font-medium text-green-600 dark:text-green-400">{smsUsage.totals.successRate}</span>
           </div>
           {smsUsage.totals.meetingReminderCount > 0 && (
             <div className="flex justify-between">
@@ -107,10 +108,7 @@ type SettingsTab =
   | "profile"
   | "account"
   | "usage"
-  | "integrations"
-  | "billing"
-  | "reminders"
-  | "preferences";
+  | "integrations";
 
 type Props = {
   isOpen: boolean;
@@ -339,13 +337,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   if (!isOpen) return null;
 
   const navItems: Array<{ id: SettingsTab; label: string }> = [
-    { id: "profile", label: "Profile" },
+    { id: "profile", label: "Profile & Preferences" },
     { id: "account", label: "Account & Security" },
-    { id: "preferences", label: "Preferences" },
-    { id: "usage", label: "Usage & API" },
+    { id: "usage", label: "Usage & Billing" },
     { id: "integrations", label: "Integrations" },
-    { id: "billing", label: "Billing" },
-    { id: "reminders", label: "Reminders" },
   ];
 
   const handleSaveKey = async (provider: string) => {
@@ -585,9 +580,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* API Usage Tracking */}
                 <ApiUsageDisplay />
-              </div>
-            ) : active === "billing" ? (
-              <div className="space-y-4">
+
+                {/* Billing (merged) */}
                 <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -622,51 +616,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   )}
                 </div>
               </div>
-            ) : active === "reminders" ? (
-              <div className="space-y-4">
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                  <div className="text-sm font-semibold mb-2">Reminder Banner</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Control the banner that reminds you to link your AI API keys (OpenAI or Gemini). You can hide it permanently or keep it enabled until you link a key.
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm">Enable AI key reminder banner</div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400">When enabled, a banner appears if no API keys are linked.</div>
-                    </div>
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={!(userPreferences?.linkReminderOptOut ?? false)}
-                        onChange={(e) => {
-                          if (user === null) {
-                            toast.error("Please sign in to change preferences");
-                            return;
-                          }
-                          setSavingReminder(true);
-                          const enabled = e.target.checked;
-                          void updateUserPreferences({ linkReminderOptOut: !enabled })
-                            .then(() => {
-                              toast.success("Reminder preference updated");
-                            })
-                            .catch((err: any) => {
-                              toast.error(err?.message ?? "Failed to update preferences");
-                            })
-                            .finally(() => {
-                              setSavingReminder(false);
-                            });
-                        }}
-                        disabled={savingReminder}
-                      />
-                      <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
-                        <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            ) : active === "preferences" ? (
+            ) : active === "profile" ? (
               <div className="space-y-6">
                 {/* Theme Customization */}
                 <div className="space-y-4">
@@ -956,10 +906,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
                   </div>
                 )}
-              </div>
-            ) : active === "profile" ? (
-              <div className="space-y-6">
-                {/* User Information */}
+
+                {/* User Information (merged from Profile tab) */}
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Information</h3>
 
@@ -1135,7 +1083,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${providerStatus["openai"]?.hasKey
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
                               : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
                             }`}>
                             <CheckCircle className="h-3 w-3" />
@@ -1165,7 +1113,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${providerStatus["gemini"]?.hasKey
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
                               : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
                             }`}>
                             <CheckCircle className="h-3 w-3" />
@@ -1408,7 +1356,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-green-100 text-green-700">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
                             <CheckCircle className="h-3 w-3" />
                             Configured
                           </span>
@@ -1659,7 +1607,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${githubOwner ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                            <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${githubOwner ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
                               }`}>
                               <CheckCircle className="h-3 w-3" />
                               {githubOwner ? "Active" : "Connecting…"}
@@ -1735,7 +1683,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${npmOrg ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${npmOrg ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
                             }`}>
                             <CheckCircle className="h-3 w-3" />
                             {npmOrg ? "Active" : "Connecting…"}
@@ -1779,14 +1727,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
-                            <div className="text-sm font-semibold">MCP Server</div>
+                            <div className="text-sm font-semibold">Tool Server</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Model Context Protocol for tool integration
+                              Enables AI tools and integrations
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-green-100 text-green-700">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
                             <CheckCircle className="h-3 w-3" />
                             Active
                           </span>
@@ -1809,15 +1757,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   <div className="text-sm font-semibold mb-3">Integration Status</div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <div className="text-2xl font-bold text-green-600">2</div>
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">2</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">Active</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-yellow-600">5</div>
+                      <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">5</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">Coming Soon</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-blue-600">1</div>
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">1</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">Configured</div>
                     </div>
                     <div>
@@ -1888,7 +1836,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                                     {deviceLabel}
                                   </span>
                                   {s.isCurrent && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700">
+                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
                                       <CheckCircle className="h-2.5 w-2.5" />
                                       Active Now
                                     </span>
@@ -1926,6 +1874,41 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         })}
                     </div>
                   ))}
+                </div>
+
+                {/* Reminders (merged from Reminders tab) */}
+                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="text-sm font-semibold mb-2">Notification Preferences</div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm">Show API key reminder banner</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">When enabled, a banner appears if no API keys are linked.</div>
+                    </div>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        aria-label="Show API key reminder banner"
+                        checked={!(userPreferences?.linkReminderOptOut ?? false)}
+                        onChange={(e) => {
+                          if (user === null) {
+                            toast.error("Please sign in to change preferences");
+                            return;
+                          }
+                          setSavingReminder(true);
+                          const enabled = e.target.checked;
+                          void updateUserPreferences({ linkReminderOptOut: !enabled })
+                            .then(() => toast.success("Reminder preference updated"))
+                            .catch((err: any) => toast.error(err?.message ?? "Failed to update preferences"))
+                            .finally(() => setSavingReminder(false));
+                        }}
+                        disabled={savingReminder}
+                      />
+                      <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
+                        <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Linked Accounts */}

@@ -7,13 +7,14 @@ import { EvidenceProvider, useEvidence } from "@/features/research/contexts/Evid
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
 import type { Evidence } from "@/features/research/types";
-// Lazy-load all section components to reduce initial bundle size
+// Critical-path imports: always visible on default 'overview' tab — inline to avoid skeleton flash
+import { DigestSection } from "@/features/research/sections/DigestSection";
+import { PersonalPulse } from "@/features/research/components/PersonalPulse";
+import { DashboardSection } from "@/features/research/sections/DashboardSection";
+import { ActAwareDashboard } from "@/features/research/components/ActAwareDashboard";
+// Lazy-load non-default tab sections (only loaded when user switches tabs)
 const BriefingSection = React.lazy(() => import("@/features/research/sections/BriefingSection").then(m => ({ default: m.BriefingSection })));
-const DashboardSection = React.lazy(() => import("@/features/research/sections/DashboardSection").then(m => ({ default: m.DashboardSection })));
-const DigestSection = React.lazy(() => import("@/features/research/sections/DigestSection").then(m => ({ default: m.DigestSection })));
 const FeedSection = React.lazy(() => import("@/features/research/sections/FeedSection").then(m => ({ default: m.FeedSection })));
-const ActAwareDashboard = React.lazy(() => import("@/features/research/components/ActAwareDashboard").then(m => ({ default: m.ActAwareDashboard })));
-const PersonalPulse = React.lazy(() => import("@/features/research/components/PersonalPulse").then(m => ({ default: m.PersonalPulse })));
 const IntelPulseMonitor = React.lazy(() => import("@/features/research/components/IntelPulseMonitor").then(m => ({ default: m.IntelPulseMonitor })));
 const FeedReaderModal = React.lazy(() => import("@/features/research/components/FeedReaderModal").then(m => ({ default: m.FeedReaderModal })));
 const EntityContextDrawer = React.lazy(() => import("@/features/research/components/EntityContextDrawer").then(m => ({ default: m.EntityContextDrawer })));
@@ -21,15 +22,16 @@ const DealRadar = React.lazy(() => import("@/features/research/components/DealRa
 const NotificationActivityPanel = React.lazy(() => import("@/components/NotificationActivityPanel").then(m => ({ default: m.NotificationActivityPanel })));
 const WhatChangedPanelLazy = React.lazy(() => import("@/features/research/components/WhatChangedPanel"));
 const ProductChangelogPanelLazy = React.lazy(() => import("@/features/research/components/ProductChangelogPanel"));
+const ForecastCockpitLazy = React.lazy(() => import("@/features/research/components/ForecastCockpit"));
 
 import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
 import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/features/research/components/TimelineStrip";
 import type { ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { cn } from "@/lib/utils";
 
-// Loading fallback for lazy-loaded sections - shimmer skeleton
+// Loading fallback for lazy-loaded sections - static skeleton (no animate-pulse to avoid frame drops)
 const SectionLoading = () => (
-  <div className="py-6 space-y-4 animate-pulse">
+  <div className="py-6 space-y-4 opacity-40">
     <div className="flex items-center gap-3">
       <div className="w-10 h-10 bg-gray-200/60 dark:bg-white/[0.06] rounded-lg" />
       <div className="space-y-2 flex-1">
@@ -46,15 +48,13 @@ const SectionLoading = () => (
 );
 
 // Tab definitions for the main content sections
-type ContentTab = 'overview' | 'signals' | 'briefing' | 'deals' | 'changes' | 'changelog';
+type ContentTab = 'overview' | 'signals' | 'briefing' | 'forecasts';
 
 const CONTENT_TABS: Array<{ id: ContentTab; label: string; icon: React.ElementType; description: string }> = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid, description: 'Digest + Personal Pulse' },
   { id: 'signals', label: 'Signals', icon: Zap, description: 'Live Signal Stream' },
-  { id: 'briefing', label: 'Briefing', icon: Layers, description: 'Deep Institutional Analysis' },
-  { id: 'deals', label: 'Deals', icon: Briefcase, description: 'Deal Radar & Funding' },
-  { id: 'changes', label: 'Changes', icon: Bell, description: 'What Changed [Sources]' },
-  { id: 'changelog', label: 'Changelog', icon: ScrollText, description: 'Product updates' },
+  { id: 'briefing', label: 'Briefing', icon: Layers, description: 'Deep Analysis' },
+  { id: 'forecasts', label: 'Forecasts', icon: TrendingUp, description: 'Prediction Cockpit' },
 ];
 
 export interface ResearchHubProps {
@@ -477,7 +477,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             </div>
             <div>
               <div className="text-2xl font-bold tracking-tight text-[color:var(--text-primary)] leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
-              <div className="text-[10px] font-black text-gray-900 dark:text-gray-400 uppercase tracking-[0.3em] mt-1 ml-0.5 opacity-60">Archive Dossier 2027</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-0.5">Research &amp; Insights</div>
             </div>
           </div>
 
@@ -485,7 +485,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             <button
               type="button"
               onClick={onGoHome}
-              className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
             >
               <ArrowRight className="w-3 h-3 rotate-180" />
               <span>Return to Pulse</span>
@@ -502,7 +502,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       type="button"
                       key={date}
                       onClick={() => setSelectedDate(date)}
-                      className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
+                      className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
                         ? "bg-gray-950 dark:bg-white/[0.12] text-white shadow-lg"
                         : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
@@ -514,19 +514,19 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-gray-400"}`}
+                    className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-gray-400"}`}
                   >
                     Latest
                   </button>
                 </>
               ) : (
-                <span className="px-3 py-1 text-[9px] font-bold text-gray-400 uppercase tracking-widest">Live Live Live</span>
+                <span className="px-3 py-1 text-xs font-medium text-gray-400 tracking-wide">Live</span>
               )}
             </div>
 
-            <div className="hidden sm:flex items-center gap-3 text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+            <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
               <div className="w-2 h-2 rounded-full bg-gray-700 dark:bg-gray-400 animate-pulse" />
-              <span>Encrypted Intelligence Stream</span>
+              <span>Secure Feed</span>
             </div>
             <div className="hidden sm:block w-[1px] h-6 bg-gray-200 dark:bg-white/[0.06]" />
             <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 font-mono tracking-widest">
@@ -544,7 +544,7 @@ function ResearchHubContent(props: ResearchHubProps) {
               <button
                 type="button"
                 onClick={onGoHome}
-                className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
               >
                 <ArrowRight className="w-3 h-3 rotate-180" />
                 <span>Return to Pulse Overview</span>
@@ -598,7 +598,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all',
                       activeTab === tab.id
                         ? 'bg-white dark:bg-white/[0.08] text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200 dark:border-white/[0.06]'
                         : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
@@ -616,37 +616,33 @@ function ResearchHubContent(props: ResearchHubProps) {
 
               {/* OVERVIEW TAB: Digest + Personal Pulse */}
               {activeTab === 'overview' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="space-y-6">
                   {/* Executive Synthesis */}
                   <section ref={actIRef} data-act-id="actI">
                     <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                       <div className="flex items-center gap-3">
                         <Newspaper className="w-4 h-4 text-gray-800 dark:text-gray-300" />
-                        <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Executive Synthesis</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Daily Summary</h3>
                         {selectedDate && (
-                          <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-[9px] font-bold uppercase tracking-wider border border-amber-900/10 dark:border-amber-500/20 rounded">Archive</span>
+                          <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-medium border border-amber-900/10 dark:border-amber-500/20 rounded">Past</span>
                         )}
                       </div>
                       <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-indigo-600')} />
                     </div>
-                    <React.Suspense fallback={<SectionLoading />}>
-                      <DigestSection
-                        onItemClick={handleDigestItemClick}
-                        onEntityClick={handleEntityOpen}
-                      />
-                    </React.Suspense>
+                    <DigestSection
+                      onItemClick={handleDigestItemClick}
+                      onEntityClick={handleEntityOpen}
+                    />
                   </section>
 
                   {/* Personal Pulse */}
                   <section className="pt-2">
-                    <React.Suspense fallback={<SectionLoading />}>
-                      <PersonalPulse
-                        personalizedContext={personalizedContext}
-                        tasksToday={tasksToday || []}
-                        recentDocs={recentDocs || []}
-                        onDocumentSelect={props.onDocumentSelect}
-                      />
-                    </React.Suspense>
+                    <PersonalPulse
+                      personalizedContext={personalizedContext}
+                      tasksToday={tasksToday || []}
+                      recentDocs={recentDocs || []}
+                      onDocumentSelect={props.onDocumentSelect}
+                    />
                   </section>
                 </div>
               )}
@@ -657,9 +653,9 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
                       <TrendingUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Live Signal Stream</h3>
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Latest Updates</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Real-time</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-xs font-medium rounded">Live</div>
                   </div>
                   <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>
@@ -678,9 +674,9 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
                     <div className="flex items-center gap-3">
                       <Layers className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Institutional Briefing</h3>
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Full Briefing</h3>
                     </div>
-                    <span className="text-[10px] font-medium text-gray-400">Deep Analysis</span>
+                    <span className="text-xs font-medium text-gray-400">In-depth</span>
                   </div>
                   <React.Suspense fallback={<SectionLoading />}>
                     <BriefingSection
@@ -695,73 +691,16 @@ function ResearchHubContent(props: ResearchHubProps) {
                 </section>
               )}
 
-              {/* DEALS TAB: Deal Radar */}
-              {activeTab === 'deals' && (
+              {/* FORECASTS TAB: Prediction Cockpit */}
+              {activeTab === 'forecasts' && (
                 <section className="animate-in fade-in duration-300 pb-8">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
-                    <div className="flex items-center gap-3">
-                      <Briefcase className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Deal Radar</h3>
-                    </div>
-                    <div className="px-1.5 py-0.5 bg-gray-900 dark:bg-white/[0.08] text-white dark:text-gray-300 text-[9px] font-bold uppercase tracking-wider rounded">JPM</div>
-                  </div>
                   <React.Suspense fallback={<SectionLoading />}>
-                    <DealRadar
-                      onDealClick={(dealId, companyName) => {
-                        setActiveEntity({ name: companyName, type: "company" });
-                      }}
-                    />
+                    <ForecastCockpitLazy />
                   </React.Suspense>
                 </section>
               )}
 
-              {/* CHANGES TAB: Knowledge Product Layer diffs */}
-              {activeTab === 'changes' && (
-                <section className="animate-in fade-in duration-300 pb-8">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
-                    <div className="flex items-center gap-3">
-                      <Bell className="w-4 h-4 text-indigo-700 dark:text-indigo-400" />
-                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">What Changed</h3>
-                    </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Sources</div>
-                  </div>
-                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
-                    <React.Suspense
-                      fallback={
-                        <div className="flex items-center justify-center py-10 text-sm text-gray-500">
-                          Loading changes…
-                        </div>
-                      }
-                    >
-                      <WhatChangedPanelLazy limit={20} daysBack={30} onAskAgent={handleAskAgentAboutChanges} />
-                    </React.Suspense>
-                  </div>
-                </section>
-              )}
-
-              {/* CHANGELOG TAB: Product changelog */}
-              {activeTab === 'changelog' && (
-                <section className="animate-in fade-in duration-300 pb-8">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
-                    <div className="flex items-center gap-3">
-                      <ScrollText className="w-4 h-4 text-gray-800 dark:text-gray-300" />
-                      <h3 className="text-[11px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Changelog</h3>
-                    </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-[9px] font-bold uppercase tracking-wider rounded">Product</div>
-                  </div>
-                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
-                    <React.Suspense
-                      fallback={
-                        <div className="flex items-center justify-center py-10 text-sm text-gray-500">
-                          Loading changelog...
-                        </div>
-                      }
-                    >
-                      <ProductChangelogPanelLazy />
-                    </React.Suspense>
-                  </div>
-                </section>
-              )}
+              {/* Deals, Changes, Changelog tabs removed — accessible via Cmd+K */}
             </div>
           </div>
 
@@ -771,23 +710,21 @@ function ResearchHubContent(props: ResearchHubProps) {
             <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-gray-200/0 via-gray-200 to-gray-200/0 dark:from-white/0 dark:via-white/[0.06] dark:to-white/0" />
 
             <div className="space-y-4 pl-4">
-              <React.Suspense fallback={<SectionLoading />}>
-                {phasedDashboardMetrics ? (
-                  <ActAwareDashboard
-                    activeAct={activeAct}
-                    dashboardData={phasedDashboardMetrics}
-                    executiveBrief={executiveBrief}
-                    sourceSummary={sourceSummary}
-                    evidence={evidence || []}
-                    workflowSteps={workflowSteps}
-                    deltas={deltas}
-                    onDataPointClick={handleDashboardPointClick}
-                    onEvidenceClick={handleEvidenceOpen}
-                  />
-                ) : (
-                  <DashboardSection activeAct={activeAct} />
-                )}
-              </React.Suspense>
+              {phasedDashboardMetrics ? (
+                <ActAwareDashboard
+                  activeAct={activeAct}
+                  dashboardData={phasedDashboardMetrics}
+                  executiveBrief={executiveBrief}
+                  sourceSummary={sourceSummary}
+                  evidence={evidence || []}
+                  workflowSteps={workflowSteps}
+                  deltas={deltas}
+                  onDataPointClick={handleDashboardPointClick}
+                  onEvidenceClick={handleEvidenceOpen}
+                />
+              ) : (
+                <DashboardSection activeAct={activeAct} />
+              )}
               <React.Suspense fallback={<SectionLoading />}>
                 <NotificationActivityPanel
                   mode="topic"

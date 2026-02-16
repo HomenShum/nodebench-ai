@@ -18,7 +18,7 @@ interface CleanHeaderProps {
   quickChatInput: string;
   setQuickChatInput: (value: string) => void;
   onQuickChat: () => void;
-  onOpenSettings: (tab?: 'profile' | 'account' | 'usage' | 'integrations' | 'billing' | 'reminders') => void;
+  onOpenSettings: (tab?: 'profile' | 'account' | 'usage' | 'integrations') => void;
   onHelp?: () => void;
 }
 

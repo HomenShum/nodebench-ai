@@ -107,8 +107,8 @@ export function CommandPalette({
             },
             {
                 id: 'nav-agents',
-                label: 'Go to Agents',
-                description: 'Manage your AI agents',
+                label: 'Go to Assistants',
+                description: 'Manage your AI assistants',
                 icon: <Zap className="w-4 h-4" />,
                 keywords: ['agents', 'ai', 'automation'],
                 section: 'navigation',
@@ -255,10 +255,31 @@ export function CommandPalette({
         return commands;
     }, [recentDocs, recentTasks, onNavigate, onCreateDocument, onCreateTask, onOpenSettings, onClose]);
 
-    // Filter commands based on query
+    // Lightweight fuzzy scorer: returns 0 (no match) or positive score (higher = better)
+    const fuzzyScore = useCallback((text: string, term: string): number => {
+        const t = text.toLowerCase();
+        const q = term.toLowerCase();
+        // Exact prefix match = highest
+        if (t.startsWith(q)) return 100;
+        // Contains substring = high
+        if (t.includes(q)) return 60;
+        // Fuzzy: all query chars appear in order
+        let ti = 0;
+        let consecutive = 0;
+        let maxConsecutive = 0;
+        for (let qi = 0; qi < q.length; qi++) {
+            const found = t.indexOf(q[qi], ti);
+            if (found === -1) return 0;
+            if (found === ti) { consecutive++; maxConsecutive = Math.max(maxConsecutive, consecutive); }
+            else { consecutive = 1; }
+            ti = found + 1;
+        }
+        return 10 + maxConsecutive * 5;
+    }, []);
+
+    // Filter and rank commands with fuzzy search
     const filteredCommands = useMemo(() => {
         if (!query.trim()) {
-            // Show recent items and common actions when no query
             return allCommands.filter(cmd =>
                 cmd.section === 'navigation' ||
                 cmd.section === 'create' ||
@@ -266,15 +287,20 @@ export function CommandPalette({
             );
         }
 
-        const searchTerm = query.toLowerCase().trim();
-        return allCommands.filter(cmd => {
-            const matchesLabel = cmd.label.toLowerCase().includes(searchTerm);
-            const matchesDescription = cmd.description?.toLowerCase().includes(searchTerm);
-            const matchesKeywords = cmd.keywords.some(kw => kw.includes(searchTerm));
+        const searchTerm = query.trim();
+        const scored = allCommands
+            .map(cmd => {
+                const labelScore = fuzzyScore(cmd.label, searchTerm);
+                const descScore = cmd.description ? fuzzyScore(cmd.description, searchTerm) * 0.6 : 0;
+                const kwScore = Math.max(0, ...cmd.keywords.map(kw => fuzzyScore(kw, searchTerm) * 0.8));
+                const best = Math.max(labelScore, descScore, kwScore);
+                return { cmd, score: best };
+            })
+            .filter(({ score }) => score > 0)
+            .sort((a, b) => b.score - a.score);
 
-            return matchesLabel || matchesDescription || matchesKeywords;
-        });
-    }, [query, allCommands]);
+        return scored.map(({ cmd }) => cmd);
+    }, [query, allCommands, fuzzyScore]);
 
     // Group commands by section
     const groupedCommands = useMemo(() => {
@@ -365,12 +391,16 @@ export function CommandPalette({
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -20 }}
                     transition={{ type: 'spring', duration: 0.3 }}
+                    role="dialog"
+                    aria-label="Command palette"
                     className="relative w-full max-w-2xl bg-white dark:bg-[#09090B] rounded-xl shadow-2xl dark:shadow-black/40 overflow-hidden border border-gray-200 dark:border-white/[0.06]"
                 >
                     {/* Search Input */}
                     <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
                         <Search className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                        <label htmlFor="command-palette-input" className="sr-only">Search commands</label>
                         <input
+                            id="command-palette-input"
                             ref={inputRef}
                             type="text"
                             value={query}

@@ -4,7 +4,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../convex/_generated/api";
 
 interface UserProfileProps {
-    onOpenSettings?: (tab?: 'profile' | 'account' | 'usage' | 'integrations' | 'billing' | 'reminders') => void;
+    onOpenSettings?: (tab?: 'profile' | 'account' | 'usage' | 'integrations') => void;
 }
 
 /**

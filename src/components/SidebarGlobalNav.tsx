@@ -29,7 +29,7 @@ const navItems = [
     id: 'research' as const,
     label: 'Home',
     icon: Home,
-    desc: 'Research & Live Dossiers',
+    desc: 'Research & Reports',
     expandable: false
   },
   {
@@ -41,7 +41,7 @@ const navItems = [
   },
   {
     id: 'saved' as const,
-    label: 'Saved Dossiers',
+    label: 'Saved Reports',
     icon: Bookmark,
     desc: 'Library',
     expandable: true
@@ -58,7 +58,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div className="space-y-0.5 mb-6">
+    <nav aria-label="Main navigation" className="space-y-0.5 mb-6">
       {!isCollapsed && (
         <div className="px-2 mb-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
           Menu
@@ -78,6 +78,8 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 if (!item.expandable) onNavigate(item.id);
               }}
               title={item.label}
+              aria-label={item.label}
+              aria-current={isActive ? 'page' : undefined}
               className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 ${
                 isActive
                   ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
@@ -100,6 +102,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                   onNavigate(item.id);
                 }
               }}
+              aria-current={isActive ? 'page' : undefined}
               className={`w-full flex items-center justify-between px-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 group ${
                 isActive
                   ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
@@ -161,13 +164,13 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         onClick={() => onNavigate('saved')}
                         className="w-full px-2.5 py-1.5 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold text-left transition-colors"
                       >
-                        View all {recentDossiers.length} dossiers →
+                        View all {recentDossiers.length} reports →
                       </button>
                     )}
                   </>
                 ) : (
                   <div className="px-2.5 py-3 text-[11px] text-gray-400 italic">
-                    No saved dossiers yet
+                    No saved reports yet
                   </div>
                 )}
               </div>
@@ -175,7 +178,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
           </div>
         );
       })}
-    </div>
+    </nav>
   );
 };
 
