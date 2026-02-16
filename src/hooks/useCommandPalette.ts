@@ -14,7 +14,7 @@ export function useCommandPalette() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         e.stopPropagation();
         toggle();

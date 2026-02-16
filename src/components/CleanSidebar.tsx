@@ -8,7 +8,7 @@
  * - Smooth transitions
  */
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
@@ -116,6 +116,11 @@ const discoveryItems = [
   { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const, subtitle: 'Post Archive' },
 ];
 
+const moreSectionViews = new Set<string>([
+  ...dashboardItems.map((i) => i.view),
+  ...discoveryItems.map((i) => i.view),
+]);
+
 export function CleanSidebar({
   appMode,
   onModeChange,
@@ -132,7 +137,7 @@ export function CleanSidebar({
   onToggleCollapse,
 }: CleanSidebarProps) {
   const [isDocsOpen, setIsDocsOpen] = useState(true);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(() => moreSectionViews.has(currentView));
   const user = useQuery(api.domains.auth.auth.loggedInUser);
   const { signIn } = useAuthActions();
   const trash = useQuery(api.domains.documents.documents.getTrash);
@@ -147,6 +152,14 @@ export function CleanSidebar({
   };
 
   const recentDocs = (documents ?? []).slice(0, 8);
+
+  useEffect(() => {
+    // If the user navigates to a destination inside "More", ensure the section is expanded
+    // so the active state is visible and navigation stays self-evident.
+    if (moreSectionViews.has(currentView)) {
+      setIsMoreOpen(true);
+    }
+  }, [currentView]);
 
   const recentDossiers: RecentDossier[] = useMemo(() => {
     return (documents ?? [])
@@ -217,7 +230,7 @@ export function CleanSidebar({
           </button>
           {!isCollapsed && (
             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight truncate">
-              Nodebench AI
+              NodeBench AI
             </span>
           )}
         </div>

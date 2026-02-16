@@ -112,12 +112,36 @@ test.describe("Full UI Dogfood", () => {
   });
 
   test("dogfood command palette", async ({ page }) => {
-    const isMac = await page.evaluate(() => /Mac|iPhone|iPad|iPod/.test(navigator.platform));
-    await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
-    await page.waitForTimeout(400);
+    const openBtn = page.getByTestId("open-command-palette");
+    await expect(openBtn).toBeVisible();
+    await openBtn.click();
+
+    const dialog = page.getByRole("dialog", { name: "Command palette" });
+    await expect(dialog).toBeVisible();
     await page.screenshot({
       path: "test-results/full-ui-dogfood/command-palette.png",
       fullPage: false,
     });
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+
+    const isMac = await page.evaluate(() => /Mac|iPhone|iPad|iPod/.test(navigator.platform));
+    await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
+    await expect(dialog).toBeVisible();
+  });
+
+  test("dogfood assistant panel", async ({ page }) => {
+    const assistantBtn = page.getByRole("button", { name: "Assistant" });
+    if (await assistantBtn.count()) {
+      await assistantBtn.click();
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(800);
+      await expect(page.getByText("Something went wrong")).toHaveCount(0);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/assistant-panel.png",
+        fullPage: false,
+      });
+    }
   });
 });

@@ -713,16 +713,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   };
 
   const densityStats = [
-    { label: 'Signals', value: digestTotals.totalSignals, hint: 'market + topics + alerts' },
-    { label: 'Sources', value: digestTotals.sourceCount, hint: 'linked citations' },
-    { label: 'Topics', value: digestTotals.entityCount, hint: 'detected names' },
-    { label: 'Topics', value: digestTotals.trackedCount, hint: 'tracked hashtags' },
-    { label: 'Alerts', value: digestTotals.alertCount, hint: 'risk flags' },
-    { label: 'Priority', value: digestTotals.priorityCount, hint: 'internal focus' },
+    { id: 'signals', label: 'Signals', value: digestTotals.totalSignals, hint: 'market + topics + alerts' },
+    { id: 'sources', label: 'Sources', value: digestTotals.sourceCount, hint: 'linked citations' },
+    { id: 'entities', label: 'Entities', value: digestTotals.entityCount, hint: 'detected names' },
+    { id: 'topics', label: 'Topics', value: digestTotals.trackedCount, hint: 'tracked hashtags' },
+    { id: 'alerts', label: 'Alerts', value: digestTotals.alertCount, hint: 'risk flags' },
+    { id: 'priority', label: 'Priority', value: digestTotals.priorityCount, hint: 'internal focus' },
   ];
 
   return (
-    <div className="relative rounded-2xl border border-gray-200 bg-gradient-to-br from-background via-background to-gray-100/50 backdrop-blur-xl shadow-xl shadow-gray-900/5 overflow-hidden">
+    <div className="relative rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gradient-to-br from-background via-background to-gray-100/50 dark:to-white/[0.02] backdrop-blur-xl shadow-xl shadow-gray-900/5 dark:shadow-black/25 overflow-hidden">
       {/* Elegant gradient accent bar - warm black/amber */}
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-gray-800 via-amber-700 to-gray-600 opacity-90" />
 
@@ -738,14 +738,14 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-600">Executive Synthesis</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-600 dark:text-gray-400">Executive Synthesis</p>
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
                 <Activity className="w-2.5 h-2.5 text-amber-600 animate-pulse" />
                 <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">LIVE</span>
               </span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 leading-tight tracking-tight">
-              Good morning, <span className="text-gray-700">{userName}</span>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight">
+              Good morning, <span className="text-gray-700 dark:text-gray-300">{userName}</span>
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <Clock className="w-3 h-3 text-gray-400" />
@@ -764,16 +764,19 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     : stat.sentiment === 'bearish'
                       ? 'bg-gradient-to-r from-gray-100 to-rose-50 border border-rose-300/50 hover:border-rose-400'
                       : 'bg-gray-100/50 border border-gray-200 hover:border-gray-400'
-                    }`}
+                    } dark:bg-white/[0.04] dark:border-white/[0.08] dark:hover:border-white/[0.14]`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-amber-700'
                     : stat.sentiment === 'bearish' ? 'text-rose-700'
                       : 'text-gray-800'
+                    } ${stat.sentiment === 'bullish' ? 'dark:text-amber-300'
+                    : stat.sentiment === 'bearish' ? 'dark:text-rose-300'
+                      : 'dark:text-gray-100'
                     }`}>
                     {stat.value}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {stat.label}
                   </span>
                 </div>
@@ -806,7 +809,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       {isExpanded && (
         <div className="px-6 pb-6 space-y-5 animate-in fade-in slide-in-from-top-2 duration-300">
           {/* Executive Summary - Premium glassmorphism card */}
-          <div className="relative mt-4 rounded-2xl border border-gray-200 bg-gradient-to-br from-background to-gray-100/50 p-5 shadow-lg shadow-gray-900/5 overflow-hidden">
+          <div className="relative mt-4 rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gradient-to-br from-background to-gray-100/50 dark:to-white/[0.02] p-5 shadow-lg shadow-gray-900/5 dark:shadow-black/25 overflow-hidden">
             {/* Decorative gradient orb - warm beige/amber */}
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-gray-300/20 dark:from-amber-900/20 dark:to-gray-700/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -817,7 +820,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <BarChart3 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">AI Research Brief</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">AI Research Brief</span>
                     <p className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
                   </div>
                 </div>
@@ -826,7 +829,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <span className="text-[9px] font-medium text-gray-600 dark:text-gray-400">Verified</span>
                 </div>
               </div>
-              <div className="text-[15px] text-gray-800 leading-relaxed tracking-[-0.01em]">
+              <div className="text-[15px] text-gray-800 dark:text-gray-200 leading-relaxed tracking-[-0.01em]">
                 <InteractiveSpanParser
                   text={fullSummary}
                   citations={citationLibrary}
@@ -843,18 +846,18 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {densityStats.slice(0, 4).map((stat, idx) => (
               <div
-                key={stat.label}
-                className="group relative rounded-xl border border-gray-200 bg-background hover:bg-gradient-to-br hover:from-background hover:to-gray-100/50 px-4 py-3 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/5 hover:scale-[1.02] hover:border-gray-400/50 cursor-default"
+                key={stat.id}
+                className="group relative rounded-xl border border-gray-200 dark:border-white/[0.06] bg-background hover:bg-gradient-to-br hover:from-background hover:to-gray-100/50 dark:hover:to-white/[0.03] px-4 py-3 transition-all duration-300 hover:shadow-lg hover:shadow-gray-900/5 dark:hover:shadow-black/30 hover:scale-[1.02] hover:border-gray-400/50 dark:hover:border-white/[0.12] cursor-default"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold text-gray-800 leading-none">{stat.value}</span>
+                  <span className="text-2xl font-bold text-gray-800 dark:text-gray-100 leading-none">{stat.value}</span>
                   {stat.value > 0 && (
                     <ArrowUpRight className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
-                <div className="mt-1.5 text-[10px] font-semibold text-gray-600 uppercase tracking-widest">{stat.label}</div>
-                <div className="mt-0.5 text-[9px] text-gray-500">{stat.hint}</div>
+                <div className="mt-1.5 text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{stat.label}</div>
+                <div className="mt-0.5 text-[9px] text-gray-500 dark:text-gray-400">{stat.hint}</div>
               </div>
             ))}
           </div>
