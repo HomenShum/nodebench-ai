@@ -37,8 +37,21 @@ function criticalCSSPlugin(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
-  plugins: [
+export default defineConfig(({ mode }) => {
+  // Root cause: terser minification can OOM on 2-core / 8GB builders (Vercel + local).
+  // Default to esbuild minify for reliability; opt into terser via NODEBENCH_MINIFY=terser.
+  //
+  // Example:
+  //   NODEBENCH_MINIFY=terser npm run build
+  //   NODEBENCH_MINIFY=esbuild npm run build
+  //
+  // "esbuild" is the Vite default and is far more memory efficient.
+  // Terser is retained for optional maximum compression.
+  const minify = (process.env.NODEBENCH_MINIFY ?? "esbuild") === "terser" ? "terser" : "esbuild";
+  const useTerser = minify === "terser";
+
+  return ({
+    plugins: [
     react(),
     // Service Worker + PWA for aggressive caching
     VitePWA({
@@ -183,8 +196,10 @@ window.addEventListener('message', async (message) => {
     // Exclude heavy libraries that are lazy-loaded to speed up dev server start
     exclude: ["@pdfme/generator"],
   },
-  // esbuild options for transforms (not minification - we use terser for that)
+  // esbuild options for transforms (and for minification when NODEBENCH_MINIFY=esbuild)
   esbuild: {
+    // eslint-disable-next-line no-undef
+    drop: mode === "production" ? ["console", "debugger"] : undefined,
     // Remove legal comments for smaller transforms
     legalComments: 'none',
     // Tree shake during transforms
@@ -199,12 +214,12 @@ window.addEventListener('message', async (message) => {
     // The heaviest routes/editors are lazy-loaded; keep this warning slightly higher
     // so it flags meaningful regressions without noise.
     chunkSizeWarningLimit: 1800,
-    minify: "terser", // Switch to terser for better compression (~20-30% better than esbuild)
+    minify,
     target: "es2020",
     cssMinify: true,
     // Modern browsers don't need module preload polyfill
     modulePreload: { polyfill: false },
-    terserOptions: {
+    terserOptions: useTerser ? {
       compress: {
         drop_console: true, // Remove console.logs in production
         drop_debugger: true,
@@ -217,7 +232,7 @@ window.addEventListener('message', async (message) => {
       format: {
         comments: false, // Remove all comments
       },
-    },
+    } : undefined,
     rollupOptions: {
       // Tree shaking - be careful with external deps that have side effects
       treeshake: {
@@ -319,4 +334,5 @@ window.addEventListener('message', async (message) => {
     // Enable source maps for production debugging (can disable for smaller bundles)
     sourcemap: false, // Disable source maps to reduce bundle size
   },
-}));
+  });
+});

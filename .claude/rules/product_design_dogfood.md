@@ -20,7 +20,7 @@ This rule is the bridge between:
 When you claim a UI change is “done”, it must be verifiable **inside the app UI**:
 1. **Dogfood route exists**: `/dogfood` loads.
 2. **Evidence is viewable**: `/dogfood` shows a gallery or clear “missing artifacts” instructions.
-3. **Screenshots are current**: after dogfooding, publish the screenshot manifest so the UI can render it.
+3. **Screenshots are current**: after dogfooding, publish the screenshot manifest so the UI can render it (`npm run dogfood:publish` or `npm run dogfood:full:local`).
 
 ## Dogfood protocol (route-by-route)
 
@@ -37,4 +37,3 @@ For every route/screen touched (and adjacent screens with shared layout):
 Follow `analyst_diagnostic`:
 - Diagnose the **root cause** (render path, data ownership, stored vs computed).
 - Fix the cause so the bug becomes **impossible**, not merely hidden.
-

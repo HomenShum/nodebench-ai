@@ -3140,6 +3140,38 @@ const toolApprovals = defineTable({
   .index("by_user_pending", ["userId", "status"])
   .index("by_thread", ["threadId", "status"]);
 
+/* ------------------------------------------------------------------ */
+/* DOGFOOD QA - Visual review runs (Gemini video understanding)        */
+/* ------------------------------------------------------------------ */
+
+const dogfoodQaRuns = defineTable({
+  userId: v.id("users"),
+  createdAt: v.number(),
+  provider: v.literal("gemini"),
+  model: v.string(),
+  source: v.union(v.literal("video"), v.literal("frames"), v.literal("screenshots")),
+  videoUrl: v.optional(v.string()),
+  inputSha256: v.optional(v.string()),
+  prompt: v.string(),
+  summary: v.string(),
+  issues: v.array(
+    v.object({
+      severity: v.union(v.literal("p0"), v.literal("p1"), v.literal("p2"), v.literal("p3")),
+      title: v.string(),
+      details: v.string(),
+      suggestedFix: v.optional(v.string()),
+      route: v.optional(v.string()),
+      startSec: v.optional(v.number()),
+      endSec: v.optional(v.number()),
+      evidence: v.optional(v.array(v.string())),
+    }),
+  ),
+  rawText: v.optional(v.string()),
+})
+  .index("by_user_createdAt", ["userId", "createdAt"])
+  .index("by_createdAt", ["createdAt"])
+  .index("by_user_inputSha256", ["userId", "inputSha256"]);
+
 export default defineSchema({
   ...authTables,       // `users`, `sessions`
   documents,
@@ -3243,6 +3275,7 @@ export default defineSchema({
   chatAnnotations,
   chatScheduledMessages,
   toolApprovals,
+  dogfoodQaRuns,
 
   /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */

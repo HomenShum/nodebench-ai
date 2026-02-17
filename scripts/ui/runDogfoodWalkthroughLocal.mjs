@@ -19,6 +19,42 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function killProcessTree(proc) {
+  if (!proc || typeof proc.pid !== "number") return;
+  try {
+    proc.kill("SIGTERM");
+  } catch {
+    // ignore
+  }
+
+  const exited = await Promise.race([
+    new Promise((resolve) => proc.once("exit", () => resolve(true))),
+    sleep(8000).then(() => false),
+  ]);
+  if (exited) return;
+
+  if (process.platform === "win32") {
+    // Ensure we don't leave a stray `cmd.exe` / preview server running.
+    try {
+      const taskkill = spawn("taskkill", ["/PID", String(proc.pid), "/T", "/F"], {
+        stdio: "ignore",
+        windowsHide: true,
+        shell: false,
+      });
+      await new Promise((resolve) => taskkill.on("exit", resolve));
+      return;
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
+    proc.kill("SIGKILL");
+  } catch {
+    // ignore
+  }
+}
+
 async function waitForPort(host, port, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -81,6 +117,8 @@ async function main() {
   const baseURL = args.get("baseURL") ?? `http://${host}:${port}`;
   const headless = args.get("headless") ?? "true";
   const scribeOnly = (args.get("scribeOnly") ?? "false") === "true";
+  const screens = (args.get("screens") ?? "false") === "true";
+  const publish = (args.get("publish") ?? (screens ? "true" : "false")) === "true";
   const play = (args.get("play") ?? "false") === "true";
 
   const repoRoot = process.cwd();
@@ -132,6 +170,38 @@ async function main() {
     await waitForPort(host, port, 240_000);
     await waitForHttpOk(baseURL, 240_000);
 
+    if (screens) {
+      // Route-by-route screenshot suite (writes test-results/full-ui-dogfood/*.png)
+      // Use BASE_URL so Playwright points at the preview/dev server we just started.
+      // eslint-disable-next-line no-console
+      console.log(`Running dogfood e2e screenshots (BASE_URL=${baseURL})...`);
+      const e2e = spawn(
+        `${npxCmd} playwright test tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1`,
+        {
+          cwd: repoRoot,
+          stdio: "inherit",
+          env: { ...process.env, BASE_URL: baseURL },
+          shell: true,
+        },
+      );
+      const e2eCode = await new Promise((resolve) => e2e.on("exit", resolve));
+      if (e2eCode !== 0) throw new Error(`Dogfood e2e exited with code ${e2eCode}`);
+
+      if (publish) {
+        // Publish screenshots to /public so /dogfood can render them.
+        // eslint-disable-next-line no-console
+        console.log("Publishing screenshot manifest to public/dogfood...");
+        const pub = spawn(`${npmCmd} run dogfood:publish`, {
+          cwd: repoRoot,
+          stdio: "inherit",
+          env: { ...process.env },
+          shell: true,
+        });
+        const pubCode = await new Promise((resolve) => pub.on("exit", resolve));
+        if (pubCode !== 0) throw new Error(`dogfood:publish exited with code ${pubCode}`);
+      }
+    }
+
     // Capture Scribe artifact (writes public/dogfood/scribe.*)
     const scribe = spawn(
       "node",
@@ -144,8 +214,8 @@ async function main() {
       ],
       { cwd: repoRoot, stdio: "inherit", env: { ...process.env } },
     );
-    const scribeCode = await new Promise((resolve) => scribe.on("exit", resolve));
-    if (scribeCode !== 0) throw new Error(`Scribe capture exited with code ${scribeCode}`);
+      const scribeCode = await new Promise((resolve) => scribe.on("exit", resolve));
+      if (scribeCode !== 0) throw new Error(`Scribe capture exited with code ${scribeCode}`);
 
     if (!scribeOnly) {
       // Record walkthrough (writes public/dogfood/walkthrough.json + video file)
@@ -167,9 +237,19 @@ async function main() {
       if (code !== 0) {
         throw new Error(`Recorder exited with code ${code}`);
       }
+
+      // Extract key frames for visual QA (writes public/dogfood/frames.json + frames/*)
+      const frames = spawn(`${npmCmd} run dogfood:frames`, {
+        cwd: repoRoot,
+        stdio: "inherit",
+        env: { ...process.env },
+        shell: true,
+      });
+      const framesCode = await new Promise((resolve) => frames.on("exit", resolve));
+      if (framesCode !== 0) throw new Error(`dogfood:frames exited with code ${framesCode}`);
     }
   } finally {
-    serverProc.kill("SIGTERM");
+    await killProcessTree(serverProc);
   }
 
   // eslint-disable-next-line no-console
@@ -180,6 +260,10 @@ async function main() {
   console.log("  public/dogfood/walkthrough.mp4");
   // eslint-disable-next-line no-console
   console.log("  (or public/dogfood/walkthrough.webm if mp4 transcoding was unavailable)");
+  if (screens) {
+    // eslint-disable-next-line no-console
+    console.log("  public/dogfood/manifest.json");
+  }
 
   if (play && !scribeOnly) {
     const candidate = path.resolve(repoRoot, "public", "dogfood", "walkthrough.mp4");

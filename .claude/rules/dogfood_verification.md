@@ -53,6 +53,13 @@ After verifying it renders, apply the design critique. Every element must earn i
 
 ## Verification Checklist
 
+## One-command dogfood capture (recommended)
+
+Runs a full Scribe-like dogfood session locally and makes it UI-verifiable at `/dogfood`:
+
+- `npm run dogfood:full:local` (screenshots + publish + how-to + video)
+- `npm run dogfood:full:local:play` (same, then opens the video)
+
 ### Before writing any fix
 1. Reproduce the exact failure. Screenshot it.
 2. Trace upstream: symptom → intermediate state → root cause.
@@ -65,7 +72,7 @@ After verifying it renders, apply the design critique. Every element must earn i
 3. **Screenshot**: Capture at 1440x900. Compare before/after.
 4. **Edge-case sweep**: Test with 0 items, 1 item, and the singular/plural boundary
 5. **Design critique**: Run through the Ive checklist above. Does every pixel earn its place?
-6. **Make it UI-verifiable**: Publish the latest screenshot evidence so `/dogfood` can render it (`npm run dogfood:publish`).
+6. **Make it UI-verifiable**: Publish the latest evidence so `/dogfood` can render it (`npm run dogfood:publish` or `npm run dogfood:full:local`).
 
 ## Red Flags You're Bandaiding
 
