@@ -69,6 +69,7 @@ function FilterButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "px-3 py-1.5 text-sm rounded-md transition-colors",
@@ -121,9 +122,9 @@ function SortDropdown({
  */
 function EmptyState({ filter }: { filter: FeedFilter }) {
   const messages: Record<FeedFilter, string> = {
-    all: "No posts yet. Check back soon for narrative updates.",
-    delta_update: "No delta updates yet.",
-    thesis_revision: "No thesis revisions yet.",
+    all: "No posts yet. Check back soon for updates.",
+    delta_update: "No updates yet.",
+    thesis_revision: "No revisions yet.",
     evidence: "No evidence additions yet.",
     questions: "No questions or corrections yet.",
   };
@@ -257,11 +258,13 @@ export function NarrativeFeed({
     <div className={cn("flex flex-col", className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Narrative Feed</h2>
+        <h2 className="text-lg font-semibold">Story Feed</h2>
         {onRefresh && (
           <button
+            type="button"
             onClick={onRefresh}
             disabled={isLoading}
+            aria-label="Refresh feed"
             className="flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
             <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
@@ -308,6 +311,7 @@ export function NarrativeFeed({
         {/* Author Filter */}
         <div className="flex items-center gap-1 border-l border-border pl-2">
           <button
+            type="button"
             onClick={() => setAuthorFilter("all")}
             className={cn(
               "p-1.5 rounded-md transition-colors",
@@ -316,10 +320,12 @@ export function NarrativeFeed({
                 : "text-muted-foreground hover:text-foreground"
             )}
             title="All authors"
+            aria-label="Show all authors"
           >
             <User className="w-4 h-4" />
           </button>
           <button
+            type="button"
             onClick={() =>
               setAuthorFilter(authorFilter === "agent" ? "all" : "agent")
             }
@@ -330,6 +336,7 @@ export function NarrativeFeed({
                 : "text-muted-foreground hover:text-foreground"
             )}
             title="Agent posts only"
+            aria-label="Show agent posts only"
           >
             <Bot className="w-4 h-4" />
           </button>
@@ -394,6 +401,7 @@ export function NarrativeFeed({
           {hasMore && onLoadMore && (
             <div className="text-center pt-4">
               <button
+                type="button"
                 onClick={onLoadMore}
                 disabled={isLoading}
                 className="px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-md transition-colors disabled:opacity-50"

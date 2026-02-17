@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
+import { WebMcpSettingsPanel } from "./WebMcpSettingsPanel";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
   X,
@@ -108,7 +109,8 @@ type SettingsTab =
   | "profile"
   | "account"
   | "usage"
-  | "integrations";
+  | "integrations"
+  | "webmcp";
 
 type Props = {
   isOpen: boolean;
@@ -341,6 +343,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     { id: "account", label: "Account & Security" },
     { id: "usage", label: "Usage & Billing" },
     { id: "integrations", label: "Integrations" },
+    { id: "webmcp", label: "WebMCP" },
   ];
 
   const handleSaveKey = async (provider: string) => {
@@ -1936,6 +1939,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   ))}
                 </div>
               </div>
+            ) : active === "webmcp" ? (
+              <WebMcpSettingsPanel />
             ) : (
               <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-6 text-sm text-gray-500">
                 This section will be available soon.

@@ -69,3 +69,5 @@ public/evals/*.json
 /test-results/
 /playwright-report/
 /tests/screenshots/
+.vercel
+.env*.local

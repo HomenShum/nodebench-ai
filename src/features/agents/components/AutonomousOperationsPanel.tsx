@@ -173,12 +173,16 @@ export const AutonomousOperationsPanel = memo(function AutonomousOperationsPanel
           <span
             className={cn(
               "px-1.5 py-0.5 rounded-full text-[10px] font-medium border",
-              healthyCount === totalCount
+              healthyCount === totalCount && totalCount > 0
                 ? "bg-green-500/10 text-green-600 border-green-500/20"
-                : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                : healthyCount === 0
+                  ? "bg-zinc-500/10 text-zinc-500 border-zinc-500/20"
+                  : "bg-amber-500/10 text-amber-600 border-amber-500/20"
             )}
           >
-            {healthyCount}/{totalCount} healthy
+            {healthyCount === 0 && totalCount > 0
+              ? `${totalCount} scheduled`
+              : `${healthyCount}/${totalCount} healthy`}
           </span>
         </div>
         {isExpanded ? (

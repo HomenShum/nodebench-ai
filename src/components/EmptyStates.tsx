@@ -115,8 +115,8 @@ export function EmptyRecommendations() {
   return (
     <EmptyState
       icon={Sparkles}
-      title="No suggestions yet"
-      description="Keep using the app and we'll provide personalized recommendations based on your activity."
+      title="No recommendations yet"
+      description="Recommendations appear as you work with documents — open, edit, or save a few to see suggestions here."
     />
   );
 }

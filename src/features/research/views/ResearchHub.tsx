@@ -117,7 +117,7 @@ function ResearchHubContent(props: ResearchHubProps) {
     : ["AWS", "Vercel", "Postgres", "Cloudflare"];
 
   const isBriefToday = isBriefDateToday(briefingDateString);
-  const briefLabel = isBriefToday ? "Today's Intelligence Brief" : "Latest Intelligence Brief";
+  const briefLabel = isBriefToday ? "Today's Daily Brief" : "Latest Daily Brief";
   const briefDateLabel = briefingDateString ? formatBriefDate(briefingDateString) : null;
 
   const briefId = (briefMemory as any)?._id || "morning_brief_latest";

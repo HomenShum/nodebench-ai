@@ -59,10 +59,10 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
       <div className="border-b border-gray-100 px-4 py-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">
-            Competing Hypotheses
+            Competing Predictions
           </h3>
           <span className="text-xs text-gray-500">
-            {scorecard.totalHypotheses} hypothesis{scorecard.totalHypotheses !== 1 ? "es" : ""}
+            {scorecard.totalHypotheses} prediction{scorecard.totalHypotheses !== 1 ? "s" : ""}
           </span>
         </div>
         {/* Summary badges */}
@@ -148,7 +148,7 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
               {/* Falsification criteria */}
               {h.falsificationCriteria && (
                 <p className="mt-2 text-xs text-gray-400 italic leading-snug">
-                  Falsified if: {h.falsificationCriteria}
+                  Disproved if: {h.falsificationCriteria}
                 </p>
               )}
             </div>

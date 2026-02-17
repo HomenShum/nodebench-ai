@@ -770,18 +770,18 @@ useEffect(() => {
                 <span className="text-sm text-[var(--text-secondary)]">{docData.isPublic ? "Public" : "Private"}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { void handleToggleFavorite(); }} className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="Favorite">
+                <button type="button" onClick={() => { void handleToggleFavorite(); }} className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="Favorite" aria-label="Favorite">
                   <Star className="h-4 w-4 text-[var(--text-muted)]" />
                 </button>
-                <button className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="Share">
+                <button type="button" className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="Share" aria-label="Share">
                   <Share className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
                 <div className="relative">
-                  <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="More options">
+                  <button type="button" onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="More options" aria-label="More options" aria-expanded={isMenuOpen}>
                     <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
                   </button>
                   {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-10">
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-10" role="dialog" aria-label="Document options">
                       <button onClick={() => { void handleTogglePublic(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-hover)] transition-colors">
                         {docData.isPublic ? "Make Private" : "Make Public"}
                       </button>
@@ -821,25 +821,29 @@ useEffect(() => {
             {/* Actions row (minimal, right-aligned) */}
             <div className="mt-2 px-2 flex items-center justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setWrapCells((w) => !w)}
                 className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
                 title={wrapCells ? 'Disable wrap' : 'Enable wrap'}
+                aria-label={wrapCells ? 'Disable text wrap' : 'Enable text wrap'}
               >
                 <WrapText className="h-4 w-4" />
               </button>
 
               <div className="relative">
                 <button
+                  type="button"
                   onClick={handleOpenAnalysisPopover}
                   disabled={isAnalyzing}
                   className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-60"
-                  title="Analyze with Gemini and add to Quick notes"
+                  title="Analyze with AI and add to Quick notes"
+                  aria-label="Analyze file with AI"
                 >
                   {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 </button>
                 {showPromptPopover && (
-                  <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3">
-                    <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">File analysis prompt</div>
+                  <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3" role="dialog" aria-label="Analysis prompt">
+                    <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">Analysis prompt</div>
                     <textarea
                       className="w-full h-28 text-xs p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                       value={analysisPrompt}
@@ -851,8 +855,8 @@ useEffect(() => {
                         Remember as default
                       </label>
                       <div className="flex items-center gap-2">
-                        <button onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
-                        <button onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
+                        <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
+                        <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
                       </div>
                     </div>
                   </div>
@@ -861,7 +865,7 @@ useEffect(() => {
 
               {storageUrl && (
                 <>
-                  <button onClick={() => window.open(storageUrl, '_blank')} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors" title="Open in new tab">
+                  <button type="button" onClick={() => window.open(storageUrl, '_blank')} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors" title="Open in new tab" aria-label="Open in new tab">
                     <Eye className="h-4 w-4" />
                   </button>
                   <a href={storageUrl} download={file.fileName} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors" title="Download file">
@@ -870,11 +874,11 @@ useEffect(() => {
                 </>
               )}
 
-              <button onClick={() => void handleSaveChanges()} disabled={isSaving || isMini} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title={isMini ? "Editing disabled in mini view" : "Save changes"}>
+              <button type="button" onClick={() => void handleSaveChanges()} disabled={isSaving || isMini} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title={isMini ? "Editing disabled in mini view" : "Save changes"} aria-label="Save changes">
                 {isSaving ? (<Loader2 className="h-4 w-4 animate-spin" />) : (<Save className="h-4 w-4" />)}
               </button>
 
-              <button onClick={() => void handleExportCsv()} disabled={isExporting} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title="Export CSV">
+              <button type="button" onClick={() => void handleExportCsv()} disabled={isExporting} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title="Export CSV" aria-label="Export CSV">
                 {isExporting ? (<Loader2 className="h-4 w-4 animate-spin" />) : (<FileDown className="h-4 w-4" />)}
               </button>
             </div>
@@ -1042,9 +1046,12 @@ useEffect(() => {
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-sm font-medium text-[var(--text-primary)]">Quick notes</h4>
             <button
+              type="button"
               onClick={toggleNotes}
               className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
               title={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
+              aria-label={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
+              aria-expanded={!notesCollapsed}
             >
               {notesCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>

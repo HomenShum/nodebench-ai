@@ -339,7 +339,7 @@ function BriefingSectionInner({
           <div className="flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-amber-600" />
             <div>
-              <p className="text-sm font-medium text-amber-800">Sample Intelligence Brief</p>
+              <p className="text-sm font-medium text-amber-800">Sample Daily Brief</p>
               <p className="text-xs text-amber-600">This is demo content. Real briefs are generated daily at 6:00 AM UTC.</p>
             </div>
           </div>

@@ -24,7 +24,7 @@ export function PreferencesStep({
           Configure Preferences
         </h3>
         <p className="text-[var(--text-secondary)]">
-          Customize how and when you receive proactive notifications
+          Customize how and when you receive notifications
         </p>
       </div>
 
@@ -144,11 +144,11 @@ export function PreferencesStep({
           <div className="flex items-center gap-2 mb-4">
             <Gauge className="w-5 h-5 text-blue-500" />
             <h4 className="font-semibold text-[var(--text-primary)]">
-              Confidence Threshold
+              Relevance Filter
             </h4>
           </div>
           <p className="text-sm text-[var(--text-secondary)] mb-4">
-            Only show notifications with confidence above this level
+            Only show notifications above this relevance level
           </p>
           <div className="space-y-2">
             <input
@@ -164,7 +164,7 @@ export function PreferencesStep({
             <div className="flex items-center justify-between text-sm">
               <span className="text-[var(--text-secondary)]">More notifications</span>
               <span className="font-medium text-blue-500">
-                {Math.round(state.minimumConfidence * 100)}% confidence
+                {Math.round(state.minimumConfidence * 100)}% relevance
               </span>
               <span className="text-[var(--text-secondary)]">Fewer, higher quality</span>
             </div>

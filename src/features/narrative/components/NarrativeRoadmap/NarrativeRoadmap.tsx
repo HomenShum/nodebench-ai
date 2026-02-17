@@ -103,7 +103,7 @@ export function NarrativeRoadmap({
         <div className="flex items-center justify-center h-48">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-700 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500 text-sm font-light">Loading narratives...</p>
+            <p className="text-gray-500 text-sm font-light">Loading stories...</p>
           </div>
         </div>
       </div>
@@ -116,11 +116,11 @@ export function NarrativeRoadmap({
         <div className="text-center">
           <Sparkles className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No Narratives Yet
+            No Stories Yet
           </h3>
           <p className="text-gray-500 text-sm font-light max-w-md mx-auto">
-            Start tracking entities to build evolving narrative threads.
-            The newsroom pipeline runs weekly to discover new developments.
+            Start tracking topics to build evolving story threads.
+            New developments are discovered weekly.
           </p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export function NarrativeRoadmap({
             <Calendar className="w-5 h-5 text-gray-500" />
             <div>
               <h2 className="text-lg font-bold text-gray-900">
-                Narrative Roadmap
+                Story Timeline
               </h2>
               <p className="text-xs text-gray-500 font-light">
                 {threads.length} threads · {weekCount} weeks

@@ -61,7 +61,7 @@ export function SignalMetricsDashboard({ threadId, className = "" }: SignalMetri
           Signal Metrics
         </h3>
         <p className="text-xs text-gray-500 mt-0.5">
-          Quantitative indicators across 5 domains
+          Key indicators across 5 areas
         </p>
       </div>
 

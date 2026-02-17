@@ -367,7 +367,68 @@ const ALLOWLIST: Record<string, AllowlistEntry> = {
     type: "query",
   },
 
-  // â”€â”€ INTERNAL CONTROL: tool call ledger hooks (used by the gateway service for "direct" tools) â”€â”€
+  // ── GROUP G: OpenClaw (sandboxed agent orchestration) ─────────────────────
+
+  createOpenClawSession: {
+    ref: internal.domains.openclaw.sessionManager.create,
+    type: "mutation",
+    injectUserId: true,
+  },
+  getOpenClawSessions: {
+    ref: internal.domains.openclaw.monitoring.listSessions,
+    type: "query",
+    injectUserId: true,
+  },
+  getOpenClawMetrics: {
+    ref: internal.domains.openclaw.monitoring.getMetrics,
+    type: "query",
+    injectUserId: true,
+  },
+
+  // ── GROUP H: Forecasting OS ─────────────────────────────────────────────
+
+  createForecast: {
+    ref: internal.domains.forecasting.actions.createForecast.createForecastAction,
+    type: "action",
+    injectUserId: true,
+  },
+  getActiveForecasts: {
+    ref: internal.domains.forecasting.forecastManager.getActiveForecastsForRefresh,
+    type: "query",
+  },
+  getTopForecastsForLinkedIn: {
+    ref: internal.domains.forecasting.forecastManager.getTopForecastsForLinkedIn,
+    type: "query",
+  },
+  getUserTrackRecord: {
+    ref: internal.domains.forecasting.forecastManager.getUserTrackRecord,
+    type: "query",
+    injectUserId: true,
+  },
+
+  // ── GROUP I: WebMCP (origin allowlist + tool inventory) ─────────────────
+  approveWebMcpOrigin: {
+    ref: api.domains.mcp.webmcpOriginManager.approveOrigin,
+    type: "mutation",
+  },
+  revokeWebMcpOrigin: {
+    ref: api.domains.mcp.webmcpOriginManager.revokeOrigin,
+    type: "mutation",
+  },
+  listWebMcpOrigins: {
+    ref: api.domains.mcp.webmcpOriginManager.listApprovedOrigins,
+    type: "query",
+  },
+  getWebMcpOriginTools: {
+    ref: api.domains.mcp.webmcpOriginManager.getOriginTools,
+    type: "query",
+  },
+  updateWebMcpToolCache: {
+    ref: internal.domains.mcp.webmcpOriginManager.updateOriginToolCache,
+    type: "mutation",
+  },
+
+  // ── INTERNAL CONTROL: tool call ledger hooks (used by the gateway service for "direct" tools) ──
   // Keys beginning with "__mcp" are excluded from automatic ledger logging.
   __mcpToolCallStart: {
     ref: internal.domains.mcp.mcpToolLedger.startToolCallInternal,

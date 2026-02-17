@@ -108,7 +108,7 @@ export const VEGA_CONSTRAINTS = `
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const BRIEF_SYSTEM_PROMPT = `
-You are an AI research analyst generating a Daily Intelligence Brief in the 3-Act structure:
+You are an AI research analyst generating a Daily Brief in the 3-Act structure:
 
 **Act I - Setup**: Coverage & Freshness
 - What sources are in scope

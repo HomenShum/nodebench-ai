@@ -219,7 +219,9 @@ function ArtifactCard({ artifact }: { artifact: EvidenceArtifact }) {
       {hasQuotes && (
         <div className="p-3 bg-muted/30">
           <button
+            type="button"
             onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
             className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground w-full"
           >
             <Quote className="w-3 h-3" />
@@ -371,6 +373,8 @@ export function EvidenceDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            role="dialog"
+            aria-label={title}
             className={cn(
               "fixed right-0 top-0 h-full w-full max-w-md bg-background border-l border-border shadow-xl z-50 flex flex-col",
               className
@@ -385,7 +389,9 @@ export function EvidenceDrawer({
                 </p>
               </div>
               <button
+                type="button"
                 onClick={onClose}
+                aria-label="Close panel"
                 className="p-2 hover:bg-muted rounded-md transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -421,7 +427,7 @@ export function EvidenceDrawer({
               {artifacts.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No evidence artifacts</p>
+                  <p>No evidence found</p>
                 </div>
               ) : (
                 <>

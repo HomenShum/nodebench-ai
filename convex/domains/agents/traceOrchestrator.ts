@@ -336,6 +336,9 @@ Remember: You are analyzing metadata summaries, not raw data. Be transparent abo
           charCount: mergedRawData.length,
           durationMs: totalDuration,
           success: true,
+          // Completion traceability — link finalize entry back to original query
+          originalRequest: query.length > 500 ? query.slice(0, 500) + "…" : query,
+          deliverySummary: `${successfulAgents.length} agent(s), ${seq} steps, ${mergedRawData.length} chars raw data`,
         },
         description: `TRACE finalization complete. ${seq} steps, ${totalDuration}ms, ${selfCorrections} self-correction(s). Raw data: ${mergedRawData.length} chars from ${successfulAgents.length} agents. Audit log: ${seq} entries.`,
       }

@@ -233,8 +233,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const { isAuthenticated } = useConvexAuth();
   const { signIn } = useAuthActions();
   const [isAnonSigningIn, setIsAnonSigningIn] = useState(false);
-  // Show guest CTA when not authenticated
-  const showGuestWorkspaceCta = !isAuthenticated && !user;
+  const [previewBannerDismissed, setPreviewBannerDismissed] = useState(() => {
+    try { return localStorage.getItem("nodebench_preview_dismissed") === "1"; } catch { return false; }
+  });
+  // Show guest CTA when not authenticated and not dismissed
+  const showGuestWorkspaceCta = !isAuthenticated && !user && !previewBannerDismissed;
 
   // Handle anonymous sign in
   const handleAnonymousSignIn = useCallback(async () => {
@@ -558,8 +561,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           </div>
 
           {showGuestWorkspaceCta && (
-            <div className="px-4 sm:px-6 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-3">
-              <div className="text-sm text-amber-900">
+            <div className="px-4 sm:px-6 py-3 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/40 flex items-center gap-3">
+              <div className="text-sm text-amber-900 dark:text-amber-200">
                 You&apos;re in preview mode. Sign in to save your work.
               </div>
               <button
@@ -569,6 +572,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 className="ml-auto px-3 py-1.5 text-sm font-semibold rounded-md bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isAnonSigningIn ? "Signing in..." : "Sign in"}
+              </button>
+              <button
+                type="button"
+                aria-label="Dismiss preview banner"
+                onClick={() => {
+                  setPreviewBannerDismissed(true);
+                  try { localStorage.setItem("nodebench_preview_dismissed", "1"); } catch {}
+                }}
+                className="p-1 rounded hover:bg-amber-200/60 dark:hover:bg-amber-800/40 text-amber-700 dark:text-amber-300 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
           )}
@@ -671,7 +685,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     order: [],
                     updatedAt: new Date().toISOString(),
                   }}
-                  briefTitle="Latest Intelligence Brief"
+                  briefTitle="Latest Daily Brief"
                   onBack={() => setCurrentView('research')}
                 />
               ) : currentView === 'signals' ? (

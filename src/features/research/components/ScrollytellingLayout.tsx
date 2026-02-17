@@ -548,7 +548,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         <div className="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto pt-6 pb-4">
           <PageHeroHeader
             icon={<span className="text-sm font-semibold">AI</span>}
-            title="Daily Intelligence Briefing"
+            title="Daily Brief"
             date={todayFormatted}
             subtitle={`${sectionCount} stories · ~${Math.ceil(sectionCount * 2.5)} min read`}
             className="pb-2"

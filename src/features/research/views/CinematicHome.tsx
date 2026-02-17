@@ -81,7 +81,9 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-950 dark:text-gray-50 tracking-tight">
                         {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
                     </h1>
-                    {/* Streak badge removed — vanity metric */}
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Your AI research workspace — signals, briefs, and agents in one place.
+                    </p>
                 </motion.div>
 
                 {/* Signature Orb — The visual identity, prominent above the input */}

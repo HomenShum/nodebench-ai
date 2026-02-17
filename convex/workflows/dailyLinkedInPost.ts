@@ -18,6 +18,18 @@ import type { AgentDigestOutput } from "../domains/agents/digestAgent";
 import type { FastVerifyResult } from "../domains/verification/fastVerification";
 import { calculateRiskScore, detectRiskSignals, selectDDTierWithRisk } from "../domains/agents/dueDiligence/riskScoring";
 import type { MicroBranchResult } from "../domains/agents/dueDiligence/microBranches";
+import {
+  matchSignalsToForecasts,
+  matchFindingsToForecasts,
+  formatDeltaBadge,
+  formatEvidenceLink,
+  type DigestSignal,
+  type DigestFinding,
+  type ActiveForecast,
+  type ForecastUpdate,
+  type SignalForecastMatch,
+  type FindingForecastMatch,
+} from "../domains/forecasting/signalMatcher";
 
 type LinkedInCompetingExplanation = {
   title: string;
@@ -63,11 +75,27 @@ type LinkedInCompetingExplanation = {
  * - Stay under 1500 characters
  * - Use content-specific hashtags (not just generic #AI)
  */
+interface ForecastCard {
+  question: string;
+  probability: number;
+  confidenceInterval?: { lower: number; upper: number };
+  resolutionDate: string;
+  topDrivers: string[];
+  topCounterarguments: string[];
+  updateCount: number;
+  previousProbability?: number; // for Δ display
+  traceSteps?: string[];       // compact TRACE breadcrumb (tool names)
+}
+
 function formatDigestForLinkedIn(
   digest: AgentDigestOutput,
   _options: {
     maxLength?: number;
     minLength?: number;
+    forecastCards?: ForecastCard[];
+    trackRecord?: { scoredCount: number; overallBrier: number | null };
+    signalMatches?: SignalForecastMatch[];
+    findingMatches?: FindingForecastMatch[];
   } = {}
 ): string[] {
   const maxPerPost = 1450;
@@ -106,6 +134,19 @@ function formatDigestForLinkedIn(
   }
   p1.push("");
 
+  // Build signal→forecast Δ badge lookup (max 2 badges per post)
+  const signalMatchMap = new Map<number, SignalForecastMatch>();
+  let badgeCount = 0;
+  for (const sm of (_options.signalMatches ?? [])) {
+    if (badgeCount >= 2) break;
+    if (sm.probabilityDelta && sm.probabilityDelta.from !== sm.probabilityDelta.to) {
+      if (!signalMatchMap.has(sm.signalIndex)) {
+        signalMatchMap.set(sm.signalIndex, sm);
+        badgeCount++;
+      }
+    }
+  }
+
   const signalCount = Math.min(signals.length, 4);
   if (signalCount > 0) {
     for (let i = 0; i < signalCount; i++) {
@@ -113,10 +154,17 @@ function formatDigestForLinkedIn(
       let line = `${i + 1}. ${s.title}`;
       if (s.hardNumbers) line += ` -- ${s.hardNumbers}`;
       p1.push(truncateAtSentenceBoundary(line, 200));
+      const hasBadge = signalMatchMap.has(i);
       if (s.summary && i < 2) {
-        p1.push(`   ${truncateAtSentenceBoundary(s.summary, 150)}`);
+        // Trim summary slightly if we're adding a Δ badge (150→120 chars)
+        p1.push(`   ${truncateAtSentenceBoundary(s.summary, hasBadge ? 120 : 150)}`);
       }
       if (s.url && i < 2) p1.push(`   ${s.url}`);
+      // Δ badge: show which forecast this signal moved
+      const match = signalMatchMap.get(i);
+      if (match?.probabilityDelta) {
+        p1.push(`   \u{1F4CA} ${formatDeltaBadge(match.forecastQuestion, match.probabilityDelta.from, match.probabilityDelta.to)}`);
+      }
     }
     p1.push("");
   }
@@ -129,12 +177,12 @@ function formatDigestForLinkedIn(
 
   // Competing explanations as natural prose (Phase 7)
   if (explanations.length >= 2) {
-    p1.push(`When I ran these through my research pipeline, ${explanations.length} competing explanations emerged:`);
+    p1.push(`When I fact-checked these, ${explanations.length} different takes emerged:`);
     for (const e of explanations.slice(0, 3)) {
       p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 160)}`);
     }
     p1.push("");
-    p1.push(`Each one implies a different set of decisions.`);
+    p1.push(`Each one leads to a different set of decisions.`);
   } else {
     p1.push(`These ${domain} developments connect in ways the headlines don't surface.`);
   }
@@ -150,21 +198,40 @@ function formatDigestForLinkedIn(
   p2.push(`Verification and context on today's ${domain} developments:`);
   p2.push("");
 
+  // Build finding→forecast evidence link lookup (max 2 links per post)
+  const findingMatchMap = new Map<number, FindingForecastMatch>();
+  let linkCount = 0;
+  for (const fm of (_options.findingMatches ?? [])) {
+    if (linkCount >= 2) break;
+    if (!findingMatchMap.has(fm.findingIndex)) {
+      findingMatchMap.set(fm.findingIndex, fm);
+      linkCount++;
+    }
+  }
+
   if (findings.length > 0) {
-    for (const finding of findings.slice(0, 4)) {
+    for (let fi = 0; fi < Math.min(findings.length, 4); fi++) {
+      const finding = findings[fi];
       const badge = finding.status === "verified" ? "VERIFIED"
         : finding.status === "false" ? "FALSE"
         : finding.status === "partially_verified" ? "PARTIAL"
         : "UNVERIFIED";
       p2.push(`[${badge}] ${truncateAtSentenceBoundary(finding.claim, 150)}`);
+      const hasLink = findingMatchMap.has(fi);
       if (finding.explanation) {
-        p2.push(`  ${truncateAtSentenceBoundary(finding.explanation, 140)}`);
+        // Trim explanation slightly if we're adding an evidence link (140→110 chars)
+        p2.push(`  ${truncateAtSentenceBoundary(finding.explanation, hasLink ? 110 : 140)}`);
       }
       // Source attribution with URL
       const srcParts: string[] = [];
       if (finding.source) srcParts.push(`Source: ${finding.source}`);
       if (finding.sourceUrl) srcParts.push(finding.sourceUrl);
       if (srcParts.length > 0) p2.push(`  ${srcParts.join(" | ")}`);
+      // Evidence→forecast link
+      const fMatch = findingMatchMap.get(fi);
+      if (fMatch) {
+        p2.push(`  ${formatEvidenceLink(fMatch.forecastQuestion, fMatch.direction, fMatch.probabilityDelta)}`);
+      }
       p2.push("");
     }
   } else {
@@ -182,7 +249,7 @@ function formatDigestForLinkedIn(
 
   // Evidence breakdown from competing explanations (Phase 7)
   if (explanations.length > 0) {
-    p2.push(`Evidence breakdown:`);
+    p2.push(`How the evidence stacks up:`);
     for (const e of explanations.slice(0, 3)) {
       p2.push(renderEvidenceLine(e));
     }
@@ -190,14 +257,14 @@ function formatDigestForLinkedIn(
   }
 
   // Connect dots -- what's the real story behind the noise
-  p2.push(`I built a research pipeline that fact-checks and grades evidence automatically. Above is what it found today.`);
+  p2.push(`I built a system that fact-checks and scores evidence automatically. Above is what it found today.`);
   p2.push("");
   p2.push(`What's one claim you've seen this week that you'd want fact-checked?`);
   p2.push("");
   p2.push(`[2/${totalPosts}] ${specificTags}`);
 
   // ── Post 3: PRACTICAL GUIDE ──
-  // Specific actions. Skills to learn. Falsification criteria as reader empowerment.
+  // Specific actions. Skills to learn. Forecast cards. Falsification criteria.
   const p3: string[] = [];
 
   p3.push(`Based on today's research -- here's a practical guide on what to focus on:`);
@@ -218,7 +285,7 @@ function formatDigestForLinkedIn(
   ).slice(0, 3);
 
   if (skillSignals.length > 0) {
-    p3.push("Relevant skills and tools to look into:");
+    p3.push("Worth learning or exploring:");
     for (const s of skillSignals) {
       p3.push(`- ${truncateAtSentenceBoundary(s.title, 140)}`);
       if (s.summary) p3.push(`  ${truncateAtSentenceBoundary(s.summary, 120)}`);
@@ -226,9 +293,55 @@ function formatDigestForLinkedIn(
     p3.push("");
   }
 
+  // Forecast cards — predictions I'm tracking (with probabilities + delta + trace)
+  const forecastCards = _options.forecastCards ?? [];
+  if (forecastCards.length > 0) {
+    // Enhanced mode (delta + trace) for ≤2 cards, compact for 3+
+    const enhanced = forecastCards.length <= 2;
+    const maxCards = enhanced ? 2 : 3;
+    p3.push("Forecasts I'm tracking:");
+    for (const fc of forecastCards.slice(0, maxCards)) {
+      const pct = (fc.probability * 100).toFixed(0);
+      const range = fc.confidenceInterval
+        ? ` \u00B1${((fc.confidenceInterval.upper - fc.confidenceInterval.lower) * 50).toFixed(0)}%`
+        : "";
+      const driver = fc.topDrivers[0] || "";
+      const counter = fc.topCounterarguments[0] || "";
+
+      // Delta display: [was X%, ±Npp today]
+      let deltaStr = "";
+      if (fc.previousProbability != null && fc.previousProbability !== fc.probability) {
+        const prevPct = Math.round(fc.previousProbability * 100);
+        const deltaPp = Math.round(fc.probability * 100) - prevPct;
+        deltaStr = ` [was ${prevPct}%, ${deltaPp >= 0 ? "+" : ""}${deltaPp}pp today]`;
+      }
+
+      p3.push(`\u2192 ${truncateAtSentenceBoundary(fc.question, 80)} [by ${fc.resolutionDate}]`);
+      p3.push(`  P: ${pct}%${range}${deltaStr}`);
+      if (driver) p3.push(`  Why: ${truncateAtSentenceBoundary(driver, 60)}${counter ? ` | Watch: ${truncateAtSentenceBoundary(counter, 50)}` : ""}`);
+
+      // Trace breadcrumb (enhanced mode only, max 45 chars)
+      if (enhanced && fc.traceSteps && fc.traceSteps.length > 0) {
+        p3.push(`  via: ${fc.traceSteps.join(" \u2192 ")}`);
+      }
+    }
+
+    // Track record with Brier percentile
+    const tr = _options.trackRecord;
+    if (tr && tr.scoredCount >= 5 && tr.overallBrier != null) {
+      // Brier baselines: Metaculus community ~0.15, GJP superforecasters ~0.12, random ~0.25
+      const percentile = tr.overallBrier <= 0.12 ? "top 5%"
+        : tr.overallBrier <= 0.15 ? "top 15%"
+        : tr.overallBrier <= 0.20 ? "top 30%"
+        : "building";
+      p3.push(`Track record: ${tr.scoredCount} resolved, Brier ${tr.overallBrier.toFixed(3)} [${percentile}]`);
+    }
+    p3.push("");
+  }
+
   // Falsification criteria as reader empowerment (Phase 7)
   if (explanations.length >= 2) {
-    p3.push(`How to stress-test each explanation:`);
+    p3.push(`How to challenge each take:`);
     for (const e of explanations.slice(0, 3)) {
       const badge = e.checksPassing != null && e.checksTotal != null
         ? ` [${e.checksPassing}/${e.checksTotal}]`
@@ -239,7 +352,7 @@ function formatDigestForLinkedIn(
   }
 
   // Builder closer -- practitioner voice, not motivational poster
-  p3.push(`The pipeline runs daily. I'll keep publishing what it finds. If you spot a claim worth checking, drop it below.`);
+  p3.push(`This runs daily. I'll keep publishing what it finds. If you spot a claim worth checking, drop it below.`);
   p3.push("");
   p3.push(`What are you building or investigating this week?`);
   p3.push("");
@@ -276,20 +389,20 @@ function renderEvidenceLine(e: {
   const cl = e.evidenceChecklist;
   if (!cl || e.checksPassing == null || e.checksTotal == null) {
     // Fallback: no checklist data (legacy digests)
-    const label = e.evidenceLevel === "grounded" ? "backed by primary sources"
+    const label = e.evidenceLevel === "grounded" ? "backed by official sources"
       : e.evidenceLevel === "mixed" ? "partly supported"
-      : "still interpretive";
+      : "limited evidence";
     return `- ${truncateAtSentenceBoundary(e.title, 40)}: ${label}`;
   }
 
   const passing: string[] = [];
   const gaps: string[] = [];
-  if (cl.hasPrimarySource) passing.push("gov/primary source"); else gaps.push("primary source");
-  if (cl.hasCorroboration) passing.push("corroborated"); else gaps.push("corroboration");
-  if (cl.hasQuantitativeData) passing.push("hard numbers"); else gaps.push("hard numbers");
-  if (cl.hasNamedAttribution) passing.push("named attribution"); else gaps.push("named attribution");
-  if (cl.isReproducible) passing.push("verifiable links"); else gaps.push("verifiable links");
-  if (cl.hasFalsifiableClaim) passing.push("falsifiable"); else gaps.push("falsifiability");
+  if (cl.hasPrimarySource) passing.push("official source"); else gaps.push("official source");
+  if (cl.hasCorroboration) passing.push("confirmed by others"); else gaps.push("independent confirmation");
+  if (cl.hasQuantitativeData) passing.push("specific numbers"); else gaps.push("specific numbers");
+  if (cl.hasNamedAttribution) passing.push("named source"); else gaps.push("named source");
+  if (cl.isReproducible) passing.push("source links"); else gaps.push("source links");
+  if (cl.hasFalsifiableClaim) passing.push("testable"); else gaps.push("testability");
 
   // Grounded: show strengths. Mixed/speculative: show what's missing.
   const score = `${e.checksPassing}/${e.checksTotal}`;
@@ -338,7 +451,7 @@ function buildContentSpecificHashtags(digest: AgentDigestOutput): string {
   if (digest.fundingRounds && digest.fundingRounds.length > 0) {
     tags.push("#StartupFunding");
   } else {
-    tags.push("#TechIntelligence");
+    tags.push("#TechNews");
   }
 
   // Deduplicate
@@ -380,7 +493,51 @@ export const postDailyDigestToLinkedIn = internalAction({
 
     console.log(`[dailyLinkedInPost] Starting daily LinkedIn post workflow, persona=${persona}, model=${model}, dryRun=${dryRun}, hoursBack=${hoursBack}, forcePost=${forcePost}`);
 
+    // TRACE execution context
+    const traceDate = new Date().toISOString().split("T")[0];
+    const executionId = `linkedin_${traceDate}_${persona}_${Date.now()}`;
+    const workflowTag = `linkedin_${traceDate}`;
+    let traceSeq = 0;
+    const traceStart = Date.now();
+
+    const appendTraceEntry = async (entry: {
+      seq: number;
+      choiceType: "gather_info" | "execute_data_op" | "execute_output" | "finalize";
+      toolName: string;
+      description: string;
+      metadata: {
+        rowCount?: number;
+        charCount?: number;
+        wordCount?: number;
+        keyTopics?: string[];
+        errorMessage?: string;
+        durationMs: number;
+        success: boolean;
+        originalRequest?: string;
+        deliverySummary?: string;
+      };
+    }) => {
+      try {
+        await ctx.runMutation(
+          internal.domains.agents.traceAuditLog.appendAuditEntry,
+          {
+            executionId,
+            executionType: "linkedin_post" as const,
+            workflowTag,
+            seq: entry.seq,
+            choiceType: entry.choiceType,
+            toolName: entry.toolName,
+            description: entry.description,
+            metadata: entry.metadata,
+          },
+        );
+      } catch (e) {
+        console.warn(`[dailyLinkedInPost:TRACE] Failed to append entry seq=${entry.seq}:`, e instanceof Error ? e.message : String(e));
+      }
+    };
+
     // Step 1: Generate digest with fact-checks
+    const step1Start = Date.now();
     let digestResult;
     try {
       digestResult = await ctx.runAction(
@@ -407,6 +564,18 @@ export const postDailyDigestToLinkedIn = internalAction({
     }
 
     console.log(`[dailyLinkedInPost] Digest generated with ${digestResult.factCheckCount} fact-checks`);
+    await appendTraceEntry({
+      seq: traceSeq++,
+      choiceType: "gather_info",
+      toolName: "generateDigest",
+      description: `Generated digest with ${digestResult.factCheckCount} fact-checks, ${(digestResult.digest.signals ?? []).length} signals`,
+      metadata: {
+        rowCount: (digestResult.digest.signals ?? []).length,
+        keyTopics: (digestResult.digest.signals ?? []).slice(0, 3).map((s: any) => s.title?.slice(0, 40) || ""),
+        durationMs: Date.now() - step1Start,
+        success: true,
+      },
+    });
 
     // Step 1b: Generate competing explanations (agentic — LLM grades with boolean evidence checklist)
     try {
@@ -460,9 +629,139 @@ export const postDailyDigestToLinkedIn = internalAction({
     } catch (e) {
       console.warn(`[dailyLinkedInPost] Competing explanations failed (non-fatal):`, e instanceof Error ? e.message : String(e));
     }
+    await appendTraceEntry({
+      seq: traceSeq++,
+      choiceType: "gather_info",
+      toolName: "generateExplanations",
+      description: `Generated ${(digestResult.digest.competingExplanations ?? []).length} competing explanations`,
+      metadata: {
+        rowCount: (digestResult.digest.competingExplanations ?? []).length,
+        durationMs: Date.now() - step1Start,
+        success: true,
+      },
+    });
+
+    // Step 1c: Query top active forecasts for LinkedIn cards
+    let forecastCards: ForecastCard[] = [];
+    let trackRecord: { scoredCount: number; overallBrier: number | null } | undefined;
+    let signalMatches: SignalForecastMatch[] = [];
+    let findingMatches: FindingForecastMatch[] = [];
+    try {
+      const topForecasts = await ctx.runQuery(
+        internal.domains.forecasting.forecastManager.getTopForecastsForLinkedIn,
+        { limit: 3 }
+      );
+      forecastCards = topForecasts.map((f: any) => ({
+        question: f.question,
+        probability: f.probability,
+        confidenceInterval: f.confidenceInterval,
+        resolutionDate: f.resolutionDate,
+        topDrivers: f.topDrivers,
+        topCounterarguments: f.topCounterarguments,
+        updateCount: f.updateCount,
+        previousProbability: f.previousProbability,
+      }));
+      // Get track record if we have forecasts
+      if (forecastCards.length > 0) {
+        const tr = await ctx.runQuery(
+          internal.domains.forecasting.forecastManager.getUserTrackRecord,
+          { userId: "default" }
+        );
+        trackRecord = { scoredCount: tr.scoredCount, overallBrier: tr.overallBrier };
+      }
+    } catch (e) {
+      console.warn(`[dailyLinkedInPost] Forecast query failed (non-fatal):`, e instanceof Error ? e.message : String(e));
+    }
+
+    // Step 1d: Cross-reference signals↔forecasts and findings↔forecasts (deterministic)
+    try {
+      if (forecastCards.length > 0) {
+        const digestSignals = (digestResult.digest.signals ?? []) as Array<{ title: string; summary?: string; hardNumbers?: string }>;
+        const digestFindings = (digestResult.digest.factCheckFindings ?? []) as Array<{ claim: string; status: string; explanation?: string }>;
+
+        // Build ActiveForecast[] for matching
+        const activeForecasts: ActiveForecast[] = forecastCards.map((fc, i) => ({
+          id: `fc_${i}`,
+          question: fc.question,
+          tags: [], // tags aren't on ForecastCard, but keyword matching still works
+          topDrivers: fc.topDrivers,
+          topCounterarguments: fc.topCounterarguments,
+          probability: fc.probability,
+        }));
+
+        // Build ForecastUpdate[] from cards with previous probability
+        const recentUpdates: ForecastUpdate[] = forecastCards
+          .filter((fc) => fc.previousProbability != null && fc.previousProbability !== fc.probability)
+          .map((fc, i) => ({
+            forecastId: `fc_${i}`,
+            previousProbability: fc.previousProbability!,
+            newProbability: fc.probability,
+            reasoning: "daily refresh",
+            updatedAt: Date.now(),
+          }));
+
+        // Match signals → forecasts
+        const signalInput: DigestSignal[] = digestSignals.map((s) => ({
+          title: s.title || "",
+          summary: s.summary || "",
+          hardNumbers: s.hardNumbers,
+        }));
+        signalMatches = matchSignalsToForecasts(signalInput, activeForecasts, recentUpdates);
+
+        // Match findings → forecasts
+        const findingInput: DigestFinding[] = digestFindings.map((f) => ({
+          claim: f.claim || "",
+          status: (f.status as any) || "unverified",
+          explanation: f.explanation || "",
+        }));
+        findingMatches = matchFindingsToForecasts(findingInput, activeForecasts, recentUpdates);
+
+        console.log(`[dailyLinkedInPost] Cross-ref: ${signalMatches.length} signal→forecast matches, ${findingMatches.length} finding→forecast matches`);
+      }
+    } catch (e) {
+      console.warn(`[dailyLinkedInPost] Cross-reference failed (non-fatal):`, e instanceof Error ? e.message : String(e));
+    }
+    await appendTraceEntry({
+      seq: traceSeq++,
+      choiceType: "execute_data_op",
+      toolName: "matchSignalsToForecasts",
+      description: `Cross-ref: ${signalMatches.length} signal\u2194forecast, ${findingMatches.length} finding\u2194forecast matches`,
+      metadata: {
+        rowCount: signalMatches.length + findingMatches.length,
+        durationMs: Date.now() - step1Start,
+        success: true,
+      },
+    });
+
+    // Step 1e: Enrich forecast cards with TRACE breadcrumbs (last refresh audit trail)
+    try {
+      if (forecastCards.length > 0) {
+        // Get TRACE steps from the most recent forecast_refresh execution
+        const today = new Date().toISOString().split("T")[0];
+        const traceEntries = await ctx.runQuery(
+          internal.domains.agents.traceAuditLog.getAuditLogByWorkflowTag,
+          { workflowTag: `forecast_refresh_${today}` }
+        );
+        if (traceEntries && traceEntries.length > 0) {
+          // Extract compact tool name sequence for breadcrumb
+          const traceSteps = traceEntries.map((e: any) => e.toolName).slice(0, 4);
+          for (const fc of forecastCards) {
+            fc.traceSteps = traceSteps;
+          }
+        }
+      }
+    } catch (e) {
+      // Non-fatal — breadcrumbs are optional enrichment
+      console.warn(`[dailyLinkedInPost] TRACE breadcrumb query failed (non-fatal):`, e instanceof Error ? e.message : String(e));
+    }
 
     // Step 2: Format for LinkedIn (multi-post thread)
-    const linkedInPosts = formatDigestForLinkedIn(digestResult.digest);
+    const linkedInPosts = formatDigestForLinkedIn(digestResult.digest, {
+      forecastCards,
+      trackRecord,
+      signalMatches,
+      findingMatches,
+    });
 
     // Optionally prepend didYouKnow to the first post
     const didYouKnowUrls =
@@ -485,6 +784,18 @@ export const postDailyDigestToLinkedIn = internalAction({
 
     const totalContent = linkedInPosts.join("\n\n---\n\n");
     console.log(`[dailyLinkedInPost] Formatted ${linkedInPosts.length} posts (total ${totalContent.length} chars)`);
+    await appendTraceEntry({
+      seq: traceSeq++,
+      choiceType: "execute_output",
+      toolName: "formatPosts",
+      description: `Formatted ${linkedInPosts.length}-post thread (${totalContent.length} chars, ${signalMatches.length} \u0394 badges, ${findingMatches.length} evidence links)`,
+      metadata: {
+        charCount: totalContent.length,
+        rowCount: linkedInPosts.length,
+        durationMs: Date.now() - traceStart,
+        success: true,
+      },
+    });
 
     // Step 3: Post to LinkedIn (unless dry run)
     if (dryRun) {
@@ -584,6 +895,21 @@ export const postDailyDigestToLinkedIn = internalAction({
 
     console.log(`[dailyLinkedInPost] Posted ${postUrls.length}/${linkedInPosts.length} parts`);
 
+    // TRACE finalize
+    await appendTraceEntry({
+      seq: traceSeq++,
+      choiceType: "finalize",
+      toolName: "linkedInPostComplete",
+      description: `LinkedIn ${persona} post complete: ${postUrls.length}/${linkedInPosts.length} parts posted, ${forecastCards.length} forecast cards, ${signalMatches.length} \u0394 badges`,
+      metadata: {
+        rowCount: postUrls.length,
+        durationMs: Date.now() - traceStart,
+        success: postUrls.length > 0,
+        originalRequest: `Daily LinkedIn ${persona} post for ${traceDate}`,
+        deliverySummary: `${postUrls.length} posts published, ${forecastCards.length} forecasts, ${signalMatches.length} signal matches`,
+      },
+    });
+
     return {
       success: postUrls.length > 0,
       posted: postUrls.length > 0,
@@ -595,6 +921,7 @@ export const postDailyDigestToLinkedIn = internalAction({
       factCheckCount: digestResult.factCheckCount,
       didYouKnow: didYouKnow.didYouKnowMetadata ?? null,
       usage: digestResult.usage,
+      executionId, // TRACE execution ID for audit
     };
   },
 });
@@ -1029,7 +1356,7 @@ const LINKEDIN_PERSONAS = {
     description: "Funding-focused content for venture capital and investor audience",
     hashtags: "#VentureCapital #Startups #FundingNews #AngelInvesting #SeriesA #SeedFunding",
     focusSections: ["fundingRounds", "entitySpotlight", "actionItems"],
-    formatPrefix: "VC Intelligence Brief",
+    formatPrefix: "VC Daily Brief",
   },
   // For technical audience (CTOs, engineers, developers)
   TECH_BUILDER: {
@@ -1038,16 +1365,16 @@ const LINKEDIN_PERSONAS = {
     description: "Technical deep-dives for CTOs, engineers, and developers",
     hashtags: "#TechNews #AI #MachineLearning #DevOps #Engineering #OpenSource",
     focusSections: ["signals", "leadStory", "actionItems"],
-    formatPrefix: "Tech Intelligence Brief",
+    formatPrefix: "Tech Daily Brief",
   },
   // General audience (founders, executives, general business)
   GENERAL: {
     id: "GENERAL",
     name: "General Business",
     description: "Balanced content for founders, executives, and business professionals",
-    hashtags: "#AI #TechIntelligence #DailyBrief #FactCheck #NodeBenchAI",
+    hashtags: "#AI #TechNews #DailyBrief #FactCheck #NodeBenchAI",
     focusSections: ["leadStory", "signals", "actionItems", "entitySpotlight"],
-    formatPrefix: "Daily Intelligence Brief",
+    formatPrefix: "Daily Brief",
   },
 } as const;
 
@@ -1188,12 +1515,12 @@ function formatDigestForPersona(
     }
     if (entities.length > 0) p1.push("");
     if (explanations.length >= 2) {
-      p1.push(`When I ran these through my research pipeline, ${explanations.length} competing explanations emerged:`);
+      p1.push(`When I fact-checked these, ${explanations.length} different takes emerged:`);
       for (const e of explanations.slice(0, 3)) {
         p1.push(`- ${truncateAtSentenceBoundary(e.explanation, 160)}`);
       }
       p1.push("");
-      p1.push(`Each one implies a different set of decisions.`);
+      p1.push(`Each one leads to a different set of decisions.`);
     } else {
       p1.push(`These ${domain} developments connect in ways the headlines don't surface.`);
     }
@@ -1242,14 +1569,14 @@ function formatDigestForPersona(
 
   // Evidence breakdown from competing explanations (Phase 7)
   if (explanations.length > 0) {
-    p2.push(`Evidence breakdown:`);
+    p2.push(`How the evidence stacks up:`);
     for (const e of explanations.slice(0, 3)) {
       p2.push(renderEvidenceLine(e));
     }
     p2.push("");
   }
 
-  p2.push(`I built a research pipeline that fact-checks and grades evidence automatically. Above is what it found today.`);
+  p2.push(`I built a system that fact-checks and scores evidence automatically. Above is what it found today.`);
   p2.push("");
   p2.push("What's one claim you've seen this week that you'd want fact-checked?");
   p2.push("");
@@ -1286,7 +1613,7 @@ function formatDigestForPersona(
     } else if (personaId === "TECH_BUILDER") {
       p3.push("Tools and frameworks to evaluate:");
     } else {
-      p3.push("Relevant skills and tools to look into:");
+      p3.push("Worth learning or exploring:");
     }
     for (const s of skillSignals) {
       p3.push(`- ${truncateAtSentenceBoundary(s.title, 140)}`);
@@ -1297,7 +1624,7 @@ function formatDigestForPersona(
 
   // Falsification criteria as reader empowerment (Phase 7)
   if (explanations.length >= 2) {
-    p3.push(`How to stress-test each explanation:`);
+    p3.push(`How to challenge each take:`);
     for (const e of explanations.slice(0, 3)) {
       const badge = e.checksPassing != null && e.checksTotal != null
         ? ` [${e.checksPassing}/${e.checksTotal}]`
@@ -1308,15 +1635,15 @@ function formatDigestForPersona(
   }
 
   if (personaId === "VC_INVESTOR") {
-    p3.push(`This pipeline runs daily. If you want a specific deal or sector fact-checked, drop it below.`);
+    p3.push(`This runs daily. If you want a specific deal or sector fact-checked, drop it below.`);
     p3.push("");
-    p3.push("What deal or thesis are you doing diligence on right now?");
+    p3.push("What deal are you researching right now?");
   } else if (personaId === "TECH_BUILDER") {
-    p3.push(`This pipeline runs daily and the evidence grading is open. If you spot something worth verifying, drop it below.`);
+    p3.push(`This runs daily and the fact-checking is open. If you spot something worth verifying, drop it below.`);
     p3.push("");
-    p3.push("What are you building or stress-testing this week?");
+    p3.push("What are you building or testing this week?");
   } else {
-    p3.push(`The pipeline runs daily. I'll keep publishing what it finds. If you spot a claim worth checking, drop it below.`);
+    p3.push(`This runs daily. I'll keep publishing what it finds. If you spot a claim worth checking, drop it below.`);
     p3.push("");
     p3.push("What are you building or investigating this week?");
   }

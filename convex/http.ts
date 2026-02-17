@@ -15,6 +15,7 @@ import {
   authorizeHandler as linkedinAuthorizeHandler,
   callbackHandler as linkedinCallbackHandler,
 } from "./domains/social/linkedinOAuth";
+import { openclawInboundHandler } from "./domains/messaging/inboundPipeline";
 
 const http = router;
 
@@ -102,6 +103,20 @@ http.route({
   path: "/linkedin/oauth/callback",
   method: "GET",
   handler: linkedinCallbackHandler,
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// OPENCLAW GATEWAY - Multi-channel messaging (WhatsApp, Signal, iMessage, etc.)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// OpenClaw Gateway inbound webhook for all Gateway-connected channels
+// Route: /openclaw/inbound
+// Setup: Configure OpenClaw hook handler to POST to this endpoint
+// Requires: OPENCLAW_WEBHOOK_SECRET env var for HMAC validation (optional in dev)
+http.route({
+  path: "/openclaw/inbound",
+  method: "POST",
+  handler: openclawInboundHandler,
 });
 
 // Only register GitHub webhook routes if a token/secret is configured.

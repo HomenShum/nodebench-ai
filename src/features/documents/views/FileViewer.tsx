@@ -570,6 +570,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => {
                     if (onGoBack) {
                       onGoBack();
@@ -580,6 +581,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                   }}
                   className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors mr-2"
                   title="Go back"
+                  aria-label="Go back"
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
@@ -603,23 +605,23 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
               <div className="flex items-center gap-2">
                 {canZoom && (
                   <div className="flex items-center gap-1 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-sm p-1">
-                    <button onClick={zoomOut} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Zoom out" disabled={zoomMode === 'manual' ? zoom <= ZOOM_MIN : false}>
+                    <button type="button" onClick={zoomOut} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Zoom out" aria-label="Zoom out" disabled={zoomMode === 'manual' ? zoom <= ZOOM_MIN : false}>
                       <ZoomOut strokeWidth={1.25} className="h-4 w-4" />
                     </button>
-                    <button onClick={zoomFit} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Fit to view">
+                    <button type="button" onClick={zoomFit} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Fit to view" aria-label="Fit to view">
                       <RotateCcw strokeWidth={1.25} className="h-4 w-4" />
                     </button>
                     {isImageOrVideo && (
                       <>
-                        <button onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`} title="Fit height">
+                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`} title="Fit height" aria-label="Fit height">
                           <StretchVertical strokeWidth={1.25} className="h-4 w-4" />
                         </button>
-                        <button onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`} title="Fit width">
+                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`} title="Fit width" aria-label="Fit width">
                           <StretchHorizontal strokeWidth={1.25} className="h-4 w-4" />
                         </button>
                       </>
                     )}
-                    <button onClick={zoomIn} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Zoom in" disabled={zoomMode === 'manual' ? zoom >= ZOOM_MAX : false}>
+                    <button type="button" onClick={zoomIn} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Zoom in" aria-label="Zoom in" disabled={zoomMode === 'manual' ? zoom >= ZOOM_MAX : false}>
                       <ZoomIn strokeWidth={1.25} className="h-4 w-4" />
                     </button>
                     <span className="ml-1 text-xs text-[var(--text-secondary)] px-1 py-0.5 rounded bg-[var(--bg-secondary)]/70">
@@ -630,16 +632,18 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
 
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={handleOpenAnalysisPopover}
                     disabled={isAnalyzing}
                     className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-60"
-                    title="Analyze with Gemini and add to Quick notes"
+                    title="Analyze with AI and add to Quick notes"
+                    aria-label="Analyze file with AI"
                   >
                     {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   </button>
                   {showPromptPopover && (
-                    <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3">
-                      <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">File analysis prompt</div>
+                    <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3" role="dialog" aria-label="File analysis prompt">
+                      <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">Analysis prompt</div>
                       <textarea
                         className="w-full h-28 text-xs p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                         value={analysisPrompt}
@@ -651,8 +655,8 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                           Remember as default
                         </label>
                         <div className="flex items-center gap-2">
-                          <button onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
-                          <button onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
+                          <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
+                          <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
                         </div>
                       </div>
                     </div>
@@ -662,9 +666,11 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                 {storageUrl && (
                   <>
                     <button
+                      type="button"
                       onClick={() => window.open(storageUrl, '_blank')}
                       className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
                       title="Open in new tab"
+                      aria-label="Open in new tab"
                     >
                       <Eye className="h-4 w-4" />
                     </button>
@@ -701,9 +707,12 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-medium text-[var(--text-primary)]">Quick notes</h4>
                   <button
+                    type="button"
                     onClick={toggleNotes}
                     className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
                     title={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
+                    aria-label={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
+                    aria-expanded={!notesCollapsed}
                   >
                     {notesCollapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                   </button>

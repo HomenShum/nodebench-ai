@@ -152,7 +152,7 @@ export interface TraceDataView {
  */
 export interface TraceOutput {
   executionId: string;
-  executionType: "swarm" | "tree" | "chat";
+  executionType: "swarm" | "tree" | "chat" | "forecast_refresh" | "linkedin_post";
   rawDataViewName: string;
   auditLog: TraceAuditEntry[];
   analysis?: string;

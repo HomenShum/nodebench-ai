@@ -124,6 +124,7 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </div>
           <button
+            type="button"
             onClick={() => { void handleSave(); }}
             disabled={saveHint !== "unsaved" || isSaving}
             className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
@@ -132,9 +133,11 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>
           <button
+            type="button"
             onClick={() => onClose()}
             className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
             title="Close"
+            aria-label="Close editor"
           >
             <X className="w-3.5 h-3.5" />
           </button>

@@ -1,12 +1,12 @@
 # NodeBench AI — Claude Code Project Instructions
 
 ## Project overview
-NodeBench MCP — a 215-tool Model Context Protocol server with progressive discovery, agent-as-a-graph embeddings, and toolset gating presets. Monorepo with `packages/mcp-local` (main server) and `packages/convex-mcp-nodebench` (Convex auditor).
+NodeBench MCP — a 218-tool Model Context Protocol server with progressive discovery, agent-as-a-graph embeddings, toolset gating presets, and CLI subcommands for human-friendly demo/onboarding. Monorepo with `packages/mcp-local` (main server) and `packages/convex-mcp-nodebench` (Convex auditor).
 
 ## Key files
 - `AGENTS.md` — Full methodology, eval bench, tool pipeline, agent contract
 - `AI_FLYWHEEL.md` — Mandatory 7-step flywheel (step 7 = re-examine for 11/10)
-- `packages/mcp-local/src/index.ts` — Server entry, toolset gating, CLI args
+- `packages/mcp-local/src/index.ts` — Server entry, toolset gating, CLI args, CLI subcommands (discover/setup/workflow/quickref/call)
 - `packages/mcp-local/src/tools/toolRegistry.ts` — 175-entry tool catalog with `nextTools` + `relatedTools` cross-refs, `computeRelatedTools()` auto-derivation, `hybridSearch` with offset pagination
 - `packages/mcp-local/src/tools/progressiveDiscoveryTools.ts` — `discover_tools` (pagination + expansion), `get_tool_quick_ref` (multi-hop BFS depth 1-3), `get_workflow_chain`
 - `packages/mcp-local/src/tools/skillUpdateTools.ts` — Skill freshness tracking
@@ -16,12 +16,16 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 
 | Rule | Focus | related_ (one-hop) |
 |------|-------|---------------------|
-| `reexamine_process` | Orchestrator — when & how to re-examine | a11y, resilience, polish, keyboard, performance |
+| `reexamine_process` | Orchestrator — when & how to re-examine | a11y, resilience, polish, keyboard, performance, analyst_diagnostic |
 | `reexamine_a11y` | ARIA, reduced motion, color-blind, screen readers | keyboard, polish, process |
-| `reexamine_resilience` | Retry/backoff, partial failures, graceful degradation | performance, process, polish |
+| `reexamine_resilience` | Retry/backoff, partial failures, graceful degradation | performance, process, polish, analyst_diagnostic |
 | `reexamine_polish` | Skeleton loading, staggered fade-ins, print stylesheet | a11y, performance, process |
 | `reexamine_keyboard` | Skip links, shortcuts, tab order, focus traps | a11y, process |
 | `reexamine_performance` | Progressive disclosure, smart refresh, lazy loading | resilience, polish, process |
+| `completion_traceability` | Cite original request on task completion | process, analyst_diagnostic |
+| `forecasting_os` | Forecasting architecture, Brier scoring, TRACE wrapping, LinkedIn Δ badges | process, analyst_diagnostic, resilience, traceability |
+| `analyst_diagnostic` | Root-cause diagnosis, not bandaids | process, resilience, traceability |
+| `reexamine_design_reduction` | Jony Ive principles: earned complexity, kill jargon | a11y, polish, process, keyboard |
 
 **Two-hop discovery**: Follow a rule's `related_` to reach its neighbors, then follow *their* `related_` for second-degree connections. Example: `process` → `a11y` → `keyboard`.
 
@@ -37,11 +41,23 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 - Tool schema: `{ name, description, inputSchema, handler }` (McpTool type)
 - TOON encoding on by default (`--no-toon` to disable)
 - Embedding search on by default (`--no-embedding` to disable)
-- Presets: default (50 tools), web_dev (102), full (175) — see `toolsetRegistry.ts`
+- **Completion traceability**: On task completion, always reference the user's original request — quote or paraphrase the specific section being fulfilled, then summarize what was done. User writes long/burst prompts across sessions and needs the link between ask → delivery.
+- **Analyst diagnostic**: Always guide yourself like an analyst diagnosing the root cause, not a junior dev slapping on a bandaid. Trace upstream from symptom → root cause before writing any fix. Ask "why" 5 times. Fix the cause, not the symptom.
+- Presets: default (54 tools), web_dev (106), research (71), data (78), devops (68), mobile (95), academic (86), multi_agent (83), content (73), full (218) — see `toolsetRegistry.ts`
+- CLI subcommands: `discover`, `setup`, `workflow`, `quickref`, `call` — run-and-exit, bypass MCP transport, call tool handlers directly. Respects `--preset` and `--no-embedding`. Test with `cliSubcommands.test.ts`.
+
+## Local Dashboard
+- `npm run local:sync` — Pull daily brief + narrative from Convex into local SQLite
+- `npm run local:sync:full` — Sync last 30 days
+- `npm run local:refresh` — Sync + verify + print summary
+- Dashboard: http://127.0.0.1:6275 (starts automatically with MCP server)
+- MCP tools: sync_daily_brief, get_daily_brief_summary, get_narrative_status, get_ops_dashboard, open_local_dashboard
+- Data: ~/.nodebench/nodebench.db (shared with all MCP local data)
+- Privacy mode: camera opt-in toggle, sanitizes entities when bystanders detected
 
 ## Same rules mirrored to
-- `.cursor/rules/reexamine_*.mdc` — Cursor AI
-- `.windsurf/rules/reexamine_*.md` — Windsurf AI
+- `.cursor/rules/*.mdc` — Cursor AI (reexamine_*, forecasting_os, analyst_diagnostic, completion_traceability, design_reduction)
+- `.windsurf/rules/*.md` — Windsurf AI (same set)
 
 ## LinkedIn post pipeline
 Key files: `convex/workflows/dailyLinkedInPost.ts`, `convex/domains/narrative/actions/competingExplanations.ts`, `convex/domains/narrative/validators.ts`

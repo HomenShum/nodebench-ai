@@ -34,7 +34,8 @@ export function DocumentRecommendations() {
     return (
       <div className="p-8 text-center text-[var(--text-secondary)]">
         <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p>No recommendations yet. Create or save some documents to get started!</p>
+        <p className="font-medium text-[var(--text-primary)] mb-1">No recommendations yet</p>
+        <p className="text-sm">Recommendations appear as you work with documents — open, edit, or save a few to see suggestions here.</p>
       </div>
     );
   }

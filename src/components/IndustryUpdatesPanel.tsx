@@ -108,9 +108,10 @@ export function IndustryUpdatesPanel() {
 
       {/* Updates List */}
       {filteredSuggestions.length === 0 ? (
-        <div className="p-8 text-center text-[var(--text-secondary)]">
+        <div className="flex flex-col items-center justify-center py-16 text-center text-[var(--text-secondary)]">
           <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No updates found for this filter</p>
+          <p className="font-medium text-[var(--text-primary)] mb-1">No updates yet</p>
+          <p className="text-sm max-w-sm">Industry updates are refreshed daily from AI leader feeds. Check back tomorrow, or try a different source filter above.</p>
         </div>
       ) : (
         <div className="space-y-4">

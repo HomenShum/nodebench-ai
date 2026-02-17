@@ -170,6 +170,7 @@ export const McpToolLedgerView: React.FC = () => {
                 <option value="write_internal">write_internal</option>
                 <option value="external_side_effect">external_side_effect</option>
                 <option value="destructive">destructive</option>
+                <option value="webmcp">webmcp</option>
                 <option value="unknown">unknown</option>
               </select>
             </label>

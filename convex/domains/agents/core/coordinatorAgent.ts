@@ -216,6 +216,12 @@ import {
   getSpreadsheetSummary,
 } from "../../../tools/editSpreadsheet";
 
+// Import OpenClaw sandboxed agent tools
+import { openclawAgentTools } from "../../openclaw/tools/openclawAgentTools";
+
+// Import channel context tools (messaging pipeline awareness)
+import { channelContextTools } from "../../../tools/integration/channelContextTools";
+
 // Import ground truth lookup tools (for evaluation and accurate responses)
 import {
   lookupGroundTruth,
@@ -479,6 +485,12 @@ export const createCoordinatorAgent = (
     // === GROUND TRUTH TOOLS (Evaluation and accurate responses) ===
     lookupGroundTruth,
     listGroundTruthEntities,
+
+    // === OPENCLAW TOOLS (Sandboxed agent orchestration) ===
+    ...openclawAgentTools,
+
+    // === CHANNEL CONTEXT TOOLS (Messaging pipeline awareness) ===
+    ...channelContextTools,
   };
 
   // Wrap all tools for artifact extraction if deps provided

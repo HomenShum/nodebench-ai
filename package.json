@@ -76,7 +76,10 @@
     "pricing:google": "tsx scripts/fetch-google-gemini-api-pricing.ts",
     "pricing:all": "npm run pricing:openai -- --latest && npm run pricing:anthropic -- --latest && npm run pricing:google -- --latest",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "local:sync": "tsx scripts/sync-local-briefs.ts",
+    "local:sync:full": "tsx scripts/sync-local-briefs.ts --days 30",
+    "local:refresh": "tsx scripts/sync-local-briefs.ts && echo Sync complete"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.53",

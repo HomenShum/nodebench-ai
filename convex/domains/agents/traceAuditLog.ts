@@ -29,7 +29,10 @@ export const appendAuditEntry = internalMutation({
       v.literal("swarm"),
       v.literal("tree"),
       v.literal("chat"),
+      v.literal("forecast_refresh"),
+      v.literal("linkedin_post"),
     ),
+    workflowTag: v.optional(v.string()),
     seq: v.number(),
     choiceType: v.union(
       v.literal("gather_info"),
@@ -52,6 +55,8 @@ export const appendAuditEntry = internalMutation({
       intendedState: v.optional(v.string()),
       actualState: v.optional(v.string()),
       correctionApplied: v.optional(v.boolean()),
+      originalRequest: v.optional(v.string()),
+      deliverySummary: v.optional(v.string()),
     }),
     description: v.string(),
   },
@@ -60,6 +65,7 @@ export const appendAuditEntry = internalMutation({
     return await ctx.db.insert("traceAuditEntries", {
       executionId: args.executionId,
       executionType: args.executionType,
+      workflowTag: args.workflowTag,
       seq: args.seq,
       timestamp: Date.now(),
       choiceType: args.choiceType,
@@ -82,7 +88,10 @@ export const appendAuditEntryPublic = mutation({
       v.literal("swarm"),
       v.literal("tree"),
       v.literal("chat"),
+      v.literal("forecast_refresh"),
+      v.literal("linkedin_post"),
     ),
+    workflowTag: v.optional(v.string()),
     seq: v.number(),
     choiceType: v.union(
       v.literal("gather_info"),
@@ -105,6 +114,8 @@ export const appendAuditEntryPublic = mutation({
       intendedState: v.optional(v.string()),
       actualState: v.optional(v.string()),
       correctionApplied: v.optional(v.boolean()),
+      originalRequest: v.optional(v.string()),
+      deliverySummary: v.optional(v.string()),
     }),
     description: v.string(),
   },
@@ -113,6 +124,7 @@ export const appendAuditEntryPublic = mutation({
     return await ctx.db.insert("traceAuditEntries", {
       executionId: args.executionId,
       executionType: args.executionType,
+      workflowTag: args.workflowTag,
       seq: args.seq,
       timestamp: Date.now(),
       choiceType: args.choiceType,
@@ -145,7 +157,10 @@ export const getAuditLog = query({
       v.literal("swarm"),
       v.literal("tree"),
       v.literal("chat"),
+      v.literal("forecast_refresh"),
+      v.literal("linkedin_post"),
     ),
+    workflowTag: v.optional(v.string()),
     seq: v.number(),
     timestamp: v.number(),
     choiceType: v.union(
@@ -169,6 +184,8 @@ export const getAuditLog = query({
       intendedState: v.optional(v.string()),
       actualState: v.optional(v.string()),
       correctionApplied: v.optional(v.boolean()),
+      originalRequest: v.optional(v.string()),
+      deliverySummary: v.optional(v.string()),
     }),
     description: v.string(),
     createdAt: v.number(),
@@ -198,7 +215,10 @@ export const getAuditLogInternal = internalQuery({
       v.literal("swarm"),
       v.literal("tree"),
       v.literal("chat"),
+      v.literal("forecast_refresh"),
+      v.literal("linkedin_post"),
     ),
+    workflowTag: v.optional(v.string()),
     seq: v.number(),
     timestamp: v.number(),
     choiceType: v.union(
@@ -222,6 +242,8 @@ export const getAuditLogInternal = internalQuery({
       intendedState: v.optional(v.string()),
       actualState: v.optional(v.string()),
       correctionApplied: v.optional(v.boolean()),
+      originalRequest: v.optional(v.string()),
+      deliverySummary: v.optional(v.string()),
     }),
     description: v.string(),
     createdAt: v.number(),
@@ -233,6 +255,23 @@ export const getAuditLogInternal = internalQuery({
       .order("asc")
       .collect();
     return entries;
+  },
+});
+
+/**
+ * Get audit entries by workflow tag (e.g. "forecast_refresh_2026-02-15").
+ * Used by LinkedIn post workflow to build TRACE breadcrumbs.
+ */
+export const getAuditLogByWorkflowTag = internalQuery({
+  args: {
+    workflowTag: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query("traceAuditEntries")
+      .withIndex("by_workflow_tag", (q) => q.eq("workflowTag", args.workflowTag))
+      .order("asc")
+      .collect();
   },
 });
 

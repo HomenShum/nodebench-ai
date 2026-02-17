@@ -14,6 +14,8 @@ Minimum required steps:
 4. Gap analysis: dead code, unused vars, missing integrations, intent mismatch
 5. Fix and re-verify: rerun steps 1-3 from scratch after any fix
 6. Deploy and document: ship + write down what changed and why
+7. **Re-examine for 11/10**: After completing the work, re-examine the result with fresh eyes. Ask: "Is this the best it can be?" Look for micro-interactions, accessibility gaps (prefers-reduced-motion, color-blind safety, print stylesheet), error resilience (partial failures, retry with backoff), keyboard efficiency (skip links, shortcuts), and progressive disclosure for large datasets. Fix anything found, then re-examine the fixes. The goal is not "no bugs" but "this is exceptional."
+8. **Completion traceability**: Before declaring done, cite the original request — quote or paraphrase the specific ask that prompted this work. Summarize what was delivered and list key files changed. This closes the loop: the user should be able to read your completion summary and immediately understand what they asked for and what they got. If working across sessions, reference the original session's ask.
 
 Additional required when changing **tool-facing behavior** (capability regression guard):
 - Run GAIA capability eval (accuracy: LLM-only vs LLM+tools): `npm run mcp:dataset:gaia:capability:test`
@@ -135,6 +137,8 @@ Every tool call, methodology step, and workflow path must answer: **"What concre
 | `run_quality_gate` | N gate rules enforced; violations blocked before deploy |
 | `record_learning` + `search_all_knowledge` | Knowledge compounds - later tasks reuse prior findings |
 | `run_mandatory_flywheel` | 6-step minimum verification; catches dead code and intent mismatches |
+| `discover_tools` (pagination + expansion) | Page through results with stable `totalMatches`; `expand` broadens recall by +2-8 tools via `relatedTools` neighbors |
+| `get_tool_quick_ref` (multi-hop BFS) | depth=2 discovers 24-40 additional tools beyond direct neighbors; `relatedTools` adds 949 cross-domain connections (191% amplification) |
 
 The comparative benchmark (`comparativeBench.test.ts`) validates this with 9 real production scenarios:
 - 13 issues detected (4 HIGH, 8 MEDIUM, 1 LOW) - bare agent ships all of them

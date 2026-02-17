@@ -21,7 +21,8 @@ import {
     Hash,
     Sparkles,
     FileSearch,
-    BarChart2
+    BarChart2,
+    Globe
 } from 'lucide-react';
 // import { useQuery, useMutation } from 'convex/react';
 // import { api } from '../../convex/_generated/api';
@@ -194,6 +195,32 @@ export function CommandPalette({
                 section: 'ai',
                 action: () => {
                     onNavigate?.('analytics');
+                    onClose();
+                }
+            },
+
+            // WebMCP
+            {
+                id: 'ai-webmcp-scan',
+                label: 'Scan WebMCP Origin',
+                description: 'Discover tools from a WebMCP-enabled website',
+                icon: <Globe className="w-4 h-4" />,
+                keywords: ['webmcp', 'mcp', 'scan', 'discover', 'tools', 'origin', 'website'],
+                section: 'ai',
+                action: () => {
+                    onOpenSettings?.();
+                    onClose();
+                }
+            },
+            {
+                id: 'ai-webmcp-manage',
+                label: 'Manage WebMCP Origins',
+                description: 'View and manage approved WebMCP origins',
+                icon: <Globe className="w-4 h-4" />,
+                keywords: ['webmcp', 'mcp', 'origins', 'manage', 'settings', 'approve'],
+                section: 'ai',
+                action: () => {
+                    onOpenSettings?.();
                     onClose();
                 }
             },

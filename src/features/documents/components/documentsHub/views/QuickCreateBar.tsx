@@ -146,6 +146,7 @@ export function QuickCreateBar({
                     disabled={isCreatingTask}
                 />
                 <button
+                    type="button"
                     onClick={() => void handleCreateTask()}
                     className="px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50"
                     title="Add task"
@@ -204,6 +205,7 @@ export function QuickCreateBar({
                     />
 
                     <button
+                        type="button"
                         onClick={() => void handleCreateEvent()}
                         className="px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 whitespace-nowrap"
                         title="Add event"

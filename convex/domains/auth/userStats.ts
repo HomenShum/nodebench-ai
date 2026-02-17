@@ -152,7 +152,7 @@ export const getGreetingMessage = query({
     let emoji: string;
 
     if (hour < 6) {
-      greeting = "Burning the midnight oil";
+      greeting = "Good night";
       timeOfDay = "late night";
       emoji = "🌙";
     } else if (hour < 12) {
@@ -168,7 +168,7 @@ export const getGreetingMessage = query({
       timeOfDay = "evening";
       emoji = "🌆";
     } else {
-      greeting = "Working late";
+      greeting = "Good evening";
       timeOfDay = "night";
       emoji = "🌃";
     }

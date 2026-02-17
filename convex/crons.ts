@@ -244,6 +244,15 @@ crons.weekly(
   {}
 );
 
+// Weekly forecast calibration (Sunday 6:00 AM UTC)
+// Computes calibration bins + Brier aggregates for track record
+crons.weekly(
+  "weekly forecast calibration",
+  { dayOfWeek: "sunday", hourUTC: 6, minuteUTC: 0 },
+  internal.domains.forecasting.cronHandlers.weeklyCalibration.handler,
+  {}
+);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Feed Ingestion Crons
 // ═══════════════════════════════════════════════════════════════════════════
@@ -309,6 +318,18 @@ crons.daily(
   {}
 );
 
+// ── FORECASTING OS ──────────────────────────────────────────────────────────
+// Refresh forecasts before LinkedIn digest, check resolutions after
+
+// Daily forecast refresh at 5:00 AM UTC (before 6:15 AM LinkedIn digest)
+// TRACE-wrapped: every step is audited to traceAuditEntries (executionType: "forecast_refresh")
+crons.daily(
+  "daily forecast refresh",
+  { hourUTC: 5, minuteUTC: 0 },
+  internal.domains.forecasting.traceWrapper.tracedForecastRefresh,
+  { date: new Date().toISOString().split("T")[0] }
+);
+
 // Post daily digest to LinkedIn at 6:15 AM UTC (15 min after digest generation)
 // Uses fact-checked findings + digest summary, formatted for professional audience
 crons.daily(
@@ -316,6 +337,15 @@ crons.daily(
   { hourUTC: 6, minuteUTC: 15 },
   internal.workflows.dailyLinkedInPost.postDailyDigestToLinkedIn,
   { persona: "GENERAL" }
+);
+
+// Daily forecast resolution check at 7:00 AM UTC
+// Flags forecasts past their resolution date for manual review
+crons.daily(
+  "forecast resolution check",
+  { hourUTC: 7, minuteUTC: 0 },
+  internal.domains.forecasting.cronHandlers.resolutionCheck.handler,
+  {}
 );
 
 // Generate daily AI Agent Project Idea post at 7:15 AM UTC
@@ -709,6 +739,18 @@ crons.interval(
   "perpetual agent loop tick",
   { minutes: 15 },
   internal.domains.agents.agentLoop.tickAgentLoop,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BATCH AUTOPILOT — Per-user scheduled autonomy
+// Sweeps pending schedules every 15 minutes, triggers batch runs
+// ═══════════════════════════════════════════════════════════════════════════
+
+crons.interval(
+  "batch autopilot sweep",
+  { minutes: 15 },
+  internal.domains.batchAutopilot.scheduler.sweepPendingRuns,
   {}
 );
 

@@ -35,6 +35,23 @@ import {
   userConsents,
 } from "./domains/proactive/schema";
 
+// OpenClaw domain schema imports
+import {
+  openclawWorkflows,
+  openclawSessions,
+  openclawExecutions,
+  openclawDelegations,
+} from "./domains/openclaw/schema";
+
+// Forecasting OS domain schema imports
+import {
+  forecasts,
+  forecastEvidence,
+  forecastResolutions,
+  forecastUpdateHistory,
+  forecastCalibrationLog,
+} from "./domains/forecasting/schema";
+
 /* ------------------------------------------------------------------ */
 /* 1.  DOCUMENTS  –  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
@@ -74,9 +91,10 @@ const documents = defineTable({
       v.literal("text"),
       v.literal("file"),
       v.literal("timeline"),
-      v.literal("dossier")
+      v.literal("dossier"),
+      v.literal("operator_profile")
     )
-  ), // "text" (default) | "file" | "timeline" | "dossier"
+  ), // "text" (default) | "file" | "timeline" | "dossier" | "operator_profile"
   fileId: v.optional(v.id("files")),     // reference to files table for file documents
   fileType: v.optional(v.string()),        // "csv", "pdf", "image", etc. for file documents
   mimeType: v.optional(v.string()),        // MIME type for file documents
@@ -3659,7 +3677,10 @@ export default defineSchema({
       v.literal("swarm"),
       v.literal("tree"),
       v.literal("chat"),
+      v.literal("forecast_refresh"),
+      v.literal("linkedin_post"),
     ),
+    workflowTag: v.optional(v.string()),
     seq: v.number(),
     timestamp: v.number(),
     choiceType: v.union(
@@ -3683,12 +3704,16 @@ export default defineSchema({
       intendedState: v.optional(v.string()),
       actualState: v.optional(v.string()),
       correctionApplied: v.optional(v.boolean()),
+      // Completion traceability — links finalize entries back to user's original ask
+      originalRequest: v.optional(v.string()),
+      deliverySummary: v.optional(v.string()),
     }),
     description: v.string(),
     createdAt: v.number(),
   })
     .index("by_execution", ["executionId", "seq"])
-    .index("by_execution_type", ["executionType", "executionId"]),
+    .index("by_execution_type", ["executionType", "executionId"])
+    .index("by_workflow_tag", ["workflowTag", "seq"]),
 
   /* ------------------------------------------------------------------ */
   /* DOSSIER DOMAIN - Bidirectional focus sync for agent↔chart views    */
@@ -9343,6 +9368,47 @@ export default defineSchema({
     .index("by_status", ["status", "approvedAt"])
     .index("by_pinned", ["isPinned", "packageName"]),
 
+  /* ------------------------------------------------------------------ */
+  /* WEBMCP ORIGINS — Approved WebMCP-enabled sites for consumer bridge  */
+  /* ------------------------------------------------------------------ */
+  webmcpOrigins: defineTable({
+    origin: v.string(),
+    label: v.string(),
+    status: v.union(
+      v.literal("approved"),
+      v.literal("pending"),
+      v.literal("revoked")
+    ),
+    approvedBy: v.optional(v.string()),
+    approvedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+    allowedToolPatterns: v.optional(v.array(v.string())),
+    blockedToolPatterns: v.optional(v.array(v.string())),
+    lastDiscoveredAt: v.optional(v.number()),
+    discoveredToolCount: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_origin", ["origin"])
+    .index("by_status", ["status", "createdAt"]),
+
+  /* ------------------------------------------------------------------ */
+  /* WEBMCP TOOL INVENTORY — Cached tool manifests per origin            */
+  /* ------------------------------------------------------------------ */
+  webmcpToolInventory: defineTable({
+    originId: v.id("webmcpOrigins"),
+    toolName: v.string(),
+    description: v.string(),
+    inputSchema: v.optional(v.any()),
+    annotations: v.optional(v.any()),
+    allowed: v.boolean(),
+    riskTier: v.string(),
+    discoveredAt: v.number(),
+    lastCalledAt: v.optional(v.number()),
+    callCount: v.optional(v.number()),
+  })
+    .index("by_origin", ["originId"])
+    .index("by_origin_tool", ["originId", "toolName"]),
+
   /* ================================================================== */
   /* HITL (HUMAN-IN-THE-LOOP) WORKFLOWS                                  */
   /* ================================================================== */
@@ -12183,4 +12249,191 @@ export default defineSchema({
   })
     .index("by_threadId_and_status", ["threadId", "status"])
     .index("by_navigationId", ["navigationId"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPENCLAW — Sandboxed AI Agent Orchestration
+  // Workflow definitions, session lifecycle, execution audit trail, delegations
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  openclawWorkflows,
+  openclawSessions,
+  openclawExecutions,
+  openclawDelegations,
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FORECASTING OS — Prediction Engine with Brier Scoring
+  // Forecasts, evidence ledger, resolutions, update history, calibration log
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  forecasts,
+  forecastEvidence,
+  forecastResolutions,
+  forecastUpdateHistory,
+  forecastCalibrationLog,
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MESSAGING — Channel Provider Abstraction Layer
+  // Multi-channel preferences, fallback chains, opt-in/out, quiet hours
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  channelPreferences: defineTable({
+    userId: v.id("users"),
+    /** Ordered fallback chain: ["whatsapp", "slack", "email"] */
+    preferredChannels: v.array(v.string()),
+    /** Per-channel configuration */
+    channelConfigs: v.array(v.object({
+      channelId: v.string(),
+      enabled: v.boolean(),
+      /** Recipient identifier (phone, email, chat ID, session key) */
+      identifier: v.string(),
+      /** GDPR/TCPA explicit opt-in */
+      optedIn: v.boolean(),
+      /** Quiet hours start (e.g., "22:00") */
+      quietHoursStart: v.optional(v.string()),
+      /** Quiet hours end (e.g., "08:00") */
+      quietHoursEnd: v.optional(v.string()),
+      /** Max messages per day per channel */
+      maxPerDay: v.optional(v.number()),
+      /** Content types this channel receives: ["alert", "digest", "report"] */
+      contentTypes: v.optional(v.array(v.string())),
+    })),
+    /** OpenClaw session keys for Gateway channels */
+    openclawSessionKeys: v.optional(v.array(v.object({
+      channelId: v.string(),
+      sessionKey: v.string(),
+    }))),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPERATOR PROFILES — User-authored agent policy (USER.md equivalent)
+  // Governs identity, goals, permissions, budget, output preferences
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  operatorProfiles: defineTable({
+    userId: v.id("users"),
+    /** Links to the markdown document in the documents table */
+    documentId: v.id("documents"),
+
+    /** Parsed structured config (extracted from markdown at save time) */
+    identity: v.object({
+      displayName: v.string(),
+      role: v.optional(v.string()),
+      domains: v.optional(v.array(v.string())),
+      /** "concise" | "detailed" | "bullet-heavy" */
+      writingStyle: v.optional(v.string()),
+    }),
+
+    goals: v.array(v.object({
+      rank: v.number(),
+      description: v.string(),
+    })),
+
+    /** "assist" | "batch_autopilot" | "full_autopilot" */
+    autonomyMode: v.string(),
+    /** "3h" | "6h" | "12h" | "daily" */
+    scheduleInterval: v.optional(v.string()),
+    /** "08:00" for daily mode (UTC) */
+    scheduleTimeUtc: v.optional(v.string()),
+
+    permissions: v.object({
+      readWeb: v.boolean(),
+      readDocs: v.boolean(),
+      readEmail: v.boolean(),
+      readCalendar: v.boolean(),
+      writeForumPosts: v.boolean(),
+      writeEmailDrafts: v.boolean(),
+      sendEmail: v.boolean(),
+      submitForms: v.boolean(),
+      uploadDocuments: v.boolean(),
+    }),
+
+    budget: v.object({
+      /** e.g., 50000 */
+      maxTokensPerRun: v.number(),
+      /** e.g., 20 */
+      maxToolCallsPerRun: v.number(),
+      /** e.g., 5 */
+      maxExternalWritesPerRun: v.number(),
+      /** "free" | "cheap" | "standard" */
+      preferredModelTier: v.string(),
+    }),
+
+    outputPreferences: v.object({
+      /** "tldr_bullets" | "narrative" | "structured" */
+      briefFormat: v.string(),
+      includeCostEstimate: v.boolean(),
+      /** "inline" | "footnotes" */
+      citationStyle: v.string(),
+    }),
+
+    lastSyncedToFilesystem: v.optional(v.number()),
+    updatedAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"]),
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BATCH AUTOPILOT — Per-user scheduled autonomy
+  // Sweep cron checks schedules → triggers batch runs → collects delta →
+  // summarizes via free models → generates personalized brief → delivers
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  batchAutopilotSchedules: defineTable({
+    userId: v.id("users"),
+    profileId: v.id("operatorProfiles"),
+    /** Interval in ms: 3h=10800000, 6h=21600000, 12h=43200000, 24h=86400000 */
+    intervalMs: v.number(),
+    isEnabled: v.boolean(),
+    lastRunAt: v.optional(v.number()),
+    nextRunAt: v.number(),
+    /** Auto-disable after 3 consecutive failures */
+    consecutiveFailures: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_next_run", ["isEnabled", "nextRunAt"]),
+
+  batchAutopilotRuns: defineTable({
+    userId: v.id("users"),
+    scheduleId: v.id("batchAutopilotSchedules"),
+    /** "collecting" | "summarizing" | "planning" | "generating_brief" | "delivering" | "completed" | "failed" */
+    status: v.string(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    /** = previous run's completedAt (or profile createdAt for first run) */
+    windowStartAt: v.number(),
+    /** = this run's startedAt */
+    windowEndAt: v.number(),
+    /** Collected data counts */
+    feedItemsCount: v.number(),
+    signalsCount: v.number(),
+    narrativeEventsCount: v.number(),
+    /** Free-model summary of new discoveries */
+    deltaSummary: v.optional(v.string()),
+    /** Generated brief stored as document */
+    briefDocumentId: v.optional(v.id("documents")),
+    /** Brief content for delivery */
+    briefMarkdown: v.optional(v.string()),
+    /** Actions planned during the run (digest-first: usually empty) */
+    plannedActions: v.optional(v.array(v.object({
+      description: v.string(),
+      /** "low" | "medium" | "high" */
+      riskTier: v.string(),
+      requiredPermission: v.string(),
+      /** "planned" | "approved" | "executed" | "skipped" */
+      status: v.string(),
+      result: v.optional(v.string()),
+    }))),
+    /** Cost tracking */
+    tokensUsed: v.number(),
+    modelCallsCount: v.number(),
+    costUsd: v.optional(v.number()),
+    error: v.optional(v.string()),
+  })
+    .index("by_user_status", ["userId", "status"])
+    .index("by_schedule", ["scheduleId"])
+    .index("by_started", ["startedAt"]),
 });

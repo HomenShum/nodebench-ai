@@ -493,6 +493,19 @@ Cron:
 
 ## Bug loop (Ralph-style back pressure)
 
+**→ Quick Refs:** `analyst_diagnostic` rule, `critter_check` (check 11: bandaid detection)
+
+### Analyst diagnostic — mandatory for all bug work
+Guide yourself like an analyst diagnosing the root cause, NOT a junior dev slapping on a bandaid.
+1. **Reproduce** the exact failure mode before touching any code
+2. **Trace upstream**: symptom → intermediate state → root cause. Follow the data, not assumptions.
+3. **Ask "why" 5 times**: stop when you reach a design decision, missing constraint, or wrong assumption
+4. **Fix the cause**: the right fix makes the symptom impossible, not just invisible
+5. **Verify no sideways shift**: bandaids move bugs, they don't fix them — check adjacent behavior
+6. **Document**: record_learning with the root cause so the next agent doesn't re-discover it
+
+Red flags you're bandaiding: try/catch that swallows errors, `?.` to mask undefined, `as any` to silence types, timeout increases to hide race conditions, deleting failing tests.
+
 Goal: errors become deduped cards, humans approve, agent does legwork, humans review.
 
 Card substrate: `agentTaskSessions` rows with `metadata.kind='bug_card'` and deterministic `metadata.signature`.
@@ -1425,6 +1438,7 @@ After every implementation — before moving to the next task — answer these 3
    - Check for orphaned verification cycles (started but never completed/abandoned)
    - Verify search_all_knowledge returns relevant results for the domain you just worked on
    - Confirm learnings from this implementation were recorded via record_learning
+   - **Completion traceability:** Each record_learning and save_session_note must cite the original request/task that prompted this work. Without traceability, knowledge compounds but context is lost — future sessions can't trace *why* something was built.
 
 2. **Are there any gaps in the actual implementation?**
    - Dead imports, unused variables, unreachable code
@@ -1481,6 +1495,26 @@ Meta → Recon → Risk → Verification → Eval → Quality Gate → Knowledge
 | 6. Quality Gate | `run_quality_gate`, `run_closed_loop` | Deploy readiness gate enforces pass/fail |
 | 7. Knowledge | `record_learning`, `search_all_knowledge` | Learnings persist and are searchable |
 | 8. Flywheel | `run_mandatory_flywheel` | All 6 flywheel steps enforced |
+| 9. Re-examine | Fresh-eyes review | Re-examine the completed work for 11/10 opportunities — micro-interactions, a11y gaps, error resilience, keyboard efficiency, progressive disclosure |
+
+### Re-examine modular rules (`related_` hop pattern)
+
+Phase 9 is backed by **6 modular rule files** in `.cursor/rules/` and `.windsurf/rules/`. Each rule has a `related_` frontmatter field listing one-hop neighbors. Following a neighbor's `related_` gives two-hop discovery.
+
+| Rule file | Focus | related_ (one-hop) |
+|-----------|-------|---------------------|
+| `reexamine_process` | Orchestrator — when & how to re-examine | a11y, resilience, polish, keyboard, performance |
+| `reexamine_a11y` | ARIA, reduced motion, color-blind, screen readers | keyboard, polish, process |
+| `reexamine_resilience` | Retry/backoff, partial failures, graceful degradation | performance, process, polish |
+| `reexamine_polish` | Skeleton loading, staggered fade-ins, print stylesheet | a11y, performance, process |
+| `reexamine_keyboard` | Skip links, shortcuts, tab order, focus traps | a11y, process |
+| `reexamine_performance` | Progressive disclosure, smart refresh, lazy loading | resilience, polish, process |
+
+**Two-hop example**: `reexamine_process` → `reexamine_a11y` (one hop) → `reexamine_keyboard` (two hops). An agent starting at the process orchestrator discovers keyboard efficiency via the a11y rule's `related_` field.
+
+**MCP parallel**: The `relatedTools` field on every tool's `_quickRef` mirrors this `related_` hop pattern in live tooling. `get_tool_quick_ref({ depth: 2 })` performs the same multi-hop BFS traversal across 215 tools that `related_` enables across rule files.
+
+**→ Quick Refs:** `register_skill` tracks freshness of these rule files. `check_skill_freshness` detects when source docs drift. `toolRegistry.ts` (`computeRelatedTools`, `_populateRelatedTools`), `progressiveDiscoveryTools.ts` (BFS traversal handler, pagination handler).
 
 ### Cross-task integration tests
 
@@ -1913,47 +1947,58 @@ Scenario 9 specifically tests parallel agent coordination — "I launched 3 Clau
 
 ## Toolset Gating & Presets (NodeBench MCP Local)
 
-NodeBench MCP exposes 4 presets that control which domain toolsets are loaded at startup. Agents select a preset via `--preset <name>` on the CLI. Meta tools (`findTools`, `getMethodology`) and discovery tools (`discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`) are always included on top of any preset — they are never gated.
+NodeBench MCP exposes 10 themed presets that control which domain toolsets are loaded at startup. Agents select a preset via `--preset <name>` on the CLI. Meta tools (`findTools`, `getMethodology`, `check_mcp_setup`) and discovery tools (`discover_tools`, `get_tool_quick_ref`, `get_workflow_chain`) are always included on top of any preset — they are never gated.
 
-**→ Quick Refs:** `packages/mcp-local/src/index.ts` (PRESETS map, parseToolsets), `--preset meta|lite|core|full`, `TOOLSET_MAP` (31 domain keys), `createMetaTools` + `createProgressiveDiscoveryTools` (always-on), `getHookHint` (auto-save + attention refresh hooks), `getToolComplexity` in toolRegistry.ts (model-tier routing), `embeddingProvider.ts` (Agent-as-a-Graph bipartite search), `--no-embedding` flag, MCP annotations in tools/list
+**→ Quick Refs:** `packages/mcp-local/src/index.ts` (PRESETS map, parseToolsets, CLI subcommands), `--preset default|web_dev|research|data|devops|mobile|academic|multi_agent|content|full`, `TOOLSET_MAP` (39 domain keys), `createMetaTools` + `createProgressiveDiscoveryTools` (always-on), `getHookHint` (auto-save + attention refresh hooks), `getToolComplexity` in toolRegistry.ts (model-tier routing), `embeddingProvider.ts` (Agent-as-a-Graph bipartite search), `--no-embedding` flag, MCP annotations in tools/list
 
-### 4 Presets
+### 10 Presets
 
-| Preset | Domain Toolsets | Domain Tools | + Meta & Discovery | Total Tools | Use Case |
-|--------|----------------|-------------|-------------------|-------------|----------|
-| **meta** | 0 | 0 | 5 (findTools, getMethodology, discover_tools, get_tool_quick_ref, get_workflow_chain) | **5** | Discovery-only front door. Agents start here and self-escalate. |
-| **lite** | 8 (verification, eval, quality_gate, learning, flywheel, recon, security, boilerplate) | 38 | +5 | **43** | Lightweight verification, eval, and flywheel. CI/CD gates, quick audits. |
-| **core** | 23 (lite + bootstrap, self_eval, llm, platform, research_writing, flicker_detection, figma_flow, benchmark, session_memory, toon, pattern, git_workflow, seo, voice_bridge, critter) | 105 | +5 | **110** | Full development methodology without vision/UI/parallel/GAIA overhead. |
-| **full** | all (31 domain keys) | 158 | +5 | **163** | Everything. Multi-agent teams, vision, UI capture, web, GitHub, docs, local files, GAIA solvers. |
+| Preset | Domains | Tools | Use Case |
+|--------|---------|-------|----------|
+| **default** | 8 (verification, eval, quality_gate, learning, flywheel, recon, security, boilerplate) | **54** | Core AI Flywheel — verification, eval, quality gates, learning, recon |
+| **web_dev** | +ui_capture, vision, web, seo, git_workflow, architect, ui_ux_dive, ui_ux_dive_v2, mcp_bridge, pr_report | **106** | Web projects — visual QA, SEO audit, git workflow, PR reports, code architecture |
+| **research** | +web, llm, rss, email, docs | **71** | Research workflows — web search, LLM calls, RSS feeds, email, docs |
+| **data** | +local_file, llm, web | **78** | Data analysis — CSV/XLSX/PDF/JSON parsing, LLM extraction, web fetch |
+| **devops** | +git_workflow, session_memory, benchmark, pattern, pr_report | **68** | CI/CD & ops — git compliance, session memory, benchmarks, pattern mining, PR reports |
+| **mobile** | +ui_capture, vision, flicker_detection, ui_ux_dive, ui_ux_dive_v2, mcp_bridge | **95** | Mobile apps — screenshot capture, vision analysis, flicker detection |
+| **academic** | +research_writing, llm, web, local_file | **86** | Academic papers — polish, review, translate, logic check, data analysis |
+| **multi_agent** | +parallel, self_eval, session_memory, pattern, toon | **83** | Multi-agent teams — task locking, messaging, roles, oracle testing |
+| **content** | +llm, critter, email, rss, platform, architect | **73** | Content & publishing — LLM, accountability, email, RSS, platform queue |
+| **full** | all 39 domains | **218** | Everything — all toolsets for maximum coverage |
 
-### The Meta Preset: Discovery-Only Front Door
+All presets include 6 always-on meta/discovery tools + 6 dynamic loading tools on top of domain tools.
 
-The `meta` preset is the recommended starting point for agents. It loads **zero domain tools** — only the 5 always-on meta and discovery tools:
+### Always-On Discovery Tools
+
+Every preset includes these 6 tools regardless of configuration — they are the agent's front door:
 
 | Tool | Purpose |
 |------|---------|
 | `findTools` | Keyword search across all registered tools (even those not loaded) |
 | `getMethodology` | Load step-by-step methodology for a topic (mandatory_flywheel, parallel_agent_teams, etc.) |
-| `discover_tools` | Hybrid semantic + keyword search with relevance scoring and explanations |
-| `get_tool_quick_ref` | Get the "what to do next" card after calling any tool |
+| `check_mcp_setup` | Diagnostic wizard — checks env vars, API keys, optional deps across all domains |
+| `discover_tools` | 14-strategy hybrid search with cursor pagination (`offset`/`hasMore`/`totalMatches`), result expansion (`expand` adds `relatedTools` neighbors at 50% parent score), and `explain` mode |
+| `get_tool_quick_ref` | Quick ref card with multi-hop BFS traversal (`depth` 1-3) — follows `nextTools` + `relatedTools` edges, returns `hopDistance` and `reachedVia` per discovered tool |
 | `get_workflow_chain` | Get a complete step-by-step tool sequence for a workflow (fix_bug, new_feature, etc.) |
 
-**Self-escalation pattern**: An agent started with `--preset meta` uses `discover_tools` to find which tools it needs, then requests a restart with `--preset lite`, `--preset core`, or targeted `--toolsets` flags to unlock the required capabilities.
+**Self-escalation pattern**: An agent started with `--preset default` uses `discover_tools` to find tools in other presets, then requests a restart with `--preset web_dev`, `--preset full`, or targeted `--toolsets` flags to unlock the required capabilities.
 
-### CLI Usage
+**Multi-hop discovery**: `get_tool_quick_ref({ tool_name: "run_recon", depth: 2 })` follows both `nextTools` (workflow-sequential) and `relatedTools` (conceptual adjacency) edges via BFS. depth=2 discovers 24-40 additional tools beyond direct neighbors. All 215 tools have auto-populated `relatedTools` (949 total connections, 191% amplification over 498 `nextTools`, 90% cross-domain, 0% overlap with `nextTools`).
+
+**Pagination**: `discover_tools({ query: "verify", limit: 5, offset: 5 })` returns page 2 with stable `totalMatches` across pages. `hasMore` flag indicates whether more pages exist.
+
+### CLI Usage (MCP Server)
 
 ```bash
-# Discovery-only (5 tools) — recommended default for new agents
-npx nodebench-mcp --preset meta
+# Default preset (54 tools) — core AI Flywheel
+npx nodebench-mcp
 
-# Lightweight (verification + eval + recon + security + boilerplate)
-npx nodebench-mcp --preset lite
-
-# Core development methodology (most domain tools, no vision/UI/parallel)
-npx nodebench-mcp --preset core
-
-# Everything enabled
-npx nodebench-mcp --preset full
+# Themed presets
+npx nodebench-mcp --preset web_dev       # Web development (106 tools)
+npx nodebench-mcp --preset research      # Research workflows (71 tools)
+npx nodebench-mcp --preset data          # Data analysis (78 tools)
+npx nodebench-mcp --preset devops        # CI/CD & ops (68 tools)
+npx nodebench-mcp --preset full          # Everything (218 tools)
 
 # Fine-grained: pick specific toolsets
 npx nodebench-mcp --toolsets verification,eval,recon
@@ -1962,24 +2007,48 @@ npx nodebench-mcp --toolsets verification,eval,recon
 npx nodebench-mcp --exclude vision,ui_capture,parallel
 ```
 
+### CLI Subcommands (Human-Friendly Demo)
+
+Try NodeBench's discovery layer directly — no MCP client needed:
+
+```bash
+# Search for tools by intent
+npx nodebench-mcp discover "security audit"
+
+# Check which domains are configured
+npx nodebench-mcp setup
+
+# List all 28 workflow recipes, or show a specific one
+npx nodebench-mcp workflow list
+npx nodebench-mcp workflow security_audit
+
+# Get tool info + graph neighbors (multi-hop BFS)
+npx nodebench-mcp quickref run_recon --depth 2
+
+# Call any tool directly (JSON output, pipeable to jq)
+npx nodebench-mcp call search_all_knowledge --args '{"query": "security", "limit": 3}'
+```
+
+All subcommands respect `--preset` and `--no-embedding` flags. Output is color-formatted on TTY, clean text when piped.
+
 ### Escalation Path
 
 ```
-meta (5 tools) → lite (43 tools) → core (110 tools) → full (163 tools)
-     │                │                    │                    │
-     │                │                    │                    └── Multi-agent, vision, web, files, GAIA solvers
-     │                │                    └── Dev methodology + LLM + platform + bootstrap + session memory + toon + pattern + git_workflow + seo + voice_bridge + critter
-     │                └── Verification + eval + flywheel + recon + security + boilerplate
-     └── discover_tools → findTools → getMethodology only
+default (54 tools) → web_dev/research/data/... (68-106 tools) → full (218 tools)
+     │                        │                                        │
+     │                        │                                        └── All 39 domains
+     │                        └── Default + themed domain tools
+     └── Verification + eval + flywheel + recon + security + boilerplate
 ```
 
 When `discover_tools` returns nothing useful, or a tool says "not configured":
-1. **Escalate toolset**: If started with `--preset meta`, switch to `--preset lite` or `--preset core`
+1. **Escalate preset**: Switch to a themed preset (`web_dev`, `research`, `data`) or `--preset full`
 2. **Resolve providers**: Configure missing API keys (`GEMINI_API_KEY`, `OPENAI_API_KEY`, etc.)
-3. **Bootstrap infra**: Run `scaffold_nodebench_project` or `bootstrap_parallel_agents` if repo lacks infra
-4. **Smoke-test**: Re-run the first workflow chain step to confirm the capability is available
+3. **Run setup check**: `npx nodebench-mcp setup` to see which domains need configuration
+4. **Bootstrap infra**: Run `scaffold_nodebench_project` or `bootstrap_parallel_agents` if repo lacks infra
+5. **Smoke-test**: Re-run the first workflow chain step to confirm the capability is available
 
-### TOOLSET_MAP Domain Keys (31)
+### TOOLSET_MAP Domain Keys (39)
 
 | Domain Key | Source File | Tools |
 |-----------|------------|-------|
@@ -2014,6 +2083,14 @@ When `discover_tools` returns nothing useful, or a tool says "not configured":
 | seo | seoTools.ts | 5 |
 | voice_bridge | voiceBridgeTools.ts | 4 |
 | critter | critterTools.ts | 1 |
+| email | emailTools.ts | 4 |
+| rss | rssTools.ts | 4 |
+| architect | architectTools.ts | 3 |
+| ui_ux_dive | uiUxDiveTools.ts | 11 |
+| mcp_bridge | mcpBridgeTools.ts | 5 |
+| ui_ux_dive_v2 | uiUxDiveToolsV2.ts | 14 |
+| skill_update | skillUpdateTools.ts | 4 |
+| pr_report | prReportTools.ts | 3 |
 
 ### Lightweight Hooks (Auto-Save + Attention Refresh)
 
@@ -2060,7 +2137,11 @@ These parameters were validated via a 6-config ablation grid (see `tools.test.ts
 
 **Cache**: `~/.nodebench/embedding_cache.json` (mcp-local), `~/.convex-mcp-nodebench/embedding_cache.json` (convex-mcp). Invalidated via FNV-1a corpus hash.
 
-**→ Quick Refs:** `embeddingProvider.ts` (provider fallback, cache, cosine KNN), `toolRegistry.ts` (wRRF block, `_setWrrfParamsForTesting`), `progressiveDiscoveryTools.ts` (`discover_tools` handler pre-computes query embedding), `index.ts` (`initEmbeddingIndex` background init)
+**Transitive co-occurrence**: `getCooccurrenceEdges(toolName, { transitive: true })` infers A→C from A→B + B→C edges with 15-edge cap (vs 10 for direct-only). Separate cache key prevents collisions.
+
+**`relatedTools` auto-derivation**: `computeRelatedTools()` uses 5 strategies — same-category siblings, DOMAIN_CLUSTERS neighbors, 2+ tag overlap, 1-tag overlap fallback, same-phase last resort — capped at 7 per tool. Populates all 215 entries at load time.
+
+**→ Quick Refs:** `embeddingProvider.ts` (provider fallback, cache, cosine KNN), `toolRegistry.ts` (wRRF block, `_setWrrfParamsForTesting`, `computeRelatedTools`, `_populateRelatedTools`, `getCooccurrenceEdges` transitive mode), `progressiveDiscoveryTools.ts` (`discover_tools` pagination + expansion handler, `get_tool_quick_ref` BFS traversal handler), `index.ts` (`initEmbeddingIndex` background init, `relatedTools` in embedding corpus text)
 
 ### MCP Annotations (v2.15.0)
 

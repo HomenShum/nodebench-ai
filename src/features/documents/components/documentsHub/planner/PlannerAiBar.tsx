@@ -50,15 +50,18 @@ export function PlannerAiBar({
         </div>
 
         <button
+          type="button"
           onClick={onSend}
           className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] text-sm flex items-center gap-2"
           title="Send"
+          aria-label="Send message to AI assistant"
         >
           <Send className="h-4 w-4" />
           <span className="hidden sm:inline">Ask</span>
         </button>
 
         <button
+          type="button"
           onClick={openChatPanel}
           className="px-3 py-2 text-sm rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
           title="Open AI Chat"
@@ -70,6 +73,7 @@ export function PlannerAiBar({
       <div className="flex flex-wrap gap-2">
         {quickActions.map((qa) => (
           <button
+            type="button"
             key={qa.label}
             onClick={() => onQuickPrompt(qa.text)}
             className="px-2.5 py-1.5 rounded-full text-xs border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"

@@ -134,6 +134,16 @@ export type AgentDigestOutput = {
     title: string;
     explanation: string;
     evidenceLevel: "grounded" | "mixed" | "speculative";
+    evidenceChecklist?: {
+      hasPrimarySource: boolean;
+      hasCorroboration: boolean;
+      hasFalsifiableClaim: boolean;
+      hasQuantitativeData: boolean;
+      hasNamedAttribution: boolean;
+      isReproducible: boolean;
+    };
+    checksPassing?: number;
+    checksTotal?: number;
     measurementApproach: string;
     falsificationCriteria: string;
   }>;

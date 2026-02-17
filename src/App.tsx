@@ -16,6 +16,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { SkipLinks } from "./components/SkipLinks";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons/ViewSkeleton";
+import { useWebMcpProvider } from "./hooks/useWebMcpProvider";
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -62,6 +63,10 @@ function App() {
   const user = useQuery(api.domains.auth.auth.loggedInUser);
   const documents = useQuery(api.domains.documents.documents.getSidebar);
   const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
+
+  // WebMCP provider — expose NodeBench tools to browser agents via navigator.modelContext
+  const [webmcpEnabled] = useState(() => localStorage.getItem("nodebench_webmcp_provider_enabled") === "true");
+  useWebMcpProvider(webmcpEnabled);
   const didEnsureRef = useRef(false);
 
   // Deep link: ?doc=ID auto-opens a shared document
