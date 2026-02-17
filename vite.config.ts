@@ -175,6 +175,8 @@ window.addEventListener('message', async (message) => {
       { find: "shared", replacement: path.resolve(__dirname, "./shared").replace(/\\/g, "/") },
       { find: /^@\//, replacement: `${path.resolve(__dirname, "./src").replace(/\\/g, "/")}/` },
     ],
+    // Prevent duplicate React instances (common cause of "Invalid hook call" in Vite/monorepo setups).
+    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     include: ["react", "react-dom", "rehype-raw", "rehype-sanitize", "rehype-parse", "hast-util-raw"],
