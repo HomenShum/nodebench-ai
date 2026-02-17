@@ -4,7 +4,7 @@ paths:
   - "**/*.tsx"
   - "**/*.html"
   - "**/*.css"
-related_: [reexamine_a11y, reexamine_resilience, reexamine_polish, reexamine_keyboard, reexamine_performance]
+related_: [reexamine_a11y, reexamine_resilience, reexamine_polish, reexamine_keyboard, reexamine_performance, analyst_diagnostic, dogfood_verification, product_design_dogfood]
 ---
 
 # Re-examine for 11/10

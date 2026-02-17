@@ -29,6 +29,7 @@ import {
   GitPullRequest,
   Linkedin,
   Activity,
+  CheckSquare,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 import { SidebarButton } from "./ui";
@@ -70,7 +71,8 @@ interface CleanSidebarProps {
     | 'github-explorer'
     | 'pr-suggestions'
     | 'linkedin-posts'
-    | 'mcp-ledger';
+    | 'mcp-ledger'
+    | 'dogfood';
   onViewChange?: (view:
     | 'documents'
     | 'calendar'
@@ -94,7 +96,8 @@ interface CleanSidebarProps {
     | 'github-explorer'
     | 'pr-suggestions'
     | 'linkedin-posts'
-    | 'mcp-ledger') => void;
+    | 'mcp-ledger'
+    | 'dogfood') => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -104,6 +107,7 @@ const dashboardItems = [
   { icon: DollarSign, label: 'Cost Dashboard', view: 'cost-dashboard' as const, subtitle: 'Spend & Usage' },
   { icon: TrendingUp, label: 'Industry Updates', view: 'industry-updates' as const, subtitle: 'Signals & Trends' },
   { icon: Activity, label: 'Tool Usage', view: 'mcp-ledger' as const, subtitle: 'What tools were used' },
+  { icon: CheckSquare, label: 'Dogfood', view: 'dogfood' as const, subtitle: 'Design review evidence' },
 ];
 
 // Discovery items

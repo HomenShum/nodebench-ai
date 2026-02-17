@@ -1510,6 +1510,62 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
       "For production: implement interrupt handling (user speaks while TTS is playing)",
     ],
   },
+  analyst_diagnostic: {
+    title: "Analyst Diagnostic — Root Cause Over Bandaids",
+    description:
+      "Guide yourself like an analyst diagnosing the root cause, NOT a junior dev slapping on a bandaid. Mandatory for all bug work.",
+    steps: [
+      {
+        step: 1,
+        name: "Reproduce",
+        description: "Confirm the exact failure mode before touching any code.",
+        tools: ["search_all_knowledge"],
+        action: "Check if this root cause is already known. If yes, apply the known fix. If no, proceed to step 2.",
+      },
+      {
+        step: 2,
+        name: "Trace Upstream",
+        description: "Walk from symptom → intermediate state → root cause. Don't stop at the first error you see.",
+        tools: ["run_recon", "log_recon_finding"],
+        action: "Use recon tools to trace the chain. Log each intermediate finding.",
+      },
+      {
+        step: 3,
+        name: "Ask 'Why' 5 Times",
+        description: "Each answer should go one level deeper into the system. If you can't get to 5, you haven't found the root cause yet.",
+        action: "Document each 'why' level. The 5th answer is usually the real fix.",
+      },
+      {
+        step: 4,
+        name: "Fix the Cause",
+        description: "The right fix makes the symptom impossible, not just invisible.",
+        tools: ["resolve_gap"],
+        action: "Implement the fix. It should address the root cause from step 3, not the symptom from step 1.",
+      },
+      {
+        step: 5,
+        name: "Verify No Sideways Shift",
+        description: "Bandaids move bugs sideways. Check adjacent behavior to confirm the fix didn't introduce new issues.",
+        tools: ["log_test_result", "run_closed_loop"],
+        action: "Run tests. Check adjacent functionality. Confirm the bug can't recur.",
+      },
+      {
+        step: 6,
+        name: "Record the Root Cause",
+        description: "Document what you found so the next person doesn't re-discover it.",
+        tools: ["record_learning"],
+        action: "Call record_learning with the root cause, not just the fix.",
+      },
+    ],
+    redFlags: [
+      "Adding try/catch that swallows errors without understanding them",
+      "Adding ?. optional chaining to mask undefined instead of finding why it's undefined",
+      "Adding 'as any' to silence type errors instead of fixing the type mismatch",
+      "Adding timeouts/retries to paper over race conditions",
+      "Deleting a failing test instead of fixing the code it tests",
+      "'It works now' without understanding why it didn't before",
+    ],
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1567,6 +1623,8 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "SEO Audit — technical SEO, content analysis, performance, WordPress security",
           voice_bridge:
             "Voice Bridge — STT/TTS/LLM pipeline design, scaffold generation, latency benchmarking",
+          analyst_diagnostic:
+            "Analyst Diagnostic — root-cause diagnosis over bandaids. Mandatory for all bug work: reproduce, trace upstream, ask 'why' 5 times, fix the cause not the symptom",
         },
       },
       {

@@ -161,6 +161,11 @@ const McpToolLedgerView = lazy(() =>
     default: mod.McpToolLedgerView,
   })),
 );
+const DogfoodReviewView = lazy(() =>
+  import("@/features/dogfood/views/DogfoodReviewView").then((mod) => ({
+    default: mod.DogfoodReviewView,
+  })),
+);
 const SettingsModal = lazy(() => import("./SettingsModal"));
 
 const viewFallback = <ViewSkeleton variant="default" />;
@@ -187,6 +192,7 @@ const VIEW_TITLES: Record<string, string> = {
   'industry-updates': 'Industry News',
   'linkedin-posts': 'LinkedIn Posts',
   'mcp-ledger': 'Tool Usage',
+  dogfood: 'Dogfood',
   documents: 'My Workspace',
   agents: 'Assistants',
   activity: 'Activity',
@@ -764,6 +770,12 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <div className="h-full overflow-auto bg-background">
                   <Suspense fallback={viewFallback}>
                     <McpToolLedgerView />
+                  </Suspense>
+                </div>
+              ) : currentView === 'dogfood' ? (
+                <div className="h-full overflow-auto bg-background">
+                  <Suspense fallback={viewFallback}>
+                    <DogfoodReviewView />
                   </Suspense>
                 </div>
               ) : currentView === 'entity' && entityName ? (

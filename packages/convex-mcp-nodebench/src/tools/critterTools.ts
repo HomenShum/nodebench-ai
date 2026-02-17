@@ -163,6 +163,21 @@ function scoreCritterCheck(input: CritterInput): {
     feedback.push("Good: success criteria defined — this makes the deploy gate concrete.");
   }
 
+  // ── Check 10: Bandaid detection — symptom fixes without root-cause reasoning ──
+  const bandaidPatterns = [
+    "add try.?catch", "wrap in try", "catch the error", "suppress the error",
+    "add optional chaining", "add \\?\\.", "silence the warning",
+    "add as any", "cast to any", "ignore the type",
+    "add a timeout", "increase the timeout", "add a delay",
+    "delete the test", "skip the test", "disable the test",
+    "hide the error", "remove the warning",
+  ];
+  const bandaidRegex = new RegExp(bandaidPatterns.join("|"), "i");
+  if (bandaidRegex.test(taskLower) && !whyLower.includes("root cause") && !whyLower.includes("because") && whyLower.length < 50) {
+    score -= 20;
+    feedback.push("Bandaid alert: this looks like a symptom fix. What's the root cause? Diagnose like an analyst, not a junior dev.");
+  }
+
   score = Math.max(0, Math.min(100, score));
 
   let verdict: "proceed" | "reconsider" | "stop";

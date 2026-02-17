@@ -86,6 +86,19 @@ const METHODOLOGY_CONTENT: Record<string, { title: string; description: string; 
     ],
     tools: ["convex_suggest_indexes", "convex_audit_schema"],
   },
+  analyst_diagnostic: {
+    title: "Analyst Diagnostic — Root Cause Over Bandaids",
+    description: "Guide yourself like an analyst diagnosing the root cause, NOT a junior dev slapping on a bandaid. Mandatory for all bug work.",
+    steps: [
+      "1. REPRODUCE: Confirm the exact failure mode before touching any code",
+      "2. TRACE UPSTREAM: Walk from symptom → intermediate state → root cause. Don't stop at the first error you see",
+      "3. ASK 'WHY' 5 TIMES: Each answer should go one level deeper into the system",
+      "4. FIX THE CAUSE: The right fix makes the symptom impossible, not just invisible",
+      "5. VERIFY NO SIDEWAYS SHIFT: Bandaids move bugs, they don't fix them — check adjacent behavior",
+      "6. RECORD: Use convex_record_gotcha with the root cause so the next person doesn't re-discover it",
+    ],
+    tools: ["convex_search_gotchas", "convex_record_gotcha", "convex_critter_check"],
+  },
 };
 
 // ── Tool Definitions ────────────────────────────────────────────────
@@ -107,6 +120,7 @@ export const methodologyTools: McpTool[] = [
             "convex_deploy_verification",
             "convex_knowledge_management",
             "convex_index_optimization",
+            "analyst_diagnostic",
           ],
           description: "Which methodology to explain",
         },

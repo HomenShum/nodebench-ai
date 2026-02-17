@@ -25,6 +25,7 @@
     "test:e2e:report": "playwright show-report",
     "test:e2e:check": "tsx scripts/check-test-prerequisites.ts",
     "test:dcf": "playwright test tests/e2e/dcf-spreadsheet.spec.ts --headed",
+    "dogfood:publish": "node scripts/ui/publishDogfoodGallery.mjs",
     "build:analyze": "cross-env ANALYZE=true npm run build",
     "perf:lighthouse": "lighthouse http://localhost:5173/#analytics/hitl --output=json --output-path=lighthouse-report.json --chrome-flags=\"--headless\" --only-categories=performance,accessibility && node analyze-lighthouse.cjs",
     "perf:bundle": "npm run build:analyze",

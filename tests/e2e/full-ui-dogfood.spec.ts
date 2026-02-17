@@ -32,6 +32,7 @@ const ROUTES = [
   { path: "/pr-suggestions", name: "pr-suggestions" },
   { path: "/linkedin", name: "linkedin-posts" },
   { path: "/mcp/ledger", name: "mcp-ledger" },
+  { path: "/dogfood", name: "dogfood" },
   { path: "/public", name: "public-docs" },
 ];
 

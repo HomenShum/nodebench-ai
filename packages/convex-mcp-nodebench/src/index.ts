@@ -404,7 +404,9 @@ After running all audits, summarize:
 - Total issues by severity (critical/warning/info)
 - Top 5 most impactful issues to fix first
 - Quality gate score and grade
-- Trend direction if previous audits exist (use convex_audit_diff)`,
+- Trend direction if previous audits exist (use convex_audit_diff)
+
+IMPORTANT — Analyst diagnostic: For every issue found, trace the ROOT CAUSE — don't just list what's wrong, explain WHY it happened. Ask "why" 5 times. Record root causes with convex_record_gotcha so they don't recur.`,
           },
         },
       ],
@@ -428,6 +430,8 @@ After running all audits, summarize:
 5. convex_snapshot_schema — Capture current schema state
 6. convex_schema_migration_plan — Compare against previous snapshot for breaking changes
 7. convex_quality_gate — Final quality check with thresholds
+
+For each blocker: diagnose the ROOT CAUSE, not just the symptom. Explain WHY the issue exists and how to prevent it from recurring.
 
 Report: DEPLOY or DO NOT DEPLOY with specific blockers to fix.`,
           },
@@ -453,7 +457,9 @@ Report: DEPLOY or DO NOT DEPLOY with specific blockers to fix.`,
 5. convex_audit_pagination — Unbounded numItems (DoS risk)
 6. convex_audit_transaction_safety — Race condition risks
 
-Focus on: unauthorized data access, unvalidated inputs, missing error boundaries, and potential data corruption vectors.`,
+Focus on: unauthorized data access, unvalidated inputs, missing error boundaries, and potential data corruption vectors.
+
+Analyst diagnostic: For each security finding, trace upstream to the ROOT CAUSE. Don't just flag the symptom — explain what system condition allowed the vulnerability to exist. Record findings with convex_record_gotcha.`,
           },
         },
       ],

@@ -119,6 +119,18 @@ export function CommandPalette({
                 }
             },
             {
+                id: 'nav-dogfood',
+                label: 'Go to Dogfood',
+                description: 'Design review evidence gallery',
+                icon: <CheckSquare className="w-4 h-4" />,
+                keywords: ['dogfood', 'design', 'review', 'screenshots', 'qa'],
+                section: 'navigation',
+                action: () => {
+                    onNavigate?.('dogfood');
+                    onClose();
+                }
+            },
+            {
                 id: 'nav-analytics',
                 label: 'Go to Analytics',
                 description: 'View your productivity analytics',

@@ -11,6 +11,7 @@ export type MainView =
     | 'public'
     | 'agents'
     | 'research'
+    | 'dogfood'
     | 'showcase'
     | 'footnotes'
     | 'signals'
@@ -87,6 +88,7 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
         if (pathname.startsWith('/pr-suggestions') || pathname.startsWith('/prs')) return { view: 'pr-suggestions', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/linkedin')) return { view: 'linkedin-posts', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/mcp/ledger') || pathname.startsWith('/mcp-ledger')) return { view: 'mcp-ledger', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+        if (pathname.startsWith('/dogfood')) return { view: 'dogfood', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
 
         if (pathname.startsWith('/entity/') || pathname.startsWith('/entity%2f')) {
             const match = (rawPathname || '').match(/^\/entity[\/](.+)$/i);

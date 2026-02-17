@@ -71,3 +71,4 @@ public/evals/*.json
 /tests/screenshots/
 .vercel
 .env*.local
+/public/dogfood/

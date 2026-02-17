@@ -24,8 +24,10 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 | `reexamine_performance` | Progressive disclosure, smart refresh, lazy loading | resilience, polish, process |
 | `completion_traceability` | Cite original request on task completion | process, analyst_diagnostic |
 | `forecasting_os` | Forecasting architecture, Brier scoring, TRACE wrapping, LinkedIn Δ badges | process, analyst_diagnostic, resilience, traceability |
-| `analyst_diagnostic` | Root-cause diagnosis, not bandaids | process, resilience, traceability |
+| `dogfood_verification` | UI dogfood protocol + screenshot evidence | analyst_diagnostic, process, completion_traceability, product_design_dogfood |
+| `analyst_diagnostic` | Root-cause diagnosis, not bandaids | dogfood_verification, process, resilience, traceability |
 | `reexamine_design_reduction` | Jony Ive principles: earned complexity, kill jargon | a11y, polish, process, keyboard |
+| `product_design_dogfood` | Jony Ive review + dogfood evidence visible in-app (`/dogfood`) | analyst_diagnostic, dogfood_verification, design_reduction |
 
 **Two-hop discovery**: Follow a rule's `related_` to reach its neighbors, then follow *their* `related_` for second-degree connections. Example: `process` → `a11y` → `keyboard`.
 
@@ -56,7 +58,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 - Privacy mode: camera opt-in toggle, sanitizes entities when bystanders detected
 
 ## Same rules mirrored to
-- `.cursor/rules/*.mdc` — Cursor AI (reexamine_*, forecasting_os, analyst_diagnostic, completion_traceability, design_reduction)
+- `.cursor/rules/*.mdc` — Cursor AI (reexamine_*, forecasting_os, analyst_diagnostic, dogfood_verification, completion_traceability, design_reduction)
 - `.windsurf/rules/*.md` — Windsurf AI (same set)
 
 ## LinkedIn post pipeline
