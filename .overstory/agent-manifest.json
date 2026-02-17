@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "agents": {
+    "scout": {
+      "file": "scout.md",
+      "model": "haiku",
+      "tools": ["Read", "Glob", "Grep", "Bash"],
+      "capabilities": ["explore", "research"],
+      "canSpawn": false,
+      "constraints": ["read-only"]
+    },
+    "builder": {
+      "file": "builder.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+      "capabilities": ["implement", "refactor", "fix"],
+      "canSpawn": false,
+      "constraints": []
+    },
+    "reviewer": {
+      "file": "reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Glob", "Grep", "Bash"],
+      "capabilities": ["review", "validate"],
+      "canSpawn": false,
+      "constraints": ["read-only"]
+    },
+    "lead": {
+      "file": "lead.md",
+      "model": "opus",
+      "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash", "Task"],
+      "capabilities": ["coordinate", "implement", "review"],
+      "canSpawn": true,
+      "constraints": []
+    },
+    "merger": {
+      "file": "merger.md",
+      "model": "sonnet",
+      "tools": ["Read", "Write", "Edit", "Glob", "Grep", "Bash"],
+      "capabilities": ["merge", "resolve-conflicts"],
+      "canSpawn": false,
+      "constraints": []
+    },
+    "coordinator": {
+      "file": "coordinator.md",
+      "model": "opus",
+      "tools": ["Read", "Glob", "Grep", "Bash"],
+      "capabilities": ["coordinate", "dispatch", "escalate"],
+      "canSpawn": true,
+      "constraints": ["read-only", "no-worktree"]
+    },
+    "qa-scout": {
+      "file": "qa-scout.md",
+      "model": "sonnet",
+      "tools": ["Bash", "Read", "Glob", "Grep"],
+      "capabilities": ["qa-scout", "visual-qa"],
+      "canSpawn": false,
+      "constraints": ["read-only", "no-source-modification"],
+      "maxToolCalls": 30,
+      "description": "Navigates routes and runs SSIM stability analysis (run_visual_qa_suite)"
+    },
+    "qa-reviewer": {
+      "file": "qa-reviewer.md",
+      "model": "sonnet",
+      "tools": ["Read", "Glob", "Grep", "Bash"],
+      "capabilities": ["qa-reviewer", "triage"],
+      "canSpawn": false,
+      "constraints": ["read-only"],
+      "maxToolCalls": 40,
+      "description": "Triggers Gemini QA, cross-references with SSIM data, triages issues p0-p3"
+    },
+    "qa-builder": {
+      "file": "qa-builder.md",
+      "model": "opus",
+      "tools": ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+      "capabilities": ["qa-builder", "implement"],
+      "canSpawn": false,
+      "constraints": ["file-scoped"],
+      "maxToolCalls": 50,
+      "description": "Fixes p0/p1 issues within reviewer-identified file scope"
+    },
+    "qa-capture": {
+      "file": "qa-capture.md",
+      "model": "haiku",
+      "tools": ["Bash"],
+      "capabilities": ["qa-capture", "artifact-generation"],
+      "canSpawn": false,
+      "constraints": ["artifact-only"],
+      "maxToolCalls": 20,
+      "description": "Runs full dogfood capture pipeline (build, record, frames, scribe, publish)"
+    }
+  },
+  "capabilityIndex": {
+    "explore": ["scout"],
+    "research": ["scout"],
+    "implement": ["builder", "lead", "qa-builder"],
+    "refactor": ["builder"],
+    "fix": ["builder"],
+    "review": ["reviewer", "lead"],
+    "validate": ["reviewer"],
+    "coordinate": ["lead", "coordinator"],
+    "merge": ["merger"],
+    "resolve-conflicts": ["merger"],
+    "dispatch": ["coordinator"],
+    "escalate": ["coordinator"],
+    "qa-scout": ["qa-scout"],
+    "qa-reviewer": ["qa-reviewer"],
+    "qa-builder": ["qa-builder"],
+    "qa-capture": ["qa-capture"],
+    "visual-qa": ["qa-scout"],
+    "triage": ["qa-reviewer"],
+    "artifact-generation": ["qa-capture"]
+  },
+  "mailProtocol": {
+    "qaRoutes": [
+      { "from": "qa-capture", "to": "@all", "type": "result", "subject": "capture-complete" },
+      { "from": "qa-scout", "to": "qa-reviewer", "type": "result", "subject": "stability-batch-*" },
+      { "from": "qa-reviewer", "to": "coordinator", "type": "result", "subject": "qa-triage-complete" },
+      { "from": "coordinator", "to": "qa-builder", "type": "dispatch", "subject": "fix-assignment" },
+      { "from": "qa-builder", "to": "coordinator", "type": "worker_done", "subject": "fixes-ready" },
+      { "from": "qa-reviewer", "to": "coordinator", "type": "escalation", "subject": "p0-blocker" }
+    ]
+  },
+  "gatePolicy": {
+    "mode": "strict",
+    "minStabilityGrade": "B",
+    "maxUnresolvedP0": 0,
+    "maxUnresolvedP1": 0,
+    "autoFixMaxIterations": 3,
+    "screenshotFreshnessHours": 2
+  }
+}

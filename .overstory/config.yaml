@@ -1,0 +1,35 @@
+# Overstory configuration
+# See: https://github.com/overstory/overstory
+
+project:
+  name: nodebench-ai
+  root: /mnt/d/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai
+  canonicalBranch: main
+agents:
+  manifestPath: .overstory/agent-manifest.json
+  baseDir: .overstory/agent-defs
+  maxConcurrent: 5
+  staggerDelayMs: 3000
+  maxDepth: 1
+worktrees:
+  baseDir: .overstory/worktrees
+beads:
+  enabled: false
+mulch:
+  enabled: false
+  domains: []
+  primeFormat: markdown
+merge:
+  aiResolveEnabled: true
+  reimagineEnabled: false
+watchdog:
+  tier0Enabled: true
+  tier0IntervalMs: 30000
+  tier1Enabled: false
+  tier2Enabled: false
+  staleThresholdMs: 300000
+  zombieThresholdMs: 600000
+  nudgeIntervalMs: 60000
+logging:
+  verbose: false
+  redactSecrets: true

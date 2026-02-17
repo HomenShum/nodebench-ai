@@ -72,3 +72,19 @@ public/dogfood/scribe/userdata/
 /tests/screenshots/
 .vercel
 .env*.local
+
+# Overstory multi-agent orchestration
+.overstory/engine/
+.overstory/worktrees/
+.overstory/overstory.db
+.overstory/overstory.db-wal
+.overstory/overstory.db-shm
+.overstory/mail.db
+.overstory/mail.db-wal
+.overstory/mail.db-shm
+.overstory/metrics.db
+.overstory/metrics.db-wal
+.overstory/metrics.db-shm
+.overstory/logs/
+.overstory/checkpoints/
+.overstory/agents/

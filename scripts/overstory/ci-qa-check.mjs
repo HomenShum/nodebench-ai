@@ -1,0 +1,123 @@
+#!/usr/bin/env node
+/**
+ * ci-qa-check.mjs — CI-compatible dogfood QA gate check
+ *
+ * Reads dogfood artifacts from public/dogfood/ and validates:
+ * 1. All required manifests exist and are fresh
+ * 2. Minimum screenshot coverage (>= 30)
+ * 3. Walkthrough has enough chapters (>= 30)
+ * 4. Frames extracted
+ * 5. Scribe steps captured
+ *
+ * Exit code 0 = pass, 1 = fail
+ * Designed for GitHub Actions — no SQLite deps, just reads JSON files.
+ */
+
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
+
+const REPO_ROOT = process.cwd();
+const DOGFOOD_DIR = join(REPO_ROOT, "public", "dogfood");
+
+const CHECKS = [];
+let passed = true;
+
+function check(name, condition, detail) {
+  const ok = condition;
+  CHECKS.push({ name, ok, detail });
+  if (!ok) passed = false;
+  console.log(`  ${ok ? "OK" : "FAIL"}: ${name}${detail ? ` — ${detail}` : ""}`);
+}
+
+function readJSON(filename) {
+  const filepath = join(DOGFOOD_DIR, filename);
+  if (!existsSync(filepath)) return null;
+  try {
+    return JSON.parse(readFileSync(filepath, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function hoursAgo(isoDate) {
+  if (!isoDate) return Infinity;
+  const captured = new Date(isoDate);
+  const now = new Date();
+  return (now - captured) / (1000 * 60 * 60);
+}
+
+console.log("=== Dogfood QA Gate (CI) ===\n");
+
+// ── Manifest ──
+console.log("[1/4] Screenshots (manifest.json)");
+const manifest = readJSON("manifest.json");
+check("manifest exists", !!manifest);
+if (manifest) {
+  const items = manifest.items || [];
+  check("screenshot count >= 30", items.length >= 30, `${items.length} screenshots`);
+  const age = hoursAgo(manifest.capturedAtIso);
+  check("manifest fresh (< 24h)", age < 24, `${Math.floor(age)}h old`);
+  const routes = items.filter((i) => i.kind === "route").length;
+  const interactions = items.filter((i) => i.kind === "interaction").length;
+  const settings = items.filter((i) => i.kind === "settings").length;
+  check("has route screenshots", routes >= 20, `${routes} routes`);
+  check("has interaction screenshots", interactions >= 1, `${interactions} interactions`);
+  check("has settings screenshots", settings >= 1, `${settings} settings`);
+}
+console.log();
+
+// ── Walkthrough ──
+console.log("[2/4] Walkthrough (walkthrough.json)");
+const walkthrough = readJSON("walkthrough.json");
+check("walkthrough exists", !!walkthrough);
+if (walkthrough) {
+  const chapters = walkthrough.chapters || [];
+  check("chapter count >= 30", chapters.length >= 30, `${chapters.length} chapters`);
+  const age = hoursAgo(walkthrough.capturedAt || walkthrough.capturedAtIso);
+  check("walkthrough fresh (< 24h)", age < 24, `${Math.floor(age)}h old`);
+  const totalSec = chapters.length > 0 ? chapters[chapters.length - 1].startSec : 0;
+  check("video duration >= 30s", totalSec >= 30, `${totalSec}s`);
+}
+console.log();
+
+// ── Frames ──
+console.log("[3/4] Frames (frames.json)");
+const frames = readJSON("frames.json");
+check("frames exists", !!frames);
+if (frames) {
+  const items = frames.items || frames.frames || [];
+  check("frame count >= 20", items.length >= 20, `${items.length} frames`);
+}
+console.log();
+
+// ── Scribe ──
+console.log("[4/4] Scribe (scribe.json)");
+const scribe = readJSON("scribe.json");
+check("scribe exists", !!scribe);
+if (scribe) {
+  const steps = scribe.steps || [];
+  check("scribe steps >= 20", steps.length >= 20, `${steps.length} steps`);
+  const age = hoursAgo(scribe.capturedAt || scribe.capturedAtIso);
+  check("scribe fresh (< 24h)", age < 24, `${Math.floor(age)}h old`);
+}
+console.log();
+
+// ── Summary ──
+const passCount = CHECKS.filter((c) => c.ok).length;
+const failCount = CHECKS.filter((c) => !c.ok).length;
+
+console.log("=== Summary ===");
+console.log(`  Passed: ${passCount}/${CHECKS.length}`);
+console.log(`  Failed: ${failCount}/${CHECKS.length}`);
+console.log();
+
+if (passed) {
+  console.log("GATE: PASSED");
+  process.exit(0);
+} else {
+  console.log("GATE: FAILED");
+  CHECKS.filter((c) => !c.ok).forEach((c) => {
+    console.log(`  - ${c.name}${c.detail ? `: ${c.detail}` : ""}`);
+  });
+  process.exit(1);
+}

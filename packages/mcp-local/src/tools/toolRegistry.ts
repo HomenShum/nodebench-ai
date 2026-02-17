@@ -2142,6 +2142,18 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "research",
   },
+  {
+    name: "ingest_dive_screenshots",
+    category: "ui_ux_dive",
+    tags: ["ui", "screenshot", "ingest", "import", "bulk", "disk", "gallery", "dive", "png", "jpg"],
+    quickRef: {
+      nextAction: "Screenshots ingested into dive session. View them in the dashboard or use dive_screenshot to capture new ones.",
+      nextTools: ["dive_screenshot", "tag_ui_bug", "end_component_flow", "get_dive_tree"],
+      methodology: "agentic_vision",
+      tip: "Scans a directory for PNG/JPG files and bulk-imports them into a dive session's screenshot gallery. Use after external Playwright captures.",
+    },
+    phase: "test",
+  },
 
   // ═══════════════════════════════════════════
   // UI/UX DIVE V2 — Deep interaction testing,
@@ -2475,6 +2487,58 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "implement",
   },
+
+  // ═══════════════════════════════════════════
+  // QA ORCHESTRATION — Overstory multi-agent QA
+  // ═══════════════════════════════════════════
+  {
+    name: "overstory_fleet_status",
+    category: "qa_orchestration",
+    tags: ["overstory", "agent", "fleet", "status", "health", "multi-agent", "orchestration", "qa", "dogfood", "worktree"],
+    quickRef: {
+      nextAction: "Review agent states. If agents are idle, run dogfood:overstory to start a QA session.",
+      nextTools: ["overstory_qa_summary", "overstory_mail_log", "run_visual_qa_suite"],
+      methodology: "ai_flywheel",
+      tip: "Reads .overstory/agent-manifest.json and overstory.db. Shows configured agents, capabilities, gate policy, and live agent health.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "overstory_qa_summary",
+    category: "qa_orchestration",
+    tags: ["overstory", "qa", "gate", "summary", "stability", "grade", "ssim", "triage", "p0", "p1", "dogfood"],
+    quickRef: {
+      nextAction: "If gate fails, check failing routes and fix p0/p1 issues. If gate passes, proceed to merge.",
+      nextTools: ["overstory_mail_log", "overstory_fleet_status", "run_visual_qa_suite", "burst_capture"],
+      methodology: "ai_flywheel",
+      tip: "Aggregates SSIM stability grades from visual_qa_runs and Gemini QA triage from Overstory mail. Returns gate pass/fail verdict.",
+    },
+    phase: "verify",
+  },
+  {
+    name: "overstory_mail_log",
+    category: "qa_orchestration",
+    tags: ["overstory", "mail", "log", "message", "route", "triage", "dispatch", "agent", "coordination"],
+    quickRef: {
+      nextAction: "Review messages to understand QA session state. Filter by type or agent for focused view.",
+      nextTools: ["overstory_qa_summary", "overstory_fleet_status", "overstory_merge_queue"],
+      methodology: "ai_flywheel",
+      tip: "Supports type_filter (result/dispatch/worker_done/escalation) and agent_filter. Shows structured mail payloads from the QA agent fleet.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "overstory_merge_queue",
+    category: "qa_orchestration",
+    tags: ["overstory", "merge", "queue", "branch", "conflict", "gate", "builder", "qa", "resolution"],
+    quickRef: {
+      nextAction: "If branches are blocked, check QA gate failures. If pending, trigger merge with overstory merge --all.",
+      nextTools: ["overstory_qa_summary", "overstory_mail_log", "overstory_fleet_status"],
+      methodology: "ai_flywheel",
+      tip: "Shows FIFO merge queue with conflict resolution tiers. Use include_completed:true to see merge history.",
+    },
+    phase: "utility",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -2542,6 +2606,7 @@ const CATEGORY_COMPLEXITY: Record<string, "low" | "medium" | "high"> = {
   email: "medium",
   rss: "low",
   architect: "low",
+  qa_orchestration: "low",
 };
 
 /** Per-tool complexity overrides (when category default is wrong) */
