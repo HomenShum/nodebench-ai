@@ -1,6 +1,6 @@
 # NodeBench Dogfood Walkthrough
 
-Captured: 2026-02-17T08:11:11.997Z
+Captured: 2026-02-17T08:36:18.362Z
 
 This is an auto-generated how-to (Scribe-style) artifact: screenshots + editable step text.
 
@@ -44,77 +44,142 @@ Navigate to /documents to review the Workspace: Documents screen.
 
 ![8. Workspace: Documents](/dogfood/scribe/08-workspace-documents.png)
 
-## 9. Workspace: Calendar
+## 9. Workspace: Spreadsheets
+Navigate to /spreadsheets to review the Workspace: Spreadsheets screen.
+
+![9. Workspace: Spreadsheets](/dogfood/scribe/09-workspace-spreadsheets.png)
+
+## 10. Workspace: Calendar
 Navigate to /calendar to review the Workspace: Calendar screen.
 
-![9. Workspace: Calendar](/dogfood/scribe/09-workspace-calendar.png)
+![10. Workspace: Calendar](/dogfood/scribe/10-workspace-calendar.png)
 
-## 10. Assistants
+## 11. Assistants
 Navigate to /agents to review the Assistants screen.
 
-![10. Assistants](/dogfood/scribe/10-assistants.png)
+![11. Assistants](/dogfood/scribe/11-assistants.png)
 
-## 11. Benchmarks
+## 12. Roadmap
+Navigate to /roadmap to review the Roadmap screen.
+
+![12. Roadmap](/dogfood/scribe/12-roadmap.png)
+
+## 13. Timeline
+Navigate to /timeline to review the Timeline screen.
+
+![13. Timeline](/dogfood/scribe/13-timeline.png)
+
+## 14. Showcase
+Navigate to /showcase to review the Showcase screen.
+
+![14. Showcase](/dogfood/scribe/14-showcase.png)
+
+## 15. Sources
+Navigate to /footnotes to review the Sources screen.
+
+![15. Sources](/dogfood/scribe/15-sources.png)
+
+## 16. Signals Log
+Navigate to /signals to review the Signals Log screen.
+
+![16. Signals Log](/dogfood/scribe/16-signals-log.png)
+
+## 17. Benchmarks
 Navigate to /benchmarks to review the Benchmarks screen.
 
-![11. Benchmarks](/dogfood/scribe/11-benchmarks.png)
+![17. Benchmarks](/dogfood/scribe/17-benchmarks.png)
 
-## 12. Funding Brief
+## 18. Funding Brief
 Navigate to /funding to review the Funding Brief screen.
 
-![12. Funding Brief](/dogfood/scribe/12-funding-brief.png)
+![18. Funding Brief](/dogfood/scribe/18-funding-brief.png)
 
-## 13. Review Queue
+## 19. Activity
+Navigate to /activity to review the Activity screen.
+
+![19. Activity](/dogfood/scribe/19-activity.png)
+
+## 20. Review Queue
 Navigate to /analytics/hitl to review the Review Queue screen.
 
-![13. Review Queue](/dogfood/scribe/13-review-queue.png)
+![20. Review Queue](/dogfood/scribe/20-review-queue.png)
 
-## 14. Usage Stats
+## 21. Usage Stats
 Navigate to /analytics/components to review the Usage Stats screen.
 
-![14. Usage Stats](/dogfood/scribe/14-usage-stats.png)
+![21. Usage Stats](/dogfood/scribe/21-usage-stats.png)
 
-## 15. Usage & Costs
+## 22. Feedback
+Navigate to /analytics/recommendations to review the Feedback screen.
+
+![22. Feedback](/dogfood/scribe/22-feedback.png)
+
+## 23. Usage & Costs
 Navigate to /cost to review the Usage & Costs screen.
 
-![15. Usage & Costs](/dogfood/scribe/15-usage-costs.png)
+![23. Usage & Costs](/dogfood/scribe/23-usage-costs.png)
 
-## 16. Industry News
+## 24. Industry News
 Navigate to /industry to review the Industry News screen.
 
-![16. Industry News](/dogfood/scribe/16-industry-news.png)
+![24. Industry News](/dogfood/scribe/24-industry-news.png)
 
-## 17. For You
+## 25. For You
 Navigate to /for-you to review the For You screen.
 
-![17. For You](/dogfood/scribe/17-for-you.png)
+![25. For You](/dogfood/scribe/25-for-you.png)
 
-## 18. LinkedIn Archive
+## 26. Recommendations
+Navigate to /recommendations to review the Recommendations screen.
+
+![26. Recommendations](/dogfood/scribe/26-recommendations.png)
+
+## 27. Agent Templates
+Navigate to /marketplace to review the Agent Templates screen.
+
+![27. Agent Templates](/dogfood/scribe/27-agent-templates.png)
+
+## 28. GitHub Explorer
+Navigate to /github to review the GitHub Explorer screen.
+
+![28. GitHub Explorer](/dogfood/scribe/28-github-explorer.png)
+
+## 29. PR Suggestions
+Navigate to /pr-suggestions to review the PR Suggestions screen.
+
+![29. PR Suggestions](/dogfood/scribe/29-pr-suggestions.png)
+
+## 30. LinkedIn Archive
 Navigate to /linkedin to review the LinkedIn Archive screen.
 
-![18. LinkedIn Archive](/dogfood/scribe/18-linkedin-archive.png)
+![30. LinkedIn Archive](/dogfood/scribe/30-linkedin-archive.png)
 
-## 19. Tool Usage Ledger
+## 31. Tool Usage Ledger
 Navigate to /mcp/ledger to review the Tool Usage Ledger screen.
 
-![19. Tool Usage Ledger](/dogfood/scribe/19-tool-usage-ledger.png)
+![31. Tool Usage Ledger](/dogfood/scribe/31-tool-usage-ledger.png)
 
-## 20. Dogfood Gallery
+## 32. Dogfood Gallery
 Navigate to /dogfood to review the Dogfood Gallery screen.
 
-![20. Dogfood Gallery](/dogfood/scribe/20-dogfood-gallery.png)
+![32. Dogfood Gallery](/dogfood/scribe/32-dogfood-gallery.png)
 
-## 21. Interaction: Command Palette
+## 33. Public Docs
+Navigate to /public to review the Public Docs screen.
+
+![33. Public Docs](/dogfood/scribe/33-public-docs.png)
+
+## 34. Interaction: Command Palette
 Open the command palette (Cmd/Ctrl+K) and confirm search + navigation are responsive.
 
-![21. Interaction: Command Palette](/dogfood/scribe/21-interaction-command-palette.png)
+![34. Interaction: Command Palette](/dogfood/scribe/34-interaction-command-palette.png)
 
-## 22. Interaction: Settings
+## 35. Interaction: Settings
 Open Settings and click through tabs to confirm layout, copy, and controls are coherent.
 
-![22. Interaction: Settings](/dogfood/scribe/22-interaction-settings.png)
+![35. Interaction: Settings](/dogfood/scribe/35-interaction-settings.png)
 
-## 23. Interaction: Assistant Panel
+## 36. Interaction: Assistant Panel
 Open the Assistant panel to verify it loads and the chat surface is usable.
 
-![23. Interaction: Assistant Panel](/dogfood/scribe/23-interaction-assistant-panel.png)
+![36. Interaction: Assistant Panel](/dogfood/scribe/36-interaction-assistant-panel.png)
