@@ -1,0 +1,211 @@
+{
+  "capturedAtIso": "2026-02-17T04:06:13.941Z",
+  "basePath": "/dogfood/screenshots",
+  "items": [
+    {
+      "file": "activity.png",
+      "kind": "route",
+      "label": "Activity"
+    },
+    {
+      "file": "agent-marketplace.png",
+      "kind": "route",
+      "label": "Agent Marketplace"
+    },
+    {
+      "file": "agents.png",
+      "kind": "route",
+      "label": "Agents"
+    },
+    {
+      "file": "analytics-components.png",
+      "kind": "route",
+      "label": "Analytics Components"
+    },
+    {
+      "file": "analytics-hitl.png",
+      "kind": "route",
+      "label": "Analytics Hitl"
+    },
+    {
+      "file": "analytics-recommendations.png",
+      "kind": "route",
+      "label": "Analytics Recommendations"
+    },
+    {
+      "file": "benchmarks.png",
+      "kind": "route",
+      "label": "Benchmarks"
+    },
+    {
+      "file": "calendar.png",
+      "kind": "route",
+      "label": "Calendar"
+    },
+    {
+      "file": "cost-dashboard.png",
+      "kind": "route",
+      "label": "Cost Dashboard"
+    },
+    {
+      "file": "document-recommendations.png",
+      "kind": "route",
+      "label": "Document Recommendations"
+    },
+    {
+      "file": "documents.png",
+      "kind": "route",
+      "label": "Documents"
+    },
+    {
+      "file": "dogfood.png",
+      "kind": "route",
+      "label": "Dogfood"
+    },
+    {
+      "file": "footnotes.png",
+      "kind": "route",
+      "label": "Footnotes"
+    },
+    {
+      "file": "for-you-feed.png",
+      "kind": "route",
+      "label": "For You Feed"
+    },
+    {
+      "file": "funding.png",
+      "kind": "route",
+      "label": "Funding"
+    },
+    {
+      "file": "github-explorer.png",
+      "kind": "route",
+      "label": "Github Explorer"
+    },
+    {
+      "file": "home.png",
+      "kind": "route",
+      "label": "Home"
+    },
+    {
+      "file": "industry-updates.png",
+      "kind": "route",
+      "label": "Industry Updates"
+    },
+    {
+      "file": "linkedin-posts.png",
+      "kind": "route",
+      "label": "Linkedin Posts"
+    },
+    {
+      "file": "mcp-ledger.png",
+      "kind": "route",
+      "label": "Mcp Ledger"
+    },
+    {
+      "file": "pr-suggestions.png",
+      "kind": "route",
+      "label": "Pr Suggestions"
+    },
+    {
+      "file": "public-docs.png",
+      "kind": "route",
+      "label": "Public Docs"
+    },
+    {
+      "file": "research-briefing.png",
+      "kind": "route",
+      "label": "Research Briefing"
+    },
+    {
+      "file": "research-changelog.png",
+      "kind": "route",
+      "label": "Research Changelog"
+    },
+    {
+      "file": "research-deals.png",
+      "kind": "route",
+      "label": "Research Deals"
+    },
+    {
+      "file": "research-hub.png",
+      "kind": "route",
+      "label": "Research Hub"
+    },
+    {
+      "file": "research-overview.png",
+      "kind": "route",
+      "label": "Research Overview"
+    },
+    {
+      "file": "research-signals.png",
+      "kind": "route",
+      "label": "Research Signals"
+    },
+    {
+      "file": "roadmap.png",
+      "kind": "route",
+      "label": "Roadmap"
+    },
+    {
+      "file": "showcase.png",
+      "kind": "route",
+      "label": "Showcase"
+    },
+    {
+      "file": "signals.png",
+      "kind": "route",
+      "label": "Signals"
+    },
+    {
+      "file": "spreadsheets.png",
+      "kind": "route",
+      "label": "Spreadsheets"
+    },
+    {
+      "file": "timeline.png",
+      "kind": "route",
+      "label": "Timeline"
+    },
+    {
+      "file": "assistant-panel.png",
+      "kind": "interaction",
+      "label": "Assistant Panel"
+    },
+    {
+      "file": "command-palette.png",
+      "kind": "interaction",
+      "label": "Command Palette"
+    },
+    {
+      "file": "settings-account.png",
+      "kind": "settings",
+      "label": "Account.png"
+    },
+    {
+      "file": "settings-billing.png",
+      "kind": "settings",
+      "label": "Billing.png"
+    },
+    {
+      "file": "settings-integrations.png",
+      "kind": "settings",
+      "label": "Integrations.png"
+    },
+    {
+      "file": "settings-preferences.png",
+      "kind": "settings",
+      "label": "Preferences.png"
+    },
+    {
+      "file": "settings-profile.png",
+      "kind": "settings",
+      "label": "Profile.png"
+    },
+    {
+      "file": "settings-usage.png",
+      "kind": "settings",
+      "label": "Usage.png"
+    }
+  ]
+}
