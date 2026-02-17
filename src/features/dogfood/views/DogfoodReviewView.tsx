@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAction, useQuery } from "convex/react";
+import { useAction, useConvex, useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 
 type DogfoodManifestItem = {
@@ -112,6 +112,14 @@ async function copyToClipboard(text: string) {
   } catch {
     return false;
   }
+}
+
+function slugifyForFile(input: string) {
+  return String(input)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
 }
 
 // ── Overstory Status Panel ────────────────────────────────────────────────────
@@ -347,11 +355,36 @@ export function DogfoodReviewView() {
   const [copied, setCopied] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  const convex = useConvex();
+  const generateUploadUrl = useMutation(api.domains.documents.files.generateUploadUrl);
+
   const qaRuns = useQuery(api.domains.dogfood.videoQaQueries.listMyDogfoodQaRuns, { limit: 6 }) as
     | DogfoodQaRun[]
     | undefined;
   const runVideoQa = useAction(api.domains.dogfood.videoQa.runDogfoodVideoQa);
   const runScreenshotQa = useAction(api.domains.dogfood.screenshotQa.runDogfoodScreenshotQa);
+
+  const uploadUrlToConvexStorage = async (inputUrl: string, fileName: string, fallbackMime: string) => {
+    const url = resolveAbsoluteUrl(inputUrl) ?? inputUrl;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to read artifact: HTTP ${res.status}`);
+    const blob = await res.blob();
+    const mimeType = blob.type || fallbackMime;
+    const file = new File([blob], fileName, { type: mimeType });
+
+    const uploadUrl = await generateUploadUrl();
+    const uploadRes = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!uploadRes.ok) throw new Error(`Upload failed: HTTP ${uploadRes.status}`);
+    const { storageId } = (await uploadRes.json()) as { storageId: string };
+
+    const publicUrl = await convex.query(api.domains.documents.files.getUrl, { storageId });
+    if (!publicUrl) throw new Error("Upload succeeded but public URL was not available");
+    return publicUrl;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -787,8 +820,13 @@ export function DogfoodReviewView() {
                   setQaRunning(true);
                   setQaError(null);
                   try {
+                    const uploadedVideoUrl = await uploadUrlToConvexStorage(
+                      resolvedVideoUrl,
+                      `dogfood-walkthrough-${Date.now()}.mp4`,
+                      walkthrough?.mime ?? "video/mp4",
+                    );
                     const run = (await runVideoQa({
-                      videoUrl: resolvedVideoUrl,
+                      videoUrl: uploadedVideoUrl,
                       walkthrough: walkthrough ?? undefined,
                       prompt: qaPrompt.trim().length ? qaPrompt : undefined,
                     })) as any as DogfoodQaRun;
@@ -825,8 +863,19 @@ export function DogfoodReviewView() {
                       }))
                       .filter((s) => s.url);
 
+                    const uploaded = [];
+                    for (const s of screenshots.slice(0, 8)) {
+                      // eslint-disable-next-line no-await-in-loop
+                      const url = await uploadUrlToConvexStorage(
+                        s.url,
+                        `dogfood-${Date.now()}-${slugifyForFile(s.label) || "screen"}.png`,
+                        "image/png",
+                      );
+                      uploaded.push({ ...s, url });
+                    }
+
                     const run = (await runScreenshotQa({
-                      screenshots,
+                      screenshots: uploaded,
                       prompt: qaPrompt.trim().length ? qaPrompt : undefined,
                       maxImages: 8,
                     })) as any as DogfoodQaRun;

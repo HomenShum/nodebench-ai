@@ -144,6 +144,18 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     }
   }, [isOpen, initialTab]);
 
+  // Accessibility + dogfood: allow keyboard escape to close the modal reliably.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
   const keyStatuses = useQuery(api.domains.auth.apiKeys.listApiKeyStatuses, {
     providers: PROVIDERS,
   });
@@ -517,7 +529,12 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             <SettingsIcon className="h-4 w-4" />
             Settings Hub
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/[0.06] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+          <button
+            onClick={onClose}
+            aria-label="Close settings"
+            data-testid="close-settings"
+            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/[0.06] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>

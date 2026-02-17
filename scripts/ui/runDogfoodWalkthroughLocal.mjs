@@ -41,7 +41,10 @@ async function killProcessTree(proc) {
         windowsHide: true,
         shell: false,
       });
-      await new Promise((resolve) => taskkill.on("exit", resolve));
+      await Promise.race([
+        new Promise((resolve) => taskkill.on("exit", resolve)),
+        sleep(8000),
+      ]);
       return;
     } catch {
       // ignore
@@ -124,17 +127,20 @@ async function main() {
   const repoRoot = process.cwd();
   const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
   const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
+  const nodeCmd = process.execPath;
+  const viteBin = path.join(repoRoot, "node_modules", "vite", "bin", "vite.js");
 
   let serverProc;
   if (serverMode === "dev") {
     // Start Vite dev server (slow, HMR) and wait for it to accept connections.
     // eslint-disable-next-line no-console
-    console.log(`Starting dev server: ${npmCmd} run dev:frontend`);
-    serverProc = spawn(`${npmCmd} run dev:frontend`, {
+    console.log(`Starting dev server: node ${viteBin}`);
+    serverProc = spawn(nodeCmd, [viteBin, "--host", host, "--port", String(port), "--strictPort"], {
       cwd: repoRoot,
       stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env },
-      shell: true,
+      windowsHide: true,
+      shell: false,
     });
   } else {
     // Build + preview server (fast start, production-like behavior).
@@ -150,12 +156,13 @@ async function main() {
     if (buildCode !== 0) throw new Error(`Build exited with code ${buildCode}`);
 
     // eslint-disable-next-line no-console
-    console.log(`Starting preview server: ${npxCmd} vite preview --host ${host} --port ${port}`);
-    serverProc = spawn(`${npxCmd} vite preview --host ${host} --port ${port} --strictPort`, {
+    console.log(`Starting preview server: node ${viteBin} preview --host ${host} --port ${port}`);
+    serverProc = spawn(nodeCmd, [viteBin, "preview", "--host", host, "--port", String(port), "--strictPort"], {
       cwd: repoRoot,
       stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env },
-      shell: true,
+      windowsHide: true,
+      shell: false,
     });
   }
 
@@ -256,10 +263,12 @@ async function main() {
   console.log("\nDogfood artifacts recorded. Open:");
   // eslint-disable-next-line no-console
   console.log("  public/dogfood/scribe.md");
-  // eslint-disable-next-line no-console
-  console.log("  public/dogfood/walkthrough.mp4");
-  // eslint-disable-next-line no-console
-  console.log("  (or public/dogfood/walkthrough.webm if mp4 transcoding was unavailable)");
+  if (!scribeOnly) {
+    // eslint-disable-next-line no-console
+    console.log("  public/dogfood/walkthrough.mp4");
+    // eslint-disable-next-line no-console
+    console.log("  (or public/dogfood/walkthrough.webm if mp4 transcoding was unavailable)");
+  }
   if (screens) {
     // eslint-disable-next-line no-console
     console.log("  public/dogfood/manifest.json");

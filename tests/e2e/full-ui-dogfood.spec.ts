@@ -41,7 +41,32 @@ async function signInIfPrompted(page: Page) {
   if (await signInButton.count()) {
     await signInButton.click();
     await page.waitForLoadState("domcontentloaded");
+    await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
     await page.waitForTimeout(1000);
+  }
+}
+
+async function ensureNoBlockingModal(page: Page) {
+  const overlay = page.locator("div.fixed.inset-0.z-50");
+  for (let i = 0; i < 6; i++) {
+    if (!(await overlay.count())) return;
+
+    const closeTestId = page.getByTestId("close-settings");
+    if (await closeTestId.count()) {
+      await closeTestId.click({ force: true });
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    const closeBtn = page.getByRole("button", { name: /close|cancel|dismiss|done/i }).first();
+    if (await closeBtn.count()) {
+      await closeBtn.click({ force: true });
+      await page.waitForTimeout(250);
+      continue;
+    }
+
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(250);
   }
 }
 
@@ -79,6 +104,8 @@ test.describe("Full UI Dogfood", () => {
       });
     }
 
+    await ensureNoBlockingModal(page);
+
     const settingsTrigger = page.getByTestId("open-settings");
     await expect(settingsTrigger).toBeVisible();
     await settingsTrigger.click();
@@ -109,6 +136,7 @@ test.describe("Full UI Dogfood", () => {
 
     await page.keyboard.press("Escape");
     await page.waitForTimeout(350);
+    await ensureNoBlockingModal(page);
 
     // Command palette
     const openBtn = page.getByTestId("open-command-palette");

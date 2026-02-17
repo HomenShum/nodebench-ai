@@ -18,6 +18,10 @@ function sha256Hex(text: string): string {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
+function sha256HexBuffer(buf: Buffer): string {
+  return crypto.createHash("sha256").update(buf).digest("hex");
+}
+
 const responseSchema = {
   type: Type.OBJECT,
   properties: {
@@ -87,25 +91,11 @@ export const runDogfoodScreenshotQa = action({
     const prompt = buildPrompt(args.prompt);
     const model = getLlmModel("vision", "gemini", args.model ?? "gemini-3-flash");
 
-    const inputSha256 = sha256Hex(
-      JSON.stringify({
-        model,
-        prompt,
-        screenshots: selected.map((s) => ({ url: s.url, label: s.label, route: s.route ?? "" })),
-      }),
-    );
-
-    if (!args.force) {
-      const existing = await ctx.runQuery(internal.domains.dogfood.videoQaQueries.findMyDogfoodQaRunByInputSha256, {
-        inputSha256,
-      });
-      if (existing) return existing;
-    }
-
     const apiKey = getGeminiKey();
     const ai = new GoogleGenAI({ apiKey });
 
     const parts: any[] = [];
+    const hashImages: { label: string; route: string; sha256: string }[] = [];
     for (let i = 0; i < selected.length; i++) {
       const s = selected[i];
       const title = `Screenshot ${i + 1}/${selected.length}: ${s.label}${s.route ? ` (${s.route})` : ""}`;
@@ -115,11 +105,33 @@ export const runDogfoodScreenshotQa = action({
       if (!res.ok) throw new Error(`Failed to fetch screenshot: HTTP ${res.status} (${s.url})`);
       const contentType = res.headers.get("content-type") || "image/png";
       const buf = Buffer.from(await res.arrayBuffer());
+
+      hashImages.push({
+        label: s.label,
+        route: s.route ?? "",
+        sha256: sha256HexBuffer(buf),
+      });
+
       parts.push({
         inlineData: { mimeType: contentType, data: buf.toString("base64") },
       });
     }
     parts.push({ text: prompt });
+
+    const inputSha256 = sha256Hex(
+      JSON.stringify({
+        model,
+        prompt,
+        images: hashImages,
+      }),
+    );
+
+    if (!args.force) {
+      const existing = await ctx.runQuery(internal.domains.dogfood.videoQaQueries.findMyDogfoodQaRunByInputSha256, {
+        inputSha256,
+      });
+      if (existing) return existing;
+    }
 
     let response: any;
     try {
@@ -198,4 +210,3 @@ export const runDogfoodScreenshotQa = action({
     );
   },
 });
-

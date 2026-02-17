@@ -91,8 +91,15 @@ async function maybeSignIn(page) {
   if (await signInButton.count()) {
     await signInButton.click();
     await page.waitForLoadState("domcontentloaded");
+    // Auth can trigger a client-side refresh; wait for the shell to stabilize.
+    await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
     await page.waitForTimeout(900);
   }
+}
+
+async function waitForAppReady(page) {
+  await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+  await page.waitForTimeout(250);
 }
 
 async function dismissBlockingModal(page) {
@@ -194,6 +201,7 @@ async function main() {
   await setDogfoodLocalStorage(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await maybeSignIn(page);
+  await waitForAppReady(page);
   await installOverlay(page);
   await page.waitForTimeout(500);
 
@@ -202,11 +210,24 @@ async function main() {
   for (const [idx, step] of steps.entries()) {
     const stepNum = idx + 1;
     const title = `${stepNum}. ${step.name}`;
-    await setOverlay(page, `Step ${stepNum}/${steps.length}`, `${step.name} — ${step.path}`);
+    // Overlay updates can race with client-side navigations; retry if needed.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await setOverlay(page, `Step ${stepNum}/${steps.length}`, `${step.name} — ${step.path}`);
+        break;
+      } catch (err) {
+        const msg = String(err?.message ?? err ?? "");
+        if (!msg.includes("Execution context was destroyed") || attempt === 2) throw err;
+        // eslint-disable-next-line no-await-in-loop
+        await page.waitForTimeout(250);
+      }
+    }
 
     if (step.kind === "route") {
       await ensureNoModal(page);
       await page.goto(step.path, { waitUntil: "domcontentloaded" });
+      await waitForAppReady(page);
       await page.waitForTimeout(settleMs);
     } else if (/command palette/i.test(step.name)) {
       await ensureNoModal(page);
@@ -224,6 +245,7 @@ async function main() {
       await ensureNoModal(page);
       // Navigate to a stable page first so the header is consistent.
       await page.goto("/", { waitUntil: "domcontentloaded" });
+      await waitForAppReady(page);
       await page.waitForTimeout(600);
       await ensureNoModal(page);
       const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();
