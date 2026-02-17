@@ -66,6 +66,7 @@ docs/
 .node-24/
 .cache/
 public/evals/*.json
+public/dogfood/scribe/userdata/
 /test-results/
 /playwright-report/
 /tests/screenshots/

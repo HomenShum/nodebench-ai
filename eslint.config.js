@@ -88,6 +88,8 @@ export default tseslint.config(
       "node_modules/**",
       "dist/**",
       "build/**",
+      ".tmp/**",
+      ".tmp-schema-dts/**",
       "eslint.config.js",
       "convex/_generated/**",
       "postcss.config.js",

@@ -12,6 +12,22 @@ type DogfoodManifest = {
   items: DogfoodManifestItem[];
 };
 
+type ScribeStep = {
+  index: number;
+  kind: string;
+  name: string;
+  path: string;
+  title: string;
+  description: string;
+  image: string;
+};
+
+type ScribeManifest = {
+  capturedAtIso: string;
+  baseURL: string;
+  steps: ScribeStep[];
+};
+
 type WalkthroughChapter = {
   index: number;
   name: string;
@@ -49,6 +65,9 @@ export function DogfoodReviewView() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [walkthrough, setWalkthrough] = useState<WalkthroughManifest | null>(null);
   const [walkthroughError, setWalkthroughError] = useState<string | null>(null);
+  const [scribe, setScribe] = useState<ScribeManifest | null>(null);
+  const [scribeError, setScribeError] = useState<string | null>(null);
+  const [scribeDraft, setScribeDraft] = useState<ScribeStep[]>([]);
   const [copied, setCopied] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -62,6 +81,26 @@ export function DogfoodReviewView() {
         if (!cancelled) setManifest(json);
       } catch (e) {
         if (!cancelled) setLoadError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/dogfood/scribe.json", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as ScribeManifest;
+        if (!cancelled) {
+          setScribe(json);
+          setScribeDraft(json.steps ?? []);
+        }
+      } catch (e) {
+        if (!cancelled) setScribeError(e instanceof Error ? e.message : String(e));
       }
     })();
     return () => {
@@ -91,8 +130,10 @@ export function DogfoodReviewView() {
     const publish = "npm run dogfood:publish";
     const record = "npm run dogfood:record";
     const recordStatic = "npm run dogfood:record:static";
+    const scribeCmd = "npm run dogfood:scribe";
+    const scribeLocal = "npm run dogfood:scribe:local";
     const full = "npm run dogfood:walkthrough";
-    return { runE2e, publish, record, recordStatic, full };
+    return { runE2e, publish, record, recordStatic, scribeCmd, scribeLocal, full };
   }, []);
 
   const grouped = useMemo(() => {
@@ -166,7 +207,9 @@ export function DogfoodReviewView() {
               type="button"
               className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
               onClick={async () => {
-                const ok = await copyToClipboard(`${commands.record}\n${commands.recordStatic}\n${commands.full}`);
+                const ok = await copyToClipboard(
+                  `${commands.record}\n${commands.recordStatic}\n${commands.scribeCmd}\n${commands.full}`,
+                );
                 setCopied(ok);
                 window.setTimeout(() => setCopied(false), 1200);
               }}
@@ -239,6 +282,109 @@ export function DogfoodReviewView() {
           )}
         </div>
 
+        <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-foreground">How-to (Scribe-style)</div>
+              <div className="text-sm text-muted-foreground">
+                Auto-generated step list with screenshots and editable copy. Export as Markdown and share.
+              </div>
+              {scribe?.capturedAtIso && (
+                <div className="text-xs text-muted-foreground">
+                  Last captured:{" "}
+                  <span className="font-medium text-foreground">{formatDate(scribe.capturedAtIso)}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+                onClick={async () => {
+                  const lines: string[] = [
+                    "# NodeBench Dogfood Walkthrough",
+                    "",
+                    scribe?.capturedAtIso ? `Captured: ${scribe.capturedAtIso}` : "",
+                    "",
+                  ].filter(Boolean);
+                  for (const step of scribeDraft) {
+                    lines.push(`## ${step.title}`);
+                    lines.push(step.description || "");
+                    lines.push("");
+                    lines.push(`![${step.title}](${step.image})`);
+                    lines.push("");
+                  }
+                  const ok = await copyToClipboard(lines.join("\n"));
+                  setCopied(ok);
+                  window.setTimeout(() => setCopied(false), 1200);
+                }}
+              >
+                Copy Markdown
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+                onClick={async () => {
+                  const ok = await copyToClipboard(`${commands.scribeCmd}\n${commands.scribeLocal}`);
+                  setCopied(ok);
+                  window.setTimeout(() => setCopied(false), 1200);
+                }}
+              >
+                Copy capture commands
+              </button>
+            </div>
+          </div>
+
+          {scribeDraft.length > 0 ? (
+            <div className="space-y-4">
+              {scribeDraft.map((s) => (
+                <div key={s.index} className="rounded-md border border-border/60 bg-background p-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-foreground truncate">{s.title}</div>
+                    <div className="text-xs text-muted-foreground font-mono truncate">{s.path}</div>
+                  </div>
+                  <div className="mt-2 grid gap-3 lg:grid-cols-[1.1fr_1fr]">
+                    <div className="rounded-md overflow-hidden border border-border/60 bg-muted/10">
+                      <img src={s.image} alt={s.title} className="w-full h-auto block" loading="lazy" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Step text (editable)
+                      </label>
+                      <textarea
+                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-500/40"
+                        value={s.description}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          setScribeDraft((prev) =>
+                            prev.map((p) => (p.index === s.index ? { ...p, description: next } : p)),
+                          );
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border border-border/60 bg-background p-3 space-y-2">
+              <div className="text-sm text-muted-foreground">
+                No how-to published yet. Capture one and it will show up here.
+              </div>
+              <div className="rounded-md bg-muted/30 border border-border/50 p-3 font-mono text-xs text-foreground whitespace-pre-wrap">
+                {commands.scribeCmd}
+                {"\n"}
+                {commands.scribeLocal}
+              </div>
+              {scribeError && (
+                <div className="text-xs text-muted-foreground">
+                  Scribe load error: <span className="font-mono">{scribeError}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {!manifest && (
           <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
             <div className="text-sm font-medium text-foreground">No published dogfood artifacts</div>
@@ -304,7 +450,7 @@ export function DogfoodReviewView() {
           <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
             <li>Every changed screen is dogfooded end-to-end (and adjacent screens sharing layout).</li>
             <li>Root cause diagnosed (render path, data ownership, stored vs computed) and fixed.</li>
-            <li>Evidence published here (screens + walkthrough) so quality is verifiable without reading code.</li>
+            <li>Evidence published here (screens + walkthrough + how-to) so quality is verifiable without reading code.</li>
           </ul>
         </div>
       </div>
