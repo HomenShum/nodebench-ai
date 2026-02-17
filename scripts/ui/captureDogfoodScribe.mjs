@@ -90,7 +90,7 @@ async function maybeSignIn(page) {
   const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
   if (await signInButton.count()) {
     await signInButton.click();
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(900);
   }
 }
@@ -192,7 +192,7 @@ async function main() {
 
   const page = await context.newPage();
   await setDogfoodLocalStorage(page);
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await maybeSignIn(page);
   await installOverlay(page);
   await page.waitForTimeout(500);
@@ -206,7 +206,7 @@ async function main() {
 
     if (step.kind === "route") {
       await ensureNoModal(page);
-      await page.goto(step.path, { waitUntil: "networkidle" });
+      await page.goto(step.path, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(settleMs);
     } else if (/command palette/i.test(step.name)) {
       await ensureNoModal(page);
@@ -223,7 +223,7 @@ async function main() {
     } else if (/assistant panel/i.test(step.name)) {
       await ensureNoModal(page);
       // Navigate to a stable page first so the header is consistent.
-      await page.goto("/", { waitUntil: "networkidle" });
+      await page.goto("/", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(600);
       await ensureNoModal(page);
       const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();

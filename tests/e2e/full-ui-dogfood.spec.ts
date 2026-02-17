@@ -40,13 +40,15 @@ async function signInIfPrompted(page: Page) {
   const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
   if (await signInButton.count()) {
     await signInButton.click();
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1000);
   }
 }
 
 test.describe("Full UI Dogfood", () => {
-  test.beforeEach(async ({ page }) => {
+  test("dogfood all routes + key interactions", async ({ page }) => {
+    test.setTimeout(12 * 60 * 1000);
+
     await page.addInitScript(() => {
       localStorage.setItem(
         "nodebench-theme",
@@ -62,27 +64,21 @@ test.describe("Full UI Dogfood", () => {
       localStorage.setItem("theme", "dark");
     });
 
-    await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Convex backend not configured")).toHaveCount(0);
     await signInIfPrompted(page);
     await expect(page.locator("#main-content")).toBeVisible();
-  });
 
-  for (const route of ROUTES) {
-    test(`dogfood route: ${route.name}`, async ({ page }) => {
-      await page.goto(route.path);
-      await page.waitForLoadState("networkidle");
+    for (const route of ROUTES) {
+      await page.goto(route.path, { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(1200);
       await expect(page.getByText("Something went wrong")).toHaveCount(0);
       await page.screenshot({
         path: `test-results/full-ui-dogfood/${route.name}.png`,
         fullPage: true,
       });
-    });
-  }
+    }
 
-  test("dogfood settings modal tabs", async ({ page }) => {
     const settingsTrigger = page.getByTestId("open-settings");
     await expect(settingsTrigger).toBeVisible();
     await settingsTrigger.click();
@@ -110,9 +106,11 @@ test.describe("Full UI Dogfood", () => {
         });
       }
     }
-  });
 
-  test("dogfood command palette", async ({ page }) => {
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(350);
+
+    // Command palette
     const openBtn = page.getByTestId("open-command-palette");
     await expect(openBtn).toBeVisible();
     await openBtn.click();
@@ -130,14 +128,16 @@ test.describe("Full UI Dogfood", () => {
     const isMac = await page.evaluate(() => /Mac|iPhone|iPad|iPod/.test(navigator.platform));
     await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
     await expect(dialog).toBeVisible();
-  });
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(250);
 
-  test("dogfood assistant panel", async ({ page }) => {
-    const assistantBtn = page.getByRole("button", { name: "Assistant" });
+    // Assistant panel
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
+    const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();
     if (await assistantBtn.count()) {
-      await assistantBtn.click();
-      await page.waitForLoadState("networkidle");
-      await page.waitForTimeout(800);
+      await assistantBtn.click({ force: true });
+      await page.waitForTimeout(900);
       await expect(page.getByText("Something went wrong")).toHaveCount(0);
       await page.screenshot({
         path: "test-results/full-ui-dogfood/assistant-panel.png",

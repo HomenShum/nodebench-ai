@@ -151,7 +151,7 @@ async function maybeSignIn(page) {
   const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
   if (await signInButton.count()) {
     await signInButton.click();
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(900);
   }
 }
@@ -217,7 +217,7 @@ async function main() {
 
   const page = await context.newPage();
   await setDogfoodLocalStorage(page);
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await maybeSignIn(page);
   await installOverlay(page);
   await page.waitForTimeout(700);
@@ -236,7 +236,7 @@ async function main() {
     });
 
     await setOverlay(page, `Dogfood ${idx + 1}/${routes.length}`, `${r.name} — ${r.path}`);
-    await page.goto(r.path, { waitUntil: "networkidle" });
+    await page.goto(r.path, { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(settleMs);
   }
 
