@@ -141,7 +141,7 @@ export function ForYouFeed() {
             </div>
             <div className="text-right">
               <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                {isPublicMode ? "Public Edition" : "Personalized"}
+                {isPublicMode ? "Preview" : "Personalized"}
               </span>
             </div>
           </div>

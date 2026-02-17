@@ -62,13 +62,15 @@ export function IndustryUpdatesPanel() {
           </p>
         </div>
 
-        {/* Status Badge */}
-        <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-[var(--text-primary)]">
-            {suggestions.totalNew} new updates
-          </span>
-        </div>
+        {/* Status Badge — only show when there are actual new updates */}
+        {suggestions.totalNew > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              {suggestions.totalNew} new {suggestions.totalNew === 1 ? 'update' : 'updates'}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Provider Filter */}

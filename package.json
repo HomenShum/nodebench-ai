@@ -26,6 +26,9 @@
     "test:e2e:check": "tsx scripts/check-test-prerequisites.ts",
     "test:dcf": "playwright test tests/e2e/dcf-spreadsheet.spec.ts --headed",
     "dogfood:publish": "node scripts/ui/publishDogfoodGallery.mjs",
+    "dogfood:record": "node scripts/ui/recordDogfoodWalkthrough.mjs --publish blob",
+    "dogfood:record:static": "node scripts/ui/recordDogfoodWalkthrough.mjs --publish static",
+    "dogfood:walkthrough": "npm run test:e2e -- tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1 && npm run dogfood:publish && npm run dogfood:record",
     "build:analyze": "cross-env ANALYZE=true npm run build",
     "perf:lighthouse": "lighthouse http://localhost:5173/#analytics/hitl --output=json --output-path=lighthouse-report.json --chrome-flags=\"--headless\" --only-categories=performance,accessibility && node analyze-lighthouse.cjs",
     "perf:bundle": "npm run build:analyze",
@@ -201,6 +204,7 @@
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
+    "@vercel/blob": "^2.2.0",
     "@chromatic-com/storybook": "^4.1.1",
     "@eslint/js": "^9.21.0",
     "@playwright/test": "^1.57.0",
@@ -233,6 +237,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "eslint-plugin-storybook": "^9.1.10",
+    "ffmpeg-static": "^5.2.0",
     "globals": "^15.15.0",
     "jsdom": "^25.0.1",
     "lighthouse": "^13.0.1",

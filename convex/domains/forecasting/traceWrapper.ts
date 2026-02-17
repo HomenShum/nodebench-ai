@@ -52,9 +52,12 @@ interface TraceEntryArgs {
 
 export const tracedForecastRefresh = internalAction({
   args: {
-    date: v.string(),
+    date: v.optional(v.string()),
   },
-  handler: async (ctx, { date }) => {
+  handler: async (ctx, { date: dateArg }) => {
+    // Compute date at fire time, not module-load time.
+    // Cron args are evaluated once at deploy — passing Date there freezes it.
+    const date = dateArg || new Date().toISOString().split("T")[0];
     const executionId = `forecast_refresh_${date}_${Date.now()}`;
     const workflowTag = `forecast_refresh_${date}`;
     let seq = 0;

@@ -327,7 +327,7 @@ crons.daily(
   "daily forecast refresh",
   { hourUTC: 5, minuteUTC: 0 },
   internal.domains.forecasting.traceWrapper.tracedForecastRefresh,
-  { date: new Date().toISOString().split("T")[0] }
+  {}
 );
 
 // Post daily digest to LinkedIn at 6:15 AM UTC (15 min after digest generation)

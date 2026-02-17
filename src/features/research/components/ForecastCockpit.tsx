@@ -63,12 +63,35 @@ export function ForecastCockpit() {
           <Target className="w-8 h-8 text-indigo-500" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          No forecasts yet
+          Forecast Cockpit
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-          Create your first forecast via MCP tools (<code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">create_forecast</code>).
-          Forecasts appear here with calibration tracking, evidence timelines, and TRACE provenance.
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
+          Track predictions with calibration scoring, evidence timelines, and
+          full provenance. Forecasts are created via MCP tools and refreshed
+          daily before the LinkedIn digest.
         </p>
+        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-4 max-w-sm w-full text-left">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+            Quick start
+          </p>
+          <ol className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
+            <li className="flex gap-2">
+              <span className="text-indigo-500 font-semibold shrink-0">1.</span>
+              <span>
+                Run <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded font-mono">create_forecast</code> with a
+                question, probability, and resolution date
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-indigo-500 font-semibold shrink-0">2.</span>
+              <span>Daily cron auto-refreshes probabilities from new signals</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-indigo-500 font-semibold shrink-0">3.</span>
+              <span>Calibration and Brier scores build here as forecasts resolve</span>
+            </li>
+          </ol>
+        </div>
       </div>
     );
   }

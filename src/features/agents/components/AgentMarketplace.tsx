@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Zap, TrendingUp, CheckCircle, Clock, Play, GitFork, Heart, Share2 } from "lucide-react";
+import { Zap, TrendingUp, CheckCircle, Clock, Play } from "lucide-react";
 
 export function AgentMarketplace() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
@@ -109,12 +109,9 @@ function AgentCard({ agent, rank }: AgentCardProps) {
             <h3 className="text-lg font-semibold text-[var(--text-primary)] capitalize">
               {agent.agentType} Agent
             </h3>
-            <p className="text-sm text-[var(--text-secondary)]">
-              ID: {agent.agentId}
-            </p>
           </div>
         </div>
-        <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-md text-sm font-medium">
+        <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-md text-sm font-medium" title="Phoenix Score: composite of success rate, usage, and latency">
           <TrendingUp className="w-4 h-4" />
           {agent.phoenixScore}
         </div>
@@ -155,7 +152,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
         <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
           <div className="flex items-center gap-2 mb-1">
             <Zap className="w-4 h-4 text-yellow-500" />
-            <span className="text-xs text-[var(--text-secondary)]">Phoenix Score</span>
+            <span className="text-xs text-[var(--text-secondary)]" title="Composite ranking: success rate + usage + speed">Overall Score</span>
           </div>
           <div className="text-xl font-bold text-[var(--text-primary)]">
             {agent.phoenixScore}
@@ -163,52 +160,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
         </div>
       </div>
 
-      {/* Multi-Action Prediction */}
-      {agent.multiActionPrediction && (
-        <div className="pt-4 border-t border-[var(--border-color)]">
-          <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
-            Engagement Prediction
-          </h4>
-          <div className="grid grid-cols-4 gap-3">
-            <div className="flex items-center gap-2">
-              <Play className="w-4 h-4 text-[var(--text-secondary)]" />
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">Run</div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">
-                  {Math.round(agent.multiActionPrediction.run * 100)}%
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <GitFork className="w-4 h-4 text-[var(--text-secondary)]" />
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">Fork</div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">
-                  {Math.round(agent.multiActionPrediction.fork * 100)}%
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Heart className="w-4 h-4 text-[var(--text-secondary)]" />
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">Like</div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">
-                  {Math.round(agent.multiActionPrediction.like * 100)}%
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Share2 className="w-4 h-4 text-[var(--text-secondary)]" />
-              <div>
-                <div className="text-xs text-[var(--text-muted)]">Share</div>
-                <div className="text-sm font-medium text-[var(--text-primary)]">
-                  {Math.round(agent.multiActionPrediction.share * 100)}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Multi-Action Prediction — removed: speculative percentages confused users */}
     </div>
   );
 }

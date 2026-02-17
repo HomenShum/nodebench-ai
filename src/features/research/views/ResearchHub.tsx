@@ -502,7 +502,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       type="button"
                       key={date}
                       onClick={() => setSelectedDate(date)}
-                      className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-tighter transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
+                      className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
                         ? "bg-gray-950 dark:bg-white/[0.12] text-white shadow-lg"
                         : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
@@ -514,7 +514,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-tighter transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-gray-400"}`}
+                    className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-gray-400"}`}
                   >
                     Latest
                   </button>
@@ -550,7 +550,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <span>Return to Pulse Overview</span>
               </button>
               {briefDateLabel && (
-                <div className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+                <div className="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
                 </div>
               )}

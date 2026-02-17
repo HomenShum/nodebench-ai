@@ -65,7 +65,7 @@ const DEFAULT_STATE: WizardState = {
 
 function buildMarkdown(state: WizardState): string {
   const lines: string[] = [
-    "# USER.md — Operator Profile",
+    "# USER.md — My Profile",
     "",
     "## Identity",
     `- **Name**: ${state.displayName || "User"}`,
@@ -79,7 +79,7 @@ function buildMarkdown(state: WizardState): string {
 
   lines.push(
     "", "## Autonomy Settings",
-    "- **Mode**: Batch Autopilot",
+    "- **Mode**: Scheduled",
     `- **Schedule**: ${state.scheduleInterval}`,
   );
 
@@ -186,7 +186,7 @@ export function OperatorProfileWizard() {
                 {existingProfile.identity.displayName}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                {existingProfile.identity.role || "Operator Profile"}
+                {existingProfile.identity.role || "My Profile"}
                 {existingProfile.identity.domains?.length
                   ? ` · ${existingProfile.identity.domains.join(", ")}`
                   : ""}

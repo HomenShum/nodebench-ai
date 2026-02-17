@@ -99,6 +99,13 @@ function ProbabilityBar({
       role="img"
       aria-label={`Probability ${Math.round(fillPct)}%`}
     >
+      <defs>
+        <linearGradient id="prob-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#9333ea" />
+          <stop offset="50%" stopColor="#6366f1" />
+          <stop offset="100%" stopColor="#3b82f6" />
+        </linearGradient>
+      </defs>
       {/* Background track */}
       <rect x="0" y="0" width="100" height="8" rx="4" className="fill-gray-200 dark:fill-gray-700" />
       {/* Confidence interval range */}
@@ -112,22 +119,8 @@ function ProbabilityBar({
           className="fill-purple-200/50 dark:fill-purple-700/30"
         />
       )}
-      {/* Filled portion */}
-      <rect x="0" y="0" width={fillPct} height="8" rx="4">
-        <animate attributeName="width" from="0" to={fillPct} dur="0.6s" fill="freeze" />
-      </rect>
-      {/* Gradient definition applied via style since Tailwind can't target SVG fills */}
-      <defs>
-        <linearGradient id="prob-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#9333ea" />
-          <stop offset="50%" stopColor="#6366f1" />
-          <stop offset="100%" stopColor="#3b82f6" />
-        </linearGradient>
-      </defs>
-      {/* Re-draw filled rect with gradient */}
-      <rect x="0" y="0" width={fillPct} height="8" rx="4" fill="url(#prob-gradient)">
-        <animate attributeName="width" from="0" to={fillPct} dur="0.6s" fill="freeze" />
-      </rect>
+      {/* Filled portion with gradient */}
+      <rect x="0" y="0" width={fillPct} height="8" rx="4" fill="url(#prob-gradient)" />
     </svg>
   );
 }
@@ -223,7 +216,7 @@ function EvidenceTimeline({
               </span>
               <span
                 className={cn(
-                  "px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0",
+                  "px-1.5 py-0.5 rounded text-xs font-medium shrink-0",
                   DIRECTION_STYLES[item.direction]
                 )}
               >
@@ -255,7 +248,7 @@ function TraceBreadcrumb({
     <button
       type="button"
       onClick={onExpand}
-      className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate"
+      className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate"
     >
       <span className="font-medium text-gray-500 dark:text-gray-400 shrink-0">
         via:
@@ -337,7 +330,7 @@ export function ForecastCard({
             )}
             <span
               className={cn(
-                "text-[11px] font-semibold uppercase tracking-wider",
+                "text-xs font-semibold uppercase tracking-wider",
                 isResolved
                   ? outcome
                     ? "text-green-600 dark:text-green-400"
@@ -357,7 +350,7 @@ export function ForecastCard({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-[11px] text-gray-400 dark:text-gray-500">
+          <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
             <span>{resolutionDate}</span>
             <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-medium">
               {updateCount} update{updateCount !== 1 ? "s" : ""}
@@ -426,7 +419,7 @@ export function ForecastCard({
             {/* Drivers */}
             {topDrivers.length > 0 && (
               <div className="mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
                   Drivers
                 </p>
                 <ul className="space-y-0.5">
@@ -446,7 +439,7 @@ export function ForecastCard({
             {/* Counterarguments */}
             {topCounterarguments.length > 0 && (
               <div className="mb-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
                   Counterarguments
                 </p>
                 <ul className="space-y-0.5">

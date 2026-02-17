@@ -119,7 +119,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
                 <h1 className="text-lg font-semibold text-gray-900">LinkedIn Posts</h1>
                 <p className="text-xs text-gray-500">
                   {stats
-                    ? `${stats.totalPosts} posts across ${stats.recentDates.length} days`
+                    ? `${stats.totalPosts} ${stats.totalPosts === 1 ? 'post' : 'posts'} across ${stats.recentDates.length} ${stats.recentDates.length === 1 ? 'day' : 'days'}`
                     : "\u00A0"}
                 </p>
               </div>

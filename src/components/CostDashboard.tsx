@@ -49,6 +49,8 @@ export function CostDashboard() {
     return <CostDashboardSkeleton />;
   }
 
+  const hasData = metrics.totalRequests > 0;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -58,7 +60,7 @@ export function CostDashboard() {
             Cost Dashboard
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            See what you're spending and where you can save
+            {hasData ? "See what you're spending and where you can save" : "Track LLM costs as you use the platform"}
           </p>
         </div>
 
@@ -66,6 +68,7 @@ export function CostDashboard() {
         <div className="flex gap-2 bg-[var(--bg-secondary)] rounded-lg p-1">
           {(["24h", "7d", "30d"] as const).map((range) => (
             <button
+              type="button"
               key={range}
               onClick={() => setTimeRange(range)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -80,7 +83,19 @@ export function CostDashboard() {
         </div>
       </div>
 
-      {/* Key Metrics Grid */}
+      {/* Empty state when no data */}
+      {!hasData && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <DollarSign className="w-12 h-12 text-[var(--text-secondary)] opacity-50 mb-3" />
+          <p className="font-medium text-[var(--text-primary)] mb-1">No usage recorded yet</p>
+          <p className="text-sm text-[var(--text-secondary)] max-w-sm">
+            Cost data appears here as you make API calls through Research, Agents, or the Assistant. Try generating a daily brief or running an agent to see your first metrics.
+          </p>
+        </div>
+      )}
+
+      {/* Key Metrics Grid — only render when there's data */}
+      {hasData && (<>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Cost */}
         <MetricCard
@@ -95,7 +110,7 @@ export function CostDashboard() {
         <MetricCard
           icon={<TrendingDown className="w-5 h-5" />}
           label="Avg Cost/Request"
-          value={`$${metrics.avgCostPerRequest.toFixed(4)}`}
+          value={`$${metrics.avgCostPerRequest.toFixed(2)}`}
           subtitle="Per request"
           trend={null}
         />
@@ -162,6 +177,7 @@ export function CostDashboard() {
       )}
 
       {/* Cost by Model */}
+      {costByModel.length > 0 && (
       <div className="bg-[var(--bg-secondary)] rounded-lg p-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Database className="w-5 h-5" />
@@ -184,15 +200,17 @@ export function CostDashboard() {
                   ${model.cost.toFixed(2)}
                 </div>
                 <div className="text-xs text-[var(--text-secondary)]">
-                  ${model.avgCostPerRequest.toFixed(4)}/req
+                  ${model.avgCostPerRequest.toFixed(2)}/req
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+      )}
 
       {/* Cost by User (Top 10) */}
+      {costByUser.length > 0 && (
       <div className="bg-[var(--bg-secondary)] rounded-lg p-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Users className="w-5 h-5" />
@@ -219,13 +237,14 @@ export function CostDashboard() {
                   ${user.cost.toFixed(2)}
                 </div>
                 <div className="text-xs text-[var(--text-secondary)]">
-                  ${user.avgCostPerRequest.toFixed(4)}/req
+                  ${user.avgCostPerRequest.toFixed(2)}/req
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+      )}
 
       {/* Token Usage Breakdown */}
       <div className="bg-[var(--bg-secondary)] rounded-lg p-6">
@@ -304,6 +323,7 @@ export function CostDashboard() {
           </div>
         </div>
       </div>
+      </>)}
     </div>
   );
 }
