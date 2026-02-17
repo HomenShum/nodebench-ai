@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-17T12:48:40.125Z",
+  "capturedAtIso": "2026-02-17T23:34:48.482Z",
   "baseURL": "http://127.0.0.1:4173",
   "mime": "video/mp4",
   "publish": "static",
@@ -26,139 +26,139 @@
       "index": 4,
       "name": "Research: Signals",
       "path": "/research/signals",
-      "startSec": 3.7
+      "startSec": 3.8
     },
     {
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 6.6
+      "startSec": 5.1
     },
     {
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 7.8
+      "startSec": 7.5
     },
     {
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 9.1
+      "startSec": 8.8
     },
     {
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 10.3
+      "startSec": 10
     },
     {
       "index": 9,
       "name": "Workspace: Spreadsheets",
       "path": "/spreadsheets",
-      "startSec": 11.6
+      "startSec": 11.3
     },
     {
       "index": 10,
       "name": "Workspace: Calendar",
       "path": "/calendar",
-      "startSec": 12.8
+      "startSec": 12.5
     },
     {
       "index": 11,
       "name": "Assistants",
       "path": "/agents",
-      "startSec": 14.1
+      "startSec": 13.8
     },
     {
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 15.3
+      "startSec": 15
     },
     {
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 16.6
+      "startSec": 16.3
     },
     {
       "index": 14,
       "name": "Showcase",
       "path": "/showcase",
-      "startSec": 17.8
+      "startSec": 17.5
     },
     {
       "index": 15,
       "name": "Sources",
       "path": "/footnotes",
-      "startSec": 19
+      "startSec": 18.8
     },
     {
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 20.3
+      "startSec": 20.1
     },
     {
       "index": 17,
       "name": "Benchmarks",
       "path": "/benchmarks",
-      "startSec": 21.5
+      "startSec": 21.3
     },
     {
       "index": 18,
       "name": "Funding Brief",
       "path": "/funding",
-      "startSec": 22.8
+      "startSec": 22.6
     },
     {
       "index": 19,
       "name": "Activity",
       "path": "/activity",
-      "startSec": 24
+      "startSec": 23.8
     },
     {
       "index": 20,
       "name": "Review Queue",
       "path": "/analytics/hitl",
-      "startSec": 25.2
+      "startSec": 25.1
     },
     {
       "index": 21,
       "name": "Usage Stats",
       "path": "/analytics/components",
-      "startSec": 26.5
+      "startSec": 26.3
     },
     {
       "index": 22,
       "name": "Feedback",
       "path": "/analytics/recommendations",
-      "startSec": 27.7
+      "startSec": 27.6
     },
     {
       "index": 23,
       "name": "Usage & Costs",
       "path": "/cost",
-      "startSec": 29
+      "startSec": 28.8
     },
     {
       "index": 24,
       "name": "Industry News",
       "path": "/industry",
-      "startSec": 30.2
+      "startSec": 30.1
     },
     {
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 31.5
+      "startSec": 31.4
     },
     {
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 32.7
+      "startSec": 32.6
     },
     {
       "index": 27,
@@ -218,10 +218,10 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 46.5
+      "startSec": 46
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-17_044741.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-17_153348.mp4"
 }

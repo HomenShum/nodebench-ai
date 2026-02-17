@@ -8,6 +8,8 @@ on:
       - "src/**/*.css"
       - "src/features/**"
       - "public/dogfood/**"
+  schedule:
+    - cron: "0 6 * * *"
 
 concurrency:
   group: dogfood-qa-${{ github.head_ref }}
@@ -47,17 +49,17 @@ jobs:
 
       - name: Capture screenshots + publish gallery
         run: |
-          npm run test:e2e -- tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1 || true
-          npm run dogfood:publish || true
+          npm run test:e2e -- tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1
+          npm run dogfood:publish
 
       - name: Capture Scribe how-to
-        run: npm run dogfood:scribe || true
+        run: npm run dogfood:scribe
 
       - name: Record walkthrough video
-        run: npm run dogfood:record:static || true
+        run: npm run dogfood:record:static
 
       - name: Extract key frames
-        run: npm run dogfood:frames || true
+        run: npm run dogfood:frames
 
       - name: Run CI QA check
         run: node scripts/overstory/ci-qa-check.mjs
@@ -87,8 +89,12 @@ jobs:
 
             let manifestStatus = 'missing';
             let walkthroughStatus = 'missing';
+            let framesStatus = 'missing';
+            let scribeStatus = 'missing';
             let screenshotCount = 0;
             let chapterCount = 0;
+            let frameCount = 0;
+            let scribeCount = 0;
 
             try {
               const manifest = JSON.parse(fs.readFileSync('public/dogfood/manifest.json', 'utf8'));
@@ -102,6 +108,18 @@ jobs:
               walkthroughStatus = chapterCount >= 30 ? 'pass' : 'low';
             } catch {}
 
+            try {
+              const frames = JSON.parse(fs.readFileSync('public/dogfood/frames.json', 'utf8'));
+              frameCount = (frames.items || []).length;
+              framesStatus = frameCount >= 20 ? 'pass' : 'low';
+            } catch {}
+
+            try {
+              const scribe = JSON.parse(fs.readFileSync('public/dogfood/scribe.json', 'utf8'));
+              scribeCount = (scribe.steps || []).length;
+              scribeStatus = scribeCount >= 20 ? 'pass' : 'low';
+            } catch {}
+
             const gateResult = '${{ job.status }}' === 'success' ? 'PASSED' : 'FAILED';
             const emoji = gateResult === 'PASSED' ? ':white_check_mark:' : ':x:';
 
@@ -111,6 +129,8 @@ jobs:
             |-------|--------|
             | Screenshots | ${screenshotCount} captured (${manifestStatus}) |
             | Walkthrough | ${chapterCount} chapters (${walkthroughStatus}) |
+            | Key Frames | ${frameCount} extracted (${framesStatus}) |
+            | Scribe Steps | ${scribeCount} how-to steps (${scribeStatus}) |
             | Build | ${{ job.status }} |
 
             <details>

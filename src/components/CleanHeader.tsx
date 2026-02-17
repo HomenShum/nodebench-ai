@@ -94,6 +94,8 @@ export function CleanHeader({
                 src={user.image}
                 alt={user.name || user.email || 'User'}
                 className="h-8 w-8 rounded-full"
+                width={32}
+                height={32}
               />
             ) : (
               <div className="h-8 w-8 rounded-full bg-[var(--accent-primary)] flex items-center justify-center">

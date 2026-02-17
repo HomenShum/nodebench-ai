@@ -43,7 +43,7 @@ function GlobalFastAgentPanel() {
   };
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={isOpen ? <div className="fixed inset-y-0 right-0 w-96 bg-background border-l border-border/60 flex items-center justify-center text-sm text-muted-foreground">Loading assistant...</div> : null}>
       <FastAgentPanel
         isOpen={isOpen}
         onClose={handleClose}

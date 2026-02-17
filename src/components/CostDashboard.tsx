@@ -9,7 +9,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { DollarSign, TrendingDown, Zap, Clock, Database, Users } from "lucide-react";
-import { CostDashboardSkeleton } from "./skeletons";
+import { ViewSkeleton } from "./skeletons";
 
 export function CostDashboard() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
@@ -46,7 +46,7 @@ export function CostDashboard() {
   });
 
   if (!metrics || !costByModel || !costByUser || !cacheStats) {
-    return <CostDashboardSkeleton />;
+    return <ViewSkeleton variant="cost-dashboard" />;
   }
 
   const hasData = metrics.totalRequests > 0;

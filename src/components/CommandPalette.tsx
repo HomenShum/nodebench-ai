@@ -193,8 +193,6 @@ export function CommandPalette({
                 keywords: ['ai', 'summarize', 'summary', 'brief'],
                 section: 'ai',
                 action: () => {
-                    // Trigger AI summarization
-                    console.log('AI Summarize');
                     onClose();
                 }
             },
@@ -264,8 +262,6 @@ export function CommandPalette({
                     keywords: ['recent', 'document', doc.title?.toLowerCase() || ''],
                     section: 'recent',
                     action: () => {
-                        // Open document
-                        console.log('Open document:', doc._id);
                         onClose();
                     }
                 });
@@ -283,8 +279,6 @@ export function CommandPalette({
                     keywords: ['recent', 'task', task.title?.toLowerCase() || ''],
                     section: 'recent',
                     action: () => {
-                        // Open task
-                        console.log('Open task:', task._id);
                         onClose();
                     }
                 });
@@ -396,7 +390,8 @@ export function CommandPalette({
         if (isOpen) {
             setQuery('');
             setSelectedIndex(0);
-            setTimeout(() => inputRef.current?.focus(), 100);
+            const timeoutId = setTimeout(() => inputRef.current?.focus(), 100);
+            return () => clearTimeout(timeoutId);
         }
     }, [isOpen]);
 
@@ -436,7 +431,7 @@ export function CommandPalette({
                 >
                     {/* Search Input */}
                     <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
-                        <Search className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                        <Search className="w-5 h-5 text-gray-400 dark:text-gray-400" />
                         <label htmlFor="command-palette-input" className="sr-only">Search commands</label>
                         <input
                             id="command-palette-input"
@@ -447,7 +442,7 @@ export function CommandPalette({
                             placeholder="Type a command or search..."
                             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
                         />
-                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-400">
                             <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-white/[0.06] rounded text-[10px] font-mono dark:text-gray-400">ESC</kbd>
                             <span>to close</span>
                         </div>
@@ -459,7 +454,7 @@ export function CommandPalette({
                         className="max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
                     >
                         {filteredCommands.length === 0 ? (
-                            <div className="py-12 text-center text-gray-400 dark:text-gray-500 text-sm">
+                            <div className="py-12 text-center text-gray-400 dark:text-gray-400 text-sm">
                                 <FileSearch className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                 <p>No commands found</p>
                                 <p className="text-xs mt-1">Try a different search term</p>

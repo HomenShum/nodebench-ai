@@ -904,7 +904,7 @@ export function FastAgentInputBar({
               return (
                 <div key={index} className="relative group flex items-center gap-2 px-2 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-xs">
                   {preview ? (
-                    <img src={preview} alt={file.name} className="w-6 h-6 object-cover rounded" />
+                    <img src={preview} alt={file.name} className="w-6 h-6 object-cover rounded" width={24} height={24} />
                   ) : (
                     <div className="p-1 bg-[var(--bg-primary)] rounded border border-[var(--border-color)]">
                       {getFileIcon(file)}

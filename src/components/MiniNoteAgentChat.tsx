@@ -65,11 +65,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     }
   };
 
-  // Mount diagnostics
-  useEffect(() => {
-    console.log('[MiniNoteAgentChat] mount');
-    return () => console.log('[MiniNoteAgentChat] unmount');
-  }, []);
 
 
   const createThread = useAction(api.domains.agents.fastAgentPanelStreaming.createThread);
@@ -111,7 +106,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     const currentCount = uiMessages?.length || 0;
     // If we have more messages than before, agent has responded
     if (currentCount > lastMessageCountRef.current) {
-      console.log('[MiniNoteAgentChat] Agent responded, clearing waiting state');
       setWaitingForAgent(false);
     }
     lastMessageCountRef.current = currentCount;
@@ -120,17 +114,12 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
   // Consume pending prompt from parent (auto-send) with de-duplication
   useEffect(() => {
     const text = pendingPrompt?.trim();
-    console.log('[MiniNoteAgentChat] pendingPrompt effect triggered, text:', text, 'user:', !!user, 'lastSent:', lastAutoSentKeyRef.current);
-
     // If cleared, allow same prompt to be sent again in the future
     if (!text) {
       lastAutoSentKeyRef.current = null;
       return;
     }
-    if (!user) {
-      console.log('[MiniNoteAgentChat] No user, skipping send');
-      return;
-    }
+    if (!user) return;
 
     // Guard against duplicate triggers from re-renders/user changes
     if (lastAutoSentKeyRef.current === text) {

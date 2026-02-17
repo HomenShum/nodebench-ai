@@ -104,10 +104,14 @@ interface CleanSidebarProps {
 
 // Dashboard items
 const dashboardItems = [
-  { icon: DollarSign, label: 'Cost Dashboard', view: 'cost-dashboard' as const, subtitle: 'Spend & Usage' },
-  { icon: TrendingUp, label: 'Industry Updates', view: 'industry-updates' as const, subtitle: 'Signals & Trends' },
-  { icon: Activity, label: 'Tool Usage', view: 'mcp-ledger' as const, subtitle: 'What tools were used' },
-  { icon: CheckSquare, label: 'Dogfood', view: 'dogfood' as const, subtitle: 'Design review evidence' },
+  { icon: DollarSign, label: 'Usage & Costs', view: 'cost-dashboard' as const, subtitle: 'Spending trends' },
+  { icon: TrendingUp, label: 'Industry News', view: 'industry-updates' as const, subtitle: 'Latest updates' },
+  { icon: Activity, label: 'Activity Log', view: 'mcp-ledger' as const, subtitle: 'Request history' },
+];
+
+// Dev-only items — hidden in production builds
+const devItems = [
+  { icon: CheckSquare, label: 'Quality Review', view: 'dogfood' as const, subtitle: 'Design review evidence' },
 ];
 
 // Discovery items
@@ -122,6 +126,7 @@ const discoveryItems = [
 
 const moreSectionViews = new Set<string>([
   ...dashboardItems.map((i) => i.view),
+  ...devItems.map((i) => i.view),
   ...discoveryItems.map((i) => i.view),
 ]);
 
@@ -226,7 +231,7 @@ export function CleanSidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-gray-800 transition-colors"
+            className="w-8 h-8 bg-gray-900 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -276,6 +281,16 @@ export function CleanSidebar({
                       isActive={currentView === item.view}
                     />
                   ))}
+                  {import.meta.env.DEV && devItems.map((item) => (
+                    <SidebarButton
+                      key={item.view}
+                      icon={<item.icon />}
+                      label={item.label}
+                      subtitle={item.subtitle}
+                      onClick={() => onViewChange?.(item.view)}
+                      isActive={currentView === item.view}
+                    />
+                  ))}
                 </div>
                 <div className="space-y-0.5">
                   {discoveryItems.map((item) => (
@@ -295,7 +310,7 @@ export function CleanSidebar({
         ) : (
           /* Collapsed: show just icons for dashboards + discovery */
           <div className="space-y-0.5">
-            {[...dashboardItems, ...discoveryItems].map((item) => (
+            {[...dashboardItems, ...(import.meta.env.DEV ? devItems : []), ...discoveryItems].map((item) => (
               <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
             ))}
           </div>
@@ -395,6 +410,8 @@ export function CleanSidebar({
               <img
                 src={imgSrc}
                 alt={displayName + " avatar"}
+                width={32}
+                height={32}
                 className="h-8 w-8 rounded-full object-cover border border-gray-200/60 dark:border-white/[0.06]"
                 title={isCollapsed ? displayName : undefined}
               />

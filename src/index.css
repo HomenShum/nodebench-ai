@@ -95,6 +95,10 @@
     @apply border-border;
   }
 
+  .dark :focus-visible {
+    box-shadow: 0 0 0 4px rgba(124, 138, 228, 0.2);
+  }
+
   body {
     @apply bg-background text-foreground;
     font-size: 14px;
@@ -123,6 +127,16 @@
   font-family: Georgia, serif;
   letter-spacing: normal;
 }
+
+/*
+ * Z-INDEX SCALE (semantic aliases in tailwind.config.js):
+ *   z-raised  (10)  — Lifted cards, hover states
+ *   z-sidebar (20)  — Navigation drawers, side panels
+ *   z-sticky  (30)  — Sticky headers, toolbars
+ *   z-overlay (40)  — Modal backdrops, dim layers
+ *   z-modal   (50)  — Dialogs, popovers, panels
+ *   z-toast   (60)  — Toasts, notifications (always on top)
+ */
 
 /* ───── Depth & Polish Utilities (Linear/Vercel tier) ───── */
 
@@ -277,6 +291,27 @@
 }
 
 /* Glass morphism container — blur(8px) balances visual effect vs GPU cost */
+.skeleton-pulse {
+  animation: skeleton-pulse 1.9s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 0.88; }
+}
+
+.reduce-motion .skeleton-pulse {
+  animation: none !important;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-pulse {
+    animation: none !important;
+    opacity: 0.8;
+  }
+}
+
 .glass-container {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -653,6 +688,18 @@
 :focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+/* Reduced motion: disable animations for users with vestibular disorders */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Screen-reader only utility */

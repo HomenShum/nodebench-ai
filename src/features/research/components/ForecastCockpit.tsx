@@ -71,7 +71,7 @@ export function ForecastCockpit() {
           daily before the LinkedIn digest.
         </p>
         <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-4 max-w-sm w-full text-left">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-2">
             Quick start
           </p>
           <ol className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">

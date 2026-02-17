@@ -122,7 +122,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
 
       {/* Total duration badge */}
       {totalDurationMs !== undefined && (
-        <span className="ml-2 text-xs font-mono text-gray-400 dark:text-gray-500 flex-shrink-0">
+        <span className="ml-2 text-xs font-mono text-gray-400 dark:text-gray-400 flex-shrink-0">
           {formatDuration(totalDurationMs)}
         </span>
       )}
@@ -150,7 +150,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
             )}
           >
             {/* Step number */}
-            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 w-4 text-right flex-shrink-0">
+            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-400 w-4 text-right flex-shrink-0">
               {idx + 1}
             </span>
 
@@ -189,7 +189,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
 
             {/* Duration */}
             {step.durationMs !== undefined && (
-              <span className="text-xs font-mono text-gray-400 dark:text-gray-500 flex-shrink-0 min-w-[40px] text-right">
+              <span className="text-xs font-mono text-gray-400 dark:text-gray-400 flex-shrink-0 min-w-[40px] text-right">
                 {formatDuration(step.durationMs)}
               </span>
             )}
@@ -207,7 +207,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
       {/* Total duration footer */}
       {totalDurationMs !== undefined && (
         <div className="flex justify-end pt-1 border-t border-gray-100 dark:border-gray-800">
-          <span className="text-xs font-mono text-gray-400 dark:text-gray-500">
+          <span className="text-xs font-mono text-gray-400 dark:text-gray-400">
             Total: {formatDuration(totalDurationMs)}
           </span>
         </div>

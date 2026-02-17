@@ -40,6 +40,8 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                             alt={displayName + " avatar"}
                             title={displayName}
                             className="h-9 w-9 rounded-full border border-[var(--border-color)] object-cover shadow-sm"
+                            width={36}
+                            height={36}
                         />
                     ) : (
                         <div

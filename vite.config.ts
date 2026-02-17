@@ -199,7 +199,10 @@ window.addEventListener('message', async (message) => {
   // esbuild options for transforms (and for minification when NODEBENCH_MINIFY=esbuild)
   esbuild: {
     // eslint-disable-next-line no-undef
-    drop: mode === "production" ? ["console", "debugger"] : undefined,
+    // Keep `console.error`/`console.warn` in production so ErrorBoundaries and
+    // client error reporting can surface actionable diagnostics.
+    drop: mode === "production" ? ["debugger"] : undefined,
+    pure: mode === "production" ? ["console.log", "console.info", "console.debug"] : undefined,
     // Remove legal comments for smaller transforms
     legalComments: 'none',
     // Tree shake during transforms
@@ -221,7 +224,8 @@ window.addEventListener('message', async (message) => {
     modulePreload: { polyfill: false },
     terserOptions: useTerser ? {
       compress: {
-        drop_console: true, // Remove console.logs in production
+        // Keep `console.error`/`console.warn` for diagnostics; strip noisy logs only.
+        drop_console: false,
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'], // Remove specific console methods
         passes: 2, // Multiple compression passes for better results

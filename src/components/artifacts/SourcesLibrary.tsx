@@ -233,7 +233,7 @@ export function SourcesLibrary({
   return (
     <div className="mt-12 border-t-2 border-gray-200 pt-8">
       {/* Header */}
-      <div 
+      <div
         className="flex items-center justify-between mb-4 cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
@@ -263,6 +263,7 @@ export function SourcesLibrary({
                 value={groupBy}
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
                 onClick={(e) => e.stopPropagation()}
+                aria-label="Group sources by"
                 className="bg-gray-100 border-none rounded px-2 py-1 text-xs text-gray-600 focus:ring-1 focus:ring-purple-300"
               >
                 <option value="provider">By Provider</option>
@@ -272,7 +273,7 @@ export function SourcesLibrary({
             </div>
           )}
           
-          <button className="p-1 hover:bg-gray-100 rounded">
+          <button type="button" className="p-1 hover:bg-gray-100 rounded" aria-label={isCollapsed ? "Expand sources" : "Collapse sources"} aria-expanded={isCollapsed ? "false" : "true"}>
             {isCollapsed ? (
               <ChevronDown className="w-5 h-5 text-gray-400" />
             ) : (
@@ -312,7 +313,8 @@ export function SourcesLibrary({
                     ))}
                   </div>
                   {!showAll && items.length > 4 && (
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => setShowAll(true)}
                       className="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium"
                     >
@@ -328,6 +330,7 @@ export function SourcesLibrary({
           {sortedArtifacts.length > initialVisible && (
             <div className="text-center pt-4">
               <button
+                type="button"
                 onClick={() => setShowAll(!showAll)}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
               >

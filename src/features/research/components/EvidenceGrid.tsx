@@ -95,6 +95,8 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
               src={faviconUrl}
               alt=""
               className="w-4 h-4 rounded-sm"
+              width={16}
+              height={16}
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           )}

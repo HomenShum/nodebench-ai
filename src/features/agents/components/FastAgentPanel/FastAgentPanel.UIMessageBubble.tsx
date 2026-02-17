@@ -2822,7 +2822,7 @@ export function FastAgentUIMessageBubble({
                     {url && (
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/cite:flex flex-col w-[200px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl p-2 z-50 pointer-events-none">
                         <div className="flex items-center gap-1.5 mb-1">
-                          <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3 h-3 rounded" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3 h-3 rounded" width={12} height={12} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                           <span className="text-[10px] font-medium text-[var(--text-primary)] truncate">{domain}</span>
                         </div>
                         <span className="text-[8px] text-[var(--text-muted)] truncate">{url.slice(0, 60)}</span>
@@ -2915,6 +2915,8 @@ export function FastAgentUIMessageBubble({
                       src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
                       alt=""
                       className="w-4 h-4 rounded flex-shrink-0"
+                      width={16}
+                      height={16}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                     <div className="flex-1 min-w-0">

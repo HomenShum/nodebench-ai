@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-17T12:46:48.886Z",
+  "capturedAtIso": "2026-02-17T23:32:53.992Z",
   "basePath": "/dogfood/screenshots",
   "items": [
     {
@@ -181,16 +181,6 @@
       "file": "settings-billing.png",
       "kind": "settings",
       "label": "Billing.png"
-    },
-    {
-      "file": "settings-integrations.png",
-      "kind": "settings",
-      "label": "Integrations.png"
-    },
-    {
-      "file": "settings-preferences.png",
-      "kind": "settings",
-      "label": "Preferences.png"
     },
     {
       "file": "settings-profile.png",

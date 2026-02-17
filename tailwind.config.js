@@ -69,6 +69,14 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      zIndex: {
+        raised: '10',
+        sidebar: '20',
+        sticky: '30',
+        overlay: '40',
+        modal: '50',
+        toast: '60',
+      },
       spacing: {
         "form-field": "16px",
         section: "32px",

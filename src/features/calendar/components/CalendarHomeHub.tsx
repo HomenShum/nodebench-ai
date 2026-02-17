@@ -97,14 +97,6 @@ export function CalendarHomeHub({
               }
             />
 
-            <PageHeroHeader
-              icon={<Calendar className="w-6 h-6" />}
-              title="Calendar Hub"
-              subtitle="Schedule meetings, events, and manage your time"
-              accent
-              className="mb-6"
-            />
-
             <CalendarView
               focusedDateMs={focusedDateMs}
               onSelectDate={setFocusedDateMs}

@@ -3223,7 +3223,7 @@ export function FastAgentPanel({
               <div className="mx-3 mt-1 flex items-center gap-2 flex-wrap">
                 {imagePreview.map((img, i) => (
                   <div key={i} className="relative group">
-                    <img src={img.url} alt="" className="w-12 h-12 rounded-lg object-cover border border-[var(--border-color)]" />
+                    <img src={img.url} alt="" className="w-12 h-12 rounded-lg object-cover border border-[var(--border-color)]" width={48} height={48} />
                     <button
                       type="button"
                       onClick={() => setImagePreview(prev => { URL.revokeObjectURL(prev[i].url); return prev.filter((_, j) => j !== i); })}

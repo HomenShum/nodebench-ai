@@ -29,12 +29,12 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: MetricCardProps) {
   const colorClasses = {
-    green: 'bg-green-50 text-green-600 border-green-200',
-    red: 'bg-red-50 text-red-600 border-red-200',
-    blue: 'bg-blue-50 text-blue-600 border-blue-200',
-    yellow: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-    gray: 'bg-gray-50 text-gray-600 border-gray-200',
-    purple: 'bg-purple-50 text-purple-600 border-purple-200',
+    green: 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
+    red: 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
+    blue: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+    gray: 'bg-gray-50 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+    purple: 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
   };
 
   // Create accessible description
@@ -76,19 +76,19 @@ function RequestTypeBar({ requestType, avgReviewTimeSeconds, approvalRate, count
   const percentage = maxTime > 0 ? (avgReviewTimeSeconds / maxTime) * 100 : 0;
 
   return (
-    <div className="py-3 border-b border-gray-100 last:border-0">
+    <div className="py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex-1">
-          <div className="text-sm font-medium text-gray-800">{requestType}</div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{requestType}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {count} {count === 1 ? 'decision' : 'decisions'} • {(approvalRate * 100).toFixed(0)}% approved
           </div>
         </div>
-        <div className="text-sm font-mono font-semibold text-gray-700 ml-4">
+        <div className="text-sm font-mono font-semibold text-gray-700 dark:text-gray-300 ml-4">
           {avgReviewTimeSeconds.toFixed(1)}s
         </div>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -108,14 +108,14 @@ function ModifiedFieldBar({ field, count, maxCount }: ModifiedFieldBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-gray-100 last:border-0">
+    <div className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm text-gray-700 font-medium">{field}</div>
-        <div className="text-xs text-gray-500 font-mono">
+        <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">{field}</div>
+        <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
           {count} {count === 1 ? 'modification' : 'modifications'}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -201,12 +201,12 @@ export default function HITLAnalyticsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Activity size={32} />
-              HITL Decision Analytics
+              Review Queue
             </h1>
-            <p className="text-gray-600 mt-1">
-              Human-in-the-loop review performance and automation opportunities
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Review performance and automation opportunities
             </p>
           </div>
 
@@ -234,7 +234,7 @@ export default function HITLAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -246,8 +246,8 @@ export default function HITLAnalyticsDashboard() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <Activity className="animate-spin mx-auto text-gray-400 mb-2" size={32} />
-            <p className="text-gray-600">Loading metrics...</p>
+            <Activity className="animate-spin mx-auto text-gray-400 dark:text-gray-400 mb-2" size={32} />
+            <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
           </div>
         )}
 
@@ -259,7 +259,7 @@ export default function HITLAnalyticsDashboard() {
               <MetricCard
                 title="Total Decisions"
                 value={metrics.total}
-                subtitle="HITL reviews completed"
+                subtitle="Reviews completed"
                 icon={<BarChart3 size={20} />}
                 color="blue"
               />
@@ -317,57 +317,57 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Decision Breakdown */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Decision Breakdown
                 </h2>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {metrics.total} total decisions
                 </span>
               </div>
 
               <div className="grid grid-cols-5 gap-3">
-                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-600">{metrics.approved}</div>
-                  <div className="text-xs text-green-700 mt-1">Approved</div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{metrics.approved}</div>
+                  <div className="text-xs text-green-700 dark:text-green-300 mt-1">Approved</div>
                 </div>
 
-                <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
-                  <div className="text-2xl font-bold text-red-600">{metrics.rejected}</div>
-                  <div className="text-xs text-red-700 mt-1">Rejected</div>
+                <div className="text-center p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{metrics.rejected}</div>
+                  <div className="text-xs text-red-700 dark:text-red-300 mt-1">Rejected</div>
                 </div>
 
-                <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="text-2xl font-bold text-yellow-600">{metrics.modified}</div>
-                  <div className="text-xs text-yellow-700 mt-1">Modified</div>
+                <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{metrics.modified}</div>
+                  <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Modified</div>
                 </div>
 
-                <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
-                  <div className="text-2xl font-bold text-purple-600">{metrics.escalated}</div>
-                  <div className="text-xs text-purple-700 mt-1">Escalated</div>
+                <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{metrics.escalated}</div>
+                  <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">Escalated</div>
                 </div>
 
-                <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="text-2xl font-bold text-gray-600">{metrics.deferred}</div>
-                  <div className="text-xs text-gray-700 mt-1">Deferred</div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{metrics.deferred}</div>
+                  <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">Deferred</div>
                 </div>
               </div>
             </div>
 
             {/* Average Review Time by Request Type */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Review Time by Request Type
                 </h2>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {reviewTimeByType?.length || 0} types
                 </span>
               </div>
 
               {!reviewTimeByType || reviewTimeByType.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No request types recorded yet
                 </div>
               ) : (
@@ -387,18 +387,18 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Most Modified Fields */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Most Modified Fields
                 </h2>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {modifiedFields?.length || 0} fields
                 </span>
               </div>
 
               {!modifiedFields || modifiedFields.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No field modifications recorded yet
                 </div>
               ) : (
@@ -417,14 +417,14 @@ export default function HITLAnalyticsDashboard() {
 
             {/* Insights */}
             {metrics.total > 10 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <Lightbulb className="text-blue-600 mt-0.5" size={20} />
+                  <Lightbulb className="text-blue-600 dark:text-blue-400 mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-blue-900 mb-2">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
                       Automation Opportunities
                     </h3>
-                    <ul className="text-sm text-blue-700 space-y-2">
+                    <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
                       {metrics.approvalRate > 0.8 && (
                         <li className="flex items-start gap-2">
                           <span className="text-green-600 font-bold">✓</span>
@@ -474,7 +474,7 @@ export default function HITLAnalyticsDashboard() {
                         <li className="flex items-start gap-2">
                           <span className="text-green-600 font-bold">✓</span>
                           <span>
-                            Excellent HITL efficiency - high approval rate with quick decisions
+                            Excellent review efficiency — high approval rate with quick decisions
                           </span>
                         </li>
                       )}
@@ -486,15 +486,15 @@ export default function HITLAnalyticsDashboard() {
 
             {/* Empty State */}
             {metrics.total === 0 && (
-              <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-                <Activity className="mx-auto text-gray-300 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No HITL Decisions Yet
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-12 text-center">
+                <Activity className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  No Reviews Yet
                 </h3>
-                <p className="text-gray-600 mb-4">
-                  HITL decision data will appear here once agents request human input and users respond.
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Review data will appear here once agents request human input and users respond.
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Make sure the HumanRequestCard component is integrated and agents are using the askHuman tool.
                 </p>
               </div>

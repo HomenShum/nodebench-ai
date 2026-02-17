@@ -17,6 +17,34 @@ export const listMyDogfoodQaRuns = query({
   },
 });
 
+export const getDogfoodQaTrending = query({
+  args: { days: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const cutoff = Date.now() - (args.days ?? 14) * 86_400_000;
+    const runs = await ctx.db
+      .query("dogfoodQaRuns")
+      .withIndex("by_user_createdAt", (q) =>
+        q.eq("userId", userId).gte("createdAt", cutoff),
+      )
+      .order("asc")
+      .collect();
+
+    return runs.map((run) => ({
+      date: new Date(run.createdAt).toISOString().slice(0, 10),
+      createdAt: run.createdAt,
+      source: run.source,
+      p0: run.issues.filter((i) => i.severity === "p0").length,
+      p1: run.issues.filter((i) => i.severity === "p1").length,
+      p2: run.issues.filter((i) => i.severity === "p2").length,
+      p3: run.issues.filter((i) => i.severity === "p3").length,
+      total: run.issues.length,
+    }));
+  },
+});
+
 export const findMyDogfoodQaRunByInputSha256 = internalQuery({
   args: { inputSha256: v.string() },
   handler: async (ctx, args) => {

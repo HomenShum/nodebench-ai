@@ -7,7 +7,6 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
-import { AnimatePresence, motion } from "framer-motion";
 
 import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
@@ -169,6 +168,7 @@ const DogfoodReviewView = lazy(() =>
 const SettingsModal = lazy(() => import("./SettingsModal"));
 
 const viewFallback = <ViewSkeleton variant="default" />;
+const EMPTY_FOOTNOTES_LIBRARY = { citations: {} as Record<string, unknown>, order: [] as string[], updatedAt: new Date().toISOString() };
 
 const VIEW_TITLES: Record<string, string> = {
   research: 'Home',
@@ -191,8 +191,8 @@ const VIEW_TITLES: Record<string, string> = {
   'cost-dashboard': 'Usage & Costs',
   'industry-updates': 'Industry News',
   'linkedin-posts': 'LinkedIn Posts',
-  'mcp-ledger': 'Tool Usage',
-  dogfood: 'Dogfood',
+  'mcp-ledger': 'Activity Log',
+  dogfood: 'Quality Review',
   documents: 'My Workspace',
   agents: 'Assistants',
   activity: 'Activity',
@@ -224,7 +224,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     setShowResearchDossier,
     researchHubInitialTab,
     setResearchHubInitialTab,
-    isTransitioning,
     setIsTransitioning,
   } = useMainLayoutRouting();
 
@@ -243,7 +242,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     try { return localStorage.getItem("nodebench_preview_dismissed") === "1"; } catch { return false; }
   });
   // Show guest CTA when not authenticated and not dismissed
-  const showGuestWorkspaceCta = !isAuthenticated && !user && !previewBannerDismissed;
+  // Preview CTA is useful on the "home" surface, but is distracting when it persists across every route.
+  const showGuestWorkspaceCta =
+    !isAuthenticated &&
+    !user &&
+    !previewBannerDismissed &&
+    currentView === "research" &&
+    !showResearchDossier;
 
   // Handle anonymous sign in
   const handleAnonymousSignIn = useCallback(async () => {
@@ -445,6 +450,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                 className="lg:hidden p-1.5 rounded-md text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
                 title={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -483,11 +489,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 onClick={commandPalette.toggle}
                 aria-label="Open command palette"
                 data-testid="open-command-palette"
-                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
+                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-[13px]">Search...</span>
-                <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-500 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
+                <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-400 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
                   {commandShortcutLabel}
                 </kbd>
               </button>
@@ -525,6 +531,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setShowFastAgent((open) => !open)}
+                aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
                 className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 ${showFastAgent
                   ? 'bg-gray-900 dark:bg-indigo-500/20 text-white dark:text-indigo-300 shadow-sm'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
@@ -551,7 +558,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               >
                 {user ? (
                   user.image ? (
-                    <img src={user.image} alt="" className="h-6 w-6 rounded-full" />
+                    <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
                   ) : (
                     <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
                       {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
@@ -567,15 +574,16 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           </div>
 
           {showGuestWorkspaceCta && (
-            <div className="px-4 sm:px-6 py-3 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800/40 flex items-center gap-3">
-              <div className="text-sm text-amber-900 dark:text-amber-200">
-                You&apos;re in preview mode. Sign in to save your work.
+            <div className="px-4 sm:px-6 py-2.5 bg-muted/30 border-b border-border/60 flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex h-2 w-2 rounded-full bg-amber-500/70" aria-hidden="true" />
+                <span>You&apos;re in preview mode. Sign in to save your work.</span>
               </div>
               <button
                 type="button"
                 onClick={handleAnonymousSignIn}
                 disabled={isAnonSigningIn}
-                className="ml-auto px-3 py-1.5 text-sm font-semibold rounded-md bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="ml-auto px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 {isAnonSigningIn ? "Signing in..." : "Sign in"}
               </button>
@@ -586,7 +594,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   setPreviewBannerDismissed(true);
                   try { localStorage.setItem("nodebench_preview_dismissed", "1"); } catch {}
                 }}
-                className="p-1 rounded hover:bg-amber-200/60 dark:hover:bg-amber-800/40 text-amber-700 dark:text-amber-300 transition-colors"
+                className="p-1 rounded hover:bg-muted/60 text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -594,62 +602,32 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           )}
 
           {/* Content Area - Resizable Split */}
-          <div className={`flex-1 overflow-hidden ${isTransitioning ? 'opacity-50' : 'opacity-100'}`} data-main-content>
-            <AnimatePresence mode="wait">
-            <motion.div
-              key={`${currentView}:${showResearchDossier ? "hub" : "home"}`}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              className="h-full w-full"
-            >
-            <Suspense
-              fallback={viewFallback}
-            >
+          <div className="flex-1 overflow-hidden" data-main-content>
+            <ErrorBoundary title="Something went wrong loading this view">
+            <Suspense fallback={viewFallback}>
               {currentView === 'research' ? (
-                <AnimatePresence mode="wait">
-                  {!showResearchDossier ? (
-                    <motion.div
-                      key="gateway"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0, scale: 1.05 }}
-                      transition={{ duration: 0.6 }}
-                      className="h-full w-full"
-                    >
-                      <CinematicHome
-                        onEnterHub={(tab) => {
-                          setResearchHubInitialTab(tab ?? "overview");
-                          setShowResearchDossier(true);
-                        }}
-                        onEnterWorkspace={() => setCurrentView('documents')}
-                        onOpenFastAgent={() => setShowFastAgent(true)}
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="hub"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.5 }}
-                      className="h-full w-full"
-                    >
-                      <ResearchHub
-                        embedded
-                        initialTab={researchHubInitialTab}
-                        onGoHome={() => setShowResearchDossier(false)}
-                        onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
-                        onEnterWorkspace={() => setCurrentView('documents')}
-                        activeSources={activeSources}
-                        onToggleSource={(sourceId) => setActiveSources(prev =>
-                          prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
-                        )}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                !showResearchDossier ? (
+                  <CinematicHome
+                    onEnterHub={(tab) => {
+                      setResearchHubInitialTab(tab ?? "overview");
+                      setShowResearchDossier(true);
+                    }}
+                    onEnterWorkspace={() => setCurrentView('documents')}
+                    onOpenFastAgent={() => setShowFastAgent(true)}
+                  />
+                ) : (
+                  <ResearchHub
+                    embedded
+                    initialTab={researchHubInitialTab}
+                    onGoHome={() => setShowResearchDossier(false)}
+                    onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
+                    onEnterWorkspace={() => setCurrentView('documents')}
+                    activeSources={activeSources}
+                    onToggleSource={(sourceId) => setActiveSources(prev =>
+                      prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
+                    )}
+                  />
+                )
               ) : currentView === 'public' ? (
                 <PublicDocuments onDocumentSelect={onDocumentSelect} />
               ) : currentView === 'spreadsheets' ? (
@@ -686,11 +664,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </Suspense>
               ) : currentView === 'footnotes' ? (
                 <FootnotesPage
-                  library={{
-                    citations: {},
-                    order: [],
-                    updatedAt: new Date().toISOString(),
-                  }}
+                  library={EMPTY_FOOTNOTES_LIBRARY}
                   briefTitle="Latest Daily Brief"
                   onBack={() => setCurrentView('research')}
                 />
@@ -774,9 +748,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </div>
               ) : currentView === 'dogfood' ? (
                 <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <DogfoodReviewView />
-                  </Suspense>
+                  <ErrorBoundary title="Quality Review failed to load">
+                    <Suspense fallback={viewFallback}>
+                      <DogfoodReviewView />
+                    </Suspense>
+                  </ErrorBoundary>
                 </div>
               ) : currentView === 'entity' && entityName ? (
                 <EntityProfilePage
@@ -812,8 +788,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </div>
               )}
             </Suspense>
-            </motion.div>
-            </AnimatePresence>
+            </ErrorBoundary>
           </div>
 
           {/* Floating Context Pills */}
@@ -855,7 +830,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       <div className="lg:hidden">
         {fastAgentHasMounted && (
           <ErrorBoundary title="Fast Agent Panel Error">
-            <Suspense fallback={null}>
+            <Suspense fallback={showFastAgent ? <div className="fixed inset-0 z-overlay bg-background flex items-center justify-center text-sm text-muted-foreground">Loading assistant...</div> : null}>
               <FastAgentPanel
                 isOpen={showFastAgent}
                 onClose={() => setShowFastAgent(false)}
@@ -911,13 +886,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Quick Capture Widget - Floating FAB */}
       {isAuthenticated && <QuickCaptureWidget />}
       {showSettingsModal && (
-        <Suspense fallback={null}>
-          <SettingsModal
-            isOpen={showSettingsModal}
-            onClose={() => setShowSettingsModal(false)}
-            initialTab={settingsInitialTab}
-          />
-        </Suspense>
+        <ErrorBoundary title="Settings failed to load">
+          <Suspense fallback={null}>
+            <SettingsModal
+              isOpen={showSettingsModal}
+              onClose={() => setShowSettingsModal(false)}
+              initialTab={settingsInitialTab}
+            />
+          </Suspense>
+        </ErrorBoundary>
       )}
     </div>
   );

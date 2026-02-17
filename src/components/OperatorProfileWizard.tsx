@@ -351,7 +351,7 @@ export function OperatorProfileWizard() {
           </button>
         ))}
       </div>
-      <div className="text-xs text-gray-400 dark:text-gray-500 pt-2">
+      <div className="text-xs text-gray-400 dark:text-gray-400 pt-2">
         You can adjust this anytime from the dashboard below.
       </div>
     </div>

@@ -232,7 +232,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               aria-label="Filter by status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as TaskSessionStatus | 'all')}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)]"
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
               {statusOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -244,7 +244,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               aria-label="Filter by type"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as TaskSessionType | 'all')}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)]"
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
               {typeOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -256,7 +256,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               aria-label="Filter by date range"
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)]"
+              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
               {dateRangeOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -267,7 +267,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               <button
                 type="button"
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="flex items-center gap-1 px-2 py-1 text-xs rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
               >
                 <X className="w-3 h-3" />
                 Clear
@@ -301,7 +301,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               <button
                 type="button"
                 onClick={clearFilters}
-                className="flex items-center gap-1 mt-3 px-3 py-1.5 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] rounded-md"
+                className="flex items-center gap-1 mt-3 px-3 py-1.5 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Clear filters
@@ -334,4 +334,3 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
 }
 
 export default TaskManagerView;
-

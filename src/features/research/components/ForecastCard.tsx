@@ -211,7 +211,7 @@ function EvidenceTimeline({
                   DIRECTION_DOT[item.direction]
                 )}
               />
-              <span className="text-gray-400 dark:text-gray-500 shrink-0 w-16">
+              <span className="text-gray-400 dark:text-gray-400 shrink-0 w-16">
                 {item.date}
               </span>
               <span
@@ -248,7 +248,7 @@ function TraceBreadcrumb({
     <button
       type="button"
       onClick={onExpand}
-      className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate"
+      className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate"
     >
       <span className="font-medium text-gray-500 dark:text-gray-400 shrink-0">
         via:
@@ -350,7 +350,7 @@ export function ForecastCard({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-400">
             <span>{resolutionDate}</span>
             <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-medium">
               {updateCount} update{updateCount !== 1 ? "s" : ""}
@@ -370,7 +370,7 @@ export function ForecastCard({
               {pct(probability)}
             </span>
             {confidenceInterval && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-gray-400 dark:text-gray-400">
                 CI [{pct(confidenceInterval.lower)}&ndash;
                 {pct(confidenceInterval.upper)}]
               </span>
@@ -419,7 +419,7 @@ export function ForecastCard({
             {/* Drivers */}
             {topDrivers.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-1">
                   Drivers
                 </p>
                 <ul className="space-y-0.5">
@@ -439,7 +439,7 @@ export function ForecastCard({
             {/* Counterarguments */}
             {topCounterarguments.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-1">
                   Counterarguments
                 </p>
                 <ul className="space-y-0.5">

@@ -42,9 +42,9 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'bg-gray-200/60',
+        'bg-muted/50',
         roundedClasses[rounded],
-        !isStatic && 'animate-pulse',
+        !isStatic && 'skeleton-pulse',
         className
       )}
       style={style}
@@ -104,7 +104,7 @@ export function SkeletonCard({
   return (
     <div
       className={cn(
-        'rounded-xl border border-gray-200 bg-white p-4 space-y-3',
+        'rounded-xl border border-border/60 bg-card p-4 space-y-3',
         className
       )}
     >

@@ -134,7 +134,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   // Log Deep Agent edit activity for debugging
   useEffect(() => {
     if (isAgentEditing) {
-      console.log(`[UnifiedEditor] Deep Agent editing: ${pendingCount} pending, processing: ${isDeepAgentProcessing}`);
+      // Deep Agent editing state tracked (debug logging removed)
     }
     if (hasFailedEdits) {
       console.warn("[UnifiedEditor] Deep Agent has failed edits - may require user intervention");
@@ -162,8 +162,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       try {
         const sanitized = sanitizeProseMirrorContent(sync.initialContent);
         if (sanitized !== sync.initialContent) {
-          // Content was modified, we may need to handle this
-          console.log("[UnifiedEditor] Sanitized content to remove unsupported node types");
+          // Content was sanitized to remove unsupported node types
         }
       } catch (err) {
         console.error("[UnifiedEditor] Error sanitizing content:", err);
@@ -558,7 +557,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
                 onResult?.(false, errMsg);
                 return;
               } else {
-                console.log(`[PM Bridge] Allowing edit with minor version drift (${versionDiff} versions)`);
+                // Minor version drift allowed
               }
             }
           }
@@ -1008,7 +1007,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               threadId={inlineAgentThreadId}
               onViewInPanel={() => {
                 if (inlineAgentThreadId) {
-                  console.log('[UnifiedEditor] Dispatching navigate:fastAgentThread event for:', inlineAgentThreadId);
                   window.dispatchEvent(
                     new CustomEvent('navigate:fastAgentThread', {
                       detail: { threadId: inlineAgentThreadId },

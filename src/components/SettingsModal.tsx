@@ -50,11 +50,11 @@ function SmsUsageStats() {
 
       {smsUsage?.totals && (
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-gray-50 rounded p-2 text-center">
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2 text-center">
             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalMessages}</div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">Messages</div>
           </div>
-          <div className="bg-gray-50 rounded p-2 text-center">
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2 text-center">
             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalSegments}</div>
             <div className="text-[10px] text-gray-500 dark:text-gray-400">Segments</div>
           </div>
@@ -107,10 +107,15 @@ function SmsUsageStats() {
 
 type SettingsTab =
   | "profile"
-  | "account"
   | "usage"
-  | "integrations"
-  | "webmcp";
+  | "connections";
+
+// Backward-compat: map old tab IDs to new ones
+const TAB_COMPAT: Record<string, SettingsTab> = {
+  account: "profile",
+  integrations: "connections",
+  webmcp: "connections",
+};
 
 type Props = {
   isOpen: boolean;
@@ -127,7 +132,7 @@ const PROVIDERS: string[] = [
 ];
 
 export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
-  const [active, setActive] = useState<SettingsTab>(initialTab ?? "usage");
+  const [active, setActive] = useState<SettingsTab>(TAB_COMPAT[initialTab as string] ?? initialTab ?? "usage");
 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [keyInputs, setKeyInputs] = useState<Record<string, string>>({});
@@ -140,7 +145,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   // Keep the active tab in sync with caller preference when opening
   useEffect(() => {
     if (isOpen) {
-      setActive(initialTab ?? "usage");
+      setActive(TAB_COMPAT[initialTab as string] ?? initialTab ?? "usage");
     }
   }, [isOpen, initialTab]);
 
@@ -351,11 +356,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   if (!isOpen) return null;
 
   const navItems: Array<{ id: SettingsTab; label: string }> = [
-    { id: "profile", label: "Profile & Preferences" },
-    { id: "account", label: "Account & Security" },
+    { id: "profile", label: "Profile" },
     { id: "usage", label: "Usage & Billing" },
-    { id: "integrations", label: "Integrations" },
-    { id: "webmcp", label: "WebMCP" },
+    { id: "connections", label: "Connections" },
   ];
 
   const handleSaveKey = async (provider: string) => {
@@ -561,14 +564,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             {active === "usage" ? (
               <div className="space-y-4">
                 {/* Plan */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">Current Plan</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{planLabel}</div>
                     </div>
                     <button
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-600 text-white text-xs hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 shadow-sm disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
                       onClick={() => { void handleUpgrade(); }}
                       disabled={billingBusy || user === null || !subscription || subscription.status === "active"}
                       title={user === null ? "Sign in to upgrade" : undefined}
@@ -611,7 +614,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
                     </div>
                     <button
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-blue-600 text-white text-xs hover:opacity-90 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 shadow-sm disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
                       onClick={() => { void handleUpgrade(); }}
                       disabled={billingBusy || user === null || !subscription || subscription.status === "active"}
                       title={user === null ? "Sign in to upgrade" : undefined}
@@ -1030,7 +1033,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <span>Log Out of This Device</span>
                     </button>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                      To manage other sessions, go to <strong>Account & Security</strong>
+                      To manage all sessions, scroll down to the Security section
                     </div>
                   </div>
 
@@ -1071,6 +1074,143 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
                 </div>
 
+                {/* Security & Sessions (merged from Account tab) */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Security</h3>
+
+                  {/* Active Sessions */}
+                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="text-sm font-semibold flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Active Sessions
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Manage devices where you're signed in
+                        </div>
+                      </div>
+                      <button
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs disabled:opacity-50"
+                        onClick={() => {
+                          if (user === null) { toast.error("Please sign in"); return; }
+                          setSigningOutOthers(true);
+                          void signOutOtherSessions({})
+                            .then(() => toast.success("Other sessions signed out"))
+                            .catch((e: any) => toast.error(e?.message ?? "Failed"))
+                            .finally(() => setSigningOutOthers(false));
+                        }}
+                        disabled={user === null || signingOutOthers || !((sessions ?? []).some((s) => !s.isCurrent))}
+                      >
+                        {signingOutOthers ? "Signing out…" : "Sign out other devices"}
+                      </button>
+                    </div>
+                    {sessions === undefined ? (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Loading sessions…</div>
+                    ) : (sessions.length === 0 ? (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">No sessions found.</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {sessions.slice().sort((a, b) => b._creationTime - a._creationTime).map((s) => {
+                          const deviceLabel = s.isCurrent ? "This Device" : `Device ${sessions.filter(sess => !sess.isCurrent).indexOf(s) + 1}`;
+                          return (
+                            <div key={s._id} className={`flex items-center justify-between p-2 rounded border ${s.isCurrent
+                                ? "border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-950/30"
+                                : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+                              }`}>
+                              <div className="text-xs flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Shield className={`h-3 w-3 ${s.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-gray-500"}`} />
+                                  <span className="font-medium">{deviceLabel}</span>
+                                  {s.isCurrent && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                  Signed in: {new Date(s._creationTime).toLocaleDateString()}
+                                </div>
+                              </div>
+                              {!s.isCurrent && (
+                                <button
+                                  type="button"
+                                  aria-label="Sign out this session"
+                                  title="Sign out this session"
+                                  className="px-2 py-1 text-xs rounded border border-red-200 hover:bg-red-50 text-red-600 disabled:opacity-50"
+                                  onClick={() => {
+                                    setSigningOutSessionId(s._id);
+                                    void signOutSession({ sessionId: s._id })
+                                      .then(() => toast.success("Session signed out"))
+                                      .catch((e: any) => toast.error(e?.message ?? "Failed"))
+                                      .finally(() => setSigningOutSessionId(null));
+                                  }}
+                                  disabled={user === null || signingOutSessionId === s._id}
+                                >
+                                  <LogOut className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Notification Preferences */}
+                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                    <div className="text-sm font-semibold mb-2">Notifications</div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm">API key reminder banner</div>
+                        <div className="text-[11px] text-gray-500 dark:text-gray-400">Show a banner when no API keys are linked.</div>
+                      </div>
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          aria-label="Show API key reminder banner"
+                          checked={!(userPreferences?.linkReminderOptOut ?? false)}
+                          onChange={(e) => {
+                            if (user === null) { toast.error("Please sign in"); return; }
+                            setSavingReminder(true);
+                            void updateUserPreferences({ linkReminderOptOut: !e.target.checked })
+                              .then(() => toast.success("Preference updated"))
+                              .catch((err: any) => toast.error(err?.message ?? "Failed"))
+                              .finally(() => setSavingReminder(false));
+                          }}
+                          disabled={savingReminder}
+                        />
+                        <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
+                          <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Linked Accounts */}
+                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                    <div className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Link className="h-4 w-4" />
+                      Linked Accounts
+                    </div>
+                    {linkedAccounts === undefined ? (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Loading…</div>
+                    ) : (linkedAccounts.length === 0 ? (
+                      <div className="text-xs text-gray-500 dark:text-gray-400">No linked accounts.</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {linkedAccounts.map((a) => (
+                          <div key={a._id} className="flex items-center justify-between p-2 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                            <div className="text-xs">
+                              <div className="font-medium">{a.provider}</div>
+                              <div className="text-[11px] text-gray-500 dark:text-gray-400">ID: {a.providerAccountId}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {user === null && (
                   <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
                     <div className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -1079,7 +1219,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
                 )}
               </div>
-            ) : active === "integrations" ? (
+            ) : active === "connections" ? (
               <div className="space-y-6">
                 {/* AI Services */}
                 <div className="space-y-4">
@@ -1794,173 +1934,16 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
                   </div>
                 </div>
-              </div>
-
-            ) : active === "account" ? (
-              <div className="space-y-4">
-                {/* Active Sessions */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Active Sessions Across All Devices
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        View and manage all devices where you're currently signed in
-                      </div>
-                    </div>
-                    <button
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs disabled:opacity-50"
-                      onClick={() => {
-                        if (user === null) {
-                          toast.error("Please sign in");
-                          return;
-                        }
-                        setSigningOutOthers(true);
-                        void signOutOtherSessions({})
-                          .then(() => toast.success("Other sessions signed out"))
-                          .catch((e: any) => toast.error(e?.message ?? "Failed to sign out sessions"))
-                          .finally(() => setSigningOutOthers(false));
-                      }}
-                      disabled={user === null || signingOutOthers || !((sessions ?? []).some((s) => !s.isCurrent))}
-                      title={user === null ? "Sign in" : undefined}
-                    >
-                      {signingOutOthers ? "Signing out…" : "Sign out other devices"}
-                    </button>
-                  </div>
-                  {sessions === undefined ? (
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Loading sessions…</div>
-                  ) : (sessions.length === 0 ? (
-                    <div className="text-xs text-gray-500 dark:text-gray-400">No sessions found.</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {sessions
-                        .slice()
-                        .sort((a, b) => b._creationTime - a._creationTime)
-                        .map((s, index) => {
-                          const created = new Date(s._creationTime).toLocaleString();
-                          const expires = new Date(s.expirationTime).toLocaleString();
-                          const deviceLabel = s.isCurrent
-                            ? "This Device (Current Browser)"
-                            : `Device ${sessions.filter(sess => !sess.isCurrent).indexOf(s) + 1}`;
-                          return (
-                            <div key={s._id} className={`flex items-center justify-between p-3 rounded border ${s.isCurrent
-                                ? "border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-950/30"
-                                : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
-                              }`}>
-                              <div className="text-xs flex-1">
-                                <div className="flex items-center gap-2">
-                                  <Shield className={`h-3.5 w-3.5 ${s.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`} />
-                                  <span className={`font-medium ${s.isCurrent ? "text-blue-900 dark:text-blue-200" : "text-gray-900 dark:text-gray-100"}`}>
-                                    {deviceLabel}
-                                  </span>
-                                  {s.isCurrent && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                                      <CheckCircle className="h-2.5 w-2.5" />
-                                      Active Now
-                                    </span>
-                                  )}
-                                </div>
-                                <div className={`mt-1 text-[11px] ${s.isCurrent ? "text-blue-700 dark:text-blue-300" : "text-gray-500 dark:text-gray-400"}`}>
-                                  Signed in: {created}
-                                </div>
-                                <div className={`text-[11px] ${s.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
-                                  Expires: {expires}
-                                </div>
-                              </div>
-                              {!s.isCurrent && (
-                                <button
-                                  className="px-2 py-1 text-xs rounded border border-red-200 hover:bg-red-50 text-red-600 disabled:opacity-50 flex items-center gap-1"
-                                  onClick={() => {
-                                    if (user === null) {
-                                      toast.error("Please sign in");
-                                      return;
-                                    }
-                                    setSigningOutSessionId(s._id);
-                                    void signOutSession({ sessionId: s._id })
-                                      .then(() => toast.success("Session signed out"))
-                                      .catch((e: any) => toast.error(e?.message ?? "Failed to sign out session"))
-                                      .finally(() => setSigningOutSessionId(null));
-                                  }}
-                                  disabled={user === null || signingOutSessionId === s._id}
-                                >
-                                  <LogOut className="h-3 w-3" />
-                                  {signingOutSessionId === s._id ? "Signing out…" : "Sign out"}
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Reminders (merged from Reminders tab) */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                  <div className="text-sm font-semibold mb-2">Notification Preferences</div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm">Show API key reminder banner</div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400">When enabled, a banner appears if no API keys are linked.</div>
-                    </div>
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        aria-label="Show API key reminder banner"
-                        checked={!(userPreferences?.linkReminderOptOut ?? false)}
-                        onChange={(e) => {
-                          if (user === null) {
-                            toast.error("Please sign in to change preferences");
-                            return;
-                          }
-                          setSavingReminder(true);
-                          const enabled = e.target.checked;
-                          void updateUserPreferences({ linkReminderOptOut: !enabled })
-                            .then(() => toast.success("Reminder preference updated"))
-                            .catch((err: any) => toast.error(err?.message ?? "Failed to update preferences"))
-                            .finally(() => setSavingReminder(false));
-                        }}
-                        disabled={savingReminder}
-                      />
-                      <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
-                        <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Linked Accounts */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                  <div className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <Link className="h-4 w-4" />
-                    Linked Accounts
-                  </div>
-                  {linkedAccounts === undefined ? (
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Loading accounts…</div>
-                  ) : (linkedAccounts.length === 0 ? (
-                    <div className="text-xs text-gray-500 dark:text-gray-400">No linked accounts.</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {linkedAccounts.map((a) => (
-                        <div key={a._id} className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
-                          <div className="text-xs">
-                            <div className="font-medium">{a.provider}</div>
-                            <div className="text-[11px] text-gray-500 dark:text-gray-400">ID: {a.providerAccountId}</div>
-                          </div>
-                          {/* Future: unlink button */}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
+                {/* WebMCP */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">WebMCP</h3>
+                  <WebMcpSettingsPanel />
                 </div>
               </div>
-            ) : active === "webmcp" ? (
-              <WebMcpSettingsPanel />
+
             ) : (
               <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-6 text-sm text-gray-500">
-                This section will be available soon.
+                Select a section from the sidebar.
               </div>
             )}
           </div>

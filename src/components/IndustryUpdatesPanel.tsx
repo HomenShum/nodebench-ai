@@ -18,7 +18,7 @@ import {
   AlertCircle,
   Filter,
 } from "lucide-react";
-import { IndustryUpdatesSkeleton } from "./skeletons";
+import { ViewSkeleton } from "./skeletons";
 
 const providers = ["anthropic", "openai", "google", "langchain", "vercel", "xai"];
 
@@ -45,7 +45,7 @@ export function IndustryUpdatesPanel() {
   }, [selectedProvider, suggestions]);
 
   if (!suggestions) {
-    return <IndustryUpdatesSkeleton />;
+    return <ViewSkeleton variant="industry-updates" />;
   }
 
   return (
@@ -112,8 +112,17 @@ export function IndustryUpdatesPanel() {
       {filteredSuggestions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center text-[var(--text-secondary)]">
           <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="font-medium text-[var(--text-primary)] mb-1">No updates yet</p>
-          <p className="text-sm max-w-sm">Industry updates are refreshed daily from AI leader feeds. Check back tomorrow, or try a different source filter above.</p>
+          {selectedProvider ? (
+            <>
+              <p className="font-medium text-[var(--text-primary)] mb-1">No updates for this filter</p>
+              <p className="text-sm max-w-sm">Try selecting a different provider or clear the filter to see all updates.</p>
+            </>
+          ) : (
+            <>
+              <p className="font-medium text-[var(--text-primary)] mb-1">No updates yet</p>
+              <p className="text-sm max-w-sm">Industry updates are refreshed daily from AI leader feeds. Check back tomorrow.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

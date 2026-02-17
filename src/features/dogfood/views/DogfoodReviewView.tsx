@@ -361,23 +361,40 @@ export function DogfoodReviewView() {
   const qaRuns = useQuery(api.domains.dogfood.videoQaQueries.listMyDogfoodQaRuns, { limit: 6 }) as
     | DogfoodQaRun[]
     | undefined;
+  const qaTrending = useQuery(api.domains.dogfood.videoQaQueries.getDogfoodQaTrending, { days: 14 }) as
+    | { date: string; createdAt: number; source: string; p0: number; p1: number; p2: number; p3: number; total: number }[]
+    | undefined;
   const runVideoQa = useAction(api.domains.dogfood.videoQa.runDogfoodVideoQa);
   const runScreenshotQa = useAction(api.domains.dogfood.screenshotQa.runDogfoodScreenshotQa);
 
+  const fetchWithTimeout = async (url: string, init: RequestInit | undefined, timeoutMs: number) => {
+    const controller = new AbortController();
+    const id = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...(init ?? {}), signal: controller.signal });
+    } finally {
+      window.clearTimeout(id);
+    }
+  };
+
   const uploadUrlToConvexStorage = async (inputUrl: string, fileName: string, fallbackMime: string) => {
     const url = resolveAbsoluteUrl(inputUrl) ?? inputUrl;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, undefined, 60_000);
     if (!res.ok) throw new Error(`Failed to read artifact: HTTP ${res.status}`);
     const blob = await res.blob();
     const mimeType = blob.type || fallbackMime;
     const file = new File([blob], fileName, { type: mimeType });
 
     const uploadUrl = await generateUploadUrl();
-    const uploadRes = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
+    const uploadRes = await fetchWithTimeout(
+      uploadUrl,
+      {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      },
+      60_000,
+    );
     if (!uploadRes.ok) throw new Error(`Upload failed: HTTP ${uploadRes.status}`);
     const { storageId } = (await uploadRes.json()) as { storageId: string };
 
@@ -820,13 +837,53 @@ export function DogfoodReviewView() {
                   setQaRunning(true);
                   setQaError(null);
                   try {
-                    const uploadedVideoUrl = await uploadUrlToConvexStorage(
-                      resolvedVideoUrl,
-                      `dogfood-walkthrough-${Date.now()}.mp4`,
-                      walkthrough?.mime ?? "video/mp4",
-                    );
+                    const allFrames = frames?.items ?? [];
+                    const maxFrames = 8;
+                    const sampleCount = Math.min(maxFrames, allFrames.length);
+                    const sampleIndices =
+                      sampleCount <= 1
+                        ? [0]
+                        : Array.from({ length: sampleCount }, (_, i) =>
+                            Math.round((i * (allFrames.length - 1)) / (sampleCount - 1)),
+                          );
+                    const frameItems = Array.from(new Set(sampleIndices))
+                      .map((idx) => allFrames[idx])
+                      .filter(Boolean)
+                      .map((it) => ({
+                        url: resolveAbsoluteUrl(it.image) ?? it.image,
+                        label: it.name,
+                        route: it.path,
+                        startSec: it.startSec,
+                      }));
+
+                    let uploadedFrames:
+                      | { url: string; label?: string; route?: string; startSec?: number }[]
+                      | undefined;
+
+                    if (frameItems.length > 0) {
+                      uploadedFrames = [];
+                      for (const f of frameItems) {
+                        // eslint-disable-next-line no-await-in-loop
+                        const url = await uploadUrlToConvexStorage(
+                          f.url,
+                          `dogfood-frame-${Date.now()}-${slugifyForFile(f.label) || "frame"}.jpg`,
+                          "image/jpeg",
+                        );
+                        uploadedFrames.push({ ...f, url });
+                      }
+                    }
+
+                    const videoUrlForRun = uploadedFrames?.length
+                      ? resolvedVideoUrl
+                      : await uploadUrlToConvexStorage(
+                          resolvedVideoUrl,
+                          `dogfood-walkthrough-${Date.now()}.mp4`,
+                          walkthrough?.mime ?? "video/mp4",
+                        );
+
                     const run = (await runVideoQa({
-                      videoUrl: uploadedVideoUrl,
+                      videoUrl: videoUrlForRun,
+                      frames: uploadedFrames,
                       walkthrough: walkthrough ?? undefined,
                       prompt: qaPrompt.trim().length ? qaPrompt : undefined,
                     })) as any as DogfoodQaRun;
@@ -853,9 +910,8 @@ export function DogfoodReviewView() {
                   setQaError(null);
                   try {
                     const base = manifest.basePath || "/dogfood/screenshots";
-                    const screenshots = (manifest.items ?? [])
+                    const allScreenshots = (manifest.items ?? [])
                       .filter((it) => it.kind === "route" || it.kind === "interaction" || it.kind === "settings")
-                      .slice(0, 10)
                       .map((it) => ({
                         label: it.label,
                         route: it.kind === "route" ? it.label : it.kind,
@@ -863,8 +919,20 @@ export function DogfoodReviewView() {
                       }))
                       .filter((s) => s.url);
 
+                    const maxUpload = 12;
+                    const sampleCount = Math.min(maxUpload, allScreenshots.length);
+                    const sampleIndices =
+                      sampleCount <= 1
+                        ? [0]
+                        : Array.from({ length: sampleCount }, (_, i) =>
+                            Math.round((i * (allScreenshots.length - 1)) / (sampleCount - 1)),
+                          );
+                    const screenshots = Array.from(new Set(sampleIndices))
+                      .map((idx) => allScreenshots[idx])
+                      .filter(Boolean);
+
                     const uploaded = [];
-                    for (const s of screenshots.slice(0, 8)) {
+                    for (const s of screenshots) {
                       // eslint-disable-next-line no-await-in-loop
                       const url = await uploadUrlToConvexStorage(
                         s.url,
@@ -877,7 +945,7 @@ export function DogfoodReviewView() {
                     const run = (await runScreenshotQa({
                       screenshots: uploaded,
                       prompt: qaPrompt.trim().length ? qaPrompt : undefined,
-                      maxImages: 8,
+                      maxImages: uploaded.length,
                     })) as any as DogfoodQaRun;
                     setQaLast(run);
                   } catch (e) {
@@ -920,6 +988,7 @@ export function DogfoodReviewView() {
                   {qaLast ? (
                     <span>
                       Latest: <span className="font-mono">{formatMs(qaLast.createdAt)}</span>
+                      {qaLast.source ? <span className="font-mono"> · {qaLast.source}</span> : null}
                     </span>
                   ) : null}
                 </div>
@@ -930,7 +999,7 @@ export function DogfoodReviewView() {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="text-sm font-medium text-foreground">Summary</div>
                     <div className="text-xs text-muted-foreground font-mono">
-                      {formatMs(run.createdAt)} · {run.provider}/{run.model}
+                      {formatMs(run.createdAt)} · {run.provider}/{run.model}{run.source ? ` · ${run.source}` : ""}
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground whitespace-pre-wrap">{run.summary}</div>
@@ -972,6 +1041,63 @@ export function DogfoodReviewView() {
                 </div>
               ))}
             </div>
+          )}
+
+          {/* QA Trend — severity burndown over last 14 days */}
+          {qaTrending && qaTrending.length > 0 && (() => {
+            const maxTotal = Math.max(...qaTrending.map((d) => d.total), 1);
+            const latest = qaTrending[qaTrending.length - 1];
+            const prev = qaTrending.length >= 2 ? qaTrending[qaTrending.length - 2] : null;
+            const critLatest = latest.p0 + latest.p1;
+            const critPrev = prev ? prev.p0 + prev.p1 : critLatest;
+            const delta = critLatest - critPrev;
+            const points = qaTrending
+              .map((d, i) => {
+                const x = qaTrending.length === 1 ? 50 : (i / (qaTrending.length - 1)) * 100;
+                const y = 100 - ((d.p0 + d.p1) / maxTotal) * 100;
+                return `${x},${y}`;
+              })
+              .join(" ");
+            return (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between gap-3">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">QA Trend</div>
+                  <div className="flex items-baseline gap-2 text-xs text-muted-foreground">
+                    <span className="font-mono">p0+p1: {critLatest}</span>
+                    {prev && (
+                      <span className={`font-mono ${delta < 0 ? "text-green-500" : delta > 0 ? "text-red-400" : "text-muted-foreground"}`}>
+                        {delta > 0 ? "+" : ""}{delta}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="rounded-md border border-border/60 bg-card p-3">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-16">
+                    <polyline
+                      points={points}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      vectorEffect="non-scaling-stroke"
+                      className="text-red-400/80"
+                    />
+                    {qaTrending.map((d, i) => {
+                      const x = qaTrending.length === 1 ? 50 : (i / (qaTrending.length - 1)) * 100;
+                      const y = 100 - ((d.p0 + d.p1) / maxTotal) * 100;
+                      return <circle key={i} cx={x} cy={y} r="2" vectorEffect="non-scaling-stroke" className="fill-red-400/80" />;
+                    })}
+                  </svg>
+                  <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-mono">
+                    <span>{qaTrending[0].date}</span>
+                    <span>{latest.date}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {qaTrending !== undefined && qaTrending.length === 0 && (
+            <div className="text-xs text-muted-foreground">No QA runs in the last 14 days — run a QA session above to start tracking trends.</div>
           )}
         </div>
 

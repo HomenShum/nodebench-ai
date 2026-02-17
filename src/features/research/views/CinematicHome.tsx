@@ -138,7 +138,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                             </div>
                         ) : (
                             <>
-                                <Sparkles className="w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                                <Sparkles className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
                                 <label htmlFor="cinematic-home-input" className="sr-only">Ask anything or drop a file</label>
                                 <input
                                     id="cinematic-home-input"
@@ -169,7 +169,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     initial={reduceMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
-                    className="mt-4 flex items-center gap-4 text-sm text-gray-400 dark:text-gray-500"
+                    className="mt-4 flex items-center gap-4 text-sm text-gray-400 dark:text-gray-400"
                 >
                     <button
                         type="button"
@@ -194,7 +194,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                         initial={reduceMotion ? false : { opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.5, delay: 0.5 }}
-                        className="mt-6 text-sm text-gray-400 dark:text-gray-500 text-center max-w-md"
+                        className="mt-6 text-sm text-gray-400 dark:text-gray-400 text-center max-w-md"
                     >
                         {insights[0].icon} {insights[0].message}
                     </motion.p>

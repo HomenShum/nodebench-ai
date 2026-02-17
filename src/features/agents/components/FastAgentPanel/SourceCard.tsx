@@ -78,6 +78,8 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
               src={previewImage}
               alt=""
               className="w-16 h-16 rounded object-cover bg-[var(--bg-hover)]"
+              width={64}
+              height={64}
               loading="lazy"
             />
           ) : (
@@ -108,6 +110,8 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
                 src={favicon}
                 alt=""
                 className="w-3 h-3"
+                width={12}
+                height={12}
                 loading="lazy"
               />
             )}

@@ -821,7 +821,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   </div>
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">AI Research Brief</span>
-                    <p className="text-[9px] text-gray-500 dark:text-gray-500 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
+                    <p className="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">

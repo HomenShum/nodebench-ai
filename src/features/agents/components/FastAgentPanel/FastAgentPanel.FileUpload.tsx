@@ -135,6 +135,8 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
                       src={uploadedFile.url}
                       alt={uploadedFile.filename}
                       className="w-20 h-20 object-cover rounded border border-[var(--border-color)]"
+                      width={80}
+                      height={80}
                     />
                   </div>
                 ) : (

@@ -48,6 +48,8 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
               src={profile.imageUrl}
               alt={profile.name}
               className="w-12 h-12 rounded-full object-cover bg-[var(--bg-hover)]"
+              width={48}
+              height={48}
               loading="lazy"
             />
           ) : (

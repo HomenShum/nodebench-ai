@@ -40,6 +40,7 @@
     "dogfood:overstory:dashboard": "bash scripts/overstory/run-in-wsl.sh dashboard",
     "dogfood:overstory:mail": "bash scripts/overstory/run-in-wsl.sh mail check --inject",
     "dogfood:qa-gate": "node scripts/overstory/ci-qa-check.mjs",
+    "dogfood:qa:gemini": "node scripts/ui/runDogfoodGeminiQa.mjs",
     "build:analyze": "cross-env ANALYZE=true npm run build",
     "perf:lighthouse": "lighthouse http://localhost:5173/#analytics/hitl --output=json --output-path=lighthouse-report.json --chrome-flags=\"--headless\" --only-categories=performance,accessibility && node analyze-lighthouse.cjs",
     "perf:bundle": "npm run build:analyze",
