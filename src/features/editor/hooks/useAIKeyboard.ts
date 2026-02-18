@@ -26,7 +26,6 @@ export function useAIKeyboard({ editor, askFastAgent }: UseAIKeyboardOptions) {
         // 1) SPACE: If user typed exactly "/ai" then pressing space converts it to "🤖 "
         if (event.key === ' ' || event.code === 'Space') {
           if (/^\/ai$/i.test(blockText)) {
-            console.log('[useAIKeyboard] Replacing "/ai" with "🤖 " on space');
             event.preventDefault();
             event.stopPropagation();
             editor.updateBlock(currentBlock, {
@@ -39,7 +38,6 @@ export function useAIKeyboard({ editor, askFastAgent }: UseAIKeyboardOptions) {
 
           // Handle /edit -> "✏️ Edit: "
           if (/^\/edit$/i.test(blockText)) {
-            console.log('[useAIKeyboard] Replacing "/edit" with "✏️ Edit: " on space');
             event.preventDefault();
             event.stopPropagation();
             editor.updateBlock(currentBlock, {
@@ -60,10 +58,8 @@ export function useAIKeyboard({ editor, askFastAgent }: UseAIKeyboardOptions) {
       }
     };
 
-    console.log('[useAIKeyboard] Adding /ai keyboard handler');
     document.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
-      console.log('[useAIKeyboard] Removing /ai keyboard handler');
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
   }, [editor, askFastAgent]);
@@ -76,7 +72,6 @@ function handleEnterKey(
   rawText: string,
   askFastAgent: (question: string, context: string) => Promise<void>
 ) {
-  console.log('[useAIKeyboard] Enter pressed, block text:', rawText);
 
   // Check for /ai or 🤖 patterns
   const aiSlash = rawText.match(/^\s*\/ai\s+(.+)$/i);
@@ -86,7 +81,6 @@ function handleEnterKey(
   if (match) {
     const question = match[1].trim();
     if (!question) return;
-    console.log('[useAIKeyboard] ✅ Detected AI inline question:', question);
 
     event.preventDefault();
     event.stopPropagation();
@@ -133,7 +127,6 @@ function handleEditInstruction(
   askFastAgent: (question: string, context: string) => Promise<void>
 ) {
   if (!instruction) return;
-  console.log('[useAIKeyboard] ✅ Detected Deep Agent edit instruction:', instruction);
 
   event.preventDefault();
   event.stopPropagation();
@@ -149,7 +142,6 @@ function handleEditInstruction(
       return "";
     }).filter(Boolean).join("\n").substring(0, 2000);
   } catch (e) {
-    console.warn("[useAIKeyboard] Could not extract document context:", e);
   }
 
   // Show editing indicator

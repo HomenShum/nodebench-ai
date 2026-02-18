@@ -84,7 +84,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
     );
 
     if (assistantMessages.length === 0) {
-      console.log("[useInlineFastAgent] No assistant messages yet");
       return;
     }
 
@@ -154,7 +153,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
         // Update the streaming block with new text
         const block = streamingBlockRef.current;
         if (block && block.id) {
-          console.log("[useInlineFastAgent] Updating block with text:", fullText.substring(0, 50));
 
           // Remove HTML comment markers, image markdown, and plain image URL lists for cleaner inline display
           const cleanText = fullText
@@ -184,7 +182,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
             const hasImageBlocks = nextBlock && nextBlock.type === 'image';
 
             if (!hasImageBlocks) {
-              console.log('[useInlineFastAgent] Inserting', images.length, 'image blocks');
 
               // Insert image blocks after the text block
               const imageBlocks = images.map(img => ({
@@ -241,7 +238,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
     const isComplete = latestMessage.status === "complete" || latestMessage.status === "error";
 
     if (isComplete && streamingState.isStreaming) {
-      console.log("[useInlineFastAgent] Streaming complete, status:", latestMessage.status);
       setStreamingState((prev) => ({
         ...prev,
         isStreaming: false,
@@ -320,7 +316,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
 
         setStreamingState((prev) => ({ ...prev, messageId: result.messageId }));
 
-        console.log("[useInlineFastAgent] Streaming initiated, messageId:", result.messageId);
       } catch (error) {
         console.error("[useInlineFastAgent] Error:", error);
         setStreamingState({

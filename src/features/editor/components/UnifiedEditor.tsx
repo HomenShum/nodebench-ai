@@ -94,7 +94,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     editorOptions,
     snapshotDebounceMs: 2000,
     onSyncError: (error: Error) => {
-      console.warn("[UnifiedEditor] sync error:", error?.message || String(error));
     },
   });
 
@@ -137,10 +136,8 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       // Deep Agent editing state tracked (debug logging removed)
     }
     if (hasFailedEdits) {
-      console.warn("[UnifiedEditor] Deep Agent has failed edits - may require user intervention");
     }
     if (staleCount > 0) {
-      console.warn(`[UnifiedEditor] ${staleCount} stale edits detected - document may have changed`);
     }
   }, [isAgentEditing, pendingCount, hasFailedEdits, staleCount, isDeepAgentProcessing]);
 
@@ -219,7 +216,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       try {
         void sync.create?.({ type: "doc", content: [] } as any);
       } catch (e) {
-        console.warn("[UnifiedEditor] autoCreateIfEmpty failed", e);
       }
     }
   }, [autoCreateIfEmpty, serverHadContent, safeLatestVersion, sync]);
@@ -265,7 +261,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         .filter((b: any) => b && b.type && !["blockGroup", "text"].includes(b.type));
       return normalized;
     } catch (e) {
-      console.warn('[UnifiedEditor] markdown parse failed, falling back to paragraph', e);
       return [{ type: 'paragraph', content: [{ type: 'text', text: txt }] }];
     }
   }, [parserEditor]);
@@ -305,7 +300,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch { }; void markHasContent();
           }
         } catch (e) {
-          console.warn('[UnifiedEditor] failed to seed from markdown', e);
         }
       })();
     } else if (seed) {
@@ -343,7 +337,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         seededDocCache.set(docKey, seed);
         try { window.localStorage.setItem(`nb.doc.hasContent.${String(documentId)}`, '1'); } catch { }; void markHasContent();
       } catch (e) {
-        console.warn('[UnifiedEditor] restore failed', e);
       }
     })();
   }, [restoreSignal, restoreMarkdown, blocksFromMarkdown, sync.editor, documentId, markHasContent]);
@@ -501,7 +494,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             });
             return { doc: json, selection: { from, to }, nodes };
           } catch (e) {
-            console.warn('[PM Bridge] buildContext failed', e);
             return null;
           }
         };
@@ -514,7 +506,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               detail: { requestId: e.detail?.requestId, documentId, context: ctx },
             }));
           } catch (err) {
-            console.warn('[PM Bridge] failed to dispatch pmContext', err);
           }
         };
 
@@ -546,7 +537,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
           if (typeof editDocVersion === 'number' && typeof safeLatestVersion === 'number') {
             if (editDocVersion < safeLatestVersion) {
               const versionDiff = safeLatestVersion - editDocVersion;
-              console.warn(`[PM Bridge] Version mismatch detected: edit version ${editDocVersion}, current version ${safeLatestVersion} (${versionDiff} versions behind)`);
 
               // Allow small version differences (user may have made minor edits)
               // but reject if too far behind (document has changed significantly)
@@ -656,7 +646,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
 
                 if (occ.length === 0) {
                   const errMsg = `Anchor not found: "${anchor.slice(0, 50)}${anchor.length > 50 ? '...' : ''}"`;
-                  console.warn('[PM Bridge] anchoredReplace: anchor not found', { anchor });
                   operationErrors.push(errMsg);
                   continue;
                 }
@@ -690,7 +679,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
                   chain.run();
                 } else {
                   const errMsg = `Failed to map offsets for anchor: "${anchor.slice(0, 30)}..."`;
-                  console.warn('[PM Bridge] anchoredReplace: failed to map plain offsets', { fromPlain, toPlain, anchor });
                   operationErrors.push(errMsg);
                 }
 
@@ -710,7 +698,6 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
             }
           } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err);
-            console.warn('[PM Bridge] apply operations failed', err);
             // Report failure to Deep Agent
             onResult?.(false, `Operation failed: ${errorMsg}`);
           }

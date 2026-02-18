@@ -1324,7 +1324,6 @@ export function DocumentsHomeHub({
             toast.success(`Indexed ${res.inserted} chunks for ${file.name}`);
           }
         }).catch((err) => {
-          console.warn(`[upload] extractAndIndexFile failed for ${file.name}:`, err);
         });
 
         toast.success(`Uploaded ${file.name}`, {
@@ -2357,7 +2356,6 @@ export function DocumentsHomeHub({
           name: "Timeline",
         });
       } catch (e) {
-        console.warn("Failed to create agent timeline for document", e);
       }
 
       // If we couldn't create a timeline (e.g., not the owner), immediately fall back to a new doc
@@ -2388,7 +2386,6 @@ export function DocumentsHomeHub({
         try {
           await setDocumentType({ id: targetDocId, documentType: "timeline" });
         } catch (e3) {
-          console.warn("Fallback setDocumentType also failed", e3);
         }
       }
 
@@ -2425,7 +2422,6 @@ export function DocumentsHomeHub({
         try {
           await setDocumentType({ id: targetDocId, documentType: "timeline" });
         } catch (e3) {
-          console.warn("Fallback setDocumentType also failed", e3);
         }
       }
 
@@ -3844,7 +3840,6 @@ export function DocumentsHomeHub({
 
       await setDocumentType({ id: newDoc, documentType: "timeline" });
     } catch (e) {
-      console.warn("Failed to create agent timeline for document", e);
     }
 
     handleSelectDocument(newDoc);

@@ -123,17 +123,14 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
 
     // Guard against duplicate triggers from re-renders/user changes
     if (lastAutoSentKeyRef.current === text) {
-      console.log('[MiniNoteAgentChat] Duplicate detected, skipping send');
       return;
     }
     // Cross-remount dedupe (sessionStorage, short TTL)
     if (!canAutoSend(text)) {
-      console.log('[MiniNoteAgentChat] Session dedupe blocked auto-send');
       return;
     }
     lastAutoSentKeyRef.current = text;
 
-    console.log('[MiniNoteAgentChat] Calling send() for pendingPrompt');
     void send(text);
     onPromptConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +160,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
     // Prevent duplicate sends (global guard across mounts) + waiting state
      
     if (creating || sending || waitingForAgent || (window as any).__miniNoteSendLock) {
-      console.log('[MiniNoteAgentChat] Already sending or locked, ignoring duplicate send');
       return;
     }
      
@@ -200,7 +196,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       return;
     }
 
-    console.log('[MiniNoteAgentChat] send() called with:', msg.substring(0, 50));
 
     // Immediately show optimistic user message
     setOptimisticUserMessage(msg);
@@ -208,17 +203,14 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
 
     try {
       if (!threadId) {
-        console.log('[MiniNoteAgentChat] Creating new thread...');
         setCreating(true);
         const newId = await createThread({
           title: 'Mini Note Agent',
           anonymousSessionId: anonymousSession.sessionId ?? undefined,
         });
-        console.log('[MiniNoteAgentChat] Thread created:', newId);
         setThreadId(newId as Id<'chatThreadsStream'>);
         setCreating(false);
         setSending(true);
-        console.log('[MiniNoteAgentChat] Sending message to new thread...');
         const clientContext =
           typeof window !== "undefined"
             ? {
@@ -246,7 +238,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         // Now waiting for agent to respond
         setWaitingForAgent(true);
       } else {
-        console.log('[MiniNoteAgentChat] Sending message to existing thread:', threadId);
         setSending(true);
         const clientContext =
           typeof window !== "undefined"
@@ -297,7 +288,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       setCancelling(true);
       await cancelStreaming({ threadId });
     } catch (err) {
-      console.warn('MiniNoteAgentChat stop failed', err);
     } finally {
       setCancelling(false);
     }
@@ -327,7 +317,6 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
             <HumanRequestList
               requests={humanRequests}
               onRespond={() => {
-                console.log('[MiniNoteAgentChat] Human request responded');
               }}
             />
           </div>

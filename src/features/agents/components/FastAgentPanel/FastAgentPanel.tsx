@@ -890,7 +890,6 @@ export function FastAgentPanel({
   // Update active thread when initialThreadId changes (for external navigation)
   useEffect(() => {
     if (initialThreadId && initialThreadId !== activeThreadId) {
-      console.log('[FastAgentPanel] Setting active thread from external source:', initialThreadId);
       setActiveThreadId(initialThreadId);
     }
   }, [initialThreadId, activeThreadId]);
@@ -1421,7 +1420,6 @@ export function FastAgentPanel({
 
   const handleSendMessage = useCallback(async (content?: string) => {
     const text = (content ?? input).trim();
-    console.log('[FastAgentPanel] 🎯 handleSendMessage called, text:', text.substring(0, 30) + '...', 'isBusy:', isBusy);
     if (!text || isBusy) return;
 
     // ⚡ CRITICAL GUARD: Prevent duplicate sends of same message within 3 seconds
@@ -1430,11 +1428,9 @@ export function FastAgentPanel({
     if (lastSentMessageRef.current &&
         lastSentMessageRef.current.text === text &&
         now - lastSentMessageRef.current.timestamp < DEDUPE_WINDOW_MS) {
-      console.log('[FastAgentPanel] 🛑 Send BLOCKED - duplicate message within', DEDUPE_WINDOW_MS, 'ms');
       return;
     }
     lastSentMessageRef.current = { text, timestamp: now };
-    console.log('[FastAgentPanel] ✅ Send ALLOWED - message recorded for deduplication');
 
     // Check if anonymous user has exceeded their daily limit
     if (anonymousSession.isAnonymous && !anonymousSession.canSendMessage) {
@@ -1452,7 +1448,6 @@ export function FastAgentPanel({
 
     if (docCreationMatch && chatMode === 'agent-streaming') {
       const topic = docCreationMatch[1];
-      console.log('[FastAgentPanel] Document creation request detected for topic:', topic);
 
       setInput('');
       setIsStreaming(true);
@@ -1494,7 +1489,6 @@ export function FastAgentPanel({
           isPublic: false,
         });
 
-        console.log('[FastAgentPanel] Document created:', result.documentId);
         // Mark this thread as having created a document to prevent duplicate auto-create
         autoDocCreatedThreadIdsRef.current.add(agentThreadId);
 
@@ -1568,17 +1562,14 @@ export function FastAgentPanel({
             model: selectedModel,
           });
           setActiveThreadId(result.threadId);
-          console.log('[FastAgentPanel] New thread created:', result.threadId);
         } else {
           // Continue existing thread
           result = await continueThreadAction({
             threadId: activeThreadId,
             message: messageContent,
           });
-          console.log('[FastAgentPanel] Continued thread:', activeThreadId);
         }
 
-        console.log('[FastAgentPanel] Message sent with messageId:', result.messageId);
         setIsStreaming(false);
       } else {
         // Agent streaming mode chat flow - uses agent component's native streaming
@@ -1613,7 +1604,6 @@ export function FastAgentPanel({
             }
             : undefined;
 
-        console.log('[FastAgentPanel] 🚀 Calling sendStreamingMessage with threadId:', threadId, 'prompt:', messageContent.substring(0, 30) + '...');
         await sendStreamingMessage({
           threadId: threadId as Id<"chatThreadsStream">,
           prompt: messageContent,
@@ -1624,7 +1614,6 @@ export function FastAgentPanel({
           clientContext,
         });
 
-        console.log('[FastAgentPanel] ✅ Streaming initiated successfully');
         setIsStreaming(false);
 
         // Auto-name the thread if it's new (fire and forget)
@@ -1634,10 +1623,8 @@ export function FastAgentPanel({
             firstMessage: text,
           }).then((result) => {
             if (!result.skipped) {
-              console.log('[FastAgentPanel] Thread auto-named:', result.title);
             }
           }).catch((err) => {
-            console.warn('[FastAgentPanel] Failed to auto-name thread:', err);
           });
         }
       }
@@ -1689,12 +1676,10 @@ export function FastAgentPanel({
 
     // ⚡ CRITICAL GUARD: Prevent duplicate auto-sends
     if (lastAutoSentRequestIdRef.current === requestId) {
-      console.log('[FastAgentPanel] 🛑 Auto-send BLOCKED - already sent requestId:', requestId);
       return;
     }
     lastAutoSentRequestIdRef.current = requestId;
 
-    console.log('[FastAgentPanel] ✅ Auto-send ALLOWED - requestId:', requestId);
     stableSendMessage(message);
     setPendingAutoSend(null);
     onOptionsConsumed?.();
@@ -1704,10 +1689,8 @@ export function FastAgentPanel({
 
   // Handle message deletion
   const handleDeleteMessage = useCallback(async (messageId: string) => {
-    console.log('[FastAgentPanel] User requested deletion for messageId:', messageId);
 
     if (chatMode !== 'agent-streaming' || !activeThreadId) {
-      console.warn('[FastAgentPanel] Cannot delete: not in streaming mode or no active thread');
       return;
     }
 
@@ -1717,7 +1700,6 @@ export function FastAgentPanel({
         messageId,
       });
       toast.success('Message deleted');
-      console.log('[FastAgentPanel] Message deleted successfully');
     } catch (err) {
       console.error('[FastAgentPanel] Failed to delete message:', err);
       toast.error('Failed to delete message');
@@ -1726,17 +1708,14 @@ export function FastAgentPanel({
 
   // Handle general message regeneration
   const handleRegenerateMessage = useCallback(async (messageKey: string) => {
-    console.log('[FastAgentPanel] User requested regeneration for message:', messageKey);
 
     if (chatMode !== 'agent-streaming' || !activeThreadId || !streamingMessages) {
-      console.warn('[FastAgentPanel] Cannot regenerate: not in streaming mode or no active thread');
       return;
     }
 
     // Find the message being regenerated
     const messageIndex = streamingMessages.findIndex(m => m.key === messageKey);
     if (messageIndex === -1) {
-      console.warn('[FastAgentPanel] Message not found:', messageKey);
       return;
     }
 
@@ -1750,12 +1729,10 @@ export function FastAgentPanel({
     }
 
     if (!userPrompt) {
-      console.warn('[FastAgentPanel] No user prompt found before this message');
       toast.error('Could not find the original prompt to regenerate');
       return;
     }
 
-    console.log('[FastAgentPanel] Regenerating with prompt:', userPrompt.substring(0, 100));
 
     try {
       const clientContext =
@@ -1811,7 +1788,6 @@ export function FastAgentPanel({
 
   // Handle document selection from document action cards
   const handleDocumentSelect = useCallback((documentId: string) => {
-    console.log('[FastAgentPanel] Document selected:', documentId);
     try {
       window.dispatchEvent(
         new CustomEvent('nodebench:openDocument', {
