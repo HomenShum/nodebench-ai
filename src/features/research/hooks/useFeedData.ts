@@ -196,7 +196,6 @@ export function useFeedData(options: UseFeedDataOptions = {}) {
   // Load more handler
   const loadMore = useCallback(() => {
     // In a real implementation, this would update the limit and trigger a new query
-    console.log('Load more triggered');
   }, []);
 
   return {

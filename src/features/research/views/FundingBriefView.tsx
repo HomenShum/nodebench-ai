@@ -454,7 +454,6 @@ export function FundingBriefView() {
         : undefined;
 
       if (insightsResult.success) {
-        console.log(`[FundingBrief] AI insights generated using ${insightsResult.modelUsed} (free=${insightsResult.isFree})`);
       }
 
       await generateFromFundingEvents(fundingRows, quarterLabel, insights, true);

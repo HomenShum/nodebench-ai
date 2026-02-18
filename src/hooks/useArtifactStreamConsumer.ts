@@ -90,7 +90,6 @@ export function useArtifactStreamConsumer({
     }));
     
     if (debug) {
-      console.log(`[useArtifactStreamConsumer] Syncing ${cards.length} artifacts for run ${runId}`);
     }
     
     // CRITICAL: Pass runId so reducer can ignore stale results from previous runs

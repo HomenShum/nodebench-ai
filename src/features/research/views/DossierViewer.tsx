@@ -58,7 +58,6 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             setQuickNotesDocId(doc._id);
           } else {
             // Quick notes not available (e.g., public dossier without edit permissions)
-            console.log('[DossierViewer] Quick notes not available for this dossier');
           }
         })
         .catch((error) => {

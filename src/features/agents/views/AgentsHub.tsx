@@ -206,8 +206,8 @@ function AgentGrid() {
           currentTask={agent.currentTask}
           isExpanded={expandedAgents.has(agent.id)}
           onToggleExpand={() => toggleExpand(agent.id)}
-          onConfigure={() => console.log("Configure", agent.id)}
-          onToggleStatus={() => console.log("Toggle", agent.id)}
+          onConfigure={() => {}}
+          onToggleStatus={() => {}}
         />
       ))}
     </div>

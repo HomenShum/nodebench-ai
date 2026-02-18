@@ -132,14 +132,6 @@ export function usePendingEdits(
     const edit = editQueueRef.current.shift()!;
     setCurrentEdit(edit);
 
-    console.log(`[usePendingEdits] Processing edit ${edit._id}`, {
-      anchor: edit.operation.anchor.substring(0, 50),
-      search: edit.operation.search.substring(0, 30),
-      replace: edit.operation.replace.substring(0, 30),
-      threadId: edit.agentThreadId,
-      queueRemaining: editQueueRef.current.length,
-    });
-
     // Create a promise that resolves when the edit is complete
     const editComplete = new Promise<{ success: boolean; error?: string }>((resolve) => {
       const onResult = async (success: boolean, error?: string) => {
@@ -205,11 +197,6 @@ export function usePendingEdits(
       .sort((a, b) => a.createdAt - b.createdAt);
 
     if (newPendingEdits.length === 0) return;
-
-    console.log(`[usePendingEdits] Queueing ${newPendingEdits.length} new edits`, {
-      editIds: newPendingEdits.map((e) => e._id),
-      currentQueueLength: editQueueRef.current.length,
-    });
 
     // Add to queue and mark as dispatched
     for (const edit of newPendingEdits) {

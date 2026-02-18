@@ -180,7 +180,6 @@ export function useRequestVerification() {
   // For now, return a placeholder
   return {
     requestVerification: async (runId: string, factId: string) => {
-      console.log(`[useRequestVerification] Would verify fact ${factId} in run ${runId}`);
       // TODO: Call mutation to schedule verification
     },
     isRequesting: false,

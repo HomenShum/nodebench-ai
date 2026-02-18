@@ -43,7 +43,6 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
     // Fast Agent Thread Navigation
     useEffect(() => {
         const handler = (e: CustomEvent<{ threadId: string }>) => {
-            console.log('[MainLayout] Navigating to Fast Agent thread:', e.detail.threadId);
             setFastAgentThreadId(e.detail.threadId);
             setShowFastAgent(true);
         };
@@ -54,7 +53,6 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
     // Chat with Document
     useEffect(() => {
         const handler = (e: CustomEvent<{ documentId: Id<"documents">; documentTitle?: string }>) => {
-            console.log('[MainLayout] Chat with document:', e.detail.documentId, e.detail.documentTitle);
             setSelectedDocumentIdsForAgent([e.detail.documentId]);
             setShowFastAgent(true);
         };
