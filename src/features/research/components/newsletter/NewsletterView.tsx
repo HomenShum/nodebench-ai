@@ -347,7 +347,6 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
                             section={section}
                             onToggleExpand={() => handleToggleExpand(section.key)}
                             onEvidenceChipClick={(chipId) => {
-                                console.log('Evidence chip clicked:', chipId);
                                 setIsDrawerOpen(true); // Open drawer on click
                             }}
                         />

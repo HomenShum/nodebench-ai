@@ -83,7 +83,6 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
         confidence: selectedOption ? 1.0 : 0.8, // Higher confidence for predefined options
       }).catch((err) => {
         // Don't block on analytics failure
-        console.warn('[HumanRequestCard] Failed to record decision:', err);
       });
 
       toast.success('Response sent to agent');
@@ -114,7 +113,6 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
         reasoning: 'User explicitly cancelled without providing a response',
       }).catch((err) => {
         // Don't block on analytics failure
-        console.warn('[HumanRequestCard] Failed to record decision:', err);
       });
 
       toast.info('Request cancelled');

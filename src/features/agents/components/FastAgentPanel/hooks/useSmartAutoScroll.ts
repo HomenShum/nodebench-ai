@@ -50,7 +50,6 @@ export function useSmartAutoScroll(
     if (!el) return;
 
     if (enableLogging) {
-      console.log('[SmartAutoScroll] Scrolling to bottom (smooth:', smooth, ')');
     }
 
     requestAnimationFrame(() => {
@@ -79,7 +78,6 @@ export function useSmartAutoScroll(
       if (!isNear && lastScrollHeightRef.current === scrollHeight) {
         userHasScrolledUpRef.current = true;
         if (enableLogging) {
-          console.log('[SmartAutoScroll] User scrolled up, pausing auto-scroll');
         }
       }
 
@@ -87,7 +85,6 @@ export function useSmartAutoScroll(
       if (isNear && userHasScrolledUpRef.current) {
         userHasScrolledUpRef.current = false;
         if (enableLogging) {
-          console.log('[SmartAutoScroll] User scrolled back to bottom, resuming auto-scroll');
         }
       }
 
@@ -102,7 +99,6 @@ export function useSmartAutoScroll(
   const autoScroll = useCallback(() => {
     if (userHasScrolledUpRef.current) {
       if (enableLogging) {
-        console.log('[SmartAutoScroll] User has scrolled up, skipping auto-scroll');
       }
       return;
     }
@@ -115,7 +111,6 @@ export function useSmartAutoScroll(
     userHasScrolledUpRef.current = false;
     lastScrollHeightRef.current = 0;
     if (enableLogging) {
-      console.log('[SmartAutoScroll] Reset scroll state');
     }
   }, [enableLogging]);
 

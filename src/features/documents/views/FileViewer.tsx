@@ -184,7 +184,6 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
         }));
       } catch { /* noop */ }
     } catch (e) {
-      console.warn('[FileViewer] Analyze to notes failed', e);
       alert('Failed to analyze file with Gemini. Please try again.');
     } finally {
       setIsAnalyzing(false);

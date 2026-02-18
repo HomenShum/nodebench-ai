@@ -278,7 +278,6 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
       }
 
       if (result.error) {
-        console.warn('Onboarding assistant reported error:', result.error);
       }
     } catch (error) {
       console.error('Error contacting onboarding assistant:', error);

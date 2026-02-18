@@ -343,7 +343,6 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             dataHash,
           });
         } catch (cacheErr) {
-          console.warn('Failed to cache digest summary:', cacheErr);
         }
       })
       .catch(err => {

@@ -143,7 +143,6 @@ export function usePendingEdits(
     // Create a promise that resolves when the edit is complete
     const editComplete = new Promise<{ success: boolean; error?: string }>((resolve) => {
       const onResult = async (success: boolean, error?: string) => {
-        console.log(`[usePendingEdits] Edit ${edit._id} completed:`, { success, error });
 
         try {
           await reportResult({
@@ -239,7 +238,6 @@ export function usePendingEdits(
   // Control functions
   const retryEdit = useCallback(
     async (editId: Id<"pendingDocumentEdits">) => {
-      console.log(`[usePendingEdits] Retrying edit ${editId}`);
       dispatchedIdsRef.current.delete(editId); // Allow re-dispatch after retry
       await retryEditMutation({ editId });
     },
@@ -248,7 +246,6 @@ export function usePendingEdits(
 
   const cancelThreadEdits = useCallback(
     async (threadId: string) => {
-      console.log(`[usePendingEdits] Cancelling edits for thread ${threadId}`);
 
       // Remove from local queue
       editQueueRef.current = editQueueRef.current.filter(
@@ -262,7 +259,6 @@ export function usePendingEdits(
   );
 
   const cancelAllEdits = useCallback(async () => {
-    console.log("[usePendingEdits] Cancelling all edits");
 
     // Get unique thread IDs
     const threadIds = new Set<string>();

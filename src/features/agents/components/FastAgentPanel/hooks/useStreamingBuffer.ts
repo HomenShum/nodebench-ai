@@ -46,7 +46,6 @@ export function useStreamingBuffer(
     setBufferSize(bufferRef.current.length);
 
     if (enableLogging) {
-      console.log(`[StreamingBuffer] Added ${update.type} update. Buffer size: ${bufferRef.current.length}`);
     }
 
     // If buffer exceeds max size, flush immediately

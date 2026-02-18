@@ -59,7 +59,6 @@ function extractYouTubeVideos(text: string): YouTubeVideo[] {
       const videos = JSON.parse(youtubeMatch[1]);
       return Array.isArray(videos) ? videos : [];
     } catch (error) {
-      console.warn('Failed to parse YouTube gallery data:', error);
     }
   }
 
@@ -92,7 +91,6 @@ function extractYouTubeVideos(text: string): YouTubeVideo[] {
     }
   }
 
-  console.log('[mediaExtractor] Extracted', videos.length, 'videos from plain text');
   return videos;
 }
 
@@ -108,7 +106,6 @@ function extractSECDocuments(text: string): SECDocument[] {
     const documents = JSON.parse(secMatch[1]);
     return Array.isArray(documents) ? documents : [];
   } catch (error) {
-    console.warn('Failed to parse SEC gallery data:', error);
     return [];
   }
 }
@@ -125,7 +122,6 @@ function extractWebSources(text: string): WebSource[] {
     const sources = JSON.parse(sourceMatch[1]);
     return Array.isArray(sources) ? sources : [];
   } catch (error) {
-    console.warn('Failed to parse source gallery data:', error);
     return [];
   }
 }
@@ -142,7 +138,6 @@ function extractProfiles(text: string): PersonProfile[] {
     const profiles = JSON.parse(profileMatch[1]);
     return Array.isArray(profiles) ? profiles : [];
   } catch (error) {
-    console.warn('Failed to parse profile gallery data:', error);
     return [];
   }
 }
@@ -166,11 +161,9 @@ function extractImages(text: string): Array<{ url: string; alt: string }> {
           url: img.url || '',
           alt: img.alt || img.name || 'Image'
         })));
-        console.log('[mediaExtractor] Extracted', images.length, 'images from IMAGE_DATA marker');
         return images; // Return early if we have structured data
       }
     } catch (error) {
-      console.warn('Failed to parse IMAGE_DATA:', error);
     }
   }
 
@@ -222,7 +215,6 @@ function extractImages(text: string): Array<{ url: string; alt: string }> {
   }
 
   if (images.length > 0) {
-    console.log('[mediaExtractor] Extracted', images.length, 'images (markdown + plain URLs)');
   }
 
   return images;

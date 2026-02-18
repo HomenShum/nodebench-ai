@@ -107,9 +107,7 @@ export function useHashtagMenu({ editor, documentId }: UseHashtagMenuOptions) {
     ]);
 
     try {
-      console.log(`[useHashtagMenu] Searching for documents matching: ${hashtag}`);
       const searchResult = await convex.action(api.domains.search.hashtagDossiers.searchForHashtag, { hashtag });
-      console.log(`[useHashtagMenu] Found ${searchResult.totalCount} matching documents`);
 
       await convex.mutation(api.domains.search.hashtagDossiers.createHashtagDossier, {
         hashtag,
@@ -125,7 +123,6 @@ export function useHashtagMenu({ editor, documentId }: UseHashtagMenuOptions) {
       content.push(" ");
       (editor).updateBlock(block, { content });
 
-      console.log(`[useHashtagMenu] ✅ Created hashtag dossier #${hashtag} with ${searchResult.totalCount} documents`);
     } catch (error) {
       console.error("[useHashtagMenu] Error creating hashtag dossier:", error);
       // Show error state

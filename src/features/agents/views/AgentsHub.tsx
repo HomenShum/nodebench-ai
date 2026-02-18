@@ -292,7 +292,6 @@ export function AgentsHub() {
       query: string,
       options: { mode: AgentMode; model: ApprovedModel; agents?: string[] }
     ) => {
-      console.log("Command submitted:", { query, options });
 
       if (options.agents && options.agents.length > 0) {
         // Spawn swarm
@@ -308,7 +307,6 @@ export function AgentsHub() {
         }
       } else {
         // Single agent query - would route to FastAgentPanel
-        console.log("Single agent query:", query);
       }
     },
     [spawnSwarm]

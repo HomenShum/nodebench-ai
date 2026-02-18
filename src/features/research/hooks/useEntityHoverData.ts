@@ -302,7 +302,6 @@ export function useEntityHoverData(
       const noDataFound = entityContext === null && adaptiveProfile === null;
 
       if (queriesComplete && noDataFound) {
-        console.log(`[AutoEnrich] No data found for ${entityName}, triggering background enrichment`);
         setEnrichmentTriggered(true);
 
         // Fire and forget - don't wait for completion

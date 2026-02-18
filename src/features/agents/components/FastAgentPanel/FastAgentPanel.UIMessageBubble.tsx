@@ -2298,7 +2298,6 @@ export function FastAgentUIMessageBubble({
                   }
                   // If parsing failed, log and fall through to default ToolStep rendering
                   if (parsed.parseError) {
-                    console.warn(`[UIMessageBubble] Fusion search parse failed: ${parsed.parseError}`);
                   }
                 }
 

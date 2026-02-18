@@ -209,7 +209,6 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
       }
     } catch (error) {
       // Fallback for browsers that don't support Intl.supportedValuesOf
-      console.warn("Failed to get supported time zones from Intl API:", error);
     }
     return [
       "UTC",
@@ -304,7 +303,6 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
       return p;
     } catch (error) {
       // Fallback (less secure) if localStorage or crypto not available
-      console.warn("Failed to generate secure passphrase, using fallback:", error);
       return "nodebench-default-passphrase";
     }
   };

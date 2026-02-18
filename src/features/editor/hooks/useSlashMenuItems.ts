@@ -153,7 +153,6 @@ export function useSlashMenuItems({ askFastAgent }: UseSlashMenuItemsProps) {
               return "";
             }).filter(Boolean).join("\n").substring(0, 2000);
           } catch (e) {
-            console.warn("[useSlashMenuItems] Could not extract document context:", e);
           }
 
           // Show editing indicator

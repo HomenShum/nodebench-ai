@@ -41,7 +41,6 @@ export const PmBridge: React.FC<PmBridgeProps> = ({
         });
         return { doc: json, selection: { from, to }, nodes };
       } catch (e) {
-        console.warn('[PM Bridge] buildContext failed', e);
         return null;
       }
     };
@@ -54,7 +53,6 @@ export const PmBridge: React.FC<PmBridgeProps> = ({
           detail: { requestId: e.detail?.requestId, documentId, context: ctx },
         }));
       } catch (err) {
-        console.warn('[PM Bridge] failed to dispatch pmContext', err);
       }
     };
 
@@ -167,7 +165,6 @@ function handleApplyOperations(evt: Event, editor: any, safeLatestVersion: numbe
   if (typeof editDocVersion === 'number' && typeof safeLatestVersion === 'number') {
     if (editDocVersion < safeLatestVersion) {
       const versionDiff = safeLatestVersion - editDocVersion;
-      console.warn(`[PM Bridge] Version mismatch: edit ${editDocVersion}, current ${safeLatestVersion}`);
 
       const MAX_VERSION_DRIFT = 10;
       if (versionDiff > MAX_VERSION_DRIFT) {
@@ -197,7 +194,6 @@ function applyPmOperations(
         const { anchor, search, replace } = op;
         const result = resolveAnchoredReplace(editor, anchor, search, replace, anchorOccurrenceStrategy);
         if (!result.success) {
-          console.warn('[PM Bridge] anchoredReplace failed:', result.error);
           continue;
         }
         const { from, to, newText } = result;

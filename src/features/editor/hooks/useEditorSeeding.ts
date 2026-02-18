@@ -60,7 +60,6 @@ export function useEditorSeeding({
         .filter((b: any) => b && b.type && !["blockGroup", "text"].includes(b.type));
       return normalized;
     } catch (e) {
-      console.warn('[useEditorSeeding] markdown parse failed, falling back to paragraph', e);
       return [{ type: 'paragraph', content: [{ type: 'text', text: txt }] }];
     }
   }, [parserEditor]);
@@ -102,7 +101,6 @@ export function useEditorSeeding({
             void markHasContent();
           }
         } catch (e) {
-          console.warn('[useEditorSeeding] failed to seed from markdown', e);
         }
       })();
     } else if (seed) {
@@ -144,7 +142,6 @@ export function useEditorSeeding({
         }
         void markHasContent();
       } catch (e) {
-        console.warn('[useEditorSeeding] restore failed', e);
       }
     })();
   }, [restoreSignal, restoreMarkdown, blocksFromMarkdown, editor, documentId, markHasContent]);

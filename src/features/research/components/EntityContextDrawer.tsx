@@ -278,7 +278,6 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
       })
       .catch((err) => {
         if (fallbackMock) {
-          console.warn("Backend failed, falling back to audit mock.");
           setInsight(fallbackMock);
           return;
         }

@@ -94,7 +94,6 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
     try {
       await updateTagKind({ documentId: document._id, tagId: t._id as any, kind: next });
     } catch (err) {
-      console.warn('[DocumentHeader] update kind failed', err);
     }
   };
 

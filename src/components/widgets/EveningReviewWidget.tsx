@@ -20,7 +20,6 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
 
   const handleSaveReflection = () => {
     // TODO: Save reflection to quick capture or journal
-    console.log('Saving reflection:', reflection);
     setReflection('');
   };
 

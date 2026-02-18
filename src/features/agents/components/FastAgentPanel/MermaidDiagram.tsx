@@ -74,7 +74,6 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
   useEffect(() => {
     // Skip if message is still streaming (wait for complete code)
     if (isStreaming) {
-      console.log('[MermaidDiagram] ⏸️ Skipping render - message still streaming');
       return;
     }
 
@@ -117,7 +116,6 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
         const { svg: renderedSvg } = await window.mermaid.render(diagramId, code);
         setSvg(renderedSvg);
         setError('');
-        console.log('[MermaidDiagram] ✅ Successfully rendered diagram');
       } catch (err) {
         console.error('[MermaidDiagram] Rendering error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to render diagram';

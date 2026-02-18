@@ -304,7 +304,6 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
     const newOrder = finalOrderedDocs.map(d => d.id).join(',');
     
     if (currentOrder !== newOrder && finalOrderedDocs.length === openTabs.length) {
-      console.log('Layout change triggered reorder:', { currentOrder, newOrder });
       onReorderTabs(finalOrderedDocs);
     }
   }, [openTabs, onReorderTabs]);
@@ -318,11 +317,8 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
     event.stopPropagation();
     // Note: stopImmediatePropagation is not available on React SyntheticEvent
     
-    console.log('Fullscreen button clicked for:', tabId);
-    console.log('onToggleFullscreen function available:', !!onToggleFullscreen);
     
     if (onToggleFullscreen) {
-      console.log('Calling onToggleFullscreen...');
       onToggleFullscreen(tabId);
     } else {
       console.error('onToggleFullscreen is not provided!');
@@ -336,10 +332,8 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
     event.stopPropagation();
     // Note: stopImmediatePropagation is not available on React SyntheticEvent
     
-    console.log('Close button clicked for:', tabId);
     
     if (onCloseTab) {
-      console.log('Calling onCloseTab...');
       onCloseTab(tabId);
     } else {
       console.error('onCloseTab is not provided!');

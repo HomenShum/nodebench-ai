@@ -176,7 +176,6 @@ export function TabManager({
           return newTabs;
         });
       } catch (err) {
-        console.warn("Failed to handle grid:pinFirst event", err);
       }
     };
     window.addEventListener("grid:pinFirst", handler as EventListener);

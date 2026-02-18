@@ -141,7 +141,6 @@ function computeDiffLines(proposal: PendingProposal, editor: any): LineOp[] {
       }
     }
   } catch (e) {
-    console.warn('[ProposalOverlay] Failed to compute diff:', e);
     lines.push({ type: 'eq', line: '(Unable to compute diff)' });
   }
 

@@ -14,7 +14,6 @@ export function useFileUpload() {
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     try {
-      console.log('[useFileUpload] Uploading file:', file.name, file.type, file.size);
 
       // Generate upload URL from Convex
       const uploadUrl = await generateUploadUrl();
@@ -44,7 +43,6 @@ export function useFileUpload() {
       // Get the public URL for the uploaded file
       const fileUrl = await convex.query(api.domains.documents.files.getUrl, { storageId });
 
-      console.log('[useFileUpload] File uploaded successfully:', fileUrl);
       return fileUrl || '';
     } catch (error) {
       console.error('[useFileUpload] File upload error:', error);

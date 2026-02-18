@@ -60,18 +60,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
     }
   );
 
-  // Debug logging
-  useEffect(() => {
-    if (streamingState.isStreaming) {
-      console.log("[useInlineFastAgent] Streaming state:", {
-        threadId: streamingState.threadId,
-        agentThreadId: streamingThread?.agentThreadId,
-        messagesCount: streamingMessages?.length || 0,
-        lastMessage: streamingMessages?.[streamingMessages.length - 1]?.text?.substring(0, 50),
-      });
-    }
-  }, [streamingMessages, streamingState.isStreaming, streamingThread]);
-
   // Update the editor block with streaming text
   useEffect(() => {
     if (!streamingState.isStreaming || !editor || !streamingBlockRef.current) {
@@ -136,14 +124,6 @@ export function useInlineFastAgent({ editor, userId, documentId }: InlineFastAge
                      fullText.includes('<!-- PROFILE_DATA') ||
                      images.length > 0;
 
-    console.log("[useInlineFastAgent] Latest message:", {
-      status: latestMessage.status,
-      textLength: fullText.length,
-      lastLength: lastTextLengthRef.current,
-      blockId: streamingBlockRef.current?.id,
-      hasMedia,
-      imageCount: images.length,
-    });
 
     // Only update if text has changed
     if (fullText && fullText.length > lastTextLengthRef.current) {

@@ -207,7 +207,6 @@ export const SpreadsheetView: React.FC<SpreadsheetViewProps> = ({
       }
       toast.success('Analysis added to Quick notes');
     } catch (e) {
-      console.warn('[SpreadsheetView] Analyze to notes failed', e);
       toast.error('Failed to analyze file. Check Gemini API key and try again.');
     } finally {
       setIsAnalyzing(false);
@@ -475,7 +474,6 @@ export const SpreadsheetView: React.FC<SpreadsheetViewProps> = ({
 
   const handleToggleFavorite = async () => {
     if (fileDocument?.document) {
-      console.log('Toggle favorite functionality to be implemented');
     }
   };
 
@@ -497,7 +495,6 @@ export const SpreadsheetView: React.FC<SpreadsheetViewProps> = ({
               escapeChar: '"',
             });
             if (parsed.errors && parsed.errors.length > 0) {
-              console.warn('CSV parse warnings:', parsed.errors);
             }
             const rowsAll = (parsed.data || []).map((r: string[]) => r.map((c: string) => (c ?? '')));
             if (rowsAll.length === 0) throw new Error('Empty CSV file');
