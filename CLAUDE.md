@@ -29,6 +29,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 | `reexamine_design_reduction` | Jony Ive principles: earned complexity, kill jargon | a11y, polish, process, keyboard |
 | `product_design_dogfood` | Jony Ive review + dogfood evidence visible in-app (`/dogfood`) | analyst_diagnostic, dogfood_verification, design_reduction |
 | `flywheel_continuous` | Continuous poll→diagnose→fix→dogfood loop, never ask to continue | process, analyst_diagnostic, dogfood_verification, product_design_dogfood, completion_traceability |
+| `self_direction` | Never wait — decide, act, verify visually, keep momentum | process, flywheel_continuous, analyst_diagnostic, completion_traceability |
 
 **Two-hop discovery**: Follow a rule's `related_` to reach its neighbors, then follow *their* `related_` for second-degree connections. Example: `process` → `a11y` → `keyboard`.
 
@@ -46,6 +47,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 - Embedding search on by default (`--no-embedding` to disable)
 - **Completion traceability**: On task completion, always reference the user's original request — quote or paraphrase the specific section being fulfilled, then summarize what was done. User writes long/burst prompts across sessions and needs the link between ask → delivery.
 - **Analyst diagnostic**: Always guide yourself like an analyst diagnosing the root cause, not a junior dev slapping on a bandaid. Trace upstream from symptom → root cause before writing any fix. Ask "why" 5 times. Fix the cause, not the symptom.
+- **Self-direction**: Never wait for permission or next instructions. When a task completes, immediately identify and start the next highest-impact action. Verify visually first, code-grep second. Only pause for user input when direction is genuinely ambiguous.
 - Presets: default (54 tools), web_dev (106), research (71), data (78), devops (68), mobile (95), academic (86), multi_agent (83), content (73), full (218) — see `toolsetRegistry.ts`
 - CLI subcommands: `discover`, `setup`, `workflow`, `quickref`, `call` — run-and-exit, bypass MCP transport, call tool handlers directly. Respects `--preset` and `--no-embedding`. Test with `cliSubcommands.test.ts`.
 

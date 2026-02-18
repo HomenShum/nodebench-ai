@@ -39,17 +39,17 @@ const ProgressBar: React.FC<{
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1.5 text-gray-600">
+        <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
           {icon}
           <span className="font-medium">{label}</span>
         </div>
-        <span className={`text-xs font-medium ${isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-gray-500'}`}>
+        <span className={`text-xs font-medium ${isAtLimit ? 'text-red-600 dark:text-red-400' : isNearLimit ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
           {format ? format(value) : value.toLocaleString()}
           {!isUnlimited && ` / ${format ? format(max) : max.toLocaleString()}`}
           {isUnlimited && " (Unlimited)"}
         </span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-300 ${
             isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : color
@@ -69,9 +69,9 @@ const StatCard: React.FC<{
   trend?: number;
   className?: string;
 }> = ({ label, value, icon, trend, className = "" }) => (
-  <div className={`bg-white rounded-xl border border-gray-200 p-4 ${className}`}>
+  <div className={`bg-white dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4 ${className}`}>
     <div className="flex items-start justify-between">
-      <div className="p-2 bg-gray-50 rounded-lg">{icon}</div>
+      <div className="p-2 bg-gray-50 dark:bg-white/[0.04] rounded-lg">{icon}</div>
       {trend !== undefined && (
         <div className={`flex items-center gap-0.5 text-xs font-medium ${trend >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
           <TrendingUp className={`h-3 w-3 ${trend < 0 ? 'rotate-180' : ''}`} />
@@ -80,8 +80,8 @@ const StatCard: React.FC<{
       )}
     </div>
     <div className="mt-3">
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
     </div>
   </div>
 );
@@ -130,11 +130,11 @@ export const UsageDashboard: React.FC<UsageDashboardProps> = ({
     const isNearLimit = percentage >= 80;
 
     return (
-      <div className={`flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg ${className}`}>
-        <Zap className={`h-4 w-4 ${isNearLimit ? 'text-amber-500' : 'text-gray-400'}`} />
-        <span className="text-xs text-gray-600">
+      <div className={`flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-white/[0.04] rounded-lg ${className}`}>
+        <Zap className={`h-4 w-4 ${isNearLimit ? 'text-amber-500' : 'text-gray-400 dark:text-gray-500'}`} />
+        <span className="text-xs text-gray-600 dark:text-gray-400">
           <span className="font-medium">{data.requestsToday}</span>
-          <span className="text-gray-400">/{data.requestsLimit > 0 ? data.requestsLimit : '∞'}</span>
+          <span className="text-gray-400 dark:text-gray-500">/{data.requestsLimit > 0 ? data.requestsLimit : '∞'}</span>
         </span>
         {isNearLimit && (
           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
@@ -148,10 +148,10 @@ export const UsageDashboard: React.FC<UsageDashboardProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Usage Dashboard</h3>
-          <p className="text-sm text-gray-500">Today's LLM usage and limits</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Usage Dashboard</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Today's LLM usage and limits</p>
         </div>
-        <div className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">
+        <div className="px-3 py-1 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-medium">
           Free Tier
         </div>
       </div>
@@ -181,8 +181,8 @@ export const UsageDashboard: React.FC<UsageDashboardProps> = ({
       </div>
 
       {/* Progress Bars */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
-        <h4 className="text-sm font-medium text-gray-900">Daily Limits</h4>
+      <div className="bg-white dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4 space-y-4">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Daily Limits</h4>
         
         <ProgressBar
           value={data.requestsToday}
@@ -224,7 +224,7 @@ export const UsageDashboard: React.FC<UsageDashboardProps> = ({
                 Upgrade to Pro for 500 requests/day, all models, and priority support.
               </p>
             </div>
-            <button className="px-4 py-2 bg-white text-indigo-600 font-medium text-sm rounded-lg hover:bg-white/90 transition-colors">
+            <button className="px-4 py-2 bg-white dark:bg-white/90 text-indigo-600 font-medium text-sm rounded-lg hover:bg-white/90 dark:hover:bg-white transition-colors">
               Upgrade
             </button>
           </div>

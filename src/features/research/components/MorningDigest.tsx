@@ -698,16 +698,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
-      case 'bullish': return 'text-green-700 bg-green-50 border border-green-100';
-      case 'bearish': return 'text-red-700 bg-red-50 border border-red-100';
-      default: return 'text-amber-700 bg-amber-50 border border-amber-100';
+      case 'bullish': return 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-800';
+      case 'bearish': return 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-800';
+      default: return 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-800';
     }
   };
 
   const getRelevanceIndicator = (relevance?: string) => {
     switch (relevance) {
-      case 'high': return 'bg-purple-50 text-purple-700 border border-purple-100';
-      case 'medium': return 'bg-blue-50 text-blue-700 border border-blue-100';
+      case 'high': return 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-800';
+      case 'medium': return 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800';
       default: return 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]';
     }
   };
@@ -867,40 +867,40 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {/* Left: Signals + Sources */}
             <div className="space-y-4">
               {/* Top Signals - Premium card */}
-              <div className="rounded-xl border border-gray-200 bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-amber-100/50 border border-amber-200/50">
-                      <Zap className="w-3.5 h-3.5 text-amber-700" />
+                    <div className="p-1.5 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/30">
+                      <Zap className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Top Signals</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Top Signals</span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{signalHighlights.length} items</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400">{signalHighlights.length} items</span>
                 </div>
                 <div className="space-y-2">
                   {signalHighlights.slice(0, 3).map((item, idx) => (
                     <div
                       key={`${item.label}-${idx}`}
-                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-gray-200 hover:bg-gray-100/50 transition-all duration-200"
+                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-white/[0.08] hover:bg-gray-100/50 dark:hover:bg-white/[0.04] transition-all duration-200"
                     >
                       <button
                         type="button"
                         onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
                         className="flex items-start gap-3 flex-1 text-left"
                       >
-                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-gray-200/50 text-gray-700 border border-gray-300/50'
-                          : item.label === 'Risk' ? 'bg-rose-100/50 text-rose-700 border border-rose-200/50'
-                            : 'bg-amber-100/50 text-amber-700 border border-amber-200/50'
+                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-gray-200/50 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 border border-gray-300/50 dark:border-white/[0.08]'
+                          : item.label === 'Risk' ? 'bg-rose-100/50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/30'
+                            : 'bg-amber-100/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30'
                           }`}>
                           {item.label}
                         </span>
-                        <span className="text-sm text-gray-700 leading-snug line-clamp-2 group-hover:text-gray-900 transition-colors">{item.text}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug line-clamp-2 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{item.text}</span>
                       </button>
                       {item.linkedEntity && (
                         <button
                           type="button"
                           onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                          className="shrink-0 px-2 py-1 text-[9px] font-mono font-medium text-gray-500 hover:text-gray-800 bg-gray-100 rounded-md border border-gray-200 hover:border-gray-400 transition-all"
+                          className="shrink-0 px-2 py-1 text-[9px] font-mono font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/[0.06] rounded-md border border-gray-200 dark:border-white/[0.08] hover:border-gray-400 dark:hover:border-white/20 transition-all"
                           title={`Open entity: ${item.linkedEntity}`}
                         >
                           {item.linkedEntity}
@@ -915,30 +915,30 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               <div className="rounded-xl border border-gray-200 bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-gray-200/50 border border-gray-300/50">
-                      <Globe2 className="w-3.5 h-3.5 text-gray-600" />
+                    <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
+                      <Globe2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Sources</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Sources</span>
                   </div>
-                  <span className="text-[10px] text-gray-500">{totalSourceCount} items</span>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">{totalSourceCount} items</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topSources.slice(0, 6).map((source, idx) => (
                     <div
                       key={source.name}
-                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100/50 border border-gray-200 hover:border-gray-400 transition-all duration-200"
+                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100/50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] hover:border-gray-400 dark:hover:border-white/20 transition-all duration-200"
                     >
                       {/* Visual bar indicator - warm amber */}
                       <div
-                        className="absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-gray-600 to-amber-600 rounded-b-lg transition-all duration-300"
+                        className="absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-gray-600 to-amber-600 dark:from-gray-400 dark:to-amber-400 rounded-b-lg transition-all duration-300"
                         style={{ width: `${(source.count / maxSourceCount) * 100}%` }}
                       />
-                      <span className="text-[11px] font-medium text-gray-700">{source.name}</span>
-                      <span className="text-[10px] font-bold text-gray-800">{source.count}</span>
+                      <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{source.name}</span>
+                      <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">{source.count}</span>
                     </div>
                   ))}
                   {topSources.length > 6 && (
-                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100/30 text-[10px] text-gray-500">
+                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100/30 dark:bg-white/[0.04] text-[10px] text-gray-500 dark:text-gray-400">
                       +{topSources.length - 6} more
                     </span>
                   )}
@@ -949,15 +949,15 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {/* Right: Tags + Entities + Actions */}
             <div className="space-y-4">
               {/* Tags - Enhanced with hover effects */}
-              <div className="rounded-xl border border-gray-200 bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-gray-200/50 border border-gray-300/50">
-                      <TrendingUp className="w-3.5 h-3.5 text-gray-600" />
+                    <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
+                      <TrendingUp className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Trending</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Trending</span>
                   </div>
-                  <span className="text-[10px] text-gray-500">{digestItems.length} signals</span>
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400">{digestItems.length} signals</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {tagRadar.slice(0, 6).map((tag, idx) => (
@@ -965,22 +965,22 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={tag.tag}
                       type="button"
                       onClick={() => onItemClick?.({ text: `Track #${tag.tag} and summarize the latest movement.`, relevance: 'medium', linkedEntity: tag.tag })}
-                      className="group px-3 py-1.5 text-[11px] font-medium border border-gray-200 bg-background text-gray-700 hover:text-gray-900 hover:border-gray-400 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      className="group px-3 py-1.5 text-[11px] font-medium border border-gray-200 dark:border-white/[0.08] bg-background text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-400 dark:hover:border-white/20 hover:bg-gray-100 dark:hover:bg-white/[0.06] rounded-lg transition-all duration-200"
                     >
-                      <span className="text-amber-700">#</span>{tag.tag}
-                      <span className="ml-1.5 text-gray-500 group-hover:text-gray-600">({tag.count})</span>
+                      <span className="text-amber-700 dark:text-amber-400">#</span>{tag.tag}
+                      <span className="ml-1.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">({tag.count})</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Entities - Enhanced with better visual treatment */}
-              <div className="rounded-xl border border-gray-200 bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+              <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-background p-4 shadow-sm hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-lg bg-gray-200/50 border border-gray-300/50">
-                    <Building2 className="w-3.5 h-3.5 text-gray-600" />
+                  <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
+                    <Building2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Key Topics</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Key Topics</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topEntities.slice(0, 6).map((entity, idx) => (
@@ -988,7 +988,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={entity}
                       type="button"
                       onClick={() => onEntityClick?.(entity, "company")}
-                      className="group px-3 py-1.5 text-[11px] font-semibold border border-gray-200 bg-gradient-to-br from-background to-gray-100/50 text-gray-700 hover:border-gray-400 hover:text-gray-900 rounded-lg transition-all duration-200 hover:shadow-sm"
+                      className="group px-3 py-1.5 text-[11px] font-semibold border border-gray-200 dark:border-white/[0.08] bg-gradient-to-br from-background to-gray-100/50 dark:to-white/[0.04] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-white/20 hover:text-gray-900 dark:hover:text-gray-100 rounded-lg transition-all duration-200 hover:shadow-sm"
                     >
                       {entity}
                       <ArrowUpRight className="inline-block ml-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -998,12 +998,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </div>
 
               {/* Agent Shortcuts - Premium CTA buttons */}
-              <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-background to-amber-50/30 p-4 shadow-sm">
+              <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gradient-to-br from-background to-amber-50/30 dark:to-amber-950/10 p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-lg bg-gray-800/10 border border-gray-300/50">
-                    <Zap className="w-3.5 h-3.5 text-gray-700" />
+                  <div className="p-1.5 rounded-lg bg-gray-800/10 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
+                    <Zap className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600">Quick Actions</span>
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Quick Actions</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {agentLaunchpad.slice(0, 3).map((item, idx) => (
@@ -1011,7 +1011,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={item.label}
                       type="button"
                       onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
-                      className="group flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold border border-gray-300 bg-gradient-to-r from-gray-100 to-amber-50/50 text-gray-700 hover:from-gray-200 hover:to-amber-100/50 hover:border-gray-400 rounded-lg transition-all duration-200"
+                      className="group flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold border border-gray-300 dark:border-white/[0.1] bg-gradient-to-r from-gray-100 dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/20 text-gray-700 dark:text-gray-300 hover:from-gray-200 dark:hover:from-white/[0.08] hover:to-amber-100/50 hover:border-gray-400 dark:hover:border-white/20 rounded-lg transition-all duration-200"
                     >
                       <Sparkles className="w-3 h-3" />
                       {item.label.replace('Deep agent: ', '')}
@@ -1024,9 +1024,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
           {/* Sample Data Banner - Enhanced */}
           {isUsingSampleData && digestSections.length > 0 && (
-            <div className="p-4 bg-gradient-to-r from-gray-100 to-amber-50/50 border border-gray-200 rounded-xl flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-gray-200/50">
-                <Sparkles className="w-4 h-4 text-gray-600" />
+            <div className="p-4 bg-gradient-to-r from-gray-100 dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/10 border border-gray-200 dark:border-white/[0.06] rounded-xl flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-gray-200/50 dark:bg-white/[0.06]">
+                <Sparkles className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-700">Sample Research Feed</p>

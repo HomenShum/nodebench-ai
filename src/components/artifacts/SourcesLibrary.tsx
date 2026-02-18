@@ -127,7 +127,7 @@ function SourceItem({ artifact }: SourceItemProps) {
       `}
     >
       {/* Thumbnail or Icon */}
-      <div className="flex-shrink-0 w-12 h-12 rounded bg-white/50 flex items-center justify-center overflow-hidden">
+      <div className="flex-shrink-0 w-12 h-12 rounded bg-white/50 dark:bg-white/[0.06] flex items-center justify-center overflow-hidden">
         {thumbnail ? (
           <img src={thumbnail} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -231,18 +231,18 @@ export function SourcesLibrary({
   }
   
   return (
-    <div className="mt-12 border-t-2 border-gray-200 pt-8">
+    <div className="mt-12 border-t-2 border-gray-200 dark:border-white/[0.08] pt-8">
       {/* Header */}
       <div
         className="flex items-center justify-between mb-4 cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gray-100 rounded-lg">
-            <Library className="w-5 h-5 text-gray-600" />
+          <div className="p-2 bg-gray-100 dark:bg-white/[0.06] rounded-lg">
+            <Library className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900">{title}</h3>
+            <h3 className="font-bold text-gray-900 dark:text-gray-100">{title}</h3>
             <p className="text-xs text-gray-500">
               {artifacts.length} source{artifacts.length !== 1 ? 's' : ''} discovered
               {artifacts.filter(a => a.flags.isPinned).length > 0 && (
@@ -264,7 +264,7 @@ export function SourcesLibrary({
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Group sources by"
-                className="bg-gray-100 border-none rounded px-2 py-1 text-xs text-gray-600 focus:ring-1 focus:ring-purple-300"
+                className="bg-gray-100 dark:bg-white/[0.06] border-none rounded px-2 py-1 text-xs text-gray-600 dark:text-gray-400 focus:ring-1 focus:ring-purple-300"
               >
                 <option value="provider">By Provider</option>
                 <option value="kind">By Type</option>
@@ -273,7 +273,7 @@ export function SourcesLibrary({
             </div>
           )}
           
-          <button type="button" className="p-1 hover:bg-gray-100 rounded" aria-label={isCollapsed ? "Expand sources" : "Collapse sources"} aria-expanded={isCollapsed ? "false" : "true"}>
+          <button type="button" className="p-1 hover:bg-gray-100 dark:hover:bg-white/[0.06] rounded" aria-label={isCollapsed ? "Expand sources" : "Collapse sources"} aria-expanded={isCollapsed ? "false" : "true"}>
             {isCollapsed ? (
               <ChevronDown className="w-5 h-5 text-gray-400" />
             ) : (
@@ -332,7 +332,7 @@ export function SourcesLibrary({
               <button
                 type="button"
                 onClick={() => setShowAll(!showAll)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.1] rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
               >
                 {showAll ? (
                   <>

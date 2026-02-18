@@ -46,15 +46,15 @@ const ROUND_TYPE_LABELS: Record<string, string> = {
 
 // Sector category colors
 const SECTOR_COLORS: Record<string, { bg: string; text: string }> = {
-  healthcare: { bg: "bg-red-100", text: "text-red-700" },
-  fintech: { bg: "bg-green-100", text: "text-green-700" },
-  ai_ml: { bg: "bg-purple-100", text: "text-purple-700" },
-  enterprise: { bg: "bg-blue-100", text: "text-blue-700" },
-  consumer: { bg: "bg-orange-100", text: "text-orange-700" },
-  deeptech: { bg: "bg-indigo-100", text: "text-indigo-700" },
-  climate: { bg: "bg-indigo-100", text: "text-gray-700" },
-  technology: { bg: "bg-gray-100", text: "text-gray-700" },
-  other: { bg: "bg-gray-100", text: "text-gray-700" },
+  healthcare: { bg: "bg-red-100 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400" },
+  fintech: { bg: "bg-green-100 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400" },
+  ai_ml: { bg: "bg-purple-100 dark:bg-purple-950/30", text: "text-purple-700 dark:text-purple-400" },
+  enterprise: { bg: "bg-blue-100 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400" },
+  consumer: { bg: "bg-orange-100 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400" },
+  deeptech: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-indigo-700 dark:text-indigo-400" },
+  climate: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-gray-700 dark:text-gray-400" },
+  technology: { bg: "bg-gray-100 dark:bg-white/[0.06]", text: "text-gray-700 dark:text-gray-400" },
+  other: { bg: "bg-gray-100 dark:bg-white/[0.06]", text: "text-gray-700 dark:text-gray-400" },
 };
 
 // Verification status badges
@@ -66,26 +66,26 @@ function VerificationBadge({
   const config = {
     verified: {
       icon: CheckCircle,
-      color: "text-green-600",
-      bg: "bg-green-50",
+      color: "text-green-600 dark:text-green-400",
+      bg: "bg-green-50 dark:bg-green-950/30",
       label: "Verified",
     },
     pending: {
       icon: Clock,
-      color: "text-yellow-600",
-      bg: "bg-yellow-50",
+      color: "text-yellow-600 dark:text-yellow-400",
+      bg: "bg-yellow-50 dark:bg-yellow-950/30",
       label: "Pending",
     },
     unverified: {
       icon: AlertCircle,
-      color: "text-gray-400",
-      bg: "bg-gray-50",
+      color: "text-gray-400 dark:text-gray-500",
+      bg: "bg-gray-50 dark:bg-white/[0.04]",
       label: "Unverified",
     },
   }[status] || {
     icon: AlertCircle,
-    color: "text-gray-400",
-    bg: "bg-gray-50",
+    color: "text-gray-400 dark:text-gray-500",
+    bg: "bg-gray-50 dark:bg-white/[0.04]",
     label: status,
   };
 
@@ -156,7 +156,7 @@ function FundingCard({
             <h3 className="font-semibold text-[color:var(--text-primary)] truncate">
               {/^unknown\s*company/i.test(event.companyName) ? 'Undisclosed' : event.companyName}
             </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 font-medium">
               {ROUND_TYPE_LABELS[event.roundType] || event.roundType}
             </span>
             {event.verificationStatus && (
@@ -168,7 +168,7 @@ function FundingCard({
           {event.amountRaw && (
             <div className="flex items-center gap-1.5 mt-1.5">
               <DollarSign className="w-4 h-4 text-green-600" />
-              <span className="font-bold text-green-700 text-lg">
+              <span className="font-bold text-green-700 dark:text-green-400 text-lg">
                 {event.amountRaw}
               </span>
             </div>
@@ -265,7 +265,7 @@ function FundingCard({
                 {event.coInvestors.map((investor, idx) => (
                   <span
                     key={idx}
-                    className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600"
+                    className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
                   >
                     {investor}
                   </span>
@@ -595,7 +595,7 @@ export function FundingBriefView() {
 
         {/* PDF Error Toast */}
         {pdfError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg flex items-center justify-between">
             <span className="text-sm text-red-700">
               PDF generation failed: {pdfError.message}
             </span>
@@ -663,8 +663,8 @@ export function FundingBriefView() {
         {!data && (
           <div className="text-center py-12">
             <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-64 mx-auto"></div>
+              <div className="h-8 bg-gray-200 dark:bg-white/[0.08] rounded w-48 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 dark:bg-white/[0.08] rounded w-64 mx-auto"></div>
             </div>
           </div>
         )}

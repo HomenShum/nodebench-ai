@@ -420,7 +420,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
           </div>
           <span className="text-xs text-gray-500 dark:text-gray-400">{daily ? daily.date : <span className="inline-block w-16 h-3 bg-gray-200 rounded animate-pulse" />}</span>
         </div>
-        <div className="w-full h-2 bg-gray-100 rounded">
+        <div className="w-full h-2 bg-gray-100 dark:bg-white/[0.08] rounded">
           <div className="h-2 rounded bg-blue-600" style={{ width: `${pct}%` }} />
         </div>
         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -438,7 +438,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 const ratio = (d.count ?? 0) / Math.max(1, d.limit ?? 1);
                 const h = Math.max(2, Math.min(60, Math.round(ratio * 60)));
                 return (
-                  <div key={d.date} className="w-2 bg-gray-100 rounded" title={`${d.date}: ${d.count}/${d.limit}`}>
+                  <div key={d.date} className="w-2 bg-gray-100 dark:bg-white/[0.08] rounded" title={`${d.date}: ${d.count}/${d.limit}`}>
                     <div className="w-2 bg-blue-600 rounded" style={{ height: h }} />
                   </div>
                 );

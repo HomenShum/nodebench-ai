@@ -27,8 +27,8 @@ export function AnimatedButton({ children, variant = 'primary', className = '', 
   const baseStyles = 'px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
   const variantStyles = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-    secondary: 'bg-gray-100 text-gray-800 hover:bg-gray-200 focus:ring-gray-400',
-    ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-300',
+    secondary: 'bg-gray-100 dark:bg-white/[0.06] text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-white/[0.1] focus:ring-gray-400',
+    ghost: 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] focus:ring-gray-300',
   };
 
   return (
@@ -53,13 +53,25 @@ interface AnimatedCardProps {
 }
 
 export function AnimatedCard({ children, className = '', onClick }: AnimatedCardProps) {
+  const interactiveProps = onClick ? {
+    role: 'button' as const,
+    tabIndex: 0,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick();
+      }
+    },
+  } : {};
+
   return (
     <motion.div
-      className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4 cursor-pointer ${className}`}
+      className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4 ${onClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2' : ''} ${className}`}
       variants={cardHoverVariants}
       initial="idle"
       whileHover="hover"
       onClick={onClick}
+      {...interactiveProps}
     >
       {children}
     </motion.div>

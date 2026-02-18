@@ -29,13 +29,13 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon, trend }: MetricCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-2">
-        <div className="text-gray-600 text-sm font-medium">{title}</div>
-        <div className="text-gray-400">{icon}</div>
+        <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">{title}</div>
+        <div className="text-gray-400 dark:text-gray-500">{icon}</div>
       </div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-      {subtitle && <div className="text-xs text-gray-500">{subtitle}</div>}
+      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{value}</div>
+      {subtitle && <div className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' :
             trend.direction === 'down' ? 'text-red-600' :
@@ -69,9 +69,9 @@ function SourcePerformanceBar({
   const percentage = maxCount > 0 ? (itemCount / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-gray-100 last:border-0">
+    <div className="py-2 border-b border-gray-100 dark:border-white/[0.04] last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm font-medium text-gray-700 truncate flex-1">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
           {sourceName}
         </div>
         <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -104,7 +104,7 @@ function SourcePerformanceBar({
           )}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -123,11 +123,11 @@ interface CategoryBreakdownProps {
 
 function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: CategoryBreakdownProps) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+    <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-white/[0.04] last:border-0">
       <div className="flex-1">
-        <div className="text-sm font-medium text-gray-700">{category}</div>
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{category}</div>
         <div className="flex items-center gap-2 mt-1">
-          <div className="h-1.5 bg-gray-100 rounded-full flex-1 max-w-[100px]">
+          <div className="h-1.5 bg-gray-100 dark:bg-white/[0.08] rounded-full flex-1 max-w-[100px]">
             <div
               className="h-full bg-purple-500 rounded-full"
               style={{ width: `${percentage}%` }}

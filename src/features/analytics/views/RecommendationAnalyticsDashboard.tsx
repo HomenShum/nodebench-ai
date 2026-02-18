@@ -30,11 +30,11 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: MetricCardProps) {
   const colorClasses = {
-    green: 'bg-green-50 text-green-600 border-green-200',
-    red: 'bg-red-50 text-red-600 border-red-200',
-    blue: 'bg-blue-50 text-blue-600 border-blue-200',
-    yellow: 'bg-yellow-50 text-yellow-600 border-yellow-200',
-    gray: 'bg-gray-50 text-gray-600 border-gray-200',
+    green: 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900/30',
+    red: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30',
+    blue: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/30',
+    yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/30',
+    gray: 'bg-gray-50 dark:bg-white/[0.04] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.06]',
   };
 
   return (
@@ -46,7 +46,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
       <div className="text-2xl font-bold mb-1">{value}</div>
       {subtitle && <div className="text-xs opacity-60">{subtitle}</div>}
       {trend && (
-        <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' : 'text-red-600'
+        <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
           }`}>
           <TrendingUp size={12} className={trend.direction === 'down' ? 'rotate-180' : ''} />
           <span>{Math.abs(trend.value)}%</span>
@@ -66,16 +66,16 @@ function RejectionReasonBar({ reason, count, maxCount }: RejectionReasonBarProps
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-gray-100 last:border-0">
+    <div className="py-2 border-b border-gray-100 dark:border-white/[0.04] last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm text-gray-700 truncate flex-1">
+        <div className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
           {reason || 'No reason given'}
         </div>
-        <div className="text-xs text-gray-500 font-mono ml-2">
+        <div className="text-xs text-gray-500 dark:text-gray-400 font-mono ml-2">
           {count} {count === 1 ? 'rejection' : 'rejections'}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -156,11 +156,11 @@ export default function RecommendationAnalyticsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <BarChart3 size={32} />
               Recommendation Analytics
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               User feedback and engagement metrics for recommendations
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-white/[0.12] rounded-lg text-sm bg-white dark:bg-white/[0.06] text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -197,7 +197,7 @@ export default function RecommendationAnalyticsDashboard() {
         {isLoading && (
           <div className="text-center py-12">
             <Activity className="animate-spin mx-auto text-gray-400 mb-2" size={32} />
-            <p className="text-gray-600">Loading metrics...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
           </div>
         )}
 
@@ -267,57 +267,57 @@ export default function RecommendationAnalyticsDashboard() {
             </div>
 
             {/* Action Breakdown */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Action Breakdown
                 </h2>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {metrics.total} total actions
                 </span>
               </div>
 
               <div className="grid grid-cols-5 gap-3">
-                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                  <div className="text-2xl font-bold text-green-600">{metrics.accepted}</div>
-                  <div className="text-xs text-green-700 mt-1">Accepted</div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900/30">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{metrics.accepted}</div>
+                  <div className="text-xs text-green-700 dark:text-green-500 mt-1">Accepted</div>
                 </div>
 
-                <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
-                  <div className="text-2xl font-bold text-red-600">{metrics.rejected}</div>
-                  <div className="text-xs text-red-700 mt-1">Rejected</div>
+                <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{metrics.rejected}</div>
+                  <div className="text-xs text-red-700 dark:text-red-500 mt-1">Rejected</div>
                 </div>
 
-                <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <div className="text-2xl font-bold text-yellow-600">{metrics.ignored}</div>
-                  <div className="text-xs text-yellow-700 mt-1">Ignored</div>
+                <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900/30">
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{metrics.ignored}</div>
+                  <div className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">Ignored</div>
                 </div>
 
-                <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="text-2xl font-bold text-gray-600">{metrics.dismissed}</div>
-                  <div className="text-xs text-gray-700 mt-1">Dismissed</div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-white/[0.04] rounded-lg border border-gray-200 dark:border-white/[0.06]">
+                  <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">{metrics.dismissed}</div>
+                  <div className="text-xs text-gray-700 dark:text-gray-400 mt-1">Dismissed</div>
                 </div>
 
-                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="text-2xl font-bold text-blue-600">{metrics.snoozed}</div>
-                  <div className="text-xs text-blue-700 mt-1">Snoozed</div>
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/30">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{metrics.snoozed}</div>
+                  <div className="text-xs text-blue-700 dark:text-blue-500 mt-1">Snoozed</div>
                 </div>
               </div>
             </div>
 
             {/* Top Rejection Reasons */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Top Rejection Reasons
                 </h2>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {rejectionReasons?.length || 0} unique reasons
                 </span>
               </div>
 
               {!rejectionReasons || rejectionReasons.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No rejection reasons recorded yet
                 </div>
               ) : (
@@ -336,14 +336,14 @@ export default function RecommendationAnalyticsDashboard() {
 
             {/* Insights */}
             {metrics.total > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <PieChart className="text-blue-600 mt-0.5" size={20} />
+                  <PieChart className="text-blue-600 dark:text-blue-400 mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-blue-900 mb-1">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">
                       Insights
                     </h3>
-                    <ul className="text-sm text-blue-700 space-y-1">
+                    <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
                       {metrics.acceptanceRate > 0.5 && (
                         <li>✓ High acceptance rate ({(metrics.acceptanceRate * 100).toFixed(0)}%) - recommendations are valuable</li>
                       )}
@@ -370,15 +370,15 @@ export default function RecommendationAnalyticsDashboard() {
 
             {/* Empty State */}
             {metrics.total === 0 && (
-              <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-                <BarChart3 className="mx-auto text-gray-300 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-12 text-center">
+                <BarChart3 className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   No Recommendation Data Yet
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Recommendation feedback will appear here once users interact with suggestions.
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-500">
                   Make sure the RecommendationPanel component is integrated into your app.
                 </p>
               </div>

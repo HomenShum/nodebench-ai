@@ -156,7 +156,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
   const [monthLabel, yearLabel] = monthYearLabel.split(" ");
 
   return (
-    <div className="w-full font-mono text-gray-900 select-none">
+    <div className="w-full font-mono text-gray-900 dark:text-gray-100 select-none">
       <div className="z-10 transition-all duration-500 shadow-none space-y-5">
 
         {/* --- ROW 1: HEADER & CHART --- */}
@@ -184,7 +184,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                 evidenceMap={evidenceMap}
               />
             ) : (
-              <div className="w-full h-full bg-gray-50 rounded flex items-center justify-center text-gray-300 text-xs">
+              <div className="w-full h-full bg-gray-50 dark:bg-white/[0.04] rounded flex items-center justify-center text-gray-300 dark:text-gray-600 text-xs">
                 No chart data
               </div>
             )}
@@ -195,7 +195,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         <div className="grid grid-cols-12 gap-4 mb-4">
           {/* LEFT COL (7/12): CAPABILITIES GRID */}
           <div className="col-span-7 flex flex-col justify-end">
-            <div className="text-[9px] uppercase tracking-widest text-gray-400 mb-2 border-b border-gray-100 pb-1">
+            <div className="text-[9px] uppercase tracking-widest text-gray-400 mb-2 border-b border-gray-100 dark:border-white/[0.06] pb-1">
               AI Capabilities
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -224,14 +224,14 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                   <span className="text-[7px] font-bold uppercase text-gray-400 leading-none mb-0.5">
                     {topShare.label}
                   </span>
-                  <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-gray-900 leading-none" />
-                  <span className="text-[6px] text-gray-300 mt-0.5">of sources</span>
+                  <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none" />
+                  <span className="text-[6px] text-gray-300 dark:text-gray-500 mt-0.5">of sources</span>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-20 mb-2 bg-gray-50 rounded">
-                <PieChart className="w-6 h-6 text-gray-200 mb-1" />
-                <span className="text-[8px] text-gray-300">No share data</span>
+              <div className="flex flex-col items-center justify-center h-20 mb-2 bg-gray-50 dark:bg-white/[0.04] rounded">
+                <PieChart className="w-6 h-6 text-gray-200 dark:text-gray-600 mb-1" />
+                <span className="text-[8px] text-gray-300 dark:text-gray-500">No share data</span>
               </div>
             )}
 
@@ -250,13 +250,13 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         </div>
 
         {/* --- ROW 1: HEADER & ACT INDICATOR --- */}
-        <div className="border-b border-gray-900/10 pb-6">
+        <div className="border-b border-gray-900/10 dark:border-white/[0.06] pb-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-4xl font-medium text-gray-950 tracking-tight">
+            <h2 className="text-4xl font-medium text-gray-950 dark:text-gray-50 tracking-tight">
               Pulse
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-gray-900/40 uppercase tracking-widest">
+              <span className="text-[10px] font-black text-gray-900/40 dark:text-gray-400 uppercase tracking-widest">
                 {formatBriefMonthYear(new Date().toISOString())}
               </span>
               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
@@ -271,10 +271,10 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
               { id: 'actIII', label: 'Signals' }
             ].map((act, i) => (
               <React.Fragment key={act.id}>
-                {i > 0 && <div className="w-8 h-px bg-gray-200" />}
+                {i > 0 && <div className="w-8 h-px bg-gray-200 dark:bg-white/[0.08]" />}
                 <div className={`flex items-center gap-2 transition-opacity duration-500 ${activeAct === act.id ? 'opacity-100' : 'opacity-30 grayscale'
                   }`}>
-                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] text-gray-900`}>
+                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-gray-100`}>
                     {act.label}
                   </span>
                 </div>
@@ -283,7 +283,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
           </div>
         </div>
         {/* --- ROW 3: KEY STATS WITH DELTAS --- */}
-        <div className="flex justify-between items-center gap-2 border-t border-gray-100 pt-3 mb-3">
+        <div className="flex justify-between items-center gap-2 border-t border-gray-100 dark:border-white/[0.06] pt-3 mb-3">
           {keyStats.map((stat, i) => {
             const statDelta = deltas?.keyStats?.[i]?.delta;
             const statHint = getKeyStatHint(stat.label);
@@ -298,7 +298,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                   {stat.label}
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-xs font-bold text-gray-900">{displayValue}</span>
+                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{displayValue}</span>
                   {statDelta !== undefined && statDelta !== null && statDelta !== 0 && (
                     <DeltaIndicator value={statDelta} size="sm" />
                   )}
@@ -322,7 +322,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
   <div className="flex flex-col gap-1 mb-3 group">
     <div className="flex justify-between items-end mb-1">
       <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold group-hover:text-gray-900 transition-colors leading-none">{label}</span>
+        <span className="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors leading-none">{label}</span>
         {delta !== undefined && delta !== null && delta !== 0 && (
           <div className="mt-0.5">
             <DeltaIndicator value={delta} unit="pts" />
@@ -331,12 +331,12 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
       </div>
       <span className="text-xs font-mono font-bold text-[color:var(--text-primary)]">{normalizeCapabilityScore(score)}%</span>
     </div>
-    <div className="h-1.5 w-full bg-gray-200 overflow-hidden">
+    <div className="h-1.5 w-full bg-gray-200 dark:bg-white/[0.1] overflow-hidden">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${normalizeCapabilityScore(score)}%` }}
         transition={{ duration: 1.5, ease: "easeOut" }}
-        className="h-full bg-gray-900"
+        className="h-full bg-gray-900 dark:bg-gray-100"
       />
     </div>
   </div>
@@ -344,12 +344,12 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
 
 const BucketColumn = ({ count, color, delta }: { count: number, color: string, delta?: number | null }) => {
   // Map old colors to new theme
-  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-gray-900' : 'bg-gray-300';
+  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-gray-900 dark:bg-gray-100' : 'bg-gray-300 dark:bg-gray-500';
 
   return (
     <div className="flex flex-col-reverse gap-[1px] w-full items-center group relative">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className={`w-full h-1 rounded-none ${i < count ? themeColor : "bg-gray-100"}`} />
+        <div key={i} className={`w-full h-1 rounded-none ${i < count ? themeColor : "bg-gray-100 dark:bg-white/[0.06]"}`} />
       ))}
       {delta !== undefined && delta !== null && delta !== 0 && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
@@ -367,7 +367,7 @@ const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
   return (
     <div className="relative w-full h-full flex-shrink-0">
       <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
-        <circle cx="50" cy="50" r="40" stroke="#E5E5E2" strokeWidth="12" fill="none" />
+        <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="12" fill="none" className="text-[#E5E5E2] dark:text-white/[0.1]" />
         <motion.circle
           initial={{ pathLength: 0 }}
           animate={{ pathLength }}
@@ -375,10 +375,11 @@ const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
           cx="50"
           cy="50"
           r="40"
-          stroke="#111827"
+          stroke="currentColor"
           strokeWidth="12"
           fill="none"
           strokeDasharray="1 1"
+          className="text-[#111827] dark:text-gray-100"
         />
       </svg>
     </div>
@@ -394,20 +395,20 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
   const totalCount = workflowSteps.length;
 
   return (
-    <div className="mt-8 pt-6 border-t border-gray-200">
+    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/[0.08]">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="px-1.5 py-1 bg-gray-900 text-background text-[9px] font-bold uppercase tracking-widest">
+          <div className="px-1.5 py-1 bg-gray-900 dark:bg-gray-100 text-background dark:text-gray-900 text-[9px] font-bold uppercase tracking-widest">
             Agent Workflow
           </div>
-          <div className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+          <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             {completedCount}/{totalCount} PROCESSED
           </div>
         </div>
         {activeStep && (
           <div className="flex items-center gap-2">
-            <Loader2 className="w-3 h-3 text-gray-700 animate-spin" />
-            <span className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Live</span>
+            <Loader2 className="w-3 h-3 text-gray-700 dark:text-gray-300 animate-spin" />
+            <span className="text-[9px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Live</span>
           </div>
         )}
       </div>
@@ -415,16 +416,16 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
       <div className="space-y-3">
         {workflowSteps.slice(0, 3).map((step) => (
           <div key={step.name} className="flex items-center gap-3 group">
-            <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${step.status === 'completed' ? 'bg-gray-900 border-gray-900' :
-              step.status === 'in_progress' ? 'border-gray-900 animate-pulse' :
-                'border-gray-200'
+            <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${step.status === 'completed' ? 'bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100' :
+              step.status === 'in_progress' ? 'border-gray-900 dark:border-gray-300 animate-pulse' :
+                'border-gray-200 dark:border-white/[0.15]'
               }`}>
-              {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
-              {step.status === 'in_progress' && <div className="w-1.5 h-1.5 bg-gray-900 rounded-full" />}
+              {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white dark:text-gray-900" />}
+              {step.status === 'in_progress' && <div className="w-1.5 h-1.5 bg-gray-900 dark:bg-gray-300 rounded-full" />}
             </div>
-            <span className={`text-[11px] transition-colors ${step.status === 'completed' ? 'text-gray-400 line-through' :
-              step.status === 'in_progress' ? 'text-gray-900 font-bold' :
-                'text-gray-500'
+            <span className={`text-[11px] transition-colors ${step.status === 'completed' ? 'text-gray-400 dark:text-gray-500 line-through' :
+              step.status === 'in_progress' ? 'text-gray-900 dark:text-gray-100 font-bold' :
+                'text-gray-500 dark:text-gray-400'
               }`}>
               {step.name}
             </span>
@@ -433,9 +434,9 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
       </div>
 
       {activeStep && (
-        <div className="mt-4 p-3 bg-indigo-50/50 border border-gray-900/10">
-          <p className="text-[10px] font-mono text-gray-900/60 uppercase tracking-tighter mb-1">Current Task</p>
-          <p className="text-[12px] font-medium text-gray-950 italic">
+        <div className="mt-4 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-white/[0.08]">
+          <p className="text-[10px] font-mono text-gray-900/60 dark:text-gray-400 uppercase tracking-tighter mb-1">Current Task</p>
+          <p className="text-[12px] font-medium text-gray-950 dark:text-gray-100 italic">
             "{activeStep.name} in progress..."
           </p>
         </div>
@@ -445,7 +446,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
         {[...Array(12)].map((_, i) => (
           <div
             key={i}
-            className={`w-1.5 h-1.5 bg-gray-900 rounded-none transition-opacity duration-1000`}
+            className={`w-1.5 h-1.5 bg-gray-900 dark:bg-gray-200 rounded-none transition-opacity duration-1000`}
             style={{
               opacity: activeStep ? PULSE_OPACITIES[i] : 0.05,
               animationDelay: `${i * 0.1}s`

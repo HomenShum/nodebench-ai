@@ -96,27 +96,19 @@ interface ArtifactCardItemProps {
 
 function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps) {
   const { flags, thumbnail, title, host, kind, provider, snippet, canonicalUrl } = artifact;
-  
-  const handleClick = () => {
-    if (onClick) {
-      onClick(artifact);
-    } else {
-      window.open(canonicalUrl, "_blank", "noopener,noreferrer");
-    }
-  };
-  
-  return (
-    <div
-      onClick={handleClick}
-      className={`
-        group relative flex flex-col bg-white border border-gray-200 rounded-lg 
-        overflow-hidden cursor-pointer transition-all duration-200
-        hover:border-purple-300 hover:shadow-md hover:-translate-y-0.5
-        ${compact ? 'w-40' : 'w-52'}
-      `}
-    >
+
+  const cardClasses = `
+    group relative flex flex-col bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg
+    overflow-hidden cursor-pointer transition-all duration-200
+    hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md hover:-translate-y-0.5
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2
+    ${compact ? 'w-40' : 'w-52'}
+  `;
+
+  const innerContent = (
+    <>
       {/* Thumbnail or Placeholder */}
-      <div className={`relative bg-gray-100 ${compact ? 'h-24' : 'h-32'}`}>
+      <div className={`relative bg-gray-100 dark:bg-white/[0.04] ${compact ? 'h-24' : 'h-32'}`}>
         {thumbnail ? (
           <img 
             src={thumbnail} 
@@ -141,7 +133,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
         {kind === "video" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
             <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-              <Play className="w-5 h-5 text-gray-900 ml-0.5" />
+              <Play className="w-5 h-5 text-gray-900 dark:text-gray-800 ml-0.5" />
             </div>
           </div>
         )}
@@ -163,7 +155,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
       
       {/* Content */}
       <div className={`flex-1 ${compact ? 'p-2' : 'p-3'}`}>
-        <h4 className={`font-medium text-gray-900 line-clamp-2 break-words ${compact ? 'text-xs' : 'text-sm'}`}>
+        <h4 className={`font-medium text-gray-900 dark:text-gray-100 line-clamp-2 break-words ${compact ? 'text-xs' : 'text-sm'}`}>
           {title}
         </h4>
         
@@ -190,7 +182,26 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
       <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
       </div>
-    </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={() => onClick(artifact)} className={cardClasses}>
+        {innerContent}
+      </button>
+    );
+  }
+
+  return (
+    <a
+      href={canonicalUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cardClasses}
+    >
+      {innerContent}
+    </a>
   );
 }
 
@@ -271,7 +282,7 @@ export function MediaRail({
       {/* Show More Link */}
       {allArtifacts.length > maxVisible && (
         <div className="mt-2 text-center">
-          <button className="text-xs text-purple-600 hover:text-purple-800 font-medium">
+          <button type="button" className="text-xs text-purple-600 hover:text-purple-800 font-medium">
             +{allArtifacts.length - maxVisible} more sources
           </button>
         </div>
@@ -303,7 +314,7 @@ export function InlineMediaRail({ artifacts, maxVisible = 4 }: InlineMediaRailPr
           href={artifact.canonicalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs text-gray-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.1] rounded text-xs text-gray-700 dark:text-gray-300 transition-colors"
         >
           <span className={getProviderColor(artifact.provider)}>
             {getKindIcon(artifact.kind)}
