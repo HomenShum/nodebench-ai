@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-17T23:34:48.482Z",
+  "capturedAtIso": "2026-02-18T01:11:16.310Z",
   "baseURL": "http://127.0.0.1:4173",
   "mime": "video/mp4",
   "publish": "static",
@@ -20,67 +20,67 @@
       "index": 3,
       "name": "Research: Overview",
       "path": "/research/overview",
-      "startSec": 2.5
+      "startSec": 2.6
     },
     {
       "index": 4,
       "name": "Research: Signals",
       "path": "/research/signals",
-      "startSec": 3.8
+      "startSec": 4.7
     },
     {
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 5.1
+      "startSec": 6
     },
     {
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 7.5
+      "startSec": 7.3
     },
     {
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 8.8
+      "startSec": 8.6
     },
     {
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 10
+      "startSec": 9.8
     },
     {
       "index": 9,
       "name": "Workspace: Spreadsheets",
       "path": "/spreadsheets",
-      "startSec": 11.3
+      "startSec": 11.1
     },
     {
       "index": 10,
       "name": "Workspace: Calendar",
       "path": "/calendar",
-      "startSec": 12.5
+      "startSec": 12.3
     },
     {
       "index": 11,
       "name": "Assistants",
       "path": "/agents",
-      "startSec": 13.8
+      "startSec": 13.6
     },
     {
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 15
+      "startSec": 14.9
     },
     {
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 16.3
+      "startSec": 16.2
     },
     {
       "index": 14,
@@ -98,7 +98,7 @@
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 20.1
+      "startSec": 20
     },
     {
       "index": 17,
@@ -116,7 +116,7 @@
       "index": 19,
       "name": "Activity",
       "path": "/activity",
-      "startSec": 23.8
+      "startSec": 23.9
     },
     {
       "index": 20,
@@ -128,43 +128,43 @@
       "index": 21,
       "name": "Usage Stats",
       "path": "/analytics/components",
-      "startSec": 26.3
+      "startSec": 26.4
     },
     {
       "index": 22,
       "name": "Feedback",
       "path": "/analytics/recommendations",
-      "startSec": 27.6
+      "startSec": 27.7
     },
     {
       "index": 23,
       "name": "Usage & Costs",
       "path": "/cost",
-      "startSec": 28.8
+      "startSec": 28.9
     },
     {
       "index": 24,
       "name": "Industry News",
       "path": "/industry",
-      "startSec": 30.1
+      "startSec": 30.2
     },
     {
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 31.4
+      "startSec": 31.5
     },
     {
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 32.6
+      "startSec": 32.7
     },
     {
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 33.9
+      "startSec": 34
     },
     {
       "index": 28,
@@ -176,52 +176,52 @@
       "index": 29,
       "name": "PR Suggestions",
       "path": "/pr-suggestions",
-      "startSec": 36.4
+      "startSec": 36.5
     },
     {
       "index": 30,
       "name": "LinkedIn Archive",
       "path": "/linkedin",
-      "startSec": 37.7
+      "startSec": 37.8
     },
     {
       "index": 31,
       "name": "Tool Usage Ledger",
       "path": "/mcp/ledger",
-      "startSec": 38.9
+      "startSec": 39.1
     },
     {
       "index": 32,
       "name": "Dogfood Gallery",
       "path": "/dogfood",
-      "startSec": 40.2
+      "startSec": 40.3
     },
     {
       "index": 33,
       "name": "Public Docs",
       "path": "/public",
-      "startSec": 41.4
+      "startSec": 41.6
     },
     {
       "index": 34,
       "name": "Interaction: Command Palette",
       "path": "(interaction)",
-      "startSec": 42.7
+      "startSec": 42.9
     },
     {
       "index": 35,
       "name": "Interaction: Settings",
       "path": "(interaction)",
-      "startSec": 44
+      "startSec": 44.2
     },
     {
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 46
+      "startSec": 46.3
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-17_153348.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-17_171015.mp4"
 }

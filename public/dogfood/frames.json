@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-17T23:34:53.807Z",
+  "capturedAtIso": "2026-02-18T01:11:21.533Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -22,7 +22,7 @@
       "index": 3,
       "name": "Research: Overview",
       "path": "/research/overview",
-      "startSec": 2.5,
+      "startSec": 2.6,
       "file": "03-research-overview.jpg",
       "image": "/dogfood/frames/03-research-overview.jpg"
     },
@@ -30,7 +30,7 @@
       "index": 4,
       "name": "Research: Signals",
       "path": "/research/signals",
-      "startSec": 3.8,
+      "startSec": 4.7,
       "file": "04-research-signals.jpg",
       "image": "/dogfood/frames/04-research-signals.jpg"
     },
@@ -38,7 +38,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 5.1,
+      "startSec": 6,
       "file": "05-research-briefing.jpg",
       "image": "/dogfood/frames/05-research-briefing.jpg"
     },
@@ -46,7 +46,7 @@
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 7.5,
+      "startSec": 7.3,
       "file": "06-research-deals.jpg",
       "image": "/dogfood/frames/06-research-deals.jpg"
     },
@@ -54,7 +54,7 @@
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 8.8,
+      "startSec": 8.6,
       "file": "07-research-changes.jpg",
       "image": "/dogfood/frames/07-research-changes.jpg"
     },
@@ -62,7 +62,7 @@
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 10,
+      "startSec": 9.8,
       "file": "08-workspace-documents.jpg",
       "image": "/dogfood/frames/08-workspace-documents.jpg"
     },
@@ -70,7 +70,7 @@
       "index": 9,
       "name": "Workspace: Spreadsheets",
       "path": "/spreadsheets",
-      "startSec": 11.3,
+      "startSec": 11.1,
       "file": "09-workspace-spreadsheets.jpg",
       "image": "/dogfood/frames/09-workspace-spreadsheets.jpg"
     },
@@ -78,7 +78,7 @@
       "index": 10,
       "name": "Workspace: Calendar",
       "path": "/calendar",
-      "startSec": 12.5,
+      "startSec": 12.3,
       "file": "10-workspace-calendar.jpg",
       "image": "/dogfood/frames/10-workspace-calendar.jpg"
     },
@@ -86,7 +86,7 @@
       "index": 11,
       "name": "Assistants",
       "path": "/agents",
-      "startSec": 13.8,
+      "startSec": 13.6,
       "file": "11-assistants.jpg",
       "image": "/dogfood/frames/11-assistants.jpg"
     },
@@ -94,7 +94,7 @@
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 15,
+      "startSec": 14.9,
       "file": "12-roadmap.jpg",
       "image": "/dogfood/frames/12-roadmap.jpg"
     },
@@ -102,7 +102,7 @@
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 16.3,
+      "startSec": 16.2,
       "file": "13-timeline.jpg",
       "image": "/dogfood/frames/13-timeline.jpg"
     },
@@ -126,7 +126,7 @@
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 20.1,
+      "startSec": 20,
       "file": "16-signals-log.jpg",
       "image": "/dogfood/frames/16-signals-log.jpg"
     },
@@ -150,7 +150,7 @@
       "index": 19,
       "name": "Activity",
       "path": "/activity",
-      "startSec": 23.8,
+      "startSec": 23.9,
       "file": "19-activity.jpg",
       "image": "/dogfood/frames/19-activity.jpg"
     },
@@ -166,7 +166,7 @@
       "index": 21,
       "name": "Usage Stats",
       "path": "/analytics/components",
-      "startSec": 26.3,
+      "startSec": 26.4,
       "file": "21-usage-stats.jpg",
       "image": "/dogfood/frames/21-usage-stats.jpg"
     },
@@ -174,7 +174,7 @@
       "index": 22,
       "name": "Feedback",
       "path": "/analytics/recommendations",
-      "startSec": 27.6,
+      "startSec": 27.7,
       "file": "22-feedback.jpg",
       "image": "/dogfood/frames/22-feedback.jpg"
     },
@@ -182,7 +182,7 @@
       "index": 23,
       "name": "Usage & Costs",
       "path": "/cost",
-      "startSec": 28.8,
+      "startSec": 28.9,
       "file": "23-usage-costs.jpg",
       "image": "/dogfood/frames/23-usage-costs.jpg"
     },
@@ -190,7 +190,7 @@
       "index": 24,
       "name": "Industry News",
       "path": "/industry",
-      "startSec": 30.1,
+      "startSec": 30.2,
       "file": "24-industry-news.jpg",
       "image": "/dogfood/frames/24-industry-news.jpg"
     },
@@ -198,7 +198,7 @@
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 31.4,
+      "startSec": 31.5,
       "file": "25-for-you.jpg",
       "image": "/dogfood/frames/25-for-you.jpg"
     },
@@ -206,7 +206,7 @@
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 32.6,
+      "startSec": 32.7,
       "file": "26-recommendations.jpg",
       "image": "/dogfood/frames/26-recommendations.jpg"
     },
@@ -214,7 +214,7 @@
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 33.9,
+      "startSec": 34,
       "file": "27-agent-templates.jpg",
       "image": "/dogfood/frames/27-agent-templates.jpg"
     },
@@ -230,7 +230,7 @@
       "index": 29,
       "name": "PR Suggestions",
       "path": "/pr-suggestions",
-      "startSec": 36.4,
+      "startSec": 36.5,
       "file": "29-pr-suggestions.jpg",
       "image": "/dogfood/frames/29-pr-suggestions.jpg"
     },
@@ -238,7 +238,7 @@
       "index": 30,
       "name": "LinkedIn Archive",
       "path": "/linkedin",
-      "startSec": 37.7,
+      "startSec": 37.8,
       "file": "30-linkedin-archive.jpg",
       "image": "/dogfood/frames/30-linkedin-archive.jpg"
     },
@@ -246,7 +246,7 @@
       "index": 31,
       "name": "Tool Usage Ledger",
       "path": "/mcp/ledger",
-      "startSec": 38.9,
+      "startSec": 39.1,
       "file": "31-tool-usage-ledger.jpg",
       "image": "/dogfood/frames/31-tool-usage-ledger.jpg"
     },
@@ -254,7 +254,7 @@
       "index": 32,
       "name": "Dogfood Gallery",
       "path": "/dogfood",
-      "startSec": 40.2,
+      "startSec": 40.3,
       "file": "32-dogfood-gallery.jpg",
       "image": "/dogfood/frames/32-dogfood-gallery.jpg"
     },
@@ -262,7 +262,7 @@
       "index": 33,
       "name": "Public Docs",
       "path": "/public",
-      "startSec": 41.4,
+      "startSec": 41.6,
       "file": "33-public-docs.jpg",
       "image": "/dogfood/frames/33-public-docs.jpg"
     },
@@ -270,7 +270,7 @@
       "index": 34,
       "name": "Interaction: Command Palette",
       "path": "(interaction)",
-      "startSec": 42.7,
+      "startSec": 42.9,
       "file": "34-interaction-command-palette.jpg",
       "image": "/dogfood/frames/34-interaction-command-palette.jpg"
     },
@@ -278,7 +278,7 @@
       "index": 35,
       "name": "Interaction: Settings",
       "path": "(interaction)",
-      "startSec": 44,
+      "startSec": 44.2,
       "file": "35-interaction-settings.jpg",
       "image": "/dogfood/frames/35-interaction-settings.jpg"
     },
@@ -286,7 +286,7 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 46,
+      "startSec": 46.3,
       "file": "36-end.jpg",
       "image": "/dogfood/frames/36-end.jpg"
     }
