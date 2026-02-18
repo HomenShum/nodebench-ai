@@ -1633,6 +1633,77 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
       "'It works now' without understanding why it didn't before",
     ],
   },
+  scenario_testing: {
+    title: "Scenario-Based Testing — Real Human Behavior at Scale",
+    description:
+      "Tests that don't model real human behavior are false confidence. Every test must be scenario-based: start from a real user persona and goal, simulate realistic behavior, and verify at scale. Covers all behavior angles and both short-running (burst) and long-running (sustained) scenarios.",
+    steps: [
+      {
+        step: 1,
+        name: "Define the User Persona",
+        description:
+          "Who is the user in this scenario? First-timer, power user, distracted user, adversarial actor, mobile user on a slow network, or concurrent session? The persona determines which failure modes matter.",
+        action:
+          "Before writing any assertion, write: 'User: <persona>. Goal: <what they want to achieve>. Prior state: <what's already in the system>.' If you can't answer these, you don't have a test scenario yet.",
+      },
+      {
+        step: 2,
+        name: "Specify Action Sequence + Timing",
+        description:
+          "What does the user do, in what order, with what timing between actions? Rushed clicks differ from deliberate actions. Concurrent users produce race conditions that single-user tests miss entirely.",
+        action:
+          "Document: 'Actions: [step-by-step sequence with timing]. Concurrency: [1 user / N concurrent].' For concurrent scenarios, specify what overlaps and at what rate.",
+      },
+      {
+        step: 3,
+        name: "Set the Scale Axis",
+        description:
+          "A test that passes at 1 user is necessary but not sufficient. Define what happens at 10x and 100x. Single-user happy paths cannot catch connection pool exhaustion, rate limit throttling, lock contention, or thundering herd.",
+        action:
+          "For every scenario, write: 'Scale: 1x (baseline) / 10x (concurrent) / 100x (sustained).' If you only have the 1x case, the test suite has a known gap — document it.",
+      },
+      {
+        step: 4,
+        name: "Set the Duration Axis",
+        description:
+          "Short-running tests (burst/spike) and long-running tests (sustained load, state accumulation) catch different failure modes. A system that handles 10 requests in 1 second may fail after 10,000 requests over 30 minutes due to memory leaks, DB growth, stale caches, or token expiry.",
+        action:
+          "For each scenario, specify: 'Duration: single request / session-length / multi-day accumulation.' If you have only short-running coverage, add a long-running counterpart or mark the gap explicitly.",
+      },
+      {
+        step: 5,
+        name: "Cover All Behavior Angles",
+        description:
+          "Six required angles per feature: (1) happy path, (2) all sad paths, (3) concurrent access, (4) degraded conditions (slow network, auth expiry, partial API failures), (5) long-running accumulation (DB growth, stale cache), (6) adversarial inputs (injection, replay, unexpected payloads).",
+        action:
+          "Use a checklist: happy ✓ / sad paths ✓ / concurrent ✓ / degraded ✓ / long-running ✓ / adversarial ✓. Missing boxes are documented gaps, not implicit coverage.",
+      },
+      {
+        step: 6,
+        name: "Verify Side Effects, Not Just Return Values",
+        description:
+          "Assertions that only check return values miss the failure modes that matter in production: state changes, side effects, downstream consequences. Did the DB update? Did the cache invalidate? Did the audit log record? Did the notification fire?",
+        action:
+          "After every action assertion, add assertions for: state in the DB, downstream side effects, observable UI change, and any async consequences. If you can't assert them, add instrumentation.",
+      },
+    ],
+    antiPatterns: [
+      "Simple unit tests with no scenario context",
+      "Tests that only cover the happy path",
+      "Tests that mock everything and test nothing real",
+      "Tests that pass at 1 user and are never run at 10+",
+      "Hard-coded user state assumptions that won't hold in production",
+      "'It passes in CI' declared without production-realistic data volume or concurrency",
+      "Declaring a feature 'tested' after a single integration test with synthetic clean data",
+      "Assertions only on return values — no state or side effect checks",
+    ],
+    scenarioAnatomy: {
+      template:
+        "Scenario: <name> | User: <persona> | Goal: <user goal> | Prior state: <system state before> | Actions: <sequence with timing> | Scale: <1x/10x/100x> | Duration: <single/session/multi-day> | Expected: <state + side effects + UI> | Edge cases: <degraded/adversarial/partial>",
+      example:
+        "Scenario: Power user submits form on slow 3G | User: power user, 50+ prior submissions, impatient | Goal: submit expense report | Prior state: DB has 10,000 existing reports, cache warm | Actions: fill form (5s), click submit, network drops to 3G mid-request, retry after 2s | Scale: 10 concurrent submitters | Duration: 30-minute session with 20 submissions | Expected: exactly-once submission, retry shows loading, no duplicate DB row, audit log entry | Edge cases: double-click, browser back mid-submit, session expiry at step 3",
+    },
+  },
   overview: {
     title: "NodeBench Development Methodology — Overview",
     description:
@@ -1692,6 +1763,8 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
             "Voice Bridge — STT/TTS/LLM pipeline design, scaffold generation, latency benchmarking",
           analyst_diagnostic:
             "Analyst Diagnostic — root-cause diagnosis over bandaids. Mandatory for all bug work: reproduce, trace upstream, ask 'why' 5 times, fix the cause not the symptom",
+          scenario_testing:
+            "Scenario-Based Testing — no shallow tests, real user personas, scale axis (1x/10x/100x), duration axis (burst + sustained), all behavior angles (happy/sad/adversarial/concurrent/degraded)",
         },
       },
       {
@@ -1986,7 +2059,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
     {
       name: "getMethodology",
       description:
-        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, flywheel_ui_dogfood, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, controlled_evaluation, overview. Call with topic "overview" to see all available methodologies.',
+        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, flywheel_ui_dogfood, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, controlled_evaluation, scenario_testing, overview. Call with topic "overview" to see all available methodologies.',
       inputSchema: {
         type: "object",
         properties: {
@@ -2015,6 +2088,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "academic_paper_writing",
               "agent_evaluation",
               "controlled_evaluation",
+              "scenario_testing",
               "overview",
             ],
             description: "Which methodology to explain",

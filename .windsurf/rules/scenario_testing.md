@@ -1,0 +1,71 @@
+---
+alwaysApply: true
+related_: [analyst_diagnostic, reexamine_resilience, reexamine_process, completion_traceability]
+---
+
+# Scenario-Based Testing
+
+Tests that don't model real human behavior are false confidence — not test coverage.
+
+## Core mandate
+
+Never write simple tests. Every test must be scenario-based: start from a real user context, simulate realistic behavior, and verify system behavior under that context at scale.
+
+> "Do not go for simple tests — they are not able to truly address how real people's behavior is going to show up during production. Tests must always be scenario-based, catered and aligned with real human behaviors in all angles. Do not go shallow — they must go thoroughly, deeply, and must consider scale. They must consider long-running and short-running."
+
+## What "scenario-based" means
+
+Every test must answer all six of these:
+
+1. **Who** — Which user persona? (first-timer, power user, distracted, adversarial, mobile/slow network, concurrent session)
+2. **What** — What is the user trying to achieve? (start from goal, not function signature)
+3. **How** — What is the action sequence, timing, and concurrency pattern?
+4. **Scale** — What happens at 1 user, 10 concurrent, 100 sustained? Single-user happy paths are necessary but not sufficient.
+5. **Duration** — Short-running (burst, spike) AND long-running (sustained load, state accumulation, memory leak over time). A test that passes in 1 second but fails after 30 minutes is a production gap.
+6. **Failure modes** — Edge cases, race conditions, degraded inputs, partial failures, auth expiry mid-flow, retry storms.
+
+## Required test categories per feature
+
+| Category | What it covers |
+|---|---|
+| Single user — happy path | Baseline correctness |
+| Single user — all sad paths | Every error condition, invalid input, boundary value |
+| Concurrent users | Race conditions, dirty reads, double-submit |
+| Degraded conditions | Slow network, auth expiry, partial API failures, quota exhaustion |
+| Long-running accumulation | State after 100+ sessions, memory/DB growth, stale cache eviction |
+| Adversarial | Injection, unexpected payloads, replay attacks on idempotent operations |
+
+## Scenario anatomy
+
+Every scenario test must explicitly document:
+
+```
+Scenario: <name>
+User:      <persona — first-timer / power user / adversarial / slow network / etc.>
+Goal:      <what the user is trying to achieve>
+Prior state: <what's already in the system before this scenario runs>
+Actions:   <sequence of user actions with timing>
+Scale:     <1 user / 10 concurrent / 100 sustained>
+Duration:  <single request / session-length / multi-day accumulation>
+Expected:  <full observable outcome — state, side effects, UI response>
+Edge cases: <what happens when inputs are wrong, partial, or adversarial>
+```
+
+## Anti-patterns — banned
+
+- Simple unit tests with no scenario context
+- Tests that only cover the happy path
+- Tests that mock everything and test nothing real
+- Tests that pass at 1 user and are never run at 10+
+- Hard-coded user state assumptions that won't hold in production
+- "It passes in CI" declared without production-realistic data volume or concurrency
+- Declaring a feature "tested" after a single integration test with synthetic clean data
+
+## Red flags you're writing shallow tests
+
+- Your test has no defined user persona
+- Your test has no prior state setup — it starts with a clean DB every time
+- Your test doesn't specify concurrency
+- Your test duration is under 5 seconds with no long-running counterpart
+- Your test passes with `mockImplementation(() => ({}))`
+- Your assertions only check return values, not state changes and side effects
