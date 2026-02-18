@@ -10,7 +10,9 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 1
+    },
     "preserveOutput": "always",
     "reporter": [
       [
@@ -40,7 +42,9 @@
         "outputDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "chromium",
         "name": "chromium",
         "testDir": "D:/VSCode Projects/cafecorner_nodebench/nodebench_ai4/nodebench-ai/tests/e2e",
@@ -56,22 +60,855 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.57.0",
-    "workers": 16,
+    "workers": 1,
     "webServer": null
   },
-  "suites": [],
-  "errors": [
+  "suites": [
     {
-      "message": "Error: No tests found",
-      "stack": "Error: No tests found"
+      "title": "scenario-regression.spec.ts",
+      "file": "scenario-regression.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Scenario: Dark mode sweep — Feb 2026 component fixes",
+          "file": "scenario-regression.spec.ts",
+          "line": 102,
+          "column": 6,
+          "specs": [
+            {
+              "title": "first-time dark-OS user browses analytics + funding + MCP (no saved theme)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7220,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "[/analytics-recommendations] bright elements in dark mode:\n  DIV[h-screen flex bg-background transition-colors duration-200] lum=250\n  DIV[\n           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blu] lum=250\n  ASIDE[h-full flex flex-col bg-gray-50 dark:bg-[#18181B]] lum=250\n  DIV[h-px bg-gray-200/60 dark:bg-white/[0.06] mx-4 my-3] lum=231\n  DIV[h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/] lum=255\n"
+                        },
+                        {
+                          "text": "[/analytics-components] bright elements in dark mode:\n  DIV[h-screen flex bg-background transition-colors duration-200] lum=250\n  DIV[\n           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blu] lum=250\n  ASIDE[h-full flex flex-col bg-gray-50 dark:bg-[#18181B]] lum=250\n  DIV[h-px bg-gray-200/60 dark:bg-white/[0.06] mx-4 my-3] lum=231\n  DIV[h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/] lum=255\n"
+                        },
+                        {
+                          "text": "[/funding] bright elements in dark mode:\n  DIV[h-screen flex bg-background transition-colors duration-200] lum=250\n  DIV[\n           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blu] lum=250\n  ASIDE[h-full flex flex-col bg-gray-50 dark:bg-[#18181B]] lum=250\n  DIV[h-px bg-gray-200/60 dark:bg-white/[0.06] mx-4 my-3] lum=231\n  DIV[h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/] lum=255\n"
+                        },
+                        {
+                          "text": "[/mcp-ledger] bright elements in dark mode:\n  DIV[h-screen flex bg-background transition-colors duration-200] lum=250\n  DIV[\n           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blu] lum=250\n  ASIDE[h-full flex flex-col bg-gray-50 dark:bg-[#18181B]] lum=250\n  DIV[h-px bg-gray-200/60 dark:bg-white/[0.06] mx-4 my-3] lum=231\n  DIV[h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/] lum=255\n"
+                        },
+                        {
+                          "text": "[/showcase] bright elements in dark mode:\n  DIV[h-screen flex bg-background transition-colors duration-200] lum=250\n  DIV[\n           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blu] lum=250\n  ASIDE[h-full flex flex-col bg-gray-50 dark:bg-[#18181B]] lum=250\n  DIV[h-px bg-gray-200/60 dark:bg-white/[0.06] mx-4 my-3] lum=231\n  DIV[h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/] lum=255\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:53:44.705Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-49c2f0a1dd74b014dffc",
+              "file": "scenario-regression.spec.ts",
+              "line": 113,
+              "column": 3
+            },
+            {
+              "title": "power user with saved dark theme — analytics recommendations renders correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2732,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:53:52.253Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-ce0242fb3daeba7ffe7d",
+              "file": "scenario-regression.spec.ts",
+              "line": 151,
+              "column": 3
+            },
+            {
+              "title": "power user opens usage dashboard in dark mode — progress bars visible",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2733,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:53:55.003Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-2b52416afaca0f9ee959",
+              "file": "scenario-regression.spec.ts",
+              "line": 184,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: Dogfood artifacts ingestion — UI loads screenshots, scribe, video, frames",
+          "file": "scenario-regression.spec.ts",
+          "line": 209,
+          "column": 6,
+          "specs": [
+            {
+              "title": "dogfood route renders keyframes + scribe steps + screenshots and assets load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1542,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:53:57.755Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-dfbea26ee9cc1d6129ac",
+              "file": "scenario-regression.spec.ts",
+              "line": 210,
+              "column": 3
+            },
+            {
+              "title": "clicking a key frame seeks the walkthrough video",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1639,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:53:59.318Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-09fa5bcc9678f0522753",
+              "file": "scenario-regression.spec.ts",
+              "line": 262,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: Live Gemini QA run — optional smoke",
+          "file": "scenario-regression.spec.ts",
+          "line": 292,
+          "column": 6,
+          "specs": [
+            {
+              "title": "QA engineer runs video QA — a run appears in Recent runs",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "Set NODEBENCH_RUN_GEMINI_QA=1 to run live Gemini QA smoke test.",
+                      "location": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts",
+                        "line": 293,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:00.980Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "Set NODEBENCH_RUN_GEMINI_QA=1 to run live Gemini QA smoke test.",
+                          "location": {
+                            "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts",
+                            "line": 293,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-ed8e5f9547beb38d33d5",
+              "file": "scenario-regression.spec.ts",
+              "line": 295,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: Route flash fixes — skeleton stability during fast navigation",
+          "file": "scenario-regression.spec.ts",
+          "line": 330,
+          "column": 6,
+          "specs": [
+            {
+              "title": "impatient user rapid-fires 5 routes — no white flash between navigations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3896,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:00.982Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-f49973b0da5bba7d29f5",
+              "file": "scenario-regression.spec.ts",
+              "line": 342,
+              "column": 3
+            },
+            {
+              "title": "cold-load first-time user — ViewSkeleton wrapper has no-skeleton-animation class",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 746,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:04.890Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-0194e44bc53139b96c60",
+              "file": "scenario-regression.spec.ts",
+              "line": 385,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: Gemini QA pipeline — auth, upload, and error states",
+          "file": "scenario-regression.spec.ts",
+          "line": 413,
+          "column": 6,
+          "specs": [
+            {
+              "title": "QA engineer opens /dogfood, signs in anonymously, QA buttons become enabled",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2823,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:05.651Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-60862dbb7bcebf18060b",
+              "file": "scenario-regression.spec.ts",
+              "line": 425,
+              "column": 3
+            },
+            {
+              "title": "QA error state renders correctly — error text is visible and non-empty",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1688,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:08.490Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-d833dd9083a693016156",
+              "file": "scenario-regression.spec.ts",
+              "line": 471,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: ThemeContext — reduced-motion init and application",
+          "file": "scenario-regression.spec.ts",
+          "line": 501,
+          "column": 6,
+          "specs": [
+            {
+              "title": "photosensitive user — reduced-motion class applied from OS preference",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3648,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:10.193Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-c93280f9f519266284ff",
+              "file": "scenario-regression.spec.ts",
+              "line": 514,
+              "column": 3
+            },
+            {
+              "title": "power user with saved reducedMotion — persists across route changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4630,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:13.857Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-eddf27770896e2b9000e",
+              "file": "scenario-regression.spec.ts",
+              "line": 564,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: Long-running session — state accumulation and memory",
+          "file": "scenario-regression.spec.ts",
+          "line": 586,
+          "column": 6,
+          "specs": [
+            {
+              "title": "power user navigates 15 routes in sequence — no error accumulation",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 14692,
+                      "error": {
+                        "message": "Error: JS errors accumulated during 15-route session:\nBlocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808\nBlocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m2\u001b[39m",
+                        "stack": "Error: JS errors accumulated during 15-route session:\nBlocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808\nBlocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts:637:7",
+                        "location": {
+                          "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts",
+                          "column": 7,
+                          "line": 637
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 635 |\u001b[39m       realErrors\u001b[33m.\u001b[39mlength\u001b[33m,\u001b[39m\n \u001b[90m 636 |\u001b[39m       \u001b[32m`JS errors accumulated during 15-route session:\\n${realErrors.slice(0, 5).join('\\n')}`\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 637 |\u001b[39m     )\u001b[33m.\u001b[39mtoBe(\u001b[35m0\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 638 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 639 |\u001b[39m\n \u001b[90m 640 |\u001b[39m   \u001b[90m/**\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts",
+                            "column": 7,
+                            "line": 637
+                          },
+                          "message": "Error: JS errors accumulated during 15-route session:\nBlocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808\nBlocked attempt to show a 'beforeunload' confirmation panel for a frame that never had a user gesture since its load. https://www.chromestatus.com/feature/5082396709879808\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m2\u001b[39m\n\n  635 |       realErrors.length,\n  636 |       `JS errors accumulated during 15-route session:\\n${realErrors.slice(0, 5).join('\\n')}`\n> 637 |     ).toBe(0);\n      |       ^\n  638 |   });\n  639 |\n  640 |   /**\n    at D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts:637:7"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:18.502Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\scenario-regression-Scenar-c3708-nce-—-no-error-accumulation-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\scenario-regression-Scenar-c3708-nce-—-no-error-accumulation-chromium\\video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\test-results\\scenario-regression-Scenar-c3708-nce-—-no-error-accumulation-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\tests\\e2e\\scenario-regression.spec.ts",
+                        "column": 7,
+                        "line": 637
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-07baf9d7d141943ff682",
+              "file": "scenario-regression.spec.ts",
+              "line": 599,
+              "column": 3
+            },
+            {
+              "title": "mobile user in dark mode — analytics and funding layout correct at 560px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4267,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:34.555Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-69d0c82ac77860694aa9",
+              "file": "scenario-regression.spec.ts",
+              "line": 649,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: Adversarial and edge conditions",
+          "file": "scenario-regression.spec.ts",
+          "line": 676,
+          "column": 6,
+          "specs": [
+            {
+              "title": "user clears localStorage mid-session — app falls back gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4642,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:39.126Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-fdd688121b15ddf846d3",
+              "file": "scenario-regression.spec.ts",
+              "line": 687,
+              "column": 3
+            },
+            {
+              "title": "direct URL navigation to dark-mode-fixed view — loads correctly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3470,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:43.783Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-db078d89bab3815b7e24",
+              "file": "scenario-regression.spec.ts",
+              "line": 721,
+              "column": 3
+            },
+            {
+              "title": "adversarial: double-click QA button — only one run triggered",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3403,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:47.268Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-e866677917568ab59dab",
+              "file": "scenario-regression.spec.ts",
+              "line": 751,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Scenario: motion-safe animations — research + funding components",
+          "file": "scenario-regression.spec.ts",
+          "line": 782,
+          "column": 6,
+          "specs": [
+            {
+              "title": "photosensitive user on /research — motion-safe LIVE indicator and stepper not pulsing",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2365,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:50.688Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-17962b7020149dfc73b0",
+              "file": "scenario-regression.spec.ts",
+              "line": 794,
+              "column": 3
+            },
+            {
+              "title": "researcher cold-loads /funding with reduced-motion — skeleton stable, no pulse",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2903,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:53.074Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-3193d787a67dc4d9acea",
+              "file": "scenario-regression.spec.ts",
+              "line": 827,
+              "column": 3
+            },
+            {
+              "title": "settings modal opens in dark mode — no crash, no white flash",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1979,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-18T22:54:56.000Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22ead876be6e602f6ef4-8c5eaa2d8f3dc8f054bc",
+              "file": "scenario-regression.spec.ts",
+              "line": 849,
+              "column": 3
+            }
+          ]
+        }
+      ]
     }
   ],
+  "errors": [],
   "stats": {
-    "startTime": "2026-01-24T02:02:22.707Z",
-    "duration": 96.077,
-    "expected": 0,
-    "skipped": 0,
-    "unexpected": 0,
+    "startTime": "2026-02-18T22:53:43.440Z",
+    "duration": 74743.343,
+    "expected": 18,
+    "skipped": 1,
+    "unexpected": 1,
     "flaky": 0
   }
 }

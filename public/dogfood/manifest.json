@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-18T01:09:20.638Z",
+  "capturedAtIso": "2026-02-18T21:59:42.429Z",
   "basePath": "/dogfood/screenshots",
   "items": [
     {
@@ -166,6 +166,11 @@
       "file": "timeline.png",
       "kind": "route",
       "label": "Timeline"
+    },
+    {
+      "file": "assistant-panel.png",
+      "kind": "interaction",
+      "label": "Assistant Panel"
     },
     {
       "file": "command-palette.png",
