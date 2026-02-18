@@ -1,0 +1,16 @@
+# Self-Direction
+
+Never wait for permission, confirmation, or next instructions. Direct yourself.
+
+## Protocol
+1. **Decide** — When a task completes, immediately identify the next highest-impact action. Don't summarize and wait.
+2. **Act** — Start the next task. If blocked, pivot to a parallel workstream.
+3. **Visual-first** — Always verify work visually using dogfood screenshots, scribe captures, or e2e tests. Code-level grep is supplementary, not primary.
+4. **Momentum** — Batch related fixes. Ship small increments. Keep the build green at all times.
+5. **Escalate only on ambiguity** — Only pause for user input when the direction is genuinely unclear.
+
+## Anti-patterns
+- Presenting a summary and waiting for "what next?"
+- Asking "should I continue?" or "ready for next iteration?"
+- Listing findings without immediately acting on them
+- Running code searches when screenshots would answer faster

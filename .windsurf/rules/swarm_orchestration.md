@@ -1,0 +1,106 @@
+# Claude Code Swarm Orchestration
+
+Master multi-agent orchestration using Claude Code's TeammateTool and Task system. Use when coordinating multiple agents, parallel code reviews, pipeline workflows, or self-organizing task queues.
+
+---
+
+## Primitives
+
+| Primitive | What It Is | File Location |
+|-----------|-----------|---------------|
+| **Agent** | A Claude instance that can use tools. You are an agent. Subagents are agents you spawn. | N/A (process) |
+| **Team** | A named group of agents working together. One leader, multiple teammates. | `~/.claude/teams/{name}/config.json` |
+| **Teammate** | An agent that joined a team. Has a name, color, inbox. Spawned via Task with `team_name` + `name`. | Listed in team config |
+| **Leader** | The agent that created the team. Receives teammate messages, approves plans/shutdowns. | First member in config |
+| **Task** | A work item with subject, description, status, owner, and dependencies. | `~/.claude/tasks/{team}/N.json` |
+| **Inbox** | JSON file where an agent receives messages from teammates. | `~/.claude/teams/{name}/inboxes/{agent}.json` |
+| **Backend** | How teammates run. Auto-detected: `in-process` (invisible), `tmux` (visible panes), `iterm2` (split panes). | Auto-detected |
+
+---
+
+## Two Ways to Spawn Agents
+
+### Method 1: Task Tool (Subagents) — short-lived, returns result
+```javascript
+Task({ subagent_type: "Explore", description: "Find auth files", prompt: "...", model: "haiku" })
+```
+
+### Method 2: Task + team_name + name (Teammates) — persistent, communicates via inbox
+```javascript
+Teammate({ operation: "spawnTeam", team_name: "my-project" })
+Task({ team_name: "my-project", name: "security-reviewer", subagent_type: "general-purpose", prompt: "...", run_in_background: true })
+```
+
+| Aspect | Task (subagent) | Task + team_name + name (teammate) |
+|--------|-----------------|-----------------------------------|
+| Lifespan | Until task complete | Until shutdown requested |
+| Communication | Return value | Inbox messages |
+| Task access | None | Shared task list |
+
+---
+
+## Built-in Agent Types
+
+- **Bash** — command execution, git ops
+- **Explore** — read-only codebase search (use `model: "haiku"` for speed)
+- **Plan** — architecture + implementation plans (read-only)
+- **general-purpose** — all tools, multi-step research + action
+
+---
+
+## TeammateTool Operations
+
+| Operation | Who | What |
+|-----------|-----|------|
+| `spawnTeam` | Leader | Create team + task directory |
+| `write` | Anyone | Message ONE teammate |
+| `broadcast` | Anyone | Message ALL teammates (N messages — expensive, avoid) |
+| `requestShutdown` | Leader | Ask teammate to exit |
+| `approveShutdown` | Teammate | **MUST call** — sends confirmation, exits process |
+| `cleanup` | Leader | Remove team + task files (all teammates must be shut down first) |
+
+---
+
+## Task System
+
+```javascript
+TaskCreate({ subject: "Step 1", description: "...", activeForm: "Working..." })
+TaskList()
+TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })   // auto-unblocks when #1 completes
+TaskUpdate({ taskId: "2", owner: "worker-1", status: "in_progress" })
+TaskUpdate({ taskId: "2", status: "completed" })
+```
+
+---
+
+## Orchestration Patterns
+
+### Parallel Specialists
+```javascript
+Teammate({ operation: "spawnTeam", team_name: "pr-review" })
+Task({ team_name: "pr-review", name: "security", subagent_type: "general-purpose", prompt: "...", run_in_background: true })
+Task({ team_name: "pr-review", name: "perf", subagent_type: "general-purpose", prompt: "...", run_in_background: true })
+```
+
+### Pipeline (Sequential Dependencies)
+```javascript
+TaskCreate({ subject: "Research" })  // #1
+TaskCreate({ subject: "Implement" }) // #2
+TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })
+```
+
+### Self-Organizing Swarm
+Workers poll TaskList, claim unclaimed tasks, complete, repeat until no tasks remain.
+
+---
+
+## Shutdown Sequence (always follow)
+```javascript
+Teammate({ operation: "requestShutdown", target_agent_id: "worker-1" })
+// wait for {"type": "shutdown_approved"} in inbox
+Teammate({ operation: "cleanup" })
+```
+
+---
+
+*Source: kieranklaassen/orchestrating-swarms gist — Claude Code v2.1.19*
