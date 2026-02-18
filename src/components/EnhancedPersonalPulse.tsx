@@ -76,7 +76,7 @@ export function EnhancedPersonalPulse({
                 <button
                   key={task._id}
                   onClick={() => onTaskSelect?.(task._id)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
                 >
                   <div className="w-4 h-4 rounded border-2 border-gray-300" />
                   <span className="text-sm text-gray-700 flex-1 truncate">{task.title}</span>
@@ -104,7 +104,7 @@ export function EnhancedPersonalPulse({
                 <button
                   key={doc._id}
                   onClick={() => onDocumentSelect?.(doc._id)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
                 >
                   <FileText className="h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-700 flex-1 truncate">{doc.title || 'Untitled'}</span>
@@ -131,7 +131,7 @@ export function EnhancedPersonalPulse({
               {recommendations.map((rec) => (
                 <div key={rec._id} className="p-3 bg-purple-50 rounded-lg border border-purple-100">
                   <p className="text-sm text-gray-700">{rec.message}</p>
-                  <button className="mt-2 text-xs text-purple-600 font-medium hover:text-purple-700">
+                  <button type="button" className="mt-2 text-xs text-purple-600 font-medium hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 rounded">
                     {rec.actionLabel} →
                   </button>
                 </div>

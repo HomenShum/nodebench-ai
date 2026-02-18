@@ -123,6 +123,7 @@ function SourceItem({ artifact }: SourceItemProps) {
       className={`
         flex items-start gap-3 p-3 rounded-lg border transition-all duration-200
         hover:shadow-md hover:-translate-y-0.5
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2
         ${getProviderColor(provider)}
       `}
     >
