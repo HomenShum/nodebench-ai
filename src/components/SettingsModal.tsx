@@ -30,6 +30,7 @@ import {
 import { ApiUsageDisplay } from "./ApiUsageDisplay";
 import { NotificationActivityPanel } from "./NotificationActivityPanel";
 import { ThemeCustomizer } from "./ThemeCustomizer";
+import { DialogOverlay } from "@/shared/components/DialogOverlay";
 // ChannelPreferencesTab, OperatorProfileWizard, BatchAutopilotTab — moved to standalone Autopilot view
 
 // SMS Usage Stats Component
@@ -523,11 +524,16 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-[900px] max-w-[95vw] max-h-[85vh] bg-white dark:bg-[#09090B] border border-gray-200 dark:border-white/[0.06] rounded-xl shadow-2xl overflow-hidden">
+    <DialogOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel="Settings Hub"
+      backdropClassName="bg-black/50"
+      positionClassName="fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
+      <div className="relative w-[900px] max-w-[95vw] max-h-[85vh] bg-background border border-border/60 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/[0.04] border-b border-gray-200 dark:border-white/[0.06]">
+        <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b border-border/60">
           <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
             <SettingsIcon className="h-4 w-4" />
             Settings Hub
@@ -544,13 +550,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
         <div className="flex">
           {/* Left Nav */}
-          <div className="w-56 border-r border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] p-3">
+          <div className="w-56 border-r border-border/60 bg-muted/10 p-3">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActive(item.id)}
                 className={`w-full text-left px-2 py-2 rounded text-sm mb-1 transition-colors ${active === item.id
-                    ? "bg-white dark:bg-white/[0.06] text-gray-900 dark:text-gray-100 shadow-sm"
+                    ? "bg-background text-gray-900 dark:text-gray-100 shadow-sm"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06]"
                   }`}
               >
@@ -1949,7 +1955,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </DialogOverlay>
   );
 }
 

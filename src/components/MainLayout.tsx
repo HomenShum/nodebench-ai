@@ -17,6 +17,7 @@ import { CommandPalette } from "./CommandPalette";
 import { useCommandPalette } from "../hooks/useCommandPalette";
 import { QuickCaptureWidget } from "./QuickCapture";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
+import { LazyView } from "@/shared/components/LazyView";
 import { usePanelResize } from "../hooks/usePanelResize";
 import { useMainLayoutRouting } from "../hooks/useMainLayoutRouting";
 import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
@@ -167,7 +168,16 @@ const DogfoodReviewView = lazy(() =>
 );
 const SettingsModal = lazy(() => import("./SettingsModal"));
 
-const viewFallback = <ViewSkeleton variant="default" />;
+const viewFallbackDefault = <ViewSkeleton variant="default" />;
+const viewFallbackDocuments = <ViewSkeleton variant="documents" />;
+const viewFallbackCalendar = <ViewSkeleton variant="calendar" />;
+const viewFallbackAgents = <ViewSkeleton variant="agents" />;
+const viewFallbackSettings = <ViewSkeleton variant="settings" />;
+const viewFallbackDashboard = <ViewSkeleton variant="dashboard" />;
+const viewFallbackCost = <ViewSkeleton variant="cost-dashboard" />;
+const viewFallbackIndustry = <ViewSkeleton variant="industry-updates" />;
+
+const viewFallback = viewFallbackDefault;
 const EMPTY_FOOTNOTES_LIBRARY = { citations: {} as Record<string, unknown>, order: [] as string[], updatedAt: new Date().toISOString() };
 
 const VIEW_TITLES: Record<string, string> = {
@@ -229,6 +239,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  const viewResetKey = `${location.pathname}:${currentView}:${String(selectedSpreadsheetId ?? "")}:${String(entityName ?? "")}:${showResearchDossier ? "dossier" : "home"}:${researchHubInitialTab}`;
 
   // User stats for unread briefings badge
   const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
@@ -393,11 +405,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-          flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blur-xl border-r border-gray-200/60 dark:border-white/[0.06] z-50 transition-all duration-200
-          lg:relative lg:translate-x-0
-          fixed inset-y-0 left-0
-          ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}
+           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blur-xl border-r border-gray-200/60 dark:border-white/[0.06] z-50 transition-[transform,width] duration-200
+           lg:relative lg:translate-x-0
+           fixed inset-y-0 left-0
+           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+         `}
         style={{ width: `${effectiveSidebarWidth}px` }}
       >
         <CleanSidebar
@@ -439,7 +451,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       <div className="flex-1 flex overflow-hidden">
         {/* Main Content Area */}
         <div
-          className="flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
+          className="flex flex-col overflow-hidden"
           style={{ width: '100%' }}
         >
           {/* Top Bar — Linear-style with breadcrumb + Cmd+K */}
@@ -540,7 +552,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <Zap className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Assistant</span>
                 {!showFastAgent && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500/80 rounded-full" />
                 )}
               </button>
 
@@ -603,16 +615,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
           {/* Content Area - Resizable Split */}
           <div className="flex-1 overflow-hidden" data-main-content>
-            <ErrorBoundary title="Something went wrong loading this view">
-            <Suspense fallback={viewFallback}>
-              {currentView === 'research' ? (
-                !showResearchDossier ? (
+            {currentView === "research" ? (
+              <LazyView
+                title="Research Hub failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDashboard}
+              >
+                {!showResearchDossier ? (
                   <CinematicHome
                     onEnterHub={(tab) => {
                       setResearchHubInitialTab(tab ?? "overview");
                       setShowResearchDossier(true);
                     }}
-                    onEnterWorkspace={() => setCurrentView('documents')}
+                    onEnterWorkspace={() => setCurrentView("documents")}
                     onOpenFastAgent={() => setShowFastAgent(true)}
                   />
                 ) : (
@@ -621,152 +636,226 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     initialTab={researchHubInitialTab}
                     onGoHome={() => setShowResearchDossier(false)}
                     onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
-                    onEnterWorkspace={() => setCurrentView('documents')}
+                    onEnterWorkspace={() => setCurrentView("documents")}
                     activeSources={activeSources}
-                    onToggleSource={(sourceId) => setActiveSources(prev =>
-                      prev.includes(sourceId) ? prev.filter(id => id !== sourceId) : [...prev, sourceId]
-                    )}
+                    onToggleSource={(sourceId) =>
+                      setActiveSources((prev) =>
+                        prev.includes(sourceId)
+                          ? prev.filter((id) => id !== sourceId)
+                          : [...prev, sourceId],
+                      )
+                    }
                   />
-                )
-              ) : currentView === 'public' ? (
+                )}
+              </LazyView>
+            ) : currentView === "public" ? (
+              <LazyView
+                title="Public documents failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDocuments}
+              >
                 <PublicDocuments onDocumentSelect={onDocumentSelect} />
-              ) : currentView === 'spreadsheets' ? (
-                <Suspense fallback={viewFallback}>
-                  {selectedSpreadsheetId ? (
-                    <SpreadsheetSheetView
-                      sheetId={selectedSpreadsheetId}
-                      onBack={() => {
-                        setSelectedSpreadsheetId(null);
-                        navigate("/spreadsheets");
-                      }}
-                    />
-                  ) : (
-                    <SpreadsheetsHub
-                      onOpenSheet={(id: Id<"spreadsheets">) => {
-                        setSelectedSpreadsheetId(id);
-                        navigate(`/spreadsheets/${String(id)}`);
-                      }}
-                    />
-                  )}
-                </Suspense>
-              ) : currentView === 'agents' ? (
+              </LazyView>
+            ) : currentView === "spreadsheets" ? (
+              <LazyView title="Spreadsheets failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
+                {selectedSpreadsheetId ? (
+                  <SpreadsheetSheetView
+                    sheetId={selectedSpreadsheetId}
+                    onBack={() => {
+                      setSelectedSpreadsheetId(null);
+                      navigate("/spreadsheets");
+                    }}
+                  />
+                ) : (
+                  <SpreadsheetsHub
+                    onOpenSheet={(id: Id<"spreadsheets">) => {
+                      setSelectedSpreadsheetId(id);
+                      navigate(`/spreadsheets/${String(id)}`);
+                    }}
+                  />
+                )}
+              </LazyView>
+            ) : currentView === "agents" ? (
+              <LazyView title="AI Assistants failed to load" resetKey={viewResetKey} fallback={viewFallbackAgents}>
                 <AgentsHub />
-              ) : currentView === 'calendar' ? (
+              </LazyView>
+            ) : currentView === "calendar" ? (
+              <LazyView title="Calendar failed to load" resetKey={viewResetKey} fallback={viewFallbackCalendar}>
                 <CalendarHomeHub
                   onDocumentSelect={onDocumentSelect}
                   onGridModeToggle={() => setIsGridMode((v) => !v)}
                 />
-              ) : currentView === 'roadmap' ? (
+              </LazyView>
+            ) : currentView === "roadmap" ? (
+              <LazyView title="Roadmap failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <TimelineRoadmapView />
-              ) : currentView === 'showcase' ? (
-                <Suspense fallback={viewFallback}>
-                  <PhaseAllShowcase onBack={() => setCurrentView('research')} />
-                </Suspense>
-              ) : currentView === 'footnotes' ? (
+              </LazyView>
+            ) : currentView === "showcase" ? (
+              <LazyView title="Showcase failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
+                <PhaseAllShowcase onBack={() => setCurrentView("research")} />
+              </LazyView>
+            ) : currentView === "footnotes" ? (
+              <LazyView title="Sources failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <FootnotesPage
                   library={EMPTY_FOOTNOTES_LIBRARY}
                   briefTitle="Latest Daily Brief"
-                  onBack={() => setCurrentView('research')}
+                  onBack={() => setCurrentView("research")}
                 />
-              ) : currentView === 'signals' ? (
+              </LazyView>
+            ) : currentView === "signals" ? (
+              <LazyView title="Signals failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <PublicSignalsLog />
-              ) : currentView === 'benchmarks' ? (
-                <div className="h-full overflow-auto p-6 bg-gray-50 dark:bg-[#09090B]">
-                  <ModelEvalDashboard />
-                </div>
-              ) : currentView === 'funding' ? (
+              </LazyView>
+            ) : currentView === "benchmarks" ? (
+              <LazyView
+                title="Benchmarks failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto p-6 bg-gray-50 dark:bg-[#09090B]"
+              >
+                <ModelEvalDashboard />
+              </LazyView>
+            ) : currentView === "funding" ? (
+              <LazyView title="Funding Brief failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <FundingBriefView />
-              ) : currentView === 'activity' ? (
-                <Suspense fallback={viewFallback}>
-                  <PublicActivityView />
-                </Suspense>
-              ) : currentView === 'analytics-hitl' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <HITLAnalyticsDashboard />
-                </div>
-              ) : currentView === 'analytics-components' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <ComponentMetricsDashboard />
-                </div>
-              ) : currentView === 'analytics-recommendations' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <RecommendationFeedbackDashboard />
-                </div>
-              ) : currentView === 'cost-dashboard' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <CostDashboard />
-                  </Suspense>
-                </div>
-              ) : currentView === 'industry-updates' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <IndustryUpdatesPanel />
-                  </Suspense>
-                </div>
-              ) : currentView === 'for-you-feed' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <ForYouFeed />
-                  </Suspense>
-                </div>
-              ) : currentView === 'document-recommendations' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <DocumentRecommendations />
-                  </Suspense>
-                </div>
-              ) : currentView === 'agent-marketplace' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <AgentMarketplace />
-                  </Suspense>
-                </div>
-              ) : currentView === 'github-explorer' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <GitHubExplorer />
-                  </Suspense>
-                </div>
-              ) : currentView === 'pr-suggestions' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <PRSuggestions />
-                  </Suspense>
-                </div>
-              ) : currentView === 'linkedin-posts' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <LinkedInPostArchiveView />
-                  </Suspense>
-                </div>
-              ) : currentView === 'mcp-ledger' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <Suspense fallback={viewFallback}>
-                    <McpToolLedgerView />
-                  </Suspense>
-                </div>
-              ) : currentView === 'dogfood' ? (
-                <div className="h-full overflow-auto bg-background">
-                  <ErrorBoundary title="Quality Review failed to load">
-                    <Suspense fallback={viewFallback}>
-                      <DogfoodReviewView />
-                    </Suspense>
-                  </ErrorBoundary>
-                </div>
-              ) : currentView === 'entity' && entityName ? (
+              </LazyView>
+            ) : currentView === "activity" ? (
+              <LazyView title="Activity failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
+                <PublicActivityView />
+              </LazyView>
+            ) : currentView === "analytics-hitl" ? (
+              <LazyView
+                title="Review Queue failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <HITLAnalyticsDashboard />
+              </LazyView>
+            ) : currentView === "analytics-components" ? (
+              <LazyView
+                title="Usage Stats failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <ComponentMetricsDashboard />
+              </LazyView>
+            ) : currentView === "analytics-recommendations" ? (
+              <LazyView
+                title="Feedback failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <RecommendationFeedbackDashboard />
+              </LazyView>
+            ) : currentView === "cost-dashboard" ? (
+              <LazyView
+                title="Cost Dashboard failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackCost}
+                className="h-full overflow-auto bg-background"
+              >
+                <CostDashboard />
+              </LazyView>
+            ) : currentView === "industry-updates" ? (
+              <LazyView
+                title="Industry Updates failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackIndustry}
+                className="h-full overflow-auto bg-background"
+              >
+                <IndustryUpdatesPanel />
+              </LazyView>
+            ) : currentView === "for-you-feed" ? (
+              <LazyView
+                title="For You feed failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <ForYouFeed />
+              </LazyView>
+            ) : currentView === "document-recommendations" ? (
+              <LazyView
+                title="Recommendations failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDocuments}
+                className="h-full overflow-auto bg-background"
+              >
+                <DocumentRecommendations />
+              </LazyView>
+            ) : currentView === "agent-marketplace" ? (
+              <LazyView
+                title="Agent Templates failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackAgents}
+                className="h-full overflow-auto bg-background"
+              >
+                <AgentMarketplace />
+              </LazyView>
+            ) : currentView === "github-explorer" ? (
+              <LazyView
+                title="GitHub Explorer failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <GitHubExplorer />
+              </LazyView>
+            ) : currentView === "pr-suggestions" ? (
+              <LazyView
+                title="PR Suggestions failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <PRSuggestions />
+              </LazyView>
+            ) : currentView === "linkedin-posts" ? (
+              <LazyView
+                title="LinkedIn Archive failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDocuments}
+                className="h-full overflow-auto bg-background"
+              >
+                <LinkedInPostArchiveView />
+              </LazyView>
+            ) : currentView === "mcp-ledger" ? (
+              <LazyView
+                title="MCP Tool Ledger failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <McpToolLedgerView />
+              </LazyView>
+            ) : currentView === "dogfood" ? (
+              <LazyView
+                title="Dogfood Review failed to load"
+                resetKey={viewResetKey}
+                fallback={viewFallbackDefault}
+                className="h-full overflow-auto bg-background"
+              >
+                <DogfoodReviewView />
+              </LazyView>
+            ) : currentView === "entity" && entityName ? (
+              <LazyView title="Entity profile failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <EntityProfilePage
                   entityName={entityName}
                   onBack={() => {
                     setEntityName(null);
-                    setCurrentView('research');
-                    navigate('/');
+                    setCurrentView("research");
+                    navigate("/");
                   }}
                 />
-              ) : (
+              </LazyView>
+            ) : (
+              <LazyView title="Workspace failed to load" resetKey={viewResetKey} fallback={viewFallbackDocuments}>
                 <div className="h-full flex">
                   <div className="flex-1 overflow-hidden">
-                    {(isGridMode || !!selectedDocumentId) ? (
+                    {isGridMode || !!selectedDocumentId ? (
                       <TabManager
                         selectedDocumentId={selectedDocumentId}
                         onDocumentSelect={onDocumentSelect}
@@ -786,9 +875,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     )}
                   </div>
                 </div>
-              )}
-            </Suspense>
-            </ErrorBoundary>
+              </LazyView>
+            )}
           </div>
 
           {/* Floating Context Pills */}

@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAction, useConvex, useMutation, useQuery } from "convex/react";
+import { useConvexAuth } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../convex/_generated/api";
 
 type DogfoodManifestItem = {
@@ -354,6 +356,9 @@ export function DogfoodReviewView() {
   const [qaLast, setQaLast] = useState<DogfoodQaRun | null>(null);
   const [copied, setCopied] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { isAuthenticated } = useConvexAuth();
+  const { signIn } = useAuthActions();
+  const [isAnonSigningIn, setIsAnonSigningIn] = useState(false);
 
   const convex = useConvex();
   const generateUploadUrl = useMutation(api.domains.documents.files.generateUploadUrl);
@@ -366,6 +371,19 @@ export function DogfoodReviewView() {
     | undefined;
   const runVideoQa = useAction(api.domains.dogfood.videoQa.runDogfoodVideoQa);
   const runScreenshotQa = useAction(api.domains.dogfood.screenshotQa.runDogfoodScreenshotQa);
+
+  const signInAnonymously = useCallback(async () => {
+    if (isAnonSigningIn) return;
+    setIsAnonSigningIn(true);
+    setQaError(null);
+    try {
+      await signIn("anonymous");
+    } catch (e) {
+      setQaError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setIsAnonSigningIn(false);
+    }
+  }, [isAnonSigningIn, signIn]);
 
   const fetchWithTimeout = async (url: string, init: RequestInit | undefined, timeoutMs: number) => {
     const controller = new AbortController();
@@ -828,10 +846,23 @@ export function DogfoodReviewView() {
               )}
             </div>
             <div className="flex items-center gap-2">
+              {!isAuthenticated && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50"
+                  disabled={isAnonSigningIn}
+                  onClick={() => void signInAnonymously()}
+                  aria-label="Sign in to run QA"
+                  data-testid="dogfood-sign-in"
+                  title="Sign in anonymously to enable QA uploads"
+                >
+                  {isAnonSigningIn ? "Signing in..." : "Sign in to run QA"}
+                </button>
+              )}
               <button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
-                disabled={!resolvedVideoUrl || qaRunning}
+                disabled={!resolvedVideoUrl || qaRunning || !isAuthenticated}
                 onClick={async () => {
                   if (!resolvedVideoUrl) return;
                   setQaRunning(true);
@@ -873,13 +904,12 @@ export function DogfoodReviewView() {
                       }
                     }
 
-                    const videoUrlForRun = uploadedFrames?.length
-                      ? resolvedVideoUrl
-                      : await uploadUrlToConvexStorage(
-                          resolvedVideoUrl,
-                          `dogfood-walkthrough-${Date.now()}.mp4`,
-                          walkthrough?.mime ?? "video/mp4",
-                        );
+                    // Always upload the video so Convex/Gemini can fetch it (localhost URLs are not reachable from the cloud).
+                    const videoUrlForRun = await uploadUrlToConvexStorage(
+                      resolvedVideoUrl,
+                      `dogfood-walkthrough-${Date.now()}.mp4`,
+                      walkthrough?.mime ?? "video/mp4",
+                    );
 
                     const run = (await runVideoQa({
                       videoUrl: videoUrlForRun,
@@ -903,7 +933,7 @@ export function DogfoodReviewView() {
               <button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50"
-                disabled={!manifest?.items?.length || qaScreensRunning}
+                disabled={!manifest?.items?.length || qaScreensRunning || !isAuthenticated}
                 onClick={async () => {
                   if (!manifest?.items?.length) return;
                   setQaScreensRunning(true);

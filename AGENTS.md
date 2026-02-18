@@ -491,6 +491,33 @@ npx convex run --push "domains/operations/selfMaintenance:getLatestSelfMaintenan
 Cron:
 - `convex/crons.ts` schedules `domains/operations/selfMaintenance:runNightlySelfMaintenanceCron` daily.
 
+## Flywheel mode (UI dogfood + Gemini QA)
+
+Purpose: continuous UI verification until issues stop reproducing and the dogfood artifacts show stability.
+
+Rules:
+- Poll every 60 seconds for new issues (logs, console, visual regressions).
+- Always do 5-whys root-cause analysis; fix the cause, not the symptom.
+- Never ask "should I continue?" in flywheel mode — keep iterating until verified.
+- After 3 consecutive failures on the same issue, change strategy (instrument, isolate, rollback, or reduce scope).
+- Motion safety: avoid high-contrast flashes (large-area pulses/fades). Default to subtle or non-animated loading states and honor `prefers-reduced-motion`.
+
+Local commands:
+```powershell
+# Capture end-to-end walkthrough evidence (screenshots + video + scribe + frames)
+npm run dogfood:full:local
+
+# Run Gemini QA (video + sampled frames + screenshots) and persist runs for /dogfood review
+npm run dogfood:qa:gemini
+
+# Verification floor
+npx tsc --noEmit
+npm run build
+```
+
+Review the output in-app:
+- Navigate to `/dogfood` and review: gallery, walkthrough video, scribe steps, Gemini QA runs, and trending issues.
+
 ## Bug loop (Ralph-style back pressure)
 
 **→ Quick Refs:** `analyst_diagnostic` rule, `critter_check` (check 11: bandaid detection)

@@ -145,6 +145,24 @@ async function readLatestLabel(page) {
 }
 
 async function ensureAnonymousSignIn(page) {
+  const dogfoodSignIn = page.getByTestId("dogfood-sign-in").first();
+  if (await dogfoodSignIn.isVisible().catch(() => false)) {
+    await dogfoodSignIn.click({ timeout: 15_000 });
+
+    const outcome = await Promise.race([
+      dogfoodSignIn.waitFor({ state: "hidden", timeout: 120_000 }).then(() => "ok"),
+      page.getByText(/qa error:/i).first().waitFor({ timeout: 120_000 }).then(() => "err"),
+    ]);
+    if (outcome === "err") {
+      const errText = (await page.getByText(/qa error:/i).first().textContent().catch(() => "")) || "";
+      throw new Error(errText.replace(/^qa error:\s*/i, "").trim() || "Anonymous sign-in failed");
+    }
+
+    await page.waitForLoadState("networkidle").catch(() => {});
+    await page.waitForTimeout(800);
+    return;
+  }
+
   const previewBanner = page.getByText(/you're in preview mode/i).first();
   const signInBtn = page.getByRole("button", { name: /^sign in$/i }).first();
 
@@ -165,6 +183,13 @@ async function ensureAnonymousSignIn(page) {
 
   await page.waitForLoadState("networkidle").catch(() => {});
   await page.waitForTimeout(800);
+}
+
+async function throwIfQaErrorVisible(page, label) {
+  const err = page.getByText(/qa error:/i).first();
+  if (!(await err.isVisible().catch(() => false))) return;
+  const errText = (await err.textContent().catch(() => "")) || "";
+  throw new Error(`${label}: ${errText.replace(/^qa error:\s*/i, "").trim() || "QA failed"}`);
 }
 
 async function runQaAndCapture({ baseURL, headless }) {
@@ -236,6 +261,7 @@ async function runQaAndCapture({ baseURL, headless }) {
         return btn instanceof HTMLButtonElement && !btn.disabled;
       }, null, { timeout: 240_000 }),
     ]);
+    await throwIfQaErrorVisible(page, "Video QA");
 
     // Wait for UI to reflect the completed run.
     await page.waitForFunction((prev) => {
@@ -272,6 +298,7 @@ async function runQaAndCapture({ baseURL, headless }) {
         return btn instanceof HTMLButtonElement && !btn.disabled;
       }, null, { timeout: 240_000 }),
     ]);
+    await throwIfQaErrorVisible(page, "Screenshot QA");
 
     await page.waitForFunction((prev) => {
       const el = Array.from(document.querySelectorAll("*")).find((n) => /^latest:/i.test(n.textContent?.trim() ?? ""));

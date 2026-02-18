@@ -248,6 +248,73 @@ const METHODOLOGY_CONTENT: Record<string, Record<string, any>> = {
       bundle_analysis: "npm run perf:bundle",
     },
   },
+  flywheel_ui_dogfood: {
+    title: "Flywheel Mode: UI Dogfood + Walkthrough Video QA",
+    description:
+      "Continuous UI verification loop: capture a full walkthrough video + screenshots, run Gemini-based video/screenshot QA, fix root causes (5-whys), and re-capture evidence until the UI is stable, accessible, and performant. Do not stop at 'build passes' — ship dogfood evidence.",
+    steps: [
+      {
+        step: 1,
+        name: "Launch + Trajectory",
+        description:
+          "Start the dev server and publish a visible trajectory link in the UI within 60 seconds. The trajectory is the audit trail of iterations and evidence.",
+        tools: ["record_learning"],
+        action:
+          "Start dev server. Ensure `/dogfood` shows the latest manifest + walkthrough. Record a learning if trajectory/evidence is missing.",
+      },
+      {
+        step: 2,
+        name: "Capture Evidence (Scribe + Video)",
+        description:
+          "Run a full route walkthrough capture (screens + interactions) so issues are visible and replayable.",
+        tools: ["capture_responsive_suite", "capture_ui_screenshot"],
+        action:
+          "Run `npm run dogfood:full:local` to generate `public/dogfood/*` (gallery + walkthrough video + frames + scribe).",
+      },
+      {
+        step: 3,
+        name: "Gemini QA (Video + Screens)",
+        description:
+          "Use Gemini video/screenshot understanding to flag UI regressions: flashes, layout shift, focus traps, broken empty states, and performance jank.",
+        tools: ["analyze_ui_screenshot"],
+        action:
+          "Run `npm run dogfood:qa:gemini` and review results in `/dogfood`. Convert actionable issues into deterministic fixes (no band-aids).",
+      },
+      {
+        step: 4,
+        name: "Root Cause + Fix (5 Whys)",
+        description:
+          "At each checkpoint, immediately seek issues and follow symptom → intermediate state → root cause. Fix the cause so the symptom is impossible.",
+        tools: ["run_closed_loop", "record_learning"],
+        action:
+          "Do a 5-whys chain. Implement the smallest correct fix. Re-run `tsc` + build. Record learnings for any repeated failure mode.",
+      },
+      {
+        step: 5,
+        name: "Motion Safety (Seizure / Flash Policy)",
+        description:
+          "Remove or soften high-contrast flashes (large-area pulses/fades). Ship stable backgrounds and subtle loading states. Always honor prefers-reduced-motion.",
+        tools: ["run_quality_gate"],
+        action:
+          "FAIL if any route shows full-viewport flashing/pulsing/fade transitions. Prefer per-view fallbacks and non-animated skeletons for large surfaces.",
+      },
+      {
+        step: 6,
+        name: "Poll + Adapt",
+        description:
+          "Poll every 60 seconds. After 3 consecutive failures on the same issue, change strategy (instrument, isolate, or rollback).",
+        tools: ["record_learning"],
+        action:
+          "Keep iterating until the dogfood artifacts + QA runs show no new P0/P1 issues.",
+      },
+    ],
+    commands: {
+      capture: "npm run dogfood:full:local",
+      gemini_qa: "npm run dogfood:qa:gemini",
+      build: "npm run build",
+      typecheck: "npx tsc --noEmit",
+    },
+  },
   agentic_vision: {
     title: "Agentic Vision (AI-Powered Visual Verification)",
     description:
@@ -1919,7 +1986,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
     {
       name: "getMethodology",
       description:
-        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, controlled_evaluation, overview. Call with topic "overview" to see all available methodologies.',
+        'Get step-by-step guidance for a development methodology. Topics: verification, eval, flywheel, mandatory_flywheel, reconnaissance, quality_gates, ui_ux_qa, flywheel_ui_dogfood, agentic_vision, closed_loop, learnings, project_ideation, tech_stack_2026, telemetry_setup, agents_md_maintenance, agent_bootstrap, autonomous_maintenance, parallel_agent_teams, self_reinforced_learning, academic_paper_writing, agent_evaluation, controlled_evaluation, overview. Call with topic "overview" to see all available methodologies.',
       inputSchema: {
         type: "object",
         properties: {
@@ -1933,6 +2000,7 @@ export function createMetaTools(allTools: McpTool[]): McpTool[] {
               "reconnaissance",
               "quality_gates",
               "ui_ux_qa",
+              "flywheel_ui_dogfood",
               "agentic_vision",
               "closed_loop",
               "learnings",

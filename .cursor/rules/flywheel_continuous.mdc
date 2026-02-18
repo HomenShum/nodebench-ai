@@ -5,26 +5,28 @@ related_: [process, analyst_diagnostic, dogfood_verification, product_design_dog
 
 # Flywheel Continuous Improvement
 
-When in flywheel mode, operate as a continuous improvement loop:
+When in flywheel mode, operate as a continuous improvement loop.
 
 ## Protocol
-1. **Launch** — Start dev server, capture baseline state
-2. **Poll** — Every 60 seconds, check logs, console, visual state
-3. **Diagnose** — At each checkpoint, immediately seek issues. Deep-dive 5-whys multi-layer root cause before any fix
-4. **Fix** — Apply minimal targeted fix, verify build passes
-5. **Dogfood** — Visually verify the fix in-app, capture evidence
-6. **Iterate** — Return to step 2. Never ask "should I continue?" — just keep going
-7. **Adapt** — After 3 consecutive failures on the same issue, change strategy entirely
-8. **Document** — Log every iteration: what was found, root cause, fix applied, verification result
+1. **Launch** - Start dev server, capture baseline state, publish a trajectory link in-app within 60 seconds.
+2. **Poll** - Every 60 seconds, check logs, console, and visual state.
+3. **Diagnose** - At each checkpoint, immediately seek issues. Do a 5-whys root-cause chain before any fix.
+4. **Fix** - Apply a minimal targeted fix that makes the failure mode impossible, not just hidden.
+5. **Dogfood** - Verify the fix end-to-end in the UI and capture evidence (screenshots + walkthrough video).
+6. **Iterate** - Return to step 2. Never ask "should I continue?" - just keep going until verified.
+7. **Adapt** - After 3 consecutive failures on the same issue, change strategy (instrumentation, isolation, or rollback).
+8. **Document** - Log every iteration: symptom, root cause, fix, verification result, and what to watch next.
+
+## Motion Safety (Seizure / Flash Policy)
+- Avoid high-contrast flashes and large-area pulses/fades.
+- Prefer stable backgrounds and subtle loading states; default to non-animated skeletons for full-viewport surfaces.
+- Always honor `prefers-reduced-motion` and ship a UI toggle when motion is used.
 
 ## Anti-patterns
-- Never ask for permission to continue iterating
-- Never skip root cause analysis to slap on a bandaid
-- Never leave a fix unverified
-- Never ignore console warnings or visual regressions
+- Band-aids: swallowing errors, `as any`, masking with `?.`, retry loops without idempotency.
+- Declaring done without dogfood artifacts and deterministic verification.
 
 ## Standards
-- Target: latest industry-standard UI performance and Jony Ive product design
-- Every route must load without jank, render without layout shift, and respond to interaction within 100ms
-- Skeleton → content transitions must be smooth, no flash of unstyled content
-- All interactive elements must have focus rings, aria-labels, and keyboard support
+- Target: industry-standard UI performance + product design polish.
+- Every route loads without jank, no layout shift, and fast interaction response.
+- All interactive elements have focus rings, aria labels, and keyboard support.

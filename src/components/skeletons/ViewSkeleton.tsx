@@ -13,24 +13,35 @@ interface ViewSkeletonProps {
 }
 
 export function ViewSkeleton({ variant = 'default' }: ViewSkeletonProps) {
+  let content: React.ReactNode;
   switch (variant) {
     case 'documents':
-      return <DocumentsViewSkeleton />;
+      content = <DocumentsViewSkeleton />;
+      break;
     case 'calendar':
-      return <CalendarViewSkeleton />;
+      content = <CalendarViewSkeleton />;
+      break;
     case 'agents':
-      return <AgentsViewSkeleton />;
+      content = <AgentsViewSkeleton />;
+      break;
     case 'settings':
-      return <SettingsViewSkeleton />;
+      content = <SettingsViewSkeleton />;
+      break;
     case 'dashboard':
-      return <DashboardViewSkeleton />;
+      content = <DashboardViewSkeleton />;
+      break;
     case 'cost-dashboard':
-      return <CostDashboardViewSkeleton />;
+      content = <CostDashboardViewSkeleton />;
+      break;
     case 'industry-updates':
-      return <IndustryUpdatesViewSkeleton />;
+      content = <IndustryUpdatesViewSkeleton />;
+      break;
     default:
-      return <DefaultViewSkeleton />;
+      content = <DefaultViewSkeleton />;
   }
+
+  // Route navigation can briefly show these skeletons; keep them visually stable (no large-area pulsing).
+  return <div className="no-skeleton-animation">{content}</div>;
 }
 
 function DefaultViewSkeleton() {

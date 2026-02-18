@@ -300,9 +300,21 @@
   50% { opacity: 0.88; }
 }
 
+/* Tailwind's `animate-pulse` uses a high-contrast opacity swing (1 → 0.5 → 1),
+   which reads as a "flash" on large surfaces. Override it to be subtler. */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.88; }
+}
+
 .reduce-motion .skeleton-pulse {
   animation: none !important;
   opacity: 0.8;
+}
+
+.no-skeleton-animation .skeleton-pulse {
+  animation: none !important;
+  opacity: 0.84;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -688,6 +700,16 @@
 :focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+/* Reduced motion toggle (ThemeProvider) */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Reduced motion: disable animations for users with vestibular disorders */

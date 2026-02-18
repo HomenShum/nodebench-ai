@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import fs from "fs";
 import { visualizer } from "rollup-plugin-visualizer";
 import { imagetools } from "vite-imagetools";
 import { VitePWA } from "vite-plugin-pwa";
@@ -9,28 +10,32 @@ import Critters from "critters";
 
 // Critical CSS plugin using Critters
 function criticalCSSPlugin(): Plugin {
-  const critters = new Critters({
-    path: 'dist',
-    publicPath: '/',
-    preload: 'swap',
-    noscriptFallback: true,
-    inlineFonts: true,
-    preloadFonts: true,
-    compress: true,
-    pruneSource: false,
-  });
-
   return {
     name: 'vite-plugin-critical-css',
     apply: 'build',
     enforce: 'post',
-    async transformIndexHtml(html) {
+    async closeBundle() {
       try {
+        const distDir = path.resolve(__dirname, "dist");
+        const indexPath = path.join(distDir, "index.html");
+        if (!fs.existsSync(indexPath)) return;
+
+        const html = await fs.promises.readFile(indexPath, "utf8");
+        const critters = new Critters({
+          path: distDir,
+          publicPath: "/",
+          preload: "swap",
+          noscriptFallback: true,
+          inlineFonts: true,
+          preloadFonts: true,
+          compress: true,
+          pruneSource: false,
+        });
+
         const result = await critters.process(html);
-        return result;
+        await fs.promises.writeFile(indexPath, result, "utf8");
       } catch (error) {
-        console.warn('[Critical CSS] Failed to process:', error);
-        return html;
+        console.warn("[Critical CSS] Failed to process:", error);
       }
     },
   };
@@ -49,6 +54,7 @@ export default defineConfig(({ mode }) => {
   // Terser is retained for optional maximum compression.
   const minify = (process.env.NODEBENCH_MINIFY ?? "esbuild") === "terser" ? "terser" : "esbuild";
   const useTerser = minify === "terser";
+  const enableCriticalCss = mode === "production" && process.env.NODEBENCH_CRITICAL_CSS === "1";
 
   return ({
     plugins: [
@@ -57,15 +63,16 @@ export default defineConfig(({ mode }) => {
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'NodeBench AI',
-        short_name: 'NodeBench',
-        description: 'AI-powered research and analytics platform',
-        theme_color: '#ffffff',
-        icons: [
-          {
-            src: '/favicon.svg',
-            sizes: '192x192',
+       manifest: {
+         name: 'NodeBench AI',
+         short_name: 'NodeBench',
+         description: 'AI-powered research and analytics platform',
+         theme_color: '#09090B',
+         background_color: '#09090B',
+         icons: [
+           {
+             src: '/favicon.svg',
+             sizes: '192x192',
             type: 'image/svg+xml',
           },
         ],
@@ -142,8 +149,9 @@ export default defineConfig(({ mode }) => {
         return new URLSearchParams();
       },
     }),
-    // Critical CSS inlining for faster FCP
-    mode === 'production' ? criticalCSSPlugin() : null,
+     // Critical CSS inlining can significantly increase build time on constrained builders.
+     // Keep it opt-in (NODEBENCH_CRITICAL_CSS=1) and rely on `index.html` baseline styles to prevent FOUC.
+     enableCriticalCss ? criticalCSSPlugin() : null,
     // Bundle analyzer - run with: ANALYZE=true npm run build
     process.env.ANALYZE === 'true' ? visualizer({
       filename: './dist/stats.html',

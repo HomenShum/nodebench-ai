@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { motion, AnimatePresence } from 'framer-motion';
+import { DialogOverlay } from "@/shared/components/DialogOverlay";
 import {
     Search,
     FileText,
@@ -408,27 +408,14 @@ export function CommandPalette({
     let commandIndex = 0;
 
     return (
-        <AnimatePresence>
-            <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh] px-4">
-                {/* Backdrop */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                    className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                />
-
-                {/* Command Palette */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -20 }}
-                    transition={{ type: 'spring', duration: 0.3 }}
-                    role="dialog"
-                    aria-label="Command palette"
-                    className="relative w-full max-w-2xl bg-white dark:bg-[#09090B] rounded-xl shadow-2xl dark:shadow-black/40 overflow-hidden border border-gray-200 dark:border-white/[0.06]"
-                >
+        <DialogOverlay
+            isOpen={isOpen}
+            onClose={onClose}
+            ariaLabel="Command palette"
+            positionClassName="items-start justify-center pt-[15vh] px-4"
+            backdropClassName="bg-black/50 backdrop-blur-sm"
+            contentClassName="w-full max-w-2xl bg-white dark:bg-[#09090B] rounded-xl shadow-2xl dark:shadow-black/40 overflow-hidden border border-gray-200 dark:border-white/[0.06]"
+        >
                     {/* Search Input */}
                     <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
                         <Search className="w-5 h-5 text-gray-400 dark:text-gray-400" />
@@ -470,7 +457,7 @@ export function CommandPalette({
                                         const isSelected = currentIndex === selectedIndex;
 
                                         return (
-                                            <motion.button
+                                            <button
                                                 key={cmd.id}
                                                 data-index={currentIndex}
                                                 onClick={() => cmd.action()}
@@ -482,7 +469,6 @@ export function CommandPalette({
                                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]'
                                                     }
                                                 `}
-                                                whileHover={{ x: 4 }}
                                             >
                                                 <div className={`
                                                     flex items-center justify-center w-8 h-8 rounded-lg
@@ -503,7 +489,7 @@ export function CommandPalette({
                                                 ) : isSelected ? (
                                                     <ArrowRight className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                                 ) : null}
-                                            </motion.button>
+                                            </button>
                                         );
                                     })}
                                 </div>
@@ -528,8 +514,6 @@ export function CommandPalette({
                             <span>Command Palette</span>
                         </span>
                     </div>
-                </motion.div>
-            </div>
-        </AnimatePresence>
+        </DialogOverlay>
     );
 }

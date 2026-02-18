@@ -208,7 +208,7 @@ function CoverImage({ storageId }: { storageId: Id<"_storage"> }) {
   const imageUrl = useQuery(api.domains.documents.files.getUrl, { storageId });
 
   if (!imageUrl) {
-    return <div className="h-full bg-[var(--bg-secondary)] animate-pulse" />;
+    return <div className="h-full bg-muted/30" aria-hidden="true" />;
   }
 
   return (

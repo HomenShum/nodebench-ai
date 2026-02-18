@@ -695,6 +695,7 @@ Available via `getMethodology({ topic: "..." })`:
 | `reconnaissance` | Codebase discovery | [Self-Bootstrap](#agent-self-bootstrap-system) |
 | `quality_gates` | Pass/fail checkpoints | [Quality Gates](#quality-gates) |
 | `ui_ux_qa` | Frontend verification | [Vision Analysis](#vision-analysis) |
+| `flywheel_ui_dogfood` | UI dogfood + walkthrough QA loop | [AI Flywheel](#the-ai-flywheel-mandatory) |
 | `agentic_vision` | AI-powered visual QA | [Vision Analysis](#vision-analysis) |
 | `closed_loop` | Build/test before presenting | [Closed Loop](#closed-loop-principle) |
 | `learnings` | Knowledge persistence | [Recording Learnings](#recording-learnings) |

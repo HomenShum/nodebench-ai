@@ -10,6 +10,68 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
+    <!-- Prevent white flash before CSS loads -->
+    <meta name="theme-color" content="#09090B" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#FAFAFA" media="(prefers-color-scheme: light)" />
+    <script>
+      // Apply persisted theme + reduced-motion before CSS to avoid flashes on load.
+      (function () {
+        try {
+          var raw = localStorage.getItem("nodebench-theme");
+          if (!raw) return;
+          var theme = JSON.parse(raw) || {};
+          var mode = theme.mode || "system";
+          var prefersDark =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var resolved = mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+
+          document.documentElement.dataset.theme = resolved;
+          if (resolved === "dark") document.documentElement.classList.add("dark");
+          else document.documentElement.classList.remove("dark");
+
+          if (theme.reducedMotion) document.documentElement.classList.add("reduce-motion");
+        } catch {
+          // ignore
+        }
+      })();
+    </script>
+    <style>
+      html,
+      body {
+        background: #fafafa;
+        color: #111827;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: light) {
+        html,
+        body {
+          background: #fafafa;
+          color: #111827;
+          color-scheme: light;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background: #09090b;
+          color: #fafafa;
+          color-scheme: dark;
+        }
+      }
+      html[data-theme="dark"],
+      html[data-theme="dark"] body {
+        background: #09090b;
+        color: #fafafa;
+        color-scheme: dark;
+      }
+      html[data-theme="light"],
+      html[data-theme="light"] body {
+        background: #fafafa;
+        color: #111827;
+        color-scheme: light;
+      }
+    </style>
+
     <link rel="stylesheet" href="/src/index.css" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />

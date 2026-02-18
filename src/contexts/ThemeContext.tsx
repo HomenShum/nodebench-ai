@@ -50,7 +50,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (typeof window === 'undefined') return DEFAULT_THEME;
     try {
       const saved = localStorage.getItem('nodebench-theme');
-      return saved ? { ...DEFAULT_THEME, ...JSON.parse(saved) } : DEFAULT_THEME;
+      if (saved) return { ...DEFAULT_THEME, ...JSON.parse(saved) };
+
+      const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+      return { ...DEFAULT_THEME, reducedMotion: prefersReducedMotion };
     } catch {
       return DEFAULT_THEME;
     }
@@ -156,4 +159,3 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     </ThemeContext.Provider>
   );
 }
-
