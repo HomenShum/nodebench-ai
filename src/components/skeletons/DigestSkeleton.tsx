@@ -7,7 +7,7 @@ import React from 'react';
 
 export function DigestSkeleton() {
   return (
-    <div className="animate-pulse rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] shadow-sm">
+    <div className="motion-safe:animate-pulse rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/[0.04]">
         <div className="flex items-center gap-3">
@@ -77,7 +77,7 @@ export function DigestSkeleton() {
         {/* Action buttons */}
         <div className="grid grid-cols-2 gap-2 pt-1">
           <div className="h-9 bg-gray-100 dark:bg-white/[0.05] rounded-lg" />
-          <div className="h-9 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 rounded-lg" />
+          <div className="h-9 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.06] rounded-lg" />
         </div>
       </div>
     </div>

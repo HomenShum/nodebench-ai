@@ -7,6 +7,12 @@ import "./index.css";
 import App from "./App";
 import { ToastProvider } from "./components/ui";
 
+declare global {
+  interface Window {
+    __nodebenchHasUserGesture?: boolean;
+  }
+}
+
 // Dev-only: Suppress noisy Chrome extension messaging errors that are unrelated to the app
 if (import.meta.env?.DEV) {
   const isExtMsgError = (msg?: string) => !!msg && (
@@ -37,6 +43,20 @@ if (import.meta.env?.DEV) {
       // Error checking failed
     }
   }, true);
+}
+
+// Track whether the user has performed a real gesture in this tab. We use this to gate beforeunload prompts,
+// which Chromium will block (and warn about) if triggered without a user activation.
+if (typeof window !== "undefined" && window.__nodebenchHasUserGesture !== true) {
+  const mark = () => {
+    window.__nodebenchHasUserGesture = true;
+    window.removeEventListener("pointerdown", mark, true);
+    window.removeEventListener("keydown", mark, true);
+    window.removeEventListener("touchstart", mark, true);
+  };
+  window.addEventListener("pointerdown", mark, true);
+  window.addEventListener("keydown", mark, true);
+  window.addEventListener("touchstart", mark, true);
 }
 
 function MissingConvexUrlScreen() {

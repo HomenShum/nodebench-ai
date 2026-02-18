@@ -259,7 +259,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
               <span className="text-[10px] font-black text-gray-900/40 dark:text-gray-400 uppercase tracking-widest">
                 {formatBriefMonthYear(new Date().toISOString())}
               </span>
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
             </div>
           </div>
 
@@ -417,7 +417,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
         {workflowSteps.slice(0, 3).map((step) => (
           <div key={step.name} className="flex items-center gap-3 group">
             <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${step.status === 'completed' ? 'bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100' :
-              step.status === 'in_progress' ? 'border-gray-900 dark:border-gray-300 animate-pulse' :
+              step.status === 'in_progress' ? 'border-gray-900 dark:border-gray-300 motion-safe:animate-pulse' :
                 'border-gray-200 dark:border-white/[0.15]'
               }`}>
               {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white dark:text-gray-900" />}

@@ -12,7 +12,7 @@ interface FeedCardSkeletonProps {
 export function FeedCardSkeleton({ variant = 'default' }: FeedCardSkeletonProps) {
   if (variant === 'compact') {
     return (
-      <div className="animate-pulse p-3 border border-gray-200 dark:border-white/[0.06] rounded-lg bg-white dark:bg-white/[0.02]">
+      <div className="motion-safe:animate-pulse p-3 border border-gray-200 dark:border-white/[0.06] rounded-lg bg-white dark:bg-white/[0.02]">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gray-200 dark:bg-white/[0.08] rounded-lg shrink-0" />
           <div className="flex-1 min-w-0">
@@ -26,7 +26,7 @@ export function FeedCardSkeleton({ variant = 'default' }: FeedCardSkeletonProps)
 
   if (variant === 'large') {
     return (
-      <div className="animate-pulse p-5 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
+      <div className="motion-safe:animate-pulse p-5 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
         <div className="flex gap-4">
           <div className="w-12 h-12 bg-gray-200 dark:bg-white/[0.08] rounded-xl shrink-0" />
           <div className="flex-1 space-y-3">
@@ -50,7 +50,7 @@ export function FeedCardSkeleton({ variant = 'default' }: FeedCardSkeletonProps)
 
   // Default variant
   return (
-    <div className="animate-pulse p-4 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
+    <div className="motion-safe:animate-pulse p-4 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
       <div className="flex gap-3">
         <div className="w-10 h-10 bg-gray-200 dark:bg-white/[0.08] rounded-lg shrink-0" />
         <div className="flex-1 min-w-0 space-y-2">

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import type { Id } from "../../../../../convex/_generated/dataModel";
@@ -43,15 +43,21 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
   const [saveHint, setSaveHint] = useState<"idle" | "saving" | "saved" | "unsaved">("idle");
   const titleRef = useRef<HTMLInputElement | null>(null);
   const lastSavedRef = useRef<string>("");
+  const skipDirtyOnceRef = useRef(false);
+  const didUserEditRef = useRef(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showDuePicker, setShowDuePicker] = useState(false);
 
-  useEffect(() => {
+  // Layout effect prevents a transient "unsaved" state on first paint (which can trigger beforeunload warnings)
+  useLayoutEffect(() => {
     if (!task) return;
+    // Skip the first dirty comparison after hydration; state updates land after this effect.
+    skipDirtyOnceRef.current = true;
+    didUserEditRef.current = false;
     setTitle(task.title ?? "");
     setDescription(task.description ?? "");
     setStatus((task.status as any) ?? "todo");
-    setPriority(task.priority as any);
+    setPriority((task.priority ?? undefined) as any);
 
     setStartDateStr(task.startDate ? toInputDate(task.startDate) : "");
     setDueDateStr(task.dueDate ? toInputDate(task.dueDate) : "");
@@ -189,6 +195,10 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
   // Track dirty state (unsaved changes) without autosaving.
   useEffect(() => {
     if (!task) return;
+    if (skipDirtyOnceRef.current) {
+      skipDirtyOnceRef.current = false;
+      return;
+    }
     const current = JSON.stringify({
       title, description, status, priority,
       startDateStr, dueDateStr,
@@ -199,14 +209,21 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
     if (current === lastSavedRef.current) {
       setSaveHint((prev) => (prev === "saved" ? "saved" : "idle"));
     } else {
+      if (!didUserEditRef.current) {
+        // If the user hasn't interacted yet, treat diffs as hydration noise (prevents beforeunload warnings).
+        setSaveHint((prev) => (prev === "saved" ? "saved" : "idle"));
+        return;
+      }
       setSaveHint("unsaved");
     }
   }, [title, description, status, priority, startDateStr, dueDateStr, useStartTime, useDueTime, startDateTimeStr, dueDateTimeStr, tags, assigneeId, refs, task]);
 
   // Warn on tab close/reload if unsaved changes exist
   useEffect(() => {
+    if (saveHint !== "unsaved") return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (saveHint === "unsaved") {
+        if (!didUserEditRef.current) return;
         e.preventDefault();
         e.returnValue = "";
       }
@@ -269,6 +286,12 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
+      onInputCapture={() => {
+        didUserEditRef.current = true;
+      }}
+      onChangeCapture={() => {
+        didUserEditRef.current = true;
+      }}
     >
       {/* Top bar: actions and save hint */}
       <div className="mb-2 flex items-center justify-between">

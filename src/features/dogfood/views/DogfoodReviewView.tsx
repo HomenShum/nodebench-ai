@@ -64,6 +64,16 @@ type FramesManifest = {
   items: FramesItem[];
 };
 
+type LocalQaEntry = {
+  ts: string;
+  score: number;
+  grade: string;
+  critical: number;
+  warning: number;
+  info: number;
+  source?: string;
+};
+
 type QaIssue = {
   severity: "p0" | "p1" | "p2" | "p3" | string;
   title: string;
@@ -355,6 +365,8 @@ export function DogfoodReviewView() {
   const [qaError, setQaError] = useState<string | null>(null);
   const [qaLast, setQaLast] = useState<DogfoodQaRun | null>(null);
   const [copied, setCopied] = useState(false);
+  const [localQaResults, setLocalQaResults] = useState<LocalQaEntry[] | null>(null);
+  const [localQaError, setLocalQaError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { isAuthenticated } = useConvexAuth();
   const { signIn } = useAuthActions();
@@ -485,6 +497,23 @@ export function DogfoodReviewView() {
         if (!cancelled) setFrames(json);
       } catch (e) {
         if (!cancelled) setFramesError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/dogfood/qa-results.json", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as LocalQaEntry[];
+        if (!cancelled) setLocalQaResults(Array.isArray(json) ? json : []);
+      } catch (e) {
+        if (!cancelled) setLocalQaError(e instanceof Error ? e.message : String(e));
       }
     })();
     return () => {
@@ -1192,6 +1221,135 @@ export function DogfoodReviewView() {
                 </div>
               </section>
             ))}
+          </div>
+        )}
+
+        {/* ── Local Script QA Score History ── */}
+        {(localQaResults !== null || localQaError) && (
+          <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+            <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="text-sm font-medium text-foreground">Local QA Score History</div>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
+                  qa-results.json
+                </span>
+              </div>
+              {localQaResults && localQaResults.length > 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  {(() => {
+                    const latest = localQaResults[0];
+                    const gradeColor =
+                      latest.grade === "A" ? "text-green-500" :
+                      latest.grade === "B" ? "text-emerald-400" :
+                      latest.grade === "C" ? "text-amber-400" :
+                      latest.grade === "D" ? "text-orange-400" : "text-red-400";
+                    return (
+                      <>
+                        <span className={`font-semibold text-base ${gradeColor}`}>{latest.grade}</span>
+                        <span className="text-muted-foreground font-mono">{latest.score}/100</span>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            <div className="p-5 space-y-4">
+              {localQaError && !localQaResults && (
+                <div className="text-xs text-muted-foreground">
+                  Not available: <span className="font-mono">{localQaError}</span>
+                  <div className="mt-1">Run <span className="font-mono">npm run dogfood:visual-qa</span> or <span className="font-mono">npm run dogfood:gemini-qa</span> to generate scores.</div>
+                </div>
+              )}
+
+              {localQaResults && localQaResults.length === 0 && (
+                <div className="text-xs text-muted-foreground">
+                  No local QA runs recorded yet. Run <span className="font-mono">npm run dogfood:visual-qa</span> to generate the first score.
+                </div>
+              )}
+
+              {localQaResults && localQaResults.length > 0 && (() => {
+                const entries = localQaResults.slice(0, 10);
+                const maxScore = 100;
+                const points = entries
+                  .slice()
+                  .reverse()
+                  .map((e, i, arr) => {
+                    const x = arr.length === 1 ? 50 : (i / (arr.length - 1)) * 100;
+                    const y = 100 - (e.score / maxScore) * 100;
+                    return `${x},${y}`;
+                  })
+                  .join(" ");
+
+                return (
+                  <>
+                    {/* Sparkline */}
+                    <div className="rounded-md border border-border/60 bg-card p-3">
+                      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-12">
+                        <polyline
+                          points={points}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          vectorEffect="non-scaling-stroke"
+                          className="text-indigo-400/80"
+                        />
+                        {entries
+                          .slice()
+                          .reverse()
+                          .map((e, i, arr) => {
+                            const x = arr.length === 1 ? 50 : (i / (arr.length - 1)) * 100;
+                            const y = 100 - (e.score / maxScore) * 100;
+                            const dotColor =
+                              e.grade === "A" ? "fill-green-400" :
+                              e.grade === "B" ? "fill-emerald-400" :
+                              e.grade === "C" ? "fill-amber-400" :
+                              e.grade === "D" ? "fill-orange-400" : "fill-red-400";
+                            return <circle key={i} cx={x} cy={y} r="2.5" vectorEffect="non-scaling-stroke" className={dotColor} />;
+                          })}
+                      </svg>
+                      <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-mono">
+                        <span>{entries[entries.length - 1]?.ts?.slice(0, 10)}</span>
+                        <span>{entries[0]?.ts?.slice(0, 10)}</span>
+                      </div>
+                    </div>
+
+                    {/* Run table */}
+                    <div className="space-y-1.5">
+                      {entries.map((e, idx) => {
+                        const gradeColor =
+                          e.grade === "A" ? "text-green-500 bg-green-500/10 border-green-500/20" :
+                          e.grade === "B" ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" :
+                          e.grade === "C" ? "text-amber-400 bg-amber-400/10 border-amber-400/20" :
+                          e.grade === "D" ? "text-orange-400 bg-orange-400/10 border-orange-400/20" :
+                          "text-red-400 bg-red-400/10 border-red-400/20";
+                        return (
+                          <div key={idx} className="flex items-center gap-3 rounded-md border border-border/40 bg-background px-3 py-2">
+                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border font-mono ${gradeColor}`}>
+                              {e.grade}
+                            </span>
+                            <span className="text-sm font-medium text-foreground font-mono w-10 tabular-nums">{e.score}</span>
+                            <div className="flex gap-2 text-[11px] font-mono text-muted-foreground">
+                              {e.critical > 0 && <span className="text-red-400">{e.critical}C</span>}
+                              {e.warning > 0 && <span className="text-amber-400">{e.warning}W</span>}
+                              {e.info > 0 && <span className="text-sky-400">{e.info}I</span>}
+                            </div>
+                            {e.source && (
+                              <span className="text-[10px] px-1 py-0.5 rounded bg-muted/40 text-muted-foreground font-mono">
+                                {e.source}
+                              </span>
+                            )}
+                            <span className="ml-auto text-[10px] text-muted-foreground font-mono">
+                              {e.ts ? new Date(e.ts).toLocaleString() : "—"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
         )}
 

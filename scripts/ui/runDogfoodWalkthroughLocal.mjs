@@ -122,6 +122,7 @@ async function main() {
   const scribeOnly = (args.get("scribeOnly") ?? "false") === "true";
   const screens = (args.get("screens") ?? "false") === "true";
   const publish = (args.get("publish") ?? (screens ? "true" : "false")) === "true";
+  const scenarios = (args.get("scenarios") ?? (screens ? "true" : "false")) === "true";
   const play = (args.get("play") ?? "false") === "true";
 
   const repoRoot = process.cwd();
@@ -254,6 +255,23 @@ async function main() {
       });
       const framesCode = await new Promise((resolve) => frames.on("exit", resolve));
       if (framesCode !== 0) throw new Error(`dogfood:frames exited with code ${framesCode}`);
+    }
+
+    if (scenarios) {
+      // Scenario regression suite: validates motion-safety + dogfood artifact ingestion in the UI.
+      // eslint-disable-next-line no-console
+      console.log(`Running scenario regression suite (BASE_URL=${baseURL})...`);
+      const scen = spawn(
+        `${npxCmd} playwright test tests/e2e/scenario-regression.spec.ts --project=chromium --workers=1`,
+        {
+          cwd: repoRoot,
+          stdio: "inherit",
+          env: { ...process.env, BASE_URL: baseURL },
+          shell: true,
+        },
+      );
+      const scenCode = await new Promise((resolve) => scen.on("exit", resolve));
+      if (scenCode !== 0) throw new Error(`Scenario regression suite exited with code ${scenCode}`);
     }
   } finally {
     await killProcessTree(serverProc);

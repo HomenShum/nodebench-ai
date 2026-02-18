@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -41,15 +41,20 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
   const [isSaving, setIsSaving] = useState(false);
   const [saveHint, setSaveHint] = useState<"idle" | "saving" | "saved" | "unsaved">("idle");
   const lastSavedRef = useRef<string>("");
+  const skipDirtyOnceRef = useRef(false);
+  const didUserEditRef = useRef(false);
 
   const isTaskStatus = (v: string): v is "todo" | "in_progress" | "done" | "blocked" =>
     v === "todo" || v === "in_progress" || v === "done" || v === "blocked";
   const isPriority = (v: string): v is "low" | "medium" | "high" | "urgent" =>
     v === "low" || v === "medium" || v === "high" || v === "urgent";
 
-  // Initialize form from task
-  useEffect(() => {
+  // Initialize form from task (layout effect prevents a transient "unsaved" state on first paint)
+  useLayoutEffect(() => {
     if (!task) return;
+    // Skip the first dirty comparison after hydration; state updates land after this effect.
+    skipDirtyOnceRef.current = true;
+    didUserEditRef.current = false;
     setTitle(task.title ?? "");
     setDescription(task.description ?? "");
     setStatus(isTaskStatus(String(task.status)) ? (task.status as any) : "todo");
@@ -142,10 +147,19 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
   // Track dirty state of the form
   useEffect(() => {
     if (!task) return;
+    if (skipDirtyOnceRef.current) {
+      skipDirtyOnceRef.current = false;
+      return;
+    }
     const current = JSON.stringify({ title, description, status, priority, dueDateStr, startDateStr, assigneeId, refs, tags });
     if (current === lastSavedRef.current) {
       setSaveHint((prev) => (prev === "saved" ? "saved" : "idle"));
     } else {
+      if (!didUserEditRef.current) {
+        // If the user hasn't interacted yet, treat diffs as hydration noise (prevents beforeunload warnings).
+        setSaveHint((prev) => (prev === "saved" ? "saved" : "idle"));
+        return;
+      }
       setSaveHint("unsaved");
     }
   }, [title, description, status, priority, dueDateStr, startDateStr, assigneeId, refs, tags, task]);
@@ -175,8 +189,10 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
   // Warn on page unload if there are unsaved changes
   useEffect(() => {
+    if (saveHint !== "unsaved") return;
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (saveHint === "unsaved") {
+        if (!didUserEditRef.current) return;
         e.preventDefault();
         e.returnValue = "";
       }
@@ -260,7 +276,15 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
   }
 
   return embedded ? (
-    <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] flex flex-col">
+    <div
+      className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] flex flex-col"
+      onInputCapture={() => {
+        didUserEditRef.current = true;
+      }}
+      onChangeCapture={() => {
+        didUserEditRef.current = true;
+      }}
+    >
         {/* Header */}
         <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">Edit Task</h3>
@@ -840,6 +864,12 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
       <div
         className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl flex flex-col z-10"
         onMouseDown={(e) => e.stopPropagation()}
+        onInputCapture={() => {
+          didUserEditRef.current = true;
+        }}
+        onChangeCapture={() => {
+          didUserEditRef.current = true;
+        }}
       >
         {/* Header */}
         <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">

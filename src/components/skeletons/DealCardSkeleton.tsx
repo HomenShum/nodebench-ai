@@ -7,7 +7,7 @@ import React from 'react';
 
 export function DealCardSkeleton() {
   return (
-    <div className="animate-pulse p-4 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
+    <div className="motion-safe:animate-pulse p-4 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">

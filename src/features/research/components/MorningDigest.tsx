@@ -739,7 +739,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-600 dark:text-gray-400">Executive Synthesis</p>
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-                <Activity className="w-2.5 h-2.5 text-amber-600 animate-pulse" />
+                <Activity className="w-2.5 h-2.5 text-amber-600 motion-safe:animate-pulse" />
                 <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">LIVE</span>
               </span>
             </div>

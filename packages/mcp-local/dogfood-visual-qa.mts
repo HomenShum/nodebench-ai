@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * Dogfood: Visual QA — Cold-Load Jank Detection
+ * Dogfood: Visual QA — Cold-Load Jank Detection + Dark Mode Screenshot Regression
  *
  * Tests the INITIAL LOADING experience by:
  * 1. Clearing all browser cache/cookies/localStorage
@@ -9,17 +9,31 @@
  * 4. 20 frames over 2s = full loading lifecycle (blank → skeleton → data → settled)
  *
  * Also runs post-settle (warm) captures for comparison.
+ * Also runs a dark mode screenshot pass using addInitScript for pre-hydration dark injection.
+ * Results are persisted to public/dogfood/qa-results.json for regression tracking.
  *
  * Usage: npx tsx dogfood-visual-qa.mts
  */
 
+import { chromium } from "playwright";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { visualQaTools } from "./src/tools/visualQaTools.js";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
 
+// Repo root derived from this file's location, NOT process.cwd().
+// This ensures the path is correct regardless of which directory the
+// script is invoked from (e.g. `npm run` from repo root vs packages/mcp-local/).
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(__dirname, "../..");
+const SCREENSHOTS_DIR = path.join(REPO_ROOT, "public", "dogfood", "screenshots");
+const QA_RESULTS_PATH = path.join(REPO_ROOT, "public", "dogfood", "qa-results.json");
+
 const tools = Object.fromEntries(visualQaTools.map((t) => [t.name, t]));
 
-// ═══ Helper ═══
+// ═══ Helpers ═══
 function sep(title: string) {
   console.log(`\n${"═".repeat(60)}`);
   console.log(`  ${title}`);
@@ -46,11 +60,16 @@ function extractJson(result: unknown): any {
   return result;
 }
 
-// ═══ Routes to test ═══
+// ═══ Routes to test (expanded from 3 → 8 to cover all recently changed views) ═══
 const ROUTES = [
   { path: "/", label: "cinematic-home" },
   { path: "/research", label: "research-hub" },
   { path: "/showcase", label: "showcase" },
+  { path: "/funding", label: "funding-brief" },
+  { path: "/analytics-recommendations", label: "analytics-recommendations" },
+  { path: "/analytics-components", label: "analytics-components" },
+  { path: "/mcp-ledger", label: "mcp-ledger" },
+  { path: "/dogfood", label: "dogfood" },
 ];
 
 type RunResult = {
@@ -65,8 +84,106 @@ type RunResult = {
   ssimScores?: number[];
 };
 
+// ═══ Persist results for regression tracking ═══
+async function persistResults(results: RunResult[]) {
+  let history: any[] = [];
+  try {
+    const existing = await fs.readFile(QA_RESULTS_PATH, "utf8");
+    history = JSON.parse(existing);
+    if (!Array.isArray(history)) history = [];
+  } catch {
+    // first run
+  }
+
+  const coldResults = results.filter((r) => r.mode === "cold-load");
+  const warmResults = results.filter((r) => r.mode === "warm");
+  const navResult = results.find((r) => r.mode === "navigation");
+
+  const entry = {
+    timestamp: new Date().toISOString(),
+    runType: "visual-qa",
+    routes: ROUTES.map((r) => r.label),
+    coldAvgScore: coldResults.length
+      ? Math.round(coldResults.reduce((s, r) => s + r.score, 0) / coldResults.length)
+      : null,
+    warmAvgScore: warmResults.length
+      ? Math.round(warmResults.reduce((s, r) => s + r.score, 0) / warmResults.length)
+      : null,
+    navScore: navResult?.score ?? null,
+    totalJank: results.reduce((s, r) => s + r.jankCount, 0),
+    routeDetails: results.map((r) => ({
+      route: r.route,
+      mode: r.mode,
+      score: r.score,
+      grade: r.grade,
+      jankCount: r.jankCount,
+      meanSsim: r.meanSsim,
+    })),
+  };
+
+  history.unshift(entry);
+  if (history.length > 100) history.length = 100;
+  await fs.writeFile(QA_RESULTS_PATH, JSON.stringify(history, null, 2), "utf8");
+  console.log(`  Results persisted → ${QA_RESULTS_PATH}`);
+}
+
+// ═══ Dark mode screenshot pass (Playwright direct — addInitScript for pre-hydration injection) ═══
+async function runDarkModeScreenshots() {
+  await fs.mkdir(SCREENSHOTS_DIR, { recursive: true });
+
+  const browser = await chromium.launch({ headless: true });
+  const darkThemePayload = JSON.stringify({ mode: "dark" });
+
+  const results: Array<{ label: string; ok: boolean; path?: string; error?: string }> = [];
+
+  for (const route of ROUTES) {
+    const label = route.label;
+    const outPath = path.join(SCREENSHOTS_DIR, `${label}-dark.png`);
+
+    try {
+      const context = await browser.newContext({
+        viewport: { width: 1440, height: 900 },
+        reducedMotion: "reduce",
+      });
+
+      // Inject dark mode into localStorage BEFORE any page script runs.
+      // This means React's ThemeProvider reads "dark" from localStorage on first render
+      // and never shows a light flash — exactly what we're testing.
+      await context.addInitScript((payload: string) => {
+        try {
+          localStorage.setItem("nodebench-theme", payload);
+          localStorage.setItem("theme", "dark");
+        } catch {
+          // storage blocked in some contexts — ignore
+        }
+      }, darkThemePayload);
+
+      const page = await context.newPage();
+      await page.goto(`${BASE_URL}${route.path}`, {
+        waitUntil: "networkidle",
+        timeout: 30_000,
+      });
+
+      // Let animations settle
+      await page.waitForTimeout(1500);
+
+      await page.screenshot({ path: outPath, fullPage: false });
+      await context.close();
+
+      results.push({ label, ok: true, path: outPath });
+      console.log(`  ✓ dark:${label} → ${path.relative(REPO_ROOT, outPath)}`);
+    } catch (err: any) {
+      results.push({ label, ok: false, error: err?.message });
+      console.error(`  ✗ dark:${label} — ${err?.message}`);
+    }
+  }
+
+  await browser.close();
+  return results;
+}
+
 async function main() {
-  console.log(`🎬 Visual QA Dogfood — Cold-Load Jank Detection`);
+  console.log(`🎬 Visual QA Dogfood — Cold-Load Jank Detection + Dark Mode Regression`);
   console.log(`   Base URL: ${BASE_URL}`);
   console.log(`   Routes: ${ROUTES.map((r) => r.label).join(", ")}`);
   console.log(`   Tools: ${visualQaTools.map((t) => t.name).join(", ")}`);
@@ -136,9 +253,8 @@ async function main() {
     console.log(`    Jank frames: ${meta.jankCount} at [${meta.jankFrames?.join(", ") || "none"}]`);
     console.log(`    Collage: ${meta.collagePath}`);
 
-    // Print SSIM timeline
     if (ssimScores.length > 0) {
-      const timeline = ssimScores.map((s: number, i: number) => {
+      const timeline = ssimScores.map((s: number) => {
         const bar = s >= 0.95 ? "█" : s >= 0.90 ? "▓" : s >= 0.85 ? "▒" : s >= 0.80 ? "░" : "·";
         return `${bar}${s.toFixed(2)}`;
       });
@@ -249,6 +365,19 @@ async function main() {
     console.error(`  ✗ Navigation test failed: ${navMeta.message}`);
   }
 
+  // ══════════════════════════════════════════════════════
+  //  TEST 4: Dark Mode Screenshots (regression baseline)
+  //  Uses addInitScript to inject dark theme into localStorage
+  //  BEFORE React hydrates — catches theme flash bugs and
+  //  verifies dark mode tokens are applied from first render.
+  //  Screenshots saved to public/dogfood/screenshots/<label>-dark.png
+  // ══════════════════════════════════════════════════════
+  sep("Test 4: Dark Mode Screenshots (pre-hydration injection)");
+  const darkResults = await runDarkModeScreenshots();
+  const darkOk = darkResults.filter((r) => r.ok).length;
+  const darkFail = darkResults.filter((r) => !r.ok).length;
+  console.log(`\n  Dark mode: ${darkOk}/${ROUTES.length} captured, ${darkFail} failed`);
+
   // ═══ Summary Table ═══
   sep("Dogfood Results Summary");
 
@@ -270,7 +399,7 @@ async function main() {
       const delta = warm.score - cold.score;
       const ssimDelta = warm.meanSsim - cold.meanSsim;
       console.log(
-        `  ${route.label.padEnd(20)} | Cold: ${cold.grade}(${cold.score}) → Warm: ${warm.grade}(${warm.score}) | Δscore: ${delta > 0 ? "+" : ""}${delta} | ΔSSIM: ${ssimDelta > 0 ? "+" : ""}${ssimDelta.toFixed(4)}`
+        `  ${route.label.padEnd(25)} | Cold: ${cold.grade}(${cold.score}) → Warm: ${warm.grade}(${warm.score}) | Δscore: ${delta > 0 ? "+" : ""}${delta} | ΔSSIM: ${ssimDelta > 0 ? "+" : ""}${ssimDelta.toFixed(4)}`
       );
       if (delta > 20) {
         console.log(`    ⚠️  Large cold/warm gap — loading phase needs attention`);
@@ -287,9 +416,13 @@ async function main() {
 
   console.log(`\n  Cold-load: ${coldPass ? "✅" : "⚠️"} ${coldPass ? "All routes above 50 (loading acceptable)" : "Some routes below 50 — loading jank detected"}`);
   console.log(`  Warm:      ${warmPass ? "✅" : "⚠️"} ${warmPass ? "All routes above 90 (settled state smooth)" : "Some routes below 90 — post-settle issues"}`);
+  console.log(`  Dark mode: ${darkFail === 0 ? "✅" : "⚠️"} ${darkOk}/${ROUTES.length} screenshots captured`);
   if (anyF) {
     console.log("  ❌ Grade F detected — immediate investigation recommended");
   }
+
+  // Persist results for regression tracking
+  await persistResults(results);
 
   console.log("\nDone.");
   process.exit(0);

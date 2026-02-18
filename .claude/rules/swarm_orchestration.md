@@ -1,8 +1,10 @@
 ---
-name: orchestrating-swarms
 description: Master multi-agent orchestration using Claude Code's TeammateTool and Task system. Use when coordinating multiple agents, running parallel code reviews, creating pipeline workflows with dependencies, building self-organizing task queues, or any task benefiting from divide-and-conquer patterns.
-related_: process, self_direction, flywheel_continuous, completion_traceability
 ---
+<!-- related_: process, self_direction, flywheel_continuous, completion_traceability -->
+<!-- skill_id: orchestrating-swarms | source: .claude/commands/orchestrating-swarms.md | hash: 1bde5a4892260024 | synced: 2026-02-18 -->
+<!-- update_triggers: Claude Code version bump, TeammateTool API changes, new agent types -->
+<!-- full version: /orchestrating-swarms command or MCP prompt "orchestrating-swarms" -->
 
 # Claude Code Swarm Orchestration
 

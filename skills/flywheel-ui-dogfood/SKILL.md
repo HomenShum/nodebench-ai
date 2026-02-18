@@ -37,7 +37,7 @@ Continuously dogfood every UI route, capture walkthrough evidence (screenshots +
 ```powershell
 npm run dogfood:full:local
 npm run dogfood:qa:gemini
+npm run dogfood:verify
 npx tsc --noEmit
 npm run build
 ```
-

@@ -28,9 +28,9 @@ const ROUTES = [
   { path: '/benchmarks', name: 'benchmarks' },
   { path: '/funding', name: 'funding' },
   { path: '/activity', name: 'activity' },
-  { path: '/analytics/hitl', name: 'analytics-hitl' },
-  { path: '/analytics/components', name: 'analytics-components' },
-  { path: '/analytics/recommendations', name: 'analytics-recommendations' },
+  { path: '/analytics-hitl', name: 'analytics-hitl' },
+  { path: '/analytics-components', name: 'analytics-components' },
+  { path: '/analytics-recommendations', name: 'analytics-recommendations' },
   { path: '/cost', name: 'cost-dashboard' },
   { path: '/industry', name: 'industry-updates' },
   { path: '/for-you', name: 'for-you-feed' },
@@ -39,7 +39,8 @@ const ROUTES = [
   { path: '/github', name: 'github-explorer' },
   { path: '/pr-suggestions', name: 'pr-suggestions' },
   { path: '/linkedin', name: 'linkedin-posts' },
-  { path: '/mcp/ledger', name: 'mcp-ledger' },
+  { path: '/mcp-ledger', name: 'mcp-ledger' },
+  { path: '/dogfood', name: 'dogfood' },
   { path: '/public', name: 'public-docs' },
 ];
 

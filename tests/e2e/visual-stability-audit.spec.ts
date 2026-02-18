@@ -10,13 +10,20 @@ import { mkdirSync, existsSync } from 'fs';
 
 const STABILITY_DIR = join(process.cwd(), 'test_assets', 'screenshots', 'stability');
 
-// Critical routes to audit (heaviest animation/loading routes)
+// Critical routes to audit (heaviest animation/loading routes).
+// Kept in sync with dogfood-visual-qa.mts ROUTES.
 const STABILITY_ROUTES = [
   { path: '/', name: 'cinematic-home', settleMs: 3000 },
   { path: '/research', name: 'research-hub', settleMs: 2000 },
   { path: '/documents', name: 'documents', settleMs: 1500 },
   { path: '/agents', name: 'agents', settleMs: 2000 },
   { path: '/showcase', name: 'showcase', settleMs: 2000 },
+  // Added: views modified in Feb 2026 dark mode / analytics sweep
+  { path: '/funding', name: 'funding-brief', settleMs: 2000 },
+  { path: '/analytics-recommendations', name: 'analytics-recommendations', settleMs: 2000 },
+  { path: '/analytics-components', name: 'analytics-components', settleMs: 2000 },
+  { path: '/mcp-ledger', name: 'mcp-ledger', settleMs: 1500 },
+  { path: '/dogfood', name: 'dogfood', settleMs: 2000 },
 ];
 
 const FRAME_COUNT = 10;

@@ -73,6 +73,20 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
+  // Follow OS reduced-motion changes at runtime.
+  // Only applies when the user has not persisted an explicit preference — once
+  // they toggle it manually in Settings, their choice takes precedence.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (!localStorage.getItem('nodebench-theme')) {
+        setTheme(prev => ({ ...prev, reducedMotion: e.matches }));
+      }
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   const resolvedMode = useMemo(() => {
     if (theme.mode === 'system') {
       return systemPrefersDark ? 'dark' : 'light';

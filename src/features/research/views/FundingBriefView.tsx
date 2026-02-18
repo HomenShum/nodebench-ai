@@ -544,7 +544,7 @@ export function FundingBriefView() {
             >
               {isGeneratingInsights && !isGenerating && !isSaving ? (
                 <>
-                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  <Sparkles className="w-4 h-4 motion-safe:animate-pulse" />
                   Analyzing...
                 </>
               ) : isSaving ? (
@@ -574,7 +574,7 @@ export function FundingBriefView() {
             >
               {isGeneratingInsights ? (
                 <>
-                  <Sparkles className="w-4 h-4 animate-pulse" />
+                  <Sparkles className="w-4 h-4 motion-safe:animate-pulse" />
                   AI Analyzing...
                 </>
               ) : isGenerating ? (
@@ -661,7 +661,7 @@ export function FundingBriefView() {
         {/* Loading State */}
         {!data && (
           <div className="text-center py-12">
-            <div className="animate-pulse">
+            <div className="motion-safe:animate-pulse">
               <div className="h-8 bg-gray-200 dark:bg-white/[0.08] rounded w-48 mx-auto mb-4"></div>
               <div className="h-4 bg-gray-200 dark:bg-white/[0.08] rounded w-64 mx-auto"></div>
             </div>

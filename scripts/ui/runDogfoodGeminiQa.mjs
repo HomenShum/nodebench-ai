@@ -185,6 +185,101 @@ async function ensureAnonymousSignIn(page) {
   await page.waitForTimeout(800);
 }
 
+// Archive the previous QA run's output before overwriting.
+// This gives a before/after for any Gemini or visual diff.
+async function archivePreviousRun(outDir) {
+  let entries;
+  try {
+    entries = await fs.readdir(outDir);
+  } catch {
+    return; // first run — nothing to archive
+  }
+  if (!entries.length) return;
+
+  const archiveBase = path.join(outDir, "..", "archive");
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+  const archiveDir = path.join(archiveBase, stamp);
+  await fs.mkdir(archiveDir, { recursive: true });
+
+  for (const entry of entries) {
+    if (entry === "archive") continue; // never recurse
+    try {
+      await fs.rename(path.join(outDir, entry), path.join(archiveDir, entry));
+    } catch {
+      // ignore move failures (e.g. cross-device) — just continue
+    }
+  }
+}
+
+// Compute a numeric quality score from scraped QA issues.
+// Severity buckets are keyword-heuristic: not perfect but deterministic.
+function computeQaScore(videoRuns, screenRuns) {
+  const allIssues = [
+    ...(videoRuns?.[0]?.issues ?? []),
+    ...(screenRuns?.[0]?.issues ?? []),
+  ];
+
+  const critical = allIssues.filter((i) =>
+    /critical|error|broken|fail|cannot|crash|missing entirely|not render/i.test(
+      (i.header ?? "") + " " + (i.details ?? "")
+    )
+  ).length;
+
+  const warning = allIssues.filter((i) =>
+    /warn|missing|overlap|overflow|truncat|wrong|incorrect|inconsistent|contrast/i.test(
+      (i.header ?? "") + " " + (i.details ?? "")
+    )
+  ).length;
+
+  const info = allIssues.length - critical - warning;
+
+  // Scoring: start at 100, deduct per-issue by severity
+  const score = Math.max(0, 100 - critical * 20 - warning * 10 - info * 2);
+  const grade =
+    score >= 90 ? "A" :
+    score >= 75 ? "B" :
+    score >= 60 ? "C" :
+    score >= 40 ? "D" : "F";
+
+  return { score, grade, critical, warning, info, total: allIssues.length };
+}
+
+// Append a scored result to public/dogfood/qa-results.json (capped at 100 entries).
+async function persistQaScore(repoRoot, videoRuns, screenRuns) {
+  const qaResultsPath = path.join(repoRoot, "public", "dogfood", "qa-results.json");
+
+  let history = [];
+  try {
+    const raw = await fs.readFile(qaResultsPath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) history = parsed;
+  } catch {
+    // first run or malformed — start fresh
+  }
+
+  const qscore = computeQaScore(videoRuns, screenRuns);
+  const entry = {
+    timestamp: new Date().toISOString(),
+    runType: "gemini-qa",
+    ...qscore,
+    videoIssues: videoRuns?.[0]?.issues?.length ?? 0,
+    screenshotIssues: screenRuns?.[0]?.issues?.length ?? 0,
+    videoSummary: (videoRuns?.[0]?.summary ?? "").slice(0, 400),
+    screenSummary: (screenRuns?.[0]?.summary ?? "").slice(0, 400),
+  };
+
+  history.unshift(entry);
+  if (history.length > 100) history.length = 100;
+
+  await fs.writeFile(qaResultsPath, JSON.stringify(history, null, 2), "utf8");
+  // eslint-disable-next-line no-console
+  console.log(`Gemini QA score: ${entry.score}/100 (${entry.grade}) — ${entry.total} issues (${entry.critical} critical, ${entry.warning} warnings)`);
+  // eslint-disable-next-line no-console
+  console.log(`QA history appended → ${qaResultsPath}`);
+
+  return entry;
+}
+
 async function throwIfQaErrorVisible(page, label) {
   const err = page.getByText(/qa error:/i).first();
   if (!(await err.isVisible().catch(() => false))) return;
@@ -194,6 +289,8 @@ async function throwIfQaErrorVisible(page, label) {
 
 async function runQaAndCapture({ baseURL, headless }) {
   const outDir = path.join(process.cwd(), ".tmp", "dogfood-gemini-qa");
+  // Archive previous run before overwriting — preserves before/after for regression diffs.
+  await archivePreviousRun(outDir);
   await fs.mkdir(outDir, { recursive: true });
 
   const browser = await chromium.launch({ headless });
@@ -310,6 +407,10 @@ async function runQaAndCapture({ baseURL, headless }) {
     await page.screenshot({ path: path.join(outDir, "screens-qa.png"), fullPage: true });
     const screenRuns = await scrapeRecentRuns(page);
     await fs.writeFile(path.join(outDir, "screens-qa.json"), JSON.stringify(screenRuns, null, 2), "utf8");
+
+    // Compute score from both QA runs and persist to public/dogfood/qa-results.json.
+    // This gives a timestamped history of Gemini QA scores for regression tracking.
+    await persistQaScore(process.cwd(), videoRuns, screenRuns);
 
     await fs.writeFile(path.join(outDir, "debug.log"), debugLines.join("\n"), "utf8");
     return { outDir };
