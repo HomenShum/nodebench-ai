@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "nodebench": {
+      "command": "npx",
+      "args": ["-y", "nodebench-mcp", "--preset", "full"],
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "SMTP_HOST": "${SMTP_HOST}",
+        "SMTP_USER": "${SMTP_USER}",
+        "SMTP_PASS": "${SMTP_PASS}",
+        "IMAP_HOST": "${IMAP_HOST}",
+        "IMAP_USER": "${IMAP_USER}",
+        "IMAP_PASS": "${IMAP_PASS}"
+      }
+    },
+    "convex-auditor": {
+      "command": "npx",
+      "args": ["-y", "@homenshum/convex-mcp-nodebench"]
+    },
+    "openclaw": {
+      "command": "npx",
+      "args": ["-y", "@homenshum/openclaw-mcp-nodebench"]
+    },
+    "core-agent": {
+      "command": "npx",
+      "args": ["tsx", "mcp_tools/core_agent_server/server.ts"],
+      "env": {
+        "CORE_AGENT_DATA_DIR": "${CORE_AGENT_DATA_DIR}"
+      }
+    },
+    "gateway": {
+      "command": "npx",
+      "args": ["tsx", "mcp_tools/gateway_server/stdioServer.ts"],
+      "env": {
+        "CONVEX_URL": "${CONVEX_URL}",
+        "MCP_SECRET": "${MCP_SECRET}"
+      }
+    },
+    "nodebench-remote": {
+      "url": "https://nodebench-mcp-unified.onrender.com",
+      "headers": {
+        "x-mcp-token": "${MCP_HTTP_TOKEN}"
+      }
+    }
+  }
+}

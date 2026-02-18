@@ -1,0 +1,74 @@
+{
+	"hooks": {
+		"SessionStart": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "overstory prime --agent orchestrator"
+					}
+				]
+			}
+		],
+		"UserPromptSubmit": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "overstory mail check --inject --agent orchestrator"
+					}
+				]
+			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "read -r INPUT; TOOL_NAME=$(echo \"$INPUT\" | sed 's/.*\"tool_name\": *\"\\([^\"]*\\)\".*/\\1/'); overstory log tool-start --agent orchestrator --tool-name \"$TOOL_NAME\""
+					}
+				]
+			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "read -r INPUT; TOOL_NAME=$(echo \"$INPUT\" | sed 's/.*\"tool_name\": *\"\\([^\"]*\\)\".*/\\1/'); overstory log tool-end --agent orchestrator --tool-name \"$TOOL_NAME\""
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "overstory log session-end --agent orchestrator"
+					},
+					{
+						"type": "command",
+						"command": "mulch learn"
+					}
+				]
+			}
+		],
+		"PreCompact": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "overstory prime --agent orchestrator --compact"
+					}
+				]
+			}
+		]
+	}
+}

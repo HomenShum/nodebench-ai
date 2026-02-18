@@ -1,0 +1,23 @@
+# Runtime state (auto-generated, do not edit)
+worktrees/
+logs/
+mail.db
+mail.db-wal
+mail.db-shm
+metrics.db
+metrics.db-wal
+metrics.db-shm
+events.db
+events.db-wal
+events.db-shm
+sessions.json
+sessions.db
+sessions.db-wal
+sessions.db-shm
+merge-queue.db
+merge-queue.db-wal
+merge-queue.db-shm
+nudge-state.json
+pending-nudges/
+agents/
+specs/
