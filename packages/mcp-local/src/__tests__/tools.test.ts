@@ -361,7 +361,7 @@ describe("Static: new methodology topics", () => {
     expect(topics).toContain("agent_bootstrap");
     expect(topics).toContain("autonomous_maintenance");
     expect(topics).toContain("parallel_agent_teams");
-    expect(topics.length).toBe(25); // All topics listed in overview
+    expect(topics.length).toBe(26); // All topics listed in overview (includes scenario_testing added v2.26.0)
   });
 });
 

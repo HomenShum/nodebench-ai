@@ -3452,6 +3452,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "run_mandatory_flywheel", action: "6-step final verification" },
       { tool: "record_learning", action: "Capture what you learned" },
       { tool: "promote_to_eval", action: "Feed into eval batch" },
+      { tool: "save_session_note", action: "Save traceability note — cite original request, summarize what was delivered" },
     ],
   },
   fix_bug: {
@@ -3464,6 +3465,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "log_test_result", action: "Record regression test" },
       { tool: "run_mandatory_flywheel", action: "6-step verification" },
       { tool: "record_learning", action: "Record the gotcha/pattern" },
+      { tool: "save_session_note", action: "Save traceability note — cite original request, record root cause and fix" },
     ],
   },
   ui_change: {
@@ -3477,6 +3479,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "run_quality_gate", action: "Run ui_ux_qa gate" },
       { tool: "run_mandatory_flywheel", action: "Final verification" },
       { tool: "record_learning", action: "Record UI patterns" },
+      { tool: "save_session_note", action: "Save traceability note — cite original request, record visual evidence path" },
     ],
   },
   parallel_project: {
@@ -3792,6 +3795,38 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "draft_email_reply", action: "Generate a professional reply draft from original email context and your instructions" },
       { tool: "send_email", action: "Send the reviewed and approved draft reply" },
       { tool: "save_session_note", action: "Log sent emails so you have an audit trail that survives compaction" },
+    ],
+  },
+  webmcp_discovery: {
+    name: "WebMCP Origin Discovery",
+    description: "Connect to a WebMCP-enabled origin, discover its tools, and invoke them from the agent",
+    steps: [
+      { tool: "connect_webmcp_origin", action: "Connect to the target origin URL and establish a WebMCP session" },
+      { tool: "list_webmcp_tools", action: "List all tools exposed by the origin with schemas and annotations" },
+      { tool: "call_webmcp_tool", action: "Invoke a specific tool on the remote origin with arguments" },
+      { tool: "disconnect_webmcp_origin", action: "Clean up the WebMCP session when done" },
+    ],
+  },
+  batch_autopilot: {
+    name: "Batch Autopilot Run",
+    description: "Set up an operator profile and run a batch autopilot session for autonomous agent tasks",
+    steps: [
+      { tool: "setup_operator_profile", action: "Create or update USER.md and operator profile for autopilot context" },
+      { tool: "get_autopilot_status", action: "Check current autopilot readiness, profile completeness, and last run status" },
+      { tool: "trigger_batch_run", action: "Start a batch autopilot run using the operator profile as context" },
+      { tool: "get_batch_run_history", action: "Review history of past batch runs, outcomes, and timing" },
+      { tool: "sync_operator_profile", action: "Sync operator profile state from disk after manual edits" },
+    ],
+  },
+  daily_review: {
+    name: "Daily Brief Review",
+    description: "Pull the latest daily brief, review narrative threads, check ops dashboard, and sync to local storage",
+    steps: [
+      { tool: "sync_daily_brief", action: "Pull today's brief and narrative from Convex into local SQLite" },
+      { tool: "get_daily_brief_summary", action: "Get the full brief summary with key signals and insights" },
+      { tool: "get_narrative_status", action: "Check narrative thread status — dominant story, under-reported angle, evidence scores" },
+      { tool: "get_ops_dashboard", action: "Review pipeline health: posting status, tool usage, active workflows" },
+      { tool: "open_local_dashboard", action: "Open the local HTML dashboard in the browser for visual review" },
     ],
   },
 };

@@ -59,8 +59,7 @@ describe("Architect Tools — Complex E2E: scan_capabilities", () => {
     expect(r.imports.has_react).toBe(true);
     expect(r.imports.count).toBeGreaterThan(5); // many imports
 
-    // framer-motion = animation
-    expect(r.interaction_patterns.animation).toBe(true);
+    // Note: framer-motion was removed in the Jony Ive animation pass; animation check skipped
   });
 
   it("detects keyboard shortcuts in CommandPalette.tsx", async () => {
@@ -73,8 +72,7 @@ describe("Architect Tools — Complex E2E: scan_capabilities", () => {
     expect(r.state_management.memos).toBeGreaterThan(0);
     expect(r.imports.has_react).toBe(true);
 
-    // framer-motion
-    expect(r.interaction_patterns.animation).toBe(true);
+    // Note: framer-motion was removed; animation check skipped
 
     // dynamic lists (.map(() => ...))
     expect(r.rendering_capabilities.dynamic_lists).toBeGreaterThan(0);
@@ -139,7 +137,7 @@ describe("Architect Tools — Complex E2E: verify_concept_support", () => {
     expect(r.id).toMatch(/^cv_/);
   });
 
-  it("verifies 'Animation System' against MainLayout → detects framer-motion", async () => {
+  it.skip("verifies 'Animation System' against MainLayout → detects framer-motion", async () => {
     const r = (await callTool("verify_concept_support", {
       file_path: MAIN_LAYOUT,
       concept_name: "Animation System",

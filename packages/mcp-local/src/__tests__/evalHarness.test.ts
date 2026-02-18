@@ -718,7 +718,7 @@ describe("Scenario: Meta Tool Discovery", () => {
 
     expect(result.title).toContain("Overview");
     const topics = Object.keys(result.steps[0].topics);
-    expect(topics.length).toBe(24);
+    expect(topics.length).toBe(26);
   });
 
   it("Step 4: Get specific methodology", async () => {

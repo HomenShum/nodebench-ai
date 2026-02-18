@@ -64,6 +64,11 @@ export const sessionMemoryTools: McpTool[] = [
           description:
             "Tags for searchability (e.g. ['auth', 'jwt', 'security'])",
         },
+        citedFrom: {
+          type: "string",
+          description:
+            "Quote or paraphrase the specific part of the user's original request this note fulfills. Enables completion traceability — links deliverables back to asks.",
+        },
       },
       required: ["title", "content"],
     },
@@ -74,6 +79,7 @@ export const sessionMemoryTools: McpTool[] = [
         content,
         category = "finding",
         tags = [],
+        citedFrom,
       } = args;
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10);
@@ -91,6 +97,7 @@ export const sessionMemoryTools: McpTool[] = [
         `**Category:** ${category}`,
         `**Date:** ${now.toISOString()}`,
         tags.length > 0 ? `**Tags:** ${tags.join(", ")}` : "",
+        citedFrom ? `**Cited From:** ${citedFrom}` : "",
         "",
         "---",
         "",
@@ -273,6 +280,11 @@ export const sessionMemoryTools: McpTool[] = [
           description:
             "Include recent relevant learnings (default: true)",
         },
+        originalRequest: {
+          type: "string",
+          description:
+            "The original user request verbatim or paraphrased. Returned in context to anchor traceability between asks and deliverables.",
+        },
       },
       required: [],
     },
@@ -282,6 +294,7 @@ export const sessionMemoryTools: McpTool[] = [
         includeNotes = true,
         includeGaps = true,
         includeLearnings = true,
+        originalRequest,
       } = args;
       const db = getDb();
       const context: Record<string, unknown> = {};
@@ -401,6 +414,10 @@ export const sessionMemoryTools: McpTool[] = [
         }
       } catch {
         /* table may not exist yet */
+      }
+
+      if (originalRequest) {
+        context.originalRequest = originalRequest;
       }
 
       return {

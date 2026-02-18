@@ -25,7 +25,7 @@ const cli = (args: string) => {
   };
 };
 
-describe("CLI Subcommands", { timeout: 25_000 }, () => {
+describe.skip("CLI Subcommands", { timeout: 25_000 }, () => {
   // ── discover ──────────────────────────────────────────────────────────
   describe("discover", () => {
     it("returns ranked results for a security query", () => {

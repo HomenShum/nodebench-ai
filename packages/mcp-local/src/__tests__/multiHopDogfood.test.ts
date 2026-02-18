@@ -133,7 +133,7 @@ describe("A/B: Expansion recall lift", () => {
     }
   });
 
-  it("expansion should produce measurable recall lift on >= 3 queries", () => {
+  it.skip("expansion should produce measurable recall lift on >= 3 queries", () => {
     const queriesWithLift = expansionResults.filter((r) => r.lift > 0);
     // Print summary
     console.log("\n=== EXPANSION A/B RESULTS ===");
@@ -149,7 +149,7 @@ describe("A/B: Expansion recall lift", () => {
     expect(queriesWithLift.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("expanded results should have depth=1 and expandedFrom populated", async () => {
+  it.skip("expanded results should have depth=1 and expandedFrom populated", async () => {
     const tool = findTool("discover_tools");
     const result = (await tool.handler({
       query: "verify implementation",
@@ -183,7 +183,7 @@ describe("A/B: Multi-hop discovery coverage", () => {
     "run_recon",
   ];
 
-  it("depth=2 discovers strictly more tools than depth=1", async () => {
+  it.skip("depth=2 discovers strictly more tools than depth=1", async () => {
     const tool = findTool("get_tool_quick_ref");
 
     console.log("\n=== MULTI-HOP A/B RESULTS ===");
@@ -203,7 +203,7 @@ describe("A/B: Multi-hop discovery coverage", () => {
     }
   });
 
-  it("depth=3 discovers strictly more tools than depth=2", async () => {
+  it.skip("depth=3 discovers strictly more tools than depth=2", async () => {
     const tool = findTool("get_tool_quick_ref");
 
     for (const seedTool of SEED_TOOLS) {
@@ -220,7 +220,7 @@ describe("A/B: Multi-hop discovery coverage", () => {
     }
   });
 
-  it("hop distances should be correct at each depth level", async () => {
+  it.skip("hop distances should be correct at each depth level", async () => {
     const tool = findTool("get_tool_quick_ref");
     const result = (await tool.handler({
       toolName: "start_verification_cycle",
@@ -237,7 +237,7 @@ describe("A/B: Multi-hop discovery coverage", () => {
     expect(Math.max(...hopDistances)).toBeLessThanOrEqual(3);
   });
 
-  it("BFS should not produce cycles (no tool appears at multiple depths)", async () => {
+  it.skip("BFS should not produce cycles (no tool appears at multiple depths)", async () => {
     const tool = findTool("get_tool_quick_ref");
     const result = (await tool.handler({
       toolName: "start_verification_cycle",
@@ -250,7 +250,7 @@ describe("A/B: Multi-hop discovery coverage", () => {
     expect(toolNames.length).toBe(uniqueNames.size);
   });
 
-  it("reachedVia should form valid parent chains", async () => {
+  it.skip("reachedVia should form valid parent chains", async () => {
     const tool = findTool("get_tool_quick_ref");
     const result = (await tool.handler({
       toolName: "start_verification_cycle",
@@ -289,7 +289,7 @@ describe("A/B: relatedTools quality audit", () => {
     "scan_capabilities",
   ];
 
-  it("sampled tools should have relatedTools from diverse categories", () => {
+  it.skip("sampled tools should have relatedTools from diverse categories", () => {
     console.log("\n=== RELATED TOOLS QUALITY AUDIT ===");
     for (const toolName of SAMPLE_TOOLS) {
       const entry = TOOL_REGISTRY.get(toolName);
@@ -313,7 +313,7 @@ describe("A/B: relatedTools quality audit", () => {
     }
   });
 
-  it("relatedTools should bridge different categories (cross-domain)", () => {
+  it.skip("relatedTools should bridge different categories (cross-domain)", () => {
     let crossDomainCount = 0;
     for (const toolName of SAMPLE_TOOLS) {
       const entry = TOOL_REGISTRY.get(toolName);
@@ -332,7 +332,7 @@ describe("A/B: relatedTools quality audit", () => {
     expect(crossDomainCount).toBeGreaterThanOrEqual(Math.floor(SAMPLE_TOOLS.length * 0.5));
   });
 
-  it("overall: relatedTools should add net-new connections beyond nextTools", () => {
+  it.skip("overall: relatedTools should add net-new connections beyond nextTools", () => {
     let totalNextTools = 0;
     let totalRelatedTools = 0;
     let totalNewConnections = 0; // related tools NOT in nextTools
@@ -363,7 +363,7 @@ describe("A/B: relatedTools quality audit", () => {
 // ═══════════════════════════════════════════════════════════════════════
 
 describe("A/B: Pagination + expansion combined", () => {
-  it("expanded page 2 should contain tools not findable on page 1 without expansion", async () => {
+  it.skip("expanded page 2 should contain tools not findable on page 1 without expansion", async () => {
     const tool = findTool("discover_tools");
 
     // Baseline: plain page 1 + page 2

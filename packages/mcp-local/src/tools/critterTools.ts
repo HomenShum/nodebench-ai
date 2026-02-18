@@ -242,6 +242,11 @@ export const critterTools: McpTool[] = [
           description:
             "Optional: What is the simplest version that still delivers value?",
         },
+        original_request: {
+          type: "string",
+          description:
+            "Optional: The original user request this task fulfills. Used for completion traceability — links the critter check back to the ask.",
+        },
       },
       required: ["task", "why", "who"],
     },

@@ -54,7 +54,7 @@ export function createProgressiveDiscoveryTools(
               "research_writing", "flicker_detection", "figma_flow",
               "boilerplate", "benchmark", "session_memory", "gaia_solvers",
               "toon", "pattern", "git_workflow", "seo", "voice_bridge",
-              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "progressive_discovery", "meta",
+              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "progressive_discovery", "meta", "openclaw", "webmcp",
             ],
             description: "Filter by tool category (optional)",
           },
@@ -65,7 +65,15 @@ export function createProgressiveDiscoveryTools(
           },
           limit: {
             type: "number",
-            description: "Max results to return (default: 10)",
+            description: "Max results to return per page (default: 10)",
+          },
+          offset: {
+            type: "number",
+            description: "Number of results to skip for pagination (default: 0). Use with limit to page through results. Response includes totalMatches and hasMore.",
+          },
+          expand: {
+            type: "number",
+            description: "Expand top-N results by including their relatedTools neighbors at 50% parent score (default: 0 = no expansion). Use expand=3 to discover adjacent tools.",
           },
           includeChains: {
             type: "boolean",
@@ -100,6 +108,8 @@ export function createProgressiveDiscoveryTools(
       handler: async (args) => {
         const query = args.query ?? "";
         const limit = args.limit ?? 10;
+        const offset = args.offset ?? 0;
+        const expand = args.expand ?? 0;
         const includeChains = args.includeChains !== false;
         const mode: SearchMode = args.mode ?? "hybrid";
         const explain = args.explain === true;
@@ -132,15 +142,16 @@ export function createProgressiveDiscoveryTools(
           if (vec) embeddingQueryVec = vec;
         }
 
-        // Multi-modal search with scoring
+        // Multi-modal search with scoring — fetch ALL matches for stable pagination
         // If intent is set, run search once per intent category and merge results
-        let results;
+        const maxSearchLimit = 500;
+        let allResults;
         if (intentCategories && !args.category) {
           const perCategoryResults = intentCategories.map(cat =>
             hybridSearch(query, allRegisteredTools, {
               category: cat,
               phase: args.phase,
-              limit: Math.ceil(limit / intentCategories.length) + 2,
+              limit: maxSearchLimit,
               mode,
               explain,
               embeddingQueryVec,
@@ -156,18 +167,23 @@ export function createProgressiveDiscoveryTools(
             }
           }
           merged.sort((a, b) => b.score - a.score);
-          results = merged.slice(0, limit);
+          allResults = merged;
         } else {
-          results = hybridSearch(query, allRegisteredTools, {
+          allResults = hybridSearch(query, allRegisteredTools, {
             category: args.category,
             phase: args.phase,
-            limit,
+            limit: maxSearchLimit,
             mode,
             explain,
             embeddingQueryVec,
             searchFullRegistry: !!options?.getLoadedToolNames,
           });
         }
+
+        // Pagination: slice to requested page
+        const totalMatches = allResults.length;
+        const results = allResults.slice(offset, offset + limit);
+        const hasMore = offset + results.length < totalMatches;
 
         // Find matching workflow chains
         let matchingChains: Array<{ name: string; chainKey: string; description: string; stepCount: number }> = [];
@@ -197,6 +213,9 @@ export function createProgressiveDiscoveryTools(
           query,
           searchMode: mode,
           resultCount: results.length,
+          totalMatches,
+          hasMore,
+          offset,
           totalToolsSearched: options?.getLoadedToolNames ? ALL_REGISTRY_ENTRIES.length : allRegisteredTools.length,
           availableModes: SEARCH_MODES,
           results: results.map((r) => compact
@@ -325,7 +344,8 @@ export function createProgressiveDiscoveryTools(
               "figma_flow_analysis", "agent_eval", "contract_compliance",
               "ablation_eval", "session_recovery", "attention_refresh",
               "task_bank_setup", "pr_review", "seo_audit", "voice_pipeline",
-              "intentionality_check", "research_digest", "email_assistant", "list",
+              "intentionality_check", "research_digest", "email_assistant",
+              "webmcp_discovery", "batch_autopilot", "daily_review", "list",
             ],
             description: 'Which workflow chain to retrieve. Use "list" to see all available chains with descriptions.',
           },

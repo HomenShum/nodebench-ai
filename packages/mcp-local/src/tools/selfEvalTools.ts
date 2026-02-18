@@ -1166,6 +1166,12 @@ export const selfEvalTools: McpTool[] = [
       } else {
         shipViolations.push("No learnings recorded (record_learning)");
       }
+      // Completion traceability: save_session_note with citedFrom links deliverables to asks
+      if (toolSet.has("save_session_note")) {
+        shipScore += 2;
+      } else {
+        shipViolations.push("No completion traceability note (save_session_note with citedFrom)");
+      }
 
       // ── Dimension 6: Tool Efficiency (10 pts) ──
       let efficiencyScore = 0;
@@ -1244,7 +1250,7 @@ export const selfEvalTools: McpTool[] = [
           self_setup: { score: selfSetupScore, max: 10, description: "Resolve missing capabilities autonomously" },
           pre_implementation: { score: preImplScore, max: 15, description: "Recon + risk assessment before changes" },
           parallel_coordination: { score: parallelScore, max: 10, description: "Task locks, roles, context budget" },
-          ship_gates: { score: shipScore, max: 30, description: "Tests + eval + quality gate + flywheel + learning" },
+          ship_gates: { score: shipScore, max: 32, description: "Tests + eval + quality gate + flywheel + learning + traceability" },
           tool_efficiency: { score: efficiencyScore, max: 10, description: "Error rate, redundancy, tool variety" },
         },
         violations: allViolations,
