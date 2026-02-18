@@ -1,0 +1,62 @@
+{
+  "name": "@homenshum/openclaw-mcp-nodebench",
+  "version": "0.1.0",
+  "description": "Sandboxed OpenClaw orchestration + workflow auditing MCP server with NodeBench diligence patterns. Tool allowlists, resource budgets, audit trails, Docker scaffolding, and a persistent gotcha DB for safe AI agent orchestration.",
+  "type": "module",
+  "bin": {
+    "openclaw-mcp-nodebench": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/__tests__",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run test"
+  },
+  "keywords": [
+    "mcp",
+    "openclaw",
+    "model-context-protocol",
+    "sandbox",
+    "security",
+    "ai-agent",
+    "audit",
+    "workflow",
+    "gotcha-db",
+    "self-instruct",
+    "orchestration"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HomenShum/nodebench-ai.git",
+    "directory": "packages/openclaw-mcp-nodebench"
+  },
+  "license": "MIT",
+  "author": "HomenShum",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@toon-format/toon": "^1.0.0",
+    "better-sqlite3": "^11.0.0"
+  },
+  "optionalDependencies": {
+    "@google/genai": "^1.10.0",
+    "openai": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
