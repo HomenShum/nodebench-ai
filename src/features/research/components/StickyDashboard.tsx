@@ -386,17 +386,18 @@ const DonutChart = ({ data }: { data: MarketShareSegment[] }) => {
   );
 };
 
-// Pre-computed stable opacity values to avoid Math.random() on every render
-const PULSE_OPACITIES = [0.85, 0.45, 0.72, 0.33, 0.91, 0.58, 0.27, 0.69, 0.42, 0.78, 0.55, 0.36];
-
 const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
   const activeStep = workflowSteps.find(s => s.status === 'in_progress');
   const completedCount = workflowSteps.filter(s => s.status === 'completed').length;
   const totalCount = workflowSteps.length;
+  const hasActivity = activeStep !== undefined || completedCount > 0;
+
+  // Nothing to show — hide entirely rather than render dead space
+  if (totalCount === 0) return null;
 
   return (
-    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/[0.08]">
-      <div className="flex items-center justify-between mb-4">
+    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/[0.08]">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="px-1.5 py-1 bg-gray-900 dark:bg-gray-100 text-background dark:text-gray-900 text-[9px] font-bold uppercase tracking-widest">
             Agent Workflow
@@ -413,28 +414,33 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
         )}
       </div>
 
-      <div className="space-y-3">
-        {workflowSteps.slice(0, 3).map((step) => (
-          <div key={step.name} className="flex items-center gap-3 group">
-            <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${step.status === 'completed' ? 'bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100' :
-              step.status === 'in_progress' ? 'border-gray-900 dark:border-gray-300 motion-safe:animate-pulse' :
-                'border-gray-200 dark:border-white/[0.15]'
+      {/* Only render step list when there is something meaningful to show */}
+      {hasActivity && (
+        <div className="mt-3 space-y-2">
+          {workflowSteps.slice(0, 3).map((step) => (
+            <div key={step.name} className="flex items-center gap-3 group">
+              <div className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center border ${
+                step.status === 'completed' ? 'bg-gray-900 dark:bg-gray-100 border-gray-900 dark:border-gray-100' :
+                step.status === 'in_progress' ? 'border-gray-900 dark:border-gray-300 motion-safe:animate-pulse' :
+                'border-gray-300 dark:border-white/[0.2]'
               }`}>
-              {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white dark:text-gray-900" />}
-              {step.status === 'in_progress' && <div className="w-1.5 h-1.5 bg-gray-900 dark:bg-gray-300 rounded-full" />}
+                {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white dark:text-gray-900" />}
+                {step.status === 'in_progress' && <div className="w-1.5 h-1.5 bg-gray-900 dark:bg-gray-300 rounded-full" />}
+              </div>
+              <span className={`text-[11px] transition-colors ${
+                step.status === 'completed' ? 'text-gray-400 dark:text-gray-500 line-through' :
+                step.status === 'in_progress' ? 'text-gray-900 dark:text-gray-100 font-bold' :
+                'text-gray-400 dark:text-gray-500'
+              }`}>
+                {step.name}
+              </span>
             </div>
-            <span className={`text-[11px] transition-colors ${step.status === 'completed' ? 'text-gray-400 dark:text-gray-500 line-through' :
-              step.status === 'in_progress' ? 'text-gray-900 dark:text-gray-100 font-bold' :
-                'text-gray-500 dark:text-gray-400'
-              }`}>
-              {step.name}
-            </span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {activeStep && (
-        <div className="mt-4 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-white/[0.08]">
+        <div className="mt-3 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-white/[0.08]">
           <p className="text-[10px] font-mono text-gray-900/60 dark:text-gray-400 uppercase tracking-tighter mb-1">Current Task</p>
           <p className="text-[12px] font-medium text-gray-950 dark:text-gray-100 italic">
             "{activeStep.name} in progress..."
@@ -442,18 +448,19 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
         </div>
       )}
 
-      <div className="mt-4 flex gap-1">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className={`w-1.5 h-1.5 bg-gray-900 dark:bg-gray-200 rounded-none transition-opacity duration-1000`}
-            style={{
-              opacity: activeStep ? PULSE_OPACITIES[i] : 0.05,
-              animationDelay: `${i * 0.1}s`
-            }}
-          />
-        ))}
-      </div>
+      {/* Activity dots — only rendered when workflow is active */}
+      {activeStep && (
+        <div className="mt-3 flex gap-1">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className={`w-1.5 h-1.5 bg-gray-900 dark:bg-gray-200 rounded-none ${
+                i % 3 === 0 ? 'opacity-90' : i % 3 === 1 ? 'opacity-50' : 'opacity-25'
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
