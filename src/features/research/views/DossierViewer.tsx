@@ -484,7 +484,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)] mx-auto" />
+          <Loader2 className="h-8 w-8 motion-safe:animate-spin text-[var(--accent-primary)] mx-auto" />
           <p className="text-sm text-[var(--text-secondary)]">Loading report...</p>
         </div>
       </div>
@@ -847,7 +847,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-primary)]" />
+                    <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
                     <span className="hidden sm:inline text-[var(--text-secondary)]">Analyzing...</span>
                   </>
                 ) : (
@@ -1081,7 +1081,7 @@ function AnalysisPopover({
           {isAnalyzing && (
             <div className="p-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
               <div className="flex items-center gap-2 mb-2">
-                <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-primary)]" />
+                <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
                 <span className="text-sm text-[var(--text-primary)]">
                   Analyzing {progress.current} of {progress.total} files...
                 </span>
@@ -1114,7 +1114,7 @@ function AnalysisPopover({
           >
             {isAnalyzing ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
                 Analyzing...
               </>
             ) : (

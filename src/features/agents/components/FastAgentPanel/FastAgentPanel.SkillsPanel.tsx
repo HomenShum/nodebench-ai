@@ -109,7 +109,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
           
           {!skills ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-4 w-4 text-[var(--text-muted)] animate-spin" />
+              <Loader2 className="h-4 w-4 text-[var(--text-muted)] motion-safe:animate-spin" />
             </div>
           ) : filteredSkills?.length === 0 ? (
             <div className="text-center py-6">

@@ -204,7 +204,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
           </span>
           {stats.running > 0 && (
             <span className="flex items-center gap-1 text-blue-500">
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
               {stats.running} running
             </span>
           )}
@@ -281,7 +281,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 text-[var(--text-muted)] animate-spin" />
+            <Loader2 className="w-6 h-6 text-[var(--text-muted)] motion-safe:animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

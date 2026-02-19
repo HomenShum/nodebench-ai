@@ -80,7 +80,7 @@ export function DeepAgentProgress({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" />
+          <Loader2 className="w-5 h-5 motion-safe:animate-spin text-blue-600 dark:text-blue-400" />
           <span className="font-medium text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Deep Agent Processing
           </span>
@@ -138,7 +138,7 @@ export function DeepAgentProgress({
                 <div
                   className={`flex-shrink-0 mt-0.5 ${
                     isActive
-                      ? 'text-blue-600 dark:text-blue-400 animate-pulse'
+                      ? 'text-blue-600 dark:text-blue-400 motion-safe:animate-pulse'
                       : isCompleted
                       ? 'text-green-600 dark:text-green-400'
                       : isError
@@ -146,7 +146,7 @@ export function DeepAgentProgress({
                       : 'text-[var(--text-muted)] dark:text-[var(--text-secondary)]'
                   }`}
                 >
-                  {isActive && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {isActive && <Loader2 className="w-4 h-4 motion-safe:animate-spin" />}
                   {isCompleted && <CheckCircle className="w-4 h-4" />}
                   {isPending && getStepIcon(step)}
                   {isError && <span className="text-xs">⚠️</span>}

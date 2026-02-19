@@ -86,7 +86,7 @@ export default function DossierMiniEditor({
   if (dossier === undefined || linkedAssets === undefined) {
     return (
       <div className="mt-1 rounded-md p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60">
-        <div className="animate-pulse space-y-3">
+        <div className="motion-safe:animate-pulse space-y-3">
           <div className="h-4 w-32 bg-[var(--bg-secondary)] rounded" />
           <div className="h-3 w-48 bg-[var(--bg-secondary)] rounded" />
           <div className="h-20 bg-[var(--bg-secondary)] rounded" />

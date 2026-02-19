@@ -110,7 +110,7 @@ export function StepTimeline({
         <h3 className="text-sm font-medium text-[var(--text-primary)]">Agent Progress</h3>
         {isStreaming && (
           <span className="ml-auto text-xs text-blue-600 flex items-center gap-1">
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
             Processing...
           </span>
         )}
@@ -141,7 +141,7 @@ export function StepTimeline({
                   <StatusIcon className={cn(
                     "h-2.5 w-2.5",
                     statusColors[step.status],
-                    step.status === 'running' && "animate-spin"
+                    step.status === 'running' && "motion-safe:animate-spin"
                   )} />
                 </div>
 

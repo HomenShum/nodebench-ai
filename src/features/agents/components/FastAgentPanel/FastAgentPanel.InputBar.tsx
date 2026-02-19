@@ -824,7 +824,7 @@ export function FastAgentInputBar({
               )}
             >
               {doc.analyzing ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
               ) : (
                 <FileText className="w-3 h-3" />
               )}
@@ -999,7 +999,7 @@ export function FastAgentInputBar({
             className={cn(
               "p-2 rounded-xl transition-all duration-200",
               isListening
-                ? "text-red-500 bg-red-50 dark:bg-red-900/20 animate-pulse"
+                ? "text-red-500 bg-red-50 dark:bg-red-900/20 motion-safe:animate-pulse"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
             )}
             title={isListening ? "Stop listening" : "Voice input (speech-to-text)"}

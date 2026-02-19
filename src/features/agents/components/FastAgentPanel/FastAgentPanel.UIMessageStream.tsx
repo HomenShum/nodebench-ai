@@ -436,7 +436,7 @@ export function UIMessageStream({
               return (
                 <div className="flex flex-col gap-2">
                   <TypingIndicator message={`Waiting for available agent to handle ${intent}...`} />
-                  <div className="text-xs text-[var(--text-muted)] pl-12 animate-pulse">
+                  <div className="text-xs text-[var(--text-muted)] pl-12 motion-safe:animate-pulse">
                     Position in queue: 1 (Estimated wait: &lt; 5s)
                   </div>
                 </div>

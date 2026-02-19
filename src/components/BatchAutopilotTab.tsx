@@ -121,7 +121,7 @@ export function BatchAutopilotTab() {
           <div className="flex items-center gap-2.5">
             <div
               className={`w-2.5 h-2.5 rounded-full ${
-                schedule?.isEnabled ? "bg-green-500 animate-pulse" : "bg-gray-300 dark:bg-gray-600"
+                schedule?.isEnabled ? "bg-green-500 motion-safe:animate-pulse" : "bg-gray-300 dark:bg-gray-600"
               }`}
             />
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -143,7 +143,7 @@ export function BatchAutopilotTab() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 text-white hover:bg-indigo-600 disabled:opacity-50 transition-colors"
             >
               {triggering ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
               ) : (
                 <Zap className="w-3.5 h-3.5" />
               )}
@@ -227,7 +227,7 @@ export function BatchAutopilotTab() {
                   className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors text-left"
                 >
                   <StatusIcon
-                    className={`w-4 h-4 flex-shrink-0 ${statusInfo.color} ${active ? "animate-spin" : ""}`}
+                    className={`w-4 h-4 flex-shrink-0 ${statusInfo.color} ${active ? "motion-safe:animate-spin" : ""}`}
                   />
                   <div className="flex-1 min-w-0">
                     {/* Primary: brief preview or status */}

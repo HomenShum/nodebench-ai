@@ -168,7 +168,7 @@ function ChartHeader({ config, isLoading, onRefresh }: {
           className="p-1 rounded hover:bg-slate-100 transition-colors disabled:opacity-50"
           aria-label="Refresh chart data"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isLoading ? "motion-safe:animate-spin" : ""}`} />
         </button>
       )}
     </div>
@@ -546,7 +546,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
         {/* Loading overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded">
-            <RefreshCw className="w-5 h-5 text-slate-400 animate-spin" />
+            <RefreshCw className="w-5 h-5 text-slate-400 motion-safe:animate-spin" />
           </div>
         )}
 

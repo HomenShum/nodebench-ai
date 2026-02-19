@@ -106,7 +106,7 @@ export function MessageSkeleton({ agentRole }: { agentRole?: TypingIndicatorProp
   const roleConfig = agentRole ? agentRoleConfig[agentRole] : null;
 
   return (
-    <div className="flex gap-3 mb-4 justify-start animate-pulse">
+    <div className="flex gap-3 mb-4 justify-start motion-safe:animate-pulse">
       {/* Avatar Skeleton */}
       <div className="flex-shrink-0">
         <div className={cn(
@@ -115,7 +115,7 @@ export function MessageSkeleton({ agentRole }: { agentRole?: TypingIndicatorProp
             ? `bg-${roleConfig.color}-200`
             : "bg-[var(--bg-secondary)]"
         )}>
-          <Loader2 className="h-4 w-4 text-[var(--text-muted)] animate-spin" />
+          <Loader2 className="h-4 w-4 text-[var(--text-muted)] motion-safe:animate-spin" />
         </div>
       </div>
 

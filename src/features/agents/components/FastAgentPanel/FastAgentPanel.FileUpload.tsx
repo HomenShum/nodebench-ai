@@ -101,7 +101,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
             <label className="flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 cursor-pointer transition-colors">
               {isUploading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
                   <span>Uploading...</span>
                 </>
               ) : (
@@ -185,7 +185,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
                     <span>Sending...</span>
                   </>
                 ) : (

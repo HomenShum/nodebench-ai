@@ -350,7 +350,7 @@ function BriefingSectionInner({
               disabled={isGenerating}
               className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isGenerating ? 'motion-safe:animate-spin' : ''}`} />
               {isGenerating ? 'Generating...' : 'Generate Now'}
             </button>
           )}

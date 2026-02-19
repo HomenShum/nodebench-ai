@@ -549,7 +549,7 @@ export function FundingBriefView() {
                 </>
               ) : isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
                   Saving...
                 </>
               ) : savedSuccess ? (
@@ -579,7 +579,7 @@ export function FundingBriefView() {
                 </>
               ) : isGenerating ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
                   Generating PDF...
                 </>
               ) : (

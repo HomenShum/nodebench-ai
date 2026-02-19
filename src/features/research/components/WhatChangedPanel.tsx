@@ -327,7 +327,7 @@ export function WhatChangedPanel({
   if (diffsData === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-5 h-5 text-[color:var(--text-muted)] animate-spin" />
+        <RefreshCw className="w-5 h-5 text-[color:var(--text-muted)] motion-safe:animate-spin" />
         <span className="ml-2 text-sm text-[color:var(--text-muted)]">Loading changes...</span>
       </div>
     );
@@ -374,7 +374,7 @@ export function WhatChangedPanel({
                            border-[color:var(--border-color)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)]
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshState.status === "running" ? "animate-spin" : ""}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshState.status === "running" ? "motion-safe:animate-spin" : ""}`} />
                 Refresh now
               </button>
               {onAskAgent && (

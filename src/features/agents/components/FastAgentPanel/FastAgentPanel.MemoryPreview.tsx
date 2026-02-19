@@ -149,7 +149,7 @@ export function MemoryPreviewCard({
         )}
       >
         <div className="flex items-center gap-2 text-zinc-500">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
           <span className="text-sm">Loading memory for {entityName}...</span>
         </div>
       </div>
@@ -225,7 +225,7 @@ export function MemoryPreviewCard({
               <RefreshCw
                 className={cn(
                   "h-3.5 w-3.5 text-zinc-500",
-                  isRefreshing && "animate-spin"
+                  isRefreshing && "motion-safe:animate-spin"
                 )}
               />
             </button>

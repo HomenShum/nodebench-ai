@@ -76,7 +76,7 @@ function QuickStatsBar() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4 animate-pulse"
+            className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4 motion-safe:animate-pulse"
           >
             <div className="h-6 w-12 bg-[var(--bg-secondary)] rounded mb-1" />
             <div className="h-4 w-20 bg-[var(--bg-secondary)] rounded" />

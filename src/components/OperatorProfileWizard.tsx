@@ -415,7 +415,7 @@ export function OperatorProfileWizard() {
             disabled={saving}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 transition-colors"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {saving ? <Loader2 className="w-4 h-4 motion-safe:animate-spin" /> : <Check className="w-4 h-4" />}
             {existingProfile ? "Update" : "Create Profile"}
           </button>
         )}

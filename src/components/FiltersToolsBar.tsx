@@ -148,7 +148,7 @@ export default function FiltersToolsBar(props: Props) {
         {/* Upload progress */}
         {isUploading && uploadProgress && (
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
             <span className="truncate max-w-[120px]">{uploadProgress}</span>
           </div>
         )}

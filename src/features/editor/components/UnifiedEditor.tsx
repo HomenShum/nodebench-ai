@@ -876,7 +876,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="flex flex-col items-center gap-2 text-sm text-[var(--text-secondary)]">
 
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-primary)]" />
+          <div className="motion-safe:animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-primary)]" />
           Loading editor…
         </div>
       </div>
@@ -907,7 +907,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
       return (
         <div className="flex items-center justify-center min-h-[200px]">
           <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--accent-primary)]" />
+            <div className="motion-safe:animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--accent-primary)]" />
             Preparing notes…
           </div>
         </div>

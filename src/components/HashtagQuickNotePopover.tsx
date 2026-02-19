@@ -159,9 +159,9 @@ function HashtagContent({
   if (document === undefined) {
     return (
       <div className="p-6 space-y-4">
-        <div className="animate-pulse h-6 w-32 bg-[var(--bg-secondary)] rounded" />
-        <div className="animate-pulse h-4 w-full bg-[var(--bg-secondary)] rounded" />
-        <div className="animate-pulse h-4 w-3/4 bg-[var(--bg-secondary)] rounded" />
+        <div className="motion-safe:animate-pulse h-6 w-32 bg-[var(--bg-secondary)] rounded" />
+        <div className="motion-safe:animate-pulse h-4 w-full bg-[var(--bg-secondary)] rounded" />
+        <div className="motion-safe:animate-pulse h-4 w-3/4 bg-[var(--bg-secondary)] rounded" />
       </div>
     );
   }

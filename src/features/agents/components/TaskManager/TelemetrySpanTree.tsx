@@ -83,7 +83,7 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
 };
 
 const spanStatusConfig: Record<SpanStatus, { icon: React.ReactNode; color: string }> = {
-  running: { icon: <Loader2 className="w-3 h-3 animate-spin" />, color: 'text-blue-500' },
+  running: { icon: <Loader2 className="w-3 h-3 motion-safe:animate-spin" />, color: 'text-blue-500' },
   completed: { icon: <CheckCircle2 className="w-3 h-3" />, color: 'text-indigo-500' },
   error: { icon: <AlertCircle className="w-3 h-3" />, color: 'text-red-500' },
 };

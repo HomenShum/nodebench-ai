@@ -310,7 +310,7 @@ export function DocumentRow({
           </div>
         ) : status.variant === "analyzing" ? (
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-medium border border-amber-500/20">
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
             {status.label}
           </div>
         ) : (

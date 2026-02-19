@@ -7,7 +7,7 @@
 export function DocumentCardSkeleton() {
   return (
     <div className="group relative">
-      <div className="document-card--hybrid animate-pulse">
+      <div className="document-card--hybrid motion-safe:animate-pulse">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-[var(--bg-primary)]" />

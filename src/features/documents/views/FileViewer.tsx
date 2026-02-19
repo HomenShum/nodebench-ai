@@ -283,7 +283,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
         <div className="flex items-center gap-2 text-[var(--text-muted)]">
-          <Loader2 strokeWidth={1.25} className="h-4 w-4 animate-spin" />
+          <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
           Loading file...
         </div>
       </div>
@@ -379,7 +379,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       return (
         <div className="flex items-center justify-center h-32">
           <div className="flex items-center gap-2 text-[var(--text-muted)]">
-            <Loader2 strokeWidth={1.25} className="h-4 w-4 animate-spin" />
+            <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
             Loading spreadsheet...
           </div>
         </div>
@@ -421,7 +421,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
           <Suspense
             fallback={
               <div className="flex items-center gap-2 text-[var(--text-muted)] p-2">
-                <Loader2 strokeWidth={1.25} className="h-4 w-4 animate-spin" />
+                <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
                 Loading spreadsheet...
               </div>
             }
@@ -638,7 +638,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     title="Analyze with AI and add to Quick notes"
                     aria-label="Analyze file with AI"
                   >
-                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                    {isAnalyzing ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   </button>
                   {showPromptPopover && (
                     <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3" role="dialog" aria-label="File analysis prompt">

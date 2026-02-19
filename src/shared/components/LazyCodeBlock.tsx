@@ -43,7 +43,7 @@ function CodeBlockFallback({ code, language }: { code: string; language?: string
       <div className="absolute top-2 right-2 flex items-center gap-2">
         <span className="text-[10px] font-mono text-gray-400 uppercase">{language || 'code'}</span>
       </div>
-      <pre className="p-4 bg-[#1e1e1e] text-[#d4d4d4] rounded-lg overflow-x-auto text-sm font-mono animate-pulse">
+      <pre className="p-4 bg-[#1e1e1e] text-[#d4d4d4] rounded-lg overflow-x-auto text-sm font-mono motion-safe:animate-pulse">
         <code>{code}</code>
       </pre>
     </div>

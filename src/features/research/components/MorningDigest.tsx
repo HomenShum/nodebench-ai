@@ -790,7 +790,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               title="Refresh digest"
               aria-label="Refresh digest"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'motion-safe:animate-spin' : ''}`} />
             </button>
             <button
               type="button"

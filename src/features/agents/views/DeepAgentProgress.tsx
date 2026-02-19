@@ -25,7 +25,7 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                     {isComplete ? (
                         <CheckCircle2 className="w-5 h-5 text-green-600" />
                     ) : (
-                        <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
+                        <Sparkles className="w-5 h-5 text-purple-600 motion-safe:animate-pulse" />
                     )}
                 </div>
                 <div>
@@ -66,7 +66,7 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                                     {isDone ? (
                                         <CheckCircle2 className="w-4 h-4 text-white" />
                                     ) : isActive ? (
-                                        <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
+                                        <Loader2 className="w-4 h-4 text-purple-600 motion-safe:animate-spin" />
                                     ) : (
                                         <Circle className="w-3 h-3 text-[var(--text-muted)] fill-[var(--bg-secondary)]" />
                                     )}

@@ -192,7 +192,7 @@ export const ScrollytellingLayout: React.FC<Props> = ({ data }) => {
         >
           {isAnalyzing ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
               Analyzing...
             </>
           ) : (

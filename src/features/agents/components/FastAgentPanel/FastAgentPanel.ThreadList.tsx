@@ -318,7 +318,7 @@ export function FastAgentThreadList({
             >
               {isLoadingMore ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                   Loading threads…
                 </>
               ) : (

@@ -318,7 +318,7 @@ export function BriefTab() {
   if (memory === undefined) {
     return (
       <div className="flex-1 flex items-center justify-center text-sm text-[var(--text-secondary)]">
-        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+        <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-2" />
         Loading daily brief...
       </div>
     );
@@ -480,12 +480,12 @@ export function BriefTab() {
           >
             {runAllProgress ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                 {runAllProgress.current}/{runAllProgress.total}
               </>
             ) : isRunning ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                 Running...
               </>
             ) : isViewingHistorical ? (
@@ -511,7 +511,7 @@ export function BriefTab() {
           >
             {runAllProgress ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                 {runAllProgress.current}/{runAllProgress.total}
               </>
             ) : (

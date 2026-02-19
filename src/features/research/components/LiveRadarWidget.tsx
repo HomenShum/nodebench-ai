@@ -92,7 +92,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
           </div>
         </div>
         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 rounded-full border border-green-200">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500 motion-safe:animate-pulse" />
           <span className="text-[9px] font-bold text-green-700 tracking-wide">LIVE</span>
         </div>
       </div>
@@ -120,7 +120,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       <div className="divide-y divide-[color:var(--bg-secondary)] min-h-[180px] max-h-[320px] overflow-y-auto">
         {!signals ? (
           <div className="flex items-center justify-center h-40 text-[color:var(--text-secondary)]">
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-5 h-5 motion-safe:animate-spin" />
           </div>
         ) : filteredSignals.length === 0 ? (
           <div className="p-4 text-center text-xs text-[color:var(--text-secondary)]">

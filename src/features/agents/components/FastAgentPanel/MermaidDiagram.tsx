@@ -238,7 +238,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded transition-colors"
               title="Ask AI to fix the diagram"
             >
-              <RefreshCw className={`h-3 w-3 ${isRetrying ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3 w-3 ${isRetrying ? 'motion-safe:animate-spin' : ''}`} />
               {isRetrying ? 'Retrying...' : 'Fix Diagram'}
             </button>
           )}
@@ -259,7 +259,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
     return (
       <div className="my-4 p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg">
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <div className="animate-spin h-4 w-4 border-2 border-[var(--text-muted)] border-t-transparent rounded-full" />
+          <div className="motion-safe:animate-spin h-4 w-4 border-2 border-[var(--text-muted)] border-t-transparent rounded-full" />
           <span>Rendering diagram...</span>
         </div>
       </div>

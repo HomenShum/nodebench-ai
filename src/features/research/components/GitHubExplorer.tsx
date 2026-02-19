@@ -31,7 +31,7 @@ export function GitHubExplorer() {
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-[var(--bg-secondary)] rounded-lg p-5 space-y-3">
+            <div key={i} className="motion-safe:animate-pulse bg-[var(--bg-secondary)] rounded-lg p-5 space-y-3">
               <div className="h-5 bg-[var(--bg-tertiary)] rounded w-2/3" />
               <div className="h-4 bg-[var(--bg-tertiary)] rounded w-full" />
               <div className="h-3 bg-[var(--bg-tertiary)] rounded w-1/4" />

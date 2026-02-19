@@ -50,7 +50,7 @@ const statusConfig: Record<AgentTaskStatus, { icon: React.ReactNode; color: stri
     label: 'Pending'
   },
   running: { 
-    icon: <Clock className="w-3.5 h-3.5 animate-pulse" />, 
+    icon: <Clock className="w-3.5 h-3.5 motion-safe:animate-pulse" />, 
     color: 'text-violet-500',
     bgColor: 'bg-violet-100',
     label: 'Running' 
@@ -218,7 +218,7 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
           <div className="flex gap-2">
             {runningTasks > 0 && (
               <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">
-                <Clock className="w-3 h-3 animate-pulse" />
+                <Clock className="w-3 h-3 motion-safe:animate-pulse" />
                 {runningTasks} running
               </span>
             )}
@@ -249,7 +249,7 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
           </div>
         ) : !agentTasks ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
+            <Loader2 className="w-5 h-5 text-[var(--text-muted)] motion-safe:animate-spin" />
           </div>
         ) : agentTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

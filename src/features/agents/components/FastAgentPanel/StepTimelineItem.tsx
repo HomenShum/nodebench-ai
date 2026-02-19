@@ -86,7 +86,7 @@ const StepTimelineItemComponent = memo(
             className={cn(
               'h-2.5 w-2.5 transition-all duration-300',
               statusColors[step.status],
-              step.status === 'running' && 'animate-spin'
+              step.status === 'running' && 'motion-safe:animate-spin'
             )}
           />
         </div>

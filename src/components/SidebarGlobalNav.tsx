@@ -153,7 +153,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         {dossier.isAgentUpdating && (
                           <span className="flex items-center gap-1 text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">
                             <Bot className="w-2.5 h-2.5" />
-                            <Loader2 className="w-2 h-2 animate-spin" />
+                            <Loader2 className="w-2 h-2 motion-safe:animate-spin" />
                           </span>
                         )}
                       </button>

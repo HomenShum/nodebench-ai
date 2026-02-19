@@ -66,7 +66,7 @@ export function StreamingMessage({ message }: StreamingMessageProps) {
         {displayText}
       </ReactMarkdown>
       {isActive && (
-        <span className="inline-block w-2 h-5 bg-current opacity-75 animate-pulse ml-1" />
+        <span className="inline-block w-2 h-5 bg-current opacity-75 motion-safe:animate-pulse ml-1" />
       )}
     </div>
   );

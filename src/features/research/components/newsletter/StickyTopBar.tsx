@@ -154,7 +154,7 @@ export function StickyTopBar({
                                 className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors disabled:opacity-50"
                                 title="Refresh"
                             >
-                                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
                             </button>
                         )}
 

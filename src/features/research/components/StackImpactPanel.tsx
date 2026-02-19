@@ -82,7 +82,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
           className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
           aria-label="Refresh stack impact"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-4 h-4 ${isLoading ? "motion-safe:animate-spin" : ""}`} />
         </button>
       </div>
 

@@ -349,7 +349,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         {(sending || waitingForAgent) && (
           <div className="flex justify-start">
             <div className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-2xl px-4 py-3 flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-primary)]" />
+              <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
               <span className="text-sm">Thinking…</span>
             </div>
           </div>

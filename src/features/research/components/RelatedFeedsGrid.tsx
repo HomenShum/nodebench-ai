@@ -104,7 +104,7 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
     return (
       <div className={`${className}`}>
         <div className="flex items-center gap-2 mb-4">
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+          <Loader2 className="w-4 h-4 motion-safe:animate-spin text-gray-400" />
           <span className="text-sm text-gray-500">Finding related content...</span>
         </div>
       </div>

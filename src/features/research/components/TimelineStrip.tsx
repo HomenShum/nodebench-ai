@@ -395,7 +395,7 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
         {formatDate(event.date)}
       </span>
       {event.isCurrent && (
-        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+        <span className="w-1.5 h-1.5 rounded-full bg-current motion-safe:animate-pulse" />
       )}
     </motion.button>
   );

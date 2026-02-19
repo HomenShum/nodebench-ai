@@ -23,7 +23,7 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-1.5 rounded-full bg-gray-900/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-[color:var(--text-primary)] border border-gray-900/10"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse"></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse"></span>
             {data.phaseLabel}
           </motion.div>
           <div className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--text-secondary)]">

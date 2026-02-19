@@ -278,7 +278,7 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
               >
                 {isSending ? (
                   <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
                     Sending...
                   </>
                 ) : (

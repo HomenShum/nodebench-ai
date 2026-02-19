@@ -24,7 +24,7 @@ function StatusPill({ isLive, count, total, freshness }: { isLive: boolean; coun
             'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold',
             isLive ? 'bg-indigo-100 text-gray-800' : 'bg-amber-100 text-amber-800'
         )}>
-            <span className={cn('w-1.5 h-1.5 rounded-full', isLive ? 'bg-indigo-500 animate-pulse' : 'bg-amber-500')} />
+            <span className={cn('w-1.5 h-1.5 rounded-full', isLive ? 'bg-indigo-500 motion-safe:animate-pulse' : 'bg-amber-500')} />
             {isLive ? `${count}/${total} signals` : 'Waiting'}
             <span className="text-gray-400">•</span>
             <span className="text-gray-500">{freshness}</span>

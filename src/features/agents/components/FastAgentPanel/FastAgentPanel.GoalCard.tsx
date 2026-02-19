@@ -54,7 +54,7 @@ export function GoalCard({
       <div className="flex items-start gap-3 mb-3">
         <div className={cn(
           "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
-          isStreaming ? "bg-violet-500 animate-pulse" : "bg-violet-600"
+          isStreaming ? "bg-violet-500 motion-safe:animate-pulse" : "bg-violet-600"
         )}>
           <Target className="h-4 w-4 text-white" />
         </div>
@@ -79,7 +79,7 @@ export function GoalCard({
                   "cursor-default",
                   task.status === 'failed' && "bg-red-500 text-white",
                   task.status === 'success' && "bg-green-500 text-white",
-                  task.status === 'active' && "bg-yellow-500 text-[var(--text-primary)] animate-pulse",
+                  task.status === 'active' && "bg-yellow-500 text-[var(--text-primary)] motion-safe:animate-pulse",
                   task.status === 'queued' && "bg-[var(--border-color)] text-[var(--text-secondary)] opacity-50"
                 )}
                 title={`${task.name}: ${task.status}`}

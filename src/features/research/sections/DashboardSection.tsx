@@ -126,7 +126,7 @@ function DashboardSectionInner({
             disabled={isRefreshing}
             className={`${buttonSecondary} px-3 py-2 text-xs`}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
             <span>Generate now</span>
           </button>
         </div>
@@ -201,7 +201,7 @@ function DashboardSectionInner({
           className={`${buttonSecondary} px-2 py-1 text-xs`}
           title="Refresh dashboard metrics"
         >
-          <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
           <span>Refresh</span>
         </button>
       </div>

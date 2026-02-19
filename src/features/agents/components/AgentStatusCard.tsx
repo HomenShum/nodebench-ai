@@ -139,7 +139,7 @@ const StatusIndicator = memo(function StatusIndicator({ status }: { status: Agen
   return (
     <div className="flex items-center gap-1.5">
       <span className={cn("agent-dashboard", config.dot)} />
-      {Icon && <Icon className="w-3 h-3 animate-spin" />}
+      {Icon && <Icon className="w-3 h-3 motion-safe:animate-spin" />}
       <span className="text-xs font-medium text-[var(--text-secondary)]">
         {config.label}
       </span>
@@ -209,7 +209,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
         {currentTask && isActive && (
           <div className="mt-3 p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
             <div className="flex items-center gap-1.5 mb-1">
-              <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-primary)]" />
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-[var(--accent-primary)]" />
               <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
                 Current Task
               </span>

@@ -23,7 +23,7 @@ export function SourcesPanel({ activeSources, onToggleSource }: SourcesPanelProp
             >
                 <span>Live Sources</span>
                 <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse" />
                     {isSourcesOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                 </div>
             </button>

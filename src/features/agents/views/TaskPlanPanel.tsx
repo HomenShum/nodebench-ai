@@ -103,7 +103,7 @@ export function TaskPlanPanel({
             ) : hasError ? (
               <AlertCircle className="w-4 h-4 text-red-600" />
             ) : isRunning ? (
-              <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+              <Loader2 className="w-4 h-4 text-blue-600 motion-safe:animate-spin" />
             ) : (
               <Sparkles className="w-4 h-4 text-[var(--text-secondary)]" />
             )}
@@ -118,7 +118,7 @@ export function TaskPlanPanel({
               </span>
             </div>
             {activeStep && isRunning && (
-              <p className="text-xs text-blue-600 mt-0.5 animate-pulse">
+              <p className="text-xs text-blue-600 mt-0.5 motion-safe:animate-pulse">
                 {activeStep.label}...
               </p>
             )}
@@ -204,7 +204,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           {isComplete ? (
             <CheckCircle2 className="w-4 h-4 text-white" />
           ) : isActive ? (
-            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+            <Loader2 className="w-4 h-4 text-blue-600 motion-safe:animate-spin" />
           ) : isError ? (
             <AlertCircle className="w-4 h-4 text-white" />
           ) : (
@@ -272,7 +272,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
                 <div className={cn(
                   "w-2 h-2 rounded-full",
                   substep.status === 'completed' ? "bg-green-500" :
-                  substep.status === 'in_progress' ? "bg-blue-500 animate-pulse" :
+                  substep.status === 'in_progress' ? "bg-blue-500 motion-safe:animate-pulse" :
                   substep.status === 'error' ? "bg-red-500" :
                   "bg-[var(--text-muted)]"
                 )} />

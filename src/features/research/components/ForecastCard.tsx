@@ -323,7 +323,7 @@ export function ForecastCard({
                 className={cn(
                   "w-2 h-2 rounded-full",
                   status === "active"
-                    ? "bg-blue-500 animate-pulse"
+                    ? "bg-blue-500 motion-safe:animate-pulse"
                     : "bg-gray-400"
                 )}
               />

@@ -72,7 +72,7 @@ const QueuePanel = memo(function QueuePanel() {
         <div className="p-2 bg-[var(--bg-secondary)] rounded-lg text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             {activeCount > 0 ? (
-              <Loader2 className="w-3 h-3 animate-spin text-green-500" />
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-green-500" />
             ) : (
               <Zap className="w-3 h-3 text-[var(--text-muted)]" />
             )}
@@ -112,7 +112,7 @@ const QueuePanel = memo(function QueuePanel() {
               key={swarm._id}
               className="flex items-center gap-2 p-2 bg-[var(--bg-secondary)] rounded-lg"
             >
-              <Loader2 className="w-3 h-3 animate-spin text-[var(--accent-primary)] flex-shrink-0" />
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-[var(--accent-primary)] flex-shrink-0" />
               <span className="text-[11px] text-[var(--text-secondary)] truncate flex-1">
                 {swarm.query?.slice(0, 40) || "Running..."}
               </span>

@@ -246,7 +246,7 @@ export default function HITLAnalyticsDashboard() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <Activity className="animate-spin mx-auto text-gray-400 dark:text-gray-400 mb-2" size={32} />
+            <Activity className="motion-safe:animate-spin mx-auto text-gray-400 dark:text-gray-400 mb-2" size={32} />
             <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
           </div>
         )}

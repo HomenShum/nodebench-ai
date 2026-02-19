@@ -108,7 +108,7 @@ const SwarmStatusIcon = memo(function SwarmStatusIcon({
   if (["pending", "spawning", "executing", "gathering", "synthesizing"].includes(status)) {
     return (
       <div className="relative flex items-center">
-        <Loader2 className="w-3 h-3 text-violet-500 animate-spin" />
+        <Loader2 className="w-3 h-3 text-violet-500 motion-safe:animate-spin" />
         <span className="ml-0.5 text-[9px] text-violet-500 font-medium">
           {completedCount}/{agentCount}
         </span>
@@ -401,7 +401,7 @@ export function ThreadTabBar({
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-6 rounded-md bg-[var(--bg-hover)] animate-pulse"
+                className="h-6 rounded-md bg-[var(--bg-hover)] motion-safe:animate-pulse"
                 style={{ width: `${60 + i * 16}px` }}
               />
             ))}

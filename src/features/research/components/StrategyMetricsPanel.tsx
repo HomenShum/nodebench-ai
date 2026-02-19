@@ -70,7 +70,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
           }}
           className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-4 h-4 ${isLoading ? "motion-safe:animate-spin" : ""}`} />
         </button>
       </div>
 

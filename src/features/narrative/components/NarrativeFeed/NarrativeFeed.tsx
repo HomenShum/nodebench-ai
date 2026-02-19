@@ -146,7 +146,7 @@ function LoadingSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="border border-border rounded-lg p-4 animate-pulse"
+          className="border border-border rounded-lg p-4 motion-safe:animate-pulse"
         >
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-muted rounded-full" />
@@ -267,7 +267,7 @@ export function NarrativeFeed({
             aria-label="Refresh feed"
             className="flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
-            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+            <RefreshCw className={cn("w-4 h-4", isLoading && "motion-safe:animate-spin")} />
             Refresh
           </button>
         )}

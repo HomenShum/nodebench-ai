@@ -122,7 +122,7 @@ export function ActionConfirmation({
       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-sm">
         <CheckCircle2 className="w-4 h-4 text-green-600" />
         <span className="text-green-700 dark:text-green-300 font-medium">Approved: {action.title}</span>
-        {isProcessing && <Clock className="w-3.5 h-3.5 text-green-500 animate-spin ml-auto" />}
+        {isProcessing && <Clock className="w-3.5 h-3.5 text-green-500 motion-safe:animate-spin ml-auto" />}
       </div>
     );
   }

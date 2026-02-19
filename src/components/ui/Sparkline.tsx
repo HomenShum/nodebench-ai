@@ -98,7 +98,7 @@ export const Sparkline: React.FC<SparklineProps> = ({
             cy={lastPoint.y}
             r="3"
             fill={lineColor}
-            className="animate-pulse"
+            className="motion-safe:animate-pulse"
           />
           <circle
             cx={lastPoint.x}

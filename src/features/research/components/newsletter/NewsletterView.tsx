@@ -310,7 +310,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
                         >
                             {isGenerating ? (
                                 <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
                                     Generating...
                                 </>
                             ) : (
@@ -355,7 +355,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
 
                 {/* Streaming indicator */}
                 {isStreaming && (
-                    <div className="flex items-center gap-3 mt-8 text-[color:var(--text-secondary)] animate-pulse">
+                    <div className="flex items-center gap-3 mt-8 text-[color:var(--text-secondary)] motion-safe:animate-pulse">
                         <div className="w-2 h-2 bg-blue-500 rounded-full" />
                         <span className="text-sm font-medium">Writing...</span>
                     </div>

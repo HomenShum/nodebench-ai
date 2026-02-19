@@ -30,7 +30,7 @@ export function LiveThinking({
   }
 
   // Determine the most recent activity to show
-  let activeIcon = <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-500" />;
+  let activeIcon = <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin text-purple-500" />;
   let activeText = "Processing...";
   let activeType: 'thinking' | 'tool' | 'source' | 'idle' = 'idle';
 
@@ -46,7 +46,7 @@ export function LiveThinking({
   if (toolCalls.length > 0) {
     const lastTool = toolCalls[toolCalls.length - 1];
     if (lastTool.status === 'running') {
-      activeIcon = <Wrench className="h-3.5 w-3.5 animate-pulse text-orange-500" />;
+      activeIcon = <Wrench className="h-3.5 w-3.5 motion-safe:animate-pulse text-orange-500" />;
       activeText = `Using tool: ${lastTool.toolName}...`;
       activeType = 'tool';
     }
@@ -58,7 +58,7 @@ export function LiveThinking({
     // If we have a very recent thinking step, it might be the most relevant
     // But usually we prefer showing active tools if they are running
     if (activeType !== 'tool') {
-      activeIcon = <Brain className="h-3.5 w-3.5 animate-pulse text-purple-500" />;
+      activeIcon = <Brain className="h-3.5 w-3.5 motion-safe:animate-pulse text-purple-500" />;
       activeText = lastStep.type || "Reasoning...";
       activeType = 'thinking';
     }
@@ -66,7 +66,7 @@ export function LiveThinking({
 
   // If just streaming but no specific data yet
   if (isStreaming && !hasContent) {
-    activeIcon = <Sparkles className="h-3.5 w-3.5 animate-pulse text-purple-500" />;
+    activeIcon = <Sparkles className="h-3.5 w-3.5 motion-safe:animate-pulse text-purple-500" />;
     activeText = "Agent is starting...";
   }
 

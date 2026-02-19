@@ -247,7 +247,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">Watchlist</h3>
           <span className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)]">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 motion-safe:animate-pulse" />
             Live
           </span>
         </div>
@@ -256,7 +256,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
             onClick={handleRefresh}
             className="p-1.5 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
           </button>
           <button className="p-1.5 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors">
             <MoreHorizontal className="w-3.5 h-3.5" />

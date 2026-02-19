@@ -372,7 +372,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
   if (fileDoc === undefined) {
     return (
       <div className="mt-2 border border-[var(--border-color)] rounded-xl p-3 bg-[var(--bg-secondary)]">
-        <div className="animate-pulse h-4 w-28 bg-[var(--bg-primary)] rounded mb-2" />
+        <div className="motion-safe:animate-pulse h-4 w-28 bg-[var(--bg-primary)] rounded mb-2" />
         <div className="space-y-2">
           <div className="h-3 bg-[var(--bg-primary)] rounded" />
           <div className="h-3 bg-[var(--bg-primary)] rounded w-5/6" />
@@ -416,7 +416,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
                   </button>
                 )}
                 <button type="button" onClick={() => { setIsAnalyzing(true); toast.info('AI analysis coming soon!'); setIsAnalyzing(false); }} disabled={isAnalyzing} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-500/25 disabled:opacity-50">
-                  {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {isAnalyzing ? <Loader2 className="w-4 h-4 motion-safe:animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   Analyze All
                 </button>
                 <button type="button" onClick={() => { void handleSaveSubset({ headers: subsetHeaders, rows: subsetRows }); }} className="p-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)] transition-colors" title="Download"><Download className="w-4 h-4" /></button>
@@ -452,7 +452,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-[var(--text-muted)]">
-                <div className="text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" /><p>Loading spreadsheet data...</p></div>
+                <div className="text-center"><Loader2 className="w-8 h-8 motion-safe:animate-spin mx-auto mb-2" /><p>Loading spreadsheet data...</p></div>
               </div>
             )}
           </div>

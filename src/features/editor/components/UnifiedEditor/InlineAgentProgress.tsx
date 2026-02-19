@@ -32,7 +32,7 @@ export function InlineAgentProgress({
     return (
       <div className="inline-agent-progress">
         <div className="flex items-center gap-2 text-sm text-[color:var(--text-primary)]">
-          <Clock className="h-4 w-4 animate-pulse" />
+          <Clock className="h-4 w-4 motion-safe:animate-pulse" />
           <span>🤖 Thinking...</span>
           {onViewInPanel && threadId && (
             <button
@@ -76,7 +76,7 @@ export function InlineAgentProgress({
             <ChevronRight className="h-4 w-4" />
           )}
           <span>🤖 Agent Progress</span>
-          {isStreaming && <Clock className="h-4 w-4 animate-pulse text-blue-600" />}
+          {isStreaming && <Clock className="h-4 w-4 motion-safe:animate-pulse text-blue-600" />}
         </button>
 
         {onViewInPanel && threadId && (
@@ -119,7 +119,7 @@ export function InlineAgentProgress({
                   statusIcon = <XCircle className="h-3 w-3" />;
                   statusColor = 'text-red-600';
                 } else {
-                  statusIcon = <Clock className="h-3 w-3 animate-pulse" />;
+                  statusIcon = <Clock className="h-3 w-3 motion-safe:animate-pulse" />;
                   statusColor = 'text-blue-600';
                 }
 

@@ -60,7 +60,7 @@ const statusColors = {
 
 const statusIcons = {
   scheduled: <Loader2 className="w-3 h-3 text-[var(--text-muted)]" />,
-  running: <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />,
+  running: <Loader2 className="w-3 h-3 text-blue-400 motion-safe:animate-spin" />,
   completed: <CheckCircle2 className="w-3 h-3 text-indigo-400" />,
   failed: <AlertCircle className="w-3 h-3 text-red-400" />,
   cancelled: <AlertCircle className="w-3 h-3 text-yellow-400" />,
@@ -98,7 +98,7 @@ function LaneCard({ delegation }: LaneCardProps) {
         `}>
           {agentIcons[delegation.agentName] || <Bot className="w-4 h-4" />}
           {isActive && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full motion-safe:animate-pulse" />
           )}
         </div>
 
@@ -147,12 +147,12 @@ function LaneCard({ delegation }: LaneCardProps) {
           <p className="text-xs text-white/70 font-mono leading-relaxed whitespace-pre-wrap">
             {truncatedText}
             {isStreaming && (
-              <span className="inline-block w-1.5 h-4 bg-blue-400 ml-0.5 animate-pulse" />
+              <span className="inline-block w-1.5 h-4 bg-blue-400 ml-0.5 motion-safe:animate-pulse" />
             )}
           </p>
         ) : isActive ? (
           <div className="flex items-center gap-2 text-white/40 text-xs">
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
             <span>Initializing...</span>
           </div>
         ) : delegation.status === "failed" ? (
@@ -200,7 +200,7 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
           <span className="text-sm font-semibold text-white">Parallel Agents</span>
           {hasActiveDelegations && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/30">
-              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full motion-safe:animate-pulse" />
               <span className="text-[10px] font-medium text-blue-300">LIVE</span>
             </span>
           )}
@@ -213,7 +213,7 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
       {/* Loading State */}
       {isLoading && delegations.length === 0 && (
         <div className="flex items-center justify-center py-8 text-white/40">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          <Loader2 className="w-5 h-5 motion-safe:animate-spin mr-2" />
           <span className="text-sm">Loading agent lanes...</span>
         </div>
       )}

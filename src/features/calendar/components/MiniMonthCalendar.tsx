@@ -754,7 +754,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       </span>
                       {/* Email proposed events (pulsing orange dot) */}
                       <span className="relative inline-flex items-center" title="Proposed email events needing confirmation">
-                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${m.emailProposed > 0 ? "bg-orange-500 animate-pulse" : "opacity-0"}`} />
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${m.emailProposed > 0 ? "bg-orange-500 motion-safe:animate-pulse" : "opacity-0"}`} />
                         <span className={`ml-0.5 text-[8px] leading-none font-semibold w-3 text-center ${m.emailProposed > 0 ? "text-orange-600" : "text-[var(--text-muted)]"}`}>{m.emailProposed > 0 ? fmtSmall(m.emailProposed) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">

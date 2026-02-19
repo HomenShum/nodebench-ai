@@ -16,7 +16,7 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
   if (publicDocuments === undefined) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--text-primary)]"></div>
+        <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--text-primary)]"></div>
       </div>
     );
   }

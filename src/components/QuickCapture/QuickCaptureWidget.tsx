@@ -154,7 +154,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                 <div className="flex flex-col items-center gap-3 py-4">
                   {isRecording ? (
                     <>
-                      <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center animate-pulse">
+                      <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center motion-safe:animate-pulse">
                         <Mic className="h-8 w-8 text-red-600" />
                       </div>
                       <span className="text-lg font-mono">{formatDuration(duration)}</span>

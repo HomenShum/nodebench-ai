@@ -29,7 +29,7 @@ import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/feature
 import type { ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { cn } from "@/lib/utils";
 
-// Loading fallback for lazy-loaded sections - static skeleton (no animate-pulse to avoid frame drops)
+// Loading fallback for lazy-loaded sections - static skeleton (no motion-safe:animate-pulse to avoid frame drops)
 const SectionLoading = () => (
   <div className="py-6 space-y-4 opacity-40">
     <div className="flex items-center gap-3">
@@ -525,7 +525,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             </div>
 
             <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-              <div className="w-2 h-2 rounded-full bg-gray-700 dark:bg-gray-400 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-gray-700 dark:bg-gray-400 motion-safe:animate-pulse" />
               <span>Secure Feed</span>
             </div>
             <div className="hidden sm:block w-[1px] h-6 bg-gray-200 dark:bg-white/[0.06]" />
@@ -627,7 +627,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                           <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-medium border border-amber-900/10 dark:border-amber-500/20 rounded">Past</span>
                         )}
                       </div>
-                      <div className={cn('w-1.5 h-1.5 rounded-full animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-indigo-600')} />
+                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-indigo-600')} />
                     </div>
                     <DigestSection
                       onItemClick={handleDigestItemClick}

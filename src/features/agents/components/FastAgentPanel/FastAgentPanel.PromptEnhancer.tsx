@@ -218,7 +218,7 @@ export function PromptEnhancer({
         title="Enhance prompt with context (Ctrl+P)"
       >
         {isEnhancing ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
         ) : (
           <Sparkles className="h-3.5 w-3.5" />
         )}
@@ -486,7 +486,7 @@ export function InlineEnhancer({
       title="Enhance prompt with context (Ctrl+P)"
     >
       {isEnhancing ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
       ) : (
         <Sparkles className="h-4 w-4" />
       )}

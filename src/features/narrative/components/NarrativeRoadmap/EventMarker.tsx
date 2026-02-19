@@ -89,7 +89,7 @@ export function EventMarker({
           ring-2 ${colors.ring}
           cursor-pointer transition-transform
           hover:scale-125 focus:outline-none focus:ring-offset-1
-          ${isPlotTwist ? "animate-pulse" : ""}
+          ${isPlotTwist ? "motion-safe:animate-pulse" : ""}
         `}
         whileHover={{ scale: 1.2 }}
         whileTap={{ scale: 0.9 }}

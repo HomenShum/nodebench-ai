@@ -694,7 +694,7 @@ useEffect(() => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-2 text-[var(--text-muted)]">
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <Loader2 className="h-5 w-5 motion-safe:animate-spin" />
           Loading spreadsheet...
         </div>
       </div>
@@ -710,7 +710,7 @@ useEffect(() => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="h-8 w-8 text-[var(--accent-primary)] animate-spin" />
+          <RefreshCw className="h-8 w-8 text-[var(--accent-primary)] motion-safe:animate-spin" />
 
 
           <div className="text-center">
@@ -836,7 +836,7 @@ useEffect(() => {
                   title="Analyze with AI and add to Quick notes"
                   aria-label="Analyze file with AI"
                 >
-                  {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {isAnalyzing ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 </button>
                 {showPromptPopover && (
                   <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3" role="dialog" aria-label="Analysis prompt">
@@ -872,11 +872,11 @@ useEffect(() => {
               )}
 
               <button type="button" onClick={() => void handleSaveChanges()} disabled={isSaving || isMini} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title={isMini ? "Editing disabled in mini view" : "Save changes"} aria-label="Save changes">
-                {isSaving ? (<Loader2 className="h-4 w-4 animate-spin" />) : (<Save className="h-4 w-4" />)}
+                {isSaving ? (<Loader2 className="h-4 w-4 motion-safe:animate-spin" />) : (<Save className="h-4 w-4" />)}
               </button>
 
               <button type="button" onClick={() => void handleExportCsv()} disabled={isExporting} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title="Export CSV" aria-label="Export CSV">
-                {isExporting ? (<Loader2 className="h-4 w-4 animate-spin" />) : (<FileDown className="h-4 w-4" />)}
+                {isExporting ? (<Loader2 className="h-4 w-4 motion-safe:animate-spin" />) : (<FileDown className="h-4 w-4" />)}
               </button>
             </div>
             </div>

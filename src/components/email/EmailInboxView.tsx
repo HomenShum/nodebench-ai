@@ -144,7 +144,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
         {isLoading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="p-4 bg-gray-800/50 rounded-lg animate-pulse">
+              <div key={i} className="p-4 bg-gray-800/50 rounded-lg motion-safe:animate-pulse">
                 <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
                 <div className="h-3 bg-gray-700 rounded w-1/2" />
               </div>

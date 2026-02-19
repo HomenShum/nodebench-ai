@@ -512,18 +512,18 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
 export const EntityHoverPreviewSkeleton: React.FC = () => (
   <div className="w-80 p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl">
     <div className="flex items-start gap-3 mb-3">
-      <div className="w-10 h-10 rounded-lg bg-[color:var(--bg-secondary)] animate-pulse" />
+      <div className="w-10 h-10 rounded-lg bg-[color:var(--bg-secondary)] motion-safe:animate-pulse" />
       <div className="flex-1">
-        <div className="h-4 w-24 bg-[color:var(--bg-secondary)] rounded animate-pulse mb-1.5" />
-        <div className="h-3 w-16 bg-[color:var(--bg-secondary)] rounded animate-pulse" />
+        <div className="h-4 w-24 bg-[color:var(--bg-secondary)] rounded motion-safe:animate-pulse mb-1.5" />
+        <div className="h-3 w-16 bg-[color:var(--bg-secondary)] rounded motion-safe:animate-pulse" />
       </div>
     </div>
     <div className="space-y-2 mb-3">
-      <div className="h-3 bg-[color:var(--bg-secondary)] rounded animate-pulse" />
-      <div className="h-3 bg-[color:var(--bg-secondary)] rounded animate-pulse w-4/5" />
+      <div className="h-3 bg-[color:var(--bg-secondary)] rounded motion-safe:animate-pulse" />
+      <div className="h-3 bg-[color:var(--bg-secondary)] rounded motion-safe:animate-pulse w-4/5" />
     </div>
     <div className="flex items-center gap-2">
-      <Loader2 className="w-4 h-4 text-[color:var(--text-secondary)] animate-spin" />
+      <Loader2 className="w-4 h-4 text-[color:var(--text-secondary)] motion-safe:animate-spin" />
       <span className="text-xs text-[color:var(--text-secondary)]">Loading enrichment...</span>
     </div>
   </div>

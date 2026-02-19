@@ -620,7 +620,7 @@ function LiveDossierDocumentInner({
                                 {editionLabel}
                             </span>
                             {isStreaming && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wider motion-safe:animate-pulse">
                                     <span className="w-1.5 h-1.5 bg-white rounded-full" />
                                     Live
                                 </span>
@@ -720,7 +720,7 @@ function LiveDossierDocumentInner({
 
                     {/* Streaming cursor */}
                     {isStreaming && (
-                        <span className="inline-block w-2.5 h-6 bg-purple-500 ml-1 animate-pulse align-middle rounded-sm"></span>
+                        <span className="inline-block w-2.5 h-6 bg-purple-500 ml-1 motion-safe:animate-pulse align-middle rounded-sm"></span>
                     )}
                 </article>
 
@@ -809,9 +809,9 @@ function LiveDossierDocumentInner({
                             className={`group flex items-center gap-3 px-8 py-4 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full font-semibold text-base shadow-xl hover:bg-gray-800 dark:hover:bg-white hover:scale-105 transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
                         >
                             {isAppending ? (
-                                <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                                <Loader2 className="w-5 h-5 motion-safe:animate-spin text-purple-400" />
                             ) : (
-                                <Sparkles className="w-5 h-5 text-purple-400 group-hover:animate-pulse" />
+                                <Sparkles className="w-5 h-5 text-purple-400 group-hover:motion-safe:animate-pulse" />
                             )}
                             <span className="tracking-wide">
                                 {isAppending ? 'Synthesizing Report...' : 'Synthesize Final Report'}
@@ -1122,7 +1122,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
     const statusIcons = {
         pending: <Loader2 className="w-3 h-3 text-[color:var(--text-secondary)]" />,
-        running: <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />,
+        running: <Loader2 className="w-3 h-3 text-blue-400 motion-safe:animate-spin" />,
         complete: <CheckCircle2 className="w-3 h-3 text-indigo-400" />,
         error: <AlertCircle className="w-3 h-3 text-red-400" />,
     };
@@ -1240,7 +1240,7 @@ function LiveAgentTicker({
                                 ))
                             ) : (
                                 <div className="flex items-center gap-1.5 text-white/40 text-xs">
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
                                     <span>Initializing...</span>
                                 </div>
                             )}

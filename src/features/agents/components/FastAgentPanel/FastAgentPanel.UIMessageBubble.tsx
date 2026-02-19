@@ -159,7 +159,7 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
     <div ref={containerRef} className="relative min-h-[100px]">
       {/* Show placeholder until visible */}
       {!isVisible && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded animate-pulse">
+        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded motion-safe:animate-pulse">
           <div className="w-8 h-8 rounded-lg bg-[var(--bg-hover)]" />
         </div>
       )}
@@ -168,7 +168,7 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
         <>
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded">
-              <Loader2 className="h-6 w-6 animate-spin text-[var(--text-muted)]" />
+              <Loader2 className="h-6 w-6 motion-safe:animate-spin text-[var(--text-muted)]" />
             </div>
           )}
           <img
@@ -444,14 +444,14 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
 
       {/* Render YouTube gallery (lazy-loaded) */}
       {youtubeVideos.length > 0 && (
-        <Suspense fallback={<div className="animate-pulse h-32 bg-[var(--bg-secondary)] rounded-lg" />}>
+        <Suspense fallback={<div className="motion-safe:animate-pulse h-32 bg-[var(--bg-secondary)] rounded-lg" />}>
           <YouTubeGallery videos={youtubeVideos} />
         </Suspense>
       )}
 
       {/* Render FileViewer for SEC documents (lazy-loaded) */}
       {fileViewerFiles.length > 0 && (
-        <Suspense fallback={<div className="animate-pulse h-24 bg-[var(--bg-secondary)] rounded-lg" />}>
+        <Suspense fallback={<div className="motion-safe:animate-pulse h-24 bg-[var(--bg-secondary)] rounded-lg" />}>
           <FileViewer files={fileViewerFiles} />
         </Suspense>
       )}
@@ -581,7 +581,7 @@ const FileTextPreview = React.memo(function FileTextPreview({ fileUrl, fileName 
         <div className="bg-[var(--bg-secondary)] p-4">
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
               <span>Loading file content...</span>
             </div>
           ) : error ? (
@@ -657,12 +657,12 @@ const ToolStepsAccordion = React.memo(function ToolStepsAccordion({
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
         <Wrench className={cn(
           "w-3.5 h-3.5",
-          isStreaming ? "text-violet-500 animate-pulse" : "text-[var(--text-muted)]"
+          isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
         )} />
         <span>{label}</span>
         <span className="ml-auto flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-normal">
           {isStreaming ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           ) : allDone ? (
             <CheckCircle2 className="w-3 h-3 text-green-500" />
           ) : null}
@@ -725,12 +725,12 @@ const ThinkingAccordion = React.memo(function ThinkingAccordion({
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
         <BrainCircuit className={cn(
           "w-3.5 h-3.5",
-          isStreaming ? "text-purple-500 animate-pulse" : "text-[var(--text-muted)]"
+          isStreaming ? "text-purple-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
         )} />
         <span>{isStreaming ? 'Thinking...' : 'Thought process'}</span>
         <span className="ml-auto flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-normal">
           {isStreaming ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           ) : (
             <span className="tabular-nums">{wordCount} words</span>
           )}
@@ -1374,7 +1374,7 @@ function ToolStep({
           {/* Status circle on the line */}
           <div className={cn(
             "absolute left-1 top-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-[var(--bg-primary)] z-10",
-            isActive && "border-violet-500 animate-pulse",
+            isActive && "border-violet-500 motion-safe:animate-pulse",
             isComplete && "border-green-500 bg-green-500",
             isError && "border-red-500 bg-red-500"
           )}>
@@ -1406,7 +1406,7 @@ function ToolStep({
           <div className="flex-1 text-left flex items-center gap-2">
             <span className="text-xs font-semibold text-[var(--text-primary)] font-mono">{toolName}</span>
             {isComplete && <span className="text-[10px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">Done</span>}
-            {isActive && <Loader2 className="w-3 h-3 text-violet-500 animate-spin" />}
+            {isActive && <Loader2 className="w-3 h-3 text-violet-500 motion-safe:animate-spin" />}
           </div>
 
           {/* Expand/Collapse */}
@@ -2474,7 +2474,7 @@ export function FastAgentUIMessageBubble({
                   ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-[var(--text-primary)] rounded-br-none"
                   : "bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-br-none shadow-md"
                 : "bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-bl-none shadow-sm dark:bg-[var(--bg-secondary)]",
-              message.status === 'streaming' && 'animate-pulse-subtle',
+              message.status === 'streaming' && 'motion-safe:animate-pulse-subtle',
               message.status === 'failed' && "bg-red-50/80 border-red-200 dark:bg-red-900/20 dark:border-red-800"
             )}
           >
@@ -2560,7 +2560,7 @@ export function FastAgentUIMessageBubble({
                         const mermaidCode = String(children).replace(/\n$/, '');
                         const isStreaming = message.status === 'streaming';
                         return (
-                          <Suspense fallback={<div className="animate-pulse h-40 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center text-sm text-[var(--text-muted)]">Loading diagram...</div>}>
+                          <Suspense fallback={<div className="motion-safe:animate-pulse h-40 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center text-sm text-[var(--text-muted)]">Loading diagram...</div>}>
                             <MermaidDiagram
                               code={mermaidCode}
                               onRetryRequest={onMermaidRetry}
@@ -2973,7 +2973,7 @@ export function FastAgentUIMessageBubble({
         <div className="flex items-center gap-2 mt-1">
           {message.status === 'streaming' && (
             <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
-              <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="inline-block w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse"></span>
               <span>Streaming...</span>
               {streamTokPerSec > 0 && (
                 <span className="tabular-nums text-[10px] text-[var(--text-muted)]">
@@ -3117,7 +3117,7 @@ export function FastAgentUIMessageBubble({
                   className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:text-[var(--text-muted)] flex items-center gap-1"
                   title="Regenerate response"
                 >
-                  <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'motion-safe:animate-spin' : ''}`} />
                 </button>
               )}
 

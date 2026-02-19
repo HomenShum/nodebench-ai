@@ -162,7 +162,7 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
     case "reasoning.start":
       return <Brain className="w-3.5 h-3.5 text-cyan-400" />;
     case "reasoning.thinking":
-      return <Brain className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />;
+      return <Brain className="w-3.5 h-3.5 text-cyan-500 motion-safe:animate-pulse" />;
     case "reasoning.complete":
       return <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />;
     // TRACE events

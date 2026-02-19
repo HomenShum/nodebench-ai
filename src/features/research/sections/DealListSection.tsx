@@ -138,7 +138,7 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
           }}
           className="flex items-center gap-1 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
         >
-          <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
           Refresh
         </button>
       </div>

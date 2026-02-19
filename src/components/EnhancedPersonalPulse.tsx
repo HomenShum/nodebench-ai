@@ -53,7 +53,7 @@ export function EnhancedPersonalPulse({
             <h2 className="text-lg font-semibold text-gray-900">Personal Pulse</h2>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-green-500 motion-safe:animate-pulse" />
             <span>{timeContext.timeOfDay === 'morning' ? 'Morning Mode' : timeContext.timeOfDay === 'afternoon' ? 'Focus Mode' : 'Wind Down'}</span>
           </div>
         </div>

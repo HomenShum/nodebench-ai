@@ -189,7 +189,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
       <div className="flex-1 overflow-y-auto p-3">
         {!edits ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
+            <Loader2 className="w-5 h-5 text-[var(--text-muted)] motion-safe:animate-spin" />
           </div>
         ) : filteredEdits?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

@@ -434,7 +434,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
         {/* Status icon */}
         <div className={`mt-0.5 ${statusConfig.color}`}>
           {node.status === "running" ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
           ) : (
             <statusConfig.icon className="w-4 h-4" />
           )}

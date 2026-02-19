@@ -4407,7 +4407,7 @@ export function DocumentsHomeHub({
                   aria-live="polite"
                   aria-atomic="true"
                 >
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
 
                   <span className="truncate">
                     {uploadProgress || "Uploading..."}
@@ -5491,7 +5491,7 @@ export function DocumentsHomeHub({
                         aria-live="polite"
                         aria-atomic="true"
                       >
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
 
                         <span className="truncate">
                           {uploadProgress || "Uploading..."}

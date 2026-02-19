@@ -54,7 +54,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
         config.bg
       )}>
         {isRunning ? (
-          <Loader2 className={cn("w-3 h-3 animate-spin", config.color)} />
+          <Loader2 className={cn("w-3 h-3 motion-safe:animate-spin", config.color)} />
         ) : (
           <Icon className={cn("w-3 h-3", config.color)} />
         )}
@@ -73,7 +73,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
             </span>
           )}
           {isRunning && (
-            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 motion-safe:animate-pulse" />
           )}
         </div>
         <p className="text-xs text-[var(--text-primary)] truncate">
@@ -147,7 +147,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
           <div className="flex items-center gap-2">
             <Activity className={cn(
               "w-4 h-4",
-              isStreaming ? "text-violet-500 animate-pulse" : "text-[var(--text-muted)]"
+              isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
             )} />
             <div>
               <div className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
@@ -229,7 +229,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
             )}>
               <Activity className={cn(
                 "w-5 h-5",
-                isStreaming ? "text-violet-500 animate-pulse" : "text-[var(--text-muted)]"
+                isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
               )} />
             </div>
             <p className="text-sm font-medium text-[var(--text-primary)] mb-1">

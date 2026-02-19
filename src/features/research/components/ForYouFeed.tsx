@@ -82,7 +82,7 @@ export function ForYouFeed() {
   if (!displayFeed) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="space-y-4 animate-pulse">
+        <div className="space-y-4 motion-safe:animate-pulse">
           {/* Header skeleton */}
           <div className="flex items-center justify-between mb-6">
             <div className="space-y-2">

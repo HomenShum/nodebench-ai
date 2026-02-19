@@ -249,7 +249,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
   if (task === undefined) {
     return (
       <div className="mt-2 border border-[var(--border-color)] rounded-xl p-4 bg-[var(--bg-secondary)]">
-        <div className="animate-pulse h-5 w-36 bg-[var(--bg-primary)] rounded mb-3" />
+        <div className="motion-safe:animate-pulse h-5 w-36 bg-[var(--bg-primary)] rounded mb-3" />
         <div className="space-y-2">
           <div className="h-4 bg-[var(--bg-primary)] rounded" />
           <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />

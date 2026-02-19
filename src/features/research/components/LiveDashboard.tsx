@@ -123,7 +123,7 @@ export const LiveDashboard: React.FC<{
             className={`${buttonSecondary} px-2 py-1 text-xs`}
             title="Refresh dashboard metrics"
           >
-            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
             <span>Refresh</span>
           </button>
         </div>
@@ -164,7 +164,7 @@ export const LiveDashboard: React.FC<{
         <div className="sticky top-4 z-10 rounded-xl border border-gray-200 bg-white shadow-sm p-3">
           <div className="flex items-center justify-center h-[400px] text-gray-400">
             <div className="flex flex-col items-center gap-2">
-              <RefreshCw className="w-6 h-6 animate-spin" />
+              <RefreshCw className="w-6 h-6 motion-safe:animate-spin" />
               <span className="text-sm">Loading dashboard...</span>
             </div>
           </div>
@@ -186,7 +186,7 @@ export const LiveDashboard: React.FC<{
               className={`${buttonSecondary} px-2 py-1 text-xs`}
               title="Generate fresh metrics"
             >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
               <span>Generate</span>
             </button>
           </div>
@@ -211,7 +211,7 @@ export const LiveDashboard: React.FC<{
                 disabled={isRefreshing}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition-colors mx-auto"
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
                 <span>{isRefreshing ? 'Generating...' : 'Generate Now'}</span>
               </button>
             </div>
@@ -292,7 +292,7 @@ export const LiveDashboard: React.FC<{
           className={`${buttonSecondary} px-2 py-1 text-xs`}
           title="Refresh dashboard metrics"
         >
-          <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>

@@ -408,7 +408,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
         </div>
         {activeStep && (
           <div className="flex items-center gap-2">
-            <Loader2 className="w-3 h-3 text-gray-700 dark:text-gray-300 animate-spin" />
+            <Loader2 className="w-3 h-3 text-gray-700 dark:text-gray-300 motion-safe:animate-spin" />
             <span className="text-[9px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Live</span>
           </div>
         )}

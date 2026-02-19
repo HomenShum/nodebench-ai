@@ -39,7 +39,7 @@ const statusConfig: Record<TaskSessionStatus, { icon: React.ReactNode; color: st
     label: 'Pending'
   },
   running: { 
-    icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />, 
+    icon: <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />, 
     color: 'text-blue-500',
     bgColor: 'bg-blue-100 dark:bg-blue-900/30',
     label: 'Running' 

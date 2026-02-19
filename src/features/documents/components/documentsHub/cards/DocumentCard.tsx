@@ -60,7 +60,7 @@ const AI_STATUS_CONFIG = {
     label: 'AI Indexed',
   },
   processing: {
-    dot: 'bg-amber-500 animate-pulse',
+    dot: 'bg-amber-500 motion-safe:animate-pulse',
     bg: 'bg-amber-50',
     border: 'border-amber-200',
     text: 'text-amber-700',
@@ -634,7 +634,7 @@ export function DocumentCard({
               </div>
             ) : aiStatus === 'processing' ? (
               <div className="flex items-center gap-1.5 opacity-70" title="Processing...">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 motion-safe:animate-pulse" />
                 <Clock className="w-3 h-3 text-amber-500" />
               </div>
             ) : (

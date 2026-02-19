@@ -463,7 +463,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
     return (
       <div ref={containerRef} className="h-full w-full relative min-h-0">
         <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
+          <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
         </div>
       </div>
     );
@@ -637,7 +637,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                   )}
                   {isSelected && isFullscreen && (
                     <div className="absolute top-2 right-2 z-10">
-                      <div className="w-3 h-3 bg-[var(--accent-primary)] rounded-full shadow-sm animate-pulse" />
+                      <div className="w-3 h-3 bg-[var(--accent-primary)] rounded-full shadow-sm motion-safe:animate-pulse" />
                     </div>
                   )}
                 </div>

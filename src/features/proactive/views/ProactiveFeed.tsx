@@ -76,7 +76,7 @@ export function ProactiveFeed() {
   if (!opportunities || !usage || !summary) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }

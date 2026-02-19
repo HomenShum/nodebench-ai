@@ -30,7 +30,7 @@ function LastEditorDisplay({ userId }: { userId: string }) {
   if (!user) {
     return (
       <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic inline-flex items-center gap-1">
-        by <span className="inline-block w-16 h-2.5 bg-[var(--bg-hover)] rounded animate-pulse" />
+        by <span className="inline-block w-16 h-2.5 bg-[var(--bg-hover)] rounded motion-safe:animate-pulse" />
       </span>
     );
   }
@@ -407,7 +407,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
           <div className="flex flex-wrap gap-1 items-center min-h-[24px] w-full sm:w-auto">
             {tags === undefined ? (
               <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading tags...
+                <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" /> Loading tags...
               </span>
             ) : (
               <>
@@ -533,7 +533,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               title={canGenerateTags ? 'Generate tags with AI' : 'Only the document owner can generate tags'}
             >
               {isGenerating ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />
               )}

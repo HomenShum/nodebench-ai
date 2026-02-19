@@ -160,8 +160,8 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   if (document === undefined || fileDoc === undefined) {
     return (
       <div className="space-y-2">
-        <div className="animate-pulse h-4 w-24 bg-[var(--bg-primary)] rounded" />
-        <div className="animate-pulse h-8 w-full bg-[var(--bg-primary)] rounded" />
+        <div className="motion-safe:animate-pulse h-4 w-24 bg-[var(--bg-primary)] rounded" />
+        <div className="motion-safe:animate-pulse h-8 w-full bg-[var(--bg-primary)] rounded" />
       </div>
     );
   }

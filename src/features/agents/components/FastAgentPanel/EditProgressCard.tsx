@@ -99,7 +99,7 @@ export function EditProgressCard({ edit, onRetry, onCancel, className }: EditPro
           className={cn(
             "h-4 w-4",
             config.color,
-            config.animate && "animate-spin"
+            config.animate && "motion-safe:animate-spin"
           )}
         />
       </div>
@@ -200,7 +200,7 @@ export function EditProgressPanel({ edits, onRetry, onCancelAll, className }: Ed
         <div className="flex items-center gap-2 text-xs">
           {pending.length > 0 && (
             <span className="flex items-center gap-1 text-blue-600">
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
               {pending.length}
             </span>
           )}

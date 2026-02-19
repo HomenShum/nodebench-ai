@@ -158,7 +158,7 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
             'border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]',
           )}
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+          {loading ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" /> : <ExternalLink className="h-4 w-4" />}
           Retrieve excerpts
         </button>
         {error && <span className="text-xs text-red-600">{error}</span>}

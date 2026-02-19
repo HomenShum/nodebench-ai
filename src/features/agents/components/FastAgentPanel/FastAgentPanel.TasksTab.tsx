@@ -196,7 +196,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
             disabled={isCreating || !newTaskTitle.trim()}
             className="px-3 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
           >
-            {isCreating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+            {isCreating ? <Loader2 className="w-3 h-3 motion-safe:animate-spin" /> : <Plus className="w-3 h-3" />}
             Add
           </button>
         </form>
@@ -226,7 +226,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
       <div className="flex-1 overflow-y-auto p-3">
         {!tasks ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
+            <Loader2 className="w-5 h-5 text-[var(--text-muted)] motion-safe:animate-spin" />
           </div>
         ) : filteredTasks?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">

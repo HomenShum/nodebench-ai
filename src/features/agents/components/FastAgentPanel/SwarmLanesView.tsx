@@ -94,7 +94,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
             <span className="text-[10px] text-[var(--text-muted)]">Pending</span>
           )}
           {isRunning && (
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           )}
           {isCompleted && (
             <CheckCircle className="w-3.5 h-3.5 text-green-500" />
@@ -109,7 +109,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
       {(isRunning || isCompleted) && previewText && (
         <div className="text-[10px] text-[var(--text-secondary)] line-clamp-2 min-h-[2em]">
           {isRunning && isStreaming && (
-            <span className="inline-block w-1.5 h-3 bg-current animate-pulse mr-0.5" />
+            <span className="inline-block w-1.5 h-3 bg-current motion-safe:animate-pulse mr-0.5" />
           )}
           {previewText}
         </div>
@@ -180,7 +180,7 @@ const SynthesisLane = memo(function SynthesisLane({
         <div className="flex items-center gap-1">
           {(isSynthesizing || isGathering) && (
             <>
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
               <span className="text-[10px]">
                 {isGathering ? "Gathering..." : "Synthesizing..."}
               </span>

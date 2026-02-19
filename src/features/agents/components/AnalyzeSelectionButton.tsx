@@ -96,7 +96,7 @@ export function AnalyzeSelectionButton({
 
   // Determine button content
   const renderIcon = () => {
-    if (isLoading) return <Loader2 className={`${iconSizes[size]} animate-spin`} />;
+    if (isLoading) return <Loader2 className={`${iconSizes[size]} motion-safe:animate-spin`} />;
     if (isSuccess) return <Check className={iconSizes[size]} />;
     return <Sparkles className={iconSizes[size]} />;
   };

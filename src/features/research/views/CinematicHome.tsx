@@ -95,14 +95,14 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                 >
                     <div className="w-44 h-44 md:w-56 md:h-56 relative flex items-center justify-center">
                         {/* Rotating outer rings — reduced from 4 to 2 for lower motion budget */}
-                        <div className={`absolute inset-0 will-change-transform ${reduceMotion ? '' : 'animate-spin-slow'}`}>
+                        <div className={`absolute inset-0 will-change-transform ${reduceMotion ? '' : 'motion-safe:animate-spin-slow'}`}>
                             <div className="absolute inset-0 rounded-full border border-gray-300/80 dark:border-white/[0.1] scale-100" />
                             <div className="absolute inset-0 rounded-full border border-indigo-300/30 dark:border-indigo-500/[0.1] scale-[1.3]" />
                         </div>
                         {/* Glow halo */}
                         <div className="absolute inset-0 rounded-full bg-indigo-200/20 dark:bg-indigo-500/[0.08] blur-2xl scale-[1.3]" />
                         {/* Pulsing core */}
-                        <div className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-white dark:bg-[#1a1a1f] shadow-[0_0_80px_rgba(99,102,241,0.15)] dark:shadow-[0_0_80px_rgba(99,102,241,0.12)] border border-gray-200/80 dark:border-white/[0.08] overflow-hidden ${reduceMotion ? '' : 'animate-pulse-subtle'}`}>
+                        <div className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-white dark:bg-[#1a1a1f] shadow-[0_0_80px_rgba(99,102,241,0.15)] dark:shadow-[0_0_80px_rgba(99,102,241,0.12)] border border-gray-200/80 dark:border-white/[0.08] overflow-hidden ${reduceMotion ? '' : 'motion-safe:animate-pulse-subtle'}`}>
                             <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/60 via-white to-violet-100/40 dark:from-indigo-500/[0.12] dark:via-transparent dark:to-violet-500/[0.08] rounded-full" />
                             {/* Inner dot — brand mark */}
                             <div className="absolute inset-0 flex items-center justify-center">

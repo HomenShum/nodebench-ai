@@ -55,7 +55,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-gray-900 animate-pulse">
+      <div className="flex flex-col h-full bg-gray-900 motion-safe:animate-pulse">
         <div className="p-4 border-b border-gray-700">
           <div className="h-8 bg-gray-700 rounded w-1/3" />
         </div>

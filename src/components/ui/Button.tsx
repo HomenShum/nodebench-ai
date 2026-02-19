@@ -77,7 +77,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading ? (
-          <Loader2 className={cn('animate-spin', size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
+          <Loader2 className={cn('motion-safe:animate-spin', size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
         ) : (
           icon && iconPosition === 'left' && icon
         )}
@@ -143,7 +143,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         {...props}
       >
         {loading ? (
-          <Loader2 className={cn('animate-spin', size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
+          <Loader2 className={cn('motion-safe:animate-spin', size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
         ) : (
           children
         )}

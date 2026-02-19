@@ -169,7 +169,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
           {/* Status dot */}
           <div className={cn(
             "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-gray-900 z-10",
-            event.status === 'running' && "border-violet-500 animate-pulse",
+            event.status === 'running' && "border-violet-500 motion-safe:animate-pulse",
             event.status === 'success' && "border-green-500",
             event.status === 'error' && "border-red-500",
             event.status === 'pending' && "border-[var(--text-muted)]"
@@ -196,7 +196,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
             styles.icon
           )}>
             {event.status === 'running' ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
             ) : event.status === 'success' ? (
               <CheckCircle2 className="w-3.5 h-3.5" />
             ) : event.status === 'error' ? (

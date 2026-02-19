@@ -460,7 +460,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                                 {message.content}
                               </ReactMarkdown>
                               {message.isProcessing && (
-                                <Loader2 className="h-4 w-4 animate-spin my-2" />
+                                <Loader2 className="h-4 w-4 motion-safe:animate-spin my-2" />
                               )}
                               {message.documentCreated && (
                                 <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center gap-2">

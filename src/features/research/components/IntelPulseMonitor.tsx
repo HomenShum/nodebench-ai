@@ -37,7 +37,7 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-3"
                     >
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
                         <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                             {res.taskName || 'Analysis Event'}
                         </span>

@@ -135,7 +135,7 @@ const RequestCard = memo(function RequestCard({
       <div className="p-3">
         {isProcessing ? (
           <div className="flex items-center justify-center gap-2 py-2 text-xs text-[var(--text-muted)]">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
             <span>Processing...</span>
           </div>
         ) : request.options && request.options.length > 0 ? (
@@ -326,7 +326,7 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
   if (pendingRequests === undefined) {
     return (
       <div className={cn("p-4 text-center text-xs text-[var(--text-muted)]", className)}>
-        <Loader2 className="w-4 h-4 animate-spin mx-auto mb-2" />
+        <Loader2 className="w-4 h-4 motion-safe:animate-spin mx-auto mb-2" />
         Loading requests...
       </div>
     );

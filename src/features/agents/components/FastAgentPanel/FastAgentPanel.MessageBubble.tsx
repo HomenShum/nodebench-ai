@@ -157,7 +157,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                 {displayText}
               </ReactMarkdown>
               {isStreaming && (
-                <span className="inline-block w-0.5 h-[1em] bg-current ml-0.5 align-middle animate-pulse" />
+                <span className="inline-block w-0.5 h-[1em] bg-current ml-0.5 align-middle motion-safe:animate-pulse" />
               )}
             </>
           ) : typeof message.content === 'object' ? (

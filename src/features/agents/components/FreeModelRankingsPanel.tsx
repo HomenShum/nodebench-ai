@@ -284,7 +284,7 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
         <div className="px-4 pb-4 border-t border-[var(--border-color)] pt-4">
           {models === undefined ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-[var(--text-muted)]" />
+              <Loader2 className="w-5 h-5 motion-safe:animate-spin text-[var(--text-muted)]" />
             </div>
           ) : models.length === 0 ? (
             <div className="text-center py-6">

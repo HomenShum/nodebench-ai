@@ -1172,8 +1172,8 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           <div className="flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-[var(--border-color)]"></div>
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent absolute inset-0"></div>
+                <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-4 border-[var(--border-color)]"></div>
+                <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent absolute inset-0"></div>
               </div>
               <p className="text-sm text-[var(--text-secondary)] font-medium">
                 {isCreating ? 'Creating your calendar...' : 'Loading calendar...'}

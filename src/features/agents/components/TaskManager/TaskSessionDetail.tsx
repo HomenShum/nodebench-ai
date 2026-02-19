@@ -75,7 +75,7 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
   );
 
   const statusIcon = trace.status === 'running' 
-    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+    ? <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin text-blue-500" />
     : trace.status === 'completed'
     ? <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
     : <AlertCircle className="w-3.5 h-3.5 text-red-500" />;
@@ -120,7 +120,7 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
         <div className="border-t border-[var(--border-color)] p-3 bg-[var(--bg-primary)]">
           {!spansData ? (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="w-5 h-5 text-[var(--text-muted)] animate-spin" />
+              <Loader2 className="w-5 h-5 text-[var(--text-muted)] motion-safe:animate-spin" />
             </div>
           ) : (
             <TelemetrySpanTree 
@@ -169,7 +169,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
   if (!sessionData) {
     return (
       <div className={cn("flex items-center justify-center h-full", className)}>
-        <Loader2 className="w-6 h-6 text-[var(--text-muted)] animate-spin" />
+        <Loader2 className="w-6 h-6 text-[var(--text-muted)] motion-safe:animate-spin" />
       </div>
     );
   }

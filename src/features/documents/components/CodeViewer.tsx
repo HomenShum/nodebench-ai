@@ -107,7 +107,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
     return (
       <div className={`flex items-center justify-center h-32 ${className}`}>
         <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-          <Loader2 strokeWidth={1.25} className="h-4 w-4 animate-spin" />
+          <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
           Loading code...
         </div>
       </div>

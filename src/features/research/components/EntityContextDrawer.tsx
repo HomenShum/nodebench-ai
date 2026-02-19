@@ -379,7 +379,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               className="p-2 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
               aria-label="Refresh entity"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${isLoading ? "motion-safe:animate-spin" : ""}`} />
             </button>
             <button
               type="button"

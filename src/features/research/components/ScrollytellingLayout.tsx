@@ -561,7 +561,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-[color:var(--border-color)] rounded-xl px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
             <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-primary)]">{activeLegacy.phaseLabel || "Briefing"}</span>
           </div>
           <div className="flex items-center gap-3">

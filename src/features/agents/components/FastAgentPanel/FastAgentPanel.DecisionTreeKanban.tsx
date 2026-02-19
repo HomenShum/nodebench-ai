@@ -222,7 +222,7 @@ function SourceCard({ node }: { node: ReasoningNode }) {
       }`}
     >
       <div className="flex items-center gap-2">
-        {isRunning && <Loader2 className="w-3 h-3 animate-spin text-violet-500" />}
+        {isRunning && <Loader2 className="w-3 h-3 motion-safe:animate-spin text-violet-500" />}
         {isComplete && <CheckCircle className="w-3 h-3 text-green-500" />}
         <span className="font-medium text-[var(--text-primary)] truncate">
           {node.label}
@@ -361,7 +361,7 @@ function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?
   if (status === "running") {
     return (
       <span className="flex items-center text-[10px] font-bold text-violet-600 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20">
-        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+        <Loader2 className="w-3 h-3 mr-1 motion-safe:animate-spin" />
         Enriching
       </span>
     );
@@ -432,7 +432,7 @@ function EnrichmentGrid({ data }: { data?: CandidateData }) {
           <p className="text-xs leading-tight">
             {summary || (
               <span className="flex items-center gap-1 text-[var(--text-tertiary)]">
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
                 Analyzing...
               </span>
             )}
@@ -486,7 +486,7 @@ function SynthesisCard({ node }: { node: ReasoningNode }) {
 
       {!isComplete && (
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
           Merging findings from qualified candidates...
         </div>
       )}

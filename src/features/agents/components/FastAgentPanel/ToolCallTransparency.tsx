@@ -103,7 +103,7 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
     ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
     : call.status === 'error'
     ? <XCircle className="w-3.5 h-3.5 text-red-500" />
-    : <Clock className="w-3.5 h-3.5 text-violet-500 animate-spin" />;
+    : <Clock className="w-3.5 h-3.5 text-violet-500 motion-safe:animate-spin" />;
 
   const displayName = call.toolName.replace(/^convex_/, '').replace(/_/g, ' ');
 
@@ -229,7 +229,7 @@ export function ToolCallTransparency({ toolCalls, isStreaming, compact }: ToolCa
         )}
         {stats.running > 0 && (
           <span className="text-violet-500 flex items-center gap-0.5">
-            <Clock className="w-3 h-3 animate-spin" />
+            <Clock className="w-3 h-3 motion-safe:animate-spin" />
             {stats.running} running
           </span>
         )}

@@ -82,7 +82,7 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
           className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
           aria-label="Refresh repo stats"
         >
-          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
         </button>
       </div>
 

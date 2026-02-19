@@ -34,7 +34,7 @@ export function ThoughtBubble({
         {/* Icon */}
         <div className="flex-shrink-0 mt-0.5">
           {isStreaming ? (
-            <Loader2 className="h-4 w-4 text-yellow-600 animate-spin" />
+            <Loader2 className="h-4 w-4 text-yellow-600 motion-safe:animate-spin" />
           ) : (
             <Brain className="h-4 w-4 text-yellow-600" />
           )}

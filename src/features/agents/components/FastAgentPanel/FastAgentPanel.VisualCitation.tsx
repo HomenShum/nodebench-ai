@@ -153,7 +153,7 @@ export function HighlightableSource({
     >
       {/* Glow effect overlay */}
       {isHighlighted && (
-        <div className="absolute inset-0 rounded-lg bg-violet-500/5 pointer-events-none animate-pulse" />
+        <div className="absolute inset-0 rounded-lg bg-violet-500/5 pointer-events-none motion-safe:animate-pulse" />
       )}
       {children}
     </div>

@@ -145,7 +145,7 @@ function FileViewerModal({ file, onClose }: { file: FileViewerFile; onClose: () 
           <div className="pdf-viewer">
             {loading && (
               <div className="file-loading">
-                <Loader2 className="h-8 w-8 animate-spin text-[var(--text-muted)]" />
+                <Loader2 className="h-8 w-8 motion-safe:animate-spin text-[var(--text-muted)]" />
                 <p>Loading PDF...</p>
               </div>
             )}
@@ -167,7 +167,7 @@ function FileViewerModal({ file, onClose }: { file: FileViewerFile; onClose: () 
           <div className="html-viewer">
             {loading && (
               <div className="file-loading">
-                <Loader2 className="h-8 w-8 animate-spin text-[var(--text-muted)]" />
+                <Loader2 className="h-8 w-8 motion-safe:animate-spin text-[var(--text-muted)]" />
                 <p>Loading HTML...</p>
               </div>
             )}
