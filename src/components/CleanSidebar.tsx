@@ -327,7 +327,7 @@ export function CleanSidebar({
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 mb-2 flex items-center justify-between">
             <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-              File Explorer
+              Files
             </span>
             <FolderOpen className="w-3.5 h-3.5 text-gray-300" />
           </div>

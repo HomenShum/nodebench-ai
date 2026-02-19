@@ -730,7 +730,6 @@ function ResearchHubContent(props: ResearchHubProps) {
                   mode="topic"
                   variant="hub"
                   title="Activity Log"
-                  subtitle="nodebench"
                   limit={4}
                 />
               </React.Suspense>

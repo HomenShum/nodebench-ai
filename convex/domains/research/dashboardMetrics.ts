@@ -176,19 +176,19 @@ function calculateKeyStats(feedItems: any[]): KeyStat[] {
 
   return [
     {
-      label: "Gap Width",
-      value: `${gapWidth} pts`,
-      context: gapWidth > 35 ? "Capability gap - critical" : "Capability gap - improving",
+      label: "AI Topics",
+      value: `${aiItems.length}`,
+      context: gapWidth > 35 ? "Low signal" : "In your feed",
       trend: gapWidth > 35 ? "down" : "up",
     },
     {
-      label: "Fail Rate",
+      label: "Alert Rate",
       value: `${failRate.toFixed(1)}%`,
-      context: "In Production",
+      context: "Outage mentions",
       trend: failRate > 15 ? "down" : "up",
     },
     {
-      label: "Avg Latency",
+      label: "Speed",
       value: `${avgLatency.toFixed(1)}s`,
       trend: avgLatency < 2.0 ? "up" : "down",
     },

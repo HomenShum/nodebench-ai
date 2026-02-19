@@ -35,7 +35,9 @@ const normalizeCapabilityScore = (score: number) => {
 };
 
 const keyStatHints: Record<string, string> = {
-  "Gap Width": "Capability vs reliability delta",
+  "AI Topics": "AI/ML articles in your feed",
+  "Alert Rate": "Percentage of items mentioning outages",
+  "Speed": "Estimated response time",
   "Reasoning": "Model reasoning score",
   "Avg Heat": "Average engagement score",
 };
@@ -45,7 +47,6 @@ const getKeyStatHint = (label: string) => {
   const direct = keyStatHints[label];
   if (direct) return direct;
   const labelLower = label.toLowerCase();
-  if (labelLower.includes("gap")) return "Capability vs reliability delta";
   if (labelLower.includes("heat")) return "Average engagement score";
   if (labelLower.includes("reason")) return "Model reasoning score";
   return null;
@@ -59,7 +60,6 @@ const formatKeyStatValue = (label: string, value: unknown): string => {
       const pct = num <= 1 ? num * 100 : num;
       return `${Math.round(pct)}%`;
     }
-    if (labelLower.includes("gap")) return `${Math.round(num)} pts`;
     if (labelLower.includes("heat")) return `${Math.round(num)} pts`;
     if (num > 0 && num < 1) return `${Math.round(num * 100)}%`;
     return `${Math.round(num)}`;
@@ -257,7 +257,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
             </h2>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-gray-900/40 dark:text-gray-400 uppercase tracking-widest">
-                {formatBriefMonthYear(new Date().toISOString())}
+                {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </span>
               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
             </div>
@@ -400,10 +400,10 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="px-1.5 py-1 bg-gray-900 dark:bg-gray-100 text-background dark:text-gray-900 text-[9px] font-bold uppercase tracking-widest">
-            Agent Workflow
+            Research
           </div>
-          <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {completedCount}/{totalCount} PROCESSED
+          <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+            {completedCount} of {totalCount} done
           </div>
         </div>
         {activeStep && (
