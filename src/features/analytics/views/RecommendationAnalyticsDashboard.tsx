@@ -184,7 +184,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-gray-300 dark:border-white/[0.12] rounded-lg text-sm bg-white dark:bg-white/[0.06] text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-white/[0.06] rounded-lg text-sm bg-white dark:bg-white/[0.06] text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
