@@ -74,11 +74,11 @@ function SourcePerformanceBar({
         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
           {sourceName}
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500">
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
           <span className="font-mono">{itemCount} items</span>
           {impressions > 0 && (
             <>
-              <span className="text-gray-300">|</span>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="flex items-center gap-1">
                 <Eye size={12} />
                 {impressions}
@@ -87,7 +87,7 @@ function SourcePerformanceBar({
           )}
           {clicks > 0 && (
             <>
-              <span className="text-gray-300">|</span>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="flex items-center gap-1">
                 <MousePointerClick size={12} />
                 {clicks}
@@ -96,7 +96,7 @@ function SourcePerformanceBar({
           )}
           {ctr > 0 && (
             <>
-              <span className="text-gray-300">|</span>
+              <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="font-semibold text-blue-600">
                 {(ctr * 100).toFixed(1)}% CTR
               </span>
@@ -133,14 +133,14 @@ function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: Cat
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <span className="text-xs text-gray-500">{percentage.toFixed(0)}%</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{percentage.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="flex items-center gap-3 text-xs text-gray-500">
+      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
         <span className="font-mono">{itemCount} items</span>
         {avgReadTime && avgReadTime > 0 && (
           <>
-            <span className="text-gray-300">|</span>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
             <span className="flex items-center gap-1">
               <Clock size={12} />
               {Math.round(avgReadTime)}s
@@ -298,11 +298,11 @@ export default function ComponentMetricsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <BarChart3 size={32} />
               Analytics Dashboard
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
               Component-level performance metrics for reports
             </p>
           </div>
@@ -315,7 +315,7 @@ export default function ComponentMetricsDashboard() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -323,7 +323,7 @@ export default function ComponentMetricsDashboard() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={1}>Last 24 hours</option>
               <option value={7}>Last 7 days</option>
@@ -332,7 +332,7 @@ export default function ComponentMetricsDashboard() {
 
             <button
               onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 border border-gray-300 dark:border-white/[0.08] dark:hover:bg-white/[0.06] rounded-lg hover:bg-gray-100 transition-colors"
               title="Go to today"
             >
               <RefreshCw size={18} className="text-gray-600" />
@@ -343,8 +343,8 @@ export default function ComponentMetricsDashboard() {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <Activity className="animate-spin mx-auto text-gray-400 mb-2" size={32} />
-            <p className="text-gray-600">Loading metrics...</p>
+            <Activity className="motion-safe:animate-spin mx-auto text-gray-400 dark:text-gray-500 mb-2" size={32} />
+            <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
           </div>
         )}
 
@@ -383,18 +383,18 @@ export default function ComponentMetricsDashboard() {
             </div>
 
             {/* Source Performance */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Source Performance
                 </h2>
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   {sourceMetrics.length} sources tracked
                 </span>
               </div>
 
               {sourceMetrics.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No source data available for {selectedDate}
                 </div>
               ) : (
@@ -417,18 +417,18 @@ export default function ComponentMetricsDashboard() {
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Category Breakdown */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Category Breakdown
                   </h2>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     {categoryMetrics.length} categories
                   </span>
                 </div>
 
                 {categoryMetrics.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No category data available for {selectedDate}
                   </div>
                 ) : (
@@ -447,18 +447,18 @@ export default function ComponentMetricsDashboard() {
               </div>
 
               {/* Top Performers (Last 7 Days) */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     Top Performers
                   </h2>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     Last {dateRange} days
                   </span>
                 </div>
 
                 {!topSources || topSources.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No performance data available
                   </div>
                 ) : (
@@ -466,23 +466,23 @@ export default function ComponentMetricsDashboard() {
                     {topSources.map((source, index) => (
                       <div
                         key={source.sourceName}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/[0.04] rounded-lg"
                       >
                         <div className="flex items-center gap-3">
                           <div className={`
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
-                            ${index === 0 ? 'bg-yellow-100 text-yellow-700' :
-                              index === 1 ? 'bg-gray-200 text-gray-700' :
-                                index === 2 ? 'bg-orange-100 text-orange-700' :
-                                  'bg-gray-100 text-gray-600'}
+                            ${index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
+                              index === 1 ? 'bg-gray-200 dark:bg-white/[0.08] text-gray-700 dark:text-gray-300' :
+                                index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
+                                  'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400'}
                           `}>
                             {index + 1}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-gray-900 dark:text-gray-100">
                               {source.sourceName}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
                               {source.totalItems} items • {source.recordCount} records
                             </div>
                           </div>
@@ -508,25 +508,25 @@ export default function ComponentMetricsDashboard() {
 
             {/* Integration Status Banner */}
             {aggregates.totalImpressions === 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="text-blue-600 mt-0.5" size={20} />
+                  <TrendingUp className="text-blue-600 dark:text-blue-400 mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-blue-900 mb-1">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
                       Engagement Tracking Not Yet Active
                     </h3>
-                    <p className="text-sm text-blue-700 mb-2">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
                       Component metrics are being collected, but user engagement tracking (impressions, clicks, CTR)
                       is not yet integrated. See{' '}
                       <a
                         href="/docs/engagement-tracking"
-                        className="underline font-medium hover:text-blue-900"
+                        className="underline font-medium hover:text-blue-900 dark:hover:text-blue-100"
                       >
                         integration guide
                       </a>
                       {' '}to enable full analytics.
                     </p>
-                    <div className="text-xs text-blue-600">
+                    <div className="text-xs text-blue-600 dark:text-blue-400">
                       Expected metrics after integration: Impressions, Clicks, CTR, Avg Read Time
                     </div>
                   </div>

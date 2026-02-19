@@ -253,7 +253,7 @@ export const McpToolLedgerView: React.FC = () => {
               </div>
               <div className="mt-3 space-y-2">
                 {(policyAndUsage.usageByTier ?? []).length === 0 ? (
-                  <div className="text-sm text-gray-600">No usage recorded yet.</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">No usage recorded yet.</div>
                 ) : (
                   policyAndUsage.usageByTier.slice(0, 8).map((row) => {
                     const pct =
@@ -268,7 +268,7 @@ export const McpToolLedgerView: React.FC = () => {
                         <div className="flex-1">
                           <div className="h-2 rounded-full bg-gray-100 dark:bg-white/[0.08] overflow-hidden">
                             <div
-                              className="h-2 bg-gray-700"
+                              className="h-2 bg-indigo-500 dark:bg-indigo-400"
                               style={{ width: `${pct ?? 0}%` }}
                             />
                           </div>
@@ -322,12 +322,12 @@ export const McpToolLedgerView: React.FC = () => {
                   const isSelected = c._id === selectedId;
                   const status =
                     c.allowed === false
-                      ? { label: "BLOCKED", cls: "bg-red-100 text-red-900" }
+                      ? { label: "BLOCKED", cls: "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400" }
                       : c.success === true
-                        ? { label: "OK", cls: "bg-indigo-100 text-gray-900" }
+                        ? { label: "OK", cls: "bg-indigo-100 dark:bg-indigo-950/30 text-gray-900 dark:text-indigo-400" }
                         : c.success === false
-                          ? { label: "ERROR", cls: "bg-amber-100 text-amber-900" }
-                          : { label: "RUNNING", cls: "bg-gray-100 text-gray-700" };
+                          ? { label: "ERROR", cls: "bg-amber-100 dark:bg-amber-950/30 text-amber-900 dark:text-amber-400" }
+                          : { label: "RUNNING", cls: "bg-gray-100 dark:bg-white/[0.08] text-gray-700 dark:text-gray-300" };
 
                   return (
                     <button

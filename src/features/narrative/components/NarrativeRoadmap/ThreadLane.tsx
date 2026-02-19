@@ -82,19 +82,19 @@ export function ThreadLane({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={`border-b border-gray-100 ${index % 2 === 0 ? "bg-white" : "bg-gray-50/30"}`}
+      className={`border-b border-gray-100 dark:border-white/[0.04] ${index % 2 === 0 ? "bg-white dark:bg-transparent" : "bg-gray-50/30 dark:bg-white/[0.01]"}`}
     >
       {/* Main Lane Row */}
       <div className="flex">
         {/* Thread Info Column */}
         <div
-          className={`w-48 flex-shrink-0 px-4 py-3 border-r border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${phaseColors.bg}`}
+          className={`w-48 flex-shrink-0 px-4 py-3 border-r border-gray-200 dark:border-white/[0.06] cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${phaseColors.bg}`}
           onClick={() => onThreadClick?.(thread)}
         >
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               {/* Thread Name */}
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                 {thread.name}
               </h3>
 
@@ -133,7 +133,7 @@ export function ThreadLane({
               </div>
 
               {/* Event Count */}
-              <div className="text-[10px] text-gray-400 mt-1">
+              <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
                 {thread.eventCount} events · {thread.plotTwistCount} twists
               </div>
             </div>
@@ -163,8 +163,8 @@ export function ThreadLane({
           return (
             <div
               key={week.weekNumber}
-              className={`w-24 flex-shrink-0 px-1 py-2 border-r border-gray-100 ${
-                week.isCurrent ? "bg-blue-50/30" : ""
+              className={`w-24 flex-shrink-0 px-1 py-2 border-r border-gray-100 dark:border-white/[0.04] ${
+                week.isCurrent ? "bg-blue-50/30 dark:bg-blue-500/[0.06]" : ""
               }`}
             >
               <div className="flex flex-wrap items-center justify-center gap-1 min-h-[2rem]">
@@ -177,7 +177,7 @@ export function ThreadLane({
                     />
                   ))
                 ) : (
-                  <div className="w-full h-0.5 bg-gray-100 rounded" />
+                  <div className="w-full h-0.5 bg-gray-100 dark:bg-white/[0.06] rounded" />
                 )}
                 {weekEvents.length > 3 && (
                   <span className="text-[10px] text-gray-400">+{weekEvents.length - 3}</span>
@@ -198,13 +198,13 @@ export function ThreadLane({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 py-4 bg-gray-50/50 border-t border-gray-100">
+            <div className="px-4 py-4 bg-gray-50/50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/[0.04]">
               {/* Thesis */}
               <div className="mb-3">
-                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-1">
                   Current Thesis
                 </h4>
-                <p className="text-sm text-gray-700 leading-relaxed">
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                   {thread.thesis}
                 </p>
               </div>
@@ -215,7 +215,7 @@ export function ThreadLane({
                   <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">
                     Counter-Narrative
                   </h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                     {thread.counterThesis}
                   </p>
                 </div>
@@ -226,7 +226,7 @@ export function ThreadLane({
                 {thread.entityKeys.map((key) => (
                   <span
                     key={key}
-                    className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-md"
+                    className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 text-xs rounded-md"
                   >
                     {key.split(":")[1] || key}
                   </span>
@@ -234,7 +234,7 @@ export function ThreadLane({
                 {thread.topicTags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-md"
+                    className="px-2 py-0.5 bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 text-xs rounded-md"
                   >
                     #{tag}
                   </span>
@@ -242,7 +242,7 @@ export function ThreadLane({
               </div>
 
               {/* Timeline Stats */}
-              <div className="flex items-center gap-4 text-xs text-gray-500">
+              <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 <span>
                   First event:{" "}
                   {new Date(thread.firstEventAt).toLocaleDateString("en-US", {
