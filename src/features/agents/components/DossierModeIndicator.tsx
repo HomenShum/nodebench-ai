@@ -35,25 +35,25 @@ const ACT_CONFIG = {
     label: "Quick Pulse",
     description: "Overview",
     icon: BookOpen,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
+    borderColor: "border-blue-200 dark:border-blue-900/50",
   },
   actII: {
     label: "Analysis",
     description: "Deep Dive",
     icon: Target,
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-    borderColor: "border-purple-200",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-950/30",
+    borderColor: "border-purple-200 dark:border-purple-900/50",
   },
   actIII: {
     label: "Deep Dive",
     description: "Implications",
     icon: Lightbulb,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
+    borderColor: "border-amber-200 dark:border-amber-900/50",
   },
 } as const;
 
@@ -74,7 +74,7 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
     return (
       <div className={cn(
         "flex items-center gap-1.5 px-2 py-1 rounded-md",
-        "bg-slate-50 border border-slate-200 text-slate-400",
+        "bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-slate-400 dark:text-slate-500",
         "text-xs",
         className
       )}>
@@ -112,7 +112,7 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
         </div>
 
         {/* Divider */}
-        <div className="w-px h-4 bg-slate-200" />
+        <div className="w-px h-4 bg-slate-200 dark:bg-white/[0.12]" />
 
         {/* Act indicator */}
         <div className="flex items-center gap-1.5">
@@ -127,10 +127,10 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
         {/* Focused data point (if any) */}
         {chartContext && (
           <>
-            <div className="w-px h-4 bg-slate-200" />
+            <div className="w-px h-4 bg-slate-200 dark:bg-white/[0.12]" />
             <div className="flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 text-slate-500" />
-              <span className="text-xs text-slate-600 font-mono">
+              <TrendingUp className="w-3 h-3 text-slate-500 dark:text-slate-400" />
+              <span className="text-xs text-slate-600 dark:text-slate-300 font-mono">
                 {chartContext.dataLabel}: {chartContext.value}{chartContext.unit ?? ""}
               </span>
             </div>
@@ -140,8 +140,8 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
         {/* Data index badge (if focused but no chart context) */}
         {focusedDataIndex !== null && !chartContext && (
           <>
-            <div className="w-px h-4 bg-slate-200" />
-            <span className="text-xs text-slate-500 font-mono">
+            <div className="w-px h-4 bg-slate-200 dark:bg-white/[0.12]" />
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
               Point [{focusedDataIndex}]
             </span>
           </>

@@ -82,7 +82,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-4 hover:shadow-sm transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -105,7 +105,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed font-light">
+      <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed font-light">
         {displayContent}
       </div>
 
@@ -128,8 +128,8 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-        <div className="flex items-center gap-3 text-xs text-gray-400">
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.04]">
+        <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
           {factCheckCount != null && factCheckCount > 0 && (
             <span>{factCheckCount} fact checks</span>
           )}
@@ -138,7 +138,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.06] rounded transition-colors"
             title="Copy post text"
           >
             {copied ? <Check className="w-3 h-3 text-indigo-500" /> : <Copy className="w-3 h-3" />}

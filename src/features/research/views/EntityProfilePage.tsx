@@ -165,28 +165,28 @@ const CollapsibleSection: React.FC<{
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-white/[0.02] rounded-lg border border-gray-200 dark:border-white/[0.06] overflow-hidden">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
         aria-expanded={isOpen}
       >
         <div className="flex items-center gap-3">
-          <span className="text-gray-400">{icon}</span>
-          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
+          <span className="text-gray-400 dark:text-gray-500">{icon}</span>
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">
             {title}
           </h3>
           {badge && (
-            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold rounded">
+            <span className="px-2 py-0.5 bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 text-[9px] font-bold rounded">
               {badge}
             </span>
           )}
         </div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-gray-400" />
+          <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
         )}
       </button>
       {isOpen && <div className="px-6 pb-6">{children}</div>}
@@ -307,19 +307,19 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-950/90 border-b border-gray-200 dark:border-white/[0.06] px-6 py-4 sticky top-0 z-10 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={handleBack}
-              className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-gray-500">
                 Topic Profile
               </p>
               <h1 className="text-xl font-bold text-[color:var(--text-primary)]">
@@ -341,18 +341,18 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
       {/* Content */}
       <main className="max-w-5xl mx-auto px-6 py-8">
         {isLoading ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8">
+          <div className="bg-white dark:bg-white/[0.02] rounded-lg border border-gray-200 dark:border-white/[0.06] p-8">
             <div className="flex items-center gap-4">
-              <div className="animate-spin">
-                <RefreshCw className="w-6 h-6 text-gray-400" />
+              <div className="motion-safe:animate-spin">
+                <RefreshCw className="w-6 h-6 text-gray-400 dark:text-gray-500" />
               </div>
-              <p className="text-gray-500">Loading profile information...</p>
+              <p className="text-gray-500 dark:text-gray-400">Loading profile information...</p>
             </div>
           </div>
         ) : entityContext ? (
           <div className="space-y-6">
             {/* Hero Card */}
-            <div className={`bg-white rounded-lg border ${colors.border} p-8`}>
+            <div className={`bg-white dark:bg-white/[0.02] rounded-lg border ${colors.border} p-8`}>
               <div className="flex items-start gap-6">
                 <div
                   className={`w-20 h-20 rounded-xl ${colors.bg} flex items-center justify-center flex-shrink-0`}
@@ -372,9 +372,9 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                     {crm?.dataQuality && (
                       <span
                         className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${crm.dataQuality === "verified"
-                            ? "bg-green-100 text-green-700"
+                            ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400"
                             : crm.dataQuality === "partial"
-                              ? "bg-yellow-100 text-yellow-700"
+                              ? "bg-yellow-100 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400"
                               : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
                           }`}
                       >
@@ -1005,12 +1005,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
           </div>
         ) : (
           /* No Data State */
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-6" />
+          <div className="bg-white dark:bg-white/[0.02] rounded-lg border border-gray-200 dark:border-white/[0.06] p-12 text-center">
+            <Sparkles className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-6" />
             <h3 className="text-2xl font-bold text-[color:var(--text-primary)] mb-3">
               Not Yet Researched
             </h3>
-            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto">
               We don't have detailed information about "{decodeURIComponent(entityName)}" yet.
               Create a report to start researching this topic.
             </p>

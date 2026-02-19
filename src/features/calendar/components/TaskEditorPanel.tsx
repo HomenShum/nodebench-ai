@@ -220,7 +220,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
   if (task === undefined) {
     return embedded ? (
       <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] p-4">
-        <div className="animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
+        <div className="motion-safe:animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
         <div className="space-y-2">
           <div className="h-4 bg-[var(--bg-primary)] rounded" />
           <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />
@@ -234,7 +234,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           className="absolute right-0 top-0 h-full w-[min(480px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl p-4 z-10"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
+          <div className="motion-safe:animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
           <div className="space-y-2">
             <div className="h-4 bg-[var(--bg-primary)] rounded" />
             <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />

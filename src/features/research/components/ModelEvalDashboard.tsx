@@ -368,26 +368,26 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
             ] as const).map(({ label, snap }) => {
               const delta = snap ? snap.tools.passRatePct - snap.baseline.passRatePct : 0;
               return (
-                <div key={label} className="bg-white rounded-lg border border-gray-200 p-4">
+                <div key={label} className="bg-white dark:bg-white/[0.02] rounded-lg border border-gray-200 dark:border-white/[0.06] p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                       {label}
                     </div>
                     {snap ? (
-                      <div className="text-[11px] text-gray-500 font-mono tabular-nums">
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400 font-mono tabular-nums">
                         {snap.generatedAtIso.slice(0, 19).replace("T", " ")}
                       </div>
                     ) : null}
                   </div>
 
                   {!snap ? (
-                    <div className="mt-2 text-sm text-gray-600">
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                       No snapshot yet. Run GAIA capability tests with{" "}
                       <span className="font-mono">NODEBENCH_WRITE_GAIA_REPORT=1</span>.
                     </div>
                   ) : (
                     <div className="mt-2 space-y-1">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">
                         Tools{" "}
                         <span className="font-semibold tabular-nums">
                           {snap.tools.passRatePct.toFixed(1)}%
