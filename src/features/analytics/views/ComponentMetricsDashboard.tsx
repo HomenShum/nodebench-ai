@@ -429,7 +429,7 @@ export default function ComponentMetricsDashboard() {
 
                 {categoryMetrics.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No category data available for {selectedDate}
+                    No category data available for {new Date(selectedDate + "T00:00:00Z").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}
                   </div>
                 ) : (
                   <div className="space-y-1">

@@ -53,7 +53,7 @@ export const TrendRail: React.FC<TrendRailProps> = ({
           <Flame className="w-3.5 h-3.5 fill-orange-500" />
           <span>LIVE SIGNALS</span>
           <span className="relative flex h-2 w-2 ml-1">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
           </span>
         </div>

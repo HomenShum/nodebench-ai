@@ -71,7 +71,7 @@ const StepTimelineItemComponent = memo(
     );
 
     return (
-      <div className="relative pl-10 animate-fadeIn">
+      <div className="relative pl-10 motion-safe:animate-fadeIn">
         {/* Timeline Node - GPU-accelerated with transform */}
         <div
           className={cn(
@@ -163,7 +163,7 @@ const StepTimelineItemComponent = memo(
 
           {/* Expanded Details - Smooth opacity transition */}
           {isExpanded && hasDetails && (
-            <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-2 animate-fadeIn">
+            <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-2 motion-safe:animate-fadeIn">
               {step.description && (
                 <div className="text-xs text-[var(--text-secondary)]">{step.description}</div>
               )}

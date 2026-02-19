@@ -188,7 +188,7 @@ const VIEW_TITLES: Record<string, string> = {
   'document-recommendations': 'Suggestions',
   'agent-marketplace': 'Agent Templates',
   'github-explorer': 'GitHub',
-  'pr-suggestions': 'Pull Requests',
+  'pr-suggestions': 'PR Suggestions',
   calendar: 'Calendar',
   roadmap: 'Roadmap',
   timeline: 'Timeline',
@@ -196,7 +196,7 @@ const VIEW_TITLES: Record<string, string> = {
   benchmarks: 'Benchmarks',
   funding: 'Funding',
   'analytics-hitl': 'Review Queue',
-  'analytics-components': 'Usage Stats',
+  'analytics-components': 'Usage & Costs',
   'analytics-recommendations': 'Feedback',
   'cost-dashboard': 'Usage & Costs',
   'industry-updates': 'Industry News',
@@ -734,7 +734,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </LazyView>
             ) : currentView === "analytics-components" ? (
               <LazyView
-                title="Usage Stats failed to load"
+                title="Usage & Costs failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
                 className="h-full overflow-auto bg-background"

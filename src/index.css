@@ -724,6 +724,15 @@
   }
 }
 
+/* View transition fade-in — eliminates flash between route changes */
+@keyframes view-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.view-enter {
+  animation: view-fade-in 0.12s ease-out both;
+}
+
 /* Screen-reader only utility */
 .sr-only {
   position: absolute;

@@ -37,7 +37,8 @@ export function LazyView({ children, title, className, fallback, resetKey, onRet
     onRetry?.();
   }, [onRetry]);
 
-  const content = className ? <div className={className}>{children}</div> : children;
+  const innerClass = className ? `motion-safe:view-enter ${className}` : "motion-safe:view-enter h-full";
+  const content = <div className={innerClass}>{children}</div>;
 
   return (
     <ErrorBoundary key={boundaryKey} title={title || "Something went wrong"} onRetry={handleRetry}>

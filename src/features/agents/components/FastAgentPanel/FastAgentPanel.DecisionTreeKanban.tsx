@@ -192,7 +192,7 @@ function PhaseIndicator({ status }: { status: string }) {
     <span className="flex h-2 w-2 relative">
       {isActive && (
         <>
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+          <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
         </>
       )}

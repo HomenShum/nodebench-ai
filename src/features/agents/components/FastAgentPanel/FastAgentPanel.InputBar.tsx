@@ -1163,7 +1163,7 @@ export function FastAgentInputBar({
               title="Stop generating"
               aria-label="Stop generating"
             >
-              <div className="absolute inset-0 rounded-xl bg-red-400 animate-ping opacity-20" />
+              <div className="absolute inset-0 rounded-xl bg-red-400 motion-safe:animate-ping opacity-20" />
               <StopCircle className="w-5 h-5 relative z-10" />
             </button>
           ) : (

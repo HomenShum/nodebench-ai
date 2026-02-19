@@ -133,7 +133,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     `}>
                         {isDragOver ? (
                             <div className="flex items-center gap-3 w-full py-1">
-                                <Upload className="w-5 h-5 text-indigo-500 animate-bounce" />
+                                <Upload className="w-5 h-5 text-indigo-500 motion-safe:animate-bounce" />
                                 <span className="text-indigo-600 dark:text-indigo-400 font-medium">Drop your file here...</span>
                             </div>
                         ) : (

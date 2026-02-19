@@ -416,7 +416,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             <BarChart2 className="h-4 w-4" />
             <span>{title}</span>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{daily ? daily.date : <span className="inline-block w-16 h-3 bg-gray-200 rounded motion-safe:animate-pulse" />}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{daily ? new Date(daily.date + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }) : <span className="inline-block w-16 h-3 bg-gray-200 rounded motion-safe:animate-pulse" />}</span>
         </div>
         <div className="w-full h-2 bg-gray-100 dark:bg-white/[0.08] rounded">
           <div className="h-2 rounded bg-blue-600" style={{ width: `${pct}%` }} />

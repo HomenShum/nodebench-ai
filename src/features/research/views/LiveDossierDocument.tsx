@@ -490,7 +490,7 @@ function LiveDossierDocumentInner({
                 {/* Shimmer animation container */}
                 <div className="relative overflow-hidden">
                     {/* Shimmer overlay */}
-                    <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
+                    <div className="absolute inset-0 -translate-x-full motion-safe:animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent" />
 
                     {/* Masthead skeleton - matches newspaper style */}
                     <div className="mb-10">

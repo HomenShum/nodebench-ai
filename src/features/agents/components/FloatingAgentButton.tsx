@@ -67,7 +67,7 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
       <div className="relative">
         <Sparkles className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
         {/* Subtle pulse effect */}
-        <div className="absolute inset-0 bg-purple-500/30 rounded-full animate-ping" style={{ animationDuration: '2s' }} />
+        <div className="absolute inset-0 bg-purple-500/30 rounded-full motion-safe:animate-ping" style={{ animationDuration: '2s' }} />
       </div>
 
       {/* Label - hidden on mobile by default */}

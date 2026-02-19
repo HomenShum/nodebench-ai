@@ -77,7 +77,7 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
           {active && (
             <span className="absolute -bottom-0.5 -right-0.5 flex h-2 w-2">
               {currentStatus.pulse && (
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${currentStatus.color} opacity-75`} />
+                <span className={`motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full ${currentStatus.color} opacity-75`} />
               )}
               <span className={`relative inline-flex rounded-full h-2 w-2 ${currentStatus.color} ring-1 ring-white`} />
             </span>
