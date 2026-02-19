@@ -52,7 +52,7 @@ export function ProactiveFeed() {
               Enable Smart Alerts
             </h1>
             <p className="text-[var(--text-secondary)] mb-6 max-w-md mx-auto">
-              Let NodeBench work for you. Get meeting prep, follow-up reminders, and daily
+              Let your AI assistant work for you. Get meeting prep, follow-up reminders, and daily
               briefs automatically.
             </p>
             <button

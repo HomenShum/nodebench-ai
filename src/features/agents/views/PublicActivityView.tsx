@@ -35,7 +35,7 @@ export function PublicActivityView() {
           <PageHeroHeader
             icon={<Globe className="w-6 h-6" />}
             title="Public Activity Feed"
-            subtitle="View autonomous agent activity, cron job executions, and public task sessions"
+            subtitle="View AI agent activity and public task sessions"
             accent
             className="mb-6"
           />
@@ -45,13 +45,12 @@ export function PublicActivityView() {
             <div className="flex items-center gap-3 mb-2">
               <Activity className="w-5 h-5 text-[var(--accent-primary)]" />
               <h3 className="font-semibold text-[var(--text-primary)]">
-                Autonomous Agent Activity
+                AI Activity
               </h3>
             </div>
             <p className="text-sm text-[var(--text-secondary)]">
-              This feed shows public agent sessions including automated cron jobs,
-              scheduled tasks, and agent swarm activities. View telemetry and trace
-              data for each execution.
+              This feed shows public AI sessions — automated tasks, research pipelines,
+              and multi-agent workflows. View step-by-step execution logs for each session.
             </p>
           </div>
 

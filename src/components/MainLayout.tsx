@@ -206,7 +206,7 @@ const VIEW_TITLES: Record<string, string> = {
   documents: 'My Workspace',
   agents: 'Assistants',
   activity: 'Activity',
-  showcase: 'Demo',
+  showcase: 'Showcase',
   footnotes: 'Sources',
 };
 
@@ -761,7 +761,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </LazyView>
             ) : currentView === "industry-updates" ? (
               <LazyView
-                title="Industry Updates failed to load"
+                title="Industry News failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackIndustry}
                 className="h-full overflow-auto bg-background"

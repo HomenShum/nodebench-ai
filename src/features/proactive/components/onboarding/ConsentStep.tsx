@@ -36,7 +36,7 @@ export function ConsentStep({
             "Gmail messages and threads",
             "Google Calendar events",
             "Slack messages (if connected)",
-            "Your notes and documents in NodeBench",
+            "Your notes and documents in the app",
           ]}
         />
 
@@ -82,7 +82,7 @@ export function ConsentStep({
               )}
             </div>
             <p className="text-sm text-[var(--text-secondary)]">
-              By checking this box, I grant NodeBench permission to:
+              By checking this box, I grant permission to:
             </p>
             <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
               <li>• Access and analyze my connected accounts</li>

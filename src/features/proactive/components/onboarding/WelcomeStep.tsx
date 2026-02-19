@@ -16,7 +16,7 @@ export function WelcomeStep() {
           Welcome to Smart Alerts
         </h3>
         <p className="text-[var(--text-secondary)] text-lg">
-          Let NodeBench work for you -- automatically find opportunities and take action
+          Let your AI assistant work for you — automatically find opportunities and take action
         </p>
       </div>
 
@@ -48,7 +48,7 @@ export function WelcomeStep() {
           <ol className="space-y-2 text-sm text-[var(--text-secondary)]">
             <li className="flex items-start gap-2">
               <span className="font-medium text-blue-500">1.</span>
-              <span>NodeBench monitors your connected accounts (Gmail, Calendar, Slack)</span>
+              <span>Your assistant monitors your connected accounts (Gmail, Calendar, Slack)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-medium text-blue-500">2.</span>

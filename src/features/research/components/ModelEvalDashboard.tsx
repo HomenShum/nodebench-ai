@@ -281,7 +281,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
         <div>
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <Activity className="w-5 h-5 text-indigo-600" />
-            NodeBench AI Model Evaluation
+            AI Model Evaluation
           </h2>
           <p className="text-xs text-gray-500 mt-1">
             Suite: <span className="font-mono text-gray-700">{suiteId}</span> | Run: {runDate} | Total Time: {totalTime.toFixed(1)}s
@@ -670,7 +670,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
 
       {/* Footer */}
       <div className="text-[10px] text-gray-400 text-center border-t border-gray-200 pt-4">
-        NodeBench AI Evaluation Framework | {modelResults.length} models | {totalTests} total tests | Generated {runDate}
+        AI Evaluation Framework | {modelResults.length} models | {totalTests} total tests | Generated {runDate}
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
         id: "welcome",
         title: "Meet Your AI Assistants",
         subtitle: "Two powerful agents, one unified experience",
-        description: "NodeBench AI combines fast, conversational AI with deep, document-aware intelligence. Let's explore what each can do for you.",
+        description: "Your AI workspace combines fast, conversational AI with deep, document-aware intelligence. Let's explore what each can do for you.",
         icon: <Sparkles className="w-8 h-8" />,
         color: "from-violet-500 to-purple-600",
         features: [

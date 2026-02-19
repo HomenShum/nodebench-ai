@@ -128,7 +128,7 @@ export const McpToolLedgerView: React.FC = () => {
                 </span>
               </div>
               <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                Date: <span className="font-mono">{policyAndUsage.dateKey}</span>
+                {new Date(policyAndUsage.dateKey + "T00:00:00Z").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}
               </div>
             </div>
           )}
@@ -217,7 +217,7 @@ export const McpToolLedgerView: React.FC = () => {
                   Policy Controls
                 </div>
                 <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-                  Toggle enforcement for budgets and denylist. Requires admin sign-in.
+                  Toggle enforcement for budgets and block lists. Requires admin sign-in.
                 </div>
               </div>
               <button

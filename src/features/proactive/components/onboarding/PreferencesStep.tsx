@@ -41,7 +41,7 @@ export function PreferencesStep({
             <ChannelToggle
               icon={MessageSquare}
               label="In-App Notifications"
-              description="Show notifications in NodeBench"
+              description="Show in-app notifications"
               enabled={state.notificationChannels.inApp}
               onChange={(enabled) =>
                 updateState({

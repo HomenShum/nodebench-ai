@@ -55,7 +55,7 @@ export function IndustryUpdatesPanel() {
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             <TrendingUp className="w-6 h-6" />
-            Industry Updates
+            Industry News
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
             What's new from AI leaders — refreshed daily
@@ -65,7 +65,7 @@ export function IndustryUpdatesPanel() {
         {/* Status Badge — only show when there are actual new updates */}
         {suggestions.totalNew > 0 && (
           <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <div className="w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse" />
             <span className="text-sm font-medium text-[var(--text-primary)]">
               {suggestions.totalNew} new {suggestions.totalNew === 1 ? 'update' : 'updates'}
             </span>

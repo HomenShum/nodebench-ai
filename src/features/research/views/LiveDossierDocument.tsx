@@ -833,7 +833,7 @@ function LiveDossierDocumentInner({
                 {/* Footer */}
                 <footer className="mt-12 pt-4 border-t border-[color:var(--border-color)] dark:border-[color:var(--border-color)] text-center">
                     <p className="text-sm text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]">
-                        NodeBench AI • {new Date().toLocaleTimeString()}
+                        AI Assistant • {new Date().toLocaleTimeString()}
                     </p>
                 </footer>
             </div>
