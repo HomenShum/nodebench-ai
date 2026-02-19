@@ -1562,7 +1562,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         <input
                           type="text"
                           className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="nodebench-yourname"
+                          placeholder="my-topic"
                           value={smsPhoneInput}
                           onChange={(e) => setSmsPhoneInput(e.target.value)}
                         />
@@ -1586,7 +1586,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </button>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Use your ntfy topic (e.g., nodebench-yourname)
+                        Use your ntfy topic (e.g., my-topic)
                       </p>
                     </div>
 
@@ -1905,7 +1905,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <button
                             className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
                             onClick={() => {
-                              toast.info("MCP configuration available in advanced settings");
+                              toast.info("Tool configuration available in advanced settings");
                             }}
                           >
                             Configure
@@ -1940,7 +1940,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
                 {/* WebMCP */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">WebMCP</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Browser Tools</h3>
                   <WebMcpSettingsPanel />
                 </div>
               </div>

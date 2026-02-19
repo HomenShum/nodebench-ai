@@ -79,7 +79,7 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
         className
       )}>
         <Link2Off className="w-3 h-3" />
-        <span>No dossier</span>
+        <span>No context</span>
       </div>
     );
   }

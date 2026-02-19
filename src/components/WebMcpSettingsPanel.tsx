@@ -41,7 +41,7 @@ export function WebMcpSettingsPanel() {
     }
 
     if (!url.startsWith("https://")) {
-      toast.error("HTTPS required for WebMCP origins");
+      toast.error("HTTPS required for browser tool sites");
       return;
     }
 
@@ -71,7 +71,7 @@ export function WebMcpSettingsPanel() {
     const next = !providerEnabled;
     setProviderEnabled(next);
     localStorage.setItem(PROVIDER_KEY, String(next));
-    toast.success(next ? "WebMCP provider enabled" : "WebMCP provider disabled");
+    toast.success(next ? "Browser tools enabled" : "Browser tools disabled");
   }, [providerEnabled]);
 
   return (
@@ -81,10 +81,10 @@ export function WebMcpSettingsPanel() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              WebMCP Provider
+              Browser Tools Provider
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Expose NodeBench tools to browser agents via navigator.modelContext
+              Expose tools to browser agents via the Model Context Protocol
             </p>
           </div>
           <button
@@ -139,7 +139,7 @@ export function WebMcpSettingsPanel() {
             <p className="text-xs text-gray-400 italic">Loading...</p>
           ) : origins.length === 0 ? (
             <p className="text-xs text-gray-400">
-              No approved origins yet. Add a WebMCP-enabled site above.
+              No approved origins yet. Add a compatible site above.
             </p>
           ) : (
             origins.map((origin) => (

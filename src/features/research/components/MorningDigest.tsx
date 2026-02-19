@@ -666,19 +666,19 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const agentLaunchpad = [
     {
-      label: 'Deep agent: summarize the pulse',
+      label: 'Summarize today\'s pulse',
       prompt: `Summarize today's pulse and list the top 3 actions.`,
     },
     {
-      label: 'Deep agent: map risk exposure',
+      label: 'Map risk exposure',
       prompt: `Scan the alerts and highlight the top 3 risk exposures to monitor.`,
     },
     {
-      label: 'Deep agent: report build',
+      label: 'Build report',
       prompt: `Build a concise report on the top signals and why they matter.`,
     },
     {
-      label: 'Deep agent: topic watchlist',
+      label: 'Update topic watchlist',
       prompt: `Create a watchlist update from today's topics and market movers.`,
     },
   ];

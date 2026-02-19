@@ -91,7 +91,7 @@ function getChoiceLabel(choiceType: AuditEntry["choiceType"]): string {
     case "gather_info":
       return "Gather";
     case "execute_data_op":
-      return "Data Op";
+      return "Processing";
     case "execute_output":
       return "Output";
     case "finalize":
@@ -394,7 +394,7 @@ export function TraceAuditPanel({ executionId, className }: TraceAuditPanelProps
                     <span className="font-medium text-[var(--text-secondary)]">
                       {auditSummary.dataOpSteps}
                     </span>{" "}
-                    data ops
+                    processing steps
                   </span>
                   <span>
                     <span className="font-medium text-[var(--text-secondary)]">

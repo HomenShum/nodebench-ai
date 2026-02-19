@@ -75,7 +75,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
 
       {/* Tools & MCPs */}
       {toolsMcp.mcpServerName && (
-        <Section title="Tools & MCPs">
+        <Section title="Tools">
           <Pill icon={<Wrench className="h-3 w-3 text-purple-600" />} label={`${toolsMcp.mcpServerName}${toolsMcp.toolCount ? ` • ${toolsMcp.toolCount} tools` : ""}`} />
         </Section>
       )}

@@ -212,8 +212,8 @@ export function CommandPalette({
             // WebMCP
             {
                 id: 'ai-webmcp-scan',
-                label: 'Scan WebMCP Origin',
-                description: 'Discover tools from a WebMCP-enabled website',
+                label: 'Scan for browser tools',
+                description: 'Discover tools from a connected website',
                 icon: <Globe className="w-4 h-4" />,
                 keywords: ['webmcp', 'mcp', 'scan', 'discover', 'tools', 'origin', 'website'],
                 section: 'ai',
@@ -224,8 +224,8 @@ export function CommandPalette({
             },
             {
                 id: 'ai-webmcp-manage',
-                label: 'Manage WebMCP Origins',
-                description: 'View and manage approved WebMCP origins',
+                label: 'Manage browser tool sites',
+                description: 'View and manage approved connected sites',
                 icon: <Globe className="w-4 h-4" />,
                 keywords: ['webmcp', 'mcp', 'origins', 'manage', 'settings', 'approve'],
                 section: 'ai',

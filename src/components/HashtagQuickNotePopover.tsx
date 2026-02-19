@@ -169,7 +169,7 @@ function HashtagContent({
   if (!document) {
     return (
       <div className="p-6">
-        <p className="text-sm text-[var(--text-muted)]">Hashtag dossier not found</p>
+        <p className="text-sm text-[var(--text-muted)]">Hashtag document not found</p>
       </div>
     );
   }
@@ -264,7 +264,7 @@ function HashtagContent({
           <button
             onClick={handleOpenFullDossier}
             className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
-            title="Open full dossier"
+            title="Open full document"
           >
             <ExternalLink className="w-4 h-4 text-[var(--text-muted)]" />
           </button>
@@ -289,7 +289,7 @@ function HashtagContent({
               onClick={handleOpenFullDossier}
               className="mt-4 text-sm text-[var(--accent-primary)] hover:underline"
             >
-              Open full dossier to see details
+              Open full document to see details
             </button>
           </div>
         ) : (
@@ -341,7 +341,7 @@ function HashtagContent({
       {/* Footer */}
       <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
         <p className="text-xs text-[var(--text-muted)]">
-          💡 <strong>Tip:</strong> Double-click the hashtag to open the full dossier view
+          💡 <strong>Tip:</strong> Double-click the hashtag to open the full document view
         </p>
       </div>
     </div>

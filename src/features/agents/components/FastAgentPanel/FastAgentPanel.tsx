@@ -2702,7 +2702,7 @@ export function FastAgentPanel({
 
                         {/* Title */}
                         <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
-                          Nodebench AI
+                          Assistant
                         </h2>
 
                        {/* Marketing Tagline */}

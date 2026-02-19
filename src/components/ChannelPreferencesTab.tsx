@@ -37,7 +37,7 @@ interface ChannelMeta {
 const CHANNELS: ChannelMeta[] = [
   // Native channels
   { id: "ui", label: "In-App UI", description: "Notifications inside the app", providerType: "native", icon: <Monitor className="h-4 w-4 text-white" />, color: "bg-gray-600", identifierLabel: "User ID", identifierPlaceholder: "auto-detected" },
-  { id: "ntfy", label: "ntfy Push", description: "Push notifications via ntfy topics", providerType: "native", icon: <Bell className="h-4 w-4 text-white" />, color: "bg-green-500", identifierLabel: "Topic", identifierPlaceholder: "nodebench-yourname" },
+  { id: "ntfy", label: "ntfy Push", description: "Push notifications via ntfy topics", providerType: "native", icon: <Bell className="h-4 w-4 text-white" />, color: "bg-green-500", identifierLabel: "Topic", identifierPlaceholder: "my-topic" },
   { id: "email", label: "Email", description: "Email notifications via Resend", providerType: "native", icon: <Mail className="h-4 w-4 text-white" />, color: "bg-red-500", identifierLabel: "Email", identifierPlaceholder: "you@example.com" },
   { id: "sms", label: "SMS", description: "Text messages via Twilio", providerType: "native", icon: <Smartphone className="h-4 w-4 text-white" />, color: "bg-blue-500", identifierLabel: "Phone", identifierPlaceholder: "+15555550123" },
   { id: "slack", label: "Slack", description: "Slack workspace messages", providerType: "native", icon: <Hash className="h-4 w-4 text-white" />, color: "bg-purple-500", identifierLabel: "Channel/DM", identifierPlaceholder: "#general or @user" },

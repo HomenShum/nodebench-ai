@@ -31,7 +31,7 @@ interface OnboardingStep {
 const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Nodebench AI',
+    title: 'Welcome',
     description: 'Your intelligent workspace for documents, tasks, and AI-powered research. Let\'s take a quick tour!',
     icon: Sparkles,
     color: 'bg-purple-500',
@@ -39,10 +39,10 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 'documents',
     title: 'Create Documents',
-    description: 'Write notes, research documents, and dossiers. Use hashtags to organize and connect your content.',
+    description: 'Write notes, research documents, and reports. Use hashtags to organize and connect your content.',
     icon: FileText,
     color: 'bg-blue-500',
-    tip: 'Try typing #topic to create linked dossiers',
+    tip: 'Try typing #topic to create linked documents',
   },
   {
     id: 'tasks',

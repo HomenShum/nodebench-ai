@@ -824,7 +824,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </LazyView>
             ) : currentView === "mcp-ledger" ? (
               <LazyView
-                title="MCP Tool Ledger failed to load"
+                title="Activity Log failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
                 className="h-full overflow-auto bg-background"

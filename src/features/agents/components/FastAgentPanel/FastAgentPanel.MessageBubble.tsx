@@ -77,7 +77,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
   const handleShare = useCallback(() => {
     const text = contentToRender || '';
-    const shareText = `${text}\n\n— Shared from Nodebench`;
+    const shareText = `${text}\n\n— Shared from AI Assistant`;
     navigator.clipboard.writeText(shareText).then(() => {
       setShared(true);
       setTimeout(() => setShared(false), 2000);
@@ -113,7 +113,7 @@ export const MessageBubble = React.memo(function MessageBubble({
         {/* Header with role and timestamp */}
         <div className="flex items-center gap-2 mb-1">
           <span className="text-sm font-semibold text-[var(--text-primary)]">
-            {isUser ? 'You' : 'Nodebench'}
+            {isUser ? 'You' : 'Assistant'}
           </span>
           <span className="text-[11px] text-[var(--text-muted)]">
             {new Date(message.timestamp).toLocaleTimeString([], { 
