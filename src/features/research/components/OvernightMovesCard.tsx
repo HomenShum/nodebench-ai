@@ -28,7 +28,7 @@ const tagStyles: Record<NonNullable<MoveItem["tag"]>, string> = {
 
 export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCardProps) {
   return (
-    <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">

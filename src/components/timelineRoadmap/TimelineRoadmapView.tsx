@@ -1695,7 +1695,7 @@ const summaryAccents = [
 function SummaryStat({ stat, index }: { stat: RoadmapStat; index: number }) {
   const accent = summaryAccents[index % summaryAccents.length];
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden transition-shadow">
       <div className={`h-0.5 w-full ${accent}`} />
       <div className="p-3">
         <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
@@ -1712,7 +1712,7 @@ function SummaryStat({ stat, index }: { stat: RoadmapStat; index: number }) {
 function RoadmapPulseCard({ item }: { item: RoadmapPulse }) {
   const Icon = item.icon;
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-3 transition-shadow">
       <div className="flex items-center justify-between">
         <div className={`flex h-8 w-8 items-center justify-center rounded-md border ${sectionToneClasses[item.tone]}`}>
           <Icon className="h-4 w-4" />
@@ -1768,7 +1768,7 @@ function TagPill({ label, tone = "default" }: { label: string; tone?: "default" 
 
 function RoadmapNavButton({ item, isActive }: { item: { label: string; target: string }; isActive?: boolean }) {
   const activeClasses = isActive
-    ? "border-indigo-500/40 bg-indigo-500/10 text-gray-700"
+    ? "border-indigo-500/40 bg-indigo-500/10 text-content-secondary"
     : "border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]";
   return (
     <button
@@ -1789,7 +1789,7 @@ function RoadmapNavButton({ item, isActive }: { item: { label: string; target: s
 
 function PersonaCard({ persona }: { persona: PersonaProfile }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-[var(--text-primary)]">{persona.name}</div>
@@ -1910,7 +1910,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
   };
   const tone = priorityStyles[priorityTone];
   return (
-    <div className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 overflow-hidden transition-shadow hover:shadow-sm">
+    <div className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 overflow-hidden transition-shadow">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${tone.bar}`} />
       <div className="flex items-center justify-between">
         <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${tone.pill}`}>
@@ -1920,7 +1920,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
       </div>
       <div className="space-y-3">
         {group.items.map((item) => (
-          <div key={item.title} className="rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 space-y-2 transition-shadow hover:shadow-sm">
+          <div key={item.title} className="rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 space-y-2 transition-shadow">
             <div>
               <div className="text-xs font-semibold text-[var(--text-primary)]">{item.title}</div>
               <div className="text-xs text-[var(--text-secondary)] mt-1">{item.summary}</div>
@@ -1950,7 +1950,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
 
 function QualityBarCard({ principle }: { principle: QualityPrinciple }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{principle.title}</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">{principle.detail}</div>
@@ -1969,7 +1969,7 @@ function QualityBarCard({ principle }: { principle: QualityPrinciple }) {
 
 function PersonaSegmentCard({ segment }: { segment: PersonaSegment }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{segment.title}</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">{segment.description}</div>
@@ -1996,7 +1996,7 @@ function PersonaSegmentCard({ segment }: { segment: PersonaSegment }) {
 
 function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{deliverable.title}</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">Cadence: {deliverable.cadence}</div>
@@ -2032,7 +2032,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
 function SourceCoverageCard({ coverage }: { coverage: SourceCoverage }) {
   const tone = coverage.status === "Live" ? "success" : "warning";
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold text-[var(--text-primary)]">{coverage.label}</div>
         <TagPill label={coverage.status} tone={tone} />
@@ -2049,7 +2049,7 @@ function SourceCoverageCard({ coverage }: { coverage: SourceCoverage }) {
 
 function ActivationPathCard({ path }: { path: ActivationPath }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{path.segment}</div>
         <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)] mt-2">Entry points</div>
@@ -2163,7 +2163,7 @@ function CoverageMatrix({ rows, segments }: { rows: CoverageMatrixRow[]; segment
 
 function MetricCard({ metric }: { metric: SuccessMetric }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{metric.name}</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">{metric.definition}</div>
@@ -2185,7 +2185,7 @@ function MetricCard({ metric }: { metric: SuccessMetric }) {
 
 function RiskCard({ risk }: { risk: RiskDependency }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div className="text-xs font-semibold text-[var(--text-primary)]">{risk.title}</div>
       <div>
         <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Impact</div>
@@ -2203,7 +2203,7 @@ function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
   const phaseTone = phase.phase === "Now" ? "emerald" : phase.phase === "Next" ? "amber" : "violet";
   const phaseBar = phaseTone === "emerald" ? "bg-indigo-500" : phaseTone === "amber" ? "bg-amber-500" : "bg-violet-500";
   return (
-    <div className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 overflow-hidden transition-shadow hover:shadow-sm">
+    <div className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 overflow-hidden transition-shadow">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${phaseBar}`} />
       <div className="flex items-start justify-between">
         <div>
@@ -2226,7 +2226,7 @@ function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
 
 function OrchestrationCard({ stage }: { stage: OrchestrationStage }) {
   return (
-    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
+    <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{stage.stage}</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">{stage.description}</div>

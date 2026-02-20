@@ -80,7 +80,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
         >
           {/* Main tooltip container - Dark slate per AI 2027 */}
           <div className={`
-            ${colors.bg} text-white p-4 rounded-xl shadow-2xl
+            ${colors.bg} text-white p-4 rounded-lg shadow-2xl
             ${colors.border} border backdrop-blur-md
             relative overflow-hidden
           `}>

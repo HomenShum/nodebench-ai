@@ -92,7 +92,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       exit={{ opacity: 0, x: 50, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       className={cn(
-        'relative flex items-start gap-3 p-4 rounded-xl border shadow-lg backdrop-blur-sm min-w-[320px] max-w-[420px] overflow-hidden',
+        'relative flex items-start gap-3 p-4 rounded-lg border shadow-lg backdrop-blur-sm min-w-[320px] max-w-[420px] overflow-hidden',
         config.bg
       )}
     >
@@ -100,14 +100,14 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       <div className="flex-1 min-w-0">
         <p className={cn('text-sm font-semibold', config.titleColor)}>{toast.title}</p>
         {toast.message && (
-          <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{toast.message}</p>
+          <p className="text-sm text-content-secondary mt-0.5 line-clamp-2">{toast.message}</p>
         )}
       </div>
       <button
         onClick={onRemove}
         className="flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition-colors"
       >
-        <X className="w-4 h-4 text-gray-400" />
+        <X className="w-4 h-4 text-content-muted" />
       </button>
       
       {/* Progress bar */}

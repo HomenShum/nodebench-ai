@@ -558,7 +558,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       )}
 
       {/* Mobile/Tablet Compact Dashboard (Sticky Top) */}
-      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-[color:var(--border-color)] rounded-xl px-4 py-3 shadow-sm">
+      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-[color:var(--border-color)] rounded-lg px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
@@ -583,7 +583,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
         <div className="lg:col-span-7 xl:col-span-8 pb-8 relative">
           {sourceData.length === 0 && (
-            <div className="p-8 text-center text-[color:var(--text-secondary)] bg-[color:var(--bg-primary)]/50 rounded-xl border border-[color:var(--border-color)]">
+            <div className="p-8 text-center text-[color:var(--text-secondary)] bg-[color:var(--bg-primary)]/50 rounded-lg border border-[color:var(--border-color)]">
               <p>No briefing data available for this view.</p>
             </div>
           )}
@@ -640,7 +640,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
           </p>
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-gray-800"
+            className="inline-flex items-center gap-2 rounded-full bg-black px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:bg-gray-800"
           >
             <span>Start Free Trial</span>
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

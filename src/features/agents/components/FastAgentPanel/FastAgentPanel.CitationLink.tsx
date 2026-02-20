@@ -50,7 +50,7 @@ export function CitationLink({
         "inline-flex items-center gap-1 px-1.5 py-0.5 rounded",
         "text-xs font-medium transition-all",
         "border border-blue-300 bg-blue-50 text-blue-700",
-        "hover:bg-blue-100 hover:border-blue-400 hover:shadow-sm",
+        "hover:bg-blue-100 hover:border-blue-400",
         "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1",
         isHovered && "scale-105"
       )}

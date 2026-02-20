@@ -59,7 +59,7 @@ export function ShareModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-[var(--border-color)] bg-[var(--bg-primary)] p-5 shadow-xl">
+            <div className="w-full max-w-md rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-5 shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="text-base font-semibold text-[var(--text-primary)]">Share</div>
@@ -72,7 +72,7 @@ export function ShareModal({
                 <button
                     type="button"
                     onClick={() => onSharePublicChange(!sharePublic)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${
                         sharePublic
                             ? 'border-indigo-200 dark:border-indigo-800/40 bg-indigo-50 dark:bg-indigo-900/20'
                             : 'border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)]'
@@ -81,7 +81,7 @@ export function ShareModal({
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         sharePublic
                             ? 'bg-indigo-100 dark:bg-indigo-800/30 text-indigo-600 dark:text-indigo-400'
-                            : 'bg-gray-100 dark:bg-white/[0.06] text-gray-400'
+                            : 'bg-surface-secondary text-content-muted'
                     }`}>
                         {sharePublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                     </div>
@@ -107,7 +107,7 @@ export function ShareModal({
 
                 {/* Public link section — shown when public and single document */}
                 {sharePublic && publicUrl && (
-                    <div className="mt-3 p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)]">
+                    <div className="mt-3 p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]">
                         <div className="text-xs font-medium text-[var(--text-muted)] mb-2">Share link</div>
                         <div className="flex items-center gap-2">
                             <div className="flex-1 text-xs text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-2 rounded-lg truncate font-mono">

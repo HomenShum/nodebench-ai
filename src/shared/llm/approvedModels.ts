@@ -414,7 +414,7 @@ export const PROVIDER_COLORS: Record<
   Provider,
   { bg: string; border: string; text: string; icon: string }
 > = {
-  openai: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-gray-700", icon: "🟢" },
+  openai: { bg: "bg-indigo-50", border: "border-indigo-200", text: "text-content-secondary", icon: "🟢" },
   anthropic: { bg: "bg-orange-50", border: "border-orange-200", text: "text-orange-700", icon: "🟠" },
   google: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-700", icon: "🔵" },
   openrouter: { bg: "bg-violet-50", border: "border-violet-200", text: "text-violet-700", icon: "🟣" },

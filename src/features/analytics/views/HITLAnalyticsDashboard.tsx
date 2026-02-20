@@ -33,7 +33,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
     red: 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
     blue: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
     yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-    gray: 'bg-gray-50 dark:bg-gray-800/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700',
+    gray: 'bg-surface-secondary dark:bg-gray-800/30 text-content-secondary border-edge',
     purple: 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
   };
 
@@ -76,19 +76,19 @@ function RequestTypeBar({ requestType, avgReviewTimeSeconds, approvalRate, count
   const percentage = maxTime > 0 ? (avgReviewTimeSeconds / maxTime) * 100 : 0;
 
   return (
-    <div className="py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
+    <div className="py-3 border-b border-edge dark:border-gray-700 last:border-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex-1">
-          <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{requestType}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <div className="text-sm font-medium text-content">{requestType}</div>
+          <div className="text-xs text-content-secondary mt-1">
             {count} {count === 1 ? 'decision' : 'decisions'} • {(approvalRate * 100).toFixed(0)}% approved
           </div>
         </div>
-        <div className="text-sm font-mono font-semibold text-gray-700 dark:text-gray-300 ml-4">
+        <div className="text-sm font-mono font-semibold text-content-secondary ml-4">
           {avgReviewTimeSeconds.toFixed(1)}s
         </div>
       </div>
-      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -108,14 +108,14 @@ function ModifiedFieldBar({ field, count, maxCount }: ModifiedFieldBarProps) {
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+    <div className="py-2 border-b border-edge dark:border-gray-700 last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">{field}</div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+        <div className="text-sm text-content-secondary font-medium">{field}</div>
+        <div className="text-xs text-content-secondary font-mono">
           {count} {count === 1 ? 'modification' : 'modifications'}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -201,11 +201,11 @@ export default function HITLAnalyticsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-content flex items-center gap-2">
               <Activity size={32} />
               Review Queue
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-content-secondary mt-1">
               Review performance and automation opportunities
             </p>
           </div>
@@ -234,7 +234,7 @@ export default function HITLAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -248,24 +248,24 @@ export default function HITLAnalyticsDashboard() {
           <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-28 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+                <div key={i} className="h-28 rounded-lg bg-surface-secondary/50" />
               ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
-              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div className="h-48 rounded-lg bg-surface-secondary/50" />
+              <div className="h-48 rounded-lg bg-surface-secondary/50" />
             </div>
           </div>
         )}
 
         {/* Metrics Content */}
         {!isLoading && metrics && metrics.total === 0 ? (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-12 text-center">
-            <Activity className="mx-auto text-gray-400 dark:text-gray-300 mb-4" size={48} />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-12 text-center">
+            <Activity className="mx-auto text-content-muted mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-content mb-2">
               No reviews yet
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-content-secondary mb-4">
               Items needing your review will appear here. Reviews are created automatically when a task is flagged for approval.
             </p>
           </div>
@@ -341,12 +341,12 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Decision Breakdown */}
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-6">
+            <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-content">
                   Decision Breakdown
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-content-secondary">
                   {metrics.total} total decisions
                 </span>
               </div>
@@ -372,26 +372,26 @@ export default function HITLAnalyticsDashboard() {
                   <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">Escalated</div>
                 </div>
 
-                <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{metrics.deferred}</div>
-                  <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">Deferred</div>
+                <div className="text-center p-3 bg-surface-secondary dark:bg-gray-800/30 rounded-lg border border-edge">
+                  <div className="text-2xl font-bold text-content-secondary">{metrics.deferred}</div>
+                  <div className="text-xs text-content-secondary mt-1">Deferred</div>
                 </div>
               </div>
             </div>
 
             {/* Average Review Time by Request Type */}
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-6">
+            <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-content">
                   Review Time by Request Type
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-content-secondary">
                   {reviewTimeByType?.length || 0} types
                 </span>
               </div>
 
               {!reviewTimeByType || reviewTimeByType.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-8 text-content-secondary">
                   No request types recorded yet
                 </div>
               ) : (
@@ -411,18 +411,18 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Most Modified Fields */}
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-6">
+            <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-content">
                   Most Modified Fields
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-content-secondary">
                   {modifiedFields?.length || 0} fields
                 </span>
               </div>
 
               {!modifiedFields || modifiedFields.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-8 text-content-secondary">
                   No field modifications recorded yet
                 </div>
               ) : (

@@ -103,9 +103,9 @@ const QuickActionCard = memo(function QuickActionCard({
   return (
     <div
       className={cn(
-        "group relative rounded-xl border transition-all duration-150 cursor-pointer overflow-hidden will-change-transform",
+        "group relative rounded-lg border transition-all duration-150 cursor-pointer overflow-hidden will-change-transform",
         preset.bgColor,
-        isExpanded ? "ring-2 ring-offset-1 ring-violet-500/40" : "hover:translate-y-[-2px] hover:shadow-md"
+        isExpanded ? "ring-2 ring-offset-1 ring-violet-500/40" : "hover:translate-y-[-2px]"
       )}
       onClick={() => !isExpanded && setIsExpanded(true)}
     >
@@ -114,7 +114,7 @@ const QuickActionCard = memo(function QuickActionCard({
         <div className="flex items-start gap-3">
           <div
             className={cn(
-              "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-150 group-hover:scale-[1.03] will-change-transform",
+              "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform duration-150 will-change-transform",
               preset.bgColor.replace("hover:", "")
             )}
           >
@@ -151,7 +151,7 @@ const QuickActionCard = memo(function QuickActionCard({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={preset.placeholder}
-              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:border-violet-300 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
+              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:border-violet-300 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
               autoFocus
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -214,7 +214,7 @@ export function SwarmQuickActions({
     <div className={cn("px-4 pb-4", className)}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm">
+        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-sm">
           <Sparkles className="w-4.5 h-4.5 text-white" />
         </div>
         <div>

@@ -171,7 +171,7 @@ export function ProactiveFeed() {
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-secondary)] mb-4">
               <Sparkles className="w-8 h-8 text-[var(--text-muted)]" />
             </div>
-            <h3 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
+            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-2">
               No opportunities yet
             </h3>
             <p className="text-[var(--text-secondary)]">
@@ -237,10 +237,10 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
     const colors: Record<string, string> = {
       detected: "bg-blue-500/20 text-blue-600",
       approved: "bg-green-500/20 text-green-600",
-      completed: "bg-gray-500/20 text-gray-600",
-      dismissed: "bg-gray-500/20 text-gray-600",
+      completed: "bg-gray-500/20 text-content-secondary",
+      dismissed: "bg-gray-500/20 text-content-secondary",
     };
-    return colors[status] || "bg-gray-500/20 text-gray-600";
+    return colors[status] || "bg-gray-500/20 text-content-secondary";
   };
 
   return (

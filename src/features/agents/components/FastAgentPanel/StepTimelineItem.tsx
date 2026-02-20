@@ -98,7 +98,7 @@ const StepTimelineItemComponent = memo(
             step.status === 'error' && 'border-red-200 bg-red-50',
             step.status === 'running' && 'border-blue-200 bg-blue-50',
             step.status === 'complete' && 'border-green-200',
-            hasDetails && 'cursor-pointer hover:shadow-md'
+            hasDetails && 'cursor-pointer'
           )}
           onClick={handleToggle}
         >

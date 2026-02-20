@@ -79,7 +79,7 @@ export function GitHubExplorer() {
       {/* Repository List */}
       {trendingRepos.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-[var(--bg-secondary)] rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center mx-auto mb-4">
             <Github className="w-8 h-8 text-[var(--text-secondary)]" />
           </div>
           <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No repositories found</h3>

@@ -224,7 +224,7 @@ export const ScrollytellingLayout: React.FC<Props> = ({ data }) => {
           ))}
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
-          <div className="sticky top-12 min-h-[400px] rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm p-6 ring-1 ring-black/5">
+          <div className="sticky top-12 min-h-[400px] rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm p-6 ring-1 ring-black/5">
             <DashboardPanel data={activeData} />
           </div>
         </div>

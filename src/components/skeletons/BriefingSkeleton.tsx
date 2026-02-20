@@ -7,7 +7,7 @@ import React from 'react';
 
 export function ActSectionSkeleton() {
   return (
-    <div className="p-6 rounded-xl border border-border/60 bg-card">
+    <div className="p-6 rounded-lg border border-border/60 bg-card">
       {/* Act header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-8 h-8 bg-muted/50 rounded-full" />
@@ -87,7 +87,7 @@ export function BriefingSkeleton() {
 export function DashboardSkeleton() {
   const barHeights = [24, 38, 52, 44, 60, 34, 48, 28, 56, 40, 50, 32];
   return (
-    <div className="p-4 rounded-xl border border-border/60 bg-card">
+    <div className="p-4 rounded-lg border border-border/60 bg-card">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="h-4 bg-muted/50 rounded w-28" />

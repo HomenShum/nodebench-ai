@@ -13,9 +13,9 @@ export const tipBadge =
 
 // Card styling constants
 export const cardBaseClasses =
-  "group relative bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl hover:border-[var(--accent-primary)] transition-all duration-200";
+  "group relative bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:border-[var(--accent-primary)] transition-all duration-200";
 
-export const cardHoverClasses = "hover:shadow-md hover:scale-[1.01]";
+export const cardHoverClasses = "hover:shadow-md";
 
 // Row styling constants
 export const rowBaseClasses =
@@ -27,7 +27,7 @@ export const statusStripeClasses =
 
 // Kanban card styling
 export const kanbanCardClasses =
-  "bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
+  "bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-3 shadow-sm transition-shadow cursor-pointer";
 
 // Priority badge styling
 export const priorityBadgeClasses =

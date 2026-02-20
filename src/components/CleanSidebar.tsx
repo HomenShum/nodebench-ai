@@ -228,7 +228,7 @@ export function CleanSidebar({
   return (
     <aside aria-label="Sidebar navigation" className="h-full flex flex-col bg-surface dark:bg-[#18181B]">
       {/* Logo */}
-      <div className={`h-14 flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} border-b border-gray-200/60 dark:border-white/[0.06]`}>
+      <div className={`h-14 flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} border-b border-edge`}>
         <div className="flex items-center gap-2.5 min-w-0">
           <Tooltip content={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} side="right">
             <button
@@ -333,7 +333,7 @@ export function CleanSidebar({
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+            <span className="text-xs font-medium uppercase tracking-wider text-content-muted">
               Files
             </span>
             <FolderOpen className="w-3.5 h-3.5 text-gray-300" />
@@ -344,11 +344,11 @@ export function CleanSidebar({
               <button
                 type="button"
                 onClick={() => setIsDocsOpen(!isDocsOpen)}
-                className="flex items-center justify-between w-full text-xs font-medium text-gray-500 uppercase tracking-wider mb-2 hover:text-gray-700 dark:hover:text-gray-300 px-2"
+                className="flex items-center justify-between w-full text-xs font-medium text-content-secondary uppercase tracking-wider mb-2 hover:text-content px-2"
               >
                 <span>Recent Documents</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-500 px-1.5 py-0.5 rounded font-medium normal-case">
+                  <span className="text-xs bg-surface-secondary text-content-secondary px-1.5 py-0.5 rounded font-medium normal-case">
                     {recentDocs.length}
                   </span>
                   {isDocsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -365,12 +365,12 @@ export function CleanSidebar({
                         key={doc._id}
                         onClick={() => onDocumentSelect?.(doc._id)}
                         className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors duration-150 ${isSelected
-                          ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
-                          : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-100'
+                          ? 'bg-black/[0.06] dark:bg-white/[0.08] text-content'
+                          : 'text-content-secondary hover:bg-surface-hover hover:text-content'
                           }`}
                         title={doc.title || 'Untitled'}
                       >
-                        <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-400'
+                        <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-content-secondary' : 'text-content-muted group-hover:text-content-secondary dark:group-hover:text-content-muted'
                           }`} />
                         <span className="truncate text-left">
                           {doc.title || 'Untitled'}
@@ -393,11 +393,11 @@ export function CleanSidebar({
         <div className="px-3 pb-2">
           <button
             type="button"
-            className="w-full flex items-center gap-2 px-2.5 py-2 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-700 dark:hover:text-gray-300 rounded-lg transition-colors"
+            className="w-full flex items-center gap-2 px-2.5 py-2 text-sm text-content-secondary hover:bg-surface-hover hover:text-content rounded-lg transition-colors"
           >
             <Trash2 className="h-4 w-4" />
             <span>Trash</span>
-            <span className="ml-auto text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+            <span className="ml-auto text-xs bg-surface-secondary text-content-secondary px-1.5 py-0.5 rounded">
               {trash.length}
             </span>
           </button>
@@ -405,7 +405,7 @@ export function CleanSidebar({
       )}
 
       {/* User Profile - Bottom */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-gray-200/60 dark:border-white/[0.06] space-y-3`}>
+      <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-edge space-y-3`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
           {(() => {
             const displayName = isAnonymous ? "Guest" : (user?.name ?? user?.email ?? "Guest");
@@ -419,12 +419,12 @@ export function CleanSidebar({
                 alt={displayName + " avatar"}
                 width={32}
                 height={32}
-                className="h-8 w-8 rounded-full object-cover border border-gray-200/60 dark:border-white/[0.06]"
+                className="h-8 w-8 rounded-full object-cover border border-edge"
                 title={isCollapsed ? displayName : undefined}
               />
             ) : (
               <div
-                className="h-8 w-8 rounded-full bg-gray-100 dark:bg-white/[0.08] flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs font-semibold border border-gray-200 dark:border-white/[0.06]"
+                className="h-8 w-8 rounded-full bg-surface-secondary dark:bg-white/[0.08] flex items-center justify-center text-content-secondary text-xs font-semibold border border-edge"
                 title={isCollapsed ? displayName : undefined}
               >
                 {initial}
@@ -434,10 +434,10 @@ export function CleanSidebar({
           {!isCollapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                <div className="text-sm font-medium text-content truncate">
                   {isAnonymous ? "Guest User" : (user?.name ?? "User")}
                 </div>
-                <div className="text-xs text-gray-400 dark:text-gray-400 font-medium">
+                <div className="text-xs text-content-muted font-medium">
                   {isAnonymous ? "Limited preview" : "Pro Account"}
                 </div>
               </div>

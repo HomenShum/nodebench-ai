@@ -90,11 +90,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
   switch (type) {
     case "company":
       return {
-        text: "text-gray-700",
+        text: "text-content-secondary",
         bg: "bg-indigo-50 hover:bg-indigo-100",
         border: "border-indigo-200",
         icon: "text-indigo-500",
-        badge: "bg-indigo-100 text-gray-700",
+        badge: "bg-indigo-100 text-content-secondary",
       };
     case "person":
       return {
@@ -122,11 +122,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     case "topic":
       return {
-        text: "text-gray-700",
-        bg: "bg-gray-50 hover:bg-gray-100",
-        border: "border-gray-200",
-        icon: "text-gray-500",
-        badge: "bg-gray-100 text-gray-700",
+        text: "text-content-secondary",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-content-secondary",
+        badge: "bg-surface-secondary text-content-secondary",
       };
     case "region":
       return {

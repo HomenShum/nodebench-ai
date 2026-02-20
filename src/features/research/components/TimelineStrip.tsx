@@ -62,9 +62,9 @@ const getPhaseIcon = (phase: TemporalPhase) => {
 const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
   const baseColors = {
     past: {
-      bg: isActive ? "bg-gray-700" : "bg-gray-100 hover:bg-gray-200",
-      text: isActive ? "text-white" : "text-gray-600",
-      border: isActive ? "border-gray-700" : "border-gray-200",
+      bg: isActive ? "bg-gray-700" : "bg-surface-secondary hover:bg-surface-secondary",
+      text: isActive ? "text-white" : "text-content-secondary",
+      border: isActive ? "border-gray-700" : "border-edge",
       dot: "bg-gray-400",
     },
     present: {
@@ -250,7 +250,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           {/* Phase segments */}
           <div className="absolute inset-0 flex">
             <div
-              className="h-full bg-gray-200"
+              className="h-full bg-surface-secondary"
               style={{ width: `${progressInfo.phasePercentages.past}%` }}
             />
             <div

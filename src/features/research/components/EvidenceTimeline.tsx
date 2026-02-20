@@ -89,7 +89,7 @@ function TimelineEntry({ item }: TimelineEntryProps) {
         {/* Direction dot + date column */}
         <div className="flex flex-col items-center gap-1 pt-0.5 flex-shrink-0 min-w-[72px]">
           <DirectionDot direction={item.direction} />
-          <span className="text-xs text-gray-500 dark:text-gray-400">{item.date}</span>
+          <span className="text-xs text-content-secondary">{item.date}</span>
         </div>
 
         {/* Title + chevron */}
@@ -98,7 +98,7 @@ function TimelineEntry({ item }: TimelineEntryProps) {
             {hasExpandableContent && (
               <ChevronRight
                 className={cn(
-                  "w-3.5 h-3.5 text-gray-400 transition-transform duration-200 flex-shrink-0",
+                  "w-3.5 h-3.5 text-content-muted transition-transform duration-200 flex-shrink-0",
                   expanded && "rotate-90"
                 )}
               />
@@ -114,7 +114,7 @@ function TimelineEntry({ item }: TimelineEntryProps) {
       {expanded && (
         <div className="mt-2 ml-[84px] space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
           {item.excerpt && (
-            <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+            <p className="text-xs text-content-secondary leading-relaxed">
               {item.excerpt}
             </p>
           )}
@@ -173,7 +173,7 @@ export function EvidenceTimeline({ items, maxVisible = 5 }: EvidenceTimelineProp
           <button
             type="button"
             onClick={() => setShowAll(false)}
-            className="text-xs text-gray-500 dark:text-gray-400 hover:underline"
+            className="text-xs text-content-secondary hover:underline"
           >
             Show less
           </button>

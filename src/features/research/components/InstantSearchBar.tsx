@@ -136,7 +136,7 @@ export function InstantSearchBar({
     <div ref={containerRef} className="relative w-full max-w-2xl mx-auto z-50">
       {/* Subtle glow effect behind - diffuse and calm */}
       <div className={cn(
-        "absolute -inset-2 bg-gradient-to-r from-[color:var(--bg-tertiary)]/40 via-[color:var(--bg-secondary)]/30 to-[color:var(--bg-tertiary)]/40 rounded-2xl blur-xl transition duration-500",
+        "absolute -inset-2 bg-gradient-to-r from-[color:var(--bg-tertiary)]/40 via-[color:var(--bg-secondary)]/30 to-[color:var(--bg-tertiary)]/40 rounded-lg blur-xl transition duration-500",
         floating ? "opacity-50" : "opacity-30",
         isFocused && "opacity-70 scale-[1.02]"
       )} />
@@ -147,7 +147,7 @@ export function InstantSearchBar({
         floating
           ? "shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[color:var(--border-color)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-[color:var(--border-color)]"
           : "shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-[color:var(--border-color)]",
-        showDropdown ? "rounded-t-2xl rounded-b-none border-b-transparent shadow-lg ring-1 ring-[color:var(--border-color)]" : "rounded-2xl",
+        showDropdown ? "rounded-t-2xl rounded-b-none border-b-transparent shadow-lg ring-1 ring-[color:var(--border-color)]" : "rounded-lg",
         isFocused && !showDropdown && "ring-1 ring-[color:var(--border-color)] shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
       )}>
         <div className="absolute left-4 text-[color:var(--text-secondary)] pointer-events-none">

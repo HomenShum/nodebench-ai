@@ -110,34 +110,34 @@ export const McpToolLedgerView: React.FC = () => {
             subtitle="See every tool request — who ran it, when, and what happened."
           />
           {policyAndUsage && (
-            <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] px-4 py-3">
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Safety Rules</div>
-              <div className="mt-1 text-sm text-gray-900 dark:text-gray-100">
+            <div className="rounded-lg border border-edge bg-surface px-4 py-3">
+              <div className="text-xs font-medium text-content-secondary">Safety Rules</div>
+              <div className="mt-1 text-sm text-content">
                 {policyAndUsage.config.name}{" "}
                 <span
                   className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                     policyAndUsage.config.enforce
                       ? "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400"
-                      : "bg-indigo-100 dark:bg-indigo-950/30 text-gray-900 dark:text-indigo-400"
+                      : "bg-indigo-100 dark:bg-indigo-950/30 text-content dark:text-indigo-400"
                   }`}
                 >
                   {policyAndUsage.config.enforce ? "Active" : "Monitoring"}
                 </span>
               </div>
-              <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+              <div className="mt-1 text-xs text-content-secondary">
                 {new Date(policyAndUsage.dateKey + "T00:00:00Z").toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}
               </div>
             </div>
           )}
         </div>
 
-        <div className="mb-6 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-          <div className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">Filters</div>
+        <div className="mb-6 rounded-lg border border-edge bg-surface p-4">
+          <div className="text-xs uppercase tracking-widest text-content-secondary">Filters</div>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-3">
             <label className="block">
-              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Usage Date (UTC)</div>
+              <div className="text-xs font-semibold text-content-secondary">Usage Date (UTC)</div>
               <div className="relative mt-1">
-                <span className="block w-full rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-gray-900 dark:text-gray-200">
+                <span className="block w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200">
                   {dateKey ? new Date(dateKey + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'All dates'}
                 </span>
                 <input
@@ -151,21 +151,21 @@ export const McpToolLedgerView: React.FC = () => {
             </label>
 
             <label className="block md:col-span-2">
-              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tool Name</div>
+              <div className="text-xs font-semibold text-content-secondary">Tool Name</div>
               <input
                 value={toolNameFilter}
                 onChange={(e) => setToolNameFilter(e.target.value)}
                 placeholder='e.g. "createPlan"'
-                className="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-gray-900 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200 placeholder:text-content-muted"
               />
             </label>
 
             <label className="block">
-              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Risk Tier</div>
+              <div className="text-xs font-semibold text-content-secondary">Risk Tier</div>
               <select
                 value={riskTierFilter}
                 onChange={(e) => setRiskTierFilter(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-gray-900 dark:text-gray-200"
+                className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200"
               >
                 <option value="">All</option>
                 <option value="read_only">read_only</option>
@@ -180,11 +180,11 @@ export const McpToolLedgerView: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Allowed</div>
+                <div className="text-xs font-semibold text-content-secondary">Allowed</div>
                 <select
                   value={allowedFilter}
                   onChange={(e) => setAllowedFilter(e.target.value as any)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-gray-900 dark:text-gray-200"
+                  className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200"
                 >
                   <option value="all">All</option>
                   <option value="allowed">Allowed</option>
@@ -193,11 +193,11 @@ export const McpToolLedgerView: React.FC = () => {
               </label>
 
               <label className="block">
-                <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Success</div>
+                <div className="text-xs font-semibold text-content-secondary">Success</div>
                 <select
                   value={successFilter}
                   onChange={(e) => setSuccessFilter(e.target.value as any)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-gray-900 dark:text-gray-200"
+                  className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200"
                 >
                   <option value="all">All</option>
                   <option value="success">Success</option>
@@ -207,19 +207,19 @@ export const McpToolLedgerView: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-3 text-xs text-gray-500">
+          <div className="mt-3 text-xs text-content-secondary">
             Note: Both the usage summary and call list are filtered to the selected UTC date.
           </div>
         </div>
 
         {policyAndUsage && (
-          <div className="mb-6 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+          <div className="mb-6 rounded-lg border border-edge bg-surface p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                <div className="text-xs uppercase tracking-widest text-content-secondary">
                   Policy Controls
                 </div>
-                <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                <div className="mt-1 text-sm text-content-secondary">
                   Toggle enforcement for budgets and block lists. Requires admin sign-in.
                 </div>
               </div>
@@ -250,13 +250,13 @@ export const McpToolLedgerView: React.FC = () => {
 
         {policyAndUsage && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-              <div className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-edge bg-surface p-4">
+              <div className="text-xs uppercase tracking-widest text-content-secondary">
                 Usage By Risk Tier (Today)
               </div>
               <div className="mt-3 space-y-2">
                 {(policyAndUsage.usageByTier ?? []).length === 0 ? (
-                  <div className="text-sm text-gray-600 dark:text-gray-400">No usage recorded yet.</div>
+                  <div className="text-sm text-content-secondary">No usage recorded yet.</div>
                 ) : (
                   policyAndUsage.usageByTier.slice(0, 8).map((row) => {
                     const pct =
@@ -265,21 +265,21 @@ export const McpToolLedgerView: React.FC = () => {
                         : null;
                     return (
                       <div key={row.tier} className="flex items-center gap-3">
-                        <div className="w-40 text-sm font-mono text-gray-900 dark:text-gray-100 truncate">
+                        <div className="w-40 text-sm font-mono text-content truncate">
                           {row.tier}
                         </div>
                         <div className="flex-1">
-                          <div className="h-2 rounded-full bg-gray-100 dark:bg-white/[0.08] overflow-hidden">
+                          <div className="h-2 rounded-full bg-surface-secondary dark:bg-white/[0.08] overflow-hidden">
                             <div
                               className="h-2 bg-indigo-500 dark:bg-indigo-400"
                               style={{ width: `${pct ?? 0}%` }}
                             />
                           </div>
                         </div>
-                        <div className="w-24 text-right text-sm text-gray-800 dark:text-gray-200 tabular-nums">
+                        <div className="w-24 text-right text-sm text-content tabular-nums">
                           {row.count}
                           {typeof row.limit === "number" ? (
-                            <span className="text-gray-500">/{row.limit}</span>
+                            <span className="text-content-secondary">/{row.limit}</span>
                           ) : null}
                         </div>
                       </div>
@@ -289,11 +289,11 @@ export const McpToolLedgerView: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-              <div className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+            <div className="rounded-lg border border-edge bg-surface p-4">
+              <div className="text-xs uppercase tracking-widest text-content-secondary">
                 What This Enables
               </div>
-              <ul className="mt-3 text-sm text-gray-700 dark:text-gray-300 list-disc pl-5 space-y-1">
+              <ul className="mt-3 text-sm text-content-secondary list-disc pl-5 space-y-1">
                 <li>Answer: who called what tool, when, with what inputs</li>
                 <li>Replayable debugging: args/result previews + policy evaluation</li>
                 <li>Budgets: daily limits per risk tier and per tool (optional enforcement)</li>
@@ -304,19 +304,19 @@ export const McpToolLedgerView: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-white/[0.06] flex items-center justify-between">
-              <div className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          <div className="lg:col-span-2 rounded-lg border border-edge bg-surface overflow-hidden">
+            <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
+              <div className="text-xs uppercase tracking-widest text-content-secondary">
                 Recent Tool Calls
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+              <div className="text-xs text-content-secondary tabular-nums">
                 {calls.length} shown
               </div>
             </div>
 
             <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
               {calls.length === 0 ? (
-                <div className="p-6 text-sm text-gray-600 dark:text-gray-400">
+                <div className="p-6 text-sm text-content-secondary">
                   No MCP tool calls recorded yet. Generate a few by calling the MCP unified server
                   or hitting <span className="font-mono">/api/mcpGateway</span>.
                 </div>
@@ -327,18 +327,18 @@ export const McpToolLedgerView: React.FC = () => {
                     c.allowed === false
                       ? { label: "BLOCKED", cls: "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400" }
                       : c.success === true
-                        ? { label: "OK", cls: "bg-indigo-100 dark:bg-indigo-950/30 text-gray-900 dark:text-indigo-400" }
+                        ? { label: "OK", cls: "bg-indigo-100 dark:bg-indigo-950/30 text-content dark:text-indigo-400" }
                         : c.success === false
                           ? { label: "ERROR", cls: "bg-amber-100 dark:bg-amber-950/30 text-amber-900 dark:text-amber-400" }
-                          : { label: "RUNNING", cls: "bg-gray-100 dark:bg-white/[0.08] text-gray-700 dark:text-gray-300" };
+                          : { label: "RUNNING", cls: "bg-surface-secondary dark:bg-white/[0.08] text-content-secondary" };
 
                   return (
                     <button
                       key={c._id}
                       type="button"
                       onClick={() => setSelectedId(isSelected ? null : c._id)}
-                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
-                        isSelected ? "bg-gray-50 dark:bg-white/[0.04]" : ""
+                      className={`w-full text-left px-4 py-2 hover:bg-surface-hover transition-colors ${
+                        isSelected ? "bg-surface-secondary" : ""
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -348,12 +348,12 @@ export const McpToolLedgerView: React.FC = () => {
                           ) : c.success === true ? (
                             <CheckCircle2 className="h-4 w-4 text-indigo-600" />
                           ) : (
-                            <Clock className="h-4 w-4 text-gray-500" />
+                            <Clock className="h-4 w-4 text-content-secondary" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-sm text-gray-900 dark:text-gray-100 truncate">
+                            <span className="font-mono text-sm text-content truncate">
                               {c.toolName}
                             </span>
                             <span
@@ -361,17 +361,17 @@ export const McpToolLedgerView: React.FC = () => {
                             >
                               {status.label}
                             </span>
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-white/[0.08] text-gray-700 dark:text-gray-300">
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-surface-secondary dark:bg-white/[0.08] text-content-secondary">
                               {c.riskTier}
                             </span>
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-white/[0.08] text-gray-700 dark:text-gray-300">
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-surface-secondary dark:bg-white/[0.08] text-content-secondary">
                               {c.toolType}
                             </span>
                           </div>
-                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 flex items-center gap-3 flex-wrap">
+                          <div className="mt-1 text-xs text-content-secondary flex items-center gap-3 flex-wrap">
                             <span className="tabular-nums">{formatTime(c.startedAt)}</span>
                             <span className="tabular-nums">dur {formatMs(c.durationMs)}</span>
-                            <span className="font-mono text-gray-500 dark:text-gray-500 truncate">
+                            <span className="font-mono text-content-secondary truncate">
                               {c.argsHash}
                             </span>
                           </div>
@@ -384,34 +384,34 @@ export const McpToolLedgerView: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-white/[0.06]">
-              <div className="text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          <div className="rounded-lg border border-edge bg-surface overflow-hidden">
+            <div className="px-4 py-3 border-b border-edge">
+              <div className="text-xs uppercase tracking-widest text-content-secondary">
                 Call Detail
               </div>
             </div>
 
             {!selected ? (
-              <div className="p-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="p-4 text-sm text-content-secondary">
                 Select a row to inspect args, policy evaluation, and result preview.
               </div>
             ) : (
               <div className="p-4 space-y-4">
                 <div>
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Tool</div>
-                  <div className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all">
+                  <div className="text-xs font-semibold text-content-secondary">Tool</div>
+                  <div className="font-mono text-sm text-content break-all">
                     {selected.toolName}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Risk Tier</div>
-                    <div className="text-sm text-gray-900 dark:text-gray-200">{selected.riskTier}</div>
+                    <div className="text-xs font-semibold text-content-secondary">Risk Tier</div>
+                    <div className="text-sm text-content dark:text-gray-200">{selected.riskTier}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Duration</div>
-                    <div className="text-sm text-gray-900 dark:text-gray-200 tabular-nums">
+                    <div className="text-xs font-semibold text-content-secondary">Duration</div>
+                    <div className="text-sm text-content dark:text-gray-200 tabular-nums">
                       {formatMs(selected.durationMs)}
                     </div>
                   </div>
@@ -427,29 +427,29 @@ export const McpToolLedgerView: React.FC = () => {
                 )}
 
                 <div>
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Args Preview</div>
-                  <pre className="mt-1 text-xs leading-relaxed bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap break-words">
+                  <div className="text-xs font-semibold text-content-secondary">Args Preview</div>
+                  <pre className="mt-1 text-xs leading-relaxed bg-surface-secondary border border-edge rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap break-words">
                     {selected.argsPreview ?? "(none)"}
                   </pre>
                 </div>
 
                 <div>
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Result Preview</div>
-                  <pre className="mt-1 text-xs leading-relaxed bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap break-words">
+                  <div className="text-xs font-semibold text-content-secondary">Result Preview</div>
+                  <pre className="mt-1 text-xs leading-relaxed bg-surface-secondary border border-edge rounded-lg p-3 overflow-auto max-h-48 whitespace-pre-wrap break-words">
                     {selected.resultPreview ?? "(none)"}
                   </pre>
                 </div>
 
                 <div>
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Policy</div>
-                  <pre className="mt-1 text-xs leading-relaxed bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-lg p-3 overflow-auto max-h-56 whitespace-pre-wrap break-words">
+                  <div className="text-xs font-semibold text-content-secondary">Policy</div>
+                  <pre className="mt-1 text-xs leading-relaxed bg-surface-secondary border border-edge rounded-lg p-3 overflow-auto max-h-56 whitespace-pre-wrap break-words">
                     {selected.policy ? JSON.stringify(selected.policy, null, 2) : "(none)"}
                   </pre>
                 </div>
 
                 <div>
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Request Meta</div>
-                  <pre className="mt-1 text-xs leading-relaxed bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-lg p-3 overflow-auto max-h-40 whitespace-pre-wrap break-words">
+                  <div className="text-xs font-semibold text-content-secondary">Request Meta</div>
+                  <pre className="mt-1 text-xs leading-relaxed bg-surface-secondary border border-edge rounded-lg p-3 overflow-auto max-h-40 whitespace-pre-wrap break-words">
                     {selected.requestMeta ? JSON.stringify(selected.requestMeta, null, 2) : "(none)"}
                   </pre>
                 </div>

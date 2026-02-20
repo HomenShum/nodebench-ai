@@ -64,24 +64,24 @@ export default function ProductChangelogPanel() {
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
-          <h2 className="text-[14px] font-black uppercase tracking-[0.28em] text-gray-900 dark:text-gray-100">Changelog</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Product updates and release notes.</p>
+          <h2 className="text-[14px] font-black uppercase tracking-[0.28em] text-content">Changelog</h2>
+          <p className="text-sm text-content-secondary">Product updates and release notes.</p>
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="text-xs text-content-secondary">
           {entries.length ? `${entries.length} releases` : "No releases found"}
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-4">
         <aside className="xl:sticky xl:top-4 xl:self-start">
-          <div className="bg-white/60 dark:bg-white/[0.03] border border-gray-200 dark:border-white/[0.06] rounded-lg p-3">
+          <div className="bg-white/60 dark:bg-white/[0.03] border border-edge rounded-lg p-3">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search releases..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-white/[0.08] rounded-md bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-edge rounded-md bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
@@ -93,23 +93,23 @@ export default function ProductChangelogPanel() {
                   onClick={() => handleJumpTo(e.id)}
                   className={cn(
                     "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors",
-                    e.id === latestId ? "text-gray-900 dark:text-gray-100 font-semibold" : "text-gray-600 dark:text-gray-400",
-                    "hover:bg-gray-50 dark:hover:bg-white/[0.04]",
+                    e.id === latestId ? "text-content font-semibold" : "text-content-secondary",
+                    "hover:bg-surface-hover",
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate">{e.version}</span>
                     {e.id === latestId ? (
-                      <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-gray-800 dark:text-gray-200 border border-indigo-200 dark:border-indigo-900/50">
+                      <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-content border border-indigo-200 dark:border-indigo-900/50">
                         Latest
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-xs text-gray-400 truncate">{e.dateLabel}</div>
+                  <div className="text-xs text-content-muted truncate">{e.dateLabel}</div>
                 </button>
               ))}
               {filtered.length === 0 ? (
-                <div className="py-6 text-sm text-gray-500 text-center">No matches.</div>
+                <div className="py-6 text-sm text-content-secondary text-center">No matches.</div>
               ) : null}
             </div>
           </div>
@@ -122,13 +122,13 @@ export default function ProductChangelogPanel() {
               ref={(node) => {
                 entryRefs.current[e.id] = node;
               }}
-              className="bg-white/60 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-5"
+              className="bg-white/60 dark:bg-white/[0.02] border border-edge rounded-lg p-5"
             >
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="text-xs font-black uppercase tracking-[0.25em] text-gray-900 dark:text-gray-100">{e.version}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{e.dateLabel}</div>
+                <div className="text-xs font-black uppercase tracking-[0.25em] text-content">{e.version}</div>
+                <div className="text-xs text-content-secondary">{e.dateLabel}</div>
                 {e.id === latestId ? (
-                  <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-gray-800 dark:text-gray-200 border border-indigo-200 dark:border-indigo-900/50">
+                  <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-content border border-indigo-200 dark:border-indigo-900/50">
                     Latest
                   </span>
                 ) : null}

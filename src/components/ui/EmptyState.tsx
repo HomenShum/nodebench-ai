@@ -219,10 +219,10 @@ export function EmptyState({
         {illustrations[variant]}
       </div>
       
-      <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
       
       {description && (
-        <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
+        <p className="text-sm text-content-secondary max-w-sm mb-6">{description}</p>
       )}
       
       {action && (

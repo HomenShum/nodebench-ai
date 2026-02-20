@@ -396,7 +396,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> 
             </svg> 
           </div> 
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">No tabs open</h2> 
+          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">No tabs open</h2> 
           <p className="text-[var(--text-secondary)]">Select documents or tasks from the sidebar to view them in the grid.</p> 
         </div> 
       </div> 
@@ -410,7 +410,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
       const isCalendarDoc = fullscreenTab.kind === "document" && (lowerTitle.includes("calendar") || lowerTitle.includes("schedule"));
       return ( 
         <div className="h-full w-full p-2"> 
-          <div className="h-full w-full bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-sm overflow-hidden"> 
+          <div className="h-full w-full bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-sm overflow-hidden"> 
             <div className="bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border-color)]">
               <div className="flex items-center justify-between px-4 py-3"> 
                 <div className="flex items-center gap-3">
@@ -422,7 +422,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                   <button 
                     onClick={(e) => handleFullscreenClick(fullscreenTab.id, e)}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                    className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--bg-secondary)] hover:bg-blue-500 flex items-center justify-center transition-all group/minimize hover:scale-110" 
+                    className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--bg-secondary)] hover:bg-blue-500 flex items-center justify-center transition-all group/minimize" 
                     aria-label="Exit fullscreen" 
                     title="Exit fullscreen"
                     type="button"
@@ -434,7 +434,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                   <button 
                     onClick={(e) => handleCloseClick(fullscreenTab.id, e)}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                    className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--bg-secondary)] hover:bg-red-500 flex items-center justify-center transition-all group/close hover:scale-110" 
+                    className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--bg-secondary)] hover:bg-red-500 flex items-center justify-center transition-all group/close" 
                     aria-label="Close document"
                     type="button"
                   >
@@ -503,11 +503,11 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                 'document-grid-item group relative overflow-hidden cursor-pointer transition-all duration-200 ease-out',
                 isFullscreen ? (
                   clsx(
-                    'rounded-xl border-2',
+                    'rounded-lg border-2',
                     colors.background,
                     colors.border,
                     isCalendarDoc && 'ring-2 ring-amber-400/40 bg-gradient-to-br from-amber-50/10 to-transparent',
-                    'hover:outline hover:outline-2 hover:outline-offset-[-1px] hover:shadow-lg',
+                    'hover:outline hover:outline-2 hover:outline-offset-[-1px]',
                     {
                       'outline outline-2 outline-offset-[-1px] shadow-lg': isSelected,
                     }
@@ -541,7 +541,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     <button 
                       onClick={(e) => handleZoomOut(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomout hover:scale-110 shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomout shadow-sm" 
                       aria-label="Zoom out" 
                       title="Zoom Out"
                       type="button"
@@ -551,7 +551,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     <button 
                       onClick={(e) => handleZoomToFit(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-purple-500 flex items-center justify-center transition-all group/zoomfit hover:scale-110 shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-purple-500 flex items-center justify-center transition-all group/zoomfit shadow-sm" 
                       aria-label="Zoom to fit" 
                       title="Zoom to Fit"
                       type="button"
@@ -561,7 +561,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     <button 
                       onClick={(e) => handleZoomIn(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomin hover:scale-110 shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomin shadow-sm" 
                       aria-label="Zoom in" 
                       title="Zoom In"
                       type="button"
@@ -571,7 +571,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     <button 
                       onClick={(e) => handleFullscreenClick(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-blue-500 flex items-center justify-center transition-all group/expand hover:scale-110 shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-blue-500 flex items-center justify-center transition-all group/expand shadow-sm" 
                       aria-label="Expand fullscreen" 
                       title="Expand fullscreen"
                       type="button"
@@ -583,7 +583,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     <button 
                       onClick={(e) => handleCloseClick(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-red-500 flex items-center justify-center transition-all group/close hover:scale-110 shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-red-500 flex items-center justify-center transition-all group/close shadow-sm" 
                       aria-label="Close document" 
                       title="Close document"
                       type="button"
@@ -650,7 +650,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
       {/* Warning modal */}
       {showMaxDocsWarning && ( 
         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity" onClick={() => setMaxDocsWarningDismissed(true)}> 
-          <div className="bg-[var(--bg-primary)] rounded-xl p-8 shadow-2xl border border-[var(--border-color)] max-w-sm text-center" onClick={e => e.stopPropagation()}> 
+          <div className="bg-[var(--bg-primary)] rounded-lg p-8 shadow-2xl border border-[var(--border-color)] max-w-sm text-center" onClick={e => e.stopPropagation()}> 
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4"> 
               <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>

@@ -54,7 +54,7 @@ function EvidenceChip({
   if (disabled || !artifact) {
     return (
       <span 
-        className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-medium bg-gray-200 text-gray-400 rounded cursor-not-allowed"
+        className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-medium bg-surface-secondary text-content-muted rounded cursor-not-allowed"
         title="Source loading..."
       >
         [{index}]
@@ -233,14 +233,14 @@ export function SourceFooter({ sectionId, evidenceLinks, onSourceClick }: Source
   }
   
   return (
-    <div className="mt-4 pt-3 border-t border-gray-100">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+    <div className="mt-4 pt-3 border-t border-edge">
+      <p className="text-xs font-semibold text-content-secondary uppercase tracking-wide mb-2">
         Sources
       </p>
-      <ol className="text-xs text-gray-600 space-y-1 list-none pl-0">
+      <ol className="text-xs text-content-secondary space-y-1 list-none pl-0">
         {uniqueArtifacts.map(({ artifact, index }) => (
           <li key={artifact.id} className="flex items-start gap-2">
-            <span className="font-mono text-gray-400 shrink-0">[{index}]</span>
+            <span className="font-mono text-content-muted shrink-0">[{index}]</span>
             <a
               href={artifact.canonicalUrl}
               target="_blank"

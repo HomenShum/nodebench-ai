@@ -11,7 +11,7 @@ const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="my-6 overflow-hidden rounded-md border-l-4 border-indigo-500 bg-gray-50">
+    <div className="my-6 overflow-hidden rounded-md border-l-4 border-indigo-500 bg-surface-secondary">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}

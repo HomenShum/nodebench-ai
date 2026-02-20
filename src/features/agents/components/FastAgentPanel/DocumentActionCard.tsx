@@ -49,7 +49,7 @@ export function DocumentActionCard({ document, className, onDocumentSelect }: Do
       onClick={handleClick}
       className={cn(
         "w-full flex items-start gap-3 p-4 rounded-lg border transition-all",
-        "hover:shadow-md hover:scale-[1.01] active:scale-[0.99]",
+        "hover:shadow-md active:scale-[0.99]",
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
         isCreated
           ? "bg-gradient-to-br from-green-50 to-white border-green-200 hover:border-green-300 focus:ring-green-500"

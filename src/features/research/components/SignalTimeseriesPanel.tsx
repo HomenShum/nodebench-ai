@@ -60,23 +60,23 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
   if (!keyword) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Activity className="w-4 h-4 text-gray-500" />
+        <Activity className="w-4 h-4 text-content-secondary" />
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Signal Momentum</div>
-          <div className="text-sm font-semibold text-gray-900">{keyword}</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Signal Momentum</div>
+          <div className="text-sm font-semibold text-content">{keyword}</div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-xs text-gray-500">
+      <div className="flex items-center justify-between text-xs text-content-secondary">
         <span>Total {total} hits</span>
         <div className="flex items-center gap-2">
           <span>Latest: {latest}</span>
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700"
+            className="inline-flex items-center gap-1 text-xs text-content-muted hover:text-content-secondary"
           >
             <Download className="w-3 h-3" />
             CSV
@@ -97,43 +97,43 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
       </div>
 
       {activePoint && (
-        <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-          <div className="text-xs uppercase tracking-widest text-gray-400">Active day</div>
-          <div className="font-semibold text-gray-800">
+        <div className="rounded-md border border-edge bg-surface-secondary px-3 py-2 text-xs text-content-secondary">
+          <div className="text-xs uppercase tracking-widest text-content-muted">Active day</div>
+          <div className="font-semibold text-content">
             {activePoint.date} • {activePoint.count} hits
           </div>
         </div>
       )}
 
       {activeEvents.length > 0 && (
-        <div className="space-y-2 text-xs text-gray-600">
-          <div className="text-xs uppercase tracking-widest text-gray-400">Mapped events</div>
+        <div className="space-y-2 text-xs text-content-secondary">
+          <div className="text-xs uppercase tracking-widest text-content-muted">Mapped events</div>
           {activeEvents.map((event: any, idx: number) => (
             <a
               key={`${event.title}-${idx}`}
               href={event.url || "#"}
               target={event.url ? "_blank" : undefined}
               rel={event.url ? "noopener noreferrer" : undefined}
-              className="block rounded-md border border-gray-100 bg-gray-50 px-2 py-1 hover:border-gray-200"
+              className="block rounded-md border border-edge bg-surface-secondary px-2 py-1 hover:border-edge"
             >
-              <div className="font-semibold text-gray-800">{event.title}</div>
-              {event.source && <div className="text-xs text-gray-400">{event.source}</div>}
+              <div className="font-semibold text-content">{event.title}</div>
+              {event.source && <div className="text-xs text-content-muted">{event.source}</div>}
             </a>
           ))}
         </div>
       )}
 
       {ledgerRows.length > 0 && (
-        <div className="space-y-2 text-xs text-gray-600">
-          <div className="text-xs uppercase tracking-widest text-gray-400">Event ledger</div>
+        <div className="space-y-2 text-xs text-content-secondary">
+          <div className="text-xs uppercase tracking-widest text-content-muted">Event ledger</div>
           <div className="space-y-1">
             {ledgerRows.map((row: any, idx: number) => (
               <div
                 key={`${row.date}-${idx}`}
-                className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-2 py-1"
+                className="flex items-center justify-between rounded-md border border-edge bg-white px-2 py-1"
               >
-                <span className="text-gray-700">{row.date}</span>
-                <span className="text-gray-500">{row.count} hits</span>
+                <span className="text-content-secondary">{row.date}</span>
+                <span className="text-content-secondary">{row.count} hits</span>
               </div>
             ))}
           </div>

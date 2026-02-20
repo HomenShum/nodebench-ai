@@ -248,7 +248,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
 
   if (task === undefined) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-xl p-4 bg-[var(--bg-secondary)]">
+      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-4 bg-[var(--bg-secondary)]">
         <div className="motion-safe:animate-pulse h-5 w-36 bg-[var(--bg-primary)] rounded mb-3" />
         <div className="space-y-2">
           <div className="h-4 bg-[var(--bg-primary)] rounded" />
@@ -261,7 +261,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
 
   if (!task) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-xl p-4 bg-[var(--bg-secondary)] flex items-center justify-between">
+      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-4 bg-[var(--bg-secondary)] flex items-center justify-between">
         <div className="text-sm text-[var(--text-secondary)]">Task not found</div>
         <button
           className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"

@@ -263,7 +263,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                         </div>
                         <div>
                           <div className="text-xs font-medium text-[var(--text-secondary)] mb-1">Replace:</div>
-                          <pre className="p-2 bg-indigo-50 border border-indigo-200 rounded text-xs text-gray-800 overflow-x-auto whitespace-pre-wrap">
+                          <pre className="p-2 bg-indigo-50 border border-indigo-200 rounded text-xs text-content overflow-x-auto whitespace-pre-wrap">
                             {edit.operation.replace}
                           </pre>
                         </div>

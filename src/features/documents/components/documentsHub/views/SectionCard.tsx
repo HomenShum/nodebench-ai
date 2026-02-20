@@ -27,7 +27,7 @@ export function SectionCard({
     className = "",
 }: SectionCardProps) {
     return (
-        <div className={`bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl p-5 ${className}`}>
+        <div className={`bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-5 ${className}`}>
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-[var(--text-primary)]">
                     {title}

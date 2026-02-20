@@ -70,16 +70,16 @@ function InsightCardComponent({
     <button
       onClick={() => onCardClick?.(card)}
       className={`
-        group relative w-full text-left p-4 rounded-xl 
+        group relative w-full text-left p-4 rounded-lg 
         bg-gradient-to-br ${gradientClass}
         border hover:border-[color:var(--border-color)]
-        transition-all duration-200 hover:shadow-md hover:scale-[1.02]
+        transition-all duration-200
         focus:outline-none focus:ring-2 focus:ring-[color:var(--text-primary)]/20
       `}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
-        <div className={`p-2 rounded-lg bg-[color:var(--bg-primary)]/80 shadow-sm ${iconColor}`}>
+        <div className={`p-2 rounded-lg bg-[color:var(--bg-primary)]/80 ${iconColor}`}>
           <Icon className="w-4 h-4" />
         </div>
         {card.source && (

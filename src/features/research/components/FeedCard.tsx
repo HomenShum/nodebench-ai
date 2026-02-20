@@ -80,7 +80,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getSourceQualityBadge = () => {
     if (!item.sourceQuality) return null;
     const badges: Record<SourceQualityTier, { icon: string; label: string; color: string }> = {
-      excellent: { icon: '✓', label: 'Excellent', color: 'bg-indigo-50 text-gray-700 border-indigo-200' },
+      excellent: { icon: '✓', label: 'Excellent', color: 'bg-indigo-50 text-content-secondary border-indigo-200' },
       good: { icon: '●', label: 'Good', color: 'bg-blue-50 text-blue-700 border-blue-200' },
       fair: { icon: '◐', label: 'Fair', color: 'bg-amber-50 text-amber-700 border-amber-200' },
       poor: { icon: '○', label: 'Poor', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-color)]' },
@@ -96,7 +96,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getVerifiedBadge = () => {
     if (!item.verified) return null;
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-indigo-50 text-gray-700 border-indigo-200" title="Facts verified">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-indigo-50 text-content-secondary border-indigo-200" title="Facts verified">
         ✓ Verified
       </span>
     );
@@ -114,7 +114,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         onClick={onClick}
         className={`
           group relative p-5 rounded-lg transition-shadow duration-150 cursor-pointer
-          bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
+          bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
           ${isSignal ? 'bg-slate-900 border-slate-800 text-white hover:border-slate-700' : ''}
         `}
       >
@@ -155,7 +155,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
       onClick={onClick}
       className={`
         group relative break-inside-avoid cursor-pointer overflow-hidden rounded-lg border transition-shadow duration-150 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]
-        border-[color:var(--border-color)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
+        border-[color:var(--border-color)] focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
         ${isSelected ? 'ring-2 ring-[var(--accent-primary)] ring-offset-1' : ''}
       `}
     >

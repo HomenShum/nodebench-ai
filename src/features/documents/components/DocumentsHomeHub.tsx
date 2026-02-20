@@ -21,7 +21,7 @@ import { useQuery, useMutation, useAction } from "convex/react";
 
   - Kanban mode: Use TaskEditorPanel for full editing (no large inline expansion).
 
-    Allow tiny popovers for quick actions (priority menu, date picker) and keep card visuals standardized (rounded-xl, focus ring, no hover motion).
+    Allow tiny popovers for quick actions (priority menu, date picker) and keep card visuals standardized (rounded-lg, focus ring, no hover motion).
 
 
   Document Editing:
@@ -5477,7 +5477,7 @@ export function DocumentsHomeHub({
                     {/* Lane watermark */}
 
                     <span
-                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-blue-400" : key === "done" ? "text-indigo-400" : key === "blocked" ? "text-rose-400" : "text-gray-400"}`}
+                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-blue-400" : key === "done" ? "text-indigo-400" : key === "blocked" ? "text-rose-400" : "text-content-muted"}`}
                     >
                       <ListTodo className="h-14 w-14 rotate-12" />
                     </span>
@@ -5501,7 +5501,7 @@ export function DocumentsHomeHub({
                     <div className="flex items-center justify-between mb-2">
                       {editingLane === key ? (
                         <input
-                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-gray-700" : key === "blocked" ? "text-rose-700" : "text-gray-700"}`}
+                          className={`text-sm font-semibold bg-transparent border-b border-[var(--border-color)] focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-content-secondary" : key === "blocked" ? "text-rose-700" : "text-content-secondary"}`}
                           autoFocus
                           value={laneDraft}
                           onChange={(e) => setLaneDraft(e.target.value)}
@@ -5521,7 +5521,7 @@ export function DocumentsHomeHub({
                         />
                       ) : (
                         <h3
-                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-gray-700" : key === "blocked" ? "text-rose-700" : "text-gray-700"}`}
+                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-blue-700" : key === "done" ? "text-content-secondary" : key === "blocked" ? "text-rose-700" : "text-content-secondary"}`}
                           title="Click to rename lane"
                           onClick={() => startEditLane(key)}
                         >
@@ -5531,7 +5531,7 @@ export function DocumentsHomeHub({
 
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-blue-50 border-blue-200 text-blue-700" : key === "done" ? "bg-indigo-50 border-indigo-200 text-gray-700" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-gray-50 border-gray-200 text-gray-700"}`}
+                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-blue-50 border-blue-200 text-blue-700" : key === "done" ? "bg-indigo-50 border-indigo-200 text-content-secondary" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-surface-secondary border-edge text-content-secondary"}`}
                         >
                           {sorted.length}
                         </span>
@@ -5665,11 +5665,11 @@ export function DocumentsHomeHub({
         <div className="flex items-center justify-between">
           {isToday ? (
             <div className="inline-flex items-center gap-2">
-              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-gray-700 border border-indigo-200">
+              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-content-secondary border border-indigo-200">
                 Today
               </span>
 
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-content-secondary">
                 {date.getDate()}
               </span>
             </div>
@@ -6623,7 +6623,7 @@ export function DocumentsHomeHub({
     };
 
     return (
-      <div className="bg-[var(--bg-primary)] rounded-xl shadow-sm border border-[var(--border-color)] p-4">
+      <div className="bg-[var(--bg-primary)] rounded-lg shadow-sm border border-[var(--border-color)] p-4">
         <DndContext
           sensors={kanbanSensors}
           onDragStart={handleWeeklyDragStart}
@@ -6943,10 +6943,10 @@ export function DocumentsHomeHub({
                 />
 
                 {Array.isArray(spreadsheets) && spreadsheets.length > 0 && (
-                  <div className="mb-6 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
+                  <div className="mb-6 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                        <FileSpreadsheet className="h-4 w-4 text-gray-700" />
+                        <FileSpreadsheet className="h-4 w-4 text-content-secondary" />
                         Spreadsheets
                         <span className="text-[var(--text-secondary)] font-normal">
                           ({spreadsheets.length})
@@ -7011,7 +7011,7 @@ export function DocumentsHomeHub({
                     <input {...getInputProps()} />
 
                     {isDragActive && (
-                      <div className="absolute inset-0 z-20 rounded-xl border-2 border-dashed border-[var(--text-muted)] bg-[var(--bg-primary)]/95 backdrop-blur-sm flex items-center justify-center">
+                      <div className="absolute inset-0 z-20 rounded-lg border-2 border-dashed border-[var(--text-muted)] bg-[var(--bg-primary)]/95 backdrop-blur-sm flex items-center justify-center">
                         <div className="text-center">
                           <p className="font-semibold text-[var(--text-primary)] text-lg">
                             Drop files to upload
@@ -7053,9 +7053,9 @@ export function DocumentsHomeHub({
                         <button
                           type="button"
                           onClick={() => open()}
-                          className="w-full flex flex-col items-center justify-center py-20 text-center rounded-2xl border-2 border-dashed border-gray-200 dark:border-white/[0.08] hover:border-indigo-300 dark:hover:border-indigo-500/30 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-indigo-50/50 dark:hover:bg-indigo-500/[0.04] transition-all duration-300 cursor-pointer group"
+                          className="w-full flex flex-col items-center justify-center py-20 text-center rounded-lg border-2 border-dashed border-edge hover:border-indigo-300 dark:hover:border-indigo-500/30 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-indigo-50/50 dark:hover:bg-indigo-500/[0.04] transition-all duration-300 cursor-pointer group"
                         >
-                          <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200">
+                          <div className="w-14 h-14 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center mb-4 transition-transform duration-200">
                             <FileText className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                           </div>
                           <p className="text-lg font-semibold text-[var(--text-primary)] mb-1">
@@ -7702,7 +7702,7 @@ export function DocumentsHomeHub({
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-task-modal-title"
-            className="w-full max-w-md rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl"
+            className="w-full max-w-md rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
             ref={modalRef}
             onKeyDown={handleModalKeyDown}
@@ -7841,7 +7841,7 @@ export function DocumentsHomeHub({
           role="dialog"
           aria-label="Create agenda item"
         >
-          <div className="w-[min(520px,calc(100vw-32px))] rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl">
+          <div className="w-[min(520px,calc(100vw-32px))] rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl">
             <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-primary)] rounded-t-xl">
               <div className="text-xs text-[var(--text-secondary)]">
                 Create on {new Date(inlineCreate.dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

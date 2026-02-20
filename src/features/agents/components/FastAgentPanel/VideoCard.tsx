@@ -25,7 +25,7 @@ export function VideoCard({ video, className }: VideoCardProps) {
       rel="noopener noreferrer"
       className={cn(
         "group block rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--border-color)]",
-        "transition-all duration-200 hover:shadow-md bg-[var(--bg-primary)]",
+        "transition-all duration-200 bg-[var(--bg-primary)]",
         className
       )}
     >

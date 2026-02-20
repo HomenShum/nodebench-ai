@@ -191,7 +191,7 @@ const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
       type="button"
       onClick={onClick}
       whileHover={{ scale: 1.01 }}
-      className="w-full text-left p-4 rounded-lg border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] hover:shadow-sm transition-all"
+      className="w-full text-left p-4 rounded-lg border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] transition-all"
     >
       <div className="flex items-start gap-3">
         <span className={`p-2 rounded-lg ${colors}`}>
@@ -243,7 +243,7 @@ export const EmailDigestPreview: React.FC<EmailDigestPreviewProps> = ({
   const StatusIcon = statusBadge.icon;
 
   return (
-    <div className={`bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] shadow-sm ${className}`}>
+    <div className={`bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] shadow-sm ${className}`}>
       {/* Header */}
       <div className="p-6 border-b border-[color:var(--border-color)]">
         <div className="flex items-start justify-between gap-4">

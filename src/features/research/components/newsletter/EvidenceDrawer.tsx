@@ -50,7 +50,7 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
     return (
         <div
             onClick={() => onSourceClick?.(source)}
-            className="p-3 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] hover:shadow-sm cursor-pointer transition-all group"
+            className="p-3 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] cursor-pointer transition-all group"
         >
             <div className="flex items-start gap-2">
                 <span className="p-1.5 bg-[color:var(--bg-secondary)] rounded border border-[color:var(--border-color)] shrink-0">
@@ -228,7 +228,7 @@ export function EvidenceDrawer({
                 {activeTab === 'verify' && (
                     <div className="space-y-4">
                         {/* Verification Summary */}
-                        <div className="p-4 bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)]">
+                        <div className="p-4 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)]">
                             <h3 className="text-sm font-semibold text-[color:var(--text-primary)] mb-3">Verification Status</h3>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
@@ -260,7 +260,7 @@ export function EvidenceDrawer({
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="p-4 bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)]">
+                        <div className="p-4 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)]">
                             <h3 className="text-sm font-semibold text-[color:var(--text-primary)] mb-3">Quick Actions</h3>
                             <div className="space-y-2">
                                 <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[color:var(--text-primary)] bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors">

@@ -97,7 +97,7 @@ function ChannelRow({
   return (
     <div
       data-testid={`channel-row-${meta.id}`}
-      className={`rounded-lg border ${config.enabled ? "border-blue-200 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-950/10" : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02]"} transition-colors`}
+      className={`rounded-lg border ${config.enabled ? "border-blue-200 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-950/10" : "border-edge bg-surface"} transition-colors`}
     >
       {/* Header row */}
       <div className="flex items-center gap-3 p-3">
@@ -109,7 +109,7 @@ function ChannelRow({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{meta.label}</span>
+            <span className="text-sm font-semibold text-content">{meta.label}</span>
             {meta.providerType === "openclaw" && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">OpenClaw</span>
             )}
@@ -119,14 +119,14 @@ function ChannelRow({
               </span>
             )}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">{meta.description}</div>
+          <div className="text-xs text-content-secondary">{meta.description}</div>
         </div>
 
         {/* Fallback reorder */}
         {config.enabled && (
           <div className="flex flex-col gap-0.5">
             <button
-              className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-white/[0.06] disabled:opacity-30"
+              className="p-0.5 rounded hover:bg-surface-hover disabled:opacity-30"
               onClick={onMoveUp}
               disabled={fallbackIndex <= 0}
               title="Move up in priority"
@@ -135,7 +135,7 @@ function ChannelRow({
               <ChevronUp className="h-3.5 w-3.5" />
             </button>
             <button
-              className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-white/[0.06] disabled:opacity-30"
+              className="p-0.5 rounded hover:bg-surface-hover disabled:opacity-30"
               onClick={onMoveDown}
               disabled={fallbackIndex >= totalFallback - 1}
               title="Move down in priority"
@@ -155,13 +155,13 @@ function ChannelRow({
             onChange={onToggle}
             data-testid={`channel-toggle-${meta.id}`}
           />
-          <div className="w-11 h-6 bg-gray-200 dark:bg-white/[0.12] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
+          <div className="w-11 h-6 bg-surface-secondary dark:bg-white/[0.12] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-edge dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600" />
         </label>
 
         {/* Expand/collapse config */}
         {config.enabled && (
           <button
-            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/[0.06] text-xs text-gray-500"
+            className="p-1 rounded hover:bg-surface-hover text-xs text-content-secondary"
             onClick={() => setExpanded((v) => !v)}
             data-testid={`channel-expand-${meta.id}`}
           >
@@ -172,13 +172,13 @@ function ChannelRow({
 
       {/* Expanded config */}
       {expanded && config.enabled && (
-        <div className="px-3 pb-3 pt-0 border-t border-gray-100 dark:border-white/[0.04] space-y-3" data-testid={`channel-config-${meta.id}`}>
+        <div className="px-3 pb-3 pt-0 border-t border-edge space-y-3" data-testid={`channel-config-${meta.id}`}>
           {/* Identifier */}
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-700 dark:text-gray-300">{meta.identifierLabel}</label>
+            <label className="text-xs font-medium text-content-secondary">{meta.identifierLabel}</label>
             <input
               type="text"
-              className="w-full px-2 py-1.5 text-sm rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+              className="w-full px-2 py-1.5 text-sm rounded border border-edge bg-surface-secondary"
               placeholder={meta.identifierPlaceholder}
               value={config.identifier}
               onChange={(e) => onUpdate({ identifier: e.target.value })}
@@ -190,29 +190,29 @@ function ChannelRow({
           <label className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
-              className="h-3.5 w-3.5 text-blue-600 rounded border-gray-300 dark:border-gray-600"
+              className="h-3.5 w-3.5 text-blue-600 rounded border-edge dark:border-gray-600"
               checked={config.optedIn}
               onChange={(e) => onUpdate({ optedIn: e.target.checked })}
               data-testid={`channel-optin-${meta.id}`}
             />
-            <span className="text-gray-700 dark:text-gray-300">I consent to receive messages on this channel</span>
+            <span className="text-content-secondary">I consent to receive messages on this channel</span>
           </label>
 
           {/* Quiet hours */}
           <div className="flex items-center gap-3">
-            <Clock className="h-3.5 w-3.5 text-gray-400" />
-            <label className="text-xs text-gray-600 dark:text-gray-400">Quiet hours:</label>
+            <Clock className="h-3.5 w-3.5 text-content-muted" />
+            <label className="text-xs text-content-secondary">Quiet hours:</label>
             <input
               type="time"
-              className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+              className="px-2 py-1 text-xs rounded border border-edge bg-surface-secondary"
               value={config.quietHoursStart ?? ""}
               onChange={(e) => onUpdate({ quietHoursStart: e.target.value || undefined })}
               data-testid={`channel-quiet-start-${meta.id}`}
             />
-            <span className="text-xs text-gray-400">to</span>
+            <span className="text-xs text-content-muted">to</span>
             <input
               type="time"
-              className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+              className="px-2 py-1 text-xs rounded border border-edge bg-surface-secondary"
               value={config.quietHoursEnd ?? ""}
               onChange={(e) => onUpdate({ quietHoursEnd: e.target.value || undefined })}
               data-testid={`channel-quiet-end-${meta.id}`}
@@ -221,10 +221,10 @@ function ChannelRow({
 
           {/* Max per day */}
           <div className="flex items-center gap-3">
-            <label className="text-xs text-gray-600 dark:text-gray-400">Max messages/day:</label>
+            <label className="text-xs text-content-secondary">Max messages/day:</label>
             <input
               type="number"
-              className="w-20 px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+              className="w-20 px-2 py-1 text-xs rounded border border-edge bg-surface-secondary"
               placeholder="No limit"
               min={0}
               value={config.maxPerDay ?? ""}
@@ -374,18 +374,18 @@ export function ChannelPreferencesTab() {
       {/* Header with stats */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Messaging Channels</h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          <h3 className="text-sm font-semibold text-content">Messaging Channels</h3>
+          <p className="text-xs text-content-secondary mt-0.5">
             Configure where you receive notifications. Drag to reorder fallback priority.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-content-secondary">
             <span className="font-medium text-blue-600">{enabledCount}</span> enabled,{" "}
             <span className="font-medium text-green-600">{optedInCount}</span> consented
           </div>
           <button
-            className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
+            className="btn-primary-sm flex items-center gap-1.5"
             onClick={() => { void handleSave(); }}
             disabled={saving || !dirty}
             data-testid="channel-save-btn"

@@ -113,7 +113,7 @@ export function CalendarDatePopover({
 
   return (
     <div
-      className={`w-80 bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-[var(--bg-primary)]/70 overflow-hidden ${className}`}
+      className={`w-80 bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-lg shadow-2xl border border-[var(--bg-primary)]/70 overflow-hidden ${className}`}
       role="dialog"
       aria-label={`Daily brief for ${shortDate}`}
       onClick={(e) => e.stopPropagation()}
@@ -192,7 +192,7 @@ export function CalendarDatePopover({
                 {events.slice(0, 4).map((evt) => (
                   <div
                     key={evt._id || `${evt.title}-${evt.startTime}`}
-                    className="flex items-start gap-3 p-2 rounded-xl hover:bg-[var(--bg-hover)] transition-colors border border-[var(--border-color)] cursor-pointer"
+                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors border border-[var(--border-color)] cursor-pointer"
                     onClick={() => onSelectEvent?.(evt._id, evt.documentId)}
                   >
                     <div className="w-1 h-12 rounded-full bg-blue-500" />
@@ -221,7 +221,7 @@ export function CalendarDatePopover({
                             <>
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-indigo-200 bg-indigo-50 text-gray-700 hover:bg-indigo-100"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-indigo-200 bg-indigo-50 text-content-secondary hover:bg-indigo-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onAcceptProposed?.(evt._id);

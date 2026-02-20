@@ -101,7 +101,7 @@ function PresenceCore({ documentId, userId, intervalMs }: PresenceIndicatorProps
         })}
         {validPresenceState.length > 5 && (
           <div
-            className="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-medium border-2 border-white shadow-sm"
+            className="w-7 h-7 rounded-full bg-surface-secondary text-content-secondary flex items-center justify-center text-xs font-medium border-2 border-white shadow-sm"
             title={`+${validPresenceState.length - 5} more`}
           >
             +{validPresenceState.length - 5}

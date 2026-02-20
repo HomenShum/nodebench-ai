@@ -24,7 +24,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     transition={{ duration: 0.6, ease: "easeOut" }}
                     className="mb-8 flex justify-center"
                 >
-                    <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4 py-1.5 text-sm font-medium shadow-sm">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4 py-1.5 text-sm font-medium">
                         <span className="relative flex h-2 w-2">
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
                         </span>
@@ -78,7 +78,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 >
                     <button
                         type="button"
-                        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gray-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-black hover:scale-105 shadow-lg"
+                        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gray-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-black shadow-lg"
                     >
                         <span>Start Reading</span>
                         <svg

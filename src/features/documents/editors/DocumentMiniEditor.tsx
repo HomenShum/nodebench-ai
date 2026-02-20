@@ -98,7 +98,7 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
 
   if (doc === undefined) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-xl p-3 bg-[var(--bg-secondary)]">
+      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-3 bg-[var(--bg-secondary)]">
         <div className="motion-safe:animate-pulse h-4 w-28 bg-[var(--bg-primary)] rounded mb-2" />
         <div className="space-y-2">
           <div className="h-3 bg-[var(--bg-primary)] rounded" />

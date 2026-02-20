@@ -14,7 +14,7 @@ export const statusChipClasses = (s?: string) => {
     case "in_progress":
       return "bg-blue-50 text-blue-700 border-blue-200";
     case "done":
-      return "bg-indigo-50 text-gray-700 border-indigo-200";
+      return "bg-indigo-50 text-content-secondary border-indigo-200";
     case "blocked":
       return "bg-rose-50 text-rose-700 border-rose-200";
     default:

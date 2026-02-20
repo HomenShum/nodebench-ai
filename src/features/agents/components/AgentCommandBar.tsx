@@ -317,7 +317,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
       <div className="relative">
         <div
           className={cn(
-            "flex flex-col bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)]",
+            "flex flex-col bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]",
             "focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/20",
             "focus-within:border-[var(--accent-primary)]/50 transition-all"
           )}

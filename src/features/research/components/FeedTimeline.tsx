@@ -76,7 +76,7 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({ items, onItemClick, 
           <div key={entry.group.id} className="relative pl-10 pb-16 last:pb-0">
             {!last && <div className="absolute left-[19px] top-10 bottom-0 w-px bg-[color:var(--border-color)]/70" />}
             <div className="absolute left-0 top-0">
-              <div className={`w-10 h-10 rounded-xl border-[3px] border-white shadow-sm flex items-center justify-center ${entry.group.color}`}>
+              <div className={`w-10 h-10 rounded-lg border-[3px] border-white shadow-sm flex items-center justify-center ${entry.group.color}`}>
                 <Icon className="w-5 h-5" />
               </div>
             </div>

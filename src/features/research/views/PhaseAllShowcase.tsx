@@ -165,17 +165,17 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200 dark:border-white/[0.06]">
+      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-edge">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (
-              <button type="button" onClick={onBack} className="p-2 hover:bg-gray-100 dark:hover:bg-white/[0.06] rounded-lg transition-colors" aria-label="Go back">
-                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <button type="button" onClick={onBack} className="p-2 hover:bg-surface-hover rounded-lg transition-colors" aria-label="Go back">
+                <ArrowLeft className="w-5 h-5 text-content-secondary" />
               </button>
             )}
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Phase All Showcase</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">AI-2027.com-like Visual Multi-Source Research Components</p>
+              <h1 className="text-base font-semibold text-content">Phase All Showcase</h1>
+              <p className="text-sm text-content-secondary">AI-2027.com-like Visual Multi-Source Research Components</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -185,8 +185,8 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
                 type="button"
                 onClick={() => setActiveSection(id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors ${activeSection === id
-                    ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900'
-                    : 'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]'
+                    ? 'bg-gray-900 dark:bg-surface-secondary text-white dark:text-content'
+                    : 'bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1]'
                   }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -201,7 +201,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         {/* Phase 2: Timeline Strip */}
         {(activeSection === 'all' || activeSection === 'timeline') && (
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-white/[0.06] pb-2">
+            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
               Phase 2: Timeline Strip
             </h2>
             <TimelineStrip
@@ -215,11 +215,11 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         {/* Phase 1: Citations */}
         {(activeSection === 'all' || activeSection === 'citations') && (
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-white/[0.06] pb-2">
+            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
               Phase 1: Citation & Provenance
             </h2>
-            <div className="bg-white dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] p-6 space-y-4">
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+            <div className="bg-surface rounded-lg border border-edge p-6 space-y-4">
+              <p className="text-content-secondary leading-relaxed">
                 Inline footnote markers: Research shows <FootnoteMarker citation={sampleCitations.citations['arxiv-001']} />
                 that AI development is accelerating. Financial data <FootnoteMarker citation={sampleCitations.citations['sec-10k']} />
                 confirms market growth. Industry leaders <FootnoteMarker citation={sampleCitations.citations['quote-altman']} />
@@ -233,18 +233,18 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         {/* Phase 3: Entity Linking */}
         {(activeSection === 'all' || activeSection === 'entities') && (
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-white/[0.06] pb-2">
+            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
               Phase 3: Entity Linking
             </h2>
-            <div className="bg-white dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] p-6 space-y-6">
+            <div className="bg-surface rounded-lg border border-edge p-6 space-y-6">
               <div className="flex flex-wrap gap-3">
                 {Object.values(sampleEntities.entities).map((entity) => (
                   <EntityLink key={entity.id} entity={entity} onClick={() => {}} />
                 ))}
               </div>
-              <div className="border-t border-gray-100 dark:border-white/[0.06] pt-4">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Interactive Span Parser Demo:</h3>
-                <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
+              <div className="border-t border-edge pt-4">
+                <h3 className="text-sm font-semibold text-content-secondary mb-2">Interactive Span Parser Demo:</h3>
+                <div className="text-content-secondary leading-relaxed">
                   <InteractiveSpanParser
                     text={sampleTextWithTokens}
                     citations={sampleCitations}
@@ -259,7 +259,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         {/* Phase 5: Research Supplements */}
         {(activeSection === 'all' || activeSection === 'supplements') && (
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-white/[0.06] pb-2">
+            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
               Phase 5: Research Supplements
             </h2>
             <ResearchSupplementView supplement={sampleSupplement} />
@@ -269,7 +269,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         {/* Phase 6: Email Digest */}
         {(activeSection === 'all' || activeSection === 'digest') && (
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-white/[0.06] pb-2">
+            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
               Phase 6: Email Digest Preview
             </h2>
             <EmailDigestPreview digest={sampleDigest} />

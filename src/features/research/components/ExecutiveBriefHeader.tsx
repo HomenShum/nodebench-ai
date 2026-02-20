@@ -77,8 +77,8 @@ function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
   };
 
   return (
-    <div className={`flex items-center gap-5 px-6 py-5 rounded-2xl border backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px] group ${colorClasses[color]}`}>
-      <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[color:var(--bg-primary)] shadow-xl shadow-[color:var(--bg-tertiary)]/20 group-hover:scale-110 transition-transform flex items-center justify-center">
+    <div className={`flex items-center gap-5 px-6 py-5 rounded-lg border backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px] group ${colorClasses[color]}`}>
+      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[color:var(--bg-primary)] shadow-xl shadow-[color:var(--bg-tertiary)]/20 transition-transform flex items-center justify-center">
         <div className="[&>svg]:w-6 [&>svg]:h-6">
           {icon}
         </div>
@@ -107,7 +107,7 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 text-xs font-bold rounded-xl transition-all tracking-[0.1em] uppercase ${isSelected
+      className={`px-4 py-2 text-xs font-bold rounded-lg transition-all tracking-[0.1em] uppercase ${isSelected
         ? "bg-gray-900 text-white shadow-xl shadow-gray-400/20 translate-y-[-1px]"
         : "bg-[color:var(--bg-primary)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] border border-[color:var(--border-color)]"
         }`}
@@ -185,7 +185,7 @@ export function ExecutiveBriefHeader({
       : undefined;
 
   return (
-    <header className={`bg-[color:var(--bg-primary)]/80 backdrop-blur-xl border border-[color:var(--border-color)] rounded-2xl shadow-sm overflow-hidden ${className ?? ""}`}>
+    <header className={`bg-[color:var(--bg-primary)]/80 backdrop-blur-xl border border-[color:var(--border-color)] rounded-lg overflow-hidden ${className ?? ""}`}>
       {/* Top row: Headline + Date */}
       <div className="px-8 py-6 border-b border-[color:var(--bg-secondary)]/50 bg-gradient-to-r from-[color:var(--bg-secondary)]/30 to-transparent">
         <div className="flex items-start justify-between gap-4">

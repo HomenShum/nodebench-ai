@@ -22,7 +22,7 @@ export function SpreadsheetsHub({
         {!sheets ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl border border-border/60 bg-card p-4">
+              <div key={i} className="rounded-lg border border-border/60 bg-card p-4">
                 <div className="h-4 bg-muted/40 rounded w-3/4 mb-2" />
                 <div className="h-3 bg-muted/30 rounded w-1/2" />
               </div>
@@ -30,7 +30,7 @@ export function SpreadsheetsHub({
           </div>
         ) : sheets.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-indigo-500/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <FileSpreadsheet className="w-8 h-8 text-indigo-400" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No spreadsheets yet</h3>
@@ -44,7 +44,7 @@ export function SpreadsheetsHub({
               <button
                 key={String(s._id)}
                 type="button"
-                className="text-left rounded-xl border border-border/60 bg-card hover:bg-muted/20 p-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                className="text-left rounded-lg border border-border/60 bg-card hover:bg-muted/20 p-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 onClick={() => onOpenSheet(s._id as Id<"spreadsheets">)}
               >
                 <div className="text-sm font-medium text-foreground truncate">

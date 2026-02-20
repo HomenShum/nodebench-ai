@@ -117,7 +117,7 @@ function DashboardSectionInner({
   if (!snapshot) {
     return (
       <div className={`${className} p-4`}>
-        <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] p-6 text-center">
+        <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] p-6 text-center">
           <div className="text-sm font-medium text-[color:var(--text-primary)] mb-1">No dashboard data yet</div>
           <div className="text-xs text-[color:var(--text-secondary)] mb-4">Metrics are generated automatically at 6:00 AM UTC.</div>
           <button

@@ -251,7 +251,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
 
             {/* Metrics (if available) */}
             {displayItem.metrics && displayItem.metrics.length > 0 && (
-              <div className="grid grid-cols-3 gap-4 p-4 bg-[color:var(--bg-secondary)] rounded-xl border border-[color:var(--border-color)]">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-[color:var(--bg-secondary)] rounded-lg border border-[color:var(--border-color)]">
                 {displayItem.metrics.map((metric, i) => (
                   <div key={i} className="text-center">
                     <div className="text-xs uppercase text-[color:var(--text-secondary)] font-medium">{metric.label}</div>
@@ -352,9 +352,9 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
 
           {/* AI Analyst Block */}
           <div className="p-6 border-t border-[color:var(--border-color)] bg-gradient-to-b from-[color:var(--bg-primary)] to-purple-50/30">
-            <div className="p-5 bg-[color:var(--bg-primary)] rounded-2xl border border-purple-100 shadow-sm">
+            <div className="p-5 bg-[color:var(--bg-primary)] rounded-lg border border-purple-100 shadow-sm">
               <div className="flex items-start gap-3">
-                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-md">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-md">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
@@ -368,21 +368,21 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                     <button
                       type="button"
                       onClick={handleSummarize}
-                      className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-xl transition-colors"
+                      className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-lg transition-colors"
                     >
                       📝 Summarize
                     </button>
                     <button
                       type="button"
                       onClick={handleMarketImpact}
-                      className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-xl transition-colors"
+                      className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-lg transition-colors"
                     >
                       📈 Market Impact
                     </button>
                     <button
                       type="button"
                       onClick={handleCompetitiveAnalysis}
-                      className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-xl transition-colors"
+                      className="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 text-xs font-medium rounded-lg transition-colors"
                     >
                       🏢 Competitive Analysis
                     </button>
@@ -392,7 +392,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                   <button
                     type="button"
                     onClick={handleAskCustom}
-                    className="mt-3 w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    className="mt-3 w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-sm font-medium rounded-lg shadow-md transition-all flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
                     Ask Custom Question

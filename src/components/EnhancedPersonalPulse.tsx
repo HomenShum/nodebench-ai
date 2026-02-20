@@ -44,15 +44,15 @@ export function EnhancedPersonalPulse({
   };
 
   return (
-    <div className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] shadow-sm overflow-hidden ${className}`}>
+    <div className={`bg-surface rounded-lg border border-edge overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-white/[0.06] bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-500/10 dark:to-blue-500/10">
+      <div className="px-6 py-4 border-b border-edge bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-500/10 dark:to-blue-500/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Personal Pulse</h2>
+            <h2 className="text-lg font-semibold text-content">Personal Pulse</h2>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-content-secondary">
             <span className="w-2 h-2 rounded-full bg-green-500 motion-safe:animate-pulse" />
             <span>{timeContext.timeOfDay === 'morning' ? 'Morning Mode' : timeContext.timeOfDay === 'afternoon' ? 'Focus Mode' : 'Wind Down'}</span>
           </div>
@@ -60,7 +60,7 @@ export function EnhancedPersonalPulse({
       </div>
 
       {/* Sections */}
-      <div className="divide-y divide-gray-100 dark:divide-white/[0.06]">
+      <div className="divide-y divide-edge">
         {/* Tasks Section */}
         <CollapsibleSection
           title="Today's Tasks"
@@ -76,16 +76,16 @@ export function EnhancedPersonalPulse({
                 <button
                   key={task._id}
                   onClick={() => onTaskSelect?.(task._id)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover dark:hover:bg-white/[0.03] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
                 >
-                  <div className="w-4 h-4 rounded border-2 border-gray-300" />
-                  <span className="text-sm text-gray-700 flex-1 truncate">{task.title}</span>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <div className="w-4 h-4 rounded border-2 border-edge" />
+                  <span className="text-sm text-content-secondary flex-1 truncate">{task.title}</span>
+                  <ChevronRight className="h-4 w-4 text-content-muted" />
                 </button>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">No pending tasks</p>
+            <p className="text-sm text-content-secondary italic">No pending tasks</p>
           )}
         </CollapsibleSection>
 
@@ -104,16 +104,16 @@ export function EnhancedPersonalPulse({
                 <button
                   key={doc._id}
                   onClick={() => onDocumentSelect?.(doc._id)}
-                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-surface-hover dark:hover:bg-white/[0.03] transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
                 >
-                  <FileText className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-700 flex-1 truncate">{doc.title || 'Untitled'}</span>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <FileText className="h-4 w-4 text-content-muted" />
+                  <span className="text-sm text-content-secondary flex-1 truncate">{doc.title || 'Untitled'}</span>
+                  <ChevronRight className="h-4 w-4 text-content-muted" />
                 </button>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">No recent documents</p>
+            <p className="text-sm text-content-secondary italic">No recent documents</p>
           )}
         </CollapsibleSection>
 
@@ -130,7 +130,7 @@ export function EnhancedPersonalPulse({
             <div className="space-y-2">
               {recommendations.map((rec) => (
                 <div key={rec._id} className="p-3 bg-purple-50 rounded-lg border border-purple-100">
-                  <p className="text-sm text-gray-700">{rec.message}</p>
+                  <p className="text-sm text-content-secondary">{rec.message}</p>
                   <button type="button" className="mt-2 text-xs text-purple-600 font-medium hover:text-purple-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 rounded">
                     {rec.actionLabel} →
                   </button>
@@ -138,7 +138,7 @@ export function EnhancedPersonalPulse({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">No suggestions right now</p>
+            <p className="text-sm text-content-secondary italic">No suggestions right now</p>
           )}
         </CollapsibleSection>
       </div>
@@ -159,13 +159,13 @@ interface CollapsibleSectionProps {
 function CollapsibleSection({ title, icon: Icon, count, isExpanded, onToggle, color, children }: CollapsibleSectionProps) {
   return (
     <div>
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+      <button onClick={onToggle} className="w-full flex items-center justify-between px-6 py-3 hover:bg-surface-hover dark:hover:bg-white/[0.03] transition-colors">
         <div className="flex items-center gap-2">
           <Icon className={`h-4 w-4 ${color}`} />
-          <span className="text-sm font-medium text-gray-800">{title}</span>
-          {count > 0 && <span className="text-xs text-gray-500 bg-gray-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded-full">{count}</span>}
+          <span className="text-sm font-medium text-content">{title}</span>
+          {count > 0 && <span className="text-xs text-content-secondary bg-surface-secondary px-1.5 py-0.5 rounded-full">{count}</span>}
         </div>
-        <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-content-muted transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence>
         {isExpanded && (

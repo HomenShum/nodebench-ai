@@ -50,7 +50,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         whileTap={isClickable ? { scale: 0.995 } : undefined}
         transition={{ type: 'tween', duration: 0.15 }}
         className={cn(
-          'bg-card rounded-xl',
+          'bg-card rounded-lg',
           bordered && 'border border-gray-200/60',
           paddingStyles[padding],
           isClickable && 'cursor-pointer will-change-transform',
@@ -80,7 +80,7 @@ export function CardHeader({ className, children }: { className?: string; childr
 /** Card title */
 export function CardTitle({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <h3 className={cn('text-base font-semibold text-gray-900 tracking-tight', className)}>
+    <h3 className={cn('text-base font-semibold text-content tracking-tight', className)}>
       {children}
     </h3>
   );
@@ -89,7 +89,7 @@ export function CardTitle({ className, children }: { className?: string; childre
 /** Card description */
 export function CardDescription({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <p className={cn('text-sm text-gray-500', className)}>
+    <p className={cn('text-sm text-content-secondary', className)}>
       {children}
     </p>
   );
@@ -107,7 +107,7 @@ export function CardContent({ className, children }: { className?: string; child
 /** Card footer section */
 export function CardFooter({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn('flex items-center gap-2 mt-4 pt-3 border-t border-gray-100', className)}>
+    <div className={cn('flex items-center gap-2 mt-4 pt-3 border-t border-edge', className)}>
       {children}
     </div>
   );

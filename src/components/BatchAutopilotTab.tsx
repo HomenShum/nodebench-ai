@@ -116,7 +116,7 @@ export function BatchAutopilotTab() {
   return (
     <div className="space-y-4">
       {/* ── Control bar ───────────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+      <div className="rounded-lg border border-edge bg-surface p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div
@@ -124,11 +124,11 @@ export function BatchAutopilotTab() {
                 schedule?.isEnabled ? "bg-green-500 motion-safe:animate-pulse" : "bg-gray-300 dark:bg-gray-600"
               }`}
             />
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-sm font-medium text-content">
               {schedule?.isEnabled ? "Active" : "Paused"}
             </span>
             {schedule?.isEnabled && schedule.nextRunAt && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-content-secondary">
                 · Next {formatCountdown(schedule.nextRunAt)}
               </span>
             )}
@@ -181,7 +181,7 @@ export function BatchAutopilotTab() {
               className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 schedule?.intervalMs === opt.value
                   ? "bg-indigo-500 text-white"
-                  : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]"
+                  : "bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1]"
               }`}
             >
               {opt.label}
@@ -192,7 +192,7 @@ export function BatchAutopilotTab() {
 
       {/* ── Runs — brief-first ───────────────────────────────────────────── */}
       {(!recentRuns || recentRuns.length === 0) ? (
-        <div className="text-center py-8 text-xs text-gray-400 dark:text-gray-400">
+        <div className="text-center py-8 text-xs text-content-muted">
           No runs yet. Enable autopilot or tap "Run Now."
         </div>
       ) : (
@@ -218,20 +218,20 @@ export function BatchAutopilotTab() {
             return (
               <div
                 key={run._id}
-                className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden"
+                className="rounded-lg border border-edge bg-surface overflow-hidden"
               >
                 {/* Row header */}
                 <button
                   type="button"
                   onClick={() => setExpandedRun(expanded ? null : run._id)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-hover transition-colors text-left"
                 >
                   <StatusIcon
                     className={`w-4 h-4 flex-shrink-0 ${statusInfo.color} ${active ? "motion-safe:animate-spin" : ""}`}
                   />
                   <div className="flex-1 min-w-0">
                     {/* Primary: brief preview or status */}
-                    <div className="text-xs text-gray-900 dark:text-gray-100 truncate">
+                    <div className="text-xs text-content truncate">
                       {briefPreview || (active
                         ? `${run.status.replace(/_/g, " ")}...`
                         : discoveries > 0
@@ -239,28 +239,28 @@ export function BatchAutopilotTab() {
                           : "No new discoveries")}
                     </div>
                     {/* Secondary: time */}
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    <div className="text-xs text-content-secondary mt-0.5">
                       {formatRelative(run.startedAt)}
                       {discoveries > 0 && ` · ${discoveries} item${discoveries !== 1 ? 's' : ''}`}
                     </div>
                   </div>
                   {hasBrief && (
                     expanded ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      <ChevronUp className="w-3.5 h-3.5 text-content-muted flex-shrink-0" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      <ChevronDown className="w-3.5 h-3.5 text-content-muted flex-shrink-0" />
                     )
                   )}
                 </button>
 
                 {/* Expanded: full brief + actions */}
                 {expanded && hasBrief && (
-                  <div className="px-3 pb-3 border-t border-gray-100 dark:border-white/[0.04]">
-                    <div className="mt-2 text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
+                  <div className="px-3 pb-3 border-t border-edge">
+                    <div className="mt-2 text-xs text-content-secondary whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">
                       {run.briefMarkdown}
                     </div>
                     {/* Action paths — what to do with this brief */}
-                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-gray-100 dark:border-white/[0.04]">
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-edge">
                       <button
                         type="button"
                         onClick={() => {
@@ -275,7 +275,7 @@ export function BatchAutopilotTab() {
                       <button
                         type="button"
                         onClick={() => setExpandedRun(null)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-content-secondary hover:bg-surface-hover transition-colors"
                       >
                         <XIcon className="w-3 h-3" /> Dismiss
                       </button>

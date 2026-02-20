@@ -62,7 +62,7 @@ export function DocumentsSidebar({
 
         <div className="space-y-3">
           {(recentTasks?.length ?? 0) === 0 ? (
-            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-6 text-center">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-6 text-center">
               <p className="text-[var(--text-secondary)] mb-3">No recent tasks</p>
 
               <button

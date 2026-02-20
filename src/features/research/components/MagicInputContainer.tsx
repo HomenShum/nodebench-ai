@@ -77,7 +77,7 @@ export default function MagicInputContainer({ onRun, onDeepRun, compact = false,
         <div className="w-full max-w-2xl mx-auto group relative z-20">
             <div className="absolute -inset-3 bg-gradient-to-r from-[color:var(--text-primary)]/10 via-[color:var(--text-secondary)]/10 to-[color:var(--text-primary)]/10 rounded-[2rem] blur-2xl opacity-40 group-hover:opacity-60 transition duration-1000"></div>
 
-            <div className="relative flex items-center bg-[color:var(--bg-primary)] rounded-xl shadow-sm h-14 w-full overflow-hidden border border-[color:var(--border-color)]">
+            <div className="relative flex items-center bg-[color:var(--bg-primary)] rounded-lg shadow-sm h-14 w-full overflow-hidden border border-[color:var(--border-color)]">
                 <div className="absolute left-4 text-[color:var(--text-secondary)] pointer-events-none">
                     <Search className="w-5 h-5" />
                 </div>
@@ -96,7 +96,7 @@ export default function MagicInputContainer({ onRun, onDeepRun, compact = false,
                     <button
                         type="button"
                         onClick={() => onRun(prompt, { mode })}
-                        className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all shadow hover:shadow-lg active:scale-95 flex items-center justify-center"
+                        className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all shadow active:scale-95 flex items-center justify-center"
                         title="Run research (Enter for Quick, Cmd/Ctrl+Enter for Deep)"
                     >
                         <ArrowRight className="w-4 h-4" />

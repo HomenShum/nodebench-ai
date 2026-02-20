@@ -27,7 +27,7 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-200 shadow-sm"
+      className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200 shadow-sm"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -35,35 +35,35 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
           <Sunset className="h-6 w-6 text-purple-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Daily Reflection</h2>
-          <p className="text-sm text-gray-600">Review your day and plan ahead</p>
+          <h2 className="text-base font-semibold text-content">Daily Reflection</h2>
+          <p className="text-sm text-content-secondary">Review your day and plan ahead</p>
         </div>
       </div>
 
       {/* Today's Accomplishments */}
       <section className="mb-6">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
+        <h3 className="font-semibold text-content flex items-center gap-2 mb-3">
           <CheckCircle className="h-4 w-4 text-purple-600" />
           What You Accomplished
         </h3>
         {completedTasks.length > 0 ? (
           <ul className="space-y-2">
             {completedTasks.map((task) => (
-              <li key={task._id} className="flex items-center gap-2 text-sm text-gray-700">
+              <li key={task._id} className="flex items-center gap-2 text-sm text-content-secondary">
                 <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                <span className="line-through text-gray-500">{task.title}</span>
+                <span className="line-through text-content-secondary">{task.title}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 italic">No tasks completed today</p>
+          <p className="text-sm text-content-secondary italic">No tasks completed today</p>
         )}
       </section>
 
       {/* Tomorrow Preview */}
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-content flex items-center gap-2">
             <Calendar className="h-4 w-4 text-purple-600" />
             Tomorrow's Agenda
           </h3>
@@ -79,20 +79,20 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
             {pendingTasks.map((task) => (
               <li
                 key={task._id}
-                className="text-sm border-l-2 border-purple-500 pl-3 py-1 text-gray-700"
+                className="text-sm border-l-2 border-purple-500 pl-3 py-1 text-content-secondary"
               >
                 {task.title}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 italic">No tasks planned for tomorrow</p>
+          <p className="text-sm text-content-secondary italic">No tasks planned for tomorrow</p>
         )}
       </section>
 
       {/* Journal Prompt */}
       <section>
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
+        <h3 className="font-semibold text-content flex items-center gap-2 mb-3">
           <BookOpen className="h-4 w-4 text-purple-600" />
           Evening Reflection
         </h3>

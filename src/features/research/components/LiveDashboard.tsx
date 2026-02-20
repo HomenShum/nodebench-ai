@@ -113,7 +113,7 @@ export const LiveDashboard: React.FC<{
     return (
       <div className="relative">
         <div className="flex items-center justify-between mb-2 px-1">
-          <div className="text-xs text-gray-500 font-mono">
+          <div className="text-xs text-content-secondary font-mono">
             {lastUpdated ? <span>Latest: {lastUpdated}</span> : <span>Loading live metrics…</span>}
           </div>
           <button
@@ -132,22 +132,22 @@ export const LiveDashboard: React.FC<{
 
         {/* Source summary footer */}
         {snapshot?.sourceSummary && (
-          <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs uppercase tracking-widest text-gray-400">
+              <div className="text-xs uppercase tracking-widest text-content-muted">
                 Data Sources
               </div>
               {availableDates.length > 0 && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-content-secondary">
                   {availableDates.length} day{availableDates.length !== 1 ? "s" : ""} available
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+            <div className="flex flex-wrap gap-2 text-xs text-content-secondary">
               {Object.entries(snapshot.sourceSummary.bySource || {}).map(([source, count]) => (
                 <span key={source} className="flex items-center gap-1">
                   <span className="font-medium">{source}:</span>
-                  <span className="text-gray-500">{count as number}</span>
+                  <span className="text-content-secondary">{count as number}</span>
                 </span>
               ))}
             </div>
@@ -160,9 +160,9 @@ export const LiveDashboard: React.FC<{
   // Show loading state while fetching
   if (snapshot === undefined) {
     return (
-      <div className="w-full font-mono text-gray-900">
-        <div className="sticky top-4 z-10 rounded-xl border border-gray-200 bg-white shadow-sm p-3">
-          <div className="flex items-center justify-center h-[400px] text-gray-400">
+      <div className="w-full font-mono text-content">
+        <div className="sticky top-4 z-10 rounded-lg border border-edge bg-white shadow-sm p-3">
+          <div className="flex items-center justify-center h-[400px] text-content-muted">
             <div className="flex flex-col items-center gap-2">
               <RefreshCw className="w-6 h-6 motion-safe:animate-spin" />
               <span className="text-sm">Loading dashboard...</span>
@@ -196,13 +196,13 @@ export const LiveDashboard: React.FC<{
     }
 
     return (
-      <div className="w-full font-mono text-gray-900">
-        <div className="sticky top-4 z-10 rounded-xl border border-gray-200 bg-white shadow-sm p-3">
-          <div className="flex flex-col items-center justify-center h-[400px] text-gray-400 gap-4">
+      <div className="w-full font-mono text-content">
+        <div className="sticky top-4 z-10 rounded-lg border border-edge bg-white shadow-sm p-3">
+          <div className="flex flex-col items-center justify-center h-[400px] text-content-muted gap-4">
             <AlertCircle className="w-8 h-8" />
             <div className="text-center">
               <p className="text-sm font-medium mb-1">No dashboard data available</p>
-              <p className="text-xs text-gray-500 mb-4">
+              <p className="text-xs text-content-secondary mb-4">
                 Daily metrics will be generated automatically at 6:00 AM UTC
               </p>
               <button
@@ -263,7 +263,7 @@ export const LiveDashboard: React.FC<{
               className={buttonIcon}
               title="Previous day"
             >
-              <ChevronLeft className="w-3 h-3 text-gray-600" />
+              <ChevronLeft className="w-3 h-3 text-content-secondary" />
             </button>
             <button
               type="button"
@@ -272,10 +272,10 @@ export const LiveDashboard: React.FC<{
               className={buttonIcon}
               title="Next day"
             >
-              <ChevronRight className="w-3 h-3 text-gray-600" />
+              <ChevronRight className="w-3 h-3 text-content-secondary" />
             </button>
           </div>
-          <div className="text-xs text-gray-500 font-mono">
+          <div className="text-xs text-content-secondary font-mono">
             {isViewingHistorical ? (
               <span className="text-amber-600 font-medium">{displayDateLabel}</span>
             ) : (
@@ -302,22 +302,22 @@ export const LiveDashboard: React.FC<{
 
       {/* Source summary footer */}
       {snapshot.sourceSummary && (
-        <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
+        <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
           <div className="flex items-center justify-between mb-1">
-            <div className="text-xs uppercase tracking-widest text-gray-400">
+            <div className="text-xs uppercase tracking-widest text-content-muted">
               Data Sources
             </div>
             {availableDates.length > 0 && (
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-content-secondary">
                 {availableDates.length} day{availableDates.length !== 1 ? 's' : ''} available
               </div>
             )}
           </div>
-          <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+          <div className="flex flex-wrap gap-2 text-xs text-content-secondary">
             {Object.entries(snapshot.sourceSummary.bySource || {}).map(([source, count]) => (
               <span key={source} className="flex items-center gap-1">
                 <span className="font-medium">{source}:</span>
-                <span className="text-gray-500">{count as number}</span>
+                <span className="text-content-secondary">{count as number}</span>
               </span>
             ))}
           </div>
@@ -326,8 +326,8 @@ export const LiveDashboard: React.FC<{
 
       {/* Historical Date Picker */}
       {availableDates.length > 1 && (
-        <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100">
-          <div className="text-xs uppercase tracking-widest text-gray-400 mb-2">
+        <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
+          <div className="text-xs uppercase tracking-widest text-content-muted mb-2">
             Historical Data
           </div>
           <div className="flex flex-wrap gap-1">
@@ -339,7 +339,7 @@ export const LiveDashboard: React.FC<{
                 className={`px-2 py-1 text-xs rounded transition-colors ${
                   date === displayDate
                     ? 'bg-indigo-600 text-white font-medium'
-                    : 'bg-white hover:bg-gray-100 text-gray-600 border border-gray-200'
+                    : 'bg-white hover:bg-surface-hover text-content-secondary border border-edge'
                 }`}
                 title={`View data from ${date}`}
               >

@@ -28,7 +28,7 @@ interface LinkedInPostCardProps {
 
 const POST_TYPE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   daily_digest: { label: "Daily Digest", color: "bg-indigo-100 text-indigo-700", icon: Newspaper },
-  funding_tracker: { label: "Funding Tracker", color: "bg-indigo-100 text-gray-700", icon: TrendingUp },
+  funding_tracker: { label: "Funding Tracker", color: "bg-indigo-100 text-content-secondary", icon: TrendingUp },
   funding_brief: { label: "Funding Brief", color: "bg-green-100 text-green-700", icon: DollarSign },
   fda: { label: "FDA Updates", color: "bg-red-100 text-red-700", icon: Shield },
   clinical: { label: "Clinical Trials", color: "bg-purple-100 text-purple-700", icon: FlaskConical },
@@ -37,7 +37,7 @@ const POST_TYPE_CONFIG: Record<string, { label: string; color: string; icon: Rea
 };
 
 const PERSONA_CONFIG: Record<string, { label: string; color: string }> = {
-  GENERAL: { label: "General", color: "bg-gray-100 text-gray-600" },
+  GENERAL: { label: "General", color: "bg-surface-secondary text-content-secondary" },
   VC_INVESTOR: { label: "Investor", color: "bg-violet-100 text-violet-600" },
   TECH_BUILDER: { label: "Tech Builder", color: "bg-cyan-100 text-cyan-600" },
   FUNDING: { label: "Funding", color: "bg-indigo-100 text-indigo-600" },
@@ -82,7 +82,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-4 hover:shadow-sm transition-shadow">
+    <div className="bg-surface border border-edge rounded-lg p-4 transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -96,16 +96,16 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
             </span>
           )}
           {metadata?.part && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-content-muted">
               Part {String(metadata.part)}/{String(metadata.totalParts)}
             </span>
           )}
         </div>
-        <span className="text-xs text-gray-400">{formattedTime}</span>
+        <span className="text-xs text-content-muted">{formattedTime}</span>
       </div>
 
       {/* Content */}
-      <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed font-light">
+      <div className="text-sm text-content whitespace-pre-wrap leading-relaxed font-light">
         {displayContent}
       </div>
 
@@ -128,8 +128,8 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/[0.04]">
-        <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-edge">
+        <div className="flex items-center gap-3 text-xs text-content-muted">
           {factCheckCount != null && factCheckCount > 0 && (
             <span>{factCheckCount} fact checks</span>
           )}
@@ -138,7 +138,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleCopy}
-            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.06] rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs text-content-secondary hover:text-content hover:bg-surface-hover rounded transition-colors"
             title="Copy post text"
           >
             {copied ? <Check className="w-3 h-3 text-indigo-500" /> : <Copy className="w-3 h-3" />}

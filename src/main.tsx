@@ -63,7 +63,7 @@ function MissingConvexUrlScreen() {
   const example = `VITE_CONVEX_URL="https://your-deployment.convex.cloud"`;
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-2xl rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="text-sm font-semibold text-muted-foreground">Setup required</div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Convex backend not configured</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-relaxed">

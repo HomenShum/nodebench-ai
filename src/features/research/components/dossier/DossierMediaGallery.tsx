@@ -227,7 +227,7 @@ function VideoCard({ video, onClick }: VideoCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+      className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200"
       style={{ willChange: 'transform, box-shadow' }}
     >
       {/* Thumbnail */}
@@ -235,11 +235,11 @@ function VideoCard({ video, onClick }: VideoCardProps) {
         <img
           src={video.thumbnail}
           alt={video.caption || 'Video'}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover transition-transform duration-300"
           loading="lazy"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors duration-200">
-          <div className="w-12 h-12 rounded-full bg-red-600 group-hover:bg-red-700 group-hover:scale-110 flex items-center justify-center shadow-lg transition-all duration-200">
+          <div className="w-12 h-12 rounded-full bg-red-600 group-hover:bg-red-700 flex items-center justify-center shadow-lg transition-all duration-200">
             <Play className="h-6 w-6 text-white ml-0.5" fill="white" />
           </div>
         </div>
@@ -273,12 +273,12 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
   return (
     <div
       onClick={onClick}
-      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group relative"
+      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 group relative"
     >
       <img
         src={image.url}
         alt={image.alt || 'Image'}
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+        className="w-full h-full object-cover transition-transform duration-300"
         loading="lazy"
       />
       {/* Hover overlay */}
@@ -367,14 +367,14 @@ function DocumentCard({ document, onDocumentClick }: DocumentCardProps) {
         target={isLocalDocument ? undefined : "_blank"}
         rel={isLocalDocument ? undefined : "noopener noreferrer"}
         onClick={handleClick}
-        className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group cursor-pointer bg-[var(--bg-primary)]"
+        className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 group cursor-pointer bg-[var(--bg-primary)]"
       >
       <div className="flex gap-3">
         {document.thumbnail && (
           <img
             src={document.thumbnail}
             alt={document.title}
-            className="w-16 h-16 object-cover rounded flex-shrink-0 group-hover:scale-105 transition-transform duration-200"
+            className="w-16 h-16 object-cover rounded flex-shrink-0 transition-transform duration-200"
             loading="lazy"
           />
         )}

@@ -478,7 +478,7 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
                 <SafeImage
                   src={img.url}
                   alt={img.alt}
-                  className="h-48 w-auto rounded-lg border border-[var(--border-color)] cursor-pointer hover:shadow-lg transition-shadow"
+                  className="h-48 w-auto rounded-lg border border-[var(--border-color)] cursor-pointer transition-shadow"
                 />
               </div>
             ))}
@@ -986,7 +986,7 @@ function SourcesCitedDropdown({ library, basisMs }: { library: CitationLibrary; 
   const asOf = typeof basisMs === 'number' && Number.isFinite(basisMs) ? formatTimeAgo(basisMs) : null;
 
   return (
-    <details className="mt-4 group rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/30 overflow-hidden">
+    <details className="mt-4 group rounded-lg border border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/30 overflow-hidden">
       <summary className="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center">
@@ -1386,7 +1386,7 @@ function ToolStep({
       )}
 
       {/* Card */}
-      <div className="mb-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div className="mb-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden transition-shadow">
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -2433,7 +2433,7 @@ export function FastAgentUIMessageBubble({
           const isAudio = mimeType.startsWith('audio/');
 
           return (
-            <div key={idx} className="rounded-xl overflow-hidden border border-[var(--border-color)] shadow-sm mb-2">
+            <div key={idx} className="rounded-lg overflow-hidden border border-[var(--border-color)] shadow-sm mb-2">
               {isImage ? (
                 <SafeImage
                   src={fileUrl}
@@ -2468,7 +2468,7 @@ export function FastAgentUIMessageBubble({
         {!isUser || (cleanedText || visibleText) ? (
           <div
             className={cn(
-              "relative p-4 rounded-xl shadow-sm transition-all duration-200 text-sm leading-relaxed",
+              "relative p-4 rounded-lg shadow-sm transition-all duration-200 text-sm leading-relaxed",
               isUser
                 ? isEditing
                   ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-[var(--text-primary)] rounded-br-none"

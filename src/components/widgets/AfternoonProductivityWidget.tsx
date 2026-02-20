@@ -23,7 +23,7 @@ export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: Aftern
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm"
+      className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -31,14 +31,14 @@ export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: Aftern
           <Zap className="h-6 w-6 text-blue-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Stay Focused</h2>
-          <p className="text-sm text-gray-600">Keep the momentum going</p>
+          <h2 className="text-base font-semibold text-content">Stay Focused</h2>
+          <p className="text-sm text-content-secondary">Keep the momentum going</p>
         </div>
       </div>
 
       {/* Progress Ring */}
       <section className="mb-6">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
+        <h3 className="font-semibold text-content flex items-center gap-2 mb-3">
           <Target className="h-4 w-4 text-blue-600" />
           Today's Progress
         </h3>
@@ -66,22 +66,22 @@ export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: Aftern
                 className="text-blue-600"
               />
             </svg>
-            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-800">
+            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-content">
               {progressPercent}%
             </span>
           </div>
           <div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-content">
               {completedCount}/{totalTasks}
             </div>
-            <div className="text-sm text-gray-600">tasks completed</div>
+            <div className="text-sm text-content-secondary">tasks completed</div>
           </div>
         </div>
       </section>
 
       {/* Focus Session */}
       <section className="mb-6">
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
+        <h3 className="font-semibold text-content flex items-center gap-2 mb-3">
           <Clock className="h-4 w-4 text-blue-600" />
           Deep Work Session
         </h3>
@@ -96,7 +96,7 @@ export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: Aftern
       {/* Pending Tasks */}
       <section>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-gray-800">Up Next</h3>
+          <h3 className="font-semibold text-content">Up Next</h3>
           <button
             onClick={() => onNavigate?.('/tasks')}
             className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
@@ -105,7 +105,7 @@ export function AfternoonProductivityWidget({ onNavigate, onStartFocus }: Aftern
           </button>
         </div>
         {pendingTasks.slice(0, 2).map((task) => (
-          <div key={task._id} className="text-sm text-gray-700 py-1">
+          <div key={task._id} className="text-sm text-content-secondary py-1">
             • {task.title}
           </div>
         ))}

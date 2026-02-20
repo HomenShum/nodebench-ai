@@ -46,7 +46,7 @@ function QuickActionButton({ icon, label, query, onClick }: QuickActionButtonPro
         <button
             type="button"
             onClick={() => onClick(query)}
-            className="group flex items-center gap-3 px-4 py-3 bg-[color:var(--bg-primary)] dark:bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] hover:border-primary/50 hover:bg-primary/5 text-foreground rounded-xl font-medium text-base shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 text-left w-full"
+            className="group flex items-center gap-3 px-4 py-3 bg-[color:var(--bg-primary)] dark:bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] hover:border-primary/50 hover:bg-primary/5 text-foreground rounded-lg font-medium text-base shadow-sm transition-all duration-200 text-left w-full"
         >
             <span className="flex-shrink-0 p-2 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-tertiary)] group-hover:bg-primary/10 rounded-lg text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] group-hover:text-primary transition-colors">
                 {icon}
@@ -97,7 +97,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     }, [isCompany, isPerson, entityName]);
 
     return (
-        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-[color:var(--bg-secondary)] to-purple-50/30 dark:from-[color:var(--bg-secondary)]/50 dark:to-purple-900/10 rounded-xl border border-[color:var(--border-color)] dark:border-[color:var(--border-color)]">
+        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-[color:var(--bg-secondary)] to-purple-50/30 dark:from-[color:var(--bg-secondary)]/50 dark:to-purple-900/10 rounded-lg border border-[color:var(--border-color)] dark:border-[color:var(--border-color)]">
             <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                     <Sparkles className="w-5 h-5 text-primary" />
@@ -108,8 +108,8 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
             </div>
             <p className="text-sm text-[color:var(--text-primary)] dark:text-[color:var(--text-secondary)] mb-6 flex items-center gap-2 flex-wrap">
                 <span>Run a focused follow-up and append results to this live report.</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full text-xs font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white dark:bg-gray-900"></span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 dark:bg-surface-secondary text-white dark:text-content rounded-full text-xs font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-surface"></span>
                     No refresh needed
                 </span>
             </p>
@@ -550,7 +550,7 @@ function LiveDossierDocumentInner({
                         <div className="h-5 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-40 mb-4" />
                         <div className="space-y-3">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center gap-3 p-4 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-xl">
+                                <div key={i} className="flex items-center gap-3 p-4 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-lg">
                                     <div className="w-8 h-8 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded-lg shrink-0" />
                                     <div className="w-5 h-5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded shrink-0" />
                                     <div className="flex-1 space-y-2">
@@ -747,7 +747,7 @@ function LiveDossierDocumentInner({
                                         type="button"
                                         key={source.artifactId}
                                         id={`source-${source.num}`}
-                                        className="flex items-center gap-3 p-4 text-left rounded-xl border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                                        className="flex items-center gap-3 p-4 text-left rounded-lg border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] hover:border-primary/40 hover:bg-primary/5 transition-all group"
                                         onClick={() => source.url && window.open(source.url, '_blank')}
                                     >
                                         <span className="w-7 h-7 flex items-center justify-center bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded-lg text-xs font-bold text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] shrink-0">
@@ -806,7 +806,7 @@ function LiveDossierDocumentInner({
                             type="button"
                             onClick={() => handleFollowUp("Synthesize all the above information into a single, comprehensive, and well-structured final report. Remove redundancies and organize logically.")}
                             disabled={isAppending}
-                            className={`group flex items-center gap-3 px-8 py-4 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-full font-semibold text-base shadow-xl hover:bg-gray-800 dark:hover:bg-white hover:scale-105 transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
+                            className={`group flex items-center gap-3 px-8 py-4 bg-gray-900 dark:bg-surface-secondary text-white dark:text-content rounded-full font-semibold text-base shadow-xl hover:bg-gray-800 dark:hover:bg-white transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
                         >
                             {isAppending ? (
                                 <Loader2 className="w-5 h-5 motion-safe:animate-spin text-purple-400" />
@@ -855,8 +855,8 @@ function EmptyState() {
     return (
         <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-16">
             <div className="text-center">
-                {/* Icon container - rounded-xl for consistency */}
-                <div className="inline-flex items-center justify-center p-6 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 mb-6">
+                {/* Icon container - rounded-lg for consistency */}
+                <div className="inline-flex items-center justify-center p-6 rounded-lg bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 mb-6">
                     <FileText className="w-10 h-10 text-purple-600 dark:text-purple-400" />
                 </div>
 
@@ -927,7 +927,7 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
     if (totalCount === 0) return null;
 
     return (
-        <section className="mt-8 mb-6 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-xl overflow-hidden bg-[color:var(--bg-secondary)]/50 dark:bg-[color:var(--bg-secondary)]/30">
+        <section className="mt-8 mb-6 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-lg overflow-hidden bg-[color:var(--bg-secondary)]/50 dark:bg-[color:var(--bg-secondary)]/30">
             {/* Header - Always visible */}
             <button
                 type="button"
@@ -989,7 +989,7 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
     const updatedCount = documents.filter(d => d.action === 'updated').length;
 
     return (
-        <section className="mt-6 mb-6 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-xl overflow-hidden bg-[color:var(--bg-secondary)]/50 dark:bg-[color:var(--bg-secondary)]/30">
+        <section className="mt-6 mb-6 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-lg overflow-hidden bg-[color:var(--bg-secondary)]/50 dark:bg-[color:var(--bg-secondary)]/30">
             {/* Header - Always visible */}
             <button
                 type="button"
@@ -1136,7 +1136,7 @@ function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
 
     return (
         <div
-            className={`tool-chip flex items-center gap-2 px-3 py-1.5 rounded-lg border ${statusBg[step.status]} transition-all duration-300 hover:scale-[1.02]`}
+            className={`tool-chip flex items-center gap-2 px-3 py-1.5 rounded-lg border ${statusBg[step.status]} transition-all duration-300`}
             style={{ "--index": index } as React.CSSProperties}
         >
             {statusIcons[step.status]}
@@ -1185,17 +1185,17 @@ function LiveAgentTicker({
 
     return (
         <div className="sticky top-20 z-30 mb-8 pointer-events-none">
-            <div className={`pointer-events-auto relative overflow-hidden rounded-xl transition-all duration-500 ${isActive ? 'active-glow' : ''}`}>
+            <div className={`pointer-events-auto relative overflow-hidden rounded-lg transition-all duration-500 ${isActive ? 'active-glow' : ''}`}>
                 {/* Animated gradient border */}
                 {isActive && (
-                    <div className="absolute inset-0 rounded-xl gradient-border" />
+                    <div className="absolute inset-0 rounded-lg gradient-border" />
                 )}
 
                 {/* Glass container */}
-                <div className="relative glass-container rounded-xl p-4 md:p-6 flowing-gradient">
+                <div className="relative glass-container rounded-lg p-4 md:p-6 flowing-gradient">
                     {/* Shimmer overlay when active */}
                     {isActive && (
-                        <div className="absolute inset-0 shimmer-bg pointer-events-none rounded-xl" />
+                        <div className="absolute inset-0 shimmer-bg pointer-events-none rounded-lg" />
                     )}
 
                     {/* Header Row */}

@@ -610,7 +610,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   // onClickDay removed; click now toggles a pinned preview. Use action buttons to view day/week.
 
   return (
-    <div className="relative bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]/50 border border-[var(--border-color)]/60 rounded-2xl overflow-visible shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)]">
+    <div className="relative bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]/50 border border-[var(--border-color)]/60 rounded-lg overflow-visible shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)]">
       {/* Singular watermark for mini calendar */}
       <span className="document-card__bg document-row__bg text-blue-500" aria-hidden>
         <CalendarDays className="h-10 w-10 rotate-12" />
@@ -729,11 +729,11 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 }}
                 onMouseEnter={() => setHoveredKey(d.key)}
                 onMouseLeave={() => setHoveredKey((cur) => (cur === d.key ? null : cur))}
-                className={`relative rounded-xl p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px] ${
+                className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px] ${
                   d.isToday
                     ? "border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm"
                     : "border-transparent hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)]"
-                  } ${d.inMonth ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] dark:text-gray-500"}`}
+                  } ${d.inMonth ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] dark:text-content-secondary"}`}
                 title={d.date.toDateString()}
               >
                 <div className="text-[13px] font-semibold">
@@ -833,7 +833,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       }}
                     />
                     {editTarget && (
-                      <div className="mt-2 w-80 max-w-[20rem] rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] shadow-lg p-2">
+                      <div className="mt-2 w-80 max-w-[20rem] rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] shadow-lg p-2">
                         {editTarget.kind === "create" && (
                           <DualCreateMiniPanel
                             dateMs={editTarget.dateMs}

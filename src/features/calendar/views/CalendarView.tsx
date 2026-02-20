@@ -450,7 +450,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
     };
 
     return (
-      <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl overflow-hidden shadow-sm relative h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
+      <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg overflow-hidden shadow-sm relative h-[calc(100vh-280px)] min-h-[600px] flex flex-col">
         {/* Day header */}
         <div
           className="grid px-2 py-1 bg-[var(--bg-secondary)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-secondary)]/80 border-b border-[var(--border-color)] text-xs text-[var(--text-secondary)]"
@@ -1025,7 +1025,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     <div
                       key={e._id}
                       ref={(el) => { if (el) eventRefs.current[String(e._id)] = el; }}
-                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:shadow-md hover:ring-2 hover:ring-blue-500/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 cursor-grab active:cursor-grabbing"
+                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:ring-2 hover:ring-blue-500/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 cursor-grab active:cursor-grabbing"
                       style={{
                         top: pe.top,
                         height: pe.height,

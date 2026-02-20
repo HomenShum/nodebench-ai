@@ -127,8 +127,8 @@ export const MessageBubble = React.memo(function MessageBubble({
         <div className={cn(
           "text-[15px] leading-relaxed",
           isUser
-            ? "px-3.5 py-2.5 rounded-xl rounded-tr-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
-            : "px-3.5 py-2.5 rounded-xl rounded-tl-sm bg-[var(--bg-secondary)]/40 border-l-2 border-l-[var(--accent-primary)]/20 text-[var(--text-primary)]"
+            ? "px-3.5 py-2.5 rounded-lg rounded-tr-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
+            : "px-3.5 py-2.5 rounded-lg rounded-tl-sm bg-[var(--bg-secondary)]/40 border-l-2 border-l-[var(--accent-primary)]/20 text-[var(--text-primary)]"
         )}>
           {/* Use StreamingMessage for messages with streamId */}
           {isAssistant && message.streamId ? (

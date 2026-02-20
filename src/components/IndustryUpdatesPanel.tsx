@@ -113,7 +113,7 @@ export function IndustryUpdatesPanel() {
             </>
           ) : (
             <>
-              <p className="text-xl font-semibold text-[var(--text-primary)] mb-2">Industry news arrives daily</p>
+              <p className="text-base font-semibold text-[var(--text-primary)] mb-2">Industry news arrives daily</p>
               <p className="text-sm text-[var(--text-secondary)] max-w-sm">Updates from Anthropic, OpenAI, Google DeepMind, LangChain, and Vercel AI SDK are collected automatically. Check back tomorrow or select a provider above to filter by source.</p>
             </>
           )}
@@ -205,7 +205,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
   const relevanceColor =
     update.relevance >= 80 ? "text-green-500" :
     update.relevance >= 60 ? "text-yellow-500" :
-    "text-gray-500";
+    "text-content-secondary";
 
   const relevanceLabel =
     update.relevance >= 80 ? "High" :

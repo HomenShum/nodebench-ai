@@ -2648,7 +2648,7 @@ export function FastAgentPanel({
                             key={i}
                             type="button"
                             onClick={() => setInput(starter.prompt)}
-                            className="flex items-center gap-2 p-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] transition-all text-left group"
+                            className="flex items-center gap-2 p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] transition-all text-left group"
                           >
                             <span className="text-lg">{starter.icon}</span>
                             <span className="text-xs font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">{starter.label}</span>
@@ -2714,7 +2714,7 @@ export function FastAgentPanel({
                         </div>
 
                         {/* Title */}
-                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">
+                        <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">
                           Assistant
                         </h2>
 
@@ -2765,11 +2765,11 @@ export function FastAgentPanel({
                         <div className="space-y-2">
                           {threadsStatus === "LoadingFirstPage" ? (
                             <>
-                              <div className="h-12 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 motion-safe:animate-pulse" />
-                              <div className="h-12 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 motion-safe:animate-pulse" />
+                              <div className="h-12 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 motion-safe:animate-pulse" />
+                              <div className="h-12 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]/50 motion-safe:animate-pulse" />
                             </>
                           ) : threads.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-[var(--border-color)] bg-[var(--bg-secondary)]/30 px-4 py-3 text-center">
+                            <div className="rounded-lg border border-dashed border-[var(--border-color)] bg-[var(--bg-secondary)]/30 px-4 py-3 text-center">
                               <div className="text-[12px] text-[var(--text-muted)]">
                                 No chats yet — try a quick action below to start one.
                               </div>
@@ -3042,7 +3042,7 @@ export function FastAgentPanel({
 
             {/* Anonymous User Banner */}
             {anonymousSession.isAnonymous && !anonymousSession.isLoading && (
-              <div className={`mx-3 mt-2 px-3 py-2.5 rounded-xl border backdrop-blur-sm ${anonymousSession.canSendMessage
+              <div className={`mx-3 mt-2 px-3 py-2.5 rounded-lg border backdrop-blur-sm ${anonymousSession.canSendMessage
                 ? 'bg-gradient-to-r from-violet-50/80 to-indigo-50/80 border-violet-200/50'
                 : 'bg-gradient-to-r from-amber-50/80 to-orange-50/80 border-amber-200/50'
                 }`}>
@@ -3053,8 +3053,8 @@ export function FastAgentPanel({
                         <div className="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center">
                           <MessageSquare className="w-3.5 h-3.5 text-violet-600" />
                         </div>
-                        <span className="text-[12px] text-gray-600">
-                          <span className="font-semibold text-gray-800">{anonymousSession.remaining}</span>
+                        <span className="text-[12px] text-content-secondary">
+                          <span className="font-semibold text-content">{anonymousSession.remaining}</span>
                           {' '}of {anonymousSession.limit} free messages remaining today
                         </span>
                       </>
@@ -3063,7 +3063,7 @@ export function FastAgentPanel({
                         <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
                           <LogIn className="w-3.5 h-3.5 text-amber-600" />
                         </div>
-                        <span className="text-[12px] text-gray-600">
+                        <span className="text-[12px] text-content-secondary">
                           Daily limit reached. Sign in for unlimited access!
                         </span>
                       </>
@@ -3373,7 +3373,7 @@ export function FastAgentPanel({
           <>
             <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowShortcutsOverlay(false)} />
             <div className="absolute inset-0 z-50 flex items-center justify-center p-8 pointer-events-none">
-              <div className="pointer-events-auto bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="pointer-events-auto bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-[var(--text-primary)]">Keyboard Shortcuts</h3>
                   <button type="button" onClick={() => setShowShortcutsOverlay(false)} className="action-btn p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-secondary)]" aria-label="Close keyboard shortcuts">
@@ -3414,7 +3414,7 @@ export function FastAgentPanel({
         {showSystemPrompt && (
           <>
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm z-50" onClick={() => setShowSystemPrompt(false)} />
-            <div className="absolute inset-x-4 top-20 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl p-4 max-h-[300px] flex flex-col">
+            <div className="absolute inset-x-4 top-20 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl p-4 max-h-[300px] flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-[var(--text-primary)]">Custom System Prompt</h3>
                 <button type="button" onClick={() => setShowSystemPrompt(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-secondary)]" aria-label="Close system prompt editor">
@@ -3453,7 +3453,7 @@ export function FastAgentPanel({
         {showQuickReplies && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowQuickReplies(false)} />
-            <div className="absolute bottom-24 left-3 right-3 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl p-3">
+            <div className="absolute bottom-24 left-3 right-3 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl p-3">
               <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">Quick Replies</div>
               <div className="space-y-1 max-h-[200px] overflow-y-auto">
                 {quickReplies.map((reply, i) => (
@@ -3493,7 +3493,7 @@ export function FastAgentPanel({
         {showCommandPalette && (
           <>
             <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowCommandPalette(false)} />
-            <div className="absolute inset-x-4 top-16 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
+            <div className="absolute inset-x-4 top-16 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border-color)]">
                 <Search className="w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
                 <input
@@ -3552,7 +3552,7 @@ export function FastAgentPanel({
         {showTimeline && messagesToRender && messagesToRender.length > 0 && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowTimeline(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
                 <span className="text-xs font-semibold text-[var(--text-primary)]">Conversation Timeline</span>
                 <button type="button" onClick={() => setShowTimeline(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
@@ -3604,7 +3604,7 @@ export function FastAgentPanel({
         {showContextPruning && messagesToRender && messagesToRender.length > 0 && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowContextPruning(false)} />
-            <div className="absolute inset-x-3 bottom-12 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden max-h-[320px] flex flex-col">
+            <div className="absolute inset-x-3 bottom-12 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden max-h-[320px] flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
                 <span className="text-xs font-semibold text-[var(--text-primary)]">Context Window</span>
                 <button type="button" onClick={() => setShowContextPruning(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
@@ -3661,7 +3661,7 @@ export function FastAgentPanel({
         {showArtifacts && artifactContent && (
           <>
             <div className="absolute inset-0 z-40 bg-black/20" onClick={() => setShowArtifacts(false)} />
-            <div className="absolute inset-y-2 right-2 w-[45%] min-w-[300px] z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="absolute inset-y-2 right-2 w-[45%] min-w-[300px] z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)] glass-header">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-[var(--text-primary)]">
@@ -3705,7 +3705,7 @@ export function FastAgentPanel({
         {/* Drag-and-Drop File Upload Overlay */}
         {isDragOver && (
           <div
-            className="absolute inset-0 z-[60] bg-violet-500/10 border-2 border-dashed border-violet-500 rounded-xl flex items-center justify-center backdrop-blur-sm"
+            className="absolute inset-0 z-[60] bg-violet-500/10 border-2 border-dashed border-violet-500 rounded-lg flex items-center justify-center backdrop-blur-sm"
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onDragLeave={() => setIsDragOver(false)}
             onDrop={(e) => {
@@ -3733,7 +3733,7 @@ export function FastAgentPanel({
         {showAnalytics && messagesToRender && messagesToRender.length > 0 && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowAnalytics(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
                 <span className="text-xs font-semibold text-[var(--text-primary)]">📊 Conversation Analytics</span>
                 <button type="button" onClick={() => setShowAnalytics(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
@@ -3818,7 +3818,7 @@ export function FastAgentPanel({
         {showBranchTree && threads && threads.length > 0 && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowBranchTree(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
                 <span className="text-xs font-semibold text-[var(--text-primary)]">🌳 Thread Branches</span>
                 <button type="button" onClick={() => setShowBranchTree(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
@@ -3881,7 +3881,7 @@ export function FastAgentPanel({
         {showMemoryPanel && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowMemoryPanel(false)} />
-            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div className="absolute inset-x-3 top-14 bottom-14 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
                 <span className="text-xs font-semibold text-[var(--text-primary)]">🧠 Memory ({memories.length})</span>
                 <button type="button" onClick={() => setShowMemoryPanel(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
@@ -3911,7 +3911,7 @@ export function FastAgentPanel({
         {showImport && (
           <>
             <div className="absolute inset-0 z-40" onClick={() => setShowImport(false)} />
-            <div className="absolute inset-x-3 top-1/4 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden">
+            <div className="absolute inset-x-3 top-1/4 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-color)]">
                 <span className="text-xs font-semibold text-[var(--text-primary)]">📥 Import Conversation</span>
                 <button type="button" onClick={() => setShowImport(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
@@ -4026,7 +4026,7 @@ function ArtifactsTab({ media, documents, hasThread, onDocumentSelect }: Artifac
           ))}
       </div>
 
-      <div className="rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 shadow-sm">
+      <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 shadow-sm">
         <div className="flex items-center justify-between mb-2">
           <div>
             <p className="text-xs font-semibold text-[var(--text-primary)]">Artifacts</p>

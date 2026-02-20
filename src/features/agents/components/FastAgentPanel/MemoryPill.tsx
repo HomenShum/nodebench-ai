@@ -84,7 +84,7 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
                     "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
                     "text-xs font-medium transition-all duration-150",
-                    "hover:bg-[var(--bg-tertiary)] hover:shadow-sm",
+                    "hover:bg-[var(--bg-tertiary)]",
                     "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)]",
                     getStatusColor()
                 )}

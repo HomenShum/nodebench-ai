@@ -42,8 +42,8 @@ function ActIIChangeView({
           Context Graph
         </h2>
         <div className="flex items-center gap-2">
-          <Share2 className="w-3 h-3 text-gray-900" />
-          <span className="text-xs font-black text-gray-900/60 dark:text-gray-400 uppercase tracking-widest">
+          <Share2 className="w-3 h-3 text-content" />
+          <span className="text-xs font-black text-gray-900/60 dark:text-content-muted uppercase tracking-widest">
             Active Narratives
           </span>
         </div>
@@ -53,17 +53,17 @@ function ActIIChangeView({
 
       <div className="space-y-4">
         {drivers.length === 0 ? (
-          <div className="text-sm text-gray-400 italic">No active narratives detected.</div>
+          <div className="text-sm text-content-muted italic">No active narratives detected.</div>
         ) : (
           drivers.map((signal: any, i: number) => (
             <div key={signal.headline ?? i} className="group cursor-default">
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-900/40 dark:bg-gray-400/40 group-hover:bg-gray-900 dark:group-hover:bg-gray-300 transition-colors" />
-                <span className="text-xs font-black uppercase tracking-wider text-gray-900/50 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
+                <span className="text-xs font-black uppercase tracking-wider text-gray-900/50 dark:text-content-muted group-hover:text-content dark:group-hover:text-gray-200 transition-colors">
                   Node {i + 1}
                 </span>
               </div>
-              <p className="text-sm font-medium text-gray-950 dark:text-gray-200 leading-snug pl-4 border-l border-gray-900/10 dark:border-white/10 group-hover:border-gray-900/40 dark:group-hover:border-white/30 transition-colors">
+              <p className="text-sm font-medium text-gray-950 dark:text-gray-200 leading-snug pl-4 border-l border-gray-900/10 dark:border-white/10 group-hover:border-content/40 dark:group-hover:border-white/30 transition-colors">
                 {signal.headline}
               </p>
             </div>
@@ -89,8 +89,8 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
           Signal Velocity
         </h2>
         <div className="flex items-center gap-2">
-          <Zap className="w-3 h-3 text-gray-900" />
-          <span className="text-xs font-black text-gray-900/60 dark:text-gray-400 uppercase tracking-widest">
+          <Zap className="w-3 h-3 text-content" />
+          <span className="text-xs font-black text-gray-900/60 dark:text-content-muted uppercase tracking-widest">
             Processing Rate
           </span>
         </div>
@@ -99,7 +99,7 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
       {/* Velocity Big Stat */}
       <div className="py-8 text-center bg-[#f2f1ed] dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/10">
         <span className="text-6xl font-bold text-gray-950 block">{velocity}</span>
-        <span className="text-xs font-black text-gray-900/40 dark:text-gray-500 uppercase tracking-[0.3em]">Nodes / Hour</span>
+        <span className="text-xs font-black text-gray-900/40 dark:text-content-secondary uppercase tracking-[0.3em]">Nodes / Hour</span>
       </div>
 
       {/* Source Distribution */}
@@ -109,15 +109,15 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
         </div>
         {(summary?.breakdown || []).slice(0, 4).map((item: { source: string; count: number }) => (
           <div key={item.source} className="flex items-center justify-between group">
-            <span className="text-xs text-gray-600 group-hover:text-gray-900 transition-colors capitalize">{item.source}</span>
+            <span className="text-xs text-content-secondary group-hover:text-content transition-colors capitalize">{item.source}</span>
             <div className="flex items-center gap-2">
-              <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-24 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gray-900/60 group-hover:bg-gray-900 transition-all duration-500"
                   style={{ width: `${(item.count / totalNodes) * 100}%` }}
                 />
               </div>
-              <span className="text-xs font-mono text-gray-400 w-4 text-right">{item.count}</span>
+              <span className="text-xs font-mono text-content-muted w-4 text-right">{item.count}</span>
             </div>
           </div>
         ))}

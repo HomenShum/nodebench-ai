@@ -72,7 +72,7 @@ interface ErrorFallbackProps {
 
 export function ErrorFallback({ section, error, onRetry, className = '' }: ErrorFallbackProps) {
   return (
-    <div className={`rounded-xl border border-red-200 bg-red-50 p-6 ${className}`}>
+    <div className={`rounded-lg border border-red-200 bg-red-50 p-6 ${className}`}>
       <div className="flex items-start gap-4">
         <div className="h-10 w-10 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
           <AlertTriangle className="w-5 h-5" />

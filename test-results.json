@@ -60,7 +60,7 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.57.0",
-    "workers": 16,
+    "workers": 1,
     "webServer": null
   },
   "suites": [
@@ -93,12 +93,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 210215,
+                      "duration": 209700,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-20T09:07:45.298Z",
+                      "startTime": "2026-02-20T23:38:46.508Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -118,8 +118,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-02-20T09:07:44.383Z",
-    "duration": 211503.414,
+    "startTime": "2026-02-20T23:38:45.584Z",
+    "duration": 212384.289,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,

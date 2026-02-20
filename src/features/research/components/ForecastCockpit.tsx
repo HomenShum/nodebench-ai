@@ -45,12 +45,12 @@ export function ForecastCockpit() {
   if (summary === undefined) {
     return (
       <div className="space-y-6">
-        <div className="h-20 bg-gray-100 dark:bg-white/[0.04] rounded-2xl" />
+        <div className="h-20 bg-surface-secondary rounded-lg" />
         <div className="grid grid-cols-2 gap-4">
-          <div className="h-56 bg-gray-100 dark:bg-white/[0.04] rounded-2xl" />
-          <div className="h-56 bg-gray-100 dark:bg-white/[0.04] rounded-2xl" />
+          <div className="h-56 bg-surface-secondary rounded-lg" />
+          <div className="h-56 bg-surface-secondary rounded-lg" />
         </div>
-        <div className="h-40 bg-gray-100 dark:bg-white/[0.04] rounded-2xl" />
+        <div className="h-40 bg-surface-secondary rounded-lg" />
       </div>
     );
   }
@@ -62,23 +62,23 @@ export function ForecastCockpit() {
         <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
           <Target className="w-8 h-8 text-indigo-500" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-semibold text-content mb-2">
           Forecast Cockpit
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mb-6">
+        <p className="text-sm text-content-secondary max-w-md mb-6">
           Track predictions with calibration scoring, evidence timelines, and
           full provenance. Forecasts are created via MCP tools and refreshed
           daily before the LinkedIn digest.
         </p>
-        <div className="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-4 max-w-sm w-full text-left">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-2">
+        <div className="rounded-lg border border-dashed border-edge dark:border-gray-600 bg-surface-secondary p-4 max-w-sm w-full text-left">
+          <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-2">
             Quick start
           </p>
-          <ol className="space-y-1.5 text-sm text-gray-600 dark:text-gray-300">
+          <ol className="space-y-1.5 text-sm text-content-secondary">
             <li className="flex gap-2">
               <span className="text-indigo-500 font-semibold shrink-0">1.</span>
               <span>
-                Run <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 rounded font-mono">create_forecast</code> with a
+                Run <code className="text-xs bg-surface-secondary dark:bg-gray-700 px-1 rounded font-mono">create_forecast</code> with a
                 question, probability, and resolution date
               </span>
             </li>
@@ -99,11 +99,11 @@ export function ForecastCockpit() {
   return (
     <div className="space-y-6">
       {/* ── Header Stats ── */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-700/50 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/30 p-5">
+      <div className="rounded-lg border border-edge/50 bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/30 p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-content">
               Forecast Cockpit
             </h2>
           </div>
@@ -113,13 +113,13 @@ export function ForecastCockpit() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-6 text-sm text-content-secondary">
           <span>{summary.activeCount} active</span>
-          <span className="text-gray-300 dark:text-gray-600">&middot;</span>
+          <span className="text-gray-300 dark:text-content-secondary">&middot;</span>
           <span>{summary.resolvedCount} resolved</span>
           {summary.scoredCount > 0 && (
             <>
-              <span className="text-gray-300 dark:text-gray-600">&middot;</span>
+              <span className="text-gray-300 dark:text-content-secondary">&middot;</span>
               <span>{brierLabel(summary.overallBrier)} calibration</span>
             </>
           )}
@@ -129,19 +129,19 @@ export function ForecastCockpit() {
       {/* ── Charts Row ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Calibration Plot */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-edge/50 bg-surface p-4">
           <div className="flex items-center gap-2 mb-3">
-            <BarChart3 className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Calibration</h3>
+            <BarChart3 className="w-4 h-4 text-content-muted" />
+            <h3 className="text-sm font-medium text-content-secondary">Calibration</h3>
           </div>
           <CalibrationPlot bins={calibration?.bins ?? []} />
         </div>
 
         {/* Brier Trend */}
-        <div className="rounded-2xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-edge/50 bg-surface p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Brier Trend</h3>
+            <TrendingUp className="w-4 h-4 text-content-muted" />
+            <h3 className="text-sm font-medium text-content-secondary">Brier Trend</h3>
           </div>
           <BrierTrendChart dataPoints={brierTrend ?? []} />
         </div>
@@ -150,7 +150,7 @@ export function ForecastCockpit() {
       {/* ── Active Forecasts ── */}
       {activeForecasts && activeForecasts.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+          <h3 className="text-sm font-medium text-content-secondary uppercase tracking-wider mb-3">
             Active Forecasts
           </h3>
           <div className="space-y-3">
@@ -174,7 +174,7 @@ export function ForecastCockpit() {
           <button
             type="button"
             onClick={() => setShowResolved(!showResolved)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-content-secondary uppercase tracking-wider mb-3 hover:text-content transition-colors"
           >
             Resolved ({resolvedForecasts.length})
             {showResolved ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

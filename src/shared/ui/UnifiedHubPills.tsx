@@ -17,7 +17,7 @@ export function UnifiedHubPills({
   const navigate = useNavigate();
 
   const container = [
-    "inline-flex items-center gap-0.5 p-1 rounded-xl bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-color)]/50 shadow-sm",
+    "inline-flex items-center gap-0.5 p-1 rounded-lg bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-color)]/50 shadow-sm",
     className ?? "",
   ]
     .join(" ")

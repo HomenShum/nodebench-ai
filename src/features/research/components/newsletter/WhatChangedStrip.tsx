@@ -27,14 +27,14 @@ export function WhatChangedStrip({
     if (!hasChanges) return null;
 
     return (
-        <div className={`flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 ${className}`}>
+        <div className={`flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 ${className}`}>
             {/* New Sources */}
             {newSources > 0 && (
                 <div className="flex items-center gap-1.5">
                     <div className="w-5 h-5 rounded-full bg-indigo-100 flex items-center justify-center">
                         <Plus className="w-3 h-3 text-indigo-600" />
                     </div>
-                    <span className="text-xs font-medium text-gray-700">
+                    <span className="text-xs font-medium text-content-secondary">
                         {newSources} new source{newSources !== 1 ? 's' : ''}
                     </span>
                 </div>

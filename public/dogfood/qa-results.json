@@ -1,5 +1,567 @@
 [
   {
+    "timestamp": "2026-02-20T23:45:43.858Z",
+    "runType": "gemini-qa-rubric",
+    "score": 100,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 14,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "falsePositivesFiltered": 14,
+      "hardFiltered": 2,
+      "llmFiltered": 12,
+      "judgeDetails": [
+        {
+          "issue": "P2Incongruous iconography in Calendar widget",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Iconography is a design choice, and while the reviewer finds it incongruous, it's a subjective opinion, not a functional bug."
+        },
+        {
+          "issue": "P2Misleading empty state iconography",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Icon choice for empty states is a design decision, and the reviewer's interpretation of the waveform icon is subjective."
+        },
+        {
+          "issue": "P3Redundant metadata in news feed",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "'Just now' timestamps on all items in the demo environment are due to mock data, not a code defect."
+        },
+        {
+          "issue": "P2Inconsistent Time Formatting",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Mixed time formats (12-hour and 24-hour) are intentional context-dependent formatting, not a bug."
+        },
+        {
+          "issue": "P2Inconsistent Date Formats",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Mixed date formats (ISO and natural language) are intentional context-dependent formatting, not a bug."
+        },
+        {
+          "issue": "P3Search Placeholder Typo",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "The claim about a double period in the search placeholder is likely a screenshot misread. The codebase contains no such typo."
+        },
+        {
+          "issue": "P1Redundant Navigation Links",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Repeated navigation labels in different navigation contexts are intentional, not redundant."
+        },
+        {
+          "issue": "P2Inconsistent Decimal Precision",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Varying decimal precision is a design choice, not a bug. Removing the '.0' is a subjective preference."
+        },
+        {
+          "issue": "P2Aggressive All-Caps Typography",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "All-caps typography is a design choice, and the reviewer's opinion about it being 'jarring' is subjective."
+        },
+        {
+          "issue": "P2Raw Jargon in Primary Content",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Displaying raw GitHub repository paths is expected in a tool for technical practitioners, not 'jargon leak'."
+        },
+        {
+          "issue": "P3FAB Layering Violation",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "The FAB persisting across all screens including modals is an intentional Material Design pattern, not a layering error."
+        },
+        {
+          "issue": "P2Excessive Timestamp Precision",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Timestamp precision is a design choice, and the reviewer's opinion about it being excessive is subjective."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Severe text overlap and alignment failures in analytics si",
+        "P3Academic jargon in UI labels",
+        "P2Incongruous iconography in Calendar widget",
+        "P2Misleading empty state iconography",
+        "P3Redundant metadata in news feed",
+        "P2Inconsistent Time Formatting",
+        "P2Inconsistent Date Formats",
+        "P3Search Placeholder Typo",
+        "P1Redundant Navigation Links",
+        "P2Inconsistent Decimal Precision",
+        "P2Aggressive All-Caps Typography",
+        "P2Raw Jargon in Primary Content",
+        "P3FAB Layering Violation",
+        "P2Excessive Timestamp Precision"
+      ]
+    },
+    "diagnostics": {
+      "totalRawIssues": 14,
+      "falsePositivesFiltered": 14,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 9
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 9,
+    "videoSummary": "The application presents a highly capable, data-dense dark mode interface tailored for power users, but it currently lacks the final layer of polish required for a truly premium feel. The primary focus must be resolving severe typographical crowding in the analytics sidebars, which undermines trust in the data. Additionally, refining the visual hierarchy of empty states, standardizing iconography,",
+    "screenSummary": "The interface demonstrates a sophisticated aesthetic with strong dark/light theme parity, but it suffers from inconsistent data formatting and semantic noise. While the visual hierarchy is generally clear, the application of 'earned complexity' is uneven—providing excessive precision in some areas (seconds in timestamps) while neglecting basic grammatical polish in others (placeholder typos and re"
+  },
+  {
+    "timestamp": "2026-02-20T23:27:10.862Z",
+    "runType": "gemini-qa-rubric",
+    "score": 90,
+    "grade": "A",
+    "critical": 1,
+    "warning": 3,
+    "info": 0,
+    "total": 14,
+    "realIssueCount": 4,
+    "rubric": {
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 72,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": false,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": false,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": false,
+            "weight": 1,
+            "axis": "layout"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 88,
+        "weight": 0.1,
+        "rawTaste": 88
+      },
+      "falsePositivesFiltered": 10,
+      "hardFiltered": 1,
+      "llmFiltered": 9,
+      "judgeDetails": [
+        {
+          "issue": "P1Overwhelming Dashboard Density",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "The dashboard density is intentional for power users."
+        },
+        {
+          "issue": "P2Low Contrast and Small Typography",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Text uses WCAG AA compliant colors. Small typography is intentional for dense data presentation."
+        },
+        {
+          "issue": "P2Redundant Calendar Navigation",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Dual calendar affordances serve different contexts, not redundant."
+        },
+        {
+          "issue": "P3Uninspired Empty States",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Empty states without CTAs are intentional when data auto-populates."
+        },
+        {
+          "issue": "P1Inconsistent Date and Time Formatting",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Mixed time formats are intentional context-dependent formatting."
+        },
+        {
+          "issue": "P1Nomenclature Collision: 'Usage & Costs'",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Using the same title for two different data sets creates confusion."
+        },
+        {
+          "issue": "P2Mobile FAB Overlaps Content",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "FAB overlapping content makes the content unreadable."
+        },
+        {
+          "issue": "P2Technical Jargon in User Interface",
+          "verdict": "genuine_bug",
+          "confidence": 0.7,
+          "reasoning": "Displaying raw system timezone strings is not user-friendly."
+        },
+        {
+          "issue": "P3Redundant Empty State Labels",
+          "verdict": "design_opinion",
+          "confidence": 0.6,
+          "reasoning": "Redundant empty state labels are a design choice, not a bug."
+        },
+        {
+          "issue": "P2Inconsistent Duration Units",
+          "verdict": "genuine_bug",
+          "confidence": 0.8,
+          "reasoning": "Inconsistent duration units in the Activity feed."
+        },
+        {
+          "issue": "P3Theatrical Jargon in Technical Reports",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Domain terminology for the target audience."
+        },
+        {
+          "issue": "P2Repetitive Inline Actions",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Repeated navigation labels in different navigation contexts are intentional."
+        },
+        {
+          "issue": "P3Punctuation Error in Search Placeholder",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Search placeholders use standard ellipsis. Claims about double periods are screenshot misreads."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P3Use of Academic/Internal Jargon",
+        "P1Overwhelming Dashboard Density",
+        "P2Low Contrast and Small Typography",
+        "P2Redundant Calendar Navigation",
+        "P3Uninspired Empty States",
+        "P1Inconsistent Date and Time Formatting",
+        "P3Redundant Empty State Labels",
+        "P3Theatrical Jargon in Technical Reports",
+        "P2Repetitive Inline Actions",
+        "P3Punctuation Error in Search Placeholder"
+      ]
+    },
+    "diagnostics": {
+      "totalRawIssues": 14,
+      "falsePositivesFiltered": 10,
+      "realIssues": 4,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 9
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 9,
+    "videoSummary": "The application offers a robust suite of tools but currently suffers from visual clutter, particularly in its dashboard views. The dark theme requires contrast tuning, as many secondary text elements and indicators are difficult to read. To achieve a more 'calm and intentional' feel, the design should focus on reducing redundant UI components, increasing whitespace, and simplifying terminology.",
+    "screenSummary": "NodeBench AI demonstrates a high level of visual craft and a sophisticated data-dense aesthetic. However, the interface suffers from significant inconsistencies in date/time formatting, nomenclature collisions between performance analytics and billing usage, and several mobile responsiveness issues where primary actions overlap content. The presence of raw technical strings (timezones) and theatri"
+  },
+  {
     "timestamp": "2026-02-20T18:24:10.088Z",
     "runType": "gemini-qa-rubric",
     "score": 100,

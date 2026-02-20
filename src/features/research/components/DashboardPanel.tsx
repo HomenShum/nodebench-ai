@@ -14,7 +14,7 @@ interface DashboardProps {
 
 export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
   return (
-    <div className="flex h-full flex-col justify-between rounded-xl bg-white/80 p-6 shadow-xl backdrop-blur-xl ring-1 ring-white/40">
+    <div className="flex h-full flex-col justify-between rounded-lg bg-white/80 p-6 shadow-xl backdrop-blur-xl ring-1 ring-white/40">
       <div>
         <div className="flex items-center justify-between mb-8">
           <motion.div

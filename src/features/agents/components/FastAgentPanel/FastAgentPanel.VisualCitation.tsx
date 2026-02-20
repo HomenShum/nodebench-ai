@@ -97,7 +97,7 @@ export function InlineCitation({
         "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
         "rounded-full cursor-pointer",
         "transition-all duration-200",
-        "hover:bg-blue-200 dark:hover:bg-blue-800/60 hover:scale-110",
+        "hover:bg-blue-200 dark:hover:bg-blue-800/60",
         "hover:shadow-sm hover:shadow-blue-300/50",
         className
       )}
@@ -183,7 +183,7 @@ const STATUS_CONFIG: Record<ArbitrageStatus, {
     label: 'Verified',
     icon: '✓',
     bgClass: 'bg-indigo-100 dark:bg-gray-900/40',
-    textClass: 'text-gray-700 dark:text-indigo-300',
+    textClass: 'text-content-secondary dark:text-indigo-300',
     description: 'Confirmed by primary source',
   },
   partial: {
@@ -262,7 +262,7 @@ export function ArbitrageCitation({
         config.textClass,
         "rounded-full cursor-pointer",
         "transition-all duration-200",
-        "hover:scale-110 hover:shadow-sm",
+        "hover:shadow-sm",
         className
       )}
       onMouseEnter={handleMouseEnter}

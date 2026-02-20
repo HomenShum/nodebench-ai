@@ -112,7 +112,7 @@ export function ForYouFeed() {
           {/* Card grid skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-muted/60 rounded-lg" />
                   <div className="flex-1 space-y-2">

@@ -109,7 +109,7 @@ const getSupplementColors = (type: SupplementType) => {
     case "deep_dive":
       return "bg-blue-50 text-blue-700 border-blue-200";
     case "data_appendix":
-      return "bg-indigo-50 text-gray-700 border-indigo-200";
+      return "bg-indigo-50 text-content-secondary border-indigo-200";
     case "methodology":
       return "bg-purple-50 text-purple-700 border-purple-200";
     case "sources":
@@ -273,7 +273,7 @@ export const ResearchSupplementView: React.FC<ResearchSupplementProps> = ({
   const StatusIcon = statusBadge.icon;
 
   return (
-    <div className={`bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] shadow-sm ${className}`}>
+    <div className={`bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] shadow-sm ${className}`}>
       {/* Header */}
       <div className="p-6 border-b border-[color:var(--border-color)]">
         <div className="flex items-start justify-between gap-4">

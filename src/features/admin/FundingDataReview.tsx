@@ -155,24 +155,24 @@ export function FundingDataReview() {
 
   if (!scanResults) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="flex items-center justify-center h-screen bg-surface-secondary dark:bg-gray-950">
         <div className="text-center">
           <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Scanning funding data...</p>
+          <p className="text-content-secondary">Scanning funding data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-8">
+    <div className="min-h-screen bg-surface-secondary dark:bg-gray-950 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-3xl font-bold text-content mb-2">
             Funding Data Review
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-content-secondary">
             Review and fix data quality issues in funding records
           </p>
         </div>
@@ -202,10 +202,10 @@ export function FundingDataReview() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-white/[0.02] border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none p-6 mb-6">
+        <div className="bg-surface border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 Search Company
               </label>
               <input
@@ -213,17 +213,17 @@ export function FundingDataReview() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by company name..."
-                className="w-full px-4 py-2 border border-gray-300 dark:border-white/[0.08] rounded-lg bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-edge rounded-lg bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div className="md:w-64">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-content-secondary mb-2">
                 Category
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-white/[0.08] rounded-lg bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-edge rounded-lg bg-white dark:bg-white/[0.04] text-content focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Issues ({allIssues.length})</option>
                 <option value="unknownCompany">
@@ -244,34 +244,34 @@ export function FundingDataReview() {
         </div>
 
         {/* Issues List */}
-        <div className="bg-white dark:bg-white/[0.02] border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none overflow-hidden">
+        <div className="bg-surface border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-white/[0.06]">
-              <thead className="bg-gray-50 dark:bg-white/[0.04]">
+            <table className="min-w-full divide-y divide-edge">
+              <thead className="bg-surface-secondary">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                     Company Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                     Amount / Round
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                     Issue
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                     Confidence
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-content-secondary uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-transparent divide-y divide-gray-200 dark:divide-white/[0.04]">
                 {filteredIssues.map((issue) => (
-                  <tr key={issue.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.04]">
+                  <tr key={issue.id} className="hover:bg-surface-hover">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <div className="text-sm font-medium text-content">
                           {issue.companyName}
                         </div>
                         {issue.suggested && (
@@ -282,8 +282,8 @@ export function FundingDataReview() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{issue.amount}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{issue.round}</div>
+                      <div className="text-sm text-content">{issue.amount}</div>
+                      <div className="text-xs text-content-secondary">{issue.round}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col space-y-1">
@@ -325,7 +325,7 @@ export function FundingDataReview() {
 
           {filteredIssues.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">No issues found</p>
+              <p className="text-content-secondary">No issues found</p>
             </div>
           )}
         </div>
@@ -354,11 +354,11 @@ function StatsCard({ title, value, color }: { title: string; value: number; colo
     red: "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400",
     orange: "bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400",
     yellow: "bg-yellow-50 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400",
-  }[color] ?? "bg-gray-50 dark:bg-white/[0.04] text-gray-700 dark:text-gray-300";
+  }[color] ?? "bg-surface-secondary text-content-secondary";
 
   return (
-    <div className="bg-white dark:bg-white/[0.02] border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none p-6">
-      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{title}</h3>
+    <div className="bg-surface border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none p-6">
+      <h3 className="text-sm font-medium text-content-secondary mb-2">{title}</h3>
       <p className={`text-3xl font-bold ${colorClasses}`}>{value.toLocaleString()}</p>
     </div>
   );
@@ -373,13 +373,13 @@ function ConfidenceMeter({ confidence }: { confidence: number }) {
 
   return (
     <div className="flex items-center space-x-2">
-      <div className="w-24 bg-gray-200 dark:bg-white/[0.08] rounded-full h-2">
+      <div className="w-24 bg-surface-secondary rounded-full h-2">
         <div
           className={`${color} h-2 rounded-full`}
           style={{ width: `${percentage}%` }}
         ></div>
       </div>
-      <span className="text-xs text-gray-600 dark:text-gray-400">{percentage}%</span>
+      <span className="text-xs text-content-secondary">{percentage}%</span>
     </div>
   );
 }
@@ -391,7 +391,7 @@ function getCategoryColor(category: string): string {
     lowConfidence: "bg-orange-100 dark:bg-orange-950/30 text-orange-800 dark:text-orange-400",
     singleSourceLarge: "bg-purple-100 dark:bg-purple-950/30 text-purple-800 dark:text-purple-400",
   };
-  return colors[category] || "bg-gray-100 dark:bg-white/[0.06] text-gray-800 dark:text-gray-300";
+  return colors[category] || "bg-surface-secondary text-content dark:text-gray-300";
 }
 
 function getCategoryLabel(category: string): string {
@@ -418,40 +418,40 @@ function ManualFixModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 border border-transparent dark:border-white/[0.08] rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Manual Fix</h2>
+      <div className="bg-surface border border-transparent dark:border-white/[0.08] rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6">
+        <h2 className="text-2xl font-bold text-content mb-4">Manual Fix</h2>
 
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Current Name
             </label>
-            <div className="px-4 py-2 bg-gray-100 dark:bg-white/[0.06] rounded text-gray-700 dark:text-gray-300 font-mono">
+            <div className="px-4 py-2 bg-surface-secondary rounded text-content-secondary font-mono">
               {issue.companyName}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Correct Company Name *
             </label>
             <input
               type="text"
               value={correctName}
               onChange={(e) => setCorrectName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-edge bg-white dark:bg-white/[0.04] text-content rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="Enter correct company name"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-content-secondary mb-2">
               Reasoning *
             </label>
             <textarea
               value={reasoning}
               onChange={(e) => setReasoning(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-edge bg-white dark:bg-white/[0.04] text-content rounded-lg focus:ring-2 focus:ring-blue-500"
               rows={3}
               placeholder="Explain why this is the correct name..."
             />
@@ -478,7 +478,7 @@ function ManualFixModal({
         <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 dark:border-white/[0.08] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+            className="px-4 py-2 border border-edge rounded-lg text-content-secondary hover:bg-surface-hover"
           >
             Cancel
           </button>

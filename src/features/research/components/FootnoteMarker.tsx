@@ -43,7 +43,7 @@ const getCitationColors = (type: CitationType) => {
     case "source":
       return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
     case "data":
-      return "bg-indigo-100 text-gray-700 hover:bg-indigo-200 border-indigo-200";
+      return "bg-indigo-100 text-content-secondary hover:bg-indigo-200 border-indigo-200";
     case "quote":
       return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200";
     case "analysis":

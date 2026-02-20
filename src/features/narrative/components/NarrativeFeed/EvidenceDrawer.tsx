@@ -109,7 +109,7 @@ function getCredibilityDisplay(tier: CredibilityTier): {
       return {
         icon: <ShieldQuestion className="w-4 h-4" />,
         label: "Unverified",
-        color: "text-gray-500 bg-gray-500/10 border-gray-500/30",
+        color: "text-content-secondary bg-gray-500/10 border-gray-500/30",
         description: "Unknown or unverified sources",
       };
   }

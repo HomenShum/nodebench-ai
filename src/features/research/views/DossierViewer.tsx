@@ -729,7 +729,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       <div className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 lg:p-6">
         <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
           {/* Top Left: Videos */}
-          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
               <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-red-500/10">
@@ -751,18 +751,18 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                     {mergedMedia.videos.map((video, idx) => (
                       <div
                         key={idx}
-                        className="group cursor-pointer rounded-xl overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 pressable"
+                        className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 pressable"
                       >
                         <div className="relative aspect-video bg-gradient-to-br from-[color:var(--bg-secondary)] to-[color:var(--bg-secondary)]">
                           <img
                             src={video.thumbnail}
                             alt={video.title || 'Video'}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-full object-cover transition-transform duration-500"
                             loading="lazy"
                           />
                           <div className="absolute inset-0 bg-gradient-to-br from-black/30 to-black/10 group-hover:from-black/40 group-hover:to-black/20 transition-all duration-300" />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-14 h-14 rounded-full bg-red-500/90 group-hover:bg-red-500 group-hover:scale-110 flex items-center justify-center transition-all duration-300">
+                            <div className="w-14 h-14 rounded-full bg-red-500/90 group-hover:bg-red-500 flex items-center justify-center transition-all duration-300">
                               <svg className="h-6 w-6 text-white ml-0.5" fill="white" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
                               </svg>
@@ -787,7 +787,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* Top Right: Images */}
-          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
               <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-blue-500/10">
@@ -808,12 +808,12 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   {mergedMedia.images.map((image, idx) => (
                     <div
                       key={idx}
-                      className="aspect-square cursor-pointer rounded-xl overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 group relative pressable"
+                      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 group relative pressable"
                     >
                       <img
                         src={image.url}
                         alt={image.alt || 'Image'}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover transition-transform duration-500"
                         loading="lazy"
                       />
                       <div className="absolute inset-0 bg-gradient-to-br from-black/0 to-black/20 group-hover:from-black/10 group-hover:to-black/30 transition-all duration-300" />
@@ -829,7 +829,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* Bottom Left: AI Chat Transcript (Read-only Main Dossier Content) */}
-          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
               <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-purple-500/10">
@@ -878,7 +878,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* Bottom Right: Quick Notes (Editable Separate Document) */}
-          <div className="border border-[var(--border-color)] rounded-xl overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
               <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-blue-500/10">

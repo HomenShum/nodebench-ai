@@ -399,7 +399,7 @@ export function WhatChangedPanel({
                 ? `Last refresh: ${new Date(refreshSummary.lastFetchedAt).toLocaleString()}`
                 : "Last refresh: unknown"}
             </span>
-            {refreshState.status === "done" && <span className="text-gray-700">{refreshState.message}</span>}
+            {refreshState.status === "done" && <span className="text-content-secondary">{refreshState.message}</span>}
             {refreshState.status === "error" && <span className="text-red-700">{refreshState.message}</span>}
           </div>
         </div>
@@ -529,7 +529,7 @@ export function WhatChangedWidget({
 
   if (!diffsData || diffsData.length === 0) {
     return (
-      <div className="border border-[color:var(--border-color)] rounded-xl p-4 bg-[color:var(--bg-primary)]">
+      <div className="border border-[color:var(--border-color)] rounded-lg p-4 bg-[color:var(--bg-primary)]">
         <div className="flex items-center gap-2 mb-3">
           <BookOpen className="w-4 h-4 text-[color:var(--text-muted)]" />
           <h4 className="text-sm font-medium text-[color:var(--text-primary)]">Source Updates</h4>
@@ -545,7 +545,7 @@ export function WhatChangedWidget({
   const highCount = sortedDiffs.filter((d) => d.severity === "high").length;
 
   return (
-    <div className="border border-[color:var(--border-color)] rounded-xl overflow-hidden bg-[color:var(--bg-primary)]">
+    <div className="border border-[color:var(--border-color)] rounded-lg overflow-hidden bg-[color:var(--bg-primary)]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50">
         <div className="flex items-center gap-2">

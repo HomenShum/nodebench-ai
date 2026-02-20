@@ -77,7 +77,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
       onClick={onExpand}
       className={cn(
         "flex items-center gap-1 py-1 px-2 rounded-md",
-        "hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors",
+        "hover:bg-surface-hover dark:hover:bg-gray-800/50 transition-colors",
         onExpand && "cursor-pointer"
       )}
       disabled={!onExpand}
@@ -95,7 +95,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
                 className={cn(
                   "w-4 h-4",
                   step.success
-                    ? "text-gray-600 dark:text-gray-300"
+                    ? "text-content-secondary"
                     : "text-red-500 dark:text-red-400"
                 )}
               />
@@ -103,7 +103,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
                 className={cn(
                   "text-xs leading-none max-w-[60px] truncate",
                   step.success
-                    ? "text-gray-500 dark:text-gray-400"
+                    ? "text-content-secondary"
                     : "text-red-500 dark:text-red-400"
                 )}
                 title={step.toolName}
@@ -114,7 +114,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
 
             {/* Arrow between steps */}
             {!isLast && (
-              <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 flex-shrink-0" />
+              <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary flex-shrink-0" />
             )}
           </React.Fragment>
         );
@@ -122,7 +122,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
 
       {/* Total duration badge */}
       {totalDurationMs !== undefined && (
-        <span className="ml-2 text-xs font-mono text-gray-400 dark:text-gray-400 flex-shrink-0">
+        <span className="ml-2 text-xs font-mono text-content-muted flex-shrink-0">
           {formatDuration(totalDurationMs)}
         </span>
       )}
@@ -145,12 +145,12 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
             key={`${step.toolName}-${idx}`}
             className={cn(
               "flex items-center gap-3 py-2 px-3 rounded-lg",
-              "bg-gray-50 dark:bg-gray-800/30",
+              "bg-surface-secondary dark:bg-gray-800/30",
               !step.success && "border border-red-200 dark:border-red-800/50"
             )}
           >
             {/* Step number */}
-            <span className="text-xs font-mono text-gray-400 dark:text-gray-400 w-4 text-right flex-shrink-0">
+            <span className="text-xs font-mono text-content-muted w-4 text-right flex-shrink-0">
               {idx + 1}
             </span>
 
@@ -159,7 +159,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
               className={cn(
                 "w-4 h-4 flex-shrink-0",
                 step.success
-                  ? "text-gray-600 dark:text-gray-300"
+                  ? "text-content-secondary"
                   : "text-red-500 dark:text-red-400"
               )}
             />
@@ -189,7 +189,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
 
             {/* Duration */}
             {step.durationMs !== undefined && (
-              <span className="text-xs font-mono text-gray-400 dark:text-gray-400 flex-shrink-0 min-w-[40px] text-right">
+              <span className="text-xs font-mono text-content-muted flex-shrink-0 min-w-[40px] text-right">
                 {formatDuration(step.durationMs)}
               </span>
             )}
@@ -206,8 +206,8 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
 
       {/* Total duration footer */}
       {totalDurationMs !== undefined && (
-        <div className="flex justify-end pt-1 border-t border-gray-100 dark:border-gray-800">
-          <span className="text-xs font-mono text-gray-400 dark:text-gray-400">
+        <div className="flex justify-end pt-1 border-t border-edge dark:border-gray-800">
+          <span className="text-xs font-mono text-content-muted">
             Total: {formatDuration(totalDurationMs)}
           </span>
         </div>

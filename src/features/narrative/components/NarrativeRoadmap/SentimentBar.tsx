@@ -48,20 +48,20 @@ export function SentimentBar({
   return (
     <div className="flex">
       {/* Empty space for thread column */}
-      <div className="w-48 flex-shrink-0 border-r border-gray-200" />
+      <div className="w-48 flex-shrink-0 border-r border-edge" />
 
       {/* Sentiment segments for each week */}
       {weekColumns.map((week, index) => {
         const data = sentimentData.get(week.weekNumber);
         const sentimentColor = data
           ? SENTIMENT_COLORS[data.sentiment]
-          : "bg-gray-100";
+          : "bg-surface-secondary";
         const indicator = data ? getSentimentIndicator(data.sentiment) : null;
 
         return (
           <div
             key={week.weekNumber}
-            className={`w-24 flex-shrink-0 border-r border-gray-100 relative group ${
+            className={`w-24 flex-shrink-0 border-r border-edge relative group ${
               week.isCurrent ? "bg-blue-50/20" : ""
             }`}
           >

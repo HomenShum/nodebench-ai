@@ -27,7 +27,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
     };
 
     return (
-        <div className="p-4 border-t border-[var(--border-color)] bg-gradient-to-r from-[var(--bg-secondary)] via-[var(--bg-tertiary)] to-[var(--bg-secondary)]">
+        <div className="p-4 border-t border-[var(--border-color)] bg-surface-secondary">
             <div className="flex items-center gap-3">
                 {(() => {
                     const displayName = (user?.name ?? user?.email ?? "Guest");
@@ -66,7 +66,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                         <button
                             type="button"
                             onClick={handleGoogleSignIn}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors shadow-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white border border-edge hover:bg-surface-hover text-content-secondary transition-colors shadow-sm"
                         >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                                 <path

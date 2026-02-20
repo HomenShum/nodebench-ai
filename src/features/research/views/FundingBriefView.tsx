@@ -52,9 +52,9 @@ const SECTOR_COLORS: Record<string, { bg: string; text: string }> = {
   enterprise: { bg: "bg-blue-100 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400" },
   consumer: { bg: "bg-orange-100 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400" },
   deeptech: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-indigo-700 dark:text-indigo-400" },
-  climate: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-gray-700 dark:text-gray-400" },
-  technology: { bg: "bg-gray-100 dark:bg-white/[0.06]", text: "text-gray-700 dark:text-gray-400" },
-  other: { bg: "bg-gray-100 dark:bg-white/[0.06]", text: "text-gray-700 dark:text-gray-400" },
+  climate: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-content-secondary dark:text-content-muted" },
+  technology: { bg: "bg-surface-secondary", text: "text-content-secondary dark:text-content-muted" },
+  other: { bg: "bg-surface-secondary", text: "text-content-secondary dark:text-content-muted" },
 };
 
 // Verification status badges
@@ -78,14 +78,14 @@ function VerificationBadge({
     },
     unverified: {
       icon: AlertCircle,
-      color: "text-gray-400 dark:text-gray-500",
-      bg: "bg-gray-50 dark:bg-white/[0.04]",
+      color: "text-content-muted",
+      bg: "bg-surface-secondary",
       label: "Unverified",
     },
   }[status] || {
     icon: AlertCircle,
-    color: "text-gray-400 dark:text-gray-500",
-    bg: "bg-gray-50 dark:bg-white/[0.04]",
+    color: "text-content-muted",
+    bg: "bg-surface-secondary",
     label: status,
   };
 
@@ -148,7 +148,7 @@ function FundingCard({
   const sectorColor = SECTOR_COLORS[sectorKey] || SECTOR_COLORS.other;
 
   return (
-    <div className="border border-[color:var(--border-color)] rounded-lg p-4 bg-[color:var(--bg-primary)] hover:shadow-md transition-shadow">
+    <div className="border border-[color:var(--border-color)] rounded-lg p-4 bg-[color:var(--bg-primary)] transition-shadow">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -662,8 +662,8 @@ export function FundingBriefView() {
         {!data && (
           <div className="text-center py-12">
             <div className="motion-safe:animate-pulse">
-              <div className="h-8 bg-gray-200 dark:bg-white/[0.08] rounded w-48 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 dark:bg-white/[0.08] rounded w-64 mx-auto"></div>
+              <div className="h-8 bg-surface-secondary rounded w-48 mx-auto mb-4"></div>
+              <div className="h-4 bg-surface-secondary rounded w-64 mx-auto"></div>
             </div>
           </div>
         )}

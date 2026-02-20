@@ -7,36 +7,36 @@ import React from 'react';
 
 export function DealCardSkeleton() {
   return (
-    <div className="motion-safe:animate-pulse p-4 border border-gray-200 dark:border-white/[0.06] rounded-xl bg-white dark:bg-white/[0.02]">
+    <div className="motion-safe:animate-pulse p-4 border border-edge rounded-lg bg-surface">
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-200 dark:bg-white/[0.08] rounded-lg" />
+          <div className="w-10 h-10 bg-surface-secondary rounded-lg" />
           <div className="space-y-1.5">
-            <div className="h-4 bg-gray-200 dark:bg-white/[0.08] rounded w-32" />
-            <div className="h-3 bg-gray-100 dark:bg-white/[0.05] rounded w-24" />
+            <div className="h-4 bg-surface-secondary rounded w-32" />
+            <div className="h-3 bg-surface-secondary dark:bg-white/[0.05] rounded w-24" />
           </div>
         </div>
-        <div className="h-6 bg-gray-100 dark:bg-white/[0.05] rounded-full w-16" />
+        <div className="h-6 bg-surface-secondary dark:bg-white/[0.05] rounded-full w-16" />
       </div>
 
       {/* Amount and date */}
       <div className="flex items-center gap-4 mb-3">
-        <div className="h-6 bg-gray-200 dark:bg-white/[0.08] rounded w-20" />
-        <div className="h-4 bg-gray-100 dark:bg-white/[0.05] rounded w-16" />
+        <div className="h-6 bg-surface-secondary rounded w-20" />
+        <div className="h-4 bg-surface-secondary dark:bg-white/[0.05] rounded w-16" />
       </div>
 
       {/* Summary */}
       <div className="space-y-2 mb-3">
-        <div className="h-3 bg-gray-100 dark:bg-white/[0.05] rounded w-full" />
-        <div className="h-3 bg-gray-100 dark:bg-white/[0.05] rounded w-4/5" />
+        <div className="h-3 bg-surface-secondary dark:bg-white/[0.05] rounded w-full" />
+        <div className="h-3 bg-surface-secondary dark:bg-white/[0.05] rounded w-4/5" />
       </div>
 
       {/* Tags */}
       <div className="flex gap-2">
-        <div className="h-5 bg-gray-100 dark:bg-white/[0.05] rounded-full w-16" />
-        <div className="h-5 bg-gray-100 dark:bg-white/[0.05] rounded-full w-20" />
-        <div className="h-5 bg-gray-100 dark:bg-white/[0.05] rounded-full w-14" />
+        <div className="h-5 bg-surface-secondary dark:bg-white/[0.05] rounded-full w-16" />
+        <div className="h-5 bg-surface-secondary dark:bg-white/[0.05] rounded-full w-20" />
+        <div className="h-5 bg-surface-secondary dark:bg-white/[0.05] rounded-full w-14" />
       </div>
     </div>
   );

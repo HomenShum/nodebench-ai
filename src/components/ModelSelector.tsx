@@ -74,7 +74,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
         {isOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-white dark:bg-[#09090B] rounded-lg shadow-xl border border-gray-200 dark:border-white/[0.06] py-1 max-h-80 overflow-y-auto">
+            <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-surface rounded-lg shadow-xl border border-edge py-1 max-h-80 overflow-y-auto">
               {MODELS.map((model) => {
                 const style = PROVIDER_COLORS[model.provider];
                 const Icon = TIER_ICONS[model.tier];
@@ -84,17 +84,17 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     type="button"
                     key={model.id}
                     onClick={() => { onChange(model.id); setIsOpen(false); }}
-                    className={`w-full px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/[0.03] flex items-center gap-2 ${isSelected ? 'bg-gray-50 dark:bg-white/[0.03]' : ''}`}
+                    className={`w-full px-3 py-2 text-left hover:bg-surface-hover dark:hover:bg-white/[0.03] flex items-center gap-2 ${isSelected ? 'bg-surface-secondary' : ''}`}
                   >
                     <span className="text-sm">{style.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 truncate flex items-center gap-1.5">
+                      <div className="text-sm font-medium text-content truncate flex items-center gap-1.5">
                         <span>{model.name}</span>
                         {model.isFree && <Gift className="h-3.5 w-3.5 text-violet-500" />}
                       </div>
-                      <div className="text-xs text-gray-500">{model.description}</div>
+                      <div className="text-xs text-content-secondary">{model.description}</div>
                     </div>
-                    <Icon className="h-3.5 w-3.5 text-gray-400" />
+                    <Icon className="h-3.5 w-3.5 text-content-muted" />
                     {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
                   </button>
                 );
@@ -118,7 +118,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               filterProvider === provider
                 ? "bg-gray-900 text-white"
-                : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]"
+                : "bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1]"
             }`}
           >
             {provider === "all"
@@ -147,25 +147,25 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               className={`p-3 rounded-lg border-2 text-left transition-all ${
                 isSelected
                   ? `${style.border} ${style.bg} ring-2 ring-offset-1 ring-indigo-500`
-                  : "border-gray-200 dark:border-white/[0.06] hover:border-gray-300 dark:hover:border-white/[0.1] bg-white dark:bg-[#09090B]"
+                  : "border-edge hover:border-edge dark:hover:border-white/[0.1] bg-surface"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm">{style.icon}</span>
-                  <span className="font-medium text-gray-900 text-sm">{model.name}</span>
+                  <span className="font-medium text-content text-sm">{model.name}</span>
                   {model.isFree && <Gift className="h-3.5 w-3.5 text-violet-500" />}
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">{model.description}</p>
+                <p className="text-xs text-content-secondary mt-0.5">{model.description}</p>
               </div>
                 <div className="flex items-center gap-1">
-                  <Icon className="h-4 w-4 text-gray-400" />
+                  <Icon className="h-4 w-4 text-content-muted" />
                   {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
-                <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-white/[0.06] rounded">{model.contextWindow}</span>
+              <div className="mt-2 flex items-center gap-2 text-xs text-content-muted">
+                <span className="px-1.5 py-0.5 bg-surface-secondary rounded">{model.contextWindow}</span>
               </div>
             </button>
           );

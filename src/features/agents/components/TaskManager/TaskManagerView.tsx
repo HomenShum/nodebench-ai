@@ -282,7 +282,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
         {isLoading ? (
           <div className="space-y-2 motion-safe:animate-pulse">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div key={i} className="h-16 rounded-lg bg-surface-secondary/50" />
             ))}
           </div>
         ) : sessions.length === 0 ? (
@@ -290,7 +290,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
             <div className="w-20 h-20 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-5">
               <Bot className="w-10 h-10 text-indigo-400" />
             </div>
-            <p className="text-xl font-semibold text-[var(--text-primary)] mb-2">
+            <p className="text-base font-semibold text-[var(--text-primary)] mb-2">
               {hasActiveFilters ? 'No sessions match your filters' : isPublic ? 'No public activity yet' : 'No task sessions yet'}
             </p>
             <p className="text-sm text-[var(--text-secondary)] max-w-sm">

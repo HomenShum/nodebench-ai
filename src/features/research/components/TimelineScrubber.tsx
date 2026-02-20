@@ -49,7 +49,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           onScrubToSection(targetIndex);
         }}
       />
-      <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/90 px-3 py-2 shadow-sm">
+      <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/90 px-3 py-2 shadow-sm">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
             Timeline

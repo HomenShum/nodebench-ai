@@ -313,7 +313,7 @@ function HashtagContent({
                       handleOpenFullDossier();
                     }
                   }}
-                  className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-sm transition-all group cursor-pointer"
+                  className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all group cursor-pointer"
                 >
                   <div className="flex gap-3">
                     <div className="flex-1 min-w-0">

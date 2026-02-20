@@ -335,7 +335,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         {/* Optimistic user message (shown immediately while sending) */}
         {optimisticUserMessage && (
           <div className="flex justify-end">
-            <div className="max-w-[85%] bg-[var(--accent-primary)] text-white rounded-2xl overflow-hidden shadow-sm">
+            <div className="max-w-[85%] bg-[var(--accent-primary)] text-white rounded-lg overflow-hidden shadow-sm">
               <div className="px-4 py-3">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <p>{optimisticUserMessage}</p>
@@ -348,7 +348,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         {/* Agent thinking indicator - show while sending OR waiting for agent response */}
         {(sending || waitingForAgent) && (
           <div className="flex justify-start">
-            <div className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-2xl px-4 py-3 flex items-center gap-2">
+            <div className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-lg px-4 py-3 flex items-center gap-2">
               <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
               <span className="text-sm">Thinking…</span>
             </div>
@@ -475,7 +475,7 @@ function MessageBubble({
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[85%] ${isUser ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'} rounded-2xl overflow-hidden shadow-sm`}>
+      <div className={`max-w-[85%] ${isUser ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'} rounded-lg overflow-hidden shadow-sm`}>
         {/* Main message content */}
         <div className="px-4 py-3">
           {/* Avatar + role for assistant */}

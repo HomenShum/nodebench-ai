@@ -93,7 +93,7 @@ export function DocumentsGridSortable<T extends string | number = string>({
       {/* ✅ Overlay clone prevents layout shift while dragging; enable smooth drop animation */}
       <DragOverlay>
         {activeId != null && activeIndex >= 0 ? (
-          <div className="ring-2 ring-gray-900/20 rounded-xl shadow-lg">
+          <div className="ring-2 ring-gray-900/20 rounded-lg shadow-lg">
             {renderItem(activeId, activeIndex, true)}
           </div>
         ) : null}

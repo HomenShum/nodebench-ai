@@ -107,25 +107,25 @@ export function NarrativeCard({
             </div>
 
             {/* Headline */}
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight group-hover:text-gray-800 transition-colors">
+            <h3 className="text-2xl md:text-3xl font-bold text-content leading-tight group-hover:text-content transition-colors">
               {thread.name}
             </h3>
 
             {/* Thesis */}
-            <p className="text-gray-600 leading-relaxed text-lg font-light line-clamp-3">
+            <p className="text-content-secondary leading-relaxed text-lg font-light line-clamp-3">
               {thread.thesis}
             </p>
 
             {/* Latest Event */}
             {latestEvent && (
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <div className="bg-surface-secondary rounded-lg p-3 border border-edge">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-500">Latest Development</span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs font-medium text-content-secondary">Latest Development</span>
+                  <span className="text-xs text-content-muted">
                     {formatTimeAgo(latestEvent.occurredAt)}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 line-clamp-2">
+                <p className="text-sm text-content-secondary line-clamp-2">
                   {latestEvent.headline}
                 </p>
               </div>
@@ -143,7 +143,7 @@ export function NarrativeCard({
                   </span>
                 ))}
               </div>
-              <span className="text-sm text-gray-400">
+              <span className="text-sm text-content-muted">
                 {thread.eventCount} events
               </span>
               <button
@@ -151,8 +151,8 @@ export function NarrativeCard({
                 onClick={handleSave}
                 className={`ml-auto p-2 rounded-full transition-colors ${
                   saved
-                    ? "text-gray-700 bg-indigo-50"
-                    : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                    ? "text-content-secondary bg-indigo-50"
+                    : "text-content-muted hover:text-content-secondary hover:bg-surface-hover"
                 }`}
                 title={saved ? "Saved" : "Save for later"}
                 aria-label={saved ? "Saved" : "Save for later"}
@@ -165,7 +165,7 @@ export function NarrativeCard({
           {/* Visual Element */}
           <div className={`w-full md:w-64 h-40 md:h-auto rounded flex items-center justify-center flex-shrink-0 ${phaseColors.bg} ${phaseColors.border} border`}>
             <div className="text-center">
-              <div className={`text-4xl mb-2 ${phaseColors.text}`}>
+              <div className={`text-2xl mb-2 ${phaseColors.text}`}>
                 {phaseDisplay.icon}
               </div>
               <span className={`text-xs font-medium ${phaseColors.text}`}>
@@ -180,14 +180,14 @@ export function NarrativeCard({
 
   if (variant === "compact") {
     return (
-      <article onClick={onClick} className="group cursor-pointer py-3 border-b border-gray-100 last:border-0">
+      <article onClick={onClick} className="group cursor-pointer py-3 border-b border-edge last:border-0">
         <div className="flex items-start gap-3">
           <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${phaseColors.bg} ${phaseColors.border} border`} />
           <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-900 group-hover:text-gray-800 transition-colors line-clamp-1">
+            <h4 className="text-sm font-medium text-content group-hover:text-content transition-colors line-clamp-1">
               {thread.name}
             </h4>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+            <div className="flex items-center gap-2 text-xs text-content-secondary mt-0.5">
               <span>{phaseDisplay.label}</span>
               <span>·</span>
               <span>{thread.eventCount} events</span>
@@ -210,17 +210,17 @@ export function NarrativeCard({
         </span>
 
         {/* Headline */}
-        <h4 className="text-lg font-semibold text-gray-900 leading-snug group-hover:text-gray-800 transition-colors line-clamp-2">
+        <h4 className="text-lg font-semibold text-content leading-snug group-hover:text-content transition-colors line-clamp-2">
           {thread.name}
         </h4>
 
         {/* Thesis */}
-        <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 font-light">
+        <p className="text-sm text-content-secondary leading-relaxed line-clamp-2 font-light">
           {thread.thesis}
         </p>
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-gray-400 pt-1">
+        <div className="flex items-center gap-3 text-xs text-content-muted pt-1">
           <span>{thread.eventCount} events</span>
           <span>{formatTimeAgo(thread.latestEventAt)}</span>
           <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />

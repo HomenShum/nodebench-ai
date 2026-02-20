@@ -28,7 +28,7 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-200 shadow-sm"
+      className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200 shadow-sm"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -36,17 +36,17 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
           <Sun className="h-6 w-6 text-amber-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-base font-semibold text-content">
             Good Morning{userName ? `, ${userName}` : ''}
           </h2>
-          <p className="text-sm text-gray-600">Here's your day at a glance</p>
+          <p className="text-sm text-content-secondary">Here's your day at a glance</p>
         </div>
       </div>
 
       {/* Today's Priorities */}
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-content flex items-center gap-2">
             <CheckSquare className="h-4 w-4 text-amber-600" />
             Today's Priorities
           </h3>
@@ -60,24 +60,24 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
         {todayTasks.length > 0 ? (
           <ul className="space-y-2">
             {todayTasks.map((task) => (
-              <li key={task._id} className="flex items-center gap-2 text-sm text-gray-700">
+              <li key={task._id} className="flex items-center gap-2 text-sm text-content-secondary">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  className="rounded border-edge text-amber-600 focus:ring-amber-500"
                 />
                 <span>{task.title}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 italic">No tasks scheduled for today</p>
+          <p className="text-sm text-content-secondary italic">No tasks scheduled for today</p>
         )}
       </section>
 
       {/* Upcoming Meetings */}
       <section>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-content flex items-center gap-2">
             <Calendar className="h-4 w-4 text-amber-600" />
             Upcoming Meetings
           </h3>
@@ -95,8 +95,8 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
                 key={event._id}
                 className="text-sm border-l-2 border-amber-500 pl-3 py-1"
               >
-                <div className="font-medium text-gray-800">{event.title}</div>
-                <div className="text-gray-500 text-xs">
+                <div className="font-medium text-content">{event.title}</div>
+                <div className="text-content-secondary text-xs">
                   {new Date(event.startTime).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -106,7 +106,7 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500 italic">No meetings scheduled</p>
+          <p className="text-sm text-content-secondary italic">No meetings scheduled</p>
         )}
       </section>
     </motion.div>

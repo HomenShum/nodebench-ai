@@ -63,20 +63,20 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               <Inbox className="h-6 w-6 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Email Inbox</h1>
-              <p className="text-sm text-gray-400">
+              <h1 className="text-base font-semibold text-white">Email Inbox</h1>
+              <p className="text-sm text-content-muted">
                 {stats?.unreadCount || 0} unread • {stats?.totalThreads || 0} total
               </p>
             </div>
           </div>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+          <button className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
             <RefreshCw className="h-5 w-5" />
           </button>
         </div>
 
         {/* Search */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-content-muted" />
           <input
             type="text"
             placeholder="Search emails..."
@@ -100,7 +100,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 filter === key
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white'
+                  : 'bg-gray-800 text-content-muted hover:text-white'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                 !selectedCategory
                   ? 'bg-gray-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white'
+                  : 'bg-gray-800 text-content-muted hover:text-white'
               }`}
             >
               All Categories
@@ -129,7 +129,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
                 className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                   selectedCategory === cat.name
                     ? 'bg-gray-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:text-white'
+                    : 'bg-gray-800 text-content-muted hover:text-white'
                 }`}
               >
                 {cat.name} ({cat.count})
@@ -163,7 +163,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
             ))}
           </AnimatePresence>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full text-content-muted">
             <Mail className="h-12 w-12 mb-4 opacity-50" />
             <p>No emails found</p>
             {searchQuery && (
@@ -248,19 +248,19 @@ function EmailThreadRow({
             <div className="flex items-center gap-2 ml-2">
               {thread.isStarred && <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />}
               {thread.lastMessageAt && (
-                <span className="text-xs text-gray-500 whitespace-nowrap">
+                <span className="text-xs text-content-secondary whitespace-nowrap">
                   {formatDate(thread.lastMessageAt)}
                 </span>
               )}
             </div>
           </div>
 
-          <p className={`text-sm truncate mb-1 ${!thread.isRead ? 'text-white' : 'text-gray-400'}`}>
+          <p className={`text-sm truncate mb-1 ${!thread.isRead ? 'text-white' : 'text-content-muted'}`}>
             {thread.subject}
           </p>
 
           {thread.snippet && (
-            <p className="text-xs text-gray-500 truncate mb-2">
+            <p className="text-xs text-content-secondary truncate mb-2">
               {thread.snippet}
             </p>
           )}
@@ -285,14 +285,14 @@ function EmailThreadRow({
               </span>
             )}
             {thread.messageCount > 1 && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-content-secondary">
                 {thread.messageCount} messages
               </span>
             )}
           </div>
         </div>
 
-        <ChevronRight className="h-5 w-5 text-gray-600 mt-1" />
+        <ChevronRight className="h-5 w-5 text-content-secondary mt-1" />
       </div>
     </motion.div>
   );

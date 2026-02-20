@@ -123,7 +123,7 @@ export function EventMarker({
                       ${event.significance === "plot_twist" ? "text-red-400" :
                         event.significance === "major" ? "text-purple-400" :
                         event.significance === "moderate" ? "text-blue-400" :
-                        "text-gray-400"}
+                        "text-content-muted"}
                     `}>
                       {event.significance.replace("_", " ")}
                     </span>
@@ -132,11 +132,11 @@ export function EventMarker({
                     {event.headline}
                   </h4>
                 </div>
-                <div className="flex items-center gap-1 text-gray-400 flex-shrink-0">
+                <div className="flex items-center gap-1 text-content-muted flex-shrink-0">
                   {event.isVerified ? (
                     <CheckCircle className="w-3 h-3 text-indigo-400" title="Verified" />
                   ) : (
-                    <XCircle className="w-3 h-3 text-gray-500" title="Unverified" />
+                    <XCircle className="w-3 h-3 text-content-secondary" title="Unverified" />
                   )}
                 </div>
               </div>
@@ -147,7 +147,7 @@ export function EventMarker({
               </p>
 
               {/* Meta */}
-              <div className="flex items-center justify-between text-gray-400 pt-2 border-t border-gray-700">
+              <div className="flex items-center justify-between text-content-muted pt-2 border-t border-gray-700">
                 <span>{formatRelativeTime(event.occurredAt)}</span>
                 <span>{event.sourceUrls.length} source{event.sourceUrls.length !== 1 ? "s" : ""}</span>
               </div>
@@ -158,13 +158,13 @@ export function EventMarker({
                   {event.sourceNames.slice(0, 3).map((name, i) => (
                     <span
                       key={i}
-                      className="px-1.5 py-0.5 bg-gray-800 rounded text-xs text-gray-400"
+                      className="px-1.5 py-0.5 bg-gray-800 rounded text-xs text-content-muted"
                     >
                       {name}
                     </span>
                   ))}
                   {event.sourceNames.length > 3 && (
-                    <span className="px-1.5 py-0.5 text-xs text-gray-500">
+                    <span className="px-1.5 py-0.5 text-xs text-content-secondary">
                       +{event.sourceNames.length - 3} more
                     </span>
                   )}

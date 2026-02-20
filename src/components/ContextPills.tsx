@@ -38,10 +38,10 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
         <Section title="Focused node + surrounding">
           <Pill icon={<Layers3 className="h-3 w-3 text-blue-500" />} label={`Doc ${focused.documentId.slice(0, 6)} · Node ${focused.blockId?.slice(0, 6) || "-"}`} />
           {focused.beforeIds?.slice(0, 2).map((id) => (
-            <Pill key={`b-${id}`} subtle icon={<FileText className="h-3 w-3 text-gray-500" />} label={`Prev ${id.slice(0, 6)}`} />
+            <Pill key={`b-${id}`} subtle icon={<FileText className="h-3 w-3 text-content-secondary" />} label={`Prev ${id.slice(0, 6)}`} />
           ))}
           {focused.afterIds?.slice(0, 2).map((id) => (
-            <Pill key={`a-${id}`} subtle icon={<FileText className="h-3 w-3 text-gray-500" />} label={`Next ${id.slice(0, 6)}`} />
+            <Pill key={`a-${id}`} subtle icon={<FileText className="h-3 w-3 text-content-secondary" />} label={`Next ${id.slice(0, 6)}`} />
           ))}
         </Section>
       )}
@@ -99,7 +99,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
 
   return (
     <div className="pointer-events-none fixed bottom-3 left-3 z-50 max-w-[80vw]">
-      <div className="pointer-events-auto bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-color)] shadow-lg rounded-xl p-3 w-[360px]">
+      <div className="pointer-events-auto bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-color)] shadow-lg rounded-lg p-3 w-[360px]">
         {content}
       </div>
     </div>

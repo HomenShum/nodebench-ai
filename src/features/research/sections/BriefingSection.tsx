@@ -321,7 +321,7 @@ function BriefingSectionInner({
 
   if (!executiveBrief || !actI || !actII || !actIII) {
     return (
-      <div className={`${className} p-8 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-xl bg-[color:var(--bg-primary)]`}>
+      <div className={`${className} p-8 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-lg bg-[color:var(--bg-primary)]`}>
         <Clock className="w-8 h-8 mx-auto mb-3 text-[color:var(--text-secondary)]" />
         <p className="text-sm font-medium">No briefing available yet</p>
         <p className="text-xs text-[color:var(--text-secondary)] mt-1">
@@ -335,7 +335,7 @@ function BriefingSectionInner({
     <div className={className}>
       {/* Sample Data Banner */}
       {isUsingFallback && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Sparkles className="w-5 h-5 text-amber-600" />
             <div>
@@ -369,7 +369,7 @@ function BriefingSectionInner({
         </div>
         <div className="flex items-center gap-2">
           {sourceSummary?.totalItems && (
-            <span className="px-3 py-1 bg-gray-900 text-white text-xs font-bold rounded-full uppercase tracking-tighter shadow-sm">
+            <span className="px-3 py-1 bg-gray-900 text-white text-xs font-bold rounded-full uppercase tracking-tighter">
               {sourceSummary.totalItems} Intelligence Nodes
             </span>
           )}
@@ -377,81 +377,81 @@ function BriefingSectionInner({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-10">
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Briefing Snapshot</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Briefing Snapshot</p>
             <p className="text-base font-bold text-[color:var(--text-primary)]">Act coverage</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {briefingStats.map((stat) => (
-              <div key={stat.label} className="rounded-md border border-gray-100 bg-background p-3">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.label}</div>
+              <div key={stat.label} className="rounded-md border border-edge bg-background p-3">
+                <div className="text-xs font-bold text-content-muted uppercase tracking-widest">{stat.label}</div>
                 <div className="text-2xl font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
-                <div className="text-xs text-gray-400">{stat.hint}</div>
+                <div className="text-xs text-content-muted">{stat.hint}</div>
               </div>
             ))}
           </div>
           {executiveBrief.meta?.headline && (
-            <div className="text-xs text-gray-500">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Headline</span>
-              <div className="mt-1 text-sm text-gray-700">{executiveBrief.meta.headline}</div>
+            <div className="text-xs text-content-secondary">
+              <span className="text-xs font-bold uppercase tracking-widest text-content-muted">Headline</span>
+              <div className="mt-1 text-sm text-content-secondary">{executiveBrief.meta.headline}</div>
             </div>
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Primary Sources</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Primary Sources</p>
             <p className="text-base font-bold text-[color:var(--text-primary)]">Recent Signals</p>
           </div>
           <div className="space-y-3">
             {topSources.length > 0 ? (
               topSources.map((source, idx) => (
-                <div key={`${source.name}-${idx}`} className="flex items-center justify-between text-xs text-gray-600 border-b border-gray-100 pb-2">
+                <div key={`${source.name}-${idx}`} className="flex items-center justify-between text-xs text-content-secondary border-b border-edge pb-2">
                   <span className="font-medium">{source.name}</span>
-                  <span className="text-gray-400">{source.count ?? '-'}</span>
+                  <span className="text-content-muted">{source.count ?? '-'}</span>
                 </div>
               ))
             ) : (
-              <div className="text-xs text-gray-400">No sources available yet.</div>
+              <div className="text-xs text-content-muted">No sources available yet.</div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Brief Structure</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Brief Structure</p>
             <p className="text-base font-bold text-[color:var(--text-primary)]">Story Arc</p>
           </div>
-          <div className="space-y-3 text-xs text-gray-600 dark:text-gray-400">
-            <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-background p-3">
-              <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Coverage</div>
-              <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">{actI?.headline || actI?.title || 'Setup'}</div>
+          <div className="space-y-3 text-xs text-content-secondary">
+            <div className="rounded-md border border-edge bg-background p-3">
+              <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Coverage</div>
+              <div className="mt-1 text-sm text-content-secondary">{actI?.headline || actI?.title || 'Setup'}</div>
             </div>
-            <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-background p-3">
-              <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Signals</div>
-              <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">{actII?.title || 'Signals'}</div>
+            <div className="rounded-md border border-edge bg-background p-3">
+              <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Signals</div>
+              <div className="mt-1 text-sm text-content-secondary">{actII?.title || 'Signals'}</div>
             </div>
-            <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-background p-3">
-              <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Actions</div>
-              <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">{actIII?.title || 'Actions'}</div>
+            <div className="rounded-md border border-edge bg-background p-3">
+              <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Actions</div>
+              <div className="mt-1 text-sm text-content-secondary">{actIII?.title || 'Actions'}</div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-12">
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Quality Metrics</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Quality Metrics</p>
               <p className="text-base font-bold text-[color:var(--text-primary)]">Coverage integrity</p>
             </div>
             {onAskAI && (
               <button
                 type="button"
                 onClick={() => onAskAI('Assess briefing quality, coverage gaps, and confidence drivers.')}
-                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-edge text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
               >
                 Ask agent
               </button>
@@ -459,14 +459,14 @@ function BriefingSectionInner({
           </div>
           <div className="grid grid-cols-2 gap-3">
             {qualityStats.map((stat) => (
-              <div key={stat.label} className="rounded-md border border-gray-100 bg-background p-3">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.label}</div>
+              <div key={stat.label} className="rounded-md border border-edge bg-background p-3">
+                <div className="text-xs font-bold text-content-muted uppercase tracking-widest">{stat.label}</div>
                 <div className="text-2xl font-semibold text-[color:var(--text-primary)]">{stat.value}</div>
-                <div className="text-xs text-gray-400">{stat.hint}</div>
+                <div className="text-xs text-content-muted">{stat.hint}</div>
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
+          <div className="grid grid-cols-2 gap-3 text-xs text-content-secondary">
             <div className="flex items-center justify-between">
               <span>Coverage/source</span>
               <span className="font-semibold">{coverageStats.perSource ?? 'N/A'}</span>
@@ -484,22 +484,22 @@ function BriefingSectionInner({
               <span className="font-semibold">{coverageStats.topicsCoveredPercent !== null ? `${coverageStats.topicsCoveredPercent}%` : 'N/A'}</span>
             </div>
           </div>
-          <div className="text-xs text-gray-400 uppercase tracking-widest">
+          <div className="text-xs text-content-muted uppercase tracking-widest">
             Window {freshnessStats.windowLabel ?? 'N/A'}
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Trend Tags</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Trend Tags</p>
               <p className="text-base font-bold text-[color:var(--text-primary)]">Active focus</p>
             </div>
             {onAskAI && (
               <button
                 type="button"
                 onClick={() => onAskAI('Summarize trend tags and highlight emerging themes.')}
-                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-edge text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
               >
                 Ask agent
               </button>
@@ -512,34 +512,34 @@ function BriefingSectionInner({
                   key={tag}
                   type="button"
                   onClick={() => onAskAI?.(`Track "${tag}" and surface the latest signals and actions.`)}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-tight border border-gray-200 bg-background text-gray-600 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-tight border border-edge bg-background text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
                 >
                   {tag}
                 </button>
               ))
             ) : (
-              <span className="text-xs text-gray-400">No tags available yet.</span>
+              <span className="text-xs text-content-muted">No tags available yet.</span>
             )}
           </div>
           {actI?.filteredOutNote && (
-            <div className="rounded-md border border-gray-100 bg-background p-3 text-xs text-gray-600">
-              <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Filtered</div>
+            <div className="rounded-md border border-edge bg-background p-3 text-xs text-content-secondary">
+              <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Filtered</div>
               <div className="mt-1">{actI.filteredOutNote}</div>
             </div>
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Provenance Log</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Provenance Log</p>
               <p className="text-base font-bold text-[color:var(--text-primary)]">Retrieval transparency</p>
             </div>
             {onAskAI && (
               <button
                 type="button"
                 onClick={() => onAskAI('Audit provenance sources and highlight any retrieval gaps.')}
-                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-edge text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
               >
                 Ask agent
               </button>
@@ -548,24 +548,24 @@ function BriefingSectionInner({
           <div className="space-y-3">
             {provenanceLog.length > 0 ? (
               provenanceLog.map((entry: any, idx: number) => (
-                <div key={`${entry.connector}-${idx}`} className="rounded-md border border-gray-100 bg-background p-3 space-y-1">
-                  <div className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                <div key={`${entry.connector}-${idx}`} className="rounded-md border border-edge bg-background p-3 space-y-1">
+                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">
                     {entry.connector || 'Source'} - {entry.resultCount ?? 0} hits
                   </div>
-                  <div className="text-xs text-gray-700">{entry.query}</div>
+                  <div className="text-xs text-content-secondary">{entry.query}</div>
                   {entry.retrievedAt && (
-                    <div className="text-xs text-gray-400">Retrieved {new Date(entry.retrievedAt).toLocaleTimeString()}</div>
+                    <div className="text-xs text-content-muted">Retrieved {new Date(entry.retrievedAt).toLocaleTimeString()}</div>
                   )}
                 </div>
               ))
             ) : (
-              <div className="text-xs text-gray-400">No provenance log attached.</div>
+              <div className="text-xs text-content-muted">No provenance log attached.</div>
             )}
           </div>
           {generationMeta && (
-            <div className="rounded-md border border-gray-100 bg-background p-3 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Generation</div>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+            <div className="rounded-md border border-edge bg-background p-3 space-y-2">
+              <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Generation</div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-content-secondary">
                 <div className="flex items-center justify-between">
                   <span>Model</span>
                   <span className="font-semibold">{generationMeta.model ?? 'N/A'}</span>
@@ -591,17 +591,17 @@ function BriefingSectionInner({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4 xl:col-span-2">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4 xl:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Signal Overview</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Signal Overview</p>
               <p className="text-base font-bold text-[color:var(--text-primary)]">Active Signals</p>
             </div>
             {onAskAI && (
               <button
                 type="button"
                 onClick={() => onAskAI('Summarize the signal ledger and surface outliers.')}
-                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-edge text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
               >
                 Ask agent
               </button>
@@ -610,29 +610,29 @@ function BriefingSectionInner({
           <div className="space-y-2">
             {signalLedger.length > 0 ? (
               signalLedger.map((signal, index) => (
-                <div key={signal.id} className="rounded-md border border-gray-100 bg-background px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                <div key={signal.id} className="rounded-md border border-edge bg-background px-4 py-3 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Signal {index + 1}</div>
+                      <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Signal {index + 1}</div>
                       {signal.label && (
-                        <span className="text-xs font-bold uppercase tracking-widest text-gray-900 border border-gray-900/20 px-2 py-0.5">
+                        <span className="text-xs font-bold uppercase tracking-widest text-content border border-gray-900/20 px-2 py-0.5">
                           {signal.label}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm font-semibold text-gray-800">{signal.headline}</div>
+                    <div className="text-sm font-semibold text-content">{signal.headline}</div>
                     {signal.deltaSummary && (
-                      <div className="text-xs text-gray-500 mt-1">{signal.deltaSummary}</div>
+                      <div className="text-xs text-content-secondary mt-1">{signal.deltaSummary}</div>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500 uppercase tracking-widest">
+                  <div className="flex items-center gap-3 text-xs text-content-secondary uppercase tracking-widest">
                     <span>Evidence {signal.evidenceCount}</span>
                     <span>Actions {signal.linkedActions}</span>
                     {onAskAI && (
                       <button
                         type="button"
                         onClick={() => onAskAI(`Deep dive on signal: ${signal.headline}`)}
-                        className="px-2 py-0.5 border border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                        className="px-2 py-0.5 border border-edge text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
                       >
                         Analyze
                       </button>
@@ -641,14 +641,14 @@ function BriefingSectionInner({
                 </div>
               ))
             ) : (
-              <div className="text-xs text-gray-400">No signals available yet.</div>
+              <div className="text-xs text-content-muted">No signals available yet.</div>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+        <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Deep Agent Launchpad</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Deep Agent Launchpad</p>
             <p className="text-base font-bold text-[color:var(--text-primary)]">Runbook shortcuts</p>
           </div>
           <div className="space-y-2">
@@ -657,15 +657,15 @@ function BriefingSectionInner({
                 key={item.label}
                 type="button"
                 onClick={() => onAskAI?.(item.prompt)}
-                className="w-full text-left rounded-md border border-gray-100 bg-background px-4 py-3 text-xs font-semibold text-gray-600 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                className="w-full text-left rounded-md border border-edge bg-background px-4 py-3 text-xs font-semibold text-content-secondary hover:text-content hover:border-[var(--text-primary)] transition-colors"
               >
                 {item.label}
               </button>
             ))}
           </div>
-          <div className="rounded-md border border-gray-100 bg-background px-4 py-3 space-y-2">
-            <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Action mix</div>
-            <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+          <div className="rounded-md border border-edge bg-background px-4 py-3 space-y-2">
+            <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Action mix</div>
+            <div className="grid grid-cols-2 gap-2 text-xs text-content-secondary">
               <div className="flex items-center justify-between">
                 <span>High</span>
                 <span className="font-semibold">{actionMix.high}</span>
@@ -689,41 +689,41 @@ function BriefingSectionInner({
 
       {(coverageItems.length > 0 || coverageRollup?.overallSummary) && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-12">
-          <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4">
+          <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Coverage Rollup</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Coverage Rollup</p>
               <p className="text-base font-bold text-[color:var(--text-primary)]">Map-reduced synthesis</p>
             </div>
-            <div className="text-sm text-gray-700 leading-relaxed">
+            <div className="text-sm text-content-secondary leading-relaxed">
               {coverageRollup?.overallSummary
                 ? coverageRollup.overallSummary
                 : `Coverage spans ${coverageItems.length} summarized items across the feed.`}
             </div>
             {coverageSourceSummaries.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">By source</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-content-muted">By source</p>
                 {coverageSourceSummaries.slice(0, 6).map((entry, idx) => (
-                  <div key={`${entry.source}-${idx}`} className="text-xs text-gray-600">
-                    <span className="font-semibold text-gray-700">{entry.source}</span>
-                    {entry.count !== null && <span className="text-gray-400"> ({entry.count})</span>}
-                    <span className="text-gray-500"> — {entry.summary}</span>
+                  <div key={`${entry.source}-${idx}`} className="text-xs text-content-secondary">
+                    <span className="font-semibold text-content-secondary">{entry.source}</span>
+                    {entry.count !== null && <span className="text-content-muted"> ({entry.count})</span>}
+                    <span className="text-content-secondary"> — {entry.summary}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-5 space-y-4 xl:col-span-2">
+          <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-5 space-y-4 xl:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400">Full Coverage</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">Full Coverage</p>
                 <p className="text-base font-bold text-[color:var(--text-primary)]">All article summaries</p>
               </div>
               {coverageItems.length > 12 && (
                 <button
                   type="button"
                   onClick={() => setIsCoverageExpanded((prev) => !prev)}
-                  className="text-xs font-bold uppercase tracking-widest text-gray-500 border border-gray-200 px-3 py-1 hover:text-gray-900 hover:border-gray-900 transition-colors"
+                  className="text-xs font-bold uppercase tracking-widest text-content-secondary border border-edge px-3 py-1 hover:text-content hover:border-[var(--text-primary)] transition-colors"
                 >
                   {isCoverageExpanded ? 'Show fewer' : `Show all ${coverageItems.length}`}
                 </button>
@@ -731,8 +731,8 @@ function BriefingSectionInner({
             </div>
             <div className="space-y-3 max-h-[480px] overflow-y-auto pr-2">
               {(isCoverageExpanded ? coverageItems : coverageItems.slice(0, 12)).map((item, idx) => (
-                <div key={`${item.title}-${idx}`} className="rounded-md border border-gray-100 bg-background px-4 py-3">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <div key={`${item.title}-${idx}`} className="rounded-md border border-edge bg-background px-4 py-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-content-muted">
                     <span>{item.source ?? 'Source'}</span>
                     {item.category && <span className="text-gray-300">• {item.category}</span>}
                   </div>
@@ -752,14 +752,14 @@ function BriefingSectionInner({
                         }
                         window.open(item.url, "_blank", "noopener,noreferrer");
                       }}
-                      className="text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors text-left"
+                      className="text-sm font-semibold text-content hover:text-content transition-colors text-left"
                     >
                       {item.title}
                     </button>
                   ) : (
-                    <div className="text-sm font-semibold text-gray-800">{item.title}</div>
+                    <div className="text-sm font-semibold text-content">{item.title}</div>
                   )}
-                  <div className="text-xs text-gray-600 mt-1">{item.summary}</div>
+                  <div className="text-xs text-content-secondary mt-1">{item.summary}</div>
                 </div>
               ))}
             </div>
@@ -784,7 +784,7 @@ function BriefingSectionInner({
             >
               <div className="flex items-center gap-2 mb-2">
                 <div className={`w-2 h-2 rounded-full ${activeAct === act.id ? 'bg-gray-900' : 'bg-gray-300'}`} />
-                <span className="text-xs font-black tracking-[0.2em] text-gray-900 uppercase">{act.label}</span>
+                <span className="text-xs font-black tracking-[0.2em] text-content uppercase">{act.label}</span>
               </div>
               <span className="text-2xl font-medium text-gray-950 leading-none italic">{act.subtitle}</span>
 
@@ -796,7 +796,7 @@ function BriefingSectionInner({
               )}
             </button>
             {idx < 2 && (
-              <div className="w-12 h-[1px] bg-gray-200 shrink-0 mx-4" />
+              <div className="w-12 h-[1px] bg-surface-secondary shrink-0 mx-4" />
             )}
           </React.Fragment>
         ))}
@@ -838,7 +838,7 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
     : [];
 
   return (
-    <div className="p-10 border-y border-gray-200 bg-transparent transition-all duration-500 group">
+    <div className="p-10 border-y border-edge bg-transparent transition-all duration-500 group">
       <div className="flex items-center gap-4 mb-8">
         <div className="w-1.5 h-12 bg-gray-900" />
         <h3 className="text-4xl font-medium text-gray-950 tracking-tight">{data.headline || 'Market Foundation'}</h3>
@@ -849,7 +849,7 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
 
       {/* Stats */}
       {data.stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-y border-gray-200 mb-10 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-y border-edge mb-10 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
           {Object.entries(data.stats).slice(0, 3).map(([key, value]) => (
             <div key={key} className="p-6 flex flex-col items-center text-center group hover:bg-[#f2f1ed] transition-colors">
               <p className="text-xs font-black text-gray-900/40 uppercase tracking-[0.2em] mb-3">{key.replace(/_/g, ' ')}</p>
@@ -863,13 +863,13 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
       {actTopSources.length > 0 && (
         <div className="pt-2">
           <div className="flex items-center justify-between mb-6">
-            <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Primary Signal Sources</p>
+            <p className="text-xs font-black text-content-muted uppercase tracking-[0.2em]">Primary Signal Sources</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {actTopSources.map((source, idx: number) => (
               <span
                 key={`${source.name}-${idx}`}
-                className="px-0 py-1 text-[13px] font-medium text-gray-600 border-b border-gray-300 hover:border-gray-900 hover:text-gray-900 transition-all cursor-default"
+                className="px-0 py-1 text-[13px] font-medium text-content-secondary border-b border-edge hover:border-content hover:text-content transition-all cursor-default"
               >
                 {source.name}
               </span>
@@ -903,30 +903,30 @@ function ActIIContent({
   return (
     <div className="space-y-4">
       {signals.length === 0 ? (
-        <div className="p-12 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-2xl bg-[color:var(--bg-primary)] shadow-sm italic">
+        <div className="p-12 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-lg bg-[color:var(--bg-primary)] italic">
           <p className="text-sm">No distinct signals detected in this cycle.</p>
         </div>
       ) : (
         signals.map((signal: any, idx: number) => (
-          <div key={idx} className="group p-10 border border-gray-200 bg-background shadow-sm hover:shadow-xl transition-all duration-500">
+          <div key={idx} className="group p-10 border border-edge bg-background hover:shadow-xl transition-all duration-500">
             <div className="flex items-start justify-between gap-12">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="text-xs font-black text-gray-900 uppercase tracking-[0.2em] border border-gray-900/20 px-3 py-1">Signal {idx + 1}</span>
+                  <span className="text-xs font-black text-content uppercase tracking-[0.2em] border border-gray-900/20 px-3 py-1">Signal {idx + 1}</span>
                   {signal.label && (
-                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500 border border-gray-200 px-3 py-1">
+                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary border border-edge px-3 py-1">
                       {signal.label}
                     </span>
                   )}
                 </div>
-                <h4 className="text-3xl font-medium text-gray-950 mb-6 tracking-tight group-hover:text-gray-800 transition-colors uppercase italic">{signal.headline}</h4>
+                <h4 className="text-3xl font-medium text-gray-950 mb-6 tracking-tight group-hover:text-content transition-colors uppercase italic">{signal.headline}</h4>
                 {signal.deltaSummary && (
-                  <div className="mb-4 text-sm text-gray-500">
-                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Delta</span>
+                  <div className="mb-4 text-sm text-content-secondary">
+                    <span className="text-xs font-bold uppercase tracking-widest text-content-muted">Delta</span>
                     <span className="ml-2">{signal.deltaSummary}</span>
                   </div>
                 )}
-                <div className="text-xl text-gray-600 leading-relaxed">
+                <div className="text-xl text-content-secondary leading-relaxed">
                   <CrossLinkedText text={signal.synthesis || signal.summary} onAskAI={onAskAI} />
                 </div>
                 <SignalMomentumMini keyword={signal.label || signal.headline} />
@@ -934,7 +934,7 @@ function ActIIContent({
               {onAskAI && (
                 <button
                   onClick={() => onAskAI(`Tell me more about: ${signal.headline}`)}
-                  className="shrink-0 px-6 py-3 text-xs font-black text-gray-900 border border-gray-900 hover:bg-gray-900 hover:text-background transition-all uppercase tracking-widest"
+                  className="shrink-0 px-6 py-3 text-xs font-black text-content border border-gray-900 hover:bg-gray-900 hover:text-background transition-all uppercase tracking-widest"
                 >
                   Analyze
                 </button>
@@ -944,7 +944,7 @@ function ActIIContent({
             {/* Evidence links */}
             {signal.evidence && signal.evidence.length > 0 && (
               <div className="mt-10 flex flex-wrap gap-4 items-center pt-8 border-t border-gray-200/60">
-                <span className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Citations</span>
+                <span className="text-xs font-black text-content-muted uppercase tracking-[0.2em]">Citations</span>
                 {signal.evidence.slice(0, 4).map((ev: any, evIdx: number) => (
                   <button
                     key={evIdx}
@@ -967,8 +967,8 @@ function ActIIContent({
                     }}
                     className="flex items-center gap-2 group/link"
                   >
-                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-gray-200 text-xs font-bold text-gray-500 group-hover/link:bg-gray-900 group-hover/link:text-white transition-colors">{evIdx + 1}</span>
-                    <span className="text-xs font-medium text-gray-500 hover:text-gray-900 border-b border-transparent hover:border-gray-900 transition-all font-mono">
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-surface-secondary text-xs font-bold text-content-secondary group-hover/link:bg-gray-900 group-hover/link:text-white transition-colors">{evIdx + 1}</span>
+                    <span className="text-xs font-medium text-content-secondary hover:text-content border-b border-transparent hover:border-content transition-all font-mono">
                       {ev.source || ev.title?.slice(0, 20) || `Node ${evIdx + 1}`}
                     </span>
                   </button>
@@ -989,14 +989,14 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
   return (
     <div className="space-y-4">
       {actions.length === 0 ? (
-        <div className="p-12 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-2xl bg-[color:var(--bg-primary)] shadow-sm italic">
+        <div className="p-12 text-center text-[color:var(--text-secondary)] border border-[color:var(--border-color)] rounded-lg bg-[color:var(--bg-primary)] italic">
           <p className="text-sm">Strategic landscape is currently stable.</p>
         </div>
       ) : (
         actions.map((action: any, idx: number) => (
-          <div key={idx} className="p-8 border border-[color:var(--border-color)] rounded-2xl bg-[color:var(--bg-primary)] shadow-sm hover:shadow-xl transition-all border-l-4 border-l-gray-900">
+          <div key={idx} className="p-8 border border-[color:var(--border-color)] rounded-lg bg-[color:var(--bg-primary)] hover:shadow-xl transition-all border-l-4 border-l-gray-900">
             <div className="flex items-start gap-6">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${action.priority === 'high' ? 'bg-red-600 text-white' :
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg ${action.priority === 'high' ? 'bg-red-600 text-white' :
                 action.priority === 'medium' ? 'bg-amber-500 text-white' :
                   'bg-gray-900 text-white'
                 }`}>
@@ -1018,8 +1018,8 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                 </div>
                 <SignalMomentumMini keyword={action.title || action.headline || "signal"} />
                 {(action.status || action.deliverable || action.expectedOutcome || action.risks) && (
-                  <div className="rounded-md border border-gray-100 bg-background p-4 text-xs text-gray-600 space-y-2">
-                    <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Action Specs</div>
+                  <div className="rounded-md border border-edge bg-background p-4 text-xs text-content-secondary space-y-2">
+                    <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Action Specs</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {action.status && (
                         <div className="flex items-center justify-between">
@@ -1051,11 +1051,11 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
 
                 {/* Attribution UI */}
                 {(action.linkedSignalIds && action.linkedSignalIds.length > 0) && (
-                  <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col gap-3">
-                    <span className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Triggered By Signals</span>
+                  <div className="mt-8 pt-6 border-t border-edge flex flex-col gap-3">
+                    <span className="text-xs font-black text-content-muted uppercase tracking-[0.2em]">Triggered By Signals</span>
                     <div className="flex flex-wrap gap-2">
                       {action.linkedSignalIds.map((sigId: string) => (
-                        <div key={sigId} className="px-2 py-1 bg-indigo-50 text-gray-900 text-xs font-bold border border-gray-900/10 flex items-center gap-2">
+                        <div key={sigId} className="px-2 py-1 bg-indigo-50 text-content text-xs font-bold border border-gray-900/10 flex items-center gap-2">
                           <Zap className="w-3 h-3" />
                           <span>SIGNAL_{sigId}</span>
                         </div>

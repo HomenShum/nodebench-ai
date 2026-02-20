@@ -241,7 +241,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
   }, [mentions, selectedItem]);
 
   return (
-    <div className="relative p-5 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-shadow">
+    <div className="relative p-5 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
             className="absolute inset-0 bg-black/10 pointer-events-auto"
             onClick={closeDetail}
           />
-          <div className="relative pointer-events-auto mt-14 mr-6 w-[380px] max-w-[92vw] bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-2xl rounded-2xl overflow-hidden">
+          <div className="relative pointer-events-auto mt-14 mr-6 w-[380px] max-w-[92vw] bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-2xl rounded-lg overflow-hidden">
             <div className="flex items-start justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
               <div>
                 <div className="flex items-center gap-2">

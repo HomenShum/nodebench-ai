@@ -20,7 +20,7 @@ function getNodeIcon(node: GraphNode) {
 export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) => {
   if (!graph || graph.nodes.length === 0) {
     return (
-      <div className="rounded-xl border border-gray-900/10 bg-white/70 p-6 text-xs text-gray-400">
+      <div className="rounded-lg border border-gray-900/10 bg-white/70 p-6 text-xs text-content-muted">
         No entity relationships detected yet.
       </div>
     );
@@ -56,12 +56,12 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
   const edges = graph.edges ?? [];
 
   return (
-    <div className="relative rounded-xl border border-gray-900/10 bg-white/80 p-4 shadow-sm">
+    <div className="relative rounded-lg border border-gray-900/10 bg-white/80 p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs font-black uppercase tracking-[0.3em] text-gray-900/60">
           Entity Influence Map
         </div>
-        <div className="text-xs font-mono text-gray-400">GraphRAG</div>
+        <div className="text-xs font-mono text-content-muted">GraphRAG</div>
       </div>
 
       <div className="relative h-[260px]">
@@ -125,9 +125,9 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
               <div className={`w-8 h-8 rounded-full bg-white border flex items-center justify-center shadow-sm ${
                 isSecondary ? "border-slate-200/60" : "border-slate-200"
               }`}>
-                <Icon className={`w-4 h-4 ${isSecondary ? "text-slate-500" : "text-gray-900"}`} />
+                <Icon className={`w-4 h-4 ${isSecondary ? "text-slate-500" : "text-content"}`} />
               </div>
-              <span className="text-xs text-gray-600 font-semibold text-center max-w-[80px]">
+              <span className="text-xs text-content-secondary font-semibold text-center max-w-[80px]">
                 {node.label}
               </span>
             </motion.div>
@@ -144,7 +144,7 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
           <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center shadow-lg border-4 border-indigo-50">
             <Building2 className="w-5 h-5 text-white" />
           </div>
-          <span className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-gray-900">
+          <span className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-content">
             {centerNode.label}
           </span>
         </motion.div>

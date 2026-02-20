@@ -22,7 +22,7 @@ describe("statusHelpers", () => {
 
     it("should return correct classes for done status", () => {
       expect(statusChipClasses("done")).toBe(
-        "bg-indigo-50 text-gray-700 border-indigo-200",
+        "bg-indigo-50 text-content-secondary border-indigo-200",
       );
     });
 

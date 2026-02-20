@@ -22,7 +22,7 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-green-50 to-indigo-50 rounded-xl border border-green-200 shadow-sm"
+      className="p-6 bg-gradient-to-br from-green-50 to-indigo-50 rounded-lg border border-green-200 shadow-sm"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -30,15 +30,15 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
           <Coffee className="h-6 w-6 text-green-600" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Weekend Mode</h2>
-          <p className="text-sm text-gray-600">Relax and plan for the week ahead</p>
+          <h2 className="text-base font-semibold text-content">Weekend Mode</h2>
+          <p className="text-sm text-content-secondary">Relax and plan for the week ahead</p>
         </div>
       </div>
 
       {/* Week Ahead Planning */}
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-content flex items-center gap-2">
             <Calendar className="h-4 w-4 text-green-600" />
             Plan Your Week
           </h3>
@@ -54,25 +54,25 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
             {pendingTasks.map((task) => (
               <li
                 key={task._id}
-                className="flex items-center gap-2 text-sm text-gray-700 bg-white/50 p-2 rounded-lg"
+                className="flex items-center gap-2 text-sm text-content-secondary bg-white/50 p-2 rounded-lg"
               >
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  className="rounded border-edge text-green-600 focus:ring-green-500"
                 />
                 <span>{task.title}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 italic">No tasks to review</p>
+          <p className="text-sm text-content-secondary italic">No tasks to review</p>
         )}
       </section>
 
       {/* Review Documents */}
       <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h3 className="font-semibold text-content flex items-center gap-2">
             <ListTodo className="h-4 w-4 text-green-600" />
             Documents to Review
           </h3>
@@ -88,45 +88,45 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
             {recentDocs.map((doc) => (
               <div
                 key={doc._id}
-                className="text-sm border-l-2 border-green-500 pl-3 py-1 text-gray-700 bg-white/50 rounded-r-lg"
+                className="text-sm border-l-2 border-green-500 pl-3 py-1 text-content-secondary bg-white/50 rounded-r-lg"
               >
                 {doc.title || 'Untitled Document'}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500 italic">No documents to review</p>
+          <p className="text-sm text-content-secondary italic">No documents to review</p>
         )}
       </section>
 
       {/* Weekend Ideas */}
       <section>
-        <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-3">
+        <h3 className="font-semibold text-content flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-green-600" />
           Weekend Ideas
         </h3>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onNavigate?.('/research')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-gray-700 hover:bg-white transition-colors text-left"
+            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
           >
             🔍 Explore new topics
           </button>
           <button
             onClick={() => onNavigate?.('/documents/new')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-gray-700 hover:bg-white transition-colors text-left"
+            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
           >
             ✍️ Start a new project
           </button>
           <button
             onClick={() => onNavigate?.('/calendar')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-gray-700 hover:bg-white transition-colors text-left"
+            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
           >
             📅 Review calendar
           </button>
           <button
             onClick={() => onNavigate?.('/settings')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-gray-700 hover:bg-white transition-colors text-left"
+            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
           >
             ⚙️ Organize workspace
           </button>

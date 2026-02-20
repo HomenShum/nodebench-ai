@@ -30,8 +30,8 @@ export function Skeleton({
     sm: 'rounded-sm',
     md: 'rounded',
     lg: 'rounded-lg',
-    xl: 'rounded-xl',
-    '2xl': 'rounded-2xl',
+    xl: 'rounded-lg',
+    '2xl': 'rounded-lg',
     full: 'rounded-full',
   };
 
@@ -104,7 +104,7 @@ export function SkeletonCard({
   return (
     <div
       className={cn(
-        'rounded-xl border border-border/60 bg-card p-4 space-y-3',
+        'rounded-lg border border-border/60 bg-card p-4 space-y-3',
         className
       )}
     >

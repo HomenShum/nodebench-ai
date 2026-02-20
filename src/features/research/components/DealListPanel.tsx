@@ -65,7 +65,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
   const sectors = Array.from(new Set(deals.map((d) => d.sector.toLowerCase())));
 
   return (
-    <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
@@ -142,7 +142,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
                   <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.location}</span>
                   <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.sector}</span>
                   {deal.leads?.[0] && <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">Lead: {deal.leads[0]}</span>}
-                  {deal.traction && <span className="text-gray-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">{deal.traction}</span>}
+                  {deal.traction && <span className="text-content-secondary bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">{deal.traction}</span>}
                 </div>
               </div>
               {deal.spark && (
@@ -182,7 +182,7 @@ export function DealFlyout({
   return (
     <div className="fixed inset-0 z-[130] flex items-start justify-end pointer-events-none">
       <div className="absolute inset-0 bg-black/10 pointer-events-auto" onClick={onClose} />
-      <div className="relative pointer-events-auto mt-10 mr-6 w-[420px] max-w-[94vw] bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-2xl rounded-2xl overflow-hidden">
+      <div className="relative pointer-events-auto mt-10 mr-6 w-[420px] max-w-[94vw] bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-2xl rounded-lg overflow-hidden">
         <div className="flex items-start justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
           <div>
             <div className="flex items-center gap-2">

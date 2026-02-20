@@ -107,7 +107,7 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <motion.div
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
+        className="bg-surface rounded-lg shadow-2xl max-w-md w-full mx-4 overflow-hidden"
         variants={scaleFadeVariants}
         initial="hidden"
         animate="visible"
@@ -117,7 +117,7 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
           <button onClick={onSkip} className="absolute top-4 right-4 p-1 rounded-full hover:bg-white/20 transition-colors" aria-label="Skip onboarding">
             <X className="h-5 w-5" />
           </button>
-          <motion.div key={step.id} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={springs.bouncy} className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+          <motion.div key={step.id} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={springs.bouncy} className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center mb-4">
             <Icon className="h-8 w-8" />
           </motion.div>
           <h2 className="text-2xl font-bold">{step.title}</h2>
@@ -127,7 +127,7 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
         <div className="p-6">
           <AnimatePresence mode="wait">
             <motion.div key={step.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">{step.description}</p>
+              <p className="text-content-secondary mb-4">{step.description}</p>
               {step.tip && (
                 <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-lg p-3 text-sm text-blue-700 dark:text-blue-300">
                   💡 <strong>Tip:</strong> {step.tip}
@@ -139,13 +139,13 @@ export function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowProps) {
           {/* Progress */}
           <div className="flex items-center gap-1 mt-6 mb-4">
             {ONBOARDING_STEPS.map((_, idx) => (
-              <div key={idx} className={`h-1 flex-1 rounded-full transition-colors ${idx <= currentStep ? 'bg-blue-500' : 'bg-gray-200 dark:bg-white/[0.08]'}`} />
+              <div key={idx} className={`h-1 flex-1 rounded-full transition-colors ${idx <= currentStep ? 'bg-blue-500' : 'bg-surface-secondary'}`} />
             ))}
           </div>
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
-            <button onClick={handlePrev} disabled={isFirstStep} className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isFirstStep ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]'}`}>
+            <button onClick={handlePrev} disabled={isFirstStep} className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isFirstStep ? 'text-gray-300 dark:text-content-secondary cursor-not-allowed' : 'text-content-secondary hover:bg-surface-hover'}`}>
               <ArrowLeft className="h-4 w-4" />
               Back
             </button>

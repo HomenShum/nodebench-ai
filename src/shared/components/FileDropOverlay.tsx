@@ -114,7 +114,7 @@ export const FileDropOverlay: React.FC<FileDropOverlayProps> = ({
         (className || "")
       }
     >
-      <div className="pointer-events-none flex items-center gap-2 rounded-xl bg-[var(--bg-primary)]/80 px-4 py-2 text-[var(--text-primary)] shadow-md border border-[var(--border-color)]">
+      <div className="pointer-events-none flex items-center gap-2 rounded-lg bg-[var(--bg-primary)]/80 px-4 py-2 text-[var(--text-primary)] shadow-md border border-[var(--border-color)]">
         <span className="text-sm font-medium">{hint}</span>
       </div>
     </div>

@@ -175,13 +175,13 @@ export const PHASE_COLORS: Record<ThreadPhase, { bg: string; text: string; borde
   },
   resolution: {
     bg: "bg-indigo-50",
-    text: "text-gray-700",
+    text: "text-content-secondary",
     border: "border-indigo-200",
   },
   dormant: {
-    bg: "bg-gray-50",
-    text: "text-gray-500",
-    border: "border-gray-200",
+    bg: "bg-surface-secondary",
+    text: "text-content-secondary",
+    border: "border-edge",
   },
 };
 

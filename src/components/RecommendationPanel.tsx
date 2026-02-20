@@ -35,9 +35,9 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
     return (
       <div className={`p-4 ${className}`}>
         <div className="motion-safe:animate-pulse space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-1/3" />
-          <div className="h-16 bg-gray-100 rounded" />
-          <div className="h-16 bg-gray-100 rounded" />
+          <div className="h-4 bg-surface-secondary rounded w-1/3" />
+          <div className="h-16 bg-surface-secondary rounded" />
+          <div className="h-16 bg-surface-secondary rounded" />
         </div>
       </div>
     );
@@ -48,23 +48,23 @@ export function RecommendationPanel({ className = '', onActionClick }: Recommend
   }
 
   return (
-    <div className={`bg-white dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] shadow-sm dark:shadow-none overflow-hidden ${className}`}>
+    <div className={`bg-surface rounded-lg border border-edge overflow-hidden ${className}`}>
       {/* Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-purple-500" />
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Suggestions</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.06] px-1.5 py-0.5 rounded-full">
+          <span className="text-sm font-semibold text-content">Suggestions</span>
+          <span className="text-xs text-content-secondary bg-surface-secondary px-1.5 py-0.5 rounded-full">
             {recommendations.length}
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <ChevronUp className="h-4 w-4 text-content-muted" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <ChevronDown className="h-4 w-4 text-content-muted" />
         )}
       </button>
 

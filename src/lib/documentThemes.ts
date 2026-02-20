@@ -25,7 +25,7 @@ export function getThemeForFileType(type: FileType): DocumentCardTheme {
         ring: "ring-1 ring-indigo-400/25",
         gradient: "bg-gradient-to-br from-indigo-50/10 to-transparent",
         iconBg: "bg-indigo-500",
-        label: "bg-indigo-500/10 border-indigo-500/30 text-gray-700",
+        label: "bg-indigo-500/10 border-indigo-500/30 text-content-secondary",
         watermarkText: "text-indigo-500",
       } as const;
     case "pdf":
@@ -66,8 +66,8 @@ export function getThemeForFileType(type: FileType): DocumentCardTheme {
         ring: "ring-1 ring-gray-400/20",
         gradient: "bg-gradient-to-br from-gray-50/10 to-transparent",
         iconBg: "bg-gray-500",
-        label: "bg-gray-500/10 border-gray-500/30 text-gray-700",
-        watermarkText: "text-gray-500",
+        label: "bg-gray-500/10 border-gray-500/30 text-content-secondary",
+        watermarkText: "text-content-secondary",
       } as const;
     case "code":
       return {

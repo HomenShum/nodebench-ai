@@ -170,7 +170,7 @@ function DeltaBadge({
 const DIRECTION_STYLES: Record<string, string> = {
   supporting: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
   disconfirming: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-  neutral: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+  neutral: "bg-surface-secondary text-content-secondary dark:bg-gray-800 dark:text-gray-300",
 };
 
 const DIRECTION_DOT: Record<string, string> = {
@@ -191,7 +191,7 @@ function EvidenceTimeline({
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+        className="flex items-center gap-1.5 text-xs font-medium text-content-secondary hover:text-content transition-colors"
       >
         {expanded ? (
           <ChevronUp className="w-3.5 h-3.5" />
@@ -211,7 +211,7 @@ function EvidenceTimeline({
                   DIRECTION_DOT[item.direction]
                 )}
               />
-              <span className="text-gray-400 dark:text-gray-400 shrink-0 w-16">
+              <span className="text-content-muted shrink-0 w-16">
                 {item.date}
               </span>
               <span
@@ -222,7 +222,7 @@ function EvidenceTimeline({
               >
                 {item.direction}
               </span>
-              <span className="text-gray-700 dark:text-gray-300 leading-snug">
+              <span className="text-content-secondary leading-snug">
                 {item.title}
               </span>
             </li>
@@ -248,9 +248,9 @@ function TraceBreadcrumb({
     <button
       type="button"
       onClick={onExpand}
-      className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors truncate"
+      className="flex items-center gap-1 text-xs text-content-muted hover:text-content-secondary transition-colors truncate"
     >
-      <span className="font-medium text-gray-500 dark:text-gray-400 shrink-0">
+      <span className="font-medium text-content-secondary shrink-0">
         via:
       </span>
       {steps.map((step, i) => {
@@ -258,7 +258,7 @@ function TraceBreadcrumb({
         return (
           <React.Fragment key={i}>
             {i > 0 && (
-              <span className="text-gray-300 dark:text-gray-600 mx-0.5">
+              <span className="text-gray-300 dark:text-content-secondary mx-0.5">
                 {"\u2192"}
               </span>
             )}
@@ -299,8 +299,8 @@ export function ForecastCard({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border shadow-sm overflow-hidden transition-all",
-        "border-gray-200 dark:border-gray-700/50",
+        "relative rounded-lg border shadow-sm overflow-hidden transition-all",
+        "border-edge/50",
         "bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/30",
         isVoided && "opacity-50"
       )}
@@ -336,7 +336,7 @@ export function ForecastCard({
                     ? "text-green-600 dark:text-green-400"
                     : "text-red-600 dark:text-red-400"
                   : isVoided
-                    ? "text-gray-400"
+                    ? "text-content-muted"
                     : "text-blue-600 dark:text-blue-400"
               )}
             >
@@ -350,27 +350,27 @@ export function ForecastCard({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-400">
+          <div className="flex items-center gap-3 text-xs text-content-muted">
             <span>{resolutionDate}</span>
-            <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-medium">
+            <span className="px-1.5 py-0.5 rounded bg-surface-secondary font-medium">
               {updateCount} update{updateCount !== 1 ? "s" : ""}
             </span>
           </div>
         </div>
 
         {/* Question */}
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-snug mb-3">
+        <h3 className="text-sm font-semibold text-content leading-snug mb-3">
           {question}
         </h3>
 
         {/* Probability + bar */}
         <div className="mb-3">
           <div className="flex items-baseline gap-2 mb-1.5">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+            <span className="text-2xl font-bold text-content tabular-nums">
               {pct(probability)}
             </span>
             {confidenceInterval && (
-              <span className="text-xs text-gray-400 dark:text-gray-400">
+              <span className="text-xs text-content-muted">
                 CI [{pct(confidenceInterval.lower)}&ndash;
                 {pct(confidenceInterval.upper)}]
               </span>
@@ -407,9 +407,9 @@ export function ForecastCard({
               )}
               Outcome: {outcome ? "YES" : "NO"}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-content-secondary">
               Brier:{" "}
-              <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">
+              <span className="font-mono font-semibold text-content-secondary">
                 {brierScore.toFixed(3)}
               </span>
             </span>
@@ -419,14 +419,14 @@ export function ForecastCard({
             {/* Drivers */}
             {topDrivers.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
                   Drivers
                 </p>
                 <ul className="space-y-0.5">
                   {topDrivers.map((d, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-1.5 text-xs text-gray-700 dark:text-gray-300"
+                      className="flex items-start gap-1.5 text-xs text-content-secondary"
                     >
                       <TrendingUp className="w-3 h-3 mt-0.5 text-green-500 shrink-0" />
                       <span>{d}</span>
@@ -439,14 +439,14 @@ export function ForecastCard({
             {/* Counterarguments */}
             {topCounterarguments.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-400 mb-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
                   Counterarguments
                 </p>
                 <ul className="space-y-0.5">
                   {topCounterarguments.map((c, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-1.5 text-xs text-gray-700 dark:text-gray-300"
+                      className="flex items-start gap-1.5 text-xs text-content-secondary"
                     >
                       <TrendingDown className="w-3 h-3 mt-0.5 text-red-500 shrink-0" />
                       <span>{c}</span>
@@ -465,7 +465,7 @@ export function ForecastCard({
 
         {/* Trace breadcrumb */}
         {traceSteps && traceSteps.length > 0 && (
-          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+          <div className="mt-3 pt-2 border-t border-edge dark:border-gray-800">
             <TraceBreadcrumb steps={traceSteps} onExpand={onExpandTrace} />
           </div>
         )}

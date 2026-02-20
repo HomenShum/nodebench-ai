@@ -52,7 +52,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
 
   if (!thread) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-900 text-gray-400">
+      <div className="flex flex-col items-center justify-center h-full bg-gray-900 text-content-muted">
         <p>Thread not found</p>
         <button
           onClick={onBack}
@@ -71,7 +71,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={onBack}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -90,7 +90,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
         {(thread.aiCategory || thread.aiPriority || thread.aiSummary) && (
           <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">AI Insights</span>
+              <span className="text-xs text-content-muted uppercase tracking-wide">AI Insights</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-2">
               {thread.aiCategory && (
@@ -135,7 +135,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
             />
           ))
         ) : (
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-content-muted py-8">
             <p>No messages in this thread</p>
           </div>
         )}
@@ -169,7 +169,7 @@ function ActionButton({
   fillColor?: string;
 }) {
   return (
-    <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+    <button className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
       <Icon className={`h-5 w-5 ${filled ? `${fillColor} fill-current` : ''}`} />
     </button>
   );
@@ -221,14 +221,14 @@ function EmailMessage({
           <div className="flex items-center justify-between">
             <span className="font-medium text-white truncate">{extractName(message.from)}</span>
             {message.date && (
-              <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+              <span className="text-xs text-content-secondary ml-2 whitespace-nowrap">
                 {formatDateTime(message.date)}
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-400 truncate">{message.from}</p>
+          <p className="text-xs text-content-muted truncate">{message.from}</p>
           {message.to && message.to.length > 0 && (
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-content-secondary truncate">
               To: {message.to.join(', ')}
             </p>
           )}
@@ -237,9 +237,9 @@ function EmailMessage({
         {/* Expand/Collapse */}
         <div className="mt-1">
           {isExpanded ? (
-            <ChevronUp className="h-5 w-5 text-gray-400" />
+            <ChevronUp className="h-5 w-5 text-content-muted" />
           ) : (
-            <ChevronDown className="h-5 w-5 text-gray-400" />
+            <ChevronDown className="h-5 w-5 text-content-muted" />
           )}
         </div>
       </button>
@@ -264,7 +264,7 @@ function EmailMessage({
             {message.bodyHtml && message.bodyText && (
               <button
                 onClick={() => setShowRaw(!showRaw)}
-                className="mt-3 text-xs text-gray-500 hover:text-gray-400"
+                className="mt-3 text-xs text-content-secondary hover:text-content-muted"
               >
                 {showRaw ? 'Show HTML' : 'Show Plain Text'}
               </button>
@@ -274,8 +274,8 @@ function EmailMessage({
             {message.hasAttachments && message.attachments && message.attachments.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-700">
                 <div className="flex items-center gap-2 mb-2">
-                  <Paperclip className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-400">
+                  <Paperclip className="h-4 w-4 text-content-muted" />
+                  <span className="text-sm text-content-muted">
                     {message.attachments.length} attachment{message.attachments.length > 1 ? 's' : ''}
                   </span>
                 </div>
@@ -285,10 +285,10 @@ function EmailMessage({
                       key={i}
                       className="px-3 py-2 bg-gray-900 rounded-lg flex items-center gap-2 text-sm text-gray-300"
                     >
-                      <Paperclip className="h-4 w-4 text-gray-500" />
+                      <Paperclip className="h-4 w-4 text-content-secondary" />
                       <span className="truncate max-w-[200px]">{att.filename}</span>
                       {att.size && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-content-secondary">
                           ({formatFileSize(att.size)})
                         </span>
                       )}
@@ -312,7 +312,7 @@ function getPriorityStyle(priority: string): string {
     case 'high':
       return 'bg-orange-500/20 text-orange-400';
     case 'low':
-      return 'bg-gray-500/20 text-gray-400';
+      return 'bg-gray-500/20 text-content-muted';
     default:
       return 'bg-blue-500/20 text-blue-400';
   }

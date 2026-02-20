@@ -142,7 +142,7 @@ const ThreadTab = memo(function ThreadTab({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
+        "group flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
         "hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
         isActive
           ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-color)]"
@@ -154,13 +154,13 @@ const ThreadTab = memo(function ThreadTab({
       {hasSwarm ? (
         <div className={cn(
           "w-5 h-5 rounded-md flex items-center justify-center",
-          isSwarmActive ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-400"
+          isSwarmActive ? "bg-violet-100 text-violet-600" : "bg-surface-secondary text-content-muted"
         )}>
           <Zap className="w-3 h-3" />
         </div>
       ) : (
-        <div className="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center">
-          <MessageSquare className="w-3 h-3 text-gray-400" />
+        <div className="w-5 h-5 rounded-md bg-surface-secondary flex items-center justify-center">
+          <MessageSquare className="w-3 h-3 text-content-muted" />
         </div>
       )}
 
@@ -281,10 +281,10 @@ export function ThreadTabBar({
         type="button"
         onClick={onNewThread}
         className={cn(
-          "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
-          "hover:bg-indigo-50 text-gray-600 hover:text-gray-700",
+          "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
+          "hover:bg-indigo-50 text-content-secondary hover:text-content-secondary",
           "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
-          !activeThreadId && "bg-indigo-50 text-gray-700 border border-indigo-200/50"
+          !activeThreadId && "bg-indigo-50 text-content-secondary border border-indigo-200/50"
         )}
         title="New chat (⌘1)"
       >
@@ -299,7 +299,7 @@ export function ThreadTabBar({
             type="button"
             onClick={() => setShowSwarmMenu(!showSwarmMenu)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
+              "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
               "hover:bg-violet-50 text-violet-600 hover:text-violet-700",
               "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
               showSwarmMenu && "bg-violet-50 border border-violet-200/50"
@@ -313,7 +313,7 @@ export function ThreadTabBar({
 
           {/* Swarm Menu Dropdown */}
           {showSwarmMenu && (
-            <div className="absolute top-full left-0 mt-1 w-72 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl z-50 overflow-hidden">
+            <div className="absolute top-full left-0 mt-1 w-72 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-xl z-50 overflow-hidden">
               {/* Query Input */}
               <div className="p-3 border-b border-[var(--border-color)]">
                 <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5">

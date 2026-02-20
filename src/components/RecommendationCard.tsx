@@ -79,16 +79,16 @@ export const RecommendationCard = React.memo(function RecommendationCard({
         className="absolute top-2 right-2 p-1 rounded-full hover:bg-black/10 transition-colors"
         aria-label="Dismiss recommendation"
       >
-        <X className="h-3.5 w-3.5 text-gray-500" />
+        <X className="h-3.5 w-3.5 text-content-secondary" />
       </button>
 
       {/* Content */}
       <div className="flex items-start gap-3 pr-6">
         <div className="flex-shrink-0 mt-0.5">
-          <Icon className="h-4 w-4 text-gray-600" />
+          <Icon className="h-4 w-4 text-content-secondary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-800 leading-snug">{message}</p>
+          <p className="text-sm text-content leading-snug">{message}</p>
 
           {!feedbackGiven && !showRating && (
             <div className="mt-2 flex items-center gap-2">
@@ -111,7 +111,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
                     title="This is helpful"
                     aria-label="Mark as helpful"
                   >
-                    <ThumbsUp className="h-3.5 w-3.5 text-gray-400 group-hover:text-green-600" />
+                    <ThumbsUp className="h-3.5 w-3.5 text-content-muted group-hover:text-green-600" />
                   </button>
                   <button
                     type="button"
@@ -120,7 +120,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
                     title="Not relevant"
                     aria-label="Not relevant"
                   >
-                    <ThumbsDown className="h-3.5 w-3.5 text-gray-400 group-hover:text-red-600" />
+                    <ThumbsDown className="h-3.5 w-3.5 text-content-muted group-hover:text-red-600" />
                   </button>
                 </div>
               )}
@@ -132,9 +132,9 @@ export const RecommendationCard = React.memo(function RecommendationCard({
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-3 p-2 bg-white/50 dark:bg-white/[0.03] rounded border border-gray-200 dark:border-white/[0.06]"
+              className="mt-3 p-2 bg-white/50 dark:bg-white/[0.03] rounded border border-edge"
             >
-              <p className="text-xs text-gray-600 mb-2">How helpful was this suggestion?</p>
+              <p className="text-xs text-content-secondary mb-2">How helpful was this suggestion?</p>
               <div className="flex items-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -170,7 +170,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
                     setShowRating(false);
                     onClick(id);
                   }}
-                  className="text-xs px-2 py-1 text-gray-600 hover:text-gray-800"
+                  className="text-xs px-2 py-1 text-content-secondary hover:text-content"
                 >
                   Skip
                 </button>
@@ -183,7 +183,7 @@ export const RecommendationCard = React.memo(function RecommendationCard({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mt-2 text-xs text-gray-500"
+              className="mt-2 text-xs text-content-secondary"
             >
               Thanks for your feedback!
             </motion.div>

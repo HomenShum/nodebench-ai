@@ -200,7 +200,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
       target="_blank"
       rel="noopener noreferrer"
       aria-label={ariaLabel}
-      className="group block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)] hover:shadow-md transition-all bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1"
+      className="group block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)] transition-all bg-[var(--bg-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1"
     >
       <div className="flex items-start gap-3">
         {/* Source icon */}

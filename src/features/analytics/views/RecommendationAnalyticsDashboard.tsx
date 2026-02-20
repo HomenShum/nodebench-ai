@@ -34,7 +34,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
     red: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30',
     blue: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/30',
     yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/30',
-    gray: 'bg-gray-50 dark:bg-white/[0.04] text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/[0.06]',
+    gray: 'bg-surface-secondary text-content-secondary border-edge',
   };
 
   return (
@@ -66,16 +66,16 @@ function RejectionReasonBar({ reason, count, maxCount }: RejectionReasonBarProps
   const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-gray-100 dark:border-white/[0.04] last:border-0">
+    <div className="py-2 border-b border-edge last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+        <div className="text-sm text-content-secondary truncate flex-1">
           {reason || 'No reason given'}
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 font-mono ml-2">
+        <div className="text-xs text-content-secondary font-mono ml-2">
           {count} {count === 1 ? 'rejection' : 'rejections'}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-secondary dark:bg-white/[0.08] rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -156,11 +156,11 @@ export default function RecommendationAnalyticsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-content flex items-center gap-2">
               <BarChart3 size={32} />
               Recommendation Analytics
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-content-secondary mt-1">
               User feedback and engagement metrics for recommendations
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-gray-300 dark:border-white/[0.06] rounded-lg text-sm bg-white dark:bg-white/[0.06] text-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-edge dark:border-white/[0.06] rounded-lg text-sm bg-white dark:bg-white/[0.06] text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -198,12 +198,12 @@ export default function RecommendationAnalyticsDashboard() {
           <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-28 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+                <div key={i} className="h-28 rounded-lg bg-surface-secondary/50" />
               ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
-              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div className="h-48 rounded-lg bg-surface-secondary/50" />
+              <div className="h-48 rounded-lg bg-surface-secondary/50" />
             </div>
           </div>
         )}
@@ -274,12 +274,12 @@ export default function RecommendationAnalyticsDashboard() {
             </div>
 
             {/* Action Breakdown */}
-            <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
+            <div className="bg-surface border border-edge rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-content">
                   Action Breakdown
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-content-secondary">
                   {metrics.total} total actions
                 </span>
               </div>
@@ -300,9 +300,9 @@ export default function RecommendationAnalyticsDashboard() {
                   <div className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">Ignored</div>
                 </div>
 
-                <div className="text-center p-3 bg-gray-50 dark:bg-white/[0.04] rounded-lg border border-gray-200 dark:border-white/[0.06]">
-                  <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">{metrics.dismissed}</div>
-                  <div className="text-xs text-gray-700 dark:text-gray-400 mt-1">Dismissed</div>
+                <div className="text-center p-3 bg-surface-secondary rounded-lg border border-edge">
+                  <div className="text-2xl font-bold text-content-secondary">{metrics.dismissed}</div>
+                  <div className="text-xs text-content-secondary dark:text-content-muted mt-1">Dismissed</div>
                 </div>
 
                 <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/30">
@@ -313,18 +313,18 @@ export default function RecommendationAnalyticsDashboard() {
             </div>
 
             {/* Top Rejection Reasons */}
-            <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
+            <div className="bg-surface border border-edge rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-content">
                   Top Rejection Reasons
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-content-secondary">
                   {rejectionReasons?.length || 0} unique reasons
                 </span>
               </div>
 
               {!rejectionReasons || rejectionReasons.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-8 text-content-secondary">
                   No rejection reasons recorded yet
                 </div>
               ) : (
@@ -377,15 +377,15 @@ export default function RecommendationAnalyticsDashboard() {
 
             {/* Empty State */}
             {metrics.total === 0 && (
-              <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-12 text-center">
-                <BarChart3 className="mx-auto text-gray-400 dark:text-gray-300 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <div className="bg-surface border border-edge rounded-lg p-12 text-center">
+                <BarChart3 className="mx-auto text-content-muted mb-4" size={48} />
+                <h3 className="text-lg font-semibold text-content mb-2">
                   No Recommendation Data Yet
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-content-secondary mb-4">
                   Recommendation feedback will appear here once users interact with suggestions.
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-500">
+                <p className="text-sm text-content-secondary">
                   Make sure the RecommendationPanel component is integrated into your app.
                 </p>
               </div>

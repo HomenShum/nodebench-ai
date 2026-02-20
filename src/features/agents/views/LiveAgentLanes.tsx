@@ -84,7 +84,7 @@ function LaneCard({ delegation }: LaneCardProps) {
   return (
     <div
       className={`
-        relative overflow-hidden rounded-xl border transition-all duration-300
+        relative overflow-hidden rounded-lg border transition-all duration-300
         ${isActive ? 'border-blue-500/30 shadow-lg shadow-blue-500/10' : 'border-white/10'}
         bg-gradient-to-br from-[var(--bg-primary)]/80 to-[var(--bg-secondary)]/80 backdrop-blur-sm
       `}

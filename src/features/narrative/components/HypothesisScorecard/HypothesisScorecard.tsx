@@ -24,7 +24,7 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   active: { bg: "bg-blue-100 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400" },
   supported: { bg: "bg-green-100 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400" },
   weakened: { bg: "bg-orange-100 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400" },
-  inconclusive: { bg: "bg-gray-100 dark:bg-white/[0.06]", text: "text-gray-600 dark:text-gray-400" },
+  inconclusive: { bg: "bg-surface-secondary", text: "text-content-secondary" },
   retired: { bg: "bg-red-100 dark:bg-red-950/30", text: "text-red-600 dark:text-red-400" },
 };
 
@@ -39,11 +39,11 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
 
   if (!scorecard) {
     return (
-      <div className={`motion-safe:animate-pulse rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 ${className}`}>
-        <div className="h-4 w-48 rounded bg-gray-200 dark:bg-white/[0.08] mb-3" />
+      <div className={`motion-safe:animate-pulse rounded-lg border border-edge bg-surface p-4 ${className}`}>
+        <div className="h-4 w-48 rounded bg-surface-secondary mb-3" />
         <div className="space-y-2">
-          <div className="h-3 w-full rounded bg-gray-100 dark:bg-white/[0.05]" />
-          <div className="h-3 w-3/4 rounded bg-gray-100 dark:bg-white/[0.05]" />
+          <div className="h-3 w-full rounded bg-surface-secondary dark:bg-white/[0.05]" />
+          <div className="h-3 w-3/4 rounded bg-surface-secondary dark:bg-white/[0.05]" />
         </div>
       </div>
     );
@@ -54,14 +54,14 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
   }
 
   return (
-    <div className={`rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] ${className}`}>
+    <div className={`rounded-lg border border-edge bg-surface ${className}`}>
       {/* Header */}
-      <div className="border-b border-gray-100 dark:border-white/[0.04] px-4 py-3">
+      <div className="border-b border-edge px-4 py-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-sm font-semibold text-content">
             Competing Predictions
           </h3>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-content-secondary">
             {scorecard.totalHypotheses} prediction{scorecard.totalHypotheses !== 1 ? "s" : ""}
           </span>
         </div>
@@ -71,7 +71,7 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
             count > 0 ? (
               <span
                 key={status}
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]?.bg ?? "bg-gray-100"} ${STATUS_COLORS[status]?.text ?? "text-gray-600"}`}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]?.bg ?? "bg-surface-secondary"} ${STATUS_COLORS[status]?.text ?? "text-content-secondary"}`}
               >
                 {count} {status}
               </span>
@@ -96,7 +96,7 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
                   {h.label}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">
+                  <p className="text-sm font-medium text-content leading-tight">
                     {h.title}
                   </p>
                 </div>
@@ -114,11 +114,11 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
 
               {/* Confidence bar */}
               <div className="mt-2">
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <div className="flex items-center justify-between text-xs text-content-secondary mb-1">
                   <span>Confidence</span>
                   <span className="font-mono">{confidencePct}%</span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-white/[0.08] overflow-hidden">
+                <div className="h-1.5 w-full rounded-full bg-surface-secondary dark:bg-white/[0.08] overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       confidencePct >= 75 ? "bg-green-500"
@@ -133,7 +133,7 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
 
               {/* Evidence counts */}
               {totalEvidence > 0 && (
-                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="mt-2 flex items-center gap-3 text-xs text-content-secondary">
                   <span className="flex items-center gap-1">
                     <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
                     {h.supportingEvidenceCount} supporting
@@ -147,7 +147,7 @@ export function HypothesisScorecard({ threadId, className = "" }: HypothesisScor
 
               {/* Falsification criteria */}
               {h.falsificationCriteria && (
-                <p className="mt-2 text-xs text-gray-400 dark:text-gray-500 italic leading-snug">
+                <p className="mt-2 text-xs text-content-muted italic leading-snug">
                   Disproved if: {h.falsificationCriteria}
                 </p>
               )}

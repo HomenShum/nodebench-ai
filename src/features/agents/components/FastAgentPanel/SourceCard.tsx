@@ -66,7 +66,7 @@ export function SourceCard({ source, className, citationNumber }: SourceCardProp
       rel="noopener noreferrer"
       className={cn(
         "group block rounded-lg border border-[var(--border-color)] hover:border-[var(--border-color)]",
-        "transition-all duration-200 hover:shadow-md bg-[var(--bg-primary)] overflow-hidden scroll-mt-4",
+        "transition-all duration-200 bg-[var(--bg-primary)] overflow-hidden scroll-mt-4",
         className
       )}
     >

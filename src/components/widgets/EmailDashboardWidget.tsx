@@ -31,7 +31,7 @@ export function EmailDashboardWidget({ onNavigate }: EmailDashboardWidgetProps) 
 
   if (isLoading) {
     return (
-      <div className="p-6 bg-slate-800/50 rounded-xl border border-slate-700 motion-safe:animate-pulse">
+      <div className="p-6 bg-slate-800/50 rounded-lg border border-slate-700 motion-safe:animate-pulse">
         <div className="h-8 bg-slate-700 rounded w-1/3 mb-4" />
         <div className="grid grid-cols-3 gap-4 mb-6">
           {[1, 2, 3].map((i) => (
@@ -47,7 +47,7 @@ export function EmailDashboardWidget({ onNavigate }: EmailDashboardWidgetProps) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-xl border border-slate-700 shadow-lg"
+      className="p-6 bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-lg border border-slate-700 shadow-lg"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -56,7 +56,7 @@ export function EmailDashboardWidget({ onNavigate }: EmailDashboardWidgetProps) 
             <Mail className="h-6 w-6 text-blue-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Email Intelligence</h2>
+            <h2 className="text-base font-semibold text-white">Email Intelligence</h2>
             <p className="text-sm text-slate-400">
               {stats?.lastSyncedAt
                 ? `Last synced ${formatRelativeTime(stats.lastSyncedAt)}`

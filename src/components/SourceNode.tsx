@@ -50,7 +50,7 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
         border transition-all duration-200 cursor-pointer
         ${active
           ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm'
-          : 'bg-white/50 border-gray-100 hover:border-gray-200 hover:bg-white hover:shadow-sm'
+          : 'bg-white/50 border-edge hover:border-edge hover:bg-white'
         }
       `}
       onClick={onToggle}
@@ -61,7 +61,7 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
         transition-opacity duration-150 cursor-grab active:cursor-grabbing
         ${isHovered ? 'opacity-60' : 'opacity-0'}
       `}>
-        <GripVertical className="w-2.5 h-2.5 text-gray-400" />
+        <GripVertical className="w-2.5 h-2.5 text-content-muted" />
       </div>
 
       <div className="flex items-center gap-2 pl-1">
@@ -69,7 +69,7 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
         <div className="relative">
           <div className={`
             flex items-center justify-center w-6 h-6 rounded text-xs font-bold
-            ${active ? 'bg-white shadow-inner' : 'bg-gray-50'}
+            ${active ? 'bg-white shadow-inner' : 'bg-surface-secondary'}
           `}>
             {icon}
           </div>
@@ -87,7 +87,7 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
         {/* Info */}
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-1">
-            <span className={`text-xs font-medium truncate ${active ? 'text-gray-900' : 'text-gray-600'}`}>
+            <span className={`text-xs font-medium truncate ${active ? 'text-content' : 'text-content-secondary'}`}>
               {name}
             </span>
             {active && activityCount > 0 && (
@@ -97,10 +97,10 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-content-muted">
             {active ? currentStatus.label : 'Inactive'}
             {trustScore && (
-              <span className={`shrink-0 ${trustScore >= 90 ? 'text-green-600' : trustScore >= 75 ? 'text-yellow-600' : 'text-gray-500'}`}>
+              <span className={`shrink-0 ${trustScore >= 90 ? 'text-green-600' : trustScore >= 75 ? 'text-yellow-600' : 'text-content-secondary'}`}>
                 {trustScore}% trust
               </span>
             )}
@@ -113,7 +113,7 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); onConfigure?.(); }}
-          className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 transition-colors"
+          className="p-1 hover:bg-surface-hover rounded text-content-muted hover:text-content-secondary transition-colors"
           title="Configure filters"
         >
           <Settings className="w-3 h-3" />
@@ -123,8 +123,8 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
           onClick={(e) => { e.stopPropagation(); onToggle?.(); }}
           className={`p-1 rounded transition-colors ${
             active
-              ? 'hover:bg-red-50 text-gray-400 hover:text-red-500'
-              : 'hover:bg-green-50 text-gray-400 hover:text-green-500'
+              ? 'hover:bg-red-50 text-content-muted hover:text-red-500'
+              : 'hover:bg-green-50 text-content-muted hover:text-green-500'
           }`}
           title={active ? 'Pause source' : 'Activate source'}
         >

@@ -152,7 +152,7 @@ export function FeedbackDashboard() {
 
         {/* Overview Stats */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
+          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
             Overview - Last {filters.dateRange === "7d" ? "7" : filters.dateRange === "30d" ? "30" : "90"} Days
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -218,7 +218,7 @@ export function FeedbackDashboard() {
 
         {/* Feedback by Detector */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
+          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
             Feedback by Detector
           </h2>
           <DetectorTable
@@ -230,7 +230,7 @@ export function FeedbackDashboard() {
         {/* Recent Feedback */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">
               Recent Feedback
             </h2>
             <div className="relative">
@@ -258,7 +258,7 @@ export function FeedbackDashboard() {
 
         {/* Top Complaints */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4">
+          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
             Top Complaints (Last 7 Days)
           </h2>
           <TopComplaints complaints={feedbackData.stats.topComplaints} />
@@ -287,7 +287,7 @@ function StatCard({
     green: "text-green-600 bg-green-500/10 border-green-500/20",
     red: "text-red-600 bg-red-500/10 border-red-500/20",
     blue: "text-blue-600 bg-blue-500/10 border-blue-500/20",
-    gray: "text-gray-600 bg-gray-500/10 border-gray-500/20",
+    gray: "text-content-secondary bg-gray-500/10 border-gray-500/20",
   };
 
   return (

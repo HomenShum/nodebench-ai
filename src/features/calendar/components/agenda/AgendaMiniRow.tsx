@@ -71,7 +71,7 @@ function noteContainerClasses(): string {
 function eventBadgeClasses(color?: string): string {
   switch (color) {
     case "green":
-      return "border-indigo-200 bg-indigo-50 text-gray-700";
+      return "border-indigo-200 bg-indigo-50 text-content-secondary";
     case "amber":
       return "border-amber-200 bg-amber-50 text-amber-700";
     case "red":
@@ -242,7 +242,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
                   ? 'border-purple-200 dark:border-purple-700/40 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
                   : kind === 'note'
                     ? 'border-amber-200 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                  : 'border-indigo-200 dark:border-indigo-700/40 bg-indigo-50 dark:bg-indigo-900/30 text-gray-700 dark:text-gray-300'
+                  : 'border-indigo-200 dark:border-indigo-700/40 bg-indigo-50 dark:bg-indigo-900/30 text-content-secondary'
             }`}
           >
             {kind === 'event' ? 'Event' : kind === 'holiday' ? 'Holiday' : kind === 'note' ? 'Note' : 'Task'}
@@ -265,7 +265,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               <span className={`text-xs px-1.5 py-0.5 rounded border ${
                 item?.status === 'cancelled' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-700/40' :
                 item?.status === 'tentative' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40' :
-                'bg-indigo-50 dark:bg-indigo-900/30 text-gray-700 dark:text-gray-300 border-indigo-200 dark:border-indigo-700/40'
+                'bg-indigo-50 dark:bg-indigo-900/30 text-content-secondary border-indigo-200 dark:border-indigo-700/40'
               }`}>
                 {String(item?.status ?? 'confirmed')}
               </span>
@@ -273,7 +273,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               <span className={`text-xs px-1.5 py-0.5 rounded border ${
                 item?.status === 'blocked' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-700/40' :
                 item?.status === 'in_progress' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/40' :
-                item?.status === 'done' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-gray-700 dark:text-gray-300 border-indigo-200 dark:border-indigo-700/40' :
+                item?.status === 'done' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-content-secondary border-indigo-200 dark:border-indigo-700/40' :
                 'bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-700/40'
               }`}>
                 {String(item?.status ?? 'todo')}

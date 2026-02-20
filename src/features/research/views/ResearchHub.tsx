@@ -36,13 +36,13 @@ const SectionLoading = () => (
       <div className="w-10 h-10 bg-gray-200/60 dark:bg-white/[0.06] rounded-lg" />
       <div className="space-y-2 flex-1">
         <div className="h-4 bg-gray-200/60 dark:bg-white/[0.06] rounded w-1/3" />
-        <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-1/2" />
+        <div className="h-3 bg-surface-secondary rounded w-1/2" />
       </div>
     </div>
     <div className="space-y-2">
-      <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-full" />
-      <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-5/6" />
-      <div className="h-3 bg-gray-100 dark:bg-white/[0.04] rounded w-4/6" />
+      <div className="h-3 bg-surface-secondary rounded w-full" />
+      <div className="h-3 bg-surface-secondary rounded w-5/6" />
+      <div className="h-3 bg-surface-secondary rounded w-4/6" />
     </div>
   </div>
 );
@@ -472,7 +472,7 @@ function ResearchHubContent(props: ResearchHubProps) {
       {!embedded && (
         <header className="h-20 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-edge shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gray-900 dark:bg-white/[0.12] rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
+            <div className="w-10 h-10 bg-gray-900 dark:bg-white/[0.12] rounded-none flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
@@ -655,7 +655,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <TrendingUp className="w-4 h-4 text-content-secondary" />
                       <h3 className="text-sm font-semibold text-content tracking-tight">Latest Updates</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-xs font-medium rounded">Live</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-content dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-xs font-medium rounded">Live</div>
                   </div>
                   <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-edge rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>

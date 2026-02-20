@@ -37,7 +37,7 @@ function StatCard({ label, value, icon: Icon, trend, color }: StatCardProps) {
   return (
     <motion.div
       variants={staggerItemVariants}
-      className={`p-4 rounded-xl border ${color}`}
+      className={`p-4 rounded-lg border ${color}`}
     >
       <div className="flex items-center justify-between mb-2">
         <Icon className="h-5 w-5 opacity-70" />
@@ -58,7 +58,7 @@ function ActivityBar({ day, value, max }: { day: string; value: number; max: num
   const height = max > 0 ? (value / max) * 100 : 0;
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="w-8 h-20 bg-gray-100 dark:bg-white/[0.06] rounded-full overflow-hidden flex items-end">
+      <div className="w-8 h-20 bg-surface-secondary rounded-full overflow-hidden flex items-end">
         <motion.div
           className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-full"
           initial={{ height: 0 }}
@@ -66,7 +66,7 @@ function ActivityBar({ day, value, max }: { day: string; value: number; max: num
           transition={{ duration: 0.5, delay: 0.1 }}
         />
       </div>
-      <span className="text-xs text-gray-500">{day}</span>
+      <span className="text-xs text-content-secondary">{day}</span>
     </div>
   );
 }
@@ -114,14 +114,14 @@ export function PersonalAnalytics({ className = '' }: PersonalAnalyticsProps) {
   const maxActivity = Math.max(...weeklyActivity.map((d) => d.value));
 
   return (
-    <div className={`bg-white dark:bg-[#09090B] rounded-xl border border-gray-200 dark:border-white/[0.06] shadow-sm p-6 ${className}`}>
+    <div className={`bg-surface rounded-lg border border-edge p-6 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-blue-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Your Analytics</h2>
+          <h2 className="text-lg font-semibold text-content">Your Analytics</h2>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center gap-2 text-sm text-content-secondary">
           <Flame className="h-4 w-4 text-orange-500" />
           <span>{stats.streak} day streak</span>
         </div>
@@ -141,8 +141,8 @@ export function PersonalAnalytics({ className = '' }: PersonalAnalyticsProps) {
       </motion.div>
 
       {/* Weekly Activity Chart */}
-      <div className="bg-gray-50 dark:bg-white/[0.03] rounded-lg p-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-4">Weekly Activity</h3>
+      <div className="bg-surface-secondary rounded-lg p-4">
+        <h3 className="text-sm font-medium text-content-secondary mb-4">Weekly Activity</h3>
         <div className="flex items-end justify-between gap-2">
           {weeklyActivity.map((day) => (
             <ActivityBar key={day.day} day={day.day} value={day.value} max={maxActivity} />

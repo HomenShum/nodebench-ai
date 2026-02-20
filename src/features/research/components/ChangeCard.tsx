@@ -110,9 +110,9 @@ function SeverityBadge({ severity }: { severity: Severity }) {
       label: "Medium",
     },
     low: {
-      bg: "bg-gray-50",
-      text: "text-gray-600",
-      border: "border-gray-200",
+      bg: "bg-surface-secondary",
+      text: "text-content-secondary",
+      border: "border-edge",
       icon: <Info className="w-3 h-3" />,
       label: "Low",
     },
@@ -140,7 +140,7 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
   > = {
     guidance_added: {
       bg: "bg-indigo-100",
-      text: "text-gray-700",
+      text: "text-content-secondary",
       icon: <PlusCircle className="w-3 h-3" />,
       label: "Added",
     },
@@ -193,8 +193,8 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
       label: "Model Update",
     },
     minor_update: {
-      bg: "bg-gray-100",
-      text: "text-gray-600",
+      bg: "bg-surface-secondary",
+      text: "text-content-secondary",
       icon: <Info className="w-3 h-3" />,
       label: "Minor",
     },
@@ -232,9 +232,9 @@ function formatTimeAgo(timestamp: number): string {
  */
 function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
   return (
-    <div className="font-mono text-xs rounded border border-gray-200 overflow-hidden">
+    <div className="font-mono text-xs rounded border border-edge overflow-hidden">
       {hunk.context && (
-        <div className="bg-gray-50 px-3 py-1 text-gray-500 border-b border-gray-200">
+        <div className="bg-surface-secondary px-3 py-1 text-content-secondary border-b border-edge">
           {hunk.context}
         </div>
       )}
@@ -245,7 +245,7 @@ function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
         </div>
       )}
       {hunk.type === "add" && hunk.newText && (
-        <div className="bg-indigo-50 px-3 py-1 text-gray-700">
+        <div className="bg-indigo-50 px-3 py-1 text-content-secondary">
           <span className="text-indigo-500">+ </span>
           {hunk.newText}
         </div>
@@ -259,7 +259,7 @@ function DiffHunkDisplay({ hunk }: { hunk: DiffHunk }) {
             </div>
           )}
           {hunk.newText && (
-            <div className="bg-indigo-50 px-3 py-1 text-gray-700">
+            <div className="bg-indigo-50 px-3 py-1 text-content-secondary">
               <span className="text-indigo-500">+ </span>
               {hunk.newText}
             </div>
@@ -299,8 +299,8 @@ export function ChangeCard({
 
   return (
     <div
-      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-xl overflow-hidden
-                 hover:border-indigo-200 hover:shadow-sm transition-all duration-200"
+      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-lg overflow-hidden
+                 hover:border-indigo-200 transition-all duration-200"
     >
       {/* Left Accent Border */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${accentColors[diff.severity]}`} />
@@ -350,13 +350,13 @@ export function ChangeCard({
               {diff.affectedSections.slice(0, 3).map((section) => (
                 <span
                   key={section}
-                  className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+                  className="px-1.5 py-0.5 text-xs bg-surface-secondary text-content-secondary rounded"
                 >
                   {section}
                 </span>
               ))}
               {diff.affectedSections.length > 3 && (
-                <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded">
+                <span className="px-1.5 py-0.5 text-xs bg-surface-secondary text-content-secondary rounded">
                   +{diff.affectedSections.length - 3} more
                 </span>
               )}
@@ -395,7 +395,7 @@ export function ChangeCard({
                 {diff.affectedSections.map((section) => (
                   <span
                     key={section}
-                    className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                    className="px-2 py-1 text-xs bg-surface-secondary text-content-secondary rounded"
                   >
                     {section}
                   </span>

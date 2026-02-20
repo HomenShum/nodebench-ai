@@ -327,7 +327,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
           </p>
           <button
             onClick={onGetStarted}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] hover:shadow-sm rounded-lg transition-all duration-200 border border-[var(--border-color)]"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-all duration-200 border border-[var(--border-color)]"
           >
             Skip tutorial and go to workspace
             <ArrowRight className="h-4 w-4" />
@@ -361,7 +361,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
 
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1">
-            <div className="bg-[var(--bg-primary)] rounded-xl shadow-sm border border-[var(--border-color)] p-6">
+            <div className="bg-[var(--bg-primary)] rounded-lg shadow-sm border border-[var(--border-color)] p-6">
               <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-[var(--accent-primary)]" />
                 Getting Started Guide
@@ -422,7 +422,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
           </div>
 
           <div className="lg:col-span-2">
-            <div className="bg-[color:var(--bg-primary)] rounded-xl shadow-sm border border-[color:var(--border-color)] h-[600px] flex flex-col">
+            <div className="bg-[color:var(--bg-primary)] rounded-lg shadow-sm border border-[color:var(--border-color)] h-[600px] flex flex-col">
               <div className="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
                 <div className="w-10 h-10 bg-[var(--accent-primary)]/15 rounded-full flex items-center justify-center">
                   <Bot className="h-5 w-5 text-blue-600" />

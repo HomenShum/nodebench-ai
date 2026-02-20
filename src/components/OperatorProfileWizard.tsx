@@ -175,17 +175,17 @@ export function OperatorProfileWizard() {
 
   if (existingProfile && !editing) {
     return (
-      <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+      <div className="rounded-lg border border-edge bg-surface p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
               <User className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <div className="text-sm font-semibold text-content">
                 {existingProfile.identity.displayName}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-content-secondary">
                 {existingProfile.identity.role || "My Profile"}
                 {existingProfile.identity.domains?.length
                   ? ` · ${existingProfile.identity.domains.join(", ")}`
@@ -196,7 +196,7 @@ export function OperatorProfileWizard() {
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-content-secondary hover:bg-surface-hover transition-colors"
           >
             <Pencil className="w-3 h-3" /> Edit
           </button>
@@ -206,13 +206,13 @@ export function OperatorProfileWizard() {
             {existingProfile.goals.slice(0, 3).map((g, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
+                className="px-2 py-0.5 rounded text-xs bg-surface-secondary text-content-secondary"
               >
                 {g.description}
               </span>
             ))}
             {existingProfile.goals.length > 3 && (
-              <span className="px-2 py-0.5 rounded text-xs text-gray-400">
+              <span className="px-2 py-0.5 rounded text-xs text-content-muted">
                 +{existingProfile.goals.length - 3} more
               </span>
             )}
@@ -229,7 +229,7 @@ export function OperatorProfileWizard() {
   const renderStep1 = () => (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-content-secondary mb-1">
           Name *
         </label>
         <input
@@ -237,21 +237,21 @@ export function OperatorProfileWizard() {
           value={state.displayName}
           onChange={(e) => update({ displayName: e.target.value })}
           placeholder="How should the agent address you?"
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+          className="w-full px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+        <label className="block text-sm font-medium text-content-secondary mb-1">Role</label>
         <input
           type="text"
           value={state.role}
           onChange={(e) => update({ role: e.target.value })}
           placeholder="e.g., Product Manager, Founder, Researcher"
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+          className="w-full px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Domains</label>
+        <label className="block text-sm font-medium text-content-secondary mb-1">Domains</label>
         <div className="flex gap-2 mb-2">
           <input
             type="text"
@@ -259,7 +259,7 @@ export function OperatorProfileWizard() {
             onChange={(e) => setDomainInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addDomain())}
             placeholder="Add a domain..."
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="flex-1 px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <button type="button" onClick={addDomain} aria-label="Add domain" className="px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">
             <Plus className="w-4 h-4" />
@@ -277,13 +277,13 @@ export function OperatorProfileWizard() {
         </div>
         {state.domains.length === 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
-            <span className="text-xs text-gray-400 mr-1">Suggestions:</span>
+            <span className="text-xs text-content-muted mr-1">Suggestions:</span>
             {DOMAIN_SUGGESTIONS.map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => update({ domains: [...state.domains, d] })}
-                className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.1] transition-colors"
+                className="px-2 py-0.5 rounded text-xs bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1] transition-colors"
               >
                 {d}
               </button>
@@ -292,20 +292,20 @@ export function OperatorProfileWizard() {
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Goals</label>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+        <label className="block text-sm font-medium text-content-secondary mb-1">Goals</label>
+        <p className="text-xs text-content-secondary mb-2">
           What should the agent prioritize? First = highest priority.
         </p>
         <div className="space-y-1.5 mb-2">
           {state.goals.map((goal, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02]">
-              <span className="text-xs font-mono text-gray-400 w-4">#{i + 1}</span>
-              <span className="flex-1 text-sm text-gray-900 dark:text-gray-100">{goal}</span>
+            <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-edge bg-surface">
+              <span className="text-xs font-mono text-content-muted w-4">#{i + 1}</span>
+              <span className="flex-1 text-sm text-content">{goal}</span>
               <button
                 type="button"
                 onClick={() => update({ goals: state.goals.filter((_, j) => j !== i) })}
                 aria-label={`Remove goal ${i + 1}`}
-                className="text-gray-400 hover:text-red-500 transition-colors"
+                className="text-content-muted hover:text-red-500 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -319,7 +319,7 @@ export function OperatorProfileWizard() {
             onChange={(e) => setGoalInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addGoal())}
             placeholder="Add a goal..."
-            className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="flex-1 px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <button type="button" onClick={addGoal} aria-label="Add goal" className="px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">
             <Plus className="w-4 h-4" />
@@ -331,7 +331,7 @@ export function OperatorProfileWizard() {
 
   const renderStep2 = () => (
     <div className="space-y-4">
-      <p className="text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-sm text-content-secondary">
         How often should the agent check for new discoveries and send you a brief?
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -343,15 +343,15 @@ export function OperatorProfileWizard() {
             className={`text-left px-4 py-3 rounded-lg border transition-colors ${
               state.scheduleInterval === opt.value
                 ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20"
-                : "border-gray-200 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.15]"
+                : "border-edge hover:border-edge dark:hover:border-white/[0.15]"
             }`}
           >
-            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{opt.label}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">{opt.desc}</div>
+            <div className="text-sm font-medium text-content">{opt.label}</div>
+            <div className="text-xs text-content-secondary">{opt.desc}</div>
           </button>
         ))}
       </div>
-      <div className="text-xs text-gray-400 dark:text-gray-400 pt-2">
+      <div className="text-xs text-content-muted pt-2">
         You can adjust this anytime from the dashboard below.
       </div>
     </div>
@@ -371,13 +371,13 @@ export function OperatorProfileWizard() {
                   ? "bg-indigo-500 text-white"
                   : step > id
                     ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                    : "bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400"
+                    : "bg-surface-secondary text-content-secondary"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
               {label}
             </button>
-            {id < 2 && <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 flex-shrink-0" />}
+            {id < 2 && <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary flex-shrink-0" />}
           </React.Fragment>
         ))}
       </div>
@@ -389,12 +389,12 @@ export function OperatorProfileWizard() {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-white/[0.06]">
+      <div className="flex items-center justify-between pt-4 border-t border-edge">
         <button
           type="button"
           onClick={() => editing && !existingProfile ? setStep((s) => Math.max(1, s - 1)) : step === 1 ? setEditing(false) : setStep(1)}
           disabled={step === 1 && !editing}
-          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] disabled:opacity-30 transition-colors"
+          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-content-secondary hover:bg-surface-hover disabled:opacity-30 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" /> {step === 1 && editing ? "Cancel" : "Back"}
         </button>

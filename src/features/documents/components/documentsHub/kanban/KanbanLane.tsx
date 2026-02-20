@@ -23,7 +23,7 @@ export function KanbanLane({ laneId, density, children }: KanbanLaneProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`document-card--hybrid relative overflow-hidden ${density === "compact" ? "p-0" : "p-0.5"} min-h-[260px] flex flex-col gap-1 rounded-none border-0 transition-none hover:shadow-none hover:ring-0 hover:scale-100 hover:bg-transparent ${
+      className={`document-card--hybrid relative overflow-hidden ${density === "compact" ? "p-0" : "p-0.5"} min-h-[260px] flex flex-col gap-1 rounded-none border-0 transition-none hover:ring-0 hover:scale-100 hover:bg-transparent ${
         // status-tinted background per lane
         laneId === "in_progress"
           ? "bg-blue-500/5"

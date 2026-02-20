@@ -81,7 +81,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-950 dark:text-gray-50 tracking-tight">
                         {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
                     </h1>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-2 text-sm text-content-secondary">
                         Your AI research workspace — signals, briefs, and agents in one place.
                     </p>
                 </motion.div>
@@ -124,11 +124,11 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     onDrop={handleDrop}
                 >
                     <div className={`
-                        relative flex items-center gap-3 px-5 py-4 rounded-2xl border-2 transition-all duration-200
+                        relative flex items-center gap-3 px-5 py-4 rounded-lg border-2 transition-all duration-200
                         bg-white/90 dark:bg-white/[0.06] backdrop-blur-xl shadow-lg dark:shadow-none
                         ${isDragOver
                             ? 'border-indigo-400 dark:border-indigo-500 shadow-indigo-100 dark:shadow-none ring-4 ring-indigo-100 dark:ring-indigo-500/10'
-                            : 'border-gray-200 dark:border-white/[0.08] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-xl'
+                            : 'border-edge hover:border-edge dark:hover:border-white/[0.12] hover:shadow-xl'
                         }
                     `}>
                         {isDragOver ? (
@@ -138,7 +138,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                             </div>
                         ) : (
                             <>
-                                <Sparkles className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
+                                <Sparkles className="w-5 h-5 text-content-muted flex-shrink-0" />
                                 <label htmlFor="cinematic-home-input" className="sr-only">Ask anything or upload a file</label>
                                 <input
                                     id="cinematic-home-input"
@@ -148,13 +148,13 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Ask anything or upload a file..."
-                                    className="flex-1 bg-transparent text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                                    className="flex-1 bg-transparent text-base text-content placeholder:text-content-muted dark:placeholder-gray-500 outline-none"
                                     autoFocus
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-shrink-0 p-2 rounded-xl bg-gray-900 dark:bg-indigo-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                                    className="flex-shrink-0 p-2 rounded-lg bg-gray-900 dark:bg-indigo-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
                                     aria-label="Send"
                                 >
                                     <Send className="w-4 h-4" />
@@ -169,7 +169,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     initial={reduceMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3, delay: 0.45 }}
-                    className="mt-4 flex items-center gap-4 text-sm text-gray-400 dark:text-gray-400"
+                    className="mt-4 flex items-center gap-4 text-sm text-content-muted"
                 >
                     <button
                         type="button"
@@ -178,7 +178,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     >
                         Browse What's New <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-gray-300 dark:text-gray-600">|</span>
+                    <span className="text-gray-300 dark:text-content-secondary">|</span>
                     <button
                         type="button"
                         onClick={onEnterWorkspace}
@@ -194,7 +194,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                         initial={reduceMotion ? false : { opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3, delay: 0.55 }}
-                        className="mt-6 text-sm text-gray-400 dark:text-gray-400 text-center max-w-md"
+                        className="mt-6 text-sm text-content-muted text-center max-w-md"
                     >
                         {insights[0].icon} {insights[0].message}
                     </motion.p>
@@ -247,15 +247,15 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
         <div
             onClick={onClick}
             className={`
-                group relative p-6 cursor-pointer overflow-hidden border rounded-2xl transition-all duration-300
+                group relative p-6 cursor-pointer overflow-hidden border rounded-lg transition-all duration-300
                 ${isDark
                     ? 'bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:from-black hover:to-gray-900 shadow-lg hover:shadow-xl'
-                    : 'bg-white/80 dark:bg-white/[0.04] backdrop-blur-sm border-gray-200/60 dark:border-white/[0.06] text-gray-900 dark:text-gray-100 hover:bg-white dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/[0.1] shadow-sm hover:shadow-lg dark:hover:shadow-none'
+                    : 'bg-white/80 dark:bg-white/[0.04] backdrop-blur-sm border-edge text-content hover:bg-white dark:hover:bg-white/[0.06] hover:border-edge dark:hover:border-white/[0.1] dark:hover:shadow-none'
                 }
             `}
         >
             <div className="relative z-10 flex flex-col h-full">
-                <div className={`w-9 h-9 mb-4 flex items-center justify-center rounded-xl border
+                <div className={`w-9 h-9 mb-4 flex items-center justify-center rounded-lg border
                     ${isDark ? 'bg-white/10 border-white/10 text-indigo-400' : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-800/30 text-indigo-600 dark:text-indigo-400'}
                 `}>
                     {icon}
@@ -263,14 +263,14 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
 
                 <h3 className="text-lg font-bold mb-1.5 tracking-tight">{title}</h3>
                 <p className={`text-sm leading-relaxed mb-5
-                    ${isDark ? 'text-gray-400' : 'text-gray-500'}
+                    ${isDark ? 'text-content-muted' : 'text-content-secondary'}
                 `}>
                     {desc}
                 </p>
 
                 <div className="mt-auto flex items-center gap-2">
                     <span className={`text-sm font-semibold transition-all duration-200
-                        ${isDark ? 'text-white' : 'text-gray-900 dark:text-gray-100'}
+                        ${isDark ? 'text-white' : 'text-content'}
                     `}>
                         {btnText}
                     </span>

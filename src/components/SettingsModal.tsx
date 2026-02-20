@@ -43,31 +43,31 @@ function SmsUsageStats() {
   }
 
   return (
-    <div className="pt-3 mt-3 border-t border-gray-100 dark:border-white/[0.04] space-y-3">
+    <div className="pt-3 mt-3 border-t border-edge space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Usage & Cost (Last 30 Days)</span>
-        <BarChart2 className="h-3.5 w-3.5 text-gray-400" />
+        <span className="text-xs font-semibold text-content-secondary">Usage & Cost (Last 30 Days)</span>
+        <BarChart2 className="h-3.5 w-3.5 text-content-muted" />
       </div>
 
       {smsUsage?.totals && (
         <div className="grid grid-cols-3 gap-2">
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2 text-center">
-            <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalMessages}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Messages</div>
+          <div className="bg-surface-secondary rounded p-2 text-center">
+            <div className="text-lg font-bold text-content">{smsUsage.totals.totalMessages}</div>
+            <div className="text-xs text-content-secondary">Messages</div>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2 text-center">
-            <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalSegments}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Segments</div>
+          <div className="bg-surface-secondary rounded p-2 text-center">
+            <div className="text-lg font-bold text-content">{smsUsage.totals.totalSegments}</div>
+            <div className="text-xs text-content-secondary">Segments</div>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 rounded p-2 text-center">
             <div className="text-lg font-bold text-green-700 dark:text-green-400">${smsUsage.totals.estimatedCostDollars}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Est. Cost</div>
+            <div className="text-xs text-content-secondary">Est. Cost</div>
           </div>
         </div>
       )}
 
       {smsUsage?.totals && smsUsage.totals.totalMessages > 0 && (
-        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+        <div className="text-xs text-content-secondary space-y-1">
           <div className="flex justify-between">
             <span>Success rate:</span>
             <span className="font-medium text-green-600 dark:text-green-400">{smsUsage.totals.successRate}</span>
@@ -88,9 +88,9 @@ function SmsUsageStats() {
       )}
 
       {costBreakdown && (
-        <details className="text-xs text-gray-500 dark:text-gray-400">
-          <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">Pricing details</summary>
-          <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200 dark:border-white/[0.06]">
+        <details className="text-xs text-content-secondary">
+          <summary className="cursor-pointer hover:text-content">Pricing details</summary>
+          <div className="mt-2 pl-2 space-y-1 border-l-2 border-edge">
             <div className="flex justify-between">
               <span>Per segment:</span>
               <span>~{costBreakdown.perMessage.totalPerSegment.toFixed(2)}¢</span>
@@ -410,18 +410,18 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
   }) => {
     const pct = Math.min(100, Math.round(((daily?.count ?? 0) / Math.max(1, daily?.limit ?? 1)) * 100));
     return (
-      <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+      <div className="rounded-lg border border-edge bg-surface p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <BarChart2 className="h-4 w-4" />
             <span>{title}</span>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{daily ? new Date(daily.date + "T00:00:00Z").toLocaleDateString('en-US', { month: "short", day: "numeric", timeZone: "UTC" }) : <span className="inline-block w-16 h-3 bg-gray-200 rounded motion-safe:animate-pulse" />}</span>
+          <span className="text-xs text-content-secondary">{daily ? new Date(daily.date + "T00:00:00Z").toLocaleDateString('en-US', { month: "short", day: "numeric", timeZone: "UTC" }) : <span className="inline-block w-16 h-3 bg-surface-secondary rounded motion-safe:animate-pulse" />}</span>
         </div>
-        <div className="w-full h-2 bg-gray-100 dark:bg-white/[0.08] rounded">
+        <div className="w-full h-2 bg-surface-secondary dark:bg-white/[0.08] rounded">
           <div className="h-2 rounded bg-blue-600" style={{ width: `${pct}%` }} />
         </div>
-        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-2 text-xs text-content-secondary">
           {daily ? (
             <>{daily.count} / {daily.limit} requests today</>
           ) : (
@@ -431,21 +431,21 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
         {series && series.length > 0 && (() => {
           const maxCount = Math.max(...series.map(d => d.count ?? 0));
           return maxCount === 0 ? (
-            <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center py-3">No usage recorded in the last 14 days</div>
+            <div className="mt-3 text-xs text-content-secondary text-center py-3">No usage recorded in the last 14 days</div>
           ) : (
             <div className="mt-3">
               <div className="flex items-center justify-between mb-1">
-                <div className="text-xs text-gray-500 dark:text-gray-400">Last 14 days</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">100%</div>
+                <div className="text-xs text-content-secondary">Last 14 days</div>
+                <div className="text-xs text-content-secondary tabular-nums">100%</div>
               </div>
               <div className="flex items-end gap-1 h-16 relative">
-                <div className="absolute inset-x-0 top-0 border-t border-dashed border-gray-200 dark:border-white/10" />
-                <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-gray-200 dark:border-white/10" />
+                <div className="absolute inset-x-0 top-0 border-t border-dashed border-edge dark:border-white/10" />
+                <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-edge dark:border-white/10" />
                 {series.map((d) => {
                   const ratio = (d.count ?? 0) / Math.max(1, d.limit ?? 1);
                   const h = Math.max(4, Math.min(60, Math.round(ratio * 60)));
                   return (
-                    <div key={d.date} className="flex-1 min-w-[4px] bg-gray-100 dark:bg-white/[0.08] rounded" title={`${d.date}: ${d.count}/${d.limit} (${Math.round(ratio * 100)}%)`}>
+                    <div key={d.date} className="flex-1 min-w-[4px] bg-surface-secondary dark:bg-white/[0.08] rounded" title={`${d.date}: ${d.count}/${d.limit} (${Math.round(ratio * 100)}%)`}>
                       <div className="w-full bg-blue-600 rounded" style={{ height: h }} />
                     </div>
                   );
@@ -465,7 +465,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
     const linkedAt = providerStatus[provider]?.createdAt;
     const inputEmpty = !(keyInputs[provider]?.trim());
     return (
-      <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+      <div className="rounded-lg border border-edge bg-surface p-3">
         <div className="flex items-center gap-2 mb-2">
           <Key className="h-4 w-4" />
           <span className="text-sm font-semibold">{label} API Key</span>
@@ -476,19 +476,19 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             </span>
           )}
           {hasKey && linkedAt && (
-            <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">on {new Date(linkedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            <span className="ml-1 text-xs text-content-secondary">on {new Date(linkedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
           <input
             type={isShown ? "text" : "password"}
-            className="flex-1 px-2 py-1 text-sm rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+            className="flex-1 px-2 py-1 text-sm rounded border border-edge bg-surface-secondary"
             placeholder={`Enter ${label} API key`}
             value={keyInputs[provider] ?? ""}
             onChange={(e) => setKeyInputs((p) => ({ ...p, [provider]: e.target.value }))}
           />
           <button
-            className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] disabled:opacity-50"
+            className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover disabled:opacity-50"
             onClick={() => setShowKeys((p) => ({ ...p, [provider]: !isShown }))}
             title={isShown ? "Hide" : "Show"}
             disabled={isBusy}
@@ -496,7 +496,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             {isShown ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
           </button>
           <button
-            className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:opacity-90 disabled:opacity-50"
+            className="btn-primary-xs"
             onClick={() => { void handleSaveKey(provider); }}
             disabled={isBusy || user === null || inputEmpty}
           >
@@ -504,7 +504,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
           </button>
           {hasKey && (
             <button
-              className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-red-600 disabled:opacity-50"
+              className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover text-red-600 disabled:opacity-50"
               onClick={() => { void handleDeleteKey(provider); }}
               title="Remove saved key"
               disabled={isBusy || user === null}
@@ -517,15 +517,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             </button>
           )}
         </div>
-        <div className="mt-2 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+        <div className="mt-2 text-xs text-content-secondary flex items-center gap-1.5">
           <Shield className="h-3.5 w-3.5 shrink-0" />
           Keys are encrypted and stored on this device only.
         </div>
-        <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+        <div className="mt-1 text-xs text-content-secondary">
           If you reset your browser data, re-enter your key. Never share keys publicly.
         </div>
         {user === null && (
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">Sign in to save or remove API keys.</div>
+          <div className="mt-2 text-xs text-content-secondary">Sign in to save or remove API keys.</div>
         )}
       </div>
     );
@@ -539,10 +539,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
       backdropClassName="bg-black/50"
       positionClassName="fixed inset-0 z-50 flex items-center justify-center p-4"
     >
-      <div className="relative w-[900px] max-w-[95vw] max-h-[85vh] bg-background border border-border/60 rounded-xl shadow-2xl overflow-hidden">
+      <div className="relative w-[900px] max-w-[95vw] max-h-[85vh] bg-background border border-border/60 rounded-lg shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b border-border/60">
-          <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex items-center gap-2 text-sm font-semibold text-content">
             <SettingsIcon className="h-4 w-4" />
             Settings Hub
           </div>
@@ -550,7 +550,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             onClick={onClose}
             aria-label="Close settings"
             data-testid="close-settings"
-            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/[0.06] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            className="p-1 rounded hover:bg-surface-hover text-content-secondary hover:text-content"
           >
             <X className="h-4 w-4" />
           </button>
@@ -564,8 +564,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 key={item.id}
                 onClick={() => setActive(item.id)}
                 className={`w-full text-left px-2 py-2 rounded text-sm mb-1 transition-colors ${active === item.id
-                    ? "bg-background text-gray-900 dark:text-gray-100 shadow-sm"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                    ? "bg-background text-content shadow-sm"
+                    : "text-content-secondary hover:bg-surface-hover"
                   }`}
               >
                 {item.label}
@@ -578,11 +578,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             {active === "usage" ? (
               <div className="space-y-4">
                 {/* Plan */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                <div className="rounded-lg border border-edge bg-surface p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">Current Plan</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{planLabel}</div>
+                      <div className="text-xs text-content-secondary">{planLabel}</div>
                     </div>
                     <button
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 shadow-sm disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
@@ -619,11 +619,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 <ApiUsageDisplay />
 
                 {/* Billing (merged) */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                <div className="rounded-lg border border-edge bg-surface p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold">Supporter Plan</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-content-secondary">
                         Status: {subscription ? subscription.status : "Loading…"}
                       </div>
                     </div>
@@ -643,7 +643,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       )}
                     </button>
                   </div>
-                  <ul className="mt-3 text-xs text-gray-500 dark:text-gray-400 list-disc pl-5 space-y-1">
+                  <ul className="mt-3 text-xs text-content-secondary list-disc pl-5 space-y-1">
                     <li>Free tier: 5 requests/day total</li>
                     <li>Supporter: 50 requests/day total</li>
                     <li>One-time $1 purchase unlocks Supporter benefits</li>
@@ -657,31 +657,31 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               <div className="space-y-6">
                 {/* Theme Customization */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Theme & Appearance</h3>
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <h3 className="text-sm font-semibold text-content">Theme & Appearance</h3>
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <ThemeCustomizer />
                   </div>
                 </div>
 
                 {/* Display & Organization */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Display & Organization</h3>
+                  <h3 className="text-sm font-semibold text-content">Display & Organization</h3>
 
                   {/* Ungrouped Section Name */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Sidebar Section Name</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-content-secondary">
                         Current: "{userPreferences?.ungroupedSectionName ?? "Ungrouped Documents"}"
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="text-xs text-content-secondary mb-3">
                       Customize the name of the ungrouped documents section in the sidebar.
                     </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        className="flex-1 px-2 py-1 text-sm rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+                        className="flex-1 px-2 py-1 text-sm rounded border border-edge bg-surface-secondary"
                         placeholder="Enter section name"
                         defaultValue={userPreferences?.ungroupedSectionName ?? "Ungrouped Documents"}
                         onKeyDown={(e) => {
@@ -699,7 +699,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         }}
                       />
                       <button
-                        className="px-2 py-1 text-xs rounded bg-blue-600 text-white hover:opacity-90 disabled:opacity-50"
+                        className="btn-primary-xs"
                         onClick={(e) => {
                           const input = e.currentTarget.previousElementSibling as HTMLInputElement;
                           const value = input.value.trim();
@@ -719,11 +719,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Ungrouped Section Expanded State */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-semibold">Expand Ungrouped Section by Default</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Whether the ungrouped documents section should be expanded when you first open the app.</div>
+                        <div className="text-xs text-content-secondary">Whether the ungrouped documents section should be expanded when you first open the app.</div>
                       </div>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -741,7 +741,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           }}
                           disabled={user === null}
                         />
-                        <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
+                        <div className="w-10 h-5 bg-surface-secondary dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
                           <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
                         </div>
                       </label>
@@ -751,17 +751,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Calendar & Planner */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Calendar & Planner</h3>
+                  <h3 className="text-sm font-semibold text-content">Calendar & Planner</h3>
 
                   {/* Calendar Hub Size */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Calendar Panel Size</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-content-secondary">
                         Current: {calendarPrefs?.calendarHubSizePct ?? 45}%
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="text-xs text-content-secondary mb-3">
                       Adjust the height of the calendar panel in the calendar view (20-80%).
                     </div>
                     <div className="flex items-center gap-2">
@@ -782,21 +782,21 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         }}
                         disabled={savingCalendarSize || user === null}
                       />
-                      <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-center">
+                      <span className="text-xs text-content-secondary w-8 text-center">
                         {savingCalendarSize ? "..." : `${calendarPrefs?.calendarHubSizePct ?? 45}%`}
                       </span>
                     </div>
                   </div>
 
                   {/* Planner Mode */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Default Planner Mode</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-content-secondary">
                         Current: {calendarPrefs?.plannerMode === "calendar" ? "Calendar" : calendarPrefs?.plannerMode === "kanban" ? "Kanban" : "List"}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="text-xs text-content-secondary mb-3">
                       Choose your preferred view for the planner/calendar section.
                     </div>
                     <div className="flex gap-2">
@@ -809,7 +809,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           key={value}
                           className={`px-3 py-1 text-xs rounded border ${calendarPrefs?.plannerMode === value
                               ? "bg-blue-600 text-white border-blue-600"
-                              : "border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                              : "border-edge hover:bg-surface-hover"
                             }`}
                           onClick={() => {
                             if (user === null) {
@@ -829,11 +829,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Planner Density & Agenda Mode */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Planner Density & Agenda View</div>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    <div className="text-xs text-content-secondary mb-3">
                       Configure the density of the planner and how today's agenda is displayed.
                     </div>
                     <div className="space-y-3">
@@ -849,7 +849,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               key={value}
                               className={`px-3 py-1 text-xs rounded border ${calendarPrefs?.plannerDensity === value
                                   ? "bg-blue-600 text-white border-blue-600"
-                                  : "border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                                  : "border-edge hover:bg-surface-hover"
                                 }`}
                               onClick={() => {
                                 if (user === null) {
@@ -874,7 +874,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-sm">Show Week in Today's Agenda</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Display upcoming events for the current week in today's agenda.</div>
+                          <div className="text-xs text-content-secondary">Display upcoming events for the current week in today's agenda.</div>
                         </div>
                         <label className="inline-flex items-center cursor-pointer">
                           <input
@@ -894,7 +894,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             }}
                             disabled={savingPlannerPrefs || user === null}
                           />
-                          <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
+                          <div className="w-10 h-5 bg-surface-secondary dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
                             <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
                           </div>
                         </label>
@@ -912,7 +912,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               key={value}
                               className={`px-3 py-1 text-xs rounded border ${calendarPrefs?.agendaMode === value
                                   ? "bg-blue-600 text-white border-blue-600"
-                                  : "border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                                  : "border-edge hover:bg-surface-hover"
                                 }`}
                               onClick={() => {
                                 if (user === null) {
@@ -937,8 +937,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {user === null && (
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
+                    <div className="text-xs text-content-secondary">
                       Sign in to save your preferences. Changes will be applied to your account.
                     </div>
                   </div>
@@ -946,17 +946,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* User Information (merged from Profile tab) */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Information</h3>
+                  <h3 className="text-sm font-semibold text-content">User Information</h3>
 
                   {/* User Name & Email */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
                         <User className="h-6 w-6 text-white" />
                       </div>
                       <div>
                         <div className="text-sm font-semibold">{user?.name || "Anonymous User"}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-content-secondary">
                           {user?.email ? (
                             <div className="flex items-center gap-1">
                               <Mail className="h-3 w-3" />
@@ -970,7 +970,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
 
                     {user?._creationTime && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center gap-1 text-xs text-content-secondary">
                         <Calendar className="h-3 w-3" />
                         Member since {new Date(user._creationTime).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                       </div>
@@ -978,18 +978,18 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Account Status */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-2">Account Status</div>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Authentication</span>
+                        <span className="text-content-secondary">Authentication</span>
                         <span className="flex items-center gap-1 text-green-600">
                           <CheckCircle className="h-3 w-3" />
                           {user ? "Signed In" : "Not Signed In"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Plan</span>
+                        <span className="text-content-secondary">Plan</span>
                         <span className="flex items-center gap-1">
                           {subscription?.status === "active" ? (
                             <span className="text-green-600 flex items-center gap-1">
@@ -997,14 +997,21 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               Supporter
                             </span>
                           ) : (
-                            <span className="text-gray-500">Free</span>
+                            <span className="text-content-secondary">Free</span>
                           )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Time Zone</span>
-                        <span className="font-mono text-xs">
-                          {selectedTz ?? browserTz ?? "UTC"}
+                        <span className="text-content-secondary">Time Zone</span>
+                        <span className="text-xs text-content">
+                          {(() => {
+                            const tz = selectedTz ?? browserTz ?? "UTC";
+                            try {
+                              return new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'long' })
+                                .formatToParts(new Date())
+                                .find(p => p.type === 'timeZoneName')?.value ?? tz;
+                            } catch { return tz; }
+                          })()}
                         </span>
                       </div>
                     </div>
@@ -1013,14 +1020,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Account Actions */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Account Actions</h3>
+                  <h3 className="text-sm font-semibold text-content">Account Actions</h3>
 
                   {/* Current Session - Log Out */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-sm font-semibold">Current Session</div>
                       {sessions && sessions.find(s => s.isCurrent) && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-content-secondary">
                           Active since {new Date(sessions.find(s => s.isCurrent)!._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       )}
@@ -1035,7 +1042,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
                     </div>
                     <button
-                      className="w-full px-3 py-2 rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full px-3 py-2 rounded border border-edge hover:bg-surface-hover text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       onClick={() => {
                         void signOut();
                         toast.success("Signed out successfully");
@@ -1046,17 +1053,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <LogOut className="h-4 w-4" />
                       <span>Log Out of This Device</span>
                     </button>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                    <div className="text-xs text-content-secondary mt-2 text-center">
                       To manage all sessions, scroll down to the Security section
                     </div>
                   </div>
 
                   {/* Data Management */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-3">Data Management</div>
                     <div className="space-y-3">
                       <button
-                        className="w-full text-left px-3 py-2 rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-sm transition-colors"
+                        className="w-full text-left px-3 py-2 rounded border border-edge hover:bg-surface-hover text-sm transition-colors"
                         onClick={() => {
                           toast.info("Data export feature coming soon");
                         }}
@@ -1065,7 +1072,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <ArrowUpRight className="h-4 w-4" />
                           Export Account Data
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-content-secondary mt-1">
                           Download a copy of your data in JSON format
                         </div>
                       </button>
@@ -1080,7 +1087,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <Trash2 className="h-4 w-4" />
                           Delete Account
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-content-secondary mt-1">
                           Permanently delete your account and all data
                         </div>
                       </button>
@@ -1090,22 +1097,22 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Security & Sessions (merged from Account tab) */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Security</h3>
+                  <h3 className="text-sm font-semibold text-content">Security</h3>
 
                   {/* Active Sessions */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <div className="text-sm font-semibold flex items-center gap-2">
                           <Shield className="h-4 w-4" />
                           Active Sessions
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-content-secondary mt-1">
                           Manage devices where you're signed in
                         </div>
                       </div>
                       <button
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] text-xs disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded border border-edge hover:bg-surface-hover text-xs disabled:opacity-50"
                         onClick={() => {
                           if (user === null) { toast.error("Please sign in"); return; }
                           setSigningOutOthers(true);
@@ -1120,9 +1127,9 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </button>
                     </div>
                     {sessions === undefined ? (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Loading sessions…</div>
+                      <div className="text-xs text-content-secondary">Loading sessions…</div>
                     ) : (sessions.length === 0 ? (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">No sessions found.</div>
+                      <div className="text-xs text-content-secondary">No sessions found.</div>
                     ) : (
                       <div className="space-y-2">
                         {sessions.slice().sort((a, b) => b._creationTime - a._creationTime).map((s) => {
@@ -1130,17 +1137,17 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           return (
                             <div key={s._id} className={`flex items-center justify-between p-2 rounded border ${s.isCurrent
                                 ? "border-blue-200 dark:border-blue-800/30 bg-blue-50 dark:bg-blue-950/30"
-                                : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]"
+                                : "border-edge bg-surface-secondary"
                               }`}>
                               <div className="text-xs flex-1">
                                 <div className="flex items-center gap-2">
-                                  <Shield className={`h-3 w-3 ${s.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-gray-500"}`} />
+                                  <Shield className={`h-3 w-3 ${s.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-content-secondary"}`} />
                                   <span className="font-medium">{deviceLabel}</span>
                                   {s.isCurrent && (
                                     <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
                                   )}
                                 </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                <div className="text-xs text-content-secondary mt-0.5">
                                   Signed in: {new Date(s._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </div>
                               </div>
@@ -1170,12 +1177,12 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Notification Preferences */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-2">Notifications</div>
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm">API key reminder banner</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Show a banner when no API keys are linked.</div>
+                        <div className="text-xs text-content-secondary">Show a banner when no API keys are linked.</div>
                       </div>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -1193,7 +1200,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           }}
                           disabled={savingReminder}
                         />
-                        <div className="w-10 h-5 bg-gray-100 dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
+                        <div className="w-10 h-5 bg-surface-secondary dark:bg-white/[0.12] peer-focus:outline-none rounded-full peer peer-checked:bg-blue-600 transition-colors">
                           <div className="w-4 h-4 bg-white rounded-full shadow transform transition-transform translate-x-0 peer-checked:translate-x-5 m-0.5" />
                         </div>
                       </label>
@@ -1201,22 +1208,22 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   </div>
 
                   {/* Linked Accounts */}
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-2 flex items-center gap-2">
                       <Link className="h-4 w-4" />
                       Linked Accounts
                     </div>
                     {linkedAccounts === undefined ? (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Loading…</div>
+                      <div className="text-xs text-content-secondary">Loading…</div>
                     ) : (linkedAccounts.length === 0 ? (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">No linked accounts.</div>
+                      <div className="text-xs text-content-secondary">No linked accounts.</div>
                     ) : (
                       <div className="space-y-2">
                         {linkedAccounts.map((a) => (
-                          <div key={a._id} className="flex items-center justify-between p-2 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                          <div key={a._id} className="flex items-center justify-between p-2 rounded border border-edge bg-surface-secondary">
                             <div className="text-xs">
                               <div className="font-medium">{a.provider}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">ID: {a.providerAccountId}</div>
+                              <div className="text-xs text-content-secondary">ID: {a.providerAccountId}</div>
                             </div>
                           </div>
                         ))}
@@ -1226,8 +1233,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {user === null && (
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
+                    <div className="text-xs text-content-secondary">
                       Sign in to view and manage your profile information.
                     </div>
                   </div>
@@ -1237,20 +1244,20 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
               <div className="space-y-6">
                 {/* AI Services */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">AI Services</h3>
+                  <h3 className="text-sm font-semibold text-content">AI Services</h3>
 
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-3">Connected AI Providers</div>
                     <div className="space-y-3">
                       {/* OpenAI Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">OpenAI</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               GPT-5, GPT-5 Mini, Embeddings
                             </div>
                           </div>
@@ -1258,13 +1265,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${providerStatus["openai"]?.hasKey
                               ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                              : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
+                              : "bg-surface-secondary text-content-secondary"
                             }`}>
                             <CheckCircle className="h-3 w-3" />
                             {providerStatus["openai"]?.hasKey ? "Connected" : "Not Connected"}
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                            className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover"
                             onClick={() => setActive("usage")}
                           >
                             Configure
@@ -1273,14 +1280,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Gemini Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Google Gemini</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Gemini 1.5, Gemini 2.0, Vision
                             </div>
                           </div>
@@ -1288,13 +1295,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${providerStatus["gemini"]?.hasKey
                               ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                              : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
+                              : "bg-surface-secondary text-content-secondary"
                             }`}>
                             <CheckCircle className="h-3 w-3" />
                             {providerStatus["gemini"]?.hasKey ? "Connected" : "Not Connected"}
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                            className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover"
                             onClick={() => setActive("usage")}
                           >
                             Configure
@@ -1307,12 +1314,12 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Calendar Ingestion */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Calendar Ingestion</h3>
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
+                  <h3 className="text-sm font-semibold text-content">Calendar Ingestion</h3>
+                  <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
                     {/* Gmail Connection Status */}
-                    <div className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-white/[0.04]">
+                    <div className="flex items-center justify-between p-2 rounded bg-surface-secondary">
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-500" />
+                        <Mail className="h-4 w-4 text-content-secondary" />
                         <div>
                           <div className="text-sm font-medium">
                             {gmailConnection?.connected ? (
@@ -1322,13 +1329,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             )}
                           </div>
                           {gmailConnection?.email && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{gmailConnection.email}</div>
+                            <div className="text-xs text-content-secondary">{gmailConnection.email}</div>
                           )}
                         </div>
                       </div>
                       <button
                         type="button"
-                        className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                        className="btn-primary-sm"
                         disabled={connectingGmail}
                         onClick={async () => {
                           setConnectingGmail(true);
@@ -1354,7 +1361,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-semibold">Auto-sync sources</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Gmail (events from email) and Google Calendar</div>
+                        <div className="text-xs text-content-secondary">Gmail (events from email) and Google Calendar</div>
                       </div>
                       <div className="flex items-center gap-2">
                         <label className="inline-flex items-center gap-2 text-xs">
@@ -1402,7 +1409,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           key={mode}
                           className={`px-2 py-1 rounded border text-xs ${(userPreferences?.calendarAutoAddMode ?? "propose") === mode
                               ? "bg-slate-900 text-white border-slate-900"
-                              : "border-gray-200 dark:border-white/[0.06] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                              : "border-edge text-content-secondary hover:bg-surface-hover"
                             }`}
                           onClick={async () => {
                             setSavingCalendarIngest(true);
@@ -1422,7 +1429,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
                     <div className="flex gap-2">
                       <button
-                        className="px-3 py-2 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] disabled:opacity-50"
+                        className="px-3 py-2 text-xs rounded border border-edge hover:bg-surface-hover disabled:opacity-50"
                         disabled={syncingCalendar === "gmail"}
                         onClick={async () => {
                           setSyncingCalendar("gmail");
@@ -1443,7 +1450,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         {syncingCalendar === "gmail" ? "Running…" : "Ingest Gmail now"}
                       </button>
                       <button
-                        className="px-3 py-2 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] disabled:opacity-50"
+                        className="px-3 py-2 text-xs rounded border border-edge hover:bg-surface-hover disabled:opacity-50"
                         disabled={syncingCalendar === "gcal"}
                         onClick={async () => {
                           setSyncingCalendar("gcal");
@@ -1469,26 +1476,26 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Communication Platforms */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Communication Platforms</h3>
+                  <h3 className="text-sm font-semibold text-content">Communication Platforms</h3>
 
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-3">Connected Services</div>
                     <div className="space-y-3">
                       {/* Slack Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                             <Slack className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Slack</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Messages, notifications, bot integration
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-surface-secondary text-content-secondary">
                             <Link className="h-3 w-3" />
                             Coming Soon
                           </span>
@@ -1496,20 +1503,20 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Discord Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
                             <MessageSquare className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Discord</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Channels, messages, webhooks
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-surface-secondary text-content-secondary">
                             <Link className="h-3 w-3" />
                             Coming Soon
                           </span>
@@ -1517,14 +1524,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Email Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                             <Mail className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Email</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Send notifications and automated responses
                             </div>
                           </div>
@@ -1535,7 +1542,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             Configured
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                            className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover"
                             onClick={() => {
                               toast.info("Email configuration available in AI Chat settings");
                             }}
@@ -1550,16 +1557,16 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Notifications */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
+                  <h3 className="text-sm font-semibold text-content">Notifications</h3>
 
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-4">
-                    <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-white/[0.04]">
+                  <div className="rounded-lg border border-edge bg-surface p-4 space-y-4">
+                    <div className="flex items-center gap-3 pb-3 border-b border-edge">
                       <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                         <Phone className="h-4 w-4 text-white" />
                       </div>
                       <div>
                         <div className="text-sm font-semibold">ntfy Push</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="text-xs text-content-secondary">
                           Receive meeting reminders via ntfy topics
                         </div>
                       </div>
@@ -1567,18 +1574,18 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                     {/* Phone Number Input */}
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Notification Topic (ntfy)</label>
+                      <label className="text-xs font-medium text-content-secondary">Notification Topic (ntfy)</label>
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          className="flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 px-3 py-2 text-sm border border-edge bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="my-topic"
                           value={smsPhoneInput}
                           onChange={(e) => setSmsPhoneInput(e.target.value)}
                         />
                         <button
                           type="button"
-                          className="px-3 py-2 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                          className="btn-primary-sm"
                           disabled={savingSmsPrefs || !smsPhoneInput}
                           onClick={async () => {
                             setSavingSmsPrefs(true);
@@ -1595,16 +1602,16 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           {savingSmsPrefs ? "Saving..." : "Save"}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-content-secondary">
                         Use your ntfy topic (e.g., my-topic)
                       </p>
                     </div>
 
                     {/* Master Toggle */}
-                    <div className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-white/[0.04]">
+                    <div className="flex items-center justify-between py-2 border-t border-edge">
                       <div>
                         <div className="text-sm font-medium">Enable Notifications</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Master toggle for all notifications</div>
+                        <div className="text-xs text-content-secondary">Master toggle for all notifications</div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -1623,22 +1630,22 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             }
                           }}
                         />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-white/[0.12] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        <div className="w-11 h-6 bg-surface-secondary dark:bg-white/[0.12] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-edge dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
                     </div>
 
                     {/* Notification Types */}
-                    <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-white/[0.04]">
-                      <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Notification Types</div>
+                    <div className="space-y-3 pt-2 border-t border-edge">
+                      <div className="text-xs font-medium text-content-secondary">Notification Types</div>
 
                       <label className="flex items-center justify-between">
                         <div>
                           <div className="text-sm">Meeting Created</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">When a new meeting is added from Gmail</div>
+                          <div className="text-xs text-content-secondary">When a new meeting is added from Gmail</div>
                         </div>
                         <input
                           type="checkbox"
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                          className="h-4 w-4 text-blue-600 rounded border-edge dark:border-gray-600 focus:ring-blue-500"
                           checked={smsPreferences?.smsMeetingCreated ?? false}
                           disabled={!smsPreferences?.smsNotificationsEnabled}
                           onChange={async (e) => {
@@ -1655,11 +1662,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <label className="flex items-center justify-between">
                         <div>
                           <div className="text-sm">Meeting Reminder</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Before meeting starts</div>
+                          <div className="text-xs text-content-secondary">Before meeting starts</div>
                         </div>
                         <input
                           type="checkbox"
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                          className="h-4 w-4 text-blue-600 rounded border-edge dark:border-gray-600 focus:ring-blue-500"
                           checked={smsPreferences?.smsMeetingReminder ?? false}
                           disabled={!smsPreferences?.smsNotificationsEnabled}
                           onChange={async (e) => {
@@ -1676,11 +1683,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <label className="flex items-center justify-between">
                         <div>
                           <div className="text-sm">Morning Digest</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">Daily summary of today's meetings</div>
+                          <div className="text-xs text-content-secondary">Daily summary of today's meetings</div>
                         </div>
                         <input
                           type="checkbox"
-                          className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500"
+                          className="h-4 w-4 text-blue-600 rounded border-edge dark:border-gray-600 focus:ring-blue-500"
                           checked={smsPreferences?.smsMorningDigest ?? false}
                           disabled={!smsPreferences?.smsNotificationsEnabled}
                           onChange={async (e) => {
@@ -1696,10 +1703,10 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
 
                     {/* Reminder Time */}
-                    <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-white/[0.04]">
-                      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">Reminder Time (minutes before meeting)</label>
+                    <div className="space-y-2 pt-2 border-t border-edge">
+                      <label className="text-xs font-medium text-content-secondary">Reminder Time (minutes before meeting)</label>
                       <select
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 text-sm border border-edge bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={smsPreferences?.smsReminderMinutes ?? 15}
                         disabled={!smsPreferences?.smsNotificationsEnabled}
                         onChange={async (e) => {
@@ -1720,7 +1727,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     </div>
 
                     {/* Status */}
-                    <div className="pt-2 border-t border-gray-100 dark:border-white/[0.04]">
+                    <div className="pt-2 border-t border-edge">
                       <div className="flex items-center gap-2 text-xs">
                         {smsPreferences?.phoneNumber && smsPreferences?.smsNotificationsEnabled ? (
                           <>
@@ -1729,8 +1736,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           </>
                         ) : (
                           <>
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-500">
+                            <Phone className="h-4 w-4 text-content-muted" />
+                            <span className="text-content-secondary">
                               {!smsPreferences?.phoneNumber
                                 ? "Add a topic to enable notifications"
                                 : "Enable notifications above"}
@@ -1754,13 +1761,13 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* Development & Productivity */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Development & Productivity</h3>
+                  <h3 className="text-sm font-semibold text-content">Development & Productivity</h3>
 
-                  <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                  <div className="rounded-lg border border-edge bg-surface p-4">
                     <div className="text-sm font-semibold mb-3">Connected Tools</div>
                     <div className="space-y-3">
                       {/* GitHub OSS Stats Integration */}
-                      <div className="p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
@@ -1768,7 +1775,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             </div>
                             <div>
                               <div className="text-sm font-semibold">GitHub OSS Stats</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                              <div className="text-xs text-content-secondary">
                                 {githubOwner ? (
                                   <>
                                     ⭐ {githubOwner.starCount?.toLocaleString() || 0} stars •
@@ -1787,7 +1794,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               {githubOwner ? "Active" : "Connecting…"}
                             </span>
                             <button
-                              className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06] disabled:opacity-50"
+                              className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover disabled:opacity-50"
                               onClick={() => {
                                 if (user === null) {
                                   toast.error("Please sign in to sync stats");
@@ -1817,7 +1824,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                               {syncingStats ? "Syncing..." : "Sync"}
                             </button>
                             <button
-                              className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                              className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover"
                               onClick={() => setShowGithubConfig((v) => !v)}
                               disabled={user === null}
                               title={user === null ? "Sign in to configure" : undefined}
@@ -1828,7 +1835,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </div>
                         {showGithubConfig && (
                           <div className="mt-3 space-y-3">
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Provide credentials for higher rate limits or private repos. Values are encrypted on this device and saved to your account.
                             </div>
                             <ApiKeyItem provider="github_access_token" label="GitHub Access Token" />
@@ -1838,14 +1845,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* NPM OSS Stats Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">NPM Download Stats</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               {npmOrg ? (
                                 <>
                                   📥 {(npmOrg.downloadCount || 0).toLocaleString()} downloads
@@ -1863,7 +1870,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             {npmOrg ? "Active" : "Connecting…"}
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                            className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover"
                             onClick={() => {
                               toast.info("NPM stats sync with GitHub sync");
                             }}
@@ -1874,20 +1881,20 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* Webhook Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
                             <Webhook className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Webhooks</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Custom integrations and automation
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-surface-secondary text-content-secondary">
                             <Link className="h-3 w-3" />
                             Coming Soon
                           </span>
@@ -1895,14 +1902,14 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       </div>
 
                       {/* MCP Integration */}
-                      <div className="flex items-center justify-between p-3 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
+                      <div className="flex items-center justify-between p-3 rounded border border-edge bg-surface-secondary">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center">
                             <Zap className="h-4 w-4 text-white" />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">Tool Server</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               Enables AI tools and integrations
                             </div>
                           </div>
@@ -1913,7 +1920,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                             Active
                           </span>
                           <button
-                            className="px-2 py-1 text-xs rounded border border-gray-200 dark:border-white/[0.06] hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+                            className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover"
                             onClick={() => {
                               toast.info("Tool configuration available in advanced settings");
                             }}
@@ -1927,36 +1934,36 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                 </div>
 
                 {/* Integration Status Summary */}
-                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+                <div className="rounded-lg border border-edge bg-surface p-4">
                   <div className="text-sm font-semibold mb-3">Integration Status</div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-green-600 dark:text-green-400">2</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Active</div>
+                      <div className="text-xs text-content-secondary">Active</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">5</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Coming Soon</div>
+                      <div className="text-xs text-content-secondary">Coming Soon</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">1</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Configured</div>
+                      <div className="text-xs text-content-secondary">Configured</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">0</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">Disconnected</div>
+                      <div className="text-2xl font-bold text-content-secondary">0</div>
+                      <div className="text-xs text-content-secondary">Disconnected</div>
                     </div>
                   </div>
                 </div>
                 {/* WebMCP */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Browser Tools</h3>
+                  <h3 className="text-sm font-semibold text-content">Browser Tools</h3>
                   <WebMcpSettingsPanel />
                 </div>
               </div>
 
             ) : (
-              <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-6 text-sm text-gray-500">
+              <div className="rounded-lg border border-edge bg-surface p-6 text-sm text-content-secondary">
                 Select a section from the sidebar.
               </div>
             )}

@@ -35,11 +35,11 @@ export function SignalMetricsDashboard({ threadId, className = "" }: SignalMetri
 
   if (!summary) {
     return (
-      <div className={`motion-safe:animate-pulse rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 ${className}`}>
-        <div className="h-4 w-40 rounded bg-gray-200 dark:bg-white/[0.08] mb-3" />
+      <div className={`motion-safe:animate-pulse rounded-lg border border-edge bg-surface p-4 ${className}`}>
+        <div className="h-4 w-40 rounded bg-surface-secondary mb-3" />
         <div className="grid grid-cols-5 gap-2">
           {DOMAINS.map((d) => (
-            <div key={d} className="h-16 rounded bg-gray-100 dark:bg-white/[0.05]" />
+            <div key={d} className="h-16 rounded bg-surface-secondary dark:bg-white/[0.05]" />
           ))}
         </div>
       </div>
@@ -54,13 +54,13 @@ export function SignalMetricsDashboard({ threadId, className = "" }: SignalMetri
   }
 
   return (
-    <div className={`rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] ${className}`}>
+    <div className={`rounded-lg border border-edge bg-surface ${className}`}>
       {/* Header */}
-      <div className="border-b border-gray-100 dark:border-white/[0.04] px-4 py-3">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <div className="border-b border-edge px-4 py-3">
+        <h3 className="text-sm font-semibold text-content">
           Signal Metrics
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+        <p className="text-xs text-content-secondary mt-0.5">
           Key indicators across 5 areas
         </p>
       </div>
@@ -76,14 +76,14 @@ export function SignalMetricsDashboard({ threadId, className = "" }: SignalMetri
             <div key={domain} className="px-3 py-3 text-center">
               {/* Domain icon + label */}
               <div className="text-lg mb-1">{meta.icon}</div>
-              <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <div className="text-xs font-medium text-content-secondary mb-2">
                 {meta.label}
               </div>
 
               {hasData ? (
                 <>
                   {/* Latest value */}
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  <div className="text-lg font-bold text-content">
                     {data.latest !== null
                       ? data.latest % 1 === 0
                         ? data.latest.toLocaleString()
@@ -92,25 +92,25 @@ export function SignalMetricsDashboard({ threadId, className = "" }: SignalMetri
                   </div>
 
                   {/* Metric count */}
-                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  <div className="text-xs text-content-muted mt-1">
                     {data.metricCount} metric{data.metricCount !== 1 ? "s" : ""}
                   </div>
 
                   {/* Confidence indicator */}
                   <div className="mt-2 mx-auto w-12">
-                    <div className="h-1 w-full rounded-full bg-gray-100 dark:bg-white/[0.08] overflow-hidden">
+                    <div className="h-1 w-full rounded-full bg-surface-secondary dark:bg-white/[0.08] overflow-hidden">
                       <div
                         className={`h-full rounded-full ${meta.color}`}
                         style={{ width: `${Math.round(data.avgConfidence * 100)}%` }}
                       />
                     </div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    <div className="text-xs text-content-muted mt-0.5">
                       {Math.round(data.avgConfidence * 100)}%
                     </div>
                   </div>
                 </>
               ) : (
-                <div className="text-xs text-gray-300 dark:text-gray-600 mt-2">
+                <div className="text-xs text-gray-300 dark:text-content-secondary mt-2">
                   No data
                 </div>
               )}

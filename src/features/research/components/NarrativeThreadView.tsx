@@ -124,7 +124,7 @@ function getPostTypeConfig(type: PostType) {
   const configs: Record<PostType, { icon: React.ReactNode; label: string; color: string }> = {
     delta_update: { icon: <GitBranch className="w-3.5 h-3.5" />, label: 'Update', color: 'bg-blue-50 text-blue-700 border-blue-200' },
     thesis_revision: { icon: <Lightbulb className="w-3.5 h-3.5" />, label: 'Thesis Revision', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-    evidence_addition: { icon: <FileText className="w-3.5 h-3.5" />, label: 'Evidence', color: 'bg-indigo-50 text-gray-700 border-indigo-200' },
+    evidence_addition: { icon: <FileText className="w-3.5 h-3.5" />, label: 'Evidence', color: 'bg-indigo-50 text-content-secondary border-indigo-200' },
     counterpoint: { icon: <AlertTriangle className="w-3.5 h-3.5" />, label: 'Counterpoint', color: 'bg-amber-50 text-amber-700 border-amber-200' },
     question: { icon: <HelpCircle className="w-3.5 h-3.5" />, label: 'Question', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]' },
     correction: { icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: 'Correction', color: 'bg-red-50 text-red-700 border-red-200' },
@@ -147,7 +147,7 @@ function ThesisEvolutionTimeline({
 
   if (revisions.length === 0) {
     return (
-      <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+      <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
         <div className="flex items-center gap-2 mb-2">
           <Lightbulb className="w-4 h-4 text-purple-600" />
           <span className="text-sm font-semibold text-purple-900">Current Thesis</span>
@@ -158,7 +158,7 @@ function ThesisEvolutionTimeline({
   }
 
   return (
-    <div className="bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] overflow-hidden">
+    <div className="bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between p-4 hover:bg-[color:var(--bg-hover)] transition-colors"
@@ -220,7 +220,7 @@ function PostCard({
 
   return (
     <div
-      className={`bg-[color:var(--bg-primary)] rounded-xl border transition-all hover:shadow-md ${
+      className={`bg-[color:var(--bg-primary)] rounded-lg border transition-all ${
         post.hasContradictions
           ? 'border-red-300'
           : post.requiresAdjudication
@@ -357,13 +357,13 @@ function DisputePanel({
   const statusColors: Record<ThreadDispute['status'], string> = {
     open: 'bg-red-50 text-red-700 border-red-200',
     under_review: 'bg-amber-50 text-amber-700 border-amber-200',
-    resolved_original: 'bg-indigo-50 text-gray-700 border-indigo-200',
+    resolved_original: 'bg-indigo-50 text-content-secondary border-indigo-200',
     resolved_challenge: 'bg-blue-50 text-blue-700 border-blue-200',
     merged: 'bg-purple-50 text-purple-700 border-purple-200',
   };
 
   return (
-    <div className="bg-red-50 rounded-xl border border-red-200 p-4">
+    <div className="bg-red-50 rounded-lg border border-red-200 p-4">
       <div className="flex items-center gap-2 mb-3">
         <AlertTriangle className="w-4 h-4 text-red-600" />
         <span className="text-sm font-semibold text-red-900">Open Disputes</span>
@@ -439,7 +439,7 @@ export function NarrativeThreadView({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Thread Header */}
-      <div className="bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] p-6">
+      <div className="bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] p-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="px-2 py-1 bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] text-xs font-medium rounded">
             {thread.phase}
@@ -461,7 +461,7 @@ export function NarrativeThreadView({
 
       {/* Counter-thesis if exists */}
       {thread.counterThesis && (
-        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+        <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-amber-600" />
             <span className="text-sm font-semibold text-amber-900">Counter-Thesis</span>

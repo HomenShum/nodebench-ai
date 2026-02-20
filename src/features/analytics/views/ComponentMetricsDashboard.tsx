@@ -30,17 +30,17 @@ interface MetricCardProps {
 
 function MetricCard({ title, value, subtitle, icon, accent, trend }: MetricCardProps) {
   return (
-    <div className={`bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-4 hover:shadow-md transition-shadow${accent ? ' border-l-2 border-l-indigo-500 dark:border-l-indigo-400' : ''}`}>
+    <div className={`bg-surface border border-edge rounded-lg p-4 transition-shadow${accent ? ' border-l-2 border-l-indigo-500 dark:border-l-indigo-400' : ''}`}>
       <div className="flex items-start justify-between mb-2">
-        <div className="text-gray-600 dark:text-gray-300 text-sm font-medium">{title}</div>
-        <div className={accent ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-300'}>{icon}</div>
+        <div className="text-content-secondary text-sm font-medium">{title}</div>
+        <div className={accent ? 'text-indigo-500 dark:text-indigo-400' : 'text-content-secondary'}>{icon}</div>
       </div>
-      <div className={`text-2xl font-bold mb-1 ${accent ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{value}</div>
-      {subtitle && <div className="text-xs text-gray-500 dark:text-gray-300">{subtitle}</div>}
+      <div className={`text-2xl font-bold mb-1 ${accent ? 'text-content' : 'text-content-secondary'}`}>{value}</div>
+      {subtitle && <div className="text-xs text-content-secondary">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' :
             trend.direction === 'down' ? 'text-red-600' :
-              'text-gray-500'
+              'text-content-secondary'
           }`}>
           {trend.direction === 'up' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           <span>{Math.abs(trend.value)}%</span>
@@ -70,16 +70,16 @@ function SourcePerformanceBar({
   const percentage = maxCount > 0 ? (itemCount / maxCount) * 100 : 0;
 
   return (
-    <div className="py-2 border-b border-gray-100 dark:border-white/[0.04] last:border-0">
+    <div className="py-2 border-b border-edge last:border-0">
       <div className="flex items-center justify-between mb-1">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
+        <div className="text-sm font-medium text-content-secondary truncate flex-1">
           {sourceName}
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">
+        <div className="flex items-center gap-3 text-xs text-content-secondary whitespace-nowrap shrink-0">
           <span className="font-mono">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
           {impressions > 0 && (
             <>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <span className="text-gray-300 dark:text-content-secondary">|</span>
               <span className="flex items-center gap-1">
                 <Eye size={12} />
                 {impressions}
@@ -88,7 +88,7 @@ function SourcePerformanceBar({
           )}
           {clicks > 0 && (
             <>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <span className="text-gray-300 dark:text-content-secondary">|</span>
               <span className="flex items-center gap-1">
                 <MousePointerClick size={12} />
                 {clicks}
@@ -97,7 +97,7 @@ function SourcePerformanceBar({
           )}
           {ctr > 0 && (
             <>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
+              <span className="text-gray-300 dark:text-content-secondary">|</span>
               <span className="font-semibold text-blue-600">
                 {parseFloat((ctr * 100).toFixed(1))}% CTR
               </span>
@@ -105,7 +105,7 @@ function SourcePerformanceBar({
           )}
         </div>
       </div>
-      <div className="h-2 bg-gray-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-secondary dark:bg-white/[0.08] rounded-full overflow-hidden">
         <div
           className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
@@ -124,24 +124,24 @@ interface CategoryBreakdownProps {
 
 function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: CategoryBreakdownProps) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-white/[0.04] last:border-0">
+    <div className="flex items-center justify-between py-2 border-b border-edge last:border-0">
       <div className="flex-1">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{category}</div>
+        <div className="text-sm font-medium text-content-secondary">{category}</div>
         <div className="flex items-center gap-2 mt-1">
-          <div className="h-1.5 bg-gray-100 dark:bg-white/[0.08] rounded-full flex-1 max-w-[100px]">
+          <div className="h-1.5 bg-surface-secondary dark:bg-white/[0.08] rounded-full flex-1 max-w-[100px]">
             <div
               className="h-full bg-purple-500 rounded-full"
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{percentage.toFixed(0)}%</span>
+          <span className="text-xs text-content-secondary">{percentage.toFixed(0)}%</span>
         </div>
       </div>
-      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-3 text-xs text-content-secondary">
         <span className="font-mono">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
         {avgReadTime && avgReadTime > 0 && (
           <>
-            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <span className="text-gray-300 dark:text-content-secondary">|</span>
             <span className="flex items-center gap-1">
               <Clock size={12} />
               {Math.round(avgReadTime)} sec
@@ -299,11 +299,11 @@ export default function ComponentMetricsDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-content flex items-center gap-2">
               <BarChart3 size={32} />
               Usage & Costs
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-content-secondary mt-1">
               Component-level performance metrics for reports
             </p>
           </div>
@@ -311,10 +311,10 @@ export default function ComponentMetricsDashboard() {
           <div className="flex items-center gap-3">
             {/* Date Selector */}
             <div className="flex items-center gap-2">
-              <Calendar size={18} className="text-gray-400" />
+              <Calendar size={18} className="text-content-muted" />
               <div className="relative">
                 {/* Formatted date label — always shows readable format */}
-                <span className="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-white/[0.08] rounded-lg bg-white dark:bg-white/[0.06] inline-block min-w-[160px]">
+                <span className="px-3 py-2 text-sm text-content-secondary border border-edge rounded-lg bg-white dark:bg-white/[0.06] inline-block min-w-[160px]">
                   {selectedDate
                     ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -334,7 +334,7 @@ export default function ComponentMetricsDashboard() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-edge dark:bg-white/[0.06] dark:text-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={1}>Last 24 hours</option>
               <option value={7}>Last 7 days</option>
@@ -343,10 +343,10 @@ export default function ComponentMetricsDashboard() {
 
             <button
               onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className="p-2 border border-gray-300 dark:border-white/[0.08] dark:hover:bg-white/[0.06] rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 border border-edge dark:hover:bg-white/[0.06] rounded-lg hover:bg-surface-hover transition-colors"
               title="Go to today"
             >
-              <RefreshCw size={18} className="text-gray-600" />
+              <RefreshCw size={18} className="text-content-secondary" />
             </button>
           </div>
         </div>
@@ -356,14 +356,14 @@ export default function ComponentMetricsDashboard() {
           <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-28 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+                <div key={i} className="h-28 rounded-lg bg-surface-secondary/50" />
               ))}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-64 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
-              <div className="h-64 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div className="h-64 rounded-lg bg-surface-secondary/50" />
+              <div className="h-64 rounded-lg bg-surface-secondary/50" />
             </div>
-            <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+            <div className="h-48 rounded-lg bg-surface-secondary/50" />
           </div>
         )}
 
@@ -404,18 +404,18 @@ export default function ComponentMetricsDashboard() {
             </div>
 
             {/* Source Performance */}
-            <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
+            <div className="bg-surface border border-edge rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg font-semibold text-content">
                   Source Performance
                 </h2>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-content-secondary">
                   {selectedDate}
                 </span>
               </div>
 
               {sourceMetrics.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-8 text-content-secondary">
                   No source data available for {selectedDate}
                 </div>
               ) : (
@@ -438,18 +438,18 @@ export default function ComponentMetricsDashboard() {
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Category Breakdown */}
-              <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
+              <div className="bg-surface border border-edge rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  <h2 className="text-lg font-semibold text-content">
                     Category Breakdown
                   </h2>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-content-secondary">
                     {categoryMetrics.length === 0 ? 'No categories' : `${categoryMetrics.length} ${categoryMetrics.length === 1 ? 'category' : 'categories'}`}
                   </span>
                 </div>
 
                 {categoryMetrics.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-8 text-content-secondary">
                     No category data available for {new Date(selectedDate + "T00:00:00Z").toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}
                   </div>
                 ) : (
@@ -468,18 +468,18 @@ export default function ComponentMetricsDashboard() {
               </div>
 
               {/* Top Performers (Last 7 Days) */}
-              <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-6">
+              <div className="bg-surface border border-edge rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  <h2 className="text-lg font-semibold text-content">
                     Top Performers
                   </h2>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span className="text-sm text-content-secondary">
                     Last {dateRange} days
                   </span>
                 </div>
 
                 {!topSources || topSources.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-8 text-content-secondary">
                     No performance data available
                   </div>
                 ) : (
@@ -487,23 +487,23 @@ export default function ComponentMetricsDashboard() {
                     {topSources.map((source, index) => (
                       <div
                         key={source.sourceName}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-white/[0.04] rounded-lg"
+                        className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg"
                       >
                         <div className="flex items-center gap-3">
                           <div className={`
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
                             ${index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                              index === 1 ? 'bg-gray-200 dark:bg-white/[0.08] text-gray-700 dark:text-gray-300' :
+                              index === 1 ? 'bg-surface-secondary text-content-secondary' :
                                 index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                                  'bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400'}
+                                  'bg-surface-secondary text-content-secondary'}
                           `}>
                             {index + 1}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                            <div className="font-medium text-content">
                               {source.sourceName}
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-xs text-content-secondary">
                               {source.totalItems} {source.totalItems === 1 ? 'item' : 'items'} • {source.recordCount} {source.recordCount === 1 ? 'record' : 'records'}
                             </div>
                           </div>
@@ -515,7 +515,7 @@ export default function ComponentMetricsDashboard() {
                             </div>
                           )}
                           {source.avgEngagement > 0 && (
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-content-secondary">
                               {source.avgEngagement.toFixed(0)} engagement
                             </div>
                           )}

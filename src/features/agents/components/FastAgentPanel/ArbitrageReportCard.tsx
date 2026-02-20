@@ -92,7 +92,7 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
  */
 function QualityTierBadge({ tier, score }: { tier: string; score: number }) {
   const config: Record<string, { bg: string; text: string }> = {
-    excellent: { bg: 'bg-indigo-100 dark:bg-gray-900/40', text: 'text-gray-700 dark:text-indigo-300' },
+    excellent: { bg: 'bg-indigo-100 dark:bg-gray-900/40', text: 'text-content-secondary dark:text-indigo-300' },
     good: { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-700 dark:text-blue-300' },
     fair: { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-700 dark:text-amber-300' },
     poor: { bg: 'bg-red-100 dark:bg-red-900/40', text: 'text-red-700 dark:text-red-300' },

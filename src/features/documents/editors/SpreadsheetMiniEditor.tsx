@@ -371,7 +371,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
 
   if (fileDoc === undefined) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-xl p-3 bg-[var(--bg-secondary)]">
+      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-3 bg-[var(--bg-secondary)]">
         <div className="motion-safe:animate-pulse h-4 w-28 bg-[var(--bg-primary)] rounded mb-2" />
         <div className="space-y-2">
           <div className="h-3 bg-[var(--bg-primary)] rounded" />
@@ -387,7 +387,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
   if (isCinemaMode) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden w-[90vw] h-[85vh] max-w-7xl">
+        <div className="bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-lg shadow-2xl border border-white/10 flex flex-col overflow-hidden w-[90vw] h-[85vh] max-w-7xl">
           {/* Glassy Header */}
           <div className="flex-shrink-0 px-6 py-4 bg-gradient-to-r from-[var(--bg-secondary)]/80 to-[var(--bg-primary)]/80 backdrop-blur-md border-b border-white/10">
             <div className="flex items-center justify-between">
@@ -439,7 +439,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           {/* Spreadsheet Content */}
           <div className="flex-1 overflow-auto p-4 bg-[var(--bg-secondary)]/30">
             {subsetHeaders.length > 0 ? (
-              <div className="cinema-spreadsheet rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden">
+              <div className="cinema-spreadsheet rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden">
                 <Spreadsheet
                   data={subsetRows.map((r) => r.map((c) => ({ value: c })))}
                   columnLabels={subsetHeaders}

@@ -98,7 +98,7 @@ function DocumentsViewSkeleton() {
 
 function DocumentCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
       <div className="flex items-start gap-3">
         <Skeleton className="w-10 h-10 shrink-0" rounded="lg" />
         <div className="flex-1 space-y-2 min-w-0">
@@ -166,7 +166,7 @@ function AgentsViewSkeleton() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-gray-200 dark:border-border/60 bg-white dark:bg-card p-4 space-y-2">
+          <div key={i} className="rounded-lg border border-edge dark:border-border/60 bg-white dark:bg-card p-4 space-y-2">
             <Skeleton className="h-8 w-12" rounded="lg" />
             <Skeleton className="h-3 w-20" />
           </div>
@@ -192,7 +192,7 @@ function AgentsViewSkeleton() {
 
 function AgentCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+    <div className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <SkeletonCircle size={40} />
@@ -220,7 +220,7 @@ function SettingsViewSkeleton() {
 
       {/* Settings sections */}
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+        <div key={i} className="rounded-lg border border-border/60 bg-card p-5 space-y-4">
           <Skeleton className="h-5 w-40" />
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, j) => (
@@ -254,7 +254,7 @@ function DashboardViewSkeleton() {
       {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+          <div key={i} className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
             <div className="flex items-center gap-3">
               <Skeleton className="w-10 h-10" rounded="lg" />
               <div className="space-y-1">
@@ -267,7 +267,7 @@ function DashboardViewSkeleton() {
       </div>
 
       {/* Chart placeholder */}
-      <div className="rounded-xl border border-border/60 bg-card p-5">
+      <div className="rounded-lg border border-border/60 bg-card p-5">
         <Skeleton className="h-5 w-32 mb-4" />
         <Skeleton className="h-64 w-full" rounded="lg" />
       </div>
@@ -291,7 +291,7 @@ function CostDashboardViewSkeleton() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+          <div key={i} className="rounded-lg border border-border/60 bg-card p-4 space-y-3">
             <div className="flex items-center gap-3">
               <Skeleton className="w-10 h-10" rounded="lg" />
               <div className="flex-1 space-y-2">
@@ -305,7 +305,7 @@ function CostDashboardViewSkeleton() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {['Cost by Model', 'Cost by User'].map((title) => (
-          <div key={title} className="rounded-xl border border-border/60 bg-card p-5">
+          <div key={title} className="rounded-lg border border-border/60 bg-card p-5">
             <div className="flex items-center justify-between mb-4">
               <Skeleton className="h-5 w-28" />
               <Skeleton className="h-4 w-16" />
@@ -353,7 +353,7 @@ function IndustryUpdatesViewSkeleton() {
       </div>
       <div className="space-y-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-border/60 bg-card p-5 space-y-4">
+          <div key={i} className="rounded-lg border border-border/60 bg-card p-5 space-y-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <Skeleton className="w-10 h-10" rounded="lg" />

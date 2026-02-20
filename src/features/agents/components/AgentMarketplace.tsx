@@ -92,7 +92,7 @@ interface AgentCardProps {
 function AgentCard({ agent, rank }: AgentCardProps) {
   const getRankColor = (rank: number) => {
     if (rank === 1) return "text-yellow-500";
-    if (rank === 2) return "text-gray-400";
+    if (rank === 2) return "text-content-muted";
     if (rank === 3) return "text-orange-600";
     return "text-[var(--text-secondary)]";
   };
@@ -124,7 +124,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
             <CheckCircle className="w-4 h-4 text-green-500" />
             <span className="text-xs text-[var(--text-secondary)]">Success Rate</span>
           </div>
-          <div className="text-xl font-bold text-[var(--text-primary)]">
+          <div className="text-base font-semibold text-[var(--text-primary)]">
             {Math.round(agent.successRate * 100)}%
           </div>
         </div>
@@ -134,7 +134,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
             <Play className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-[var(--text-secondary)]">Total Runs</span>
           </div>
-          <div className="text-xl font-bold text-[var(--text-primary)]">
+          <div className="text-base font-semibold text-[var(--text-primary)]">
             {agent.usageCount.toLocaleString()}
           </div>
         </div>
@@ -144,7 +144,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
             <Clock className="w-4 h-4 text-purple-500" />
             <span className="text-xs text-[var(--text-secondary)]">Avg Latency</span>
           </div>
-          <div className="text-xl font-bold text-[var(--text-primary)]">
+          <div className="text-base font-semibold text-[var(--text-primary)]">
             {(agent.avgLatencyMs / 1000).toFixed(1)}s
           </div>
         </div>
@@ -154,7 +154,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
             <Zap className="w-4 h-4 text-yellow-500" />
             <span className="text-xs text-[var(--text-secondary)]" title="Composite ranking: success rate + usage + speed">Overall Score</span>
           </div>
-          <div className="text-xl font-bold text-[var(--text-primary)]">
+          <div className="text-base font-semibold text-[var(--text-primary)]">
             {agent.phoenixScore}
           </div>
         </div>

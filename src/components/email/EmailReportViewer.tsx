@@ -77,8 +77,8 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
             <FileText className="h-6 w-6 text-purple-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Daily Email Reports</h1>
-            <p className="text-sm text-gray-400">
+            <h1 className="text-base font-semibold text-white">Daily Email Reports</h1>
+            <p className="text-sm text-content-muted">
               AI-powered email summaries and insights
             </p>
           </div>
@@ -93,7 +93,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                 className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors flex items-center gap-2 ${
                   activeReport?._id === report._id
                     ? 'bg-purple-600 text-white'
-                    : 'bg-gray-800 text-gray-400 hover:text-white'
+                    : 'bg-gray-800 text-content-muted hover:text-white'
                 }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -113,7 +113,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-gradient-to-br from-purple-900/30 to-slate-800/50 rounded-xl border border-purple-500/30"
+                className="p-4 bg-gradient-to-br from-purple-900/30 to-slate-800/50 rounded-lg border border-purple-500/30"
               >
                 <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
                   <Star className="h-5 w-5 text-purple-400" />
@@ -155,7 +155,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
             {activeReport.groupedEmails && activeReport.groupedEmails.length > 0 && (
               <div>
                 <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Archive className="h-5 w-5 text-gray-400" />
+                  <Archive className="h-5 w-5 text-content-muted" />
                   Email Groups
                 </h2>
                 <div className="space-y-3">
@@ -198,7 +198,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
                         </div>
                         <div className="flex-1">
                           <p className="text-sm text-white">{item.action}</p>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-content-muted mt-1">
                             From: {item.from} • {item.subject}
                           </p>
                         </div>
@@ -216,7 +216,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
 
             {/* Delivery Status */}
             {activeReport.deliveredVia && activeReport.deliveredVia.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-gray-500 pt-4 border-t border-gray-700">
+              <div className="flex items-center gap-2 text-sm text-content-secondary pt-4 border-t border-gray-700">
                 <Bell className="h-4 w-4" />
                 <span>Delivered via: {activeReport.deliveredVia.join(', ')}</span>
                 {activeReport.generatedAt && (
@@ -228,7 +228,7 @@ export function EmailReportViewer({ selectedReportId }: EmailReportViewerProps) 
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
+          <div className="flex flex-col items-center justify-center h-full text-content-muted">
             <FileText className="h-12 w-12 mb-4 opacity-50" />
             <p>No reports available yet</p>
             <p className="text-sm mt-2">Daily reports are generated automatically at 10 PM UTC</p>
@@ -319,9 +319,9 @@ function CategorySection({
       >
         <div className="flex items-center gap-3">
           {isExpanded ? (
-            <ChevronDown className="h-5 w-5 text-gray-400" />
+            <ChevronDown className="h-5 w-5 text-content-muted" />
           ) : (
-            <ChevronRight className="h-5 w-5 text-gray-400" />
+            <ChevronRight className="h-5 w-5 text-content-muted" />
           )}
           <span className="font-medium text-white">{group.category}</span>
           <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-sm rounded">
@@ -352,15 +352,15 @@ function CategorySection({
                         {email.status === 'unread' ? (
                           <Circle className="h-3 w-3 text-blue-400 fill-blue-400" />
                         ) : (
-                          <CheckCircle className="h-3 w-3 text-gray-500" />
+                          <CheckCircle className="h-3 w-3 text-content-secondary" />
                         )}
                         <p className="text-sm font-medium text-white truncate">
                           {email.subject}
                         </p>
                       </div>
-                      <p className="text-xs text-gray-400 truncate">{email.from}</p>
+                      <p className="text-xs text-content-muted truncate">{email.from}</p>
                       {email.summary && (
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-xs text-content-secondary mt-1 line-clamp-2">
                           {email.summary}
                         </p>
                       )}
@@ -397,7 +397,7 @@ function getPriorityStyle(priority: string): string {
     case 'high':
       return 'bg-orange-500/20 text-orange-400';
     case 'low':
-      return 'bg-gray-500/20 text-gray-400';
+      return 'bg-gray-500/20 text-content-muted';
     default:
       return 'bg-blue-500/20 text-blue-400';
   }

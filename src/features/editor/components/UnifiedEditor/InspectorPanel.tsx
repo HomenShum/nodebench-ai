@@ -42,7 +42,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
         <h3 className="text-sm font-semibold">Editor Inspector</h3>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="text-content-muted hover:text-white transition-colors"
         >
           ✕
         </button>

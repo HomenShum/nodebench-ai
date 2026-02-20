@@ -54,7 +54,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
   
   return (
     <div
-      className="absolute top-full right-0 mt-1.5 w-72 bg-[var(--bg-primary)] rounded-xl shadow-xl border border-[var(--border-color)] z-50 overflow-hidden"
+      className="absolute top-full right-0 mt-1.5 w-72 bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-color)] z-50 overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Search - compact */}

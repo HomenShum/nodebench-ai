@@ -78,7 +78,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
   ];
 
   return (
-    <div className={`bg-[color:var(--bg-primary)] rounded-xl border border-[color:var(--border-color)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] overflow-hidden ${className}`}>
+    <div className={`bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] overflow-hidden ${className}`}>
       
       {/* Header: "Live" Pulse */}
       <div className="px-4 py-3 border-b border-[color:var(--border-color)] bg-gradient-to-r from-[color:var(--bg-secondary)]/80 to-[color:var(--bg-primary)] flex items-center justify-between">

@@ -60,26 +60,26 @@ export const CostCrossoverCalculator: React.FC = () => {
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-4">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sliders className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <Sliders className="w-4 h-4 text-content-secondary" />
           <div>
-            <div className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Cost Crossover</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Live calculator</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Cost Crossover</div>
+            <div className="text-sm font-semibold text-content">Live calculator</div>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setPresentationMode((prev) => !prev)}
-          className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          className="text-xs uppercase tracking-widest text-content-muted hover:text-content"
         >
           {presentationMode ? "Edit" : "Present"}
         </button>
       </div>
 
       {!presentationMode && (
-        <div className="space-y-3 text-xs text-gray-600 dark:text-gray-400">
+        <div className="space-y-3 text-xs text-content-secondary">
         <label className="flex items-center justify-between">
           <span>Monthly tokens (M)</span>
           <input
@@ -90,7 +90,7 @@ export const CostCrossoverCalculator: React.FC = () => {
             onChange={(e) => setMonthlyTokens(Number(e.target.value))}
             className="w-40"
           />
-          <span className="font-semibold text-gray-900 dark:text-gray-100">{monthlyTokens}M</span>
+          <span className="font-semibold text-content">{monthlyTokens}M</span>
         </label>
 
         <label className="flex items-center justify-between">
@@ -104,7 +104,7 @@ export const CostCrossoverCalculator: React.FC = () => {
             onChange={(e) => setCloudCostPer1M(Number(e.target.value))}
             className="w-40"
           />
-          <span className="font-semibold text-gray-900 dark:text-gray-100">${cloudCostPer1M.toFixed(1)}</span>
+          <span className="font-semibold text-content">${cloudCostPer1M.toFixed(1)}</span>
         </label>
 
         <label className="flex items-center justify-between">
@@ -118,7 +118,7 @@ export const CostCrossoverCalculator: React.FC = () => {
             onChange={(e) => setLocalFixedCost(Number(e.target.value))}
             className="w-40"
           />
-          <span className="font-semibold text-gray-900 dark:text-gray-100">${localFixedCost.toLocaleString()}</span>
+          <span className="font-semibold text-content">${localFixedCost.toLocaleString()}</span>
         </label>
 
         <label className="flex items-center justify-between">
@@ -132,42 +132,42 @@ export const CostCrossoverCalculator: React.FC = () => {
             onChange={(e) => setLocalVariableCost(Number(e.target.value))}
             className="w-40"
           />
-          <span className="font-semibold text-gray-900 dark:text-gray-100">${localVariableCost.toFixed(1)}</span>
+          <span className="font-semibold text-content">${localVariableCost.toFixed(1)}</span>
         </label>
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
-        <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] p-3">
-          <div className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-1">
+      <div className="grid grid-cols-2 gap-3 text-xs text-content-secondary">
+        <div className="rounded-md border border-edge bg-surface-secondary p-3">
+          <div className="text-xs uppercase tracking-widest text-content-muted flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> Cloud
           </div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">${cloudCost.toFixed(0)}</div>
+          <div className="text-lg font-semibold text-content">${cloudCost.toFixed(0)}</div>
         </div>
-        <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] p-3">
-          <div className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-1">
+        <div className="rounded-md border border-edge bg-surface-secondary p-3">
+          <div className="text-xs uppercase tracking-widest text-content-muted flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> Local
           </div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">${localCost.toFixed(0)}</div>
+          <div className="text-lg font-semibold text-content">${localCost.toFixed(0)}</div>
         </div>
       </div>
 
-      <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
-        <div className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Cost curve</div>
+      <div className="rounded-md border border-edge bg-surface p-3">
+        <div className="text-xs uppercase tracking-widest text-content-muted mb-2">Cost curve</div>
         <svg width={220} height={90} className="w-full">
           <path d={buildPath("cloud")} stroke="#2563eb" strokeWidth={2} fill="none" />
           <path d={buildPath("local")} stroke="#16a34a" strokeWidth={2} fill="none" />
         </svg>
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+        <div className="mt-2 flex items-center justify-between text-xs text-content-muted">
           <span>0M</span>
           <span>200M</span>
         </div>
       </div>
 
-      <div className="text-xs font-semibold text-gray-800 dark:text-gray-200 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-md px-3 py-2">
+      <div className="text-xs font-semibold text-content bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-md px-3 py-2">
         Verdict: {verdict}
         {breakevenTokens !== null && (
-          <span className="text-gray-500 dark:text-gray-400 font-normal"> - Breakeven at ~{breakevenTokens}M tokens</span>
+          <span className="text-content-secondary font-normal"> - Breakeven at ~{breakevenTokens}M tokens</span>
         )}
       </div>
 
@@ -175,7 +175,7 @@ export const CostCrossoverCalculator: React.FC = () => {
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-white/[0.08] rounded-md px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+          className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-content-secondary border border-edge rounded-md px-3 py-2 hover:bg-surface-hover"
         >
           <Share2 className="w-3 h-3" />
           Copy demo summary

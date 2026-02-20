@@ -139,7 +139,7 @@ export function ActionConfirmation({
 
   return (
     <div className={cn(
-      "rounded-xl border-2 overflow-hidden shadow-md",
+      "rounded-lg border-2 overflow-hidden shadow-md",
       config.borderColor,
       config.bgColor,
     )}>

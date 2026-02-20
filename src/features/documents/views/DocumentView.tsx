@@ -129,7 +129,7 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
         {(!isValidId) ? (
           <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
             <div className="text-center max-w-md mx-4">
-              <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Invalid document</h2>
+              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Invalid document</h2>
               <p className="text-[var(--text-secondary)] mb-2">The provided document id is invalid or missing.</p>
               {isGridMode ? (
                 <p className="text-[var(--text-tertiary)] text-sm">Close this tab or select another document from the sidebar.</p>
@@ -145,7 +145,7 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
         ) : (document === null) ? (
           <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
             <div className="text-center">
-              <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Document not found</h2>
+              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Document not found</h2>
               <p className="text-[var(--text-secondary)]">This document may have been deleted or you don't have permission to view it.</p>
             </div>
           </div>

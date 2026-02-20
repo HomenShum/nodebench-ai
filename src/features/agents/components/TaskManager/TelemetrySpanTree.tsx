@@ -76,8 +76,8 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
   },
   custom: {
     icon: <Cpu className="w-3 h-3" />,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100 dark:bg-gray-900/30',
+    color: 'text-content-secondary',
+    bgColor: 'bg-surface-secondary dark:bg-gray-900/30',
     label: 'Custom'
   },
 };

@@ -56,7 +56,7 @@ const AI_STATUS_CONFIG = {
     dot: 'bg-indigo-500',
     bg: 'bg-indigo-50',
     border: 'border-indigo-200',
-    text: 'text-gray-700',
+    text: 'text-content-secondary',
     label: 'AI Indexed',
   },
   processing: {
@@ -474,9 +474,9 @@ export function DocumentCard({
       {/* Card Container */}
       <div
         className={`
-          bg-[var(--bg-primary)] rounded-xl border p-3 h-52
+          bg-[var(--bg-primary)] rounded-lg border p-3 h-52
           flex flex-col transition-all duration-200 ease-out cursor-pointer relative overflow-hidden
-          shadow-sm hover:shadow-md hover:-translate-y-0.5
+
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2
           ${isDragging ? "opacity-90 scale-[1.02] shadow-lg ring-2 ring-blue-400" : ""}
           ${isSelected
@@ -566,7 +566,7 @@ export function DocumentCard({
               <button
                 type="button"
                 onClick={handleChatClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:opacity-90 hover:scale-105"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-medium rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all duration-200 hover:opacity-90"
               >
                 <Sparkles className="w-3 h-3 text-purple-300" />
                 Ask AI

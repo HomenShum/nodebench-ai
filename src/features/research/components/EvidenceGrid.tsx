@@ -79,7 +79,7 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
       className={`
         group flex-shrink-0 w-[260px] bg-[color:var(--bg-primary)] border rounded-lg p-3
         transition-all duration-300
-        hover:border-indigo-300 hover:shadow-md
+        hover:border-indigo-300
         hover:bg-gradient-to-br hover:from-indigo-50/50 hover:to-white
         ${isHighlighted
           ? "border-indigo-500 shadow-lg shadow-indigo-200/50 ring-2 ring-indigo-300 motion-safe:animate-pulse"

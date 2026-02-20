@@ -294,7 +294,7 @@ export function FastAgentThreadList({
         {/* Empty State */}
         {Object.values(groupedThreads).every(g => g.length === 0) && (
           <div className="flex flex-col items-center justify-center h-40 text-[var(--text-muted)] text-xs px-4">
-            <div className="w-12 h-12 bg-[var(--bg-primary)] rounded-xl flex items-center justify-center mb-3 border border-[var(--border-color)]">
+            <div className="w-12 h-12 bg-[var(--bg-primary)] rounded-lg flex items-center justify-center mb-3 border border-[var(--border-color)]">
               <MessageSquare className="w-5 h-5 opacity-40" />
             </div>
             <p className="font-medium text-[var(--text-secondary)] mb-1">No conversations yet</p>
@@ -351,7 +351,7 @@ export function FastAgentThreadList({
       {/* Delete Modal */}
       {deletingThreadId && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" role="presentation">
-          <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-xl rounded-xl p-4 w-full max-w-[240px]" role="dialog" aria-label="Delete conversation">
+          <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-xl rounded-lg p-4 w-full max-w-[240px]" role="dialog" aria-label="Delete conversation">
             <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Delete chat?</h3>
             <p className="text-xs text-[var(--text-secondary)] mb-3">This cannot be undone.</p>
             <div className="flex gap-2">

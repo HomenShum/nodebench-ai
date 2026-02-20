@@ -40,10 +40,10 @@ export function EmailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+          <button className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
             <RefreshCw className="h-5 w-5" />
           </button>
-          <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+          <button className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
             <Settings className="h-5 w-5" />
           </button>
         </div>
@@ -77,7 +77,7 @@ export function EmailPage() {
 
             {/* Empty State for Desktop */}
             {!selectedThreadId && (
-              <div className="hidden md:flex flex-1 items-center justify-center text-gray-500">
+              <div className="hidden md:flex flex-1 items-center justify-center text-content-secondary">
                 <div className="text-center">
                   <Inbox className="h-16 w-16 mx-auto mb-4 opacity-30" />
                   <p>Select an email to view</p>
@@ -113,7 +113,7 @@ function TabButton({
       className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
         active
           ? 'bg-blue-600 text-white'
-          : 'text-gray-400 hover:text-white'
+          : 'text-content-muted hover:text-white'
       }`}
     >
       {icon}

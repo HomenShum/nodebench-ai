@@ -58,18 +58,18 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
 
   if (error) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700">
+      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs text-rose-700">
         {error}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Repo Momentum</div>
-          <div className="text-sm font-semibold text-gray-800">{stats?.repoFullName ?? "GitHub Repo"}</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Repo Momentum</div>
+          <div className="text-sm font-semibold text-content">{stats?.repoFullName ?? "GitHub Repo"}</div>
         </div>
         <button
           type="button"
@@ -79,44 +79,44 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
               .catch((err) => setError(err?.message ?? "Failed to refresh."))
               .finally(() => setIsRefreshing(false));
           }}
-          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+          className="p-1 rounded hover:bg-surface-hover text-content-muted hover:text-content-secondary"
           aria-label="Refresh repo stats"
         >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-xs text-gray-600">
-        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-gray-400">
+      <div className="grid grid-cols-3 gap-3 text-xs text-content-secondary">
+        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
             <Star className="w-3 h-3" /> Stars/day
           </div>
-          <div className="text-lg font-semibold text-gray-900">{starsPerDay}</div>
+          <div className="text-lg font-semibold text-content">{starsPerDay}</div>
         </div>
-        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-gray-400">
+        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
             <GitBranch className="w-3 h-3" /> Commits/wk
           </div>
-          <div className="text-lg font-semibold text-gray-900">{commitsPerWeek}</div>
+          <div className="text-lg font-semibold text-content">{commitsPerWeek}</div>
         </div>
-        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-gray-400">
+        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
             <Clock className="w-3 h-3" /> Last push
           </div>
-          <div className="text-sm font-semibold text-gray-900">{lastPush}</div>
+          <div className="text-sm font-semibold text-content">{lastPush}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Star Velocity</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-content-muted mb-1">Star Velocity</div>
           <Sparkline
             data={starHistory.map((item: any) => item.delta ?? item.stars ?? 0)}
             stroke="#111827"
           />
         </div>
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">Commit Velocity</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-content-muted mb-1">Commit Velocity</div>
           <SparkBars
             data={commitHistory.map((item: any) => item.commits ?? 0)}
             color="#0f172a"

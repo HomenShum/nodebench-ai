@@ -151,7 +151,7 @@ function RichMediaContent({ media, showCitations }: { media: ExtractedMedia; sho
                   href={img.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 snap-start group relative rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-blue-400 transition-all hover:shadow-lg"
+                  className="flex-shrink-0 snap-start group relative rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-blue-400 transition-all"
                   title={img.alt}
                 >
                   <img

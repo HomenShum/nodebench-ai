@@ -432,7 +432,7 @@ export const TaskRowGlobal = ({
                 onClick={handleStarClick}
                 aria-label={t.isFavorite ? "Unfavorite task" : "Favorite task"}
                 title={t.isFavorite ? "Unfavorite" : "Favorite"}
-                className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
+                className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
                   t.isFavorite
                     ? "bg-yellow-500 text-yellow-100 shadow-sm"
                     : "bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)]"
@@ -446,7 +446,7 @@ export const TaskRowGlobal = ({
                 onClick={handleDeleteTask}
                 aria-label="Delete task"
                 title="Delete"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -489,7 +489,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Delete event"
                 title="Delete"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

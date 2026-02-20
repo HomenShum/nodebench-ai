@@ -33,7 +33,7 @@ function DeltaBadge({ deltaSummary }: DeltaBadgeProps) {
     || deltaSummary.toLowerCase().includes("decrease");
 
   const colorClass = isPositive
-    ? "bg-indigo-50 text-gray-700 border-indigo-200"
+    ? "bg-indigo-50 text-content-secondary border-indigo-200"
     : isNegative
     ? "bg-red-50 text-red-700 border-red-200"
     : "bg-amber-50 text-amber-700 border-amber-200";
@@ -72,8 +72,8 @@ export function SignalCard({
 
   return (
     <div
-      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-xl overflow-hidden
-                 hover:border-indigo-200 hover:shadow-sm transition-all duration-200"
+      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-lg overflow-hidden
+                 hover:border-indigo-200 transition-all duration-200"
     >
       {/* Left Accent Border */}
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500" />
@@ -103,7 +103,7 @@ export function SignalCard({
               {signalLabel}
             </span>
             {signal.vizArtifactId && showMicroViz && (
-              <span className="text-xs text-gray-400 flex items-center gap-1">
+              <span className="text-xs text-content-muted flex items-center gap-1">
                 <BarChart2 className="w-2.5 h-2.5" />
                 Chart
               </span>
@@ -176,7 +176,7 @@ export function SignalList({ signals, onSignalClick, className = "" }: SignalLis
   if (!signals || signals.length === 0) {
     return (
       <div className="text-center py-12 text-[color:var(--text-secondary)]">
-        <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="w-14 h-14 bg-amber-50 rounded-lg flex items-center justify-center mx-auto mb-4">
           <Lightbulb className="w-7 h-7 text-amber-500" />
         </div>
         <h3 className="text-base font-semibold text-[color:var(--text-primary)] mb-1">No signals yet</h3>

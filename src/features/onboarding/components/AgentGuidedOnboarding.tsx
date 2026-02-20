@@ -109,7 +109,7 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="relative w-full max-w-2xl mx-4 bg-[color:var(--bg-primary)] rounded-2xl shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-2xl mx-4 bg-[color:var(--bg-primary)] rounded-lg shadow-2xl overflow-hidden">
                 {/* Skip button */}
                 {onSkip && (
                     <button
@@ -137,7 +137,7 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
                 {/* Content */}
                 <div className="pt-12 pb-6 px-8">
                     {/* Icon with gradient background */}
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white shadow-lg mb-6`}>
+                    <div className={`w-16 h-16 rounded-lg bg-gradient-to-br ${step.color} flex items-center justify-center text-white shadow-lg mb-6`}>
                         {step.icon}
                     </div>
 

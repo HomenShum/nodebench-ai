@@ -64,10 +64,10 @@ function getProviderColor(provider: ArtifactProvider | undefined): string {
     case "twitter": return "bg-sky-50 text-sky-600 border-sky-200";
     case "linkedin": return "bg-blue-50 text-blue-700 border-blue-200";
     case "crunchbase": return "bg-orange-50 text-orange-600 border-orange-200";
-    case "github": return "bg-gray-50 text-gray-800 border-gray-200";
+    case "github": return "bg-surface-secondary text-content border-edge";
     case "news": return "bg-indigo-50 text-indigo-600 border-indigo-200";
     case "arxiv": return "bg-amber-50 text-amber-700 border-amber-200";
-    default: return "bg-gray-50 text-gray-600 border-gray-200";
+    default: return "bg-surface-secondary text-content-secondary border-edge";
   }
 }
 
@@ -122,7 +122,7 @@ function SourceItem({ artifact }: SourceItemProps) {
       rel="noopener noreferrer"
       className={`
         flex items-start gap-3 p-3 rounded-lg border transition-all duration-200
-        hover:shadow-md hover:-translate-y-0.5
+       
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2
         ${getProviderColor(provider)}
       `}
@@ -232,19 +232,19 @@ export function SourcesLibrary({
   }
   
   return (
-    <div className="mt-12 border-t-2 border-gray-200 dark:border-white/[0.08] pt-8">
+    <div className="mt-12 border-t-2 border-edge pt-8">
       {/* Header */}
       <div
         className="flex items-center justify-between mb-4 cursor-pointer"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gray-100 dark:bg-white/[0.06] rounded-lg">
-            <Library className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <div className="p-2 bg-surface-secondary rounded-lg">
+            <Library className="w-5 h-5 text-content-secondary" />
           </div>
           <div>
-            <h3 className="font-bold text-gray-900 dark:text-gray-100">{title}</h3>
-            <p className="text-xs text-gray-500">
+            <h3 className="font-bold text-content">{title}</h3>
+            <p className="text-xs text-content-secondary">
               {artifacts.length} source{artifacts.length !== 1 ? 's' : ''} discovered
               {artifacts.filter(a => a.flags.isPinned).length > 0 && (
                 <span className="ml-2 text-purple-600">
@@ -259,13 +259,13 @@ export function SourcesLibrary({
           {/* Group By Toggle */}
           {!isCollapsed && (
             <div className="flex items-center gap-1 text-xs">
-              <Filter className="w-3.5 h-3.5 text-gray-400" />
+              <Filter className="w-3.5 h-3.5 text-content-muted" />
               <select
                 value={groupBy}
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Group sources by"
-                className="bg-gray-100 dark:bg-white/[0.06] border-none rounded px-2 py-1 text-xs text-gray-600 dark:text-gray-400 focus:ring-1 focus:ring-purple-300"
+                className="bg-surface-secondary border-none rounded px-2 py-1 text-xs text-content-secondary focus:ring-1 focus:ring-purple-300"
               >
                 <option value="provider">By Provider</option>
                 <option value="kind">By Type</option>
@@ -274,11 +274,11 @@ export function SourcesLibrary({
             </div>
           )}
           
-          <button type="button" className="p-1 hover:bg-gray-100 dark:hover:bg-white/[0.06] rounded" aria-label={isCollapsed ? "Expand sources" : "Collapse sources"} aria-expanded={isCollapsed ? "false" : "true"}>
+          <button type="button" className="p-1 hover:bg-surface-hover rounded" aria-label={isCollapsed ? "Expand sources" : "Collapse sources"} aria-expanded={isCollapsed ? "false" : "true"}>
             {isCollapsed ? (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
+              <ChevronDown className="w-5 h-5 text-content-muted" />
             ) : (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
+              <ChevronUp className="w-5 h-5 text-content-muted" />
             )}
           </button>
         </div>
@@ -303,10 +303,10 @@ export function SourcesLibrary({
               
               return (
                 <div key={group}>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-content-secondary mb-2 flex items-center gap-2">
                     {groupBy === "kind" && getKindIcon(group as ArtifactKind)}
                     {label}
-                    <span className="text-gray-400">({items.length})</span>
+                    <span className="text-content-muted">({items.length})</span>
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {items.slice(0, showAll ? items.length : 4).map(artifact => (
@@ -333,7 +333,7 @@ export function SourcesLibrary({
               <button
                 type="button"
                 onClick={() => setShowAll(!showAll)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.1] rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-surface-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1] rounded-lg text-sm font-medium text-content-secondary transition-colors"
               >
                 {showAll ? (
                   <>

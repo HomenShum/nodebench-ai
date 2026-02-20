@@ -11,12 +11,12 @@ export function ApiUsageDisplay() {
 
   if (!usageSummary) {
     return (
-      <div className="p-4 border border-gray-200 dark:border-white/[0.06] rounded-lg">
+      <div className="p-4 border border-edge rounded-lg">
         <div className="flex items-center gap-2 mb-2">
-          <Activity className="h-5 w-5 text-gray-500" />
+          <Activity className="h-5 w-5 text-content-secondary" />
           <h3 className="font-semibold">API Usage</h3>
         </div>
-        <p className="text-sm text-gray-500">Loading usage data...</p>
+        <p className="text-sm text-content-secondary">Loading usage data...</p>
       </div>
     );
   }
@@ -28,7 +28,7 @@ export function ApiUsageDisplay() {
   const totalCostDollars = (summary.totalCost / 100).toFixed(2);
 
   return (
-    <div className="p-4 border border-gray-200 dark:border-white/[0.06] rounded-lg space-y-4">
+    <div className="p-4 border border-edge rounded-lg space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <Activity className="h-5 w-5 text-blue-600" />
         <h3 className="font-semibold text-lg">Usage</h3>
@@ -37,46 +37,46 @@ export function ApiUsageDisplay() {
       {/* Overall Summary */}
       <div className="grid grid-cols-3 gap-3">
         <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Today</div>
+          <div className="text-xs text-content-secondary mb-1">Today</div>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {summary.todayTotalCalls}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">requests</div>
+          <div className="text-xs text-content-secondary">requests</div>
         </div>
 
         <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-lg">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">This Month</div>
+          <div className="text-xs text-content-secondary mb-1">This Month</div>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {summary.monthTotalCalls}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">requests</div>
+          <div className="text-xs text-content-secondary">requests</div>
         </div>
 
         <div className="p-3 bg-purple-50 dark:bg-purple-500/10 rounded-lg">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">All Time</div>
+          <div className="text-xs text-content-secondary mb-1">All Time</div>
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             {summary.totalCalls}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">requests</div>
+          <div className="text-xs text-content-secondary">requests</div>
         </div>
       </div>
 
       {/* Success Rate */}
       {summary.totalCalls > 0 && (
-        <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-lg">
+        <div className="p-3 bg-surface-secondary rounded-lg">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Success Rate</span>
             <span className="text-lg font-bold text-green-600 dark:text-green-400">
               {parseFloat(((summary.successfulCalls / summary.totalCalls) * 100).toFixed(1))}%
             </span>
           </div>
-          <div className="mt-2 h-2 bg-gray-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
+          <div className="mt-2 h-2 bg-surface-secondary rounded-full overflow-hidden">
             <div 
               className="h-full bg-green-500"
               style={{ width: `${(summary.successfulCalls / summary.totalCalls) * 100}%` }}
             />
           </div>
-          <div className="mt-1 text-xs text-gray-500">
+          <div className="mt-1 text-xs text-content-secondary">
             {summary.successfulCalls} successful, {summary.failedCalls} failed
           </div>
         </div>
@@ -92,7 +92,7 @@ export function ApiUsageDisplay() {
           <div className="text-2xl font-bold text-yellow-700 mt-1">
             ${totalCostDollars}
           </div>
-          <div className="text-xs text-gray-600 mt-1">
+          <div className="text-xs text-content-secondary mt-1">
             Based on API pricing estimates
           </div>
         </div>
@@ -113,7 +113,7 @@ export function ApiUsageDisplay() {
                 : 0;
 
               return (
-                <div key={apiName} className="p-3 border border-gray-200 dark:border-white/[0.06] rounded-lg">
+                <div key={apiName} className="p-3 border border-edge rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${
@@ -124,28 +124,28 @@ export function ApiUsageDisplay() {
                       }`} />
                       <span className="font-medium capitalize">{apiName}</span>
                     </div>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-content-secondary">
                       {apiData.totalCalls} calls
                     </span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-xs">
                     <div>
-                      <div className="text-gray-500">Today</div>
+                      <div className="text-content-secondary">Today</div>
                       <div className="font-semibold">{apiData.todayCalls}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">This Month</div>
+                      <div className="text-content-secondary">This Month</div>
                       <div className="font-semibold">{apiData.monthCalls}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Success</div>
+                      <div className="text-content-secondary">Success</div>
                       <div className="font-semibold text-green-600">{successRate}%</div>
                     </div>
                   </div>
 
                   {apiData.totalUnitsUsed > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-content-secondary">
                       {apiData.totalUnitsUsed} units used
                       {apiData.totalCost > 0 && ` • $${(apiData.totalCost / 100).toFixed(2)}`}
                     </div>
@@ -160,9 +160,9 @@ export function ApiUsageDisplay() {
       {/* Info Note */}
       <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
         <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-xs text-gray-700">
+        <div className="text-xs text-content-secondary">
           <div className="font-medium mb-1">About API Usage Tracking</div>
-          <div className="text-gray-600 space-y-1">
+          <div className="text-content-secondary space-y-1">
             <div>• <strong>Linkup:</strong> Web search (~€0.005 = 0.5¢ per search)</div>
             <div>• <strong>YouTube:</strong> Video search (free: 10K units/day, 100 units/search)</div>
             <div>• <strong>OpenAI GPT-5:</strong> $1.25/1M input ($0.00125/1K), $10/1M output ($0.01/1K)</div>

@@ -132,11 +132,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
   switch (type) {
     case "company":
       return {
-        text: "text-gray-700",
+        text: "text-content-secondary",
         bg: "bg-indigo-50",
         border: "border-indigo-200",
         icon: "text-indigo-500",
-        badge: "bg-indigo-100 text-gray-700",
+        badge: "bg-indigo-100 text-content-secondary",
         ring: "ring-indigo-500/20",
       };
     case "person":
@@ -288,7 +288,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           className={`
             absolute left-0 top-full z-50
             w-80 p-4
-            rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl
+            rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl
             ring-1 ${colors.ring}
             ${className}
           `}
@@ -384,7 +384,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                 {data.circleOfInfluence.tier1?.slice(0, 3).map((name, idx) => (
                   <span
                     key={`t1-${idx}`}
-                    className="px-1.5 py-0.5 text-xs bg-indigo-100 text-gray-700 rounded"
+                    className="px-1.5 py-0.5 text-xs bg-indigo-100 text-content-secondary rounded"
                     title="Inner circle"
                   >
                     {name}
@@ -405,11 +405,11 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
 
           {/* Timeline Highlight (from adaptive enrichment) */}
           {data.timelineHighlight && (
-            <div className="mb-3 flex items-start gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
-              <Calendar className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+            <div className="mb-3 flex items-start gap-2 px-2 py-1.5 bg-surface-secondary rounded-lg border border-edge">
+              <Calendar className="w-3.5 h-3.5 text-content-muted mt-0.5 flex-shrink-0" />
               <div>
-                <div className="text-xs text-gray-500">{data.timelineHighlight.date}</div>
-                <div className="text-xs text-gray-700 line-clamp-1">{data.timelineHighlight.title}</div>
+                <div className="text-xs text-content-secondary">{data.timelineHighlight.date}</div>
+                <div className="text-xs text-content-secondary line-clamp-1">{data.timelineHighlight.title}</div>
               </div>
             </div>
           )}
@@ -510,7 +510,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
  * Loading state for the preview
  */
 export const EntityHoverPreviewSkeleton: React.FC = () => (
-  <div className="w-80 p-4 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl">
+  <div className="w-80 p-4 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-2xl">
     <div className="flex items-start gap-3 mb-3">
       <div className="w-10 h-10 rounded-lg bg-[color:var(--bg-secondary)] motion-safe:animate-pulse" />
       <div className="flex-1">

@@ -708,7 +708,7 @@ export function FastAgentInputBar({
       {/* Drag-over visual feedback */}
       {isDragOver && (
         <div className={cn(
-          "absolute inset-0 z-10 rounded-xl border-2 border-dashed flex items-center justify-center pointer-events-none",
+          "absolute inset-0 z-10 rounded-lg border-2 border-dashed flex items-center justify-center pointer-events-none",
           dragFeedback.overlay
         )}>
           <div className={cn("flex items-center gap-2", dragFeedback.text)}>
@@ -742,7 +742,7 @@ export function FastAgentInputBar({
 
       {/* Main Input Card */}
       <div className={cn(
-        "bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-sm transition-all duration-200 glass-surface",
+        "bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-sm transition-all duration-200 glass-surface",
         "focus-within:shadow-md focus-within:border-[var(--accent-primary)]/30 focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/[0.06]",
         isDragOver && dragFeedback.border
       )}>
@@ -767,7 +767,7 @@ export function FastAgentInputBar({
             {showModelSelector && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
-                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto dropdown-enter" style={{ '--dropdown-origin': 'bottom left' } as React.CSSProperties}>
+                <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto dropdown-enter" style={{ '--dropdown-origin': 'bottom left' } as React.CSSProperties}>
                   <div className="px-3 py-2 border-b border-[var(--border-color)]/50">
                     <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Select Model</span>
                   </div>
@@ -820,7 +820,7 @@ export function FastAgentInputBar({
                 "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all",
                 doc.analyzing
                   ? "bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300"
-                  : "bg-indigo-50 dark:bg-gray-900/20 border border-indigo-200 dark:border-gray-800 text-gray-700 dark:text-indigo-300"
+                  : "bg-indigo-50 dark:bg-gray-900/20 border border-indigo-200 dark:border-gray-800 text-content-secondary dark:text-indigo-300"
               )}
             >
               {doc.analyzing ? (
@@ -835,7 +835,7 @@ export function FastAgentInputBar({
                 <button
                   type="button"
                   onClick={() => onRemoveContextDocument(doc.id)}
-                  className="hover:text-gray-900 dark:hover:text-indigo-100"
+                  className="hover:text-content dark:hover:text-indigo-100"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -925,7 +925,7 @@ export function FastAgentInputBar({
 
         {/* Slash Command Autocomplete Dropdown */}
         {showSlashCommands && (
-          <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl overflow-hidden z-50 dropdown-enter" style={{ '--dropdown-origin': 'bottom center' } as React.CSSProperties}>
+          <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-xl overflow-hidden z-50 dropdown-enter" style={{ '--dropdown-origin': 'bottom center' } as React.CSSProperties}>
             <div className="px-3 py-2 border-b border-[var(--border-color)]/50 bg-[var(--bg-secondary)]">
               <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
                 Slash Commands
@@ -984,7 +984,7 @@ export function FastAgentInputBar({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isStreaming}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-all duration-200"
             title="Attach file"
             aria-label="Attach file"
           >
@@ -997,7 +997,7 @@ export function FastAgentInputBar({
             onClick={toggleSpeechToText}
             disabled={isStreaming || isRecording}
             className={cn(
-              "p-2 rounded-xl transition-all duration-200",
+              "p-2 rounded-lg transition-all duration-200",
               isListening
                 ? "text-red-500 bg-red-50 dark:bg-red-900/20 motion-safe:animate-pulse"
                 : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
@@ -1010,7 +1010,7 @@ export function FastAgentInputBar({
             type="button"
             onClick={() => startRecording("video")}
             disabled={isStreaming || isRecording}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-xl transition-all duration-200"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded-lg transition-all duration-200"
             title="Record video"
             aria-label="Record video"
           >
@@ -1159,11 +1159,11 @@ export function FastAgentInputBar({
           {isStreaming ? (
             <button
               onClick={onStop}
-              className="press-scale group relative p-2.5 bg-red-500 text-white hover:bg-red-600 rounded-xl shadow-md shadow-red-500/20 transition-all duration-200"
+              className="press-scale group relative p-2.5 bg-red-500 text-white hover:bg-red-600 rounded-lg shadow-md shadow-red-500/20 transition-all duration-200"
               title="Stop generating"
               aria-label="Stop generating"
             >
-              <div className="absolute inset-0 rounded-xl bg-red-400 motion-safe:animate-ping opacity-20" />
+              <div className="absolute inset-0 rounded-lg bg-red-400 motion-safe:animate-ping opacity-20" />
               <StopCircle className="w-5 h-5 relative z-10" />
             </button>
           ) : (
@@ -1171,9 +1171,9 @@ export function FastAgentInputBar({
               onClick={handleSend}
               disabled={!canSend}
               className={cn(
-                "press-scale p-2.5 rounded-xl",
+                "press-scale p-2.5 rounded-lg",
                 canSend
-                  ? "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 shadow-md hover:shadow-lg transition-shadow"
+                  ? "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 shadow-md transition-shadow"
                   : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
               )}
               title="Send message"

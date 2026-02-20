@@ -166,7 +166,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
 
       <div
         ref={modalRef}
-        className="relative w-full max-w-6xl h-[90vh] bg-[color:var(--bg-primary)] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10 pointer-events-auto"
+        className="relative w-full max-w-6xl h-[90vh] bg-[color:var(--bg-primary)] rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 ring-1 ring-white/10 pointer-events-auto"
       >
         <div className="px-8 py-5 border-b border-[color:var(--border-color)] flex items-center justify-between bg-[color:var(--bg-primary)] z-10">
           <div className="flex items-center gap-3">
@@ -226,7 +226,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                   )}
                 </div>
 
-                <h1 className="text-3xl md:text-4xl font-bold text-[color:var(--text-primary)] leading-tight mb-8">{item.title}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-[color:var(--text-primary)] leading-tight mb-8">{item.title}</h1>
 
                 <div className="prose prose-lg prose-gray max-w-none leading-relaxed text-[color:var(--text-primary)]">
                   <p className="text-xl leading-relaxed text-[color:var(--text-primary)] font-sans mb-8 border-l-4 border-blue-500 pl-6 italic">
@@ -310,21 +310,21 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                 {isStrategy && <StrategyMetricsPanel title={item.title} summary={item.subtitle} url={item.url} />}
                 {showCostCrossover && <CostCrossoverCalculator />}
 
-                <div className="rounded-xl border border-gray-200 bg-[color:var(--bg-primary)] p-4 space-y-3">
+                <div className="rounded-lg border border-edge bg-[color:var(--bg-primary)] p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Deep dive</div>
-                      <div className="text-sm font-semibold text-gray-900">Raw data + timeline</div>
+                      <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Deep dive</div>
+                      <div className="text-sm font-semibold text-content">Raw data + timeline</div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-gray-400">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-content-muted">
                       {(["summary", "data", "timeline"] as const).map((tab) => (
                         <button
                           key={tab}
                           type="button"
                           onClick={() => setDeepDiveTab(tab)}
                           className={`px-2 py-1 border ${deepDiveTab === tab
-                            ? "border-gray-900 text-gray-900"
-                            : "border-gray-200 text-gray-400 hover:text-gray-900"
+                            ? "border-gray-900 text-content"
+                            : "border-edge text-content-muted hover:text-content"
                             }`}
                         >
                           {tab}
@@ -334,39 +334,39 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                   </div>
 
                   {deepDiveTab === "summary" && (
-                    <div className="space-y-3 text-xs text-gray-600">
+                    <div className="space-y-3 text-xs text-content-secondary">
                       <div className="flex flex-wrap gap-2">
                         {tags.length > 0 ? (
                           tags.map((tag) => (
-                            <span key={`tag-${tag}`} className="px-2 py-0.5 border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04] dark:text-gray-300">
+                            <span key={`tag-${tag}`} className="px-2 py-0.5 border border-edge dark:border-white/10 bg-surface-secondary dark:text-gray-300">
                               {tag.replace(/_/g, ' ')}
                             </span>
                           ))
                         ) : (
-                          <span className="text-gray-400">No tags.</span>
+                          <span className="text-content-muted">No tags.</span>
                         )}
                       </div>
                       {metrics.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs uppercase tracking-widest text-gray-400">Metrics</div>
+                          <div className="text-xs uppercase tracking-widest text-content-muted">Metrics</div>
                           <div className="grid grid-cols-2 gap-2">
                             {metrics.slice(0, 4).map((metric) => (
-                              <div key={metric.label} className="rounded-md border border-gray-100 bg-gray-50 p-2">
-                                <div className="text-xs text-gray-400 uppercase tracking-widest">{metric.label}</div>
-                                <div className="text-sm font-semibold text-gray-900">{metric.value}</div>
+                              <div key={metric.label} className="rounded-md border border-edge bg-surface-secondary p-2">
+                                <div className="text-xs text-content-muted uppercase tracking-widest">{metric.label}</div>
+                                <div className="text-sm font-semibold text-content">{metric.value}</div>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-                          <div className="text-xs uppercase tracking-widest text-gray-400">Source</div>
-                          <div className="text-sm font-semibold text-gray-900">{item.source || "n/a"}</div>
+                        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+                          <div className="text-xs uppercase tracking-widest text-content-muted">Source</div>
+                          <div className="text-sm font-semibold text-content">{item.source || "n/a"}</div>
                         </div>
-                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-                          <div className="text-xs uppercase tracking-widest text-gray-400">Timestamp</div>
-                          <div className="text-sm font-semibold text-gray-900">{timestamp || "n/a"}</div>
+                        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+                          <div className="text-xs uppercase tracking-widest text-content-muted">Timestamp</div>
+                          <div className="text-sm font-semibold text-content">{timestamp || "n/a"}</div>
                         </div>
                       </div>
                     </div>
@@ -374,20 +374,20 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
 
                   {deepDiveTab === "data" && (
                     <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-                          <div className="uppercase tracking-widest text-gray-400">Content bytes</div>
-                          <div className="text-sm font-semibold text-gray-800">{readerData?.contentBytes ?? "n/a"}</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-content-secondary">
+                        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+                          <div className="uppercase tracking-widest text-content-muted">Content bytes</div>
+                          <div className="text-sm font-semibold text-content">{readerData?.contentBytes ?? "n/a"}</div>
                         </div>
-                        <div className="rounded-md border border-gray-100 bg-gray-50 p-2">
-                          <div className="uppercase tracking-widest text-gray-400">Sources</div>
-                          <div className="text-sm font-semibold text-gray-800">{sourceMatrix.length}</div>
+                        <div className="rounded-md border border-edge bg-surface-secondary p-2">
+                          <div className="uppercase tracking-widest text-content-muted">Sources</div>
+                          <div className="text-sm font-semibold text-content">{sourceMatrix.length}</div>
                         </div>
                       </div>
                       {sourceMatrixItems.length > 0 && (
-                        <div className="max-h-40 overflow-auto border border-gray-200 rounded-md">
+                        <div className="max-h-40 overflow-auto border border-edge rounded-md">
                           <table className="w-full text-xs text-left">
-                            <thead className="sticky top-0 bg-gray-50 text-gray-400 uppercase tracking-widest">
+                            <thead className="sticky top-0 bg-surface-secondary text-content-muted uppercase tracking-widest">
                               <tr>
                                 <th className="px-2 py-1">Source</th>
                                 <th className="px-2 py-1">Domain</th>
@@ -395,24 +395,24 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                             </thead>
                             <tbody>
                               {sourceMatrixItems.map((source, idx) => (
-                                <tr key={`${source.url}-${idx}`} className="border-t border-gray-100">
-                                  <td className="px-2 py-1 text-gray-700">{source.title}</td>
-                                  <td className="px-2 py-1 text-gray-500">{source.domain || "n/a"}</td>
+                                <tr key={`${source.url}-${idx}`} className="border-t border-edge">
+                                  <td className="px-2 py-1 text-content-secondary">{source.title}</td>
+                                  <td className="px-2 py-1 text-content-secondary">{source.domain || "n/a"}</td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
                         </div>
                       )}
-                      <pre className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-md p-3 overflow-auto max-h-64">
+                      <pre className="text-xs text-content-secondary bg-surface-secondary border border-edge rounded-md p-3 overflow-auto max-h-64">
                         {rawPayload}
                       </pre>
                     </div>
                   )}
 
                   {deepDiveTab === "timeline" && (
-                    <div className="space-y-3 text-xs text-gray-600">
-                      <div className="text-xs uppercase tracking-widest text-gray-400">Source matrix</div>
+                    <div className="space-y-3 text-xs text-content-secondary">
+                      <div className="text-xs uppercase tracking-widest text-content-muted">Source matrix</div>
                       {sourceMatrixItems.length > 0 ? (
                         <div className="space-y-2">
                           {sourceMatrixItems.map((source, idx) => (
@@ -422,15 +422,15 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                               onClick={() => {
                                 if (source.url) window.open(source.url, "_blank", "noopener,noreferrer");
                               }}
-                              className="w-full text-left rounded-md border border-gray-100 bg-white px-3 py-2 hover:border-gray-900 transition-colors"
+                              className="w-full text-left rounded-md border border-edge bg-white px-3 py-2 hover:border-content transition-colors"
                             >
-                              <div className="text-xs font-semibold text-gray-800">{source.title}</div>
-                              <div className="text-xs text-gray-400">{source.domain || "Source"}</div>
+                              <div className="text-xs font-semibold text-content">{source.title}</div>
+                              <div className="text-xs text-content-muted">{source.domain || "Source"}</div>
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <div className="text-gray-400">No source matrix entries.</div>
+                        <div className="text-content-muted">No source matrix entries.</div>
                       )}
                     </div>
                   )}
@@ -450,14 +450,14 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
               <div className="flex gap-2 flex-col sm:flex-row">
                 <button
                   onClick={handleAskAgent}
-                  className="flex-1 flex items-center justify-between px-4 py-2.5 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:border-purple-300 hover:shadow-md hover:text-purple-700 rounded-lg text-sm text-[color:var(--text-primary)] transition-all text-left group"
+                  className="flex-1 flex items-center justify-between px-4 py-2.5 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:border-purple-300 hover:text-purple-700 rounded-lg text-sm text-[color:var(--text-primary)] transition-all text-left group"
                 >
                   <span>Summarize key risks...</span>
                   <MessageSquare className="w-4 h-4 text-[color:var(--border-color)] group-hover:text-purple-400" />
                 </button>
                 <button
                   onClick={handleAskAgent}
-                  className="flex-1 flex items-center justify-between px-4 py-2.5 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:border-blue-300 hover:shadow-md hover:text-blue-700 rounded-lg text-sm text-[color:var(--text-primary)] transition-all text-left group"
+                  className="flex-1 flex items-center justify-between px-4 py-2.5 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:border-blue-300 hover:text-blue-700 rounded-lg text-sm text-[color:var(--text-primary)] transition-all text-left group"
                 >
                   <span>Compare with competitors...</span>
                   <MessageSquare className="w-4 h-4 text-[color:var(--border-color)] group-hover:text-blue-400" />

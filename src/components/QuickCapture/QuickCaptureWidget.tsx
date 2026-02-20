@@ -110,18 +110,18 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="absolute bottom-16 right-0 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden"
+            className="absolute bottom-16 right-0 w-80 bg-white rounded-lg shadow-2xl border border-edge overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-              <span className="text-sm font-semibold text-gray-900">Quick Capture</span>
-              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="h-4 w-4 text-gray-500" />
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
+              <span className="text-sm font-semibold text-content">Quick Capture</span>
+              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-surface-hover rounded">
+                <X className="h-4 w-4 text-content-secondary" />
               </button>
             </div>
 
             {/* Mode Selector */}
-            <div className="flex gap-1 p-2 border-b border-gray-100">
+            <div className="flex gap-1 p-2 border-b border-edge">
               {modeButtons.map(({ mode: m, icon, label }) => (
                 <button
                   key={m}
@@ -129,7 +129,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     mode === m
                       ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : 'text-content-secondary hover:bg-surface-hover'
                   }`}
                 >
                   {icon}
@@ -145,7 +145,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={mode === 'task' ? 'What needs to be done?' : 'Capture a thought...'}
-                  className="w-full h-24 px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-24 px-3 py-2 text-sm border border-edge rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   autoFocus
                 />
               )}
@@ -168,7 +168,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   ) : audioBlob ? (
                     <>
                       <audio src={URL.createObjectURL(audioBlob)} controls className="w-full" />
-                      <button onClick={clearRecording} className="text-xs text-gray-500 hover:text-gray-700">
+                      <button onClick={clearRecording} className="text-xs text-content-secondary hover:text-content-secondary">
                         Record again
                       </button>
                     </>
@@ -188,7 +188,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   {screenshotData ? (
                     <>
                       <img src={screenshotData} alt="Screenshot" className="w-full rounded-lg border" />
-                      <button onClick={clearScreenshot} className="text-xs text-gray-500 hover:text-gray-700">
+                      <button onClick={clearScreenshot} className="text-xs text-content-secondary hover:text-content-secondary">
                         Capture again
                       </button>
                     </>

@@ -61,7 +61,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
   return (
     <nav aria-label="Main navigation" className="space-y-0.5 mb-6">
       {!isCollapsed && (
-        <div className="px-2 mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">
+        <div className="px-2 mb-2 text-xs font-medium uppercase tracking-wider text-content-muted">
           Menu
         </div>
       )}
@@ -113,33 +113,33 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
               <div className="flex items-center gap-2.5">
                 <div className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
                   isActive
-                    ? 'bg-gray-200/80 dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
-                    : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                    ? 'bg-gray-200/80 dark:bg-white/[0.08] text-content'
+                    : 'text-content-muted group-hover:text-content-secondary dark:group-hover:text-gray-300'
                 }`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="font-semibold">{item.label}</span>
                   {isActive && (
-                    <span className="text-xs text-gray-500 font-medium">{item.desc}</span>
+                    <span className="text-xs text-content-secondary font-medium">{item.desc}</span>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
                 {item.expandable && recentDossiers.length > 0 && (
-                  <span className="text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-500 px-1.5 py-0.5 rounded-full font-semibold">
+                  <span className="text-xs bg-surface-secondary text-content-secondary px-1.5 py-0.5 rounded-full font-semibold">
                     {recentDossiers.length}
                   </span>
                 )}
                 {item.expandable ? (
-                  <ChevronRight className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
+                  <ChevronRight className={`w-3.5 h-3.5 text-content-muted transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                 ) : null}
               </div>
             </button>
 
             {/* Expandable Dossier Submenu */}
             {item.expandable && isExpanded && (
-              <div className="mt-1 ml-5 pl-3 border-l border-gray-200/60 dark:border-white/[0.06] space-y-0.5">
+              <div className="mt-1 ml-5 pl-3 border-l border-edge space-y-0.5">
                 {recentDossiers.length > 0 ? (
                   <>
                     {recentDossiers.slice(0, 5).map((dossier) => (
@@ -147,9 +147,9 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         key={dossier.id}
                         type="button"
                         onClick={() => onDossierSelect?.(dossier.id)}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-white/[0.04] rounded-md transition-all duration-150 group"
+                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-150 group"
                       >
-                        <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 shrink-0 transition-colors" />
+                        <FileText className="w-3.5 h-3.5 text-content-muted group-hover:text-content-secondary dark:group-hover:text-gray-300 shrink-0 transition-colors" />
                         <span className="truncate flex-1 text-left font-medium">{dossier.title || 'Untitled'}</span>
                         {dossier.isAgentUpdating && (
                           <span className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">
@@ -170,7 +170,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                     )}
                   </>
                 ) : (
-                  <div className="px-2.5 py-3 text-xs text-gray-400 italic">
+                  <div className="px-2.5 py-3 text-xs text-content-muted italic">
                     No saved reports yet
                   </div>
                 )}

@@ -216,7 +216,7 @@ const VIEW_TITLES: Record<string, string> = {
   benchmarks: 'Benchmarks',
   funding: 'Funding',
   'analytics-hitl': 'Review Queue',
-  'analytics-components': 'Usage & Costs',
+  'analytics-components': 'Performance Analytics',
   'analytics-recommendations': 'Feedback',
   'cost-dashboard': 'Usage & Costs',
   'industry-updates': 'Industry News',
@@ -425,7 +425,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blur-xl border-r border-gray-200/60 dark:border-white/[0.06] z-50 transition-[transform,width] duration-200
+           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blur-xl border-r border-edge z-50 transition-[transform,width] duration-200
            lg:relative lg:translate-x-0
            fixed inset-y-0 left-0
            ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -463,7 +463,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
       {/* Sidebar Resize Handle - Desktop Only */}
       <div
-        className="hidden lg:block w-1 bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0"
+        className="hidden lg:block w-1 bg-surface-secondary hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0"
         onMouseDown={startSidebarResizing}
       />
 
@@ -475,7 +475,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           style={{ width: '100%' }}
         >
           {/* Top Bar — Linear-style with breadcrumb + Cmd+K */}
-          <div className="h-12 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md border-b border-gray-200/60 dark:border-white/[0.06] px-4 sm:px-5 flex items-center transition-colors duration-200 relative z-10">
+          <div className="h-12 bg-surface/80 backdrop-blur-md border-b border-edge px-4 sm:px-5 flex items-center transition-colors duration-200 relative z-10">
             {/* Left: hamburger + breadcrumb */}
             <div className="flex items-center gap-2 min-w-0">
               <button
@@ -483,7 +483,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                 className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover dark:hover:bg-white/[0.06] transition-colors"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
-                title={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
@@ -499,7 +498,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 </button>
                 {currentView !== 'research' && (
                   <>
-                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary shrink-0" />
                     <span className="font-medium text-content truncate">
                       {VIEW_TITLES[currentView] || (currentView === 'entity' ? entityName || 'Entity' : selectedDocumentId ? 'My Documents' : 'My Workspace')}
                     </span>
@@ -507,7 +506,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 )}
                 {currentView === 'research' && showResearchDossier && (
                   <>
-                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary shrink-0" />
                     <span className="font-medium text-content truncate">Research Hub</span>
                   </>
                 )}
@@ -521,11 +520,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 onClick={commandPalette.toggle}
                 aria-label="Open command palette"
                 data-testid="open-command-palette"
-                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-content-muted hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
+                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-edge bg-surface-secondary text-content-muted hover:bg-surface-hover hover:border-edge dark:hover:border-white/10 transition-all duration-150 group"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-[13px]">Search...</span>
-                <kbd className="ml-auto text-xs font-medium text-content-muted bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
+                <kbd className="ml-auto text-xs font-medium text-content-muted bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-edge dark:group-hover:border-white/20">
                   {commandShortcutLabel}
                 </kbd>
               </button>
@@ -538,7 +537,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <button
                   type="button"
                   onClick={() => setShowResearchDossier(false)}
-                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/10 transition-colors"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   Home
@@ -566,7 +565,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
                 className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 ${showFastAgent
                   ? 'bg-gray-900 dark:bg-indigo-500/20 text-white dark:text-indigo-300 shadow-sm'
-                  : 'text-content-secondary hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
+                  : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                 }`}
               >
                 <Zap className="h-3.5 w-3.5" />
@@ -583,8 +582,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => openSettings(user ? "profile" : "usage")}
-                className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
-                title="Open settings"
+                className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-colors"
                 aria-label="Settings"
                 data-testid="open-settings"
               >
@@ -597,7 +595,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     </div>
                   )
                 ) : (
-                  <div className="h-6 w-6 rounded-full bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center text-gray-500 dark:text-gray-300">
+                  <div className="h-6 w-6 rounded-full bg-surface-secondary flex items-center justify-center text-content-secondary">
                     <SettingsIcon className="h-4 w-4" />
                   </div>
                 )}
@@ -731,7 +729,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Benchmarks failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto p-6 pb-24 lg:pb-6 bg-gray-50 dark:bg-[#09090B]"
+                className="h-full overflow-auto p-6 pb-24 lg:pb-6 bg-surface"
               >
                 <ModelEvalDashboard />
               </LazyView>
@@ -748,7 +746,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Review Queue failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <HITLAnalyticsDashboard />
               </LazyView>
@@ -757,7 +755,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Usage & Costs failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <ComponentMetricsDashboard />
               </LazyView>
@@ -766,7 +764,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Feedback failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <RecommendationFeedbackDashboard />
               </LazyView>
@@ -775,7 +773,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Cost Dashboard failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackCost}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <CostDashboard />
               </LazyView>
@@ -784,7 +782,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Industry News failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackIndustry}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <IndustryUpdatesPanel />
               </LazyView>
@@ -793,7 +791,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="For You feed failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <ForYouFeed />
               </LazyView>
@@ -802,7 +800,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Recommendations failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDocuments}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <DocumentRecommendations />
               </LazyView>
@@ -811,7 +809,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Agent Templates failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackAgents}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <AgentMarketplace />
               </LazyView>
@@ -820,7 +818,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="GitHub Explorer failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <GitHubExplorer />
               </LazyView>
@@ -829,7 +827,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="PR Suggestions failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <PRSuggestions />
               </LazyView>
@@ -838,7 +836,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="LinkedIn Archive failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDocuments}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <LinkedInPostArchiveView />
               </LazyView>
@@ -847,7 +845,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Activity Log failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <McpToolLedgerView />
               </LazyView>
@@ -856,7 +854,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Quality Review failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background"
+                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
               >
                 <DogfoodReviewView />
               </LazyView>
@@ -906,7 +904,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* Resize Handle between Main and AI Chat Panel */}
         {showFastAgent && (
           <div
-            className="hidden lg:block w-1 bg-gray-200 dark:bg-white/[0.06] hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
+            className="hidden lg:block w-1 bg-surface-secondary hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
             onMouseDown={startAgentResizing}
           />
         )}
@@ -914,7 +912,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* AI Chat Panel - Right Side Column (Desktop) */}
         {showFastAgent && (
           <div
-            className="hidden lg:flex flex-shrink-0 h-full bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-xl border-l border-gray-200/60 dark:border-white/[0.06] z-20 shadow-xl lg:shadow-none lg:relative overflow-hidden"
+            className="hidden lg:flex flex-shrink-0 h-full bg-surface/80 backdrop-blur-xl border-l border-edge z-20 shadow-xl lg:shadow-none lg:relative overflow-hidden"
             style={{ width: `${agentPanelWidth}px` }}
           >
             <ErrorBoundary title="Fast Agent Panel Error">

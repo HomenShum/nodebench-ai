@@ -44,16 +44,16 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-2xl font-bold text-[color:var(--text-primary)] italic">Deal Radar</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-content-secondary mt-1">
                         Recent financings matching JPM criteria • {stats.filtered} of {stats.total} deals
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-indigo-900/30 rounded">
-                        <div className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Avg Score</div>
-                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.avgBankerScore}</div>
+                        <div className="text-xs font-bold uppercase tracking-widest text-content-secondary dark:text-content-muted">Avg Score</div>
+                        <div className="text-base font-semibold text-content">{stats.avgBankerScore}</div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-widest">
+                    <div className="flex items-center gap-2 text-xs text-content-muted uppercase tracking-widest">
                         <Building2 className="w-4 h-4" />
                         <span>Last 30 Days</span>
                     </div>
@@ -61,7 +61,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-2 border-b border-gray-200 dark:border-white/[0.06] pb-3">
+            <div className="flex items-center gap-2 border-b border-edge pb-3">
                 {STAGE_OPTIONS.map((option) => {
                     const count = option.value === 'all' ? stats.total : stats.byStage[option.value as DealStage] || 0;
                     return (
@@ -71,11 +71,11 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             onClick={() => setActiveTab(option.value as typeof activeTab)}
                             className={`px-4 py-2 text-xs font-bold uppercase tracking-tight transition-all ${activeTab === option.value
                                     ? 'bg-gray-900 dark:bg-white/[0.15] text-white'
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
+                                    : 'text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-surface-hover'
                                 }`}
                         >
                             {option.label}
-                            <span className={`ml-2 ${activeTab === option.value ? 'text-indigo-200' : 'text-gray-400 dark:text-gray-500'}`}>
+                            <span className={`ml-2 ${activeTab === option.value ? 'text-indigo-200' : 'text-content-muted'}`}>
                                 ({count})
                             </span>
                         </button>
@@ -84,17 +84,17 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06]">
+            <div className="flex items-center gap-4 p-4 bg-surface-secondary dark:bg-white/[0.02] border border-edge">
                 <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Filters</span>
+                    <Filter className="w-4 h-4 text-content-muted" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Filters</span>
                 </div>
 
                 <select
                     value={sectorFilter}
                     onChange={(e) => setSectorFilter(e.target.value as typeof sectorFilter)}
                     aria-label="Filter by sector"
-                    className="px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-white/[0.06] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-1.5 text-xs font-medium border border-edge bg-white dark:bg-white/[0.06] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                     {SECTOR_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -104,7 +104,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                 </select>
 
                 <div className="flex items-center gap-2">
-                    <label className="text-xs text-gray-600 dark:text-gray-400">Min Score:</label>
+                    <label className="text-xs text-content-secondary">Min Score:</label>
                     <input
                         type="range"
                         min="0"
@@ -114,7 +114,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                         onChange={(e) => setMinScore(Number(e.target.value))}
                         className="w-32"
                     />
-                    <span className="text-xs font-mono font-semibold text-gray-700 dark:text-gray-300 w-8">{minScore}</span>
+                    <span className="text-xs font-mono font-semibold text-content-secondary w-8">{minScore}</span>
                 </div>
 
                 {(sectorFilter !== 'all' || minScore > 0) && (
@@ -124,7 +124,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             setSectorFilter('all');
                             setMinScore(0);
                         }}
-                        className="ml-auto text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                        className="ml-auto text-xs font-bold uppercase tracking-widest text-content-secondary hover:text-content dark:hover:text-gray-200 transition-colors"
                     >
                         Clear Filters
                     </button>
@@ -132,13 +132,13 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Deal Table */}
-            <div className="border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02]">
+            <div className="border border-edge bg-surface">
                 <DealTable deals={deals} onDealClick={onDealClick} />
             </div>
 
             {/* Footer Stats */}
             {deals.length > 0 && (
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 px-4">
+                <div className="flex items-center justify-between text-xs text-content-secondary px-4">
                     <div>
                         Showing {deals.length} deal{deals.length !== 1 ? 's' : ''}
                     </div>
