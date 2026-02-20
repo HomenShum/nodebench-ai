@@ -112,7 +112,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
 
                 {/* Signal list - expanded with summaries for richer content */}
                 <div className={cn(
-                    'divide-y divide-gray-100 overflow-y-auto transition-all',
+                    'divide-y divide-gray-100 overflow-y-auto',
                     showAllSignals ? 'max-h-[680px]' : 'max-h-[520px]'
                 )}>
                     {displayFeatures.length > 0 ? (

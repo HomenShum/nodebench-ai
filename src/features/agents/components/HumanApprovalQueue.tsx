@@ -166,6 +166,7 @@ const RequestCard = memo(function RequestCard({
                 value={customResponse}
                 onChange={(e) => setCustomResponse(e.target.value)}
                 placeholder="Or type a custom response..."
+                aria-label="Custom response"
                 className={cn(
                   "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
                   "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -182,6 +183,7 @@ const RequestCard = memo(function RequestCard({
                 type="button"
                 onClick={handleCustomSubmit}
                 disabled={!customResponse.trim()}
+                aria-label="Submit response"
                 className={cn(
                   "p-1.5 rounded-lg",
                   "bg-[var(--accent-primary)] text-white",
@@ -189,11 +191,12 @@ const RequestCard = memo(function RequestCard({
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
               >
-                <CheckCircle className="w-3.5 h-3.5" />
+                <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 onClick={() => onCancel(request._id)}
+                aria-label="Cancel request"
                 className={cn(
                   "p-1.5 rounded-lg",
                   "border border-[var(--border-color)]",
@@ -201,7 +204,7 @@ const RequestCard = memo(function RequestCard({
                   "transition-colors"
                 )}
               >
-                <XCircle className="w-3.5 h-3.5 text-red-500" />
+                <XCircle className="w-3.5 h-3.5 text-red-500" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -213,6 +216,7 @@ const RequestCard = memo(function RequestCard({
               value={customResponse}
               onChange={(e) => setCustomResponse(e.target.value)}
               placeholder="Type your response..."
+              aria-label="Your response"
               className={cn(
                 "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
                 "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
@@ -229,6 +233,7 @@ const RequestCard = memo(function RequestCard({
               type="button"
               onClick={handleCustomSubmit}
               disabled={!customResponse.trim()}
+              aria-label="Submit response"
               className={cn(
                 "p-1.5 rounded-lg",
                 "bg-[var(--accent-primary)] text-white",
@@ -236,11 +241,12 @@ const RequestCard = memo(function RequestCard({
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              <CheckCircle className="w-3.5 h-3.5" />
+              <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={() => onCancel(request._id)}
+              aria-label="Cancel request"
               className={cn(
                 "p-1.5 rounded-lg",
                 "border border-[var(--border-color)]",
@@ -248,7 +254,7 @@ const RequestCard = memo(function RequestCard({
                 "transition-colors"
               )}
             >
-              <XCircle className="w-3.5 h-3.5 text-red-500" />
+              <XCircle className="w-3.5 h-3.5 text-red-500" aria-hidden="true" />
             </button>
           </div>
         )}

@@ -68,7 +68,6 @@ import AgendaMiniRow from "@features/calendar/components/agenda/AgendaMiniRow";
 import MetaPills from "@/shared/components/MetaPills";
 import { taskToPills } from "@/lib/metaPillMappers";
 import { shapeTaskForPills, reorderTaskPillsForTightRows } from "@/lib/tasks";
-import { CalendarView } from "@/features/calendar/views/CalendarView";
 import { MiniMonthCalendar } from "@/features/calendar/components/MiniMonthCalendar";
 import { usePlannerState } from "@/hooks/usePlannerState";
 import { SidebarMiniCalendar } from "@shared/ui/SidebarMiniCalendar";

@@ -137,9 +137,9 @@ const StatusIndicator = memo(function StatusIndicator({ status }: { status: Agen
   const Icon = config.icon;
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={cn("agent-dashboard", config.dot)} />
-      {Icon && <Icon className="w-3 h-3 motion-safe:animate-spin" />}
+    <div className="flex items-center gap-1.5" role="status" aria-label={`Agent status: ${config.label}`}>
+      <span className={cn("agent-dashboard", config.dot)} aria-hidden="true" />
+      {Icon && <Icon className="w-3 h-3 motion-safe:animate-spin" aria-hidden="true" />}
       <span className="text-xs font-medium text-[var(--text-secondary)]">
         {config.label}
       </span>
@@ -189,7 +189,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
                 config.borderColorClass
               )}
             >
-              <Icon className={cn("w-5 h-5", config.colorClass)} />
+              <Icon className={cn("w-5 h-5", config.colorClass)} aria-hidden="true" />
             </div>
             <div>
               <h3 className="font-semibold text-[var(--text-primary)] text-sm">
@@ -250,12 +250,12 @@ export const AgentStatusCard = memo(function AgentStatusCard({
         >
           {isActive ? (
             <>
-              <Pause className="w-3.5 h-3.5" />
+              <Pause className="w-3.5 h-3.5" aria-hidden="true" />
               Pause
             </>
           ) : (
             <>
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-3.5 h-3.5" aria-hidden="true" />
               Start
             </>
           )}

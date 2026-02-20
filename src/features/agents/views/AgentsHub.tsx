@@ -10,7 +10,7 @@
  * - Human-in-the-loop approval queue
  */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { useQuery, useAction } from "convex/react";
 import {
   Bot,
@@ -39,10 +39,18 @@ import { AgentStatusCard, AGENT_CONFIGS, type AgentStatus } from "../components/
 import { AgentCommandBar, type AgentMode, type ApprovedModel } from "../components/AgentCommandBar";
 import { HumanApprovalQueue } from "../components/HumanApprovalQueue";
 import { AgentSidebar } from "../components/AgentSidebar";
-import { SwarmLanesView } from "../components/FastAgentPanel/SwarmLanesView";
 import { AutonomousOperationsPanel } from "../components/AutonomousOperationsPanel";
-import { FreeModelRankingsPanel } from "../components/FreeModelRankingsPanel";
-import { TaskManagerView } from "../components/TaskManager";
+
+// Lazy-loaded heavy sub-components (behind tabs/expandable sections)
+const SwarmLanesView = lazy(() =>
+  import("../components/FastAgentPanel/SwarmLanesView").then((mod) => ({ default: mod.SwarmLanesView }))
+);
+const FreeModelRankingsPanel = lazy(() =>
+  import("../components/FreeModelRankingsPanel").then((mod) => ({ default: mod.FreeModelRankingsPanel }))
+);
+const TaskManagerView = lazy(() =>
+  import("../components/TaskManager").then((mod) => ({ default: mod.TaskManagerView }))
+);
 
 // Hooks
 import { useSwarmActions } from "@/hooks/useSwarm";
@@ -268,13 +276,15 @@ function ActiveSwarmsSection() {
       {/* Content */}
       {isExpanded && (
         <div className="border-t border-[var(--border-color)]">
-          {runningSwarms.map((swarm) => (
-            <SwarmLanesView
-              key={swarm.swarmId}
-              threadId={swarm.threadId}
-              className="border-b last:border-b-0 border-[var(--border-color)]"
-            />
-          ))}
+          <Suspense fallback={<div className="p-4 text-xs text-[var(--text-muted)]">Loading swarm...</div>}>
+            {runningSwarms.map((swarm) => (
+              <SwarmLanesView
+                key={swarm.swarmId}
+                threadId={swarm.threadId}
+                className="border-b last:border-b-0 border-[var(--border-color)]"
+              />
+            ))}
+          </Suspense>
         </div>
       )}
     </div>
@@ -368,7 +378,9 @@ export function AgentsHub() {
 
             {/* Free Model Rankings */}
             <div className="mb-6">
-              <FreeModelRankingsPanel />
+              <Suspense fallback={<div className="h-[200px]" />}>
+                <FreeModelRankingsPanel />
+              </Suspense>
             </div>
 
             {/* Human Approval Queue */}
@@ -393,7 +405,9 @@ export function AgentsHub() {
                 </a>
               </div>
               <div className="rounded-lg border border-[var(--border-color)] overflow-hidden h-[500px]">
-                <TaskManagerView isPublic={false} className="h-full" />
+                <Suspense fallback={<div className="h-full flex items-center justify-center text-xs text-[var(--text-muted)]">Loading tasks...</div>}>
+                  <TaskManagerView isPublic={false} className="h-full" />
+                </Suspense>
               </div>
             </div>
 

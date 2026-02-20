@@ -330,6 +330,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
+              aria-label="Message input"
               rows={1}
               className={cn(
                 "flex-1 resize-none bg-transparent text-sm",
@@ -341,6 +342,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
               type="button"
               onClick={handleSubmit}
               disabled={!input.trim() || isLoading}
+              aria-label="Send message"
               className={cn(
                 "flex items-center justify-center w-8 h-8 rounded-lg",
                 "bg-[var(--accent-primary)] text-white",
@@ -348,7 +350,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 

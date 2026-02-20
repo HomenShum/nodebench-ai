@@ -301,6 +301,9 @@
 /* Glass morphism container — blur(8px) balances visual effect vs GPU cost */
 .skeleton-pulse {
   animation: skeleton-pulse 1.9s ease-in-out infinite;
+  animation-delay: 300ms;
+  animation-fill-mode: backwards;
+  opacity: 0.84;
 }
 
 @keyframes skeleton-pulse {

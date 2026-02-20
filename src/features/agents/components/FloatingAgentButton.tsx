@@ -65,7 +65,7 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
       aria-label="Open AI Agent"
     >
       {/* Animated icon */}
-      <div className="relative">
+      <div className="relative" aria-hidden="true">
         <Sparkles className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
         {/* Subtle pulse effect */}
         <div className="absolute inset-0 bg-purple-500/30 rounded-full motion-safe:animate-ping" style={{ animationDuration: '2s' }} />
@@ -113,7 +113,7 @@ export const FloatingAgentIcon: React.FC<{ className?: string }> = ({ className 
       `}
       aria-label="Open AI Agent"
     >
-      <Zap className="w-6 h-6" />
+      <Zap className="w-6 h-6" aria-hidden="true" />
     </button>
   );
 };

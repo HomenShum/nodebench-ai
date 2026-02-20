@@ -168,6 +168,26 @@ const DogfoodReviewView = lazy(() =>
 );
 const SettingsModal = lazy(() => import("./SettingsModal"));
 
+// Prefetch likely next routes after idle (perceived-performance optimization).
+// Uses requestIdleCallback where available, falls back to 2s setTimeout.
+const prefetchRoutes = () => {
+  const prefetch = () => {
+    import("@/features/research/views/ResearchHub").catch(() => {});
+    import("@/features/documents/components/DocumentsHomeHub").catch(() => {});
+    import("@/features/agents/views/AgentsHub").catch(() => {});
+  };
+  if ("requestIdleCallback" in window) {
+    (window as any).requestIdleCallback(prefetch, { timeout: 3000 });
+  } else {
+    setTimeout(prefetch, 2000);
+  }
+};
+
+// Fire once on module load (after initial render settles)
+if (typeof window !== "undefined") {
+  setTimeout(prefetchRoutes, 1500);
+}
+
 const viewFallbackDefault = <ViewSkeleton variant="default" />;
 const viewFallbackDocuments = <ViewSkeleton variant="documents" />;
 const viewFallbackCalendar = <ViewSkeleton variant="calendar" />;

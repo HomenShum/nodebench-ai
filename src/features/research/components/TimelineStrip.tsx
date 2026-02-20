@@ -185,7 +185,8 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
   };
 
   if (visibleEvents.length === 0) {
-    return null;
+    // Reserve height to prevent CLS when events load async
+    return <div className="min-h-[84px]" />;
   }
 
   return (

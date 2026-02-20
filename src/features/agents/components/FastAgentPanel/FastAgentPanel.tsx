@@ -2022,12 +2022,17 @@ export function FastAgentPanel({
             onClick={() => setIsMinimized(false)}
             className="p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
             title="Expand panel"
+            aria-label="Expand panel"
           >
-            <Maximize2 className="w-5 h-5 text-[var(--text-primary)]" />
+            <Maximize2 className="w-5 h-5 text-[var(--text-primary)]" aria-hidden="true" />
           </button>
 
           {/* Status indicator */}
-          <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-violet-500 motion-safe:animate-pulse' : 'bg-green-500'}`} />
+          <div
+            role="status"
+            aria-label={isStreaming ? 'Agent is active' : 'Agent is ready'}
+            className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-violet-500 motion-safe:animate-pulse' : 'bg-green-500'}`}
+          />
 
           {/* Recent threads icons */}
           {threads?.slice(0, 3).map((thread) => (
@@ -2043,8 +2048,9 @@ export function FastAgentPanel({
                 : 'hover:bg-[var(--bg-hover)] text-[var(--text-muted)]'
                 }`}
               title={thread.title || 'Untitled Thread'}
+              aria-label={thread.title || 'Untitled Thread'}
             >
-              <MessageSquare className="w-4 h-4" />
+              <MessageSquare className="w-4 h-4" aria-hidden="true" />
             </button>
           ))}
 
@@ -2057,8 +2063,9 @@ export function FastAgentPanel({
             }}
             className="p-2 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-colors"
             title="New chat"
+            aria-label="New chat"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden="true" />
           </button>
 
           {/* Close button */}
@@ -2067,8 +2074,9 @@ export function FastAgentPanel({
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-[var(--text-muted)] hover:text-red-600 transition-colors mt-2"
             title="Close panel"
+            aria-label="Close panel"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </>
@@ -2185,9 +2193,10 @@ export function FastAgentPanel({
                 type="button"
                 onClick={() => setShowOverflowMenu(!showOverflowMenu)}
                 className={`p-1.5 rounded-md transition-colors ${showOverflowMenu ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}
-                title="More options"
+                aria-label="More options"
+                aria-expanded={showOverflowMenu}
               >
-                <MoreHorizontal className="w-4 h-4 text-[var(--text-muted)]" />
+                <MoreHorizontal className="w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
               </button>
 
               {/* Overflow Dropdown */}
@@ -2385,20 +2394,21 @@ export function FastAgentPanel({
               type="button"
               onClick={onClose}
               className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors"
-              title="Close panel"
+              aria-label="Close panel"
             >
-              <X className="w-4 h-4 text-[var(--text-muted)] hover:text-red-600" />
+              <X className="w-4 h-4 text-[var(--text-muted)] hover:text-red-600" aria-hidden="true" />
             </button>
           </div>
         </div>
 
         {/* Conversation Search Bar */}
         {showSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
-            <Search className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]" role="search">
+            <Search className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" aria-hidden="true" />
             <input
               ref={searchInputRef}
               type="text"
+              aria-label="Search messages"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setSearchMatchIndex(0); }}
               onKeyDown={(e) => {
@@ -2432,8 +2442,9 @@ export function FastAgentPanel({
               type="button"
               onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchMatchIndex(0); }}
               className="p-1 hover:bg-[var(--bg-tertiary)] rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0"
+              aria-label="Close search"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -2461,7 +2472,7 @@ export function FastAgentPanel({
             <button
               type="button"
               className="px-2 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-              title="More views"
+              aria-label="More views"
             >
               ···
             </button>
@@ -2580,10 +2591,12 @@ export function FastAgentPanel({
                           )}
                         </div>
                         <button
+                          type="button"
                           onClick={() => setShowEventsPanel(false)}
                           className="p-1 rounded text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]"
+                          aria-label="Collapse live activity"
                         >
-                          <ChevronDown className="w-3.5 h-3.5" />
+                          <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
                         </button>
                       </div>
                       <div className="space-y-1">
@@ -3019,9 +3032,9 @@ export function FastAgentPanel({
                       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                     }}
                     className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 w-8 h-8 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] shadow-lg flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-all duration-200 animate-in fade-in slide-in-from-bottom-2"
-                    title="Scroll to bottom"
+                    aria-label="Scroll to bottom"
                   >
-                    <ArrowDown className="w-4 h-4" />
+                    <ArrowDown className="w-4 h-4" aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -3097,7 +3110,7 @@ export function FastAgentPanel({
                   type="button"
                   onClick={() => setShowFocusPicker(p => !p)}
                   className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                  title="Focus mode"
+                  aria-label="Focus mode"
                 >
                   {FOCUS_MODES.find(m => m.id === focusMode)?.icon} {FOCUS_MODES.find(m => m.id === focusMode)?.label}
                 </button>
@@ -3204,6 +3217,7 @@ export function FastAgentPanel({
                       type="button"
                       onClick={() => setImagePreview(prev => { URL.revokeObjectURL(prev[i].url); return prev.filter((_, j) => j !== i); })}
                       className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label={`Remove image ${i + 1}`}
                     >
                       &times;
                     </button>
@@ -3231,7 +3245,7 @@ export function FastAgentPanel({
                     ? 'bg-red-50 dark:bg-red-900/20 border-red-300 text-red-600 motion-safe:animate-pulse'
                     : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                   }`}
-                  title={isRecording ? 'Stop recording' : 'Voice input'}
+                  aria-label={isRecording ? 'Stop recording' : 'Voice input'}
                 >
                   {isRecording ? '⏹ Stop' : '🎙 Voice'}
                 </button>
@@ -3245,7 +3259,7 @@ export function FastAgentPanel({
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
                     className="w-[50px] h-1 accent-[var(--accent-primary)]"
-                    title={`Font size: ${fontSize}px`}
+                    aria-label={`Font size: ${fontSize}px`}
                   />
                   <span className="text-xs text-[var(--text-muted)]">A</span>
                 </div>
@@ -3362,8 +3376,8 @@ export function FastAgentPanel({
               <div className="pointer-events-auto bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl w-full max-w-sm p-5 animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-[var(--text-primary)]">Keyboard Shortcuts</h3>
-                  <button type="button" onClick={() => setShowShortcutsOverlay(false)} className="action-btn p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-secondary)]">
-                    <X className="w-4 h-4" />
+                  <button type="button" onClick={() => setShowShortcutsOverlay(false)} className="action-btn p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-secondary)]" aria-label="Close keyboard shortcuts">
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
                 <div className="space-y-2.5 text-xs">
@@ -3403,14 +3417,15 @@ export function FastAgentPanel({
             <div className="absolute inset-x-4 top-20 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl p-4 max-h-[300px] flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-[var(--text-primary)]">Custom System Prompt</h3>
-                <button type="button" onClick={() => setShowSystemPrompt(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-secondary)]">
-                  <X className="w-4 h-4" />
+                <button type="button" onClick={() => setShowSystemPrompt(false)} className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md hover:bg-[var(--bg-secondary)]" aria-label="Close system prompt editor">
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
               <textarea
                 value={systemPrompt}
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder="Enter a custom system prompt for this thread (e.g., 'You are a financial analyst specializing in tech stocks...')"
+                aria-label="Custom system prompt"
                 className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20"
                 rows={5}
               />
@@ -3456,6 +3471,7 @@ export function FastAgentPanel({
                 <input
                   type="text"
                   placeholder="Add a new template..."
+                  aria-label="Add quick reply template"
                   className="w-full text-xs bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg px-3 py-1.5 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
@@ -3479,13 +3495,14 @@ export function FastAgentPanel({
             <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowCommandPalette(false)} />
             <div className="absolute inset-x-4 top-16 z-50 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border-color)]">
-                <Search className="w-4 h-4 text-[var(--text-muted)]" />
+                <Search className="w-4 h-4 text-[var(--text-muted)]" aria-hidden="true" />
                 <input
                   ref={commandInputRef}
                   type="text"
                   value={commandQuery}
                   onChange={(e) => setCommandQuery(e.target.value)}
                   placeholder="Search commands, threads, actions..."
+                  aria-label="Search commands"
                   className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') { setShowCommandPalette(false); setCommandQuery(''); }

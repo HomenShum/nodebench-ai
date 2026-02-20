@@ -50,7 +50,7 @@ export function DigestSection(props: DigestSectionProps) {
       section="Morning Digest"
       fallback={<DigestErrorFallback onRetry={() => window.location.reload()} />}
     >
-      <Suspense fallback={<DigestSkeleton />}>
+      <Suspense fallback={<div className="min-h-[320px]"><DigestSkeleton /></div>}>
         <DigestSectionInner {...props} />
       </Suspense>
     </ErrorBoundary>

@@ -73,9 +73,9 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
                 {/* Greeting */}
                 <motion.div
-                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
                     className="text-center mb-6"
                 >
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-950 dark:text-gray-50 tracking-tight">
@@ -88,9 +88,9 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
                 {/* Signature Orb — The visual identity, prominent above the input */}
                 <motion.div
-                    initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
                     className="relative mb-8 flex items-center justify-center"
                 >
                     <div className="w-44 h-44 md:w-56 md:h-56 relative flex items-center justify-center">
@@ -115,9 +115,9 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
                 {/* Hero Input — The ONE action */}
                 <motion.div
-                    initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.15 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
                     className="w-full relative z-10"
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -168,7 +168,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                 <motion.div
                     initial={reduceMotion ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
+                    transition={{ duration: 0.3, delay: 0.45 }}
                     className="mt-4 flex items-center gap-4 text-sm text-gray-400 dark:text-gray-400"
                 >
                     <button
@@ -193,7 +193,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <motion.p
                         initial={reduceMotion ? false : { opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.5, delay: 0.5 }}
+                        transition={{ duration: 0.3, delay: 0.55 }}
                         className="mt-6 text-sm text-gray-400 dark:text-gray-400 text-center max-w-md"
                     >
                         {insights[0].icon} {insights[0].message}
@@ -204,9 +204,9 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
                 {/* Discovery Cards — renamed to plain language */}
                 <motion.div
-                    initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.5 }}
+                    transition={{ duration: 0.3, delay: 0.55 }}
                     className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-10"
                 >
                     <DiscoveryCard
