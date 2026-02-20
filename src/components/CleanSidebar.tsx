@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 import { SidebarButton } from "./ui";
+import { Tooltip } from "../shared/ui/Tooltip";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -208,37 +209,39 @@ export function CleanSidebar({
 
   // Collapsed icon-only button helper
   const CollapsedButton = ({ icon: Icon, label, view }: { icon: any; label: string; view: string }) => (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      onClick={() => onViewChange?.(view as any)}
-      className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 ${
-        currentView === view
-          ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
-          : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-gray-300'
-      }`}
-    >
-      <Icon className="w-[18px] h-[18px]" />
-    </button>
+    <Tooltip content={label} side="right" wrapperClassName="block">
+      <button
+        type="button"
+        aria-label={label}
+        onClick={() => onViewChange?.(view as any)}
+        className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${
+          currentView === view
+            ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
+            : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
+        }`}
+      >
+        <Icon className="w-4 h-4" />
+      </button>
+    </Tooltip>
   );
 
   return (
-    <aside aria-label="Sidebar navigation" className="h-full flex flex-col bg-gray-50 dark:bg-[#18181B]">
+    <aside aria-label="Sidebar navigation" className="h-full flex flex-col bg-surface dark:bg-[#18181B]">
       {/* Logo */}
       <div className={`h-14 flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} border-b border-gray-200/60 dark:border-white/[0.06]`}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            className="w-8 h-8 bg-gray-900 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
-            title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <span className="text-white font-bold text-sm">N</span>
-          </button>
+          <Tooltip content={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} side="right">
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="w-8 h-8 bg-gray-900 dark:bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors"
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <span className="text-white font-bold text-sm">N</span>
+            </button>
+          </Tooltip>
           {!isCollapsed && (
-            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight truncate">
+            <span className="text-sm font-semibold text-content dark:text-gray-100 tracking-tight truncate">
               NodeBench AI
             </span>
           )}
@@ -263,7 +266,7 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={() => setIsMoreOpen(!isMoreOpen)}
-              className="w-full flex items-center justify-between px-2 mb-2 text-xs font-medium uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="w-full flex items-center justify-between px-2 mb-2 text-xs font-medium uppercase tracking-wider text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors"
             >
               <span>More</span>
               {isMoreOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -310,7 +313,11 @@ export function CleanSidebar({
         ) : (
           /* Collapsed: show just icons for dashboards + discovery */
           <div className="space-y-0.5">
-            {[...dashboardItems, ...(import.meta.env.DEV ? devItems : []), ...discoveryItems].map((item) => (
+            {[...dashboardItems, ...(import.meta.env.DEV ? devItems : [])].map((item) => (
+              <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
+            ))}
+            <div className="h-px bg-gray-200/60 dark:bg-white/[0.06] mx-2 my-2" />
+            {discoveryItems.map((item) => (
               <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
             ))}
           </div>
@@ -435,15 +442,16 @@ export function CleanSidebar({
                 </div>
               </div>
               {!isAnonymous && (
-                <button
-                  type="button"
-                  onClick={() => onOpenSettings?.('profile')}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
-                  title="Settings"
-                  aria-label="Open settings"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
+                <Tooltip content="Settings" side="top">
+                  <button
+                    type="button"
+                    onClick={() => onOpenSettings?.('profile')}
+                    className="p-1.5 text-content-muted hover:text-content-secondary rounded-md hover:bg-surface-hover transition-colors"
+                    aria-label="Open settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               )}
             </>
           )}

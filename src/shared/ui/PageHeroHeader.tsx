@@ -19,8 +19,8 @@ export function PageHeroHeader({ icon, title, date, subtitle, presets, className
   return (
     <div className={className}>
       <div className="flex items-center justify-between gap-4 mb-2">
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-3">
-          {icon && <span className="text-2xl opacity-90">{icon}</span>}
+        <h1 className="type-page-title text-[var(--text-primary)] flex items-center gap-3">
+          {icon && <span className="text-xl opacity-90">{icon}</span>}
           {accent ? (
             <span className="underline decoration-[var(--text-primary)]/40 decoration-[3px] underline-offset-[8px]">{title}</span>
           ) : (
@@ -32,7 +32,7 @@ export function PageHeroHeader({ icon, title, date, subtitle, presets, className
         )}
       </div>
       {subtitle && (
-        <p className="text-[var(--text-primary)] text-sm leading-relaxed max-w-xl">{subtitle}</p>
+        <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-xl">{subtitle}</p>
       )}
       {presets && (
         <div className="mt-5 pb-2 flex flex-wrap gap-2">{presets}</div>

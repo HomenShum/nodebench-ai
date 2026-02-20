@@ -125,6 +125,16 @@
   }
 }
 
+/* ───── Type Scale (Linear/Vercel consistency) ───── */
+@layer components {
+  .type-page-title { @apply text-2xl font-semibold tracking-tight; }
+  .type-section-title { @apply text-sm font-semibold; }
+  .type-card-title { @apply text-sm font-medium; }
+  .type-body { @apply text-sm leading-relaxed; }
+  .type-caption { @apply text-xs; color: var(--text-muted); }
+  .type-label { @apply text-xs font-medium uppercase tracking-wider; color: var(--text-muted); }
+}
+
 /* Preserve serif in editorial/research views */
 .editorial-layout h1,
 .editorial-layout h2,

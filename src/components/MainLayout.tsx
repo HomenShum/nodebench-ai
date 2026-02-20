@@ -481,7 +481,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-1.5 rounded-md text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover dark:hover:bg-white/[0.06] transition-colors"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
                 title={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
@@ -493,14 +493,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <button
                   type="button"
                   onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
-                  className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors shrink-0"
+                  className="text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors shrink-0"
                 >
                   Home
                 </button>
                 {currentView !== 'research' && (
                   <>
                     <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                    <span className="font-medium text-content truncate">
                       {VIEW_TITLES[currentView] || (currentView === 'entity' ? entityName || 'Entity' : selectedDocumentId ? 'My Documents' : 'My Workspace')}
                     </span>
                   </>
@@ -508,7 +508,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 {currentView === 'research' && showResearchDossier && (
                   <>
                     <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 shrink-0" />
-                    <span className="font-medium text-gray-900 dark:text-gray-100 truncate">Research Hub</span>
+                    <span className="font-medium text-content truncate">Research Hub</span>
                   </>
                 )}
               </nav>
@@ -521,11 +521,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 onClick={commandPalette.toggle}
                 aria-label="Open command palette"
                 data-testid="open-command-palette"
-                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
+                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-gray-200/60 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] text-content-muted hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:border-gray-300 dark:hover:border-white/10 transition-all duration-150 group"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-[13px]">Search...</span>
-                <kbd className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-400 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
+                <kbd className="ml-auto text-xs font-medium text-content-muted bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
                   {commandShortcutLabel}
                 </kbd>
               </button>
@@ -566,7 +566,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
                 className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 ${showFastAgent
                   ? 'bg-gray-900 dark:bg-indigo-500/20 text-white dark:text-indigo-300 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
+                  : 'text-content-secondary hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/[0.06]'
                 }`}
               >
                 <Zap className="h-3.5 w-3.5" />

@@ -68,6 +68,20 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /* Semantic aliases — use these for new code */
+        surface: {
+          DEFAULT: "var(--bg-primary)",
+          secondary: "var(--bg-secondary)",
+          hover: "var(--bg-hover)",
+        },
+        content: {
+          DEFAULT: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
+        },
+        edge: {
+          DEFAULT: "var(--border-color)",
+        },
       },
       zIndex: {
         raised: '10',

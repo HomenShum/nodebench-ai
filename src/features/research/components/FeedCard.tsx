@@ -113,8 +113,8 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
       <div
         onClick={onClick}
         className={`
-          group relative p-5 rounded-2xl transition-all duration-200 cursor-pointer
-          bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] hover:shadow-md
+          group relative p-5 rounded-lg transition-shadow duration-150 cursor-pointer
+          bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
           ${isSignal ? 'bg-slate-900 border-slate-800 text-white hover:border-slate-700' : ''}
         `}
       >
@@ -154,9 +154,9 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
     <div
       onClick={onClick}
       className={`
-        group relative break-inside-avoid cursor-pointer overflow-hidden rounded-xl border transition-all duration-200 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]
-        border-[color:var(--border-color)] hover:border-[color:var(--border-color)] hover:shadow-md hover:-translate-y-0.5
-        ${isSelected ? 'ring-2 ring-blue-500 ring-offset-1' : ''}
+        group relative break-inside-avoid cursor-pointer overflow-hidden rounded-lg border transition-shadow duration-150 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]
+        border-[color:var(--border-color)] hover:shadow-sm focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
+        ${isSelected ? 'ring-2 ring-[var(--accent-primary)] ring-offset-1' : ''}
       `}
     >
       {item.relevanceScore && item.relevanceScore > 70 && (

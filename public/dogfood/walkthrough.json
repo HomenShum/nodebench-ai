@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-02-20T09:07:37.296Z",
-  "baseURL": "http://127.0.0.1:5173",
+  "capturedAtIso": "2026-02-20T18:22:19.593Z",
+  "baseURL": "http://127.0.0.1:4173",
   "mime": "video/mp4",
   "publish": "static",
   "chapters": [
@@ -32,7 +32,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.4
+      "startSec": 8.3
     },
     {
       "index": 6,
@@ -80,7 +80,7 @@
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 25.3
+      "startSec": 25.2
     },
     {
       "index": 14,
@@ -218,10 +218,10 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.5
+      "startSec": 73.4
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-20_010559.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-20_102049.mp4"
 }

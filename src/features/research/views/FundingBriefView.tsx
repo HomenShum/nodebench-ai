@@ -265,7 +265,7 @@ function FundingCard({
                 {event.coInvestors.map((investor, idx) => (
                   <span
                     key={idx}
-                    className="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
+                    className="text-xs px-2 py-0.5 rounded bg-surface-secondary text-content-secondary"
                   >
                     {investor}
                   </span>

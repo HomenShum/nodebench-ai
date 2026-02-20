@@ -3,6 +3,7 @@ import { useAction, useConvex, useMutation, useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../convex/_generated/api";
+import { PageHeroHeader } from "@/shared/ui/PageHeroHeader";
 
 type DogfoodManifestItem = {
   file: string;
@@ -554,17 +555,19 @@ export function DogfoodReviewView() {
     <div className="h-full overflow-auto bg-background">
       <div className="mx-auto w-full max-w-6xl p-6 space-y-6">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Quality Review</h1>
-            <p className="text-sm text-muted-foreground">
-              UI evidence and route-by-route review. Fix root causes, then publish proof here.
-            </p>
-            {manifest?.capturedAtIso && (
-              <p className="text-xs text-muted-foreground">
-                Last published: <span className="font-medium text-foreground">{formatDate(manifest.capturedAtIso)}</span>
-              </p>
-            )}
-          </div>
+          <PageHeroHeader
+            title="Quality Review"
+            subtitle={
+              <>
+                UI evidence and route-by-route review. Fix root causes, then publish proof here.
+                {manifest?.capturedAtIso && (
+                  <span className="block text-xs mt-1">
+                    Last published: <span className="font-medium text-foreground">{formatDate(manifest.capturedAtIso)}</span>
+                  </span>
+                )}
+              </>
+            }
+          />
 
           <div className="flex items-center gap-2">
             <button

@@ -4,21 +4,27 @@ function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
+export type BadgeTone = "default" | "success" | "warning" | "info" | "error" | "brand" | "neutral" | "premium";
+
 export function Badge({
   children,
   tone = "default",
   className,
 }: {
   children: React.ReactNode;
-  tone?: "default" | "success" | "warning" | "info";
+  tone?: BadgeTone;
   className?: string;
 }) {
-  const tones: Record<string, string> = {
+  const tones: Record<BadgeTone, string> = {
     default:
       "border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]",
-    success: "border-indigo-500/30 bg-indigo-500/10 text-indigo-300",
-    warning: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-    info: "border-[var(--accent-primary)]/30 bg-[var(--accent-muted)] text-[var(--text-primary)]",
+    success: "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400",
+    warning: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    info: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    error: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400",
+    brand: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+    neutral: "border-gray-300/40 dark:border-white/10 bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400",
+    premium: "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-400",
   };
   return (
     <span

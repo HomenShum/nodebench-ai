@@ -10,6 +10,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { DollarSign, TrendingDown, Zap, Clock, Database, Users } from "lucide-react";
 import { ViewSkeleton } from "./skeletons";
+import { PageHeroHeader } from "../shared/ui/PageHeroHeader";
 
 export function CostDashboard() {
   const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d">("7d");
@@ -53,35 +54,29 @@ export function CostDashboard() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
-            Usage & Costs
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            {hasData ? "See what you're spending and where you can save" : "Track LLM costs as you use the platform"}
-          </p>
-        </div>
-
-        {/* Time Range Selector */}
-        <div className="flex gap-2 bg-[var(--bg-secondary)] rounded-lg p-1">
-          {(["24h", "7d", "30d"] as const).map((range) => (
-            <button
-              type="button"
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                timeRange === range
-                  ? "bg-[var(--accent-primary)] text-white"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {range === "24h" ? "24 Hours" : range === "7d" ? "7 Days" : "30 Days"}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeroHeader
+        icon={<DollarSign className="w-5 h-5" />}
+        title="Usage & Costs"
+        subtitle={hasData ? "See what you're spending and where you can save" : "Track LLM costs as you use the platform"}
+        date={
+          <div className="flex gap-2 bg-[var(--bg-secondary)] rounded-lg p-1">
+            {(["24h", "7d", "30d"] as const).map((range) => (
+              <button
+                type="button"
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  timeRange === range
+                    ? "bg-[var(--accent-primary)] text-white"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {range === "24h" ? "24 Hours" : range === "7d" ? "7 Days" : "30 Days"}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {/* Empty state when no data */}
       {!hasData && (

@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import { Home, LayoutGrid, Bookmark, ChevronRight, FileText, Loader2, Bot } from 'lucide-react';
+import { Tooltip } from '../shared/ui/Tooltip';
 
 export type ActivePage = 'research' | 'workspace' | 'saved';
 
@@ -71,23 +72,23 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
 
         if (isCollapsed) {
           return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                if (!item.expandable) onNavigate(item.id);
-              }}
-              title={item.label}
-              aria-label={item.label}
-              aria-current={isActive ? 'page' : undefined}
-              className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 ${
-                isActive
-                  ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
-                  : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-gray-300'
-              }`}
-            >
-              <Icon className="w-[18px] h-[18px]" />
-            </button>
+            <Tooltip key={item.id} content={item.label} side="right" wrapperClassName="block">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!item.expandable) onNavigate(item.id);
+                }}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${
+                  isActive
+                    ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
+                    : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+              </button>
+            </Tooltip>
           );
         }
 
@@ -103,10 +104,10 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }
               }}
               aria-current={isActive ? 'page' : undefined}
-              className={`w-full flex items-center justify-between px-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 group ${
+              className={`w-full flex items-center justify-between px-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 group border-l-2 ${
                 isActive
-                  ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
+                  : 'border-l-transparent text-content-secondary hover:bg-surface-hover hover:text-content'
               }`}
             >
               <div className="flex items-center gap-2.5">

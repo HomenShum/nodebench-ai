@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DialogOverlay } from "@/shared/components/DialogOverlay";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import {
     Search,
     FileText,
@@ -24,8 +26,6 @@ import {
     BarChart2,
     Globe
 } from 'lucide-react';
-// import { useQuery, useMutation } from 'convex/react';
-// import { api } from '../../convex/_generated/api';
 
 export interface CommandAction {
     id: string;
@@ -60,10 +60,7 @@ export function CommandPalette({
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    // TODO: Fetch recent documents and tasks once the queries are available
-    // const recentDocs = useQuery(api.domains.documents.documents.listDocuments, { limit: 5 });
-    // const recentTasks = useQuery(api.domains.tasks.tasks.listTasks, { limit: 5 });
-    const recentDocs = null;
+    const recentDocs = useQuery(api.domains.documents.documents.getSidebar);
     const recentTasks = null;
 
     // Define all available commands
@@ -390,8 +387,7 @@ export function CommandPalette({
         if (isOpen) {
             setQuery('');
             setSelectedIndex(0);
-            const timeoutId = setTimeout(() => inputRef.current?.focus(), 100);
-            return () => clearTimeout(timeoutId);
+            requestAnimationFrame(() => inputRef.current?.focus());
         }
     }, [isOpen]);
 

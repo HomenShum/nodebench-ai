@@ -19,6 +19,7 @@ import {
   Filter,
 } from "lucide-react";
 import { ViewSkeleton } from "./skeletons";
+import { PageHeroHeader } from "../shared/ui/PageHeroHeader";
 
 const providers = ["anthropic", "openai", "google", "langchain", "vercel", "xai"];
 
@@ -50,28 +51,19 @@ export function IndustryUpdatesPanel() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <TrendingUp className="w-6 h-6" />
-            Industry News
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            What's new from AI leaders — refreshed daily
-          </p>
-        </div>
-
-        {/* Status Badge — only show when there are actual new updates */}
-        {suggestions.totalNew > 0 && (
+      <PageHeroHeader
+        icon={<TrendingUp className="w-5 h-5" />}
+        title="Industry News"
+        subtitle="What's new from AI leaders — refreshed daily"
+        date={suggestions.totalNew > 0 ? (
           <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg">
             <div className="w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse" />
             <span className="text-sm font-medium text-[var(--text-primary)]">
               {suggestions.totalNew} new {suggestions.totalNew === 1 ? 'update' : 'updates'}
             </span>
           </div>
-        )}
-      </div>
+        ) : undefined}
+      />
 
       {/* Provider Filter */}
       <div className="flex items-center gap-2">

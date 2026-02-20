@@ -1,16 +1,5 @@
 import React, { Suspense, useCallback, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ErrorBoundary } from "./ErrorBoundary";
-
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-const pageVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1, transition: { duration: 0.15, ease: "easeOut" } },
-  exit: { opacity: 0, transition: { duration: 0.1 } },
-};
 
 interface LazyViewProps {
   children: React.ReactNode;
@@ -33,8 +22,7 @@ interface LazyViewProps {
  * doesn't take down the entire content area. The parent Suspense
  * handles the loading state; this handles the error state.
  *
- * Includes a subtle fade+slide transition between views that
- * respects prefers-reduced-motion.
+ * Instant swap between views (no exit animation) — matches Linear/Vercel.
  */
 export function LazyView({ children, title, className, fallback, resetKey, onRetry }: LazyViewProps) {
   const [retry, setRetry] = useState(0);
@@ -47,28 +35,12 @@ export function LazyView({ children, title, className, fallback, resetKey, onRet
   }, [onRetry]);
 
   const innerClass = className ? className : "h-full";
-  const reduced = prefersReducedMotion();
-
-  const content = reduced ? (
-    <div className={innerClass}>{children}</div>
-  ) : (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={String(resetKey ?? "view")}
-        className={innerClass}
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
-  );
 
   return (
     <ErrorBoundary key={boundaryKey} title={title || "Something went wrong"} onRetry={handleRetry}>
-      <Suspense fallback={fallback ?? null}>{content}</Suspense>
+      <Suspense fallback={fallback ?? null}>
+        <div className={innerClass}>{children}</div>
+      </Suspense>
     </ErrorBoundary>
   );
 }

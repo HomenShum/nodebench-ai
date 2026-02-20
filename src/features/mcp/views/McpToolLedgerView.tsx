@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Activity, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { PageHeroHeader } from "@/shared/ui/PageHeroHeader";
 import { useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { useStableQuery } from "@/hooks/useStableQuery";
@@ -103,15 +104,11 @@ export const McpToolLedgerView: React.FC = () => {
     <div className="h-full overflow-auto bg-background">
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-gray-700 dark:text-gray-400" />
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Activity Log</h1>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              See every tool request — who ran it, when, and what happened.
-            </p>
-          </div>
+          <PageHeroHeader
+            icon={<Activity className="w-5 h-5" />}
+            title="Activity Log"
+            subtitle="See every tool request — who ran it, when, and what happened."
+          />
           {policyAndUsage && (
             <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] px-4 py-3">
               <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Safety Rules</div>
@@ -340,7 +337,7 @@ export const McpToolLedgerView: React.FC = () => {
                       key={c._id}
                       type="button"
                       onClick={() => setSelectedId(isSelected ? null : c._id)}
-                      className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
                         isSelected ? "bg-gray-50 dark:bg-white/[0.04]" : ""
                       }`}
                     >

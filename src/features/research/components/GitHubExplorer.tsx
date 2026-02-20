@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Github, Star, TrendingUp, Code, ExternalLink, Tag } from "lucide-react";
+import { PageHeroHeader } from "../../../shared/ui/PageHeroHeader";
 
 export function GitHubExplorer() {
   const [selectedLanguage, setSelectedLanguage] = useState<string | undefined>(undefined);
@@ -20,15 +21,11 @@ export function GitHubExplorer() {
   if (!trendingRepos) {
     return (
       <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <Github className="w-6 h-6" />
-            GitHub Explorer
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Discover trending AI repositories ranked by Phoenix ML
-          </p>
-        </div>
+        <PageHeroHeader
+          icon={<Github className="w-5 h-5" />}
+          title="GitHub Explorer"
+          subtitle="Discover trending AI repositories ranked by Phoenix ML"
+        />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-[var(--bg-secondary)] rounded-lg p-5 space-y-3 no-skeleton-animation" aria-busy="true">
@@ -44,16 +41,11 @@ export function GitHubExplorer() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <Github className="w-6 h-6" />
-          GitHub Explorer
-        </h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Discover trending AI repositories ranked by Phoenix ML
-        </p>
-      </div>
+      <PageHeroHeader
+        icon={<Github className="w-5 h-5" />}
+        title="GitHub Explorer"
+        subtitle="Discover trending AI repositories ranked by Phoenix ML"
+      />
 
       {/* Language Filter */}
       <div className="flex items-center gap-2 flex-wrap">

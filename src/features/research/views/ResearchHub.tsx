@@ -470,14 +470,14 @@ function ResearchHubContent(props: ResearchHubProps) {
   return (
     <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-background overflow-hidden`}>
       {!embedded && (
-        <header className="h-20 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-gray-200 dark:border-white/[0.06] shadow-sm">
+        <header className="h-20 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-edge shadow-sm">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-gray-900 dark:bg-white/[0.12] rounded-none flex items-center justify-center text-white shadow-none transform hover:scale-105 transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
               <div className="text-2xl font-bold tracking-tight text-[color:var(--text-primary)] leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-0.5">Research &amp; Insights</div>
+              <div className="text-xs text-content-secondary mt-1 ml-0.5">Research &amp; Insights</div>
             </div>
           </div>
 
@@ -485,7 +485,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             <button
               type="button"
               onClick={onGoHome}
-              className="flex items-center gap-2 text-xs font-medium text-gray-400 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-content-muted uppercase tracking-wider hover:text-content transition-colors"
             >
               <ArrowRight className="w-3 h-3 rotate-180" />
               <span>Return to Pulse</span>
@@ -494,7 +494,7 @@ function ResearchHubContent(props: ResearchHubProps) {
 
           <div className="flex items-center gap-8">
             {/* Historical Date Selector */}
-            <div className="flex items-center gap-2 p-1 bg-gray-100/50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06]">
+            <div className="flex items-center gap-2 p-1 bg-gray-100/50 dark:bg-white/[0.04] border border-edge">
               {availableDates && availableDates.length > 0 ? (
                 <>
                   {availableDates.slice(0, 3).map((date: string) => (
@@ -504,7 +504,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       onClick={() => setSelectedDate(date)}
                       className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
                         ? "bg-gray-950 dark:bg-white/[0.12] text-white shadow-lg"
-                        : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        : "text-content-muted hover:text-content"
                         }`}
                     >
                       {new Date(date + "T00:00:00").toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -514,22 +514,22 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-gray-400"}`}
+                    className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-content-muted"}`}
                   >
                     Latest
                   </button>
                 </>
               ) : (
-                <span className="px-3 py-1 text-xs font-medium text-gray-400 tracking-wide">Live</span>
+                <span className="px-3 py-1 text-xs font-medium text-content-muted tracking-wide">Live</span>
               )}
             </div>
 
-            <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-content-secondary uppercase tracking-wider">
               <div className="w-2 h-2 rounded-full bg-gray-700 dark:bg-gray-400 motion-safe:animate-pulse" />
               <span>Secure Feed</span>
             </div>
-            <div className="hidden sm:block w-[1px] h-6 bg-gray-200 dark:bg-white/[0.06]" />
-            <div className="text-sm font-semibold text-gray-600 dark:text-gray-400 font-mono tracking-widest">
+            <div className="hidden sm:block w-[1px] h-6 bg-edge" />
+            <div className="text-sm font-semibold text-content-secondary font-mono tracking-widest">
               <span>{briefingDateString?.replace(/-/g, '.').toUpperCase()}</span>
             </div>
           </div>
@@ -540,17 +540,17 @@ function ResearchHubContent(props: ResearchHubProps) {
       <main className="flex-1 overflow-y-auto custom-scrollbar bg-background">
         {embedded && onGoHome && (
           <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200 dark:border-white/[0.06] pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-edge pb-3">
               <button
                 type="button"
                 onClick={onGoHome}
-                className="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="flex items-center gap-2 text-xs font-medium text-content-secondary uppercase tracking-wider hover:text-content transition-colors"
               >
                 <ArrowRight className="w-3 h-3 rotate-180" />
                 <span>Return to Pulse Overview</span>
               </button>
               {briefDateLabel && (
-                <div className="text-xs font-mono text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <div className="text-xs font-mono text-content-secondary uppercase tracking-wide">
                   {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
                 </div>
               )}
@@ -589,7 +589,7 @@ function ResearchHubContent(props: ResearchHubProps) {
           <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-16">
 
             {/* TAB NAVIGATION */}
-            <nav className="flex items-center gap-1 mb-4 p-1 bg-gray-100/50 dark:bg-white/[0.04] rounded-lg border border-gray-200 dark:border-white/[0.06] w-fit">
+            <nav className="flex items-center gap-1 mb-4 p-1 bg-gray-100/50 dark:bg-white/[0.04] rounded-lg border border-edge w-fit">
               {CONTENT_TABS.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -600,8 +600,8 @@ function ResearchHubContent(props: ResearchHubProps) {
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all',
                       activeTab === tab.id
-                        ? 'bg-white dark:bg-white/[0.08] text-gray-900 dark:text-gray-100 shadow-sm border border-gray-200 dark:border-white/[0.06]'
-                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.04]'
+                        ? 'bg-white dark:bg-white/[0.08] text-content shadow-sm border border-edge'
+                        : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -619,10 +619,10 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <div className="space-y-6">
                   {/* Executive Synthesis */}
                   <section ref={actIRef} data-act-id="actI">
-                    <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
+                    <div className="mb-3 flex items-center justify-between border-b border-edge pb-2">
                       <div className="flex items-center gap-3">
-                        <Newspaper className="w-4 h-4 text-gray-800 dark:text-gray-300" />
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Daily Summary</h3>
+                        <Newspaper className="w-4 h-4 text-content" />
+                        <h3 className="text-sm font-semibold text-content tracking-tight">Daily Summary</h3>
                         {selectedDate && (
                           <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-medium border border-amber-900/10 dark:border-amber-500/20 rounded">Past</span>
                         )}
@@ -650,14 +650,14 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* SIGNALS TAB: Live Signal Stream */}
               {activeTab === 'signals' && (
                 <section ref={actIIIRef} data-act-id="actIII" className="animate-in fade-in duration-300">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-edge pb-2">
                     <div className="flex items-center gap-3">
-                      <TrendingUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Latest Updates</h3>
+                      <TrendingUp className="w-4 h-4 text-content-secondary" />
+                      <h3 className="text-sm font-semibold text-content tracking-tight">Latest Updates</h3>
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-gray-800 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-xs font-medium rounded">Live</div>
                   </div>
-                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-gray-200/60 dark:border-white/[0.06] rounded-lg">
+                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-edge rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>
                       <FeedSection
                         onItemClick={handleFeedItemClick}
@@ -671,12 +671,12 @@ function ResearchHubContent(props: ResearchHubProps) {
               {/* BRIEFING TAB: Institutional Briefing */}
               {activeTab === 'briefing' && (
                 <section ref={actIIRef} data-act-id="actII" className="animate-in fade-in duration-300">
-                  <div className="mb-3 flex items-center justify-between border-b border-gray-200 dark:border-white/[0.06] pb-2">
+                  <div className="mb-3 flex items-center justify-between border-b border-edge pb-2">
                     <div className="flex items-center gap-3">
-                      <Layers className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Full Briefing</h3>
+                      <Layers className="w-4 h-4 text-content-secondary" />
+                      <h3 className="text-sm font-semibold text-content tracking-tight">Full Briefing</h3>
                     </div>
-                    <span className="text-xs font-medium text-gray-400">In-depth</span>
+                    <span className="text-xs font-medium text-content-muted">In-depth</span>
                   </div>
                   <React.Suspense fallback={<SectionLoading />}>
                     <BriefingSection

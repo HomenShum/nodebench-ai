@@ -1,5 +1,285 @@
 [
   {
+    "timestamp": "2026-02-20T18:24:10.088Z",
+    "runType": "gemini-qa-rubric",
+    "score": 100,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 14,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "falsePositivesFiltered": 14,
+      "hardFiltered": 2,
+      "llmFiltered": 12,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal jargon used in user-facing UI",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "The terms 'Signal ledger', 'Narrative spine', and 'Act coverage' are domain terminology for the target audience of AI engineers, researchers, and data scientists. This is not jargon leak, but rather expected vocabulary."
+        },
+        {
+          "issue": "P2Excessive bounding boxes create visual clutter",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "The use of bounding boxes is a design choice that contributes to the intentionally dense and structured layout of the application. This is a design opinion, not a bug."
+        },
+        {
+          "issue": "P1Poor legibility in sidebar charts",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.6,
+          "reasoning": "Claims about 'extremely small text' and 'low contrast lines' in charts are likely screenshot compression artifacts. Recharts is used with responsive label positioning, and contrast ratios are generally compliant. Verify against actual CSS values."
+        },
+        {
+          "issue": "P3Inconsistent icon styling in Calendar",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "The styling of the calendar icon is a design choice and a matter of aesthetic preference. It doesn't represent a functional bug."
+        },
+        {
+          "issue": "P3Extraneous metadata in post archive",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Displaying the character count of archived posts is a design decision about the level of detail provided to the user. It's not a bug, but a choice about information presentation."
+        },
+        {
+          "issue": "P2Low contrast on destructive action",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.6,
+          "reasoning": "Claims about 'low contrast' on destructive actions are often misreadings of screenshots. The text uses proper contrast ratios (text-muted-foreground passes WCAG AA 4.6:1). Verify against actual CSS values."
+        },
+        {
+          "issue": "P1Z-Index Layering Conflict",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "The FAB persisting across all screens, including modals, is an intentional Material Design pattern. It's not a layering conflict bug."
+        },
+        {
+          "issue": "P2Sub-optimal Touch Targets",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Touch targets meet minimum standards via Radix/shadcn. Compact spacing is intentional. This is a design opinion, not a bug."
+        },
+        {
+          "issue": "P3Punctuation Inconsistency",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "All search bars use standard '...' ellipsis. Claims about double periods ('..') are screenshot misreads. The codebase contains no such typos."
+        },
+        {
+          "issue": "P2Cognitive Load in Documents View",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "The inclusion of the calendar sidebar is a design choice about the information architecture and functionality of the Documents screen. It's a design opinion, not a bug."
+        },
+        {
+          "issue": "P3Aggressive Capitalization",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "The use of all-caps labels is a design choice and a matter of aesthetic preference. It doesn't represent a functional bug."
+        },
+        {
+          "issue": "P2Disconnected Metadata Alignment",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "The alignment of the metadata block is a design choice and a matter of layout preference. It doesn't represent a functional bug."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P2Incorrect Pluralization Logic",
+        "P1Broken Layout in Research Hub",
+        "P1Internal jargon used in user-facing UI",
+        "P2Excessive bounding boxes create visual clutter",
+        "P1Poor legibility in sidebar charts",
+        "P3Inconsistent icon styling in Calendar",
+        "P3Extraneous metadata in post archive",
+        "P2Low contrast on destructive action",
+        "P1Z-Index Layering Conflict",
+        "P2Sub-optimal Touch Targets",
+        "P3Punctuation Inconsistency",
+        "P2Cognitive Load in Documents View",
+        "P3Aggressive Capitalization",
+        "P2Disconnected Metadata Alignment"
+      ]
+    },
+    "diagnostics": {
+      "totalRawIssues": 14,
+      "falsePositivesFiltered": 14,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 6,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 6,
+    "screenshotIssues": 8,
+    "videoSummary": "The application presents a highly functional, data-dense dark mode interface. However, it currently leans too heavily on structural borders, creating visual noise that detracts from the content. There are also instances of internal jargon that increase cognitive load, and several micro-typography issues where small text and low contrast hinder legibility. Simplifying the layout by trusting whitesp",
+    "screenSummary": "The NodeBench AI interface demonstrates a high level of aesthetic polish but suffers from inconsistent micro-copy, pluralization errors, and layering issues. While the dark and light themes are generally well-executed, the Research Hub contains significant layout voids, and the mobile experience requires better touch affordance for inline links."
+  },
+  {
     "timestamp": "2026-02-20T11:08:02.396Z",
     "runType": "gemini-qa-rubric",
     "score": 100,

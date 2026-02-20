@@ -8,7 +8,6 @@
  */
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
 interface SidebarButtonProps {
@@ -33,37 +32,35 @@ export function SidebarButton({
   className,
 }: SidebarButtonProps) {
   return (
-    <motion.button
+    <button
       type="button"
       onClick={onClick}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: 'tween', duration: 0.1 }}
       className={cn(
-        'flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md transition-colors duration-150 w-full text-left will-change-transform',
+        'flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md transition-colors duration-150 w-full text-left border-l-2',
         isActive
-          ? 'bg-black/[0.06] dark:bg-white/[0.08] text-gray-900 dark:text-gray-100'
-          : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-700 dark:hover:text-gray-300',
+          ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
+          : 'border-l-transparent text-content-secondary hover:bg-surface-hover hover:text-content',
         className
       )}
     >
       <span className={cn(
         'w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full',
-        isActive ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400'
+        isActive ? 'text-content' : 'text-content-muted'
       )}>
         {icon}
       </span>
       <div className="flex flex-col items-start min-w-0">
         <span className="truncate">{label}</span>
         {isActive && subtitle && (
-          <span className="text-xs text-gray-500 font-medium truncate">{subtitle}</span>
+          <span className="text-xs text-content-secondary font-medium truncate">{subtitle}</span>
         )}
       </div>
       {badge !== undefined && badge > 0 && (
-        <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold rounded-full bg-gray-200 dark:bg-white/[0.08] text-gray-600 dark:text-gray-400">
+        <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold rounded-full bg-surface-secondary text-content-secondary">
           {badge > 99 ? '99+' : badge}
         </span>
       )}
-    </motion.button>
+    </button>
   );
 }
 

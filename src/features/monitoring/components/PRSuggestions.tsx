@@ -7,6 +7,7 @@ import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { GitPullRequest, CheckCircle, Clock, XCircle, ExternalLink, Lightbulb } from "lucide-react";
+import { PageHeroHeader } from "../../../shared/ui/PageHeroHeader";
 
 export function PRSuggestions() {
   const suggestions = useQuery(api.domains.monitoring.industryUpdatesEnhanced.getPRSuggestions, {
@@ -28,16 +29,11 @@ export function PRSuggestions() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-          <GitPullRequest className="w-6 h-6" />
-          Pull Request Suggestions
-        </h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Automated pull request suggestions based on industry updates
-        </p>
-      </div>
+      <PageHeroHeader
+        icon={<GitPullRequest className="w-5 h-5" />}
+        title="Pull Request Suggestions"
+        subtitle="Automated pull request suggestions based on industry updates"
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
