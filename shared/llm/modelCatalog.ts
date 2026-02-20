@@ -15,9 +15,13 @@
  * - claude-sonnet-4.5: Best balance (200K context)
  * - claude-haiku-4.5: Fastest (200K context) - DEFAULT
  *
- * Google (2 models):
- * - gemini-3-pro: Flagship (2M context)
- * - gemini-3-flash: Frontier intelligence, fast (Dec 17, 2025), 1M context
+ * Google (6 models):
+ * - gemini-3.1-pro-preview: Latest flagship (Feb 19, 2026), 1M context, complex reasoning + agentic
+ * - gemini-3-pro-preview: Flagship preview (2M context)
+ * - gemini-3-flash-preview: Frontier intelligence, fast (Dec 17, 2025), 1M context
+ * - gemini-2.5-pro: Stable flagship (1M context)
+ * - gemini-2.5-flash: Stable efficient (1M context)
+ * - gemini-2.5-flash-lite: Ultra-efficient (1M context)
  *
  * For model resolution logic, see: convex/domains/agents/mcp_tools/models/
  */
@@ -63,9 +67,22 @@ export const modelPricing: Record<string, ModelPricing> = {
   "claude-sonnet-4.5": { inputPer1M: 3.00, outputPer1M: 15.00, cachedInputPer1M: 0.30, contextWindow: 200000 },
   "claude-haiku-4.5": { inputPer1M: 0.80, outputPer1M: 4.00, cachedInputPer1M: 0.08, contextWindow: 200000 },
 
-  // Google Gemini (2025)
+  // Google Gemini 3.1 Series (Feb 2026 preview)
+  "gemini-3.1-pro-preview": { inputPer1M: 2.50, outputPer1M: 10.00, cachedInputPer1M: 0.25, contextWindow: 1048576 },
+
+  // Google Gemini 3 Series (2025-2026 preview)
   "gemini-3-pro": { inputPer1M: 2.00, outputPer1M: 8.00, cachedInputPer1M: 0.20, contextWindow: 2000000 },
+  "gemini-3-pro-preview": { inputPer1M: 2.00, outputPer1M: 8.00, cachedInputPer1M: 0.20, contextWindow: 2000000 },
   "gemini-3-flash": { inputPer1M: 0.10, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 1000000 },
+  "gemini-3-flash-preview": { inputPer1M: 0.10, outputPer1M: 0.40, cachedInputPer1M: 0.01, contextWindow: 1000000 },
+
+  // Google Gemini 2.5 Series (stable, Feb 2026)
+  "gemini-2.5-pro": { inputPer1M: 1.25, outputPer1M: 10.00, cachedInputPer1M: 0.31, contextWindow: 1000000 },
+  "gemini-2.5-flash": { inputPer1M: 0.15, outputPer1M: 0.60, cachedInputPer1M: 0.04, contextWindow: 1000000 },
+  "gemini-2.5-flash-lite": { inputPer1M: 0.075, outputPer1M: 0.30, cachedInputPer1M: 0.02, contextWindow: 1000000 },
+
+  // Google Gemini 2.0 Series (DEPRECATED — sunset March 31, 2026)
+  "gemini-2.0-flash": { inputPer1M: 0.10, outputPer1M: 0.40, cachedInputPer1M: 0.025, contextWindow: 1000000 },
 
   // OpenRouter (pricing used by eval cost checks; USD per 1M tokens)
   "deepseek-r1": { inputPer1M: 0.70, outputPer1M: 2.40, contextWindow: 163840 },
@@ -194,15 +211,17 @@ export const llmModelCatalog: ModelCatalog = {
     coding: ["claude-opus-4.6", "claude-sonnet-4.5"],
   },
   gemini: {
-    chat: ["gemini-3-flash", "gemini-3-pro"],
-    agent: ["gemini-3-pro", "gemini-3-flash"],
-    router: ["gemini-3-flash"],
-    judge: ["gemini-3-pro", "gemini-3-flash"],
-    analysis: ["gemini-3-pro", "gemini-3-flash"],
-    vision: ["gemini-3-flash", "gemini-3-pro"],
-    fileSearch: ["gemini-3-flash"],
-    voice: ["gemini-3-flash"],
-    coding: ["gemini-3-pro", "gemini-3-flash"],
+    // Gemini 3 (preview) → 2.5 (stable) → 2.0 (deprecated March 31 2026).
+    // Callers can still override explicitly with any model ID.
+    chat: ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash", "gemini-2.5-pro"],
+    agent: ["gemini-3-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
+    router: ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.5-flash-lite"],
+    judge: ["gemini-3-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro"],
+    analysis: ["gemini-3-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
+    vision: ["gemini-3-flash-preview", "gemini-3-pro-preview", "gemini-2.5-flash", "gemini-2.5-pro"],
+    fileSearch: ["gemini-3-flash-preview", "gemini-2.5-flash"],
+    voice: ["gemini-3-flash-preview", "gemini-2.5-flash"],
+    coding: ["gemini-3-pro-preview", "gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
   },
   openrouter: {
     chat: ["glm-4.7-flash", "deepseek-v3.2-speciale", "deepseek-r1", "glm-4.7"],
@@ -495,15 +514,14 @@ export const modelAliases: Record<string, string> = {
   "haiku": "claude-haiku-4.5",
   "anthropic": "claude-sonnet-4.5",
 
-  // Gemini aliases → Gemini 3 Flash (Dec 17, 2025)
-  "gemini": "gemini-3-flash",
-  "gemini-flash": "gemini-3-flash",
-  "gemini-2.5-flash": "gemini-3-flash",
-  "gemini-2.5-pro": "gemini-3-flash",
-  "gemini-pro": "gemini-3-pro",
-  "gemini-3": "gemini-3-pro",
-  "flash": "gemini-3-flash",
-  "google": "gemini-3-flash",
+  // Gemini aliases → default to latest stable or preview
+  "gemini": "gemini-3-flash-preview",
+  "gemini-flash": "gemini-3-flash-preview",
+  "gemini-pro": "gemini-3-pro-preview",
+  "gemini-3": "gemini-3-pro-preview",
+  "gemini-2.5": "gemini-2.5-flash",
+  "flash": "gemini-3-flash-preview",
+  "google": "gemini-3-flash-preview",
 };
 
 /**
@@ -609,8 +627,12 @@ export const modelFallbackChains: Record<string, string[]> = {
   "claude-opus-4.5": ["claude-sonnet-4.5", "claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
   "claude-sonnet-4.5": ["claude-haiku-4.5", "gpt-5-mini", "gemini-3-flash"],
 
-  // Gemini long-context → fast Gemini → cross-provider small model
-  "gemini-3-pro": ["gemini-3-flash", "gpt-5-mini", "claude-haiku-4.5"],
+  // Gemini: preview → stable 2.5 → deprecated 2.0 → cross-provider
+  "gemini-3-pro-preview": ["gemini-3-flash-preview", "gemini-2.5-pro", "gemini-2.5-flash", "gpt-5-mini"],
+  "gemini-3-flash-preview": ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "claude-haiku-4.5"],
+  "gemini-3-pro": ["gemini-3-flash", "gemini-2.5-pro", "gemini-2.5-flash", "gpt-5-mini", "claude-haiku-4.5"],
+  "gemini-2.5-pro": ["gemini-2.5-flash", "gemini-3-flash-preview", "gpt-5-mini", "claude-haiku-4.5"],
+  "gemini-2.5-flash": ["gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-3-flash-preview", "claude-haiku-4.5"],
 };
 
 export function getNextFallback(model: string, attempted: string[]): string | null {
@@ -633,11 +655,12 @@ export function getModelForContextSize(
     return preferredModel;
   }
   
-  // Try larger context models in order of preference (7 approved models only)
+  // Try larger context models in order of preference
   const largeContextModels = [
-    "gemini-3-flash",        // 1M context
-    "gemini-3-pro",          // 2M context
-    "gpt-5.2",               // 256K context
+    "gemini-3-flash-preview", // 1M context
+    "gemini-2.5-flash",       // 1M context (stable)
+    "gemini-3-pro-preview",   // 2M context
+    "gpt-5.2",                // 256K context
   ];
   
   for (const model of largeContextModels) {
@@ -715,9 +738,12 @@ export const modelEquivalents: Record<string, Record<LlmProvider, string>> = {
   "glm-4.7-flash": { openai: "gpt-5-mini", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
 
   // Fast/efficient models
-  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
-  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gpt-5-nano": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "claude-haiku-4.5": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
   "gemini-3-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gemini-3-flash-preview": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-3-flash-preview", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gemini-2.5-flash": { openai: "gpt-5-nano", anthropic: "claude-haiku-4.5", gemini: "gemini-2.5-flash", openrouter: "glm-4.7-flash", xai: "grok-3-mini" },
+  "gemini-2.5-pro": { openai: "gpt-5-mini", anthropic: "claude-sonnet-4.5", gemini: "gemini-2.5-pro", openrouter: "glm-4.7", xai: "grok-4-1-fast-reasoning" },
 };
 
 /**
@@ -733,7 +759,7 @@ export function getEquivalentModel(modelName: string, targetProvider: LlmProvide
   const defaults: Record<LlmProvider, string> = {
     openai: "gpt-5-nano",          // Cheapest OpenAI
     anthropic: "claude-haiku-4.5", // Cheapest Anthropic (DEFAULT)
-    gemini: "gemini-3-flash",      // Cheapest Google (Dec 17, 2025)
+    gemini: "gemini-2.5-flash",      // Cheapest stable Google (Feb 2026)
     openrouter: "glm-4.7-flash",   // Cheapest OpenRouter-priced model (Jan 2026)
     xai: "grok-3-mini",            // Cheapest xAI (Jan 2026)
   };

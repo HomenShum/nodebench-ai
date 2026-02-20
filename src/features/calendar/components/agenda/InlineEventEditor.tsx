@@ -154,9 +154,9 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[11px] text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
+        <div className="text-xs text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
         <div className="flex items-center gap-2">
-          <div className="text-[11px] text-[var(--text-muted)]">{saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}</div>
+          <div className="text-xs text-[var(--text-muted)]">{saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}</div>
           <button
             onClick={() => { void save(); }}
             disabled={saveHint !== "unsaved" || isSaving}
@@ -199,7 +199,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           <button
             type="button"
             onClick={() => setAllDay((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Toggle all‑day"
           >
             <CalendarIcon className="w-3 h-3 opacity-70" /> {allDay ? "All‑day" : "Timed"}
@@ -211,7 +211,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`pill inline-flex items-center gap-1 text-[11px] ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
+                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
                 title={`Set status: ${s}`}
               >
                 {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -223,7 +223,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           <button
             type="button"
             onClick={() => setShowStartPicker((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set start"
             aria-expanded={showStartPicker}
           >
@@ -233,7 +233,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           <button
             type="button"
             onClick={() => setShowEndPicker((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set end"
             aria-expanded={showEndPicker}
           >
@@ -245,7 +245,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           <button
             type="button"
             onClick={() => setShowTagsEditor((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Edit tags"
             aria-expanded={showTagsEditor}
           >
@@ -281,7 +281,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           <button
             type="button"
             onClick={() => setShowLocation((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set location"
             aria-expanded={showLocation}
           >
@@ -303,8 +303,8 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
 
         {/* Color row with inline palette */}
         <div className="flex flex-wrap items-center gap-2 mt-1.5">
-          <span className="text-[11px] text-[var(--text-secondary)]">Color</span>
-          <span className="pill pill--time inline-flex items-center gap-1 text-[11px]">
+          <span className="text-xs text-[var(--text-secondary)]">Color</span>
+          <span className="pill pill--time inline-flex items-center gap-1 text-xs">
             <Palette className="w-3 h-3 opacity-70" /> {color || "None"}
           </span>
           <div className="flex items-center gap-1">
@@ -322,7 +322,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
             <button
               type="button"
               onClick={() => setColor("")}
-              className="text-[11px] px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+              className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
               title="Clear color"
             >
               Clear
@@ -333,12 +333,12 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
         {showTagsEditor && (
           <div className="flex flex-wrap items-center gap-1 mt-1.5">
             {tags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
                 {t}
                 <button
                   type="button"
                   onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
-                  className="text-[10px] opacity-70 hover:opacity-100"
+                  className="text-xs opacity-70 hover:opacity-100"
                   title="Remove tag"
                 >
                   ×
@@ -348,7 +348,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-[11px] bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
               onKeyDown={(e) => {
                 const el = e.currentTarget;
                 if (e.key === "Enter" || e.key === ",") {

@@ -48,12 +48,12 @@ export default function AgendaHoverPreview({
         const d = Number(parts[2]);
         if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
           const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
-          return dt.toLocaleDateString();
+          return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
       }
     }
     const ms = typeof val?.dateMs === "number" ? val.dateMs : undefined;
-    if (ms) return new Date(ms).toLocaleDateString();
+    if (ms) return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     return undefined;
   };
 
@@ -96,7 +96,7 @@ export default function AgendaHoverPreview({
       <div className="flex items-center justify-between gap-2">
         <div className="truncate text-xs font-semibold" title={String(item?.title ?? item?.name ?? "")}>{String(item?.title ?? item?.name ?? "")}</div>
         {kind === "event" ? (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+          <span className={`text-xs px-1.5 py-0.5 rounded border ${
             item?.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' :
             item?.status === 'tentative' ? 'bg-amber-50 text-amber-700 border-amber-200' :
             'bg-indigo-50 text-gray-700 border-indigo-200'
@@ -104,7 +104,7 @@ export default function AgendaHoverPreview({
             {String(item?.status ?? 'confirmed')}
           </span>
         ) : kind === "task" ? (
-          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+          <span className={`text-xs px-1.5 py-0.5 rounded border ${
             item?.status === 'blocked' ? 'bg-rose-50 text-rose-700 border-rose-200' :
             item?.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
             item?.status === 'done' ? 'bg-indigo-50 text-gray-700 border-indigo-200' :
@@ -113,7 +113,7 @@ export default function AgendaHoverPreview({
             {String(item?.status ?? 'todo')}
           </span>
         ) : (
-          <span className="text-[10px] px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">Holiday</span>
+          <span className="text-xs px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">Holiday</span>
         )}
       </div>
 
@@ -122,16 +122,16 @@ export default function AgendaHoverPreview({
         {kind === 'event' ? (
           <>
             {eventTime(item) && (
-              <div className="text-[10px] text-[var(--text-secondary)]">{eventTime(item)}</div>
+              <div className="text-xs text-[var(--text-secondary)]">{eventTime(item)}</div>
             )}
             {item?.location && (
-              <div className="text-[10px] text-[var(--text-secondary)]">📍 {String(item.location)}</div>
+              <div className="text-xs text-[var(--text-secondary)]">📍 {String(item.location)}</div>
             )}
             {Array.isArray(item?.attendees) && item.attendees.length > 0 && (
-              <div className="text-[10px] text-[var(--text-secondary)]">👥 {item.attendees.length} attendee{item.attendees.length > 1 ? 's' : ''}</div>
+              <div className="text-xs text-[var(--text-secondary)]">👥 {item.attendees.length} attendee{item.attendees.length > 1 ? 's' : ''}</div>
             )}
             {item?.description && (
-              <div className="text-[10px] text-[var(--text-secondary)]">
+              <div className="text-xs text-[var(--text-secondary)]">
                 {String(item.description).slice(0, 140)}{String(item.description).length > 140 ? '…' : ''}
               </div>
             )}
@@ -139,22 +139,22 @@ export default function AgendaHoverPreview({
         ) : kind === 'task' ? (
           <>
             {typeof item?.dueDate === 'number' && (
-              <div className="text-[10px] text-[var(--text-secondary)]">Due: {new Date(item.dueDate).toLocaleString()}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Due: {new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
             )}
             {item?.priority && (
-              <div className="text-[10px] text-[var(--text-secondary)]">Priority: {String(item.priority)}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Priority: {String(item.priority)}</div>
             )}
             {item?.description && (
-              <div className="text-[10px] text-[var(--text-secondary)]">
+              <div className="text-xs text-[var(--text-secondary)]">
                 {String(item.description).slice(0, 140)}{String(item.description).length > 140 ? '…' : ''}
               </div>
             )}
           </>
         ) : (
           <>
-            <div className="text-[10px] text-[var(--text-secondary)]">Date: {holidayDate(item) ?? ''}</div>
+            <div className="text-xs text-[var(--text-secondary)]">Date: {holidayDate(item) ?? ''}</div>
             {item?.country && (
-              <div className="text-[10px] text-[var(--text-secondary)]">Country: {String(item.country)}</div>
+              <div className="text-xs text-[var(--text-secondary)]">Country: {String(item.country)}</div>
             )}
           </>
         )}

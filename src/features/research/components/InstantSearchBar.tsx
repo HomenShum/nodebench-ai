@@ -183,7 +183,7 @@ export function InstantSearchBar({
       {/* Instant Results Dropdown */}
       {showDropdown && (
         <div className="absolute top-full left-0 right-0 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] border-t-0 rounded-b-2xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="px-4 py-2 text-[10px] font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider bg-[color:var(--bg-secondary)]/80 flex items-center gap-1.5">
+          <div className="px-4 py-2 text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider bg-[color:var(--bg-secondary)]/80 flex items-center gap-1.5">
             <Zap className="w-3 h-3" />
             Instant Knowledge (Cached)
           </div>
@@ -276,7 +276,7 @@ function ResultItem({ doc, onClick }: { doc: SearchResult; onClick: () => void }
           {doc.snippet}
         </p>
         {isDossier && (
-          <span className="inline-flex items-center mt-2 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">
+          <span className="inline-flex items-center mt-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
             Report
           </span>
         )}
@@ -302,7 +302,7 @@ function formatTimeAgo(timestamp: number): string {
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
 
-  return new Date(timestamp).toLocaleDateString();
+  return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default InstantSearchBar;

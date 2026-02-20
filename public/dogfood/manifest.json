@@ -1,201 +1,1048 @@
 {
-  "capturedAtIso": "2026-02-18T21:59:42.429Z",
+  "capturedAtIso": "2026-02-20T09:11:20.172Z",
   "basePath": "/dogfood/screenshots",
+  "variants": {
+    "darkDesktop": 49,
+    "lightDesktop": 33,
+    "darkMobile": 33,
+    "lightMobile": 33
+  },
   "items": [
     {
       "file": "activity.png",
       "kind": "route",
-      "label": "Activity"
+      "label": "Activity",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "activity-light.png",
+      "kind": "route",
+      "label": "Activity",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "activity-mobile.png",
+      "kind": "route",
+      "label": "Activity",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "activity-mobile-light.png",
+      "kind": "route",
+      "label": "Activity",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "agent-marketplace.png",
       "kind": "route",
-      "label": "Agent Marketplace"
+      "label": "Agent Marketplace",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "agent-marketplace-light.png",
+      "kind": "route",
+      "label": "Agent Marketplace",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "agent-marketplace-mobile.png",
+      "kind": "route",
+      "label": "Agent Marketplace",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "agent-marketplace-mobile-light.png",
+      "kind": "route",
+      "label": "Agent Marketplace",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "agents.png",
       "kind": "route",
-      "label": "Agents"
+      "label": "Agents",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "agents-light.png",
+      "kind": "route",
+      "label": "Agents",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "agents-mobile.png",
+      "kind": "route",
+      "label": "Agents",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "agents-mobile-light.png",
+      "kind": "route",
+      "label": "Agents",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "analytics-components.png",
       "kind": "route",
-      "label": "Analytics Components"
+      "label": "Analytics Components",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "analytics-components-light.png",
+      "kind": "route",
+      "label": "Analytics Components",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "analytics-components-mobile.png",
+      "kind": "route",
+      "label": "Analytics Components",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "analytics-components-mobile-light.png",
+      "kind": "route",
+      "label": "Analytics Components",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "analytics-hitl.png",
       "kind": "route",
-      "label": "Analytics Hitl"
+      "label": "Analytics Hitl",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "analytics-hitl-light.png",
+      "kind": "route",
+      "label": "Analytics Hitl",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "analytics-hitl-mobile.png",
+      "kind": "route",
+      "label": "Analytics Hitl",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "analytics-hitl-mobile-light.png",
+      "kind": "route",
+      "label": "Analytics Hitl",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "analytics-recommendations.png",
       "kind": "route",
-      "label": "Analytics Recommendations"
+      "label": "Analytics Recommendations",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "analytics-recommendations-light.png",
+      "kind": "route",
+      "label": "Analytics Recommendations",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "analytics-recommendations-mobile.png",
+      "kind": "route",
+      "label": "Analytics Recommendations",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "analytics-recommendations-mobile-light.png",
+      "kind": "route",
+      "label": "Analytics Recommendations",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "benchmarks.png",
       "kind": "route",
-      "label": "Benchmarks"
+      "label": "Benchmarks",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "benchmarks-light.png",
+      "kind": "route",
+      "label": "Benchmarks",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "benchmarks-mobile.png",
+      "kind": "route",
+      "label": "Benchmarks",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "benchmarks-mobile-light.png",
+      "kind": "route",
+      "label": "Benchmarks",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "calendar.png",
       "kind": "route",
-      "label": "Calendar"
+      "label": "Calendar",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "calendar-light.png",
+      "kind": "route",
+      "label": "Calendar",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "calendar-mobile.png",
+      "kind": "route",
+      "label": "Calendar",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "calendar-mobile-light.png",
+      "kind": "route",
+      "label": "Calendar",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "cost-dashboard.png",
       "kind": "route",
-      "label": "Cost Dashboard"
+      "label": "Cost Dashboard",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "cost-dashboard-light.png",
+      "kind": "route",
+      "label": "Cost Dashboard",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "cost-dashboard-mobile.png",
+      "kind": "route",
+      "label": "Cost Dashboard",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "cost-dashboard-mobile-light.png",
+      "kind": "route",
+      "label": "Cost Dashboard",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "document-recommendations.png",
       "kind": "route",
-      "label": "Document Recommendations"
+      "label": "Document Recommendations",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "document-recommendations-light.png",
+      "kind": "route",
+      "label": "Document Recommendations",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "document-recommendations-mobile.png",
+      "kind": "route",
+      "label": "Document Recommendations",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "document-recommendations-mobile-light.png",
+      "kind": "route",
+      "label": "Document Recommendations",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "documents.png",
       "kind": "route",
-      "label": "Documents"
+      "label": "Documents",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "documents-light.png",
+      "kind": "route",
+      "label": "Documents",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "documents-mobile.png",
+      "kind": "route",
+      "label": "Documents",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "documents-mobile-light.png",
+      "kind": "route",
+      "label": "Documents",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "dogfood.png",
       "kind": "route",
-      "label": "Dogfood"
+      "label": "Dogfood",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "dogfood-light.png",
+      "kind": "route",
+      "label": "Dogfood",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "dogfood-mobile.png",
+      "kind": "route",
+      "label": "Dogfood",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "dogfood-mobile-light.png",
+      "kind": "route",
+      "label": "Dogfood",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "footnotes.png",
       "kind": "route",
-      "label": "Footnotes"
+      "label": "Footnotes",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "footnotes-light.png",
+      "kind": "route",
+      "label": "Footnotes",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "footnotes-mobile.png",
+      "kind": "route",
+      "label": "Footnotes",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "footnotes-mobile-light.png",
+      "kind": "route",
+      "label": "Footnotes",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "for-you-feed.png",
       "kind": "route",
-      "label": "For You Feed"
+      "label": "For You Feed",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "for-you-feed-light.png",
+      "kind": "route",
+      "label": "For You Feed",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "for-you-feed-mobile.png",
+      "kind": "route",
+      "label": "For You Feed",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "for-you-feed-mobile-light.png",
+      "kind": "route",
+      "label": "For You Feed",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "funding.png",
       "kind": "route",
-      "label": "Funding"
+      "label": "Funding",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "funding-light.png",
+      "kind": "route",
+      "label": "Funding",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "funding-mobile.png",
+      "kind": "route",
+      "label": "Funding",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "funding-mobile-light.png",
+      "kind": "route",
+      "label": "Funding",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "github-explorer.png",
       "kind": "route",
-      "label": "Github Explorer"
+      "label": "Github Explorer",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "github-explorer-light.png",
+      "kind": "route",
+      "label": "Github Explorer",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "github-explorer-mobile.png",
+      "kind": "route",
+      "label": "Github Explorer",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "github-explorer-mobile-light.png",
+      "kind": "route",
+      "label": "Github Explorer",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "home.png",
       "kind": "route",
-      "label": "Home"
+      "label": "Home",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "home-light.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "home-mobile.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "home-mobile-light.png",
+      "kind": "route",
+      "label": "Home",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "industry-updates.png",
       "kind": "route",
-      "label": "Industry Updates"
+      "label": "Industry Updates",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "industry-updates-light.png",
+      "kind": "route",
+      "label": "Industry Updates",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "industry-updates-mobile.png",
+      "kind": "route",
+      "label": "Industry Updates",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "industry-updates-mobile-light.png",
+      "kind": "route",
+      "label": "Industry Updates",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
+      "file": "interaction-agent-input.png",
+      "kind": "route",
+      "label": "Interaction Agent Input",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-agent-query-typed.png",
+      "kind": "route",
+      "label": "Interaction Agent Query Typed",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-agent-response-stream.png",
+      "kind": "route",
+      "label": "Interaction Agent Response Stream",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-agent-thread-switch.png",
+      "kind": "route",
+      "label": "Interaction Agent Thread Switch",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-calendar-click.png",
+      "kind": "route",
+      "label": "Interaction Calendar Click",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-document-hover.png",
+      "kind": "route",
+      "label": "Interaction Document Hover",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-dogfood-frame-selected.png",
+      "kind": "route",
+      "label": "Interaction Dogfood Frame Selected",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-github-hover.png",
+      "kind": "route",
+      "label": "Interaction Github Hover",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-search-suggestions.png",
+      "kind": "route",
+      "label": "Interaction Search Suggestions",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-sidebar-hover.png",
+      "kind": "route",
+      "label": "Interaction Sidebar Hover",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "interaction-swarm-lanes.png",
+      "kind": "route",
+      "label": "Interaction Swarm Lanes",
+      "theme": "dark",
+      "viewport": "desktop"
     },
     {
       "file": "linkedin-posts.png",
       "kind": "route",
-      "label": "Linkedin Posts"
+      "label": "Linkedin Posts",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "linkedin-posts-light.png",
+      "kind": "route",
+      "label": "Linkedin Posts",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "linkedin-posts-mobile.png",
+      "kind": "route",
+      "label": "Linkedin Posts",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "linkedin-posts-mobile-light.png",
+      "kind": "route",
+      "label": "Linkedin Posts",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "mcp-ledger.png",
       "kind": "route",
-      "label": "Mcp Ledger"
+      "label": "Mcp Ledger",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "mcp-ledger-light.png",
+      "kind": "route",
+      "label": "Mcp Ledger",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "mcp-ledger-mobile.png",
+      "kind": "route",
+      "label": "Mcp Ledger",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "mcp-ledger-mobile-light.png",
+      "kind": "route",
+      "label": "Mcp Ledger",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "pr-suggestions.png",
       "kind": "route",
-      "label": "Pr Suggestions"
+      "label": "Pr Suggestions",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "pr-suggestions-light.png",
+      "kind": "route",
+      "label": "Pr Suggestions",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "pr-suggestions-mobile.png",
+      "kind": "route",
+      "label": "Pr Suggestions",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "pr-suggestions-mobile-light.png",
+      "kind": "route",
+      "label": "Pr Suggestions",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "public-docs.png",
       "kind": "route",
-      "label": "Public Docs"
+      "label": "Public Docs",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "public-docs-light.png",
+      "kind": "route",
+      "label": "Public Docs",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "public-docs-mobile.png",
+      "kind": "route",
+      "label": "Public Docs",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "public-docs-mobile-light.png",
+      "kind": "route",
+      "label": "Public Docs",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "research-briefing.png",
       "kind": "route",
-      "label": "Research Briefing"
+      "label": "Research Briefing",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-briefing-light.png",
+      "kind": "route",
+      "label": "Research Briefing",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-briefing-mobile.png",
+      "kind": "route",
+      "label": "Research Briefing",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "research-briefing-mobile-light.png",
+      "kind": "route",
+      "label": "Research Briefing",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "research-changelog.png",
       "kind": "route",
-      "label": "Research Changelog"
+      "label": "Research Changelog",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-changelog-light.png",
+      "kind": "route",
+      "label": "Research Changelog",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-changelog-mobile.png",
+      "kind": "route",
+      "label": "Research Changelog",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "research-changelog-mobile-light.png",
+      "kind": "route",
+      "label": "Research Changelog",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "research-deals.png",
       "kind": "route",
-      "label": "Research Deals"
+      "label": "Research Deals",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-deals-light.png",
+      "kind": "route",
+      "label": "Research Deals",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-deals-mobile.png",
+      "kind": "route",
+      "label": "Research Deals",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "research-deals-mobile-light.png",
+      "kind": "route",
+      "label": "Research Deals",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "research-hub.png",
       "kind": "route",
-      "label": "Research Hub"
+      "label": "Research Hub",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-hub-light.png",
+      "kind": "route",
+      "label": "Research Hub",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-hub-mobile.png",
+      "kind": "route",
+      "label": "Research Hub",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "research-hub-mobile-light.png",
+      "kind": "route",
+      "label": "Research Hub",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "research-overview.png",
       "kind": "route",
-      "label": "Research Overview"
+      "label": "Research Overview",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-overview-light.png",
+      "kind": "route",
+      "label": "Research Overview",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-overview-mobile.png",
+      "kind": "route",
+      "label": "Research Overview",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "research-overview-mobile-light.png",
+      "kind": "route",
+      "label": "Research Overview",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "research-signals.png",
       "kind": "route",
-      "label": "Research Signals"
+      "label": "Research Signals",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-signals-light.png",
+      "kind": "route",
+      "label": "Research Signals",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "research-signals-mobile.png",
+      "kind": "route",
+      "label": "Research Signals",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "research-signals-mobile-light.png",
+      "kind": "route",
+      "label": "Research Signals",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "roadmap.png",
       "kind": "route",
-      "label": "Roadmap"
+      "label": "Roadmap",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "roadmap-light.png",
+      "kind": "route",
+      "label": "Roadmap",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "roadmap-mobile.png",
+      "kind": "route",
+      "label": "Roadmap",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "roadmap-mobile-light.png",
+      "kind": "route",
+      "label": "Roadmap",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "showcase.png",
       "kind": "route",
-      "label": "Showcase"
+      "label": "Showcase",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "showcase-light.png",
+      "kind": "route",
+      "label": "Showcase",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "showcase-mobile.png",
+      "kind": "route",
+      "label": "Showcase",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "showcase-mobile-light.png",
+      "kind": "route",
+      "label": "Showcase",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "signals.png",
       "kind": "route",
-      "label": "Signals"
+      "label": "Signals",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "signals-light.png",
+      "kind": "route",
+      "label": "Signals",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "signals-mobile.png",
+      "kind": "route",
+      "label": "Signals",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "signals-mobile-light.png",
+      "kind": "route",
+      "label": "Signals",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "spreadsheets.png",
       "kind": "route",
-      "label": "Spreadsheets"
+      "label": "Spreadsheets",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "spreadsheets-light.png",
+      "kind": "route",
+      "label": "Spreadsheets",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "spreadsheets-mobile.png",
+      "kind": "route",
+      "label": "Spreadsheets",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "spreadsheets-mobile-light.png",
+      "kind": "route",
+      "label": "Spreadsheets",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "timeline.png",
       "kind": "route",
-      "label": "Timeline"
+      "label": "Timeline",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "timeline-light.png",
+      "kind": "route",
+      "label": "Timeline",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "timeline-mobile.png",
+      "kind": "route",
+      "label": "Timeline",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "timeline-mobile-light.png",
+      "kind": "route",
+      "label": "Timeline",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "assistant-panel.png",
       "kind": "interaction",
-      "label": "Assistant Panel"
+      "label": "Assistant Panel",
+      "theme": "dark",
+      "viewport": "desktop"
     },
     {
       "file": "command-palette.png",
       "kind": "interaction",
-      "label": "Command Palette"
+      "label": "Command Palette",
+      "theme": "dark",
+      "viewport": "desktop"
     },
     {
       "file": "settings-account.png",
       "kind": "settings",
-      "label": "Account.png"
-    },
-    {
-      "file": "settings-billing.png",
-      "kind": "settings",
-      "label": "Billing.png"
+      "label": "Account",
+      "theme": "dark",
+      "viewport": "desktop"
     },
     {
       "file": "settings-profile.png",
       "kind": "settings",
-      "label": "Profile.png"
+      "label": "Profile",
+      "theme": "dark",
+      "viewport": "desktop"
     },
     {
       "file": "settings-usage.png",
       "kind": "settings",
-      "label": "Usage.png"
+      "label": "Usage",
+      "theme": "dark",
+      "viewport": "desktop"
     }
   ]
 }

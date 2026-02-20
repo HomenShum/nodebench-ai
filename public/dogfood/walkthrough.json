@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-02-18T22:02:04.210Z",
-  "baseURL": "http://127.0.0.1:4173",
+  "capturedAtIso": "2026-02-20T09:07:37.296Z",
+  "baseURL": "http://127.0.0.1:5173",
   "mime": "video/mp4",
   "publish": "static",
   "chapters": [
@@ -14,214 +14,214 @@
       "index": 2,
       "name": "Research Hub",
       "path": "/research",
-      "startSec": 1.3
+      "startSec": 2
     },
     {
       "index": 3,
       "name": "Research: Overview",
       "path": "/research/overview",
-      "startSec": 2.5
+      "startSec": 4.1
     },
     {
       "index": 4,
       "name": "Research: Signals",
       "path": "/research/signals",
-      "startSec": 3.8
+      "startSec": 6.2
     },
     {
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 5.1
+      "startSec": 8.4
     },
     {
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 6.4
+      "startSec": 10.5
     },
     {
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 14.8
+      "startSec": 12.6
     },
     {
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 16.1
+      "startSec": 14.7
     },
     {
       "index": 9,
       "name": "Workspace: Spreadsheets",
       "path": "/spreadsheets",
-      "startSec": 17.4
+      "startSec": 16.8
     },
     {
       "index": 10,
       "name": "Workspace: Calendar",
       "path": "/calendar",
-      "startSec": 18.7
+      "startSec": 18.9
     },
     {
       "index": 11,
       "name": "Assistants",
       "path": "/agents",
-      "startSec": 19.9
+      "startSec": 21
     },
     {
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 21.2
+      "startSec": 23.1
     },
     {
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 22.5
+      "startSec": 25.3
     },
     {
       "index": 14,
       "name": "Showcase",
       "path": "/showcase",
-      "startSec": 23.9
+      "startSec": 27.4
     },
     {
       "index": 15,
       "name": "Sources",
       "path": "/footnotes",
-      "startSec": 25.2
+      "startSec": 29.5
     },
     {
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 26.5
+      "startSec": 31.6
     },
     {
       "index": 17,
       "name": "Benchmarks",
       "path": "/benchmarks",
-      "startSec": 27.8
+      "startSec": 33.7
     },
     {
       "index": 18,
       "name": "Funding Brief",
       "path": "/funding",
-      "startSec": 29.1
+      "startSec": 35.8
     },
     {
       "index": 19,
       "name": "Activity",
       "path": "/activity",
-      "startSec": 30.4
+      "startSec": 37.9
     },
     {
       "index": 20,
       "name": "Review Queue",
-      "path": "/analytics/hitl",
-      "startSec": 31.8
+      "path": "/review-queue",
+      "startSec": 40
     },
     {
       "index": 21,
-      "name": "Usage Stats",
+      "name": "Usage & Costs",
       "path": "/analytics/components",
-      "startSec": 33.1
+      "startSec": 42.1
     },
     {
       "index": 22,
       "name": "Feedback",
       "path": "/analytics/recommendations",
-      "startSec": 34.4
+      "startSec": 44.2
     },
     {
       "index": 23,
       "name": "Usage & Costs",
       "path": "/cost",
-      "startSec": 35.8
+      "startSec": 46.4
     },
     {
       "index": 24,
       "name": "Industry News",
       "path": "/industry",
-      "startSec": 37.1
+      "startSec": 48.5
     },
     {
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 38.4
+      "startSec": 50.6
     },
     {
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 39.8
+      "startSec": 52.7
     },
     {
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 41.1
+      "startSec": 54.8
     },
     {
       "index": 28,
       "name": "GitHub Explorer",
       "path": "/github",
-      "startSec": 42.4
+      "startSec": 56.9
     },
     {
       "index": 29,
       "name": "PR Suggestions",
       "path": "/pr-suggestions",
-      "startSec": 43.7
+      "startSec": 59
     },
     {
       "index": 30,
       "name": "LinkedIn Archive",
       "path": "/linkedin",
-      "startSec": 45
+      "startSec": 61.2
     },
     {
       "index": 31,
-      "name": "Tool Usage Ledger",
-      "path": "/mcp/ledger",
-      "startSec": 46.4
+      "name": "Activity Log",
+      "path": "/activity-log",
+      "startSec": 63.3
     },
     {
       "index": 32,
-      "name": "Dogfood Gallery",
-      "path": "/dogfood",
-      "startSec": 47.7
+      "name": "Quality Review",
+      "path": "/quality-review",
+      "startSec": 65.4
     },
     {
       "index": 33,
       "name": "Public Docs",
       "path": "/public",
-      "startSec": 49
+      "startSec": 67.5
     },
     {
       "index": 34,
       "name": "Interaction: Command Palette",
       "path": "(interaction)",
-      "startSec": 50.4
+      "startSec": 69.6
     },
     {
       "index": 35,
       "name": "Interaction: Settings",
       "path": "(interaction)",
-      "startSec": 51.7
+      "startSec": 70.9
     },
     {
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 53.8
+      "startSec": 73.5
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-18_140044.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-20_010559.mp4"
 }

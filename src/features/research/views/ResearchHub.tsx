@@ -117,7 +117,7 @@ function ResearchHubContent(props: ResearchHubProps) {
     : ["AWS", "Vercel", "Postgres", "Cloudflare"];
 
   const isBriefToday = isBriefDateToday(briefingDateString);
-  const briefLabel = isBriefToday ? "Today's Daily Brief" : "Latest Daily Brief";
+  const briefLabel = isBriefToday ? "The Daily Brief" : "Latest Daily Brief";
   const briefDateLabel = briefingDateString ? formatBriefDate(briefingDateString) : null;
 
   const briefId = (briefMemory as any)?._id || "morning_brief_latest";
@@ -507,7 +507,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                         : "text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         }`}
                     >
-                      {new Date(date + "T00:00:00").toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(date + "T00:00:00").toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </button>
                   ))}
                   <div className="w-[1px] h-3 bg-gray-300 dark:bg-white/[0.08] mx-1" />
@@ -705,7 +705,7 @@ function ResearchHubContent(props: ResearchHubProps) {
           </div>
 
           {/* RIGHT: COMPACT HUD SIDEBAR */}
-          <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden xl:block">
+          <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden xl:block overflow-hidden">
             {/* Gradient separator */}
             <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-gray-200/0 via-gray-200 to-gray-200/0 dark:from-white/0 dark:via-white/[0.06] dark:to-white/0" />
 

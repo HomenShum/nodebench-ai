@@ -139,7 +139,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                         ) : (
                             <>
                                 <Sparkles className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
-                                <label htmlFor="cinematic-home-input" className="sr-only">Ask anything or drop a file</label>
+                                <label htmlFor="cinematic-home-input" className="sr-only">Ask anything or upload a file</label>
                                 <input
                                     id="cinematic-home-input"
                                     ref={inputRef}
@@ -147,7 +147,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={handleKeyDown}
-                                    placeholder="Ask anything or drop a file..."
+                                    placeholder="Ask anything or upload a file..."
                                     className="flex-1 bg-transparent text-base text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
                                     autoFocus
                                 />

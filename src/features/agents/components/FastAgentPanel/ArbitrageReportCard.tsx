@@ -81,7 +81,7 @@ function SeverityBadge({ severity }: { severity: 'high' | 'medium' | 'low' }) {
   };
   const c = config[severity];
   return (
-    <span className={cn('px-1.5 py-0.5 text-[10px] font-medium rounded-full', c.bg, c.text)}>
+    <span className={cn('px-1.5 py-0.5 text-xs font-medium rounded-full', c.bg, c.text)}>
       {c.label}
     </span>
   );
@@ -99,7 +99,7 @@ function QualityTierBadge({ tier, score }: { tier: string; score: number }) {
   };
   const c = config[tier] || config.fair;
   return (
-    <span className={cn('px-1.5 py-0.5 text-[10px] font-medium rounded-full', c.bg, c.text)}>
+    <span className={cn('px-1.5 py-0.5 text-xs font-medium rounded-full', c.bg, c.text)}>
       {tier} ({score})
     </span>
   );
@@ -231,7 +231,7 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
                 <span className="font-mono text-[var(--text-secondary)] w-4">{idx + 1}.</span>
                 <QualityTierBadge tier={s.tier} score={s.finalScore} />
                 <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate flex-1">{s.name}</span>
-                <span className="text-[var(--text-muted)] text-[10px]">{s.type}</span>
+                <span className="text-[var(--text-muted)] text-xs">{s.type}</span>
               </div>
             ))}
           </div>
@@ -278,7 +278,7 @@ export function ArbitrageReportCard({ data, className }: ArbitrageReportCardProp
                 {h.status === 'content_changed' && <FileWarning className="h-3 w-3 text-amber-500" />}
                 <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate flex-1">{h.url}</span>
                 {h.responseTimeMs && (
-                  <span className="text-[var(--text-muted)] text-[10px]">{h.responseTimeMs}ms</span>
+                  <span className="text-[var(--text-muted)] text-xs">{h.responseTimeMs}ms</span>
                 )}
               </div>
             ))}

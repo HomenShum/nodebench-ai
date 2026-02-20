@@ -342,7 +342,7 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
 function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?: string }) {
   if (status === "pruned") {
     return (
-      <span className="flex items-center text-[10px] font-bold text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] px-2 py-1 rounded">
+      <span className="flex items-center text-xs font-bold text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] px-2 py-1 rounded">
         <Ban className="w-3 h-3 mr-1" />
         {pruneReason ? pruneReason.slice(0, 20) : "Pruned"}
       </span>
@@ -351,7 +351,7 @@ function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?
 
   if (status === "verified" || status === "completed") {
     return (
-      <span className="flex items-center text-[10px] font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded border border-green-500/20">
+      <span className="flex items-center text-xs font-bold text-green-600 bg-green-500/10 px-2 py-1 rounded border border-green-500/20">
         <CheckCircle className="w-3 h-3 mr-1" />
         Shortlist
       </span>
@@ -360,7 +360,7 @@ function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?
 
   if (status === "running") {
     return (
-      <span className="flex items-center text-[10px] font-bold text-violet-600 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20">
+      <span className="flex items-center text-xs font-bold text-violet-600 bg-violet-500/10 px-2 py-1 rounded border border-violet-500/20">
         <Loader2 className="w-3 h-3 mr-1 motion-safe:animate-spin" />
         Enriching
       </span>
@@ -369,7 +369,7 @@ function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?
 
   if (status === "failed") {
     return (
-      <span className="flex items-center text-[10px] font-bold text-red-600 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
+      <span className="flex items-center text-xs font-bold text-red-600 bg-red-500/10 px-2 py-1 rounded border border-red-500/20">
         <AlertCircle className="w-3 h-3 mr-1" />
         Failed
       </span>
@@ -425,7 +425,7 @@ function EnrichmentGrid({ data }: { data?: CandidateData }) {
           key={id}
           className={`p-2 rounded border ${colorMap[color]}`}
         >
-          <div className="flex items-center gap-1 text-[10px] uppercase font-bold mb-1">
+          <div className="flex items-center gap-1 text-xs uppercase font-bold mb-1">
             <Icon className="w-3 h-3" />
             {label}
           </div>

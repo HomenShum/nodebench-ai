@@ -101,7 +101,7 @@ function CompactView({ steps, totalDurationMs, onExpand }: Omit<TraceBreadcrumbP
               />
               <span
                 className={cn(
-                  "text-[10px] leading-none max-w-[60px] truncate",
+                  "text-xs leading-none max-w-[60px] truncate",
                   step.success
                     ? "text-gray-500 dark:text-gray-400"
                     : "text-red-500 dark:text-red-400"
@@ -150,7 +150,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
             )}
           >
             {/* Step number */}
-            <span className="text-[10px] font-mono text-gray-400 dark:text-gray-400 w-4 text-right flex-shrink-0">
+            <span className="text-xs font-mono text-gray-400 dark:text-gray-400 w-4 text-right flex-shrink-0">
               {idx + 1}
             </span>
 
@@ -196,7 +196,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
 
             {/* Status indicator */}
             {!step.success && (
-              <span className="text-[10px] text-red-500 dark:text-red-400 font-medium flex-shrink-0">
+              <span className="text-xs text-red-500 dark:text-red-400 font-medium flex-shrink-0">
                 FAIL
               </span>
             )}

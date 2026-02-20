@@ -79,7 +79,7 @@ export function WhatChangedStrip({
 
             {/* Last Updated */}
             {lastUpdated && (
-                <span className="text-[10px] text-[color:var(--text-secondary)]">
+                <span className="text-xs text-[color:var(--text-secondary)]">
                     {formatTimeAgo(lastUpdated)}
                 </span>
             )}
@@ -88,7 +88,7 @@ export function WhatChangedStrip({
             {onViewDiff && (
                 <button
                     onClick={onViewDiff}
-                    className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-primary)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg border border-[color:var(--border-color)] transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[color:var(--text-primary)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg border border-[color:var(--border-color)] transition-colors"
                 >
                     <Eye className="w-3 h-3" />
                     View diff
@@ -111,7 +111,7 @@ function formatTimeAgo(date: Date): string {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default WhatChangedStrip;

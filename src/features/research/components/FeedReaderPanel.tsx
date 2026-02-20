@@ -163,7 +163,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             {/* Source Badge & Title */}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${badge.text} ${badge.bg} px-2 py-0.5 rounded-full`}>
+                <span className={`text-xs font-semibold uppercase tracking-wider ${badge.text} ${badge.bg} px-2 py-0.5 rounded-full`}>
                   {badge.label}
                 </span>
                 {sourceDomain && (
@@ -239,7 +239,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                     {displayItem.tags.slice(0, 3).map((tag, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] rounded-full text-[10px]"
+                        className="px-2 py-0.5 bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] rounded-full text-xs"
                       >
                         #{tag}
                       </span>
@@ -254,7 +254,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
               <div className="grid grid-cols-3 gap-4 p-4 bg-[color:var(--bg-secondary)] rounded-xl border border-[color:var(--border-color)]">
                 {displayItem.metrics.map((metric, i) => (
                   <div key={i} className="text-center">
-                    <div className="text-[10px] uppercase text-[color:var(--text-secondary)] font-medium">{metric.label}</div>
+                    <div className="text-xs uppercase text-[color:var(--text-secondary)] font-medium">{metric.label}</div>
                     <div className="text-lg font-mono font-bold text-[color:var(--text-primary)]">{metric.value}</div>
                   </div>
                 ))}
@@ -304,10 +304,10 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             {readerState.status === "ready" && (
               <div className="mt-8 pt-6 border-t border-[color:var(--border-color)]">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-[color:var(--text-secondary)]">
+                  <span className="text-xs font-semibold uppercase tracking-widest text-[color:var(--text-secondary)]">
                     Source Matrix
                   </span>
-                  <span className="text-[10px] text-[color:var(--text-secondary)]">
+                  <span className="text-xs text-[color:var(--text-secondary)]">
                     {sourceMatrix.length} sources
                   </span>
                 </div>
@@ -322,7 +322,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                         className="block rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] px-4 py-3 hover:border-blue-200 hover:bg-[color:var(--bg-primary)] transition-colors"
                       >
                         <div className="text-sm font-semibold text-[color:var(--text-primary)]">{source.title}</div>
-                        <div className="text-[11px] text-[color:var(--text-secondary)] mt-1">
+                        <div className="text-xs text-[color:var(--text-secondary)] mt-1">
                           {source.domain || 'Source'}
                         </div>
                         {source.snippet && (

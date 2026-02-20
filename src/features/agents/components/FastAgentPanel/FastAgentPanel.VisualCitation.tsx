@@ -93,7 +93,7 @@ export function InlineCitation({
       className={cn(
         "inline-flex items-center justify-center",
         "min-w-[1.25rem] h-4 px-1 mx-0.5",
-        "text-[10px] font-semibold",
+        "text-xs font-semibold",
         "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300",
         "rounded-full cursor-pointer",
         "transition-all duration-200",
@@ -257,7 +257,7 @@ export function ArbitrageCitation({
       className={cn(
         "inline-flex items-center gap-0.5",
         "h-4 px-1.5 mx-0.5",
-        "text-[10px] font-semibold",
+        "text-xs font-semibold",
         config.bgClass,
         config.textClass,
         "rounded-full cursor-pointer",
@@ -331,8 +331,8 @@ export function StatusBadge({
   const config = STATUS_CONFIG[status];
 
   const sizeClasses = {
-    xs: 'text-[9px] px-1 py-0',
-    sm: 'text-[10px] px-1.5 py-0.5',
+    xs: 'text-xs px-1 py-0',
+    sm: 'text-xs px-1.5 py-0.5',
     md: 'text-xs px-2 py-1',
   };
 

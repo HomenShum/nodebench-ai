@@ -206,13 +206,13 @@ export function OperatorProfileWizard() {
             {existingProfile.goals.slice(0, 3).map((g, i) => (
               <span
                 key={i}
-                className="px-2 py-0.5 rounded text-[11px] bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
+                className="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400"
               >
                 {g.description}
               </span>
             ))}
             {existingProfile.goals.length > 3 && (
-              <span className="px-2 py-0.5 rounded text-[11px] text-gray-400">
+              <span className="px-2 py-0.5 rounded text-xs text-gray-400">
                 +{existingProfile.goals.length - 3} more
               </span>
             )}

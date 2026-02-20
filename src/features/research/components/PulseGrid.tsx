@@ -83,7 +83,7 @@ function InsightCardComponent({
           <Icon className="w-4 h-4" />
         </div>
         {card.source && (
-          <span className="text-[10px] font-medium text-[color:var(--text-secondary)] uppercase tracking-wide">
+          <span className="text-xs font-medium text-[color:var(--text-secondary)] uppercase tracking-wide">
             {card.source}
           </span>
         )}
@@ -102,12 +102,12 @@ function InsightCardComponent({
       {/* Footer */}
       <div className="flex items-center justify-between">
         {timeAgo && (
-          <span className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)]">
+          <span className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
             <Clock className="w-3 h-3" />
             {timeAgo}
           </span>
         )}
-        <span className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
           <ExternalLink className="w-3 h-3" />
           View
         </span>

@@ -4,7 +4,7 @@ paths:
   - "**/*.tsx"
   - "**/*.html"
   - "**/*.css"
-related_: [analyst_diagnostic, reexamine_design_reduction, reexamine_process, completion_traceability]
+related_: [analyst_diagnostic, reexamine_design_reduction, reexamine_process, completion_traceability, gemini_qa_loop]
 ---
 
 # Dogfood Verification Protocol — Product Design Review

@@ -154,7 +154,7 @@ export function ActionConfirmation({
               {action.title}
             </h4>
             <span className={cn(
-              "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+              "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
               config.color,
               action.riskTier === 'critical' ? 'bg-red-100 dark:bg-red-800/40' :
               action.riskTier === 'high' ? 'bg-orange-100 dark:bg-orange-800/40' :
@@ -172,7 +172,7 @@ export function ActionConfirmation({
       <div className="px-4 py-2 border-t border-[var(--border-color)] space-y-1.5">
         <div className="flex items-center gap-2 text-xs">
           <span className="text-[var(--text-muted)] font-medium w-24">Tool:</span>
-          <code className="text-[var(--text-primary)] font-mono text-[11px] bg-[var(--bg-hover)] px-1.5 py-0.5 rounded">
+          <code className="text-[var(--text-primary)] font-mono text-xs bg-[var(--bg-hover)] px-1.5 py-0.5 rounded">
             {action.toolName}
           </code>
         </div>
@@ -189,7 +189,7 @@ export function ActionConfirmation({
             <span className="text-[var(--text-muted)] font-medium w-24 shrink-0">Affects:</span>
             <div className="flex flex-wrap gap-1">
               {action.affectedResources.map((r) => (
-                <span key={r} className="px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-secondary)] text-[10px]">
+                <span key={r} className="px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-secondary)] text-xs">
                   {r}
                 </span>
               ))}

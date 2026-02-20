@@ -172,7 +172,7 @@ export default function DossierMiniEditor({
       <div className="mb-3">
         <div className="text-xs font-medium text-[var(--text-secondary)] mb-2 flex items-center justify-between">
           <span>Chat Transcript</span>
-          <span className="text-[10px] text-[var(--text-tertiary)] font-normal">
+          <span className="text-xs text-[var(--text-tertiary)] font-normal">
             Use "Copy Transcript" button below
           </span>
         </div>
@@ -273,11 +273,11 @@ function AssetThumbnail({ asset }: { asset: any }) {
           </div>
         )}
         {/* Type badge */}
-        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-[10px] font-medium text-white">
+        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-xs font-medium text-white">
           {assetType}
         </div>
       </div>
-      <div className="mt-1 text-[10px] text-[var(--text-secondary)] truncate">
+      <div className="mt-1 text-xs text-[var(--text-secondary)] truncate">
         {title}
       </div>
     </a>

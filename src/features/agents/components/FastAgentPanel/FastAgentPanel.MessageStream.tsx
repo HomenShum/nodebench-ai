@@ -191,7 +191,7 @@ export function MessageStream({
 
         {/* Completion traceability — remind user of original request in long threads */}
         {originalRequest && !isStreaming && (
-          <div className="mt-2 mb-4 pl-10 text-[11px] text-[var(--text-muted)] italic">
+          <div className="mt-2 mb-4 pl-10 text-xs text-[var(--text-muted)] italic">
             Re: &ldquo;{originalRequest}&rdquo;
           </div>
         )}

@@ -21,7 +21,7 @@ interface PersonalPulseProps {
 function StatusPill({ isLive, count, total, freshness }: { isLive: boolean; count: number; total: number; freshness: string }) {
     return (
         <div className={cn(
-            'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold',
+            'inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold',
             isLive ? 'bg-indigo-100 text-gray-800' : 'bg-amber-100 text-amber-800'
         )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isLive ? 'bg-indigo-500 motion-safe:animate-pulse' : 'bg-amber-500')} />
@@ -38,12 +38,12 @@ function SourceBadges({ sources }: { sources: Array<{ name: string; count: numbe
     return (
         <div className="flex flex-wrap gap-1">
             {sources.slice(0, 6).map(({ name, count }) => (
-                <span key={name} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-[9px] text-gray-600">
+                <span key={name} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
                     {name} <span className="text-gray-400">({count})</span>
                 </span>
             ))}
             {sources.length > 6 && (
-                <span className="px-1.5 py-0.5 text-[9px] text-gray-400">+{sources.length - 6}</span>
+                <span className="px-1.5 py-0.5 text-xs text-gray-400">+{sources.length - 6}</span>
             )}
         </div>
     );
@@ -96,8 +96,8 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                     <div className="flex items-center gap-2">
                         <Zap className="w-4 h-4 text-indigo-600" />
                         <div>
-                            <div className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Your Signal Feed</div>
-                            <div className="text-[10px] text-gray-500">Latest headlines from your tracked sources</div>
+                            <div className="text-xs font-bold text-gray-700 uppercase tracking-wide">Your Signal Feed</div>
+                            <div className="text-xs text-gray-500">Latest headlines from your tracked sources</div>
                         </div>
                     </div>
                     <StatusPill isLive={isLiveData && hasFeatures} count={totalSignals} total={totalAvailable} freshness={freshnessLabel} />
@@ -146,7 +146,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                     ) : (
                         <div className="p-6 text-center">
                             <Sparkles className="w-5 h-5 text-gray-300 mx-auto mb-2" />
-                            <p className="text-xs text-gray-400">No signals yet. Ingestors run every 1–6 hours.</p>
+                            <p className="text-xs text-gray-400">No signals yet. Sources refresh automatically every few hours.</p>
                         </div>
                     )}
                 </div>
@@ -156,7 +156,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                     <button
                         type="button"
                         onClick={() => setShowAllSignals(!showAllSignals)}
-                        className="w-full py-2.5 text-[11px] font-medium text-gray-700 bg-indigo-50/50 hover:bg-indigo-50 border-t border-gray-100 transition-colors flex items-center justify-center gap-1"
+                        className="w-full py-2.5 text-xs font-medium text-gray-700 bg-indigo-50/50 hover:bg-indigo-50 border-t border-gray-100 transition-colors flex items-center justify-center gap-1"
                     >
                         {showAllSignals ? 'Show less' : `+${totalSignals - 6} more signals`}
                         <ChevronRight className={cn('w-3 h-3 transition-transform', showAllSignals && 'rotate-90')} />
@@ -169,22 +169,22 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                 <div className="lg:col-span-4 bg-white border border-gray-200 rounded-lg overflow-hidden">
                     <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
                         <div className="flex items-center justify-between">
-                            <div className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Your Context</div>
-                            <div className="text-[10px] text-gray-500">Quick access</div>
+                            <div className="text-xs font-bold text-gray-700 uppercase tracking-wide">Your Context</div>
+                            <div className="text-xs text-gray-500">Quick access</div>
                         </div>
                         <div className="mt-2 inline-flex rounded-lg border border-gray-200 bg-white p-1">
                             <button
                                 type="button"
                                 onClick={() => setContextTab('tasks')}
                                 className={cn(
-                                    'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors flex items-center gap-1.5',
+                                    'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5',
                                     contextTab === 'tasks' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
                                 )}
                             >
                                 <Calendar className="w-3.5 h-3.5" />
                                 Today
                                 {tasksToday.length > 0 && (
-                                    <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[9px] font-bold">
+                                    <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">
                                         {tasksToday.length}
                                     </span>
                                 )}
@@ -193,14 +193,14 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                                 type="button"
                                 onClick={() => setContextTab('docs')}
                                 className={cn(
-                                    'px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors flex items-center gap-1.5',
+                                    'px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5',
                                     contextTab === 'docs' ? 'bg-violet-50 text-violet-700' : 'text-gray-600 hover:bg-gray-50'
                                 )}
                             >
                                 <FileText className="w-3.5 h-3.5" />
                                 Recent
                                 {recentDocs.length > 0 && (
-                                    <span className="ml-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-[9px] font-bold">
+                                    <span className="ml-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-xs font-bold">
                                         {recentDocs.length}
                                     </span>
                                 )}
@@ -248,7 +248,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                                             <div className="text-[12px] text-gray-700 truncate flex-1">{doc.title}</div>
                                             <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 shrink-0" />
                                         </div>
-                                        <div className="text-[9px] text-gray-400 mt-0.5">
+                                        <div className="text-xs text-gray-400 mt-0.5">
                                             {doc.updatedAt && !isNaN(new Date(doc.updatedAt).getTime())
                                                 ? new Date(doc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                                                 : 'recently'}

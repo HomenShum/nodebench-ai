@@ -445,7 +445,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
           <div className="flex items-center gap-2">
             {/* Type badge */}
             <span
-              className={`text-[10px] px-1.5 py-0.5 rounded ${typeConfig.bg} ${typeConfig.text}`}
+              className={`text-xs px-1.5 py-0.5 rounded ${typeConfig.bg} ${typeConfig.text}`}
             >
               {typeConfig.label}
             </span>
@@ -548,7 +548,7 @@ function StatusBadge({ status }: { status: TreeStatus }) {
   }[status];
 
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded ${config.bg} ${config.text}`}>
+    <span className={`text-xs px-1.5 py-0.5 rounded ${config.bg} ${config.text}`}>
       {config.label}
     </span>
   );
@@ -558,7 +558,7 @@ function VerificationBadge({ score, passed }: { score: number; passed: boolean }
   const pct = Math.round(score * 100);
   return (
     <span
-      className={`text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 ${
+      className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
         passed
           ? "bg-green-500/20 text-green-400"
           : "bg-red-500/20 text-red-400"
@@ -579,7 +579,7 @@ function ConfidenceBadge({ confidence }: { confidence: number }) {
     : "text-red-400 bg-red-500/20";
 
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded ${color}`}>
+    <span className={`text-xs px-1.5 py-0.5 rounded ${color}`}>
       {pct}% conf
     </span>
   );
@@ -593,7 +593,7 @@ function CritiqueBadge({ verdict }: { verdict: "agree" | "disagree" | "partial" 
   }[verdict];
 
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1 ${config.color}`}>
+    <span className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${config.color}`}>
       <config.icon className="w-3 h-3" />
       {verdict}
     </span>

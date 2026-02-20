@@ -98,12 +98,12 @@ export function SignalCard({
         <div className="flex-1 min-w-0">
           {/* Signal Label */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
+            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
               <Tag className="w-2.5 h-2.5" />
               {signalLabel}
             </span>
             {signal.vizArtifactId && showMicroViz && (
-              <span className="text-[10px] text-gray-400 flex items-center gap-1">
+              <span className="text-xs text-gray-400 flex items-center gap-1">
                 <BarChart2 className="w-2.5 h-2.5" />
                 Chart
               </span>
@@ -117,12 +117,12 @@ export function SignalCard({
 
           {/* Meta Row */}
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-            <span className="text-[10px] font-medium text-[color:var(--text-secondary)] uppercase tracking-wide flex items-center gap-1">
+            <span className="text-xs font-medium text-[color:var(--text-secondary)] uppercase tracking-wide flex items-center gap-1">
               <LinkIcon className="w-3 h-3" />
               {evidenceCount} source{evidenceCount !== 1 ? "s" : ""}
             </span>
             {signal.relatedSignalIds && signal.relatedSignalIds.length > 0 && (
-              <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+              <span className="text-xs text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
                 Links to {signal.relatedSignalIds.length} signal{signal.relatedSignalIds.length !== 1 ? "s" : ""}
               </span>
             )}

@@ -38,7 +38,7 @@ function formatRelative(ts: number): string {
   if (diff < 60000) return "just now";
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return new Date(ts).toLocaleDateString();
+  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatCountdown(ts: number): string {
@@ -239,9 +239,9 @@ export function BatchAutopilotTab() {
                           : "No new discoveries")}
                     </div>
                     {/* Secondary: time */}
-                    <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {formatRelative(run.startedAt)}
-                      {discoveries > 0 && ` · ${discoveries} items`}
+                      {discoveries > 0 && ` · ${discoveries} item${discoveries !== 1 ? 's' : ''}`}
                     </div>
                   </div>
                   {hasBrief && (
@@ -268,14 +268,14 @@ export function BatchAutopilotTab() {
                           toast.success("Opening in Research...");
                           setExpandedRun(null);
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
                       >
                         Research deeper <ArrowRight className="w-3 h-3" />
                       </button>
                       <button
                         type="button"
                         onClick={() => setExpandedRun(null)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
                       >
                         <XIcon className="w-3 h-3" /> Dismiss
                       </button>

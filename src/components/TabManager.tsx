@@ -350,7 +350,7 @@ export function TabManager({
                   const colorIndex = index % 12;
                   const basePad = iconOnly ? "px-1.5 py-1" : compact ? "px-2 py-1.5" : "px-3 py-2";
                   const baseGap = iconOnly ? "gap-1" : compact ? "gap-1.5" : "gap-2";
-                  const baseText = iconOnly ? "text-[10px]" : compact ? "text-xs" : "text-sm";
+                  const baseText = iconOnly ? "text-xs" : compact ? "text-xs" : "text-sm";
                   const baseMinW = iconOnly ? "min-w-[30px]" : compact ? "min-w-[44px]" : "min-w-[64px]";
                   const selRing = selectedDocumentId === tab.id ? "ring-2 ring-[var(--accent-primary)]/40" : "";
 

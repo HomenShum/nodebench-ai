@@ -156,14 +156,14 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
   const [monthLabel, yearLabel] = monthYearLabel.split(" ");
 
   return (
-    <div className="w-full font-mono text-gray-900 dark:text-gray-100 select-none">
+    <div className="w-full font-mono text-gray-900 dark:text-gray-100 select-none overflow-hidden">
       <div className="z-10 transition-all duration-500 shadow-none space-y-5">
 
         {/* --- ROW 1: HEADER & CHART --- */}
         <div className="relative mb-4">
           {/* Date Pill */}
           <div className="absolute top-0 left-0 z-10">
-            <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-[10px] tracking-widest gap-2 shadow-sm">
+            <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-xs tracking-widest gap-2 shadow-sm">
               <span>{monthLabel}</span>
               <span className="font-bold">{yearLabel || "2025"}</span>
             </div>
@@ -184,18 +184,19 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                 evidenceMap={evidenceMap}
               />
             ) : (
-              <div className="w-full h-full bg-gray-50 dark:bg-white/[0.04] rounded flex items-center justify-center text-gray-300 dark:text-gray-600 text-xs">
-                No chart data
+              <div className="w-full h-full bg-gray-50 dark:bg-white/[0.04] rounded flex flex-col items-center justify-center gap-2">
+                <Activity className="w-6 h-6 text-gray-300 dark:text-gray-500" />
+                <span className="text-xs text-gray-400 dark:text-gray-400">Chart data updates daily</span>
               </div>
             )}
           </div>
         </div>
 
         {/* --- ROW 2: SPLIT GRID (Capabilities vs Donut) --- */}
-        <div className="grid grid-cols-12 gap-4 mb-4">
-          {/* LEFT COL (7/12): CAPABILITIES GRID */}
-          <div className="col-span-7 flex flex-col justify-end">
-            <div className="text-[9px] uppercase tracking-widest text-gray-400 mb-2 border-b border-gray-100 dark:border-white/[0.06] pb-1">
+        <div className="grid grid-cols-12 gap-3 mb-4">
+          {/* LEFT COL (8/12): CAPABILITIES GRID */}
+          <div className="col-span-8 flex flex-col justify-end">
+            <div className="text-xs uppercase tracking-widest text-gray-400 mb-2 border-b border-gray-100 dark:border-white/[0.06] pb-1">
               AI Capabilities
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -214,31 +215,31 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
             </div>
           </div>
 
-          {/* RIGHT COL (5/12): DONUT & BUCKETS */}
-          <div className="col-span-5 flex flex-col justify-between h-full">
+          {/* RIGHT COL (4/12): DONUT & BUCKETS */}
+          <div className="col-span-4 flex flex-col justify-between h-full">
             {/* Donut - Only render if we have data */}
             {safeCharts.marketShare.length > 0 ? (
               <div className="flex justify-center items-center relative h-20 mb-2">
                 <DonutChart data={safeCharts.marketShare} />
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-[7px] font-bold uppercase text-gray-400 leading-none mb-0.5">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden px-1">
+                  <span className="text-[10px] font-bold uppercase text-gray-400 leading-none mb-0.5 truncate max-w-full">
                     {topShare.label}
                   </span>
                   <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-none" />
-                  <span className="text-[6px] text-gray-300 dark:text-gray-500 mt-0.5">of sources</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-400 mt-0.5">of sources</span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-20 mb-2 bg-gray-50 dark:bg-white/[0.04] rounded">
-                <PieChart className="w-6 h-6 text-gray-200 dark:text-gray-600 mb-1" />
-                <span className="text-[8px] text-gray-300 dark:text-gray-500">No share data</span>
+                <PieChart className="w-6 h-6 text-gray-400 dark:text-gray-400 mb-1" />
+                <span className="text-xs text-gray-400 dark:text-gray-500">No share data</span>
               </div>
             )}
 
             {/* Tech Readiness Buckets */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[7px] uppercase tracking-wider text-gray-400">
-                <span>Exist</span><span>Emerging</span><span>Sci-Fi</span>
+              <div className="flex justify-between text-[9px] uppercase tracking-normal text-gray-400 px-0.5">
+                <span>Now</span><span>Next</span><span>Future</span>
               </div>
               <div className="flex justify-between gap-1 h-8">
                 <BucketColumn count={safeTech.existing} color="bg-gray-900" delta={deltas?.techReadiness?.existing} />
@@ -256,7 +257,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
               Pulse
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-gray-900/40 dark:text-gray-400 uppercase tracking-widest">
+              <span className="text-xs font-black text-gray-900/40 dark:text-gray-400 uppercase tracking-widest">
                 {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </span>
               <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
@@ -274,7 +275,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                 {i > 0 && <div className="w-8 h-px bg-gray-200 dark:bg-white/[0.08]" />}
                 <div className={`flex items-center gap-2 transition-opacity duration-500 ${activeAct === act.id ? 'opacity-100' : 'opacity-30 grayscale'
                   }`}>
-                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-gray-100`}>
+                  <span className={`text-xs font-black uppercase tracking-[0.2em] text-gray-900 dark:text-gray-100`}>
                     {act.label}
                   </span>
                 </div>
@@ -283,26 +284,25 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
           </div>
         </div>
         {/* --- ROW 3: KEY STATS WITH DELTAS --- */}
-        <div className="flex justify-between items-center gap-2 border-t border-gray-100 dark:border-white/[0.06] pt-3 mb-3">
+        <div className="flex flex-wrap justify-between items-start gap-x-3 gap-y-2 border-t border-gray-100 dark:border-white/[0.06] pt-3 mb-3 overflow-hidden">
           {keyStats.map((stat, i) => {
             const statDelta = deltas?.keyStats?.[i]?.delta;
             const statHint = getKeyStatHint(stat.label);
             const displayContext = stat.context ?? statHint;
             const displayValue = formatKeyStatValue(stat.label, stat.value);
             return (
-              <div key={stat.label} className="flex flex-col">
+              <div key={stat.label} className="flex flex-col min-w-0 max-w-[45%]">
                 <span
-                  className="text-[8px] text-gray-400 uppercase tracking-wider mb-0.5"
-                  title={statHint ?? undefined}
+                  className="text-[10px] text-gray-500 dark:text-gray-300 uppercase tracking-wider mb-0.5 truncate"
+                  title={stat.label + (statHint ? ` — ${statHint}` : '')}
                 >
                   {stat.label}
                 </span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{displayValue}</span>
+                <div className="flex items-baseline gap-1 min-w-0">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100 shrink-0">{displayValue}</span>
                   {statDelta !== undefined && statDelta !== null && statDelta !== 0 && (
                     <DeltaIndicator value={statDelta} size="sm" />
                   )}
-                  {displayContext && <span className="text-[8px] font-bold text-gray-400">{displayContext}</span>}
                 </div>
               </div>
             );
@@ -319,24 +319,20 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
 // --- SUB-COMPONENTS ---
 
 const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: number, icon: string, delta?: number | null }) => (
-  <div className="flex flex-col gap-1 mb-3 group">
-    <div className="flex justify-between items-end mb-1">
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400 font-bold group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors leading-none">{label}</span>
-        {delta !== undefined && delta !== null && delta !== 0 && (
-          <div className="mt-0.5">
-            <DeltaIndicator value={delta} unit="pts" />
-          </div>
-        )}
-      </div>
-      <span className="text-xs font-mono font-bold text-[color:var(--text-primary)]">{normalizeCapabilityScore(score)}%</span>
+  <div className="flex flex-col gap-0.5 mb-3 group overflow-hidden">
+    <div className="flex items-baseline gap-1.5 min-w-0">
+      <span className="text-[10px] uppercase tracking-wider text-gray-600 dark:text-gray-300 font-bold group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors leading-none truncate min-w-0 flex-1">{label}</span>
+      <span className="text-[10px] font-mono font-bold text-[color:var(--text-primary)] shrink-0 tabular-nums whitespace-nowrap">{normalizeCapabilityScore(score)}%</span>
+      {delta !== undefined && delta !== null && delta !== 0 && (
+        <DeltaIndicator value={delta} unit="pts" />
+      )}
     </div>
-    <div className="h-1.5 w-full bg-gray-200 dark:bg-white/[0.1] overflow-hidden">
+    <div className="h-1.5 w-full bg-gray-200 dark:bg-white/[0.1] overflow-hidden rounded-full">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${normalizeCapabilityScore(score)}%` }}
         transition={{ duration: 1.5, ease: "easeOut" }}
-        className="h-full bg-gray-900 dark:bg-gray-100"
+        className="h-full bg-gray-900 dark:bg-gray-100 rounded-full"
       />
     </div>
   </div>
@@ -399,17 +395,17 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
     <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/[0.08]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="px-1.5 py-1 bg-gray-900 dark:bg-gray-100 text-background dark:text-gray-900 text-[9px] font-bold uppercase tracking-widest">
+          <div className="px-1.5 py-1 bg-gray-900 dark:bg-gray-100 text-background dark:text-gray-900 text-xs font-bold uppercase tracking-widest">
             Research
           </div>
-          <div className="text-[10px] font-mono text-gray-500 dark:text-gray-400">
+          <div className="text-xs font-mono text-gray-500 dark:text-gray-400">
             {completedCount} of {totalCount} done
           </div>
         </div>
         {activeStep && (
           <div className="flex items-center gap-2">
             <Loader2 className="w-3 h-3 text-gray-700 dark:text-gray-300 motion-safe:animate-spin" />
-            <span className="text-[9px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Live</span>
+            <span className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-widest">Live</span>
           </div>
         )}
       </div>
@@ -427,7 +423,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
                 {step.status === 'completed' && <CheckCircle2 className="w-2.5 h-2.5 text-white dark:text-gray-900" />}
                 {step.status === 'in_progress' && <div className="w-1.5 h-1.5 bg-gray-900 dark:bg-gray-300 rounded-full" />}
               </div>
-              <span className={`text-[11px] transition-colors ${
+              <span className={`text-xs transition-colors ${
                 step.status === 'completed' ? 'text-gray-400 dark:text-gray-500 line-through' :
                 step.status === 'in_progress' ? 'text-gray-900 dark:text-gray-100 font-bold' :
                 'text-gray-400 dark:text-gray-500'
@@ -441,7 +437,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
 
       {activeStep && (
         <div className="mt-3 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-white/[0.08]">
-          <p className="text-[10px] font-mono text-gray-900/60 dark:text-gray-400 uppercase tracking-tighter mb-1">Current Task</p>
+          <p className="text-xs font-mono text-gray-900/60 dark:text-gray-400 uppercase tracking-tighter mb-1">Current Task</p>
           <p className="text-[12px] font-medium text-gray-950 dark:text-gray-100 italic">
             "{activeStep.name} in progress..."
           </p>

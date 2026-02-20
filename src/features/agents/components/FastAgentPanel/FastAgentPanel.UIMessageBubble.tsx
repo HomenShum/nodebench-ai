@@ -660,7 +660,7 @@ const ToolStepsAccordion = React.memo(function ToolStepsAccordion({
           isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
         )} />
         <span>{label}</span>
-        <span className="ml-auto flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-normal">
+        <span className="ml-auto flex items-center gap-2 text-xs text-[var(--text-muted)] font-normal">
           {isStreaming ? (
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           ) : allDone ? (
@@ -728,7 +728,7 @@ const ThinkingAccordion = React.memo(function ThinkingAccordion({
           isStreaming ? "text-purple-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
         )} />
         <span>{isStreaming ? 'Thinking...' : 'Thought process'}</span>
-        <span className="ml-auto flex items-center gap-2 text-[10px] text-[var(--text-muted)] font-normal">
+        <span className="ml-auto flex items-center gap-2 text-xs text-[var(--text-muted)] font-normal">
           {isStreaming ? (
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           ) : (
@@ -780,13 +780,13 @@ const RunCodeButton = React.memo(function RunCodeButton({ code, language }: { co
       <button
         type="button"
         onClick={runCode}
-        className="flex items-center gap-1 text-[10px] text-green-600 hover:text-green-700 transition-colors"
+        className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 transition-colors"
         disabled={isRunning}
       >
         {isRunning ? '⏳' : '▶'} Run
       </button>
       {output !== null && (
-        <div className="absolute left-0 right-0 top-full z-50 mx-3 mt-1 rounded-lg border border-[var(--border-color)] bg-gray-900 text-green-400 text-[10px] font-mono p-2 max-h-[120px] overflow-auto shadow-xl whitespace-pre-wrap">
+        <div className="absolute left-0 right-0 top-full z-50 mx-3 mt-1 rounded-lg border border-[var(--border-color)] bg-gray-900 text-green-400 text-xs font-mono p-2 max-h-[120px] overflow-auto shadow-xl whitespace-pre-wrap">
           {output}
         </div>
       )}
@@ -817,7 +817,7 @@ const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
   return (
     <div className="relative group/code rounded-lg overflow-hidden border border-[var(--border-color)] my-3">
       <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
-        <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider">{language}</span>
+        <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">{language}</span>
         <div className="flex items-center gap-2 opacity-0 group-hover/code:opacity-100 transition-opacity">
           {['html', 'svg', 'jsx', 'tsx', 'css'].includes(language) && (
             <button
@@ -826,7 +826,7 @@ const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
                 const type = (language === 'svg' ? 'svg' : language === 'html' ? 'html' : 'code') as 'html' | 'svg' | 'code';
                 window.dispatchEvent(new CustomEvent('fa-open-artifact', { detail: { type, content: children, language } }));
               }}
-              className="flex items-center gap-1 text-[10px] text-violet-500 hover:text-violet-600 transition-colors"
+              className="flex items-center gap-1 text-xs text-violet-500 hover:text-violet-600 transition-colors"
             >
               <ExternalLink className="w-3 h-3" /> Canvas
             </button>
@@ -837,7 +837,7 @@ const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
           <button
             type="button"
             onClick={() => { void handleCopy(); }}
-            className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             {copied ? (
               <><Check className="w-3 h-3 text-green-500" /> Copied</>
@@ -1394,7 +1394,7 @@ function ToolStep({
         >
           {/* Step number badge */}
           <div className={cn(
-            "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold",
+            "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
             isComplete && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
             isError && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
             isActive && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
@@ -1405,7 +1405,7 @@ function ToolStep({
           {/* Tool Name */}
           <div className="flex-1 text-left flex items-center gap-2">
             <span className="text-xs font-semibold text-[var(--text-primary)] font-mono">{toolName}</span>
-            {isComplete && <span className="text-[10px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">Done</span>}
+            {isComplete && <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">Done</span>}
             {isActive && <Loader2 className="w-3 h-3 text-violet-500 motion-safe:animate-spin" />}
           </div>
 
@@ -1433,7 +1433,7 @@ function ToolStep({
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
+              className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
             >
               {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               <span>{showDetails ? "Hide Debug Details" : "View Debug Details"}</span>
@@ -1444,8 +1444,8 @@ function ToolStep({
                 {/* Arguments */}
                 {(part as any).args && (
                   <div>
-                    <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Input Arguments</div>
-                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)]">
+                    <div className="font-medium text-[var(--text-muted)] mb-1 text-xs uppercase tracking-wider">Input Arguments</div>
+                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-xs text-[var(--text-secondary)]">
                       {JSON.stringify((part as any).args, null, 2)}
                     </pre>
                   </div>
@@ -1454,8 +1454,8 @@ function ToolStep({
                 {/* Raw Output */}
                 {hasOutput && (
                   <div>
-                    <div className="font-medium text-[var(--text-muted)] mb-1 text-[10px] uppercase tracking-wider">Raw Output</div>
-                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-[10px] text-[var(--text-secondary)] max-h-60">
+                    <div className="font-medium text-[var(--text-muted)] mb-1 text-xs uppercase tracking-wider">Raw Output</div>
+                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-xs text-[var(--text-secondary)] max-h-60">
                       {typeof part.output === 'string' ? part.output : JSON.stringify(part.output, null, 2)}
                     </pre>
                   </div>
@@ -2519,7 +2519,7 @@ export function FastAgentUIMessageBubble({
               return (
                 <details className="thinking-disclosure mb-2">
                   <summary>Reasoning ({thinkMatch[1].split(/\s+/).length} words)</summary>
-                  <div className="mt-1 text-[11px] leading-relaxed opacity-80 whitespace-pre-wrap">
+                  <div className="mt-1 text-xs leading-relaxed opacity-80 whitespace-pre-wrap">
                     {thinkMatch[1].trim()}
                   </div>
                 </details>
@@ -2593,10 +2593,10 @@ export function FastAgentUIMessageBubble({
                       return <thead className="bg-[var(--bg-secondary)]">{children}</thead>;
                     },
                     th({ children }) {
-                      return <th className="px-3 py-2 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] text-[11px]">{children}</th>;
+                      return <th className="px-3 py-2 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] text-xs">{children}</th>;
                     },
                     td({ children }) {
-                      return <td className="px-3 py-1.5 border-b border-[var(--border-color)] text-[var(--text-secondary)] text-[11px]">{children}</td>;
+                      return <td className="px-3 py-1.5 border-b border-[var(--border-color)] text-[var(--text-secondary)] text-xs">{children}</td>;
                     },
                     tr({ children }) {
                       return <tr className="hover:bg-[var(--bg-secondary)] transition-colors">{children}</tr>;
@@ -2655,7 +2655,7 @@ export function FastAgentUIMessageBubble({
                   <button
                     type="button"
                     onClick={() => setIsCollapsed(prev => !prev)}
-                    className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline mt-1"
+                    className="text-xs font-medium text-[var(--accent-primary)] hover:underline mt-1"
                   >
                     {isCollapsed ? 'Show more ▼' : 'Show less ▲'}
                   </button>
@@ -2742,8 +2742,8 @@ export function FastAgentUIMessageBubble({
 
         {/* Edit Diff View */}
         {editDiff && (
-          <div className="mt-2 rounded-lg border border-[var(--border-color)] overflow-hidden text-[11px] font-mono">
-            <div className="px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[9px] font-semibold uppercase tracking-wider">Edit Diff</div>
+          <div className="mt-2 rounded-lg border border-[var(--border-color)] overflow-hidden text-xs font-mono">
+            <div className="px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider">Edit Diff</div>
             <div className="px-3 py-1.5 bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 line-through whitespace-pre-wrap">
               {editDiff.oldText}
             </div>
@@ -2768,7 +2768,7 @@ export function FastAgentUIMessageBubble({
           if (wordCount < 80) return null;
           const readMin = Math.ceil(wordCount / 230);
           return (
-            <span className="text-[9px] text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
+            <span className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
               <Clock className="w-2.5 h-2.5" />
               {readMin} min read
             </span>
@@ -2795,7 +2795,7 @@ export function FastAgentUIMessageBubble({
                   />
                 ))}
               </div>
-              <span className="text-[9px] text-[var(--text-muted)]">{confLabels[confidence]}</span>
+              <span className="text-xs text-[var(--text-muted)]">{confLabels[confidence]}</span>
             </div>
           );
         })()}
@@ -2808,7 +2808,7 @@ export function FastAgentUIMessageBubble({
           const urls = text.match(/https?:\/\/[^\s)]+/g) || [];
           return (
             <div className="flex flex-wrap gap-1 mt-1.5">
-              <span className="text-[9px] text-[var(--text-muted)] mr-0.5">Sources:</span>
+              <span className="text-xs text-[var(--text-muted)] mr-0.5">Sources:</span>
               {citationNums.slice(0, 8).map((num, i) => {
                 const url = urls[i] || null;
                 let domain = '';
@@ -2822,7 +2822,7 @@ export function FastAgentUIMessageBubble({
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/cite:flex flex-col w-[200px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl p-2 z-50 pointer-events-none">
                         <div className="flex items-center gap-1.5 mb-1">
                           <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3 h-3 rounded" width={12} height={12} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          <span className="text-[10px] font-medium text-[var(--text-primary)] truncate">{domain}</span>
+                          <span className="text-xs font-medium text-[var(--text-primary)] truncate">{domain}</span>
                         </div>
                         <span className="text-[8px] text-[var(--text-muted)] truncate">{url.slice(0, 60)}</span>
                       </div>
@@ -2919,8 +2919,8 @@ export function FastAgentUIMessageBubble({
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-medium text-[var(--text-primary)] truncate group-hover/link:underline">{domain}</div>
-                      <div className="text-[9px] text-[var(--text-muted)] truncate">{url.slice(0, 80)}</div>
+                      <div className="text-xs font-medium text-[var(--text-primary)] truncate group-hover/link:underline">{domain}</div>
+                      <div className="text-xs text-[var(--text-muted)] truncate">{url.slice(0, 80)}</div>
                     </div>
                     <ExternalLink className="w-3 h-3 text-[var(--text-muted)] flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                   </a>
@@ -2945,7 +2945,7 @@ export function FastAgentUIMessageBubble({
 
         {/* Raw Markdown View */}
         {showRawMarkdown && !isUser && (cleanedText || visibleText) && (
-          <pre className="text-[11px] font-mono bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3 mt-1 overflow-x-auto max-h-[300px] overflow-y-auto text-[var(--text-secondary)] whitespace-pre-wrap">
+          <pre className="text-xs font-mono bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3 mt-1 overflow-x-auto max-h-[300px] overflow-y-auto text-[var(--text-secondary)] whitespace-pre-wrap">
             {cleanedText || visibleText}
           </pre>
         )}
@@ -2976,12 +2976,12 @@ export function FastAgentUIMessageBubble({
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse"></span>
               <span>Streaming...</span>
               {streamTokPerSec > 0 && (
-                <span className="tabular-nums text-[10px] text-[var(--text-muted)]">
+                <span className="tabular-nums text-xs text-[var(--text-muted)]">
                   {streamTokPerSec} tok/s
                 </span>
               )}
               {streamStartRef.current && (
-                <span className="tabular-nums text-[10px] text-[var(--text-muted)]">
+                <span className="tabular-nums text-xs text-[var(--text-muted)]">
                   {((Date.now() - streamStartRef.current) / 1000).toFixed(1)}s
                 </span>
               )}
@@ -2993,12 +2993,12 @@ export function FastAgentUIMessageBubble({
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               {/* Timestamp + token estimate on hover */}
               {message._creationTime && (
-                <span className="text-[10px] text-[var(--text-muted)] tabular-nums mr-1">
+                <span className="text-xs text-[var(--text-muted)] tabular-nums mr-1">
                   {new Date(message._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
               {visibleText && (
-                <span className="text-[10px] text-[var(--text-muted)] tabular-nums mr-1" title={`${visibleText.split(/\s+/).length} words, ${visibleText.length} chars, ~${Math.ceil(visibleText.length / 4)} tokens`}>
+                <span className="text-xs text-[var(--text-muted)] tabular-nums mr-1" title={`${visibleText.split(/\s+/).length} words, ${visibleText.length} chars, ~${Math.ceil(visibleText.length / 4)} tokens`}>
                   ~{Math.ceil(visibleText.length / 4)} tok &middot; {visibleText.split(/\s+/).length}w
                 </span>
               )}

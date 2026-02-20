@@ -148,7 +148,7 @@ const ModeSelector = memo(function ModeSelector({
                 <ModeIcon className="w-4 h-4 mt-0.5 text-[var(--accent-primary)]" />
                 <div>
                   <div className="text-xs font-medium text-[var(--text-primary)]">{cfg.label}</div>
-                  <div className="text-[10px] text-[var(--text-muted)]">{cfg.description}</div>
+                  <div className="text-xs text-[var(--text-muted)]">{cfg.description}</div>
                 </div>
               </button>
             );
@@ -209,7 +209,7 @@ const ModelSelector = memo(function ModelSelector({
                 <span className="text-xs font-medium text-[var(--text-primary)]">{m.label}</span>
                 {m.isFree && <Gift className="w-3 h-3 text-violet-500" />}
               </div>
-              <div className="text-[10px] text-[var(--text-muted)]">{m.provider}</div>
+              <div className="text-xs text-[var(--text-muted)]">{m.provider}</div>
             </button>
           ))}
         </div>
@@ -377,7 +377,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
 
             {/* Spawn indicator */}
             {isSpawn && parsedSpawn && (
-              <div className="flex items-center gap-1.5 text-[10px] text-[var(--accent-primary)]">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--accent-primary)]">
                 <Zap className="w-3 h-3" />
                 <span>Swarm: {parsedSpawn.agents.length} agents</span>
               </div>
@@ -394,7 +394,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
                 Spawn Command
               </span>
             </div>
-            <p className="text-[11px] text-[var(--text-muted)] mb-2">
+            <p className="text-xs text-[var(--text-muted)] mb-2">
               Use <code className="px-1 bg-[var(--bg-secondary)] rounded">/spawn "query" --agents=doc,media,sec</code>
             </p>
             <div className="flex flex-wrap gap-1">
@@ -403,7 +403,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
                 return (
                   <span
                     key={agent.key}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-[var(--bg-secondary)] rounded"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-[var(--bg-secondary)] rounded"
                   >
                     <Icon className="w-2.5 h-2.5" />
                     {agent.key}

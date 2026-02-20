@@ -193,11 +193,18 @@ export default function RecommendationAnalyticsDashboard() {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State — skeleton grid */}
         {isLoading && (
-          <div className="text-center py-12">
-            <Activity className="motion-safe:animate-spin mx-auto text-gray-400 mb-2" size={32} />
-            <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
+          <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-28 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+            </div>
           </div>
         )}
 
@@ -216,7 +223,7 @@ export default function RecommendationAnalyticsDashboard() {
 
               <MetricCard
                 title="Acceptance Rate"
-                value={`${(metrics.acceptanceRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.acceptanceRate * 100).toFixed(1))}%`}
                 subtitle={`${metrics.accepted} accepted`}
                 icon={<ThumbsUp size={20} />}
                 color="green"
@@ -224,7 +231,7 @@ export default function RecommendationAnalyticsDashboard() {
 
               <MetricCard
                 title="Rejection Rate"
-                value={`${(metrics.rejectionRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.rejectionRate * 100).toFixed(1))}%`}
                 subtitle={`${metrics.rejected} rejected`}
                 icon={<ThumbsDown size={20} />}
                 color="red"
@@ -232,7 +239,7 @@ export default function RecommendationAnalyticsDashboard() {
 
               <MetricCard
                 title="Ignore Rate"
-                value={`${(metrics.ignoreRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.ignoreRate * 100).toFixed(1))}%`}
                 subtitle={`${metrics.ignored} ignored`}
                 icon={<EyeOff size={20} />}
                 color="yellow"
@@ -243,7 +250,7 @@ export default function RecommendationAnalyticsDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <MetricCard
                 title="Engagement Rate"
-                value={`${(metrics.engagementRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.engagementRate * 100).toFixed(1))}%`}
                 subtitle="Accepted or rejected"
                 icon={<Activity size={20} />}
                 color="blue"
@@ -371,7 +378,7 @@ export default function RecommendationAnalyticsDashboard() {
             {/* Empty State */}
             {metrics.total === 0 && (
               <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-12 text-center">
-                <BarChart3 className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+                <BarChart3 className="mx-auto text-gray-400 dark:text-gray-300 mb-4" size={48} />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                   No Recommendation Data Yet
                 </h3>

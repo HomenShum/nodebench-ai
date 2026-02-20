@@ -53,21 +53,21 @@ function SmsUsageStats() {
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2 text-center">
             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalMessages}</div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">Messages</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Messages</div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded p-2 text-center">
             <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{smsUsage.totals.totalSegments}</div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">Segments</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Segments</div>
           </div>
           <div className="bg-green-50 dark:bg-green-900/20 rounded p-2 text-center">
             <div className="text-lg font-bold text-green-700 dark:text-green-400">${smsUsage.totals.estimatedCostDollars}</div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">Est. Cost</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Est. Cost</div>
           </div>
         </div>
       )}
 
       {smsUsage?.totals && smsUsage.totals.totalMessages > 0 && (
-        <div className="text-[10px] text-gray-500 dark:text-gray-400 space-y-1">
+        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
           <div className="flex justify-between">
             <span>Success rate:</span>
             <span className="font-medium text-green-600 dark:text-green-400">{smsUsage.totals.successRate}</span>
@@ -88,7 +88,7 @@ function SmsUsageStats() {
       )}
 
       {costBreakdown && (
-        <details className="text-[10px] text-gray-500 dark:text-gray-400">
+        <details className="text-xs text-gray-500 dark:text-gray-400">
           <summary className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">Pricing details</summary>
           <div className="mt-2 pl-2 space-y-1 border-l-2 border-gray-200 dark:border-white/[0.06]">
             <div className="flex justify-between">
@@ -356,7 +356,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
   const navItems: Array<{ id: SettingsTab; label: string }> = [
     { id: "profile", label: "Profile" },
-    { id: "usage", label: "Usage & Billing" },
+    { id: "usage", label: "Usage & Costs" },
     { id: "connections", label: "Connections" },
   ];
 
@@ -416,7 +416,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             <BarChart2 className="h-4 w-4" />
             <span>{title}</span>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{daily ? new Date(daily.date + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" }) : <span className="inline-block w-16 h-3 bg-gray-200 rounded motion-safe:animate-pulse" />}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{daily ? new Date(daily.date + "T00:00:00Z").toLocaleDateString('en-US', { month: "short", day: "numeric", timeZone: "UTC" }) : <span className="inline-block w-16 h-3 bg-gray-200 rounded motion-safe:animate-pulse" />}</span>
         </div>
         <div className="w-full h-2 bg-gray-100 dark:bg-white/[0.08] rounded">
           <div className="h-2 rounded bg-blue-600" style={{ width: `${pct}%` }} />
@@ -428,22 +428,32 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             <>Loading usage…</>
           )}
         </div>
-        {series && series.length > 0 && (
-          <div className="mt-3">
-            <div className="text-[11px] text-gray-500 dark:text-gray-400 mb-1">Last 14 days</div>
-            <div className="flex items-end gap-1 h-16">
-              {series.map((d) => {
-                const ratio = (d.count ?? 0) / Math.max(1, d.limit ?? 1);
-                const h = Math.max(2, Math.min(60, Math.round(ratio * 60)));
-                return (
-                  <div key={d.date} className="w-2 bg-gray-100 dark:bg-white/[0.08] rounded" title={`${d.date}: ${d.count}/${d.limit}`}>
-                    <div className="w-2 bg-blue-600 rounded" style={{ height: h }} />
-                  </div>
-                );
-              })}
+        {series && series.length > 0 && (() => {
+          const maxCount = Math.max(...series.map(d => d.count ?? 0));
+          return maxCount === 0 ? (
+            <div className="mt-3 text-xs text-gray-500 dark:text-gray-400 text-center py-3">No usage recorded in the last 14 days</div>
+          ) : (
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Last 14 days</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">100%</div>
+              </div>
+              <div className="flex items-end gap-1 h-16 relative">
+                <div className="absolute inset-x-0 top-0 border-t border-dashed border-gray-200 dark:border-white/10" />
+                <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-gray-200 dark:border-white/10" />
+                {series.map((d) => {
+                  const ratio = (d.count ?? 0) / Math.max(1, d.limit ?? 1);
+                  const h = Math.max(4, Math.min(60, Math.round(ratio * 60)));
+                  return (
+                    <div key={d.date} className="flex-1 min-w-[4px] bg-gray-100 dark:bg-white/[0.08] rounded" title={`${d.date}: ${d.count}/${d.limit} (${Math.round(ratio * 100)}%)`}>
+                      <div className="w-full bg-blue-600 rounded" style={{ height: h }} />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     );
   };
@@ -466,7 +476,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             </span>
           )}
           {hasKey && linkedAt && (
-            <span className="ml-1 text-[11px] text-gray-500 dark:text-gray-400">on {new Date(linkedAt).toLocaleDateString()}</span>
+            <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">on {new Date(linkedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -507,15 +517,15 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
             </button>
           )}
         </div>
-        <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1">
-          <Shield className="h-3 w-3" />
-          Keys are stored encrypted client-side using a passphrase on this device (v2 format).
+        <div className="mt-2 text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5 shrink-0" />
+          Keys are encrypted and stored on this device only.
         </div>
-        <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
-          If you lose the passphrase, re-enter your key. Never share keys publicly.
+        <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+          If you reset your browser data, re-enter your key. Never share keys publicly.
         </div>
         {user === null && (
-          <div className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">Sign in to save or remove API keys.</div>
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">Sign in to save or remove API keys.</div>
         )}
       </div>
     );
@@ -564,7 +574,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
           </div>
 
           {/* Right Content */}
-          <div className="flex-1 p-4 overflow-auto">
+          <div className="flex-1 p-4 overflow-auto motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150" key={active}>
             {active === "usage" ? (
               <div className="space-y-4">
                 {/* Plan */}
@@ -585,7 +595,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       ) : (
                         <>
                           <ArrowUpRight className="h-3.5 w-3.5" />
-                          {billingBusy ? "Redirecting…" : "Upgrade for $1"}
+                          {billingBusy ? "Redirecting…" : "Upgrade to Supporter · $1/month"}
                         </>
                       )}
                     </button>
@@ -600,7 +610,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {/* API Keys */}
                 <div className="space-y-3">
-                  <div className="text-sm font-semibold">API Keys</div>
+                  <div className="text-sm font-semibold">Provider Keys</div>
                   <ApiKeyItem provider="openai" label="OpenAI" />
                   <ApiKeyItem provider="gemini" label="Gemini" />
                 </div>
@@ -628,7 +638,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       ) : (
                         <>
                           <ArrowUpRight className="h-3.5 w-3.5" />
-                          {billingBusy ? "Redirecting…" : "Upgrade for $1"}
+                          {billingBusy ? "Redirecting…" : "Upgrade to Supporter · $1/month"}
                         </>
                       )}
                     </button>
@@ -639,7 +649,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <li>One-time $1 purchase unlocks Supporter benefits</li>
                   </ul>
                   {user === null && (
-                    <div className="mt-2 text-[11px]">Sign in to upgrade your account.</div>
+                    <div className="mt-2 text-xs">Sign in to upgrade your account.</div>
                   )}
                 </div>
               </div>
@@ -661,7 +671,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Sidebar Section Name</div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Current: "{userPreferences?.ungroupedSectionName ?? "Ungrouped Documents"}"
                       </div>
                     </div>
@@ -713,7 +723,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-semibold">Expand Ungrouped Section by Default</div>
-                        <div className="text-[11px] text-gray-500 dark:text-gray-400">Whether the ungrouped documents section should be expanded when you first open the app.</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Whether the ungrouped documents section should be expanded when you first open the app.</div>
                       </div>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -747,7 +757,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Calendar Panel Size</div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Current: {calendarPrefs?.calendarHubSizePct ?? 45}%
                       </div>
                     </div>
@@ -782,7 +792,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                   <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-semibold">Default Planner Mode</div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         Current: {calendarPrefs?.plannerMode === "calendar" ? "Calendar" : calendarPrefs?.plannerMode === "kanban" ? "Kanban" : "List"}
                       </div>
                     </div>
@@ -864,7 +874,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="text-sm">Show Week in Today's Agenda</div>
-                          <div className="text-[11px] text-gray-500 dark:text-gray-400">Display upcoming events for the current week in today's agenda.</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Display upcoming events for the current week in today's agenda.</div>
                         </div>
                         <label className="inline-flex items-center cursor-pointer">
                           <input
@@ -928,7 +938,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {user === null && (
                   <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       Sign in to save your preferences. Changes will be applied to your account.
                     </div>
                   </div>
@@ -962,7 +972,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     {user?._creationTime && (
                       <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <Calendar className="h-3 w-3" />
-                        Member since {new Date(user._creationTime).toLocaleDateString()}
+                        Member since {new Date(user._creationTime).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                       </div>
                     )}
                   </div>
@@ -1011,7 +1021,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="text-sm font-semibold">Current Session</div>
                       {sessions && sessions.find(s => s.isCurrent) && (
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Active since {new Date(sessions.find(s => s.isCurrent)!._creationTime).toLocaleDateString()}
+                          Active since {new Date(sessions.find(s => s.isCurrent)!._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       )}
                     </div>
@@ -1066,11 +1076,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           toast.error("Account deletion must be requested through customer support");
                         }}
                       >
-                        <div className="flex items-center gap-2 text-red-600">
+                        <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                           <Trash2 className="h-4 w-4" />
                           Delete Account
                         </div>
-                        <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           Permanently delete your account and all data
                         </div>
                       </button>
@@ -1127,11 +1137,11 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                                   <Shield className={`h-3 w-3 ${s.isCurrent ? "text-blue-600 dark:text-blue-400" : "text-gray-500"}`} />
                                   <span className="font-medium">{deviceLabel}</span>
                                   {s.isCurrent && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">Active</span>
                                   )}
                                 </div>
-                                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                                  Signed in: {new Date(s._creationTime).toLocaleDateString()}
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                  Signed in: {new Date(s._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </div>
                               </div>
                               {!s.isCurrent && (
@@ -1165,7 +1175,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm">API key reminder banner</div>
-                        <div className="text-[11px] text-gray-500 dark:text-gray-400">Show a banner when no API keys are linked.</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Show a banner when no API keys are linked.</div>
                       </div>
                       <label className="inline-flex items-center cursor-pointer">
                         <input
@@ -1206,7 +1216,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                           <div key={a._id} className="flex items-center justify-between p-2 rounded border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04]">
                             <div className="text-xs">
                               <div className="font-medium">{a.provider}</div>
-                              <div className="text-[11px] text-gray-500 dark:text-gray-400">ID: {a.providerAccountId}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">ID: {a.providerAccountId}</div>
                             </div>
                           </div>
                         ))}
@@ -1217,7 +1227,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
 
                 {user === null && (
                   <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
                       Sign in to view and manage your profile information.
                     </div>
                   </div>
@@ -1818,8 +1828,8 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                         </div>
                         {showGithubConfig && (
                           <div className="mt-3 space-y-3">
-                            <div className="text-[11px] text-gray-500 dark:text-gray-400">
-                              Provide credentials for higher rate limits or private orgs. Values are stored client-side encrypted and saved to your account.
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Provide credentials for higher rate limits or private repos. Values are encrypted on this device and saved to your account.
                             </div>
                             <ApiKeyItem provider="github_access_token" label="GitHub Access Token" />
                             <ApiKeyItem provider="github_webhook_secret" label="GitHub Webhook Secret" />

@@ -133,7 +133,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
           {factCheckCount != null && factCheckCount > 0 && (
             <span>{factCheckCount} fact checks</span>
           )}
-          <span>{content.length} characters</span>
+          <span>{content.length > 60 ? `${Math.ceil(content.length / 200)} min read` : ''}</span>
         </div>
         <div className="flex items-center gap-2">
           <button

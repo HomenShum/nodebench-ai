@@ -50,10 +50,10 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-indigo-900/30 rounded">
-                        <div className="text-[9px] font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Avg Score</div>
+                        <div className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-400">Avg Score</div>
                         <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.avgBankerScore}</div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-gray-400 uppercase tracking-widest">
+                    <div className="flex items-center gap-2 text-xs text-gray-400 uppercase tracking-widest">
                         <Building2 className="w-4 h-4" />
                         <span>Last 30 Days</span>
                     </div>
@@ -87,7 +87,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06]">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Filters</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Filters</span>
                 </div>
 
                 <select
@@ -124,7 +124,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             setSectorFilter('all');
                             setMinScore(0);
                         }}
-                        className="ml-auto text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                        className="ml-auto text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                     >
                         Clear Filters
                     </button>

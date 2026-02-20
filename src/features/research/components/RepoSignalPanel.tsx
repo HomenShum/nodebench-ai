@@ -51,7 +51,7 @@ export const RepoSignalPanel: React.FC<RepoSignalPanelProps> = ({ title, summary
         <div className="flex items-center gap-2">
           <Network className="w-4 h-4 text-gray-500" />
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Moat Pressure</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Moat Pressure</div>
             <div className="text-sm font-semibold text-gray-900">Open-source challengers</div>
           </div>
         </div>
@@ -77,7 +77,7 @@ export const RepoSignalPanel: React.FC<RepoSignalPanelProps> = ({ title, summary
       <SignalMomentumMini keyword={title} />
 
       {report?.moatRisks?.length ? (
-        <ul className="list-disc list-inside text-[11px] text-gray-500 space-y-1">
+        <ul className="list-disc list-inside text-xs text-gray-500 space-y-1">
           {report.moatRisks.slice(0, 3).map((risk: string, idx: number) => (
             <li key={`${risk}-${idx}`}>{risk}</li>
           ))}
@@ -95,13 +95,13 @@ export const RepoSignalPanel: React.FC<RepoSignalPanelProps> = ({ title, summary
           >
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold text-gray-800">{repo.name}</div>
-              <div className="flex items-center gap-2 text-[10px] text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
                 <span className="inline-flex items-center gap-1"><Star className="w-3 h-3" /> {repo.starVelocity}/day</span>
                 <span className="inline-flex items-center gap-1"><GitBranch className="w-3 h-3" /> {repo.commitsPerWeek}/wk</span>
               </div>
             </div>
             {repo.description && (
-              <div className="text-[11px] text-gray-500 mt-1 line-clamp-2">{repo.description}</div>
+              <div className="text-xs text-gray-500 mt-1 line-clamp-2">{repo.description}</div>
             )}
           </a>
         ))}

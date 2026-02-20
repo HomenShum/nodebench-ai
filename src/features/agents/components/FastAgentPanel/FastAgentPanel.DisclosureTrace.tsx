@@ -577,19 +577,19 @@ export function DisclosureTrace({
                   <span className="flex items-center gap-1 text-[var(--text-secondary)]">
                     Invariants:
                     <span className={cn(
-                      "px-1 rounded text-[10px] font-mono",
+                      "px-1 rounded text-xs font-mono",
                       stats.invariantStatus.A === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.A === "fail" ? "bg-red-500/20 text-red-400" :
                       "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>A</span>
                     <span className={cn(
-                      "px-1 rounded text-[10px] font-mono",
+                      "px-1 rounded text-xs font-mono",
                       stats.invariantStatus.C === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.C === "fail" ? "bg-red-500/20 text-red-400" :
                       "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                     )}>C</span>
                     <span className={cn(
-                      "px-1 rounded text-[10px] font-mono",
+                      "px-1 rounded text-xs font-mono",
                       stats.invariantStatus.D === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.D === "fail" ? "bg-red-500/20 text-red-400" :
                       "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
@@ -609,7 +609,7 @@ export function DisclosureTrace({
                     <span
                       key={i}
                       className={cn(
-                        "px-1.5 py-0.5 rounded text-[10px]",
+                        "px-1.5 py-0.5 rounded text-xs",
                         u.action === "create" ? "bg-indigo-500/20 text-indigo-400" :
                         u.action === "update" ? "bg-violet-500/20 text-violet-400" :
                         "bg-[var(--bg-secondary)] text-[var(--text-muted)]"

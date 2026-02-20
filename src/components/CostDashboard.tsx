@@ -57,7 +57,7 @@ export function CostDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">
-            Cost Dashboard
+            Usage & Costs
           </h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
             {hasData ? "See what you're spending and where you can save" : "Track LLM costs as you use the platform"}
@@ -102,7 +102,7 @@ export function CostDashboard() {
           icon={<DollarSign className="w-5 h-5" />}
           label="Total Cost"
           value={`$${metrics.totalCost.toFixed(2)}`}
-          subtitle={`${metrics.totalRequests.toLocaleString()} requests`}
+          subtitle={`${metrics.totalRequests.toLocaleString()} ${metrics.totalRequests === 1 ? 'request' : 'requests'}`}
           trend={null}
         />
 
@@ -191,8 +191,8 @@ export function CostDashboard() {
                   {model.model}
                 </div>
                 <div className="text-xs text-[var(--text-secondary)]">
-                  {model.requests.toLocaleString()} requests •{" "}
-                  {model.tokens.toLocaleString()} tokens
+                  {model.requests.toLocaleString()} {model.requests === 1 ? 'request' : 'requests'} •{" "}
+                  {model.tokens.toLocaleString()} {model.tokens === 1 ? 'token' : 'tokens'}
                 </div>
               </div>
               <div className="text-right">
@@ -228,7 +228,7 @@ export function CostDashboard() {
                     {user.userId === "anonymous" ? "Anonymous Users" : `User ${user.userId.slice(0, 8)}...`}
                   </div>
                   <div className="text-xs text-[var(--text-secondary)]">
-                    {user.requests.toLocaleString()} requests
+                    {user.requests.toLocaleString()} {user.requests === 1 ? 'request' : 'requests'}
                   </div>
                 </div>
               </div>

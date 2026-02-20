@@ -377,7 +377,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           <div className="h-3 bg-[var(--bg-primary)] rounded" />
           <div className="h-3 bg-[var(--bg-primary)] rounded w-5/6" />
         </div>
-        <div className="text-[11px] text-[var(--text-tertiary)] mt-2">Loading preview…</div>
+        <div className="text-xs text-[var(--text-tertiary)] mt-2">Loading preview…</div>
       </div>
     );
   }
@@ -460,8 +460,8 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           {/* Footer with Keyboard Shortcuts */}
           <div className="flex-shrink-0 px-6 py-3 bg-[var(--bg-secondary)]/50 border-t border-[var(--border-color)] flex items-center justify-between">
             <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
-              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-sm font-mono text-[10px]">Esc</kbd>Close</span>
-              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-sm font-mono text-[10px]">⌘S</kbd>Save changes</span>
+              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-sm font-mono text-xs">Esc</kbd>Close</span>
+              <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded shadow-sm font-mono text-xs">⌘S</kbd>Save changes</span>
             </div>
             <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-lg ${saveHint === "unsaved" && !isSaving ? "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90 shadow-[var(--border-color)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] cursor-not-allowed shadow-none"}`}>Save Changes</button>
           </div>
@@ -480,9 +480,9 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div className="mb-1 flex items-center justify-between">
-        <div className="text-[11px] text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
+        <div className="text-xs text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
         <div className="flex items-center gap-2">
-          <div className="text-[11px] text-[var(--text-muted)]">
+          <div className="text-xs text-[var(--text-muted)]">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </div>
           {/* Cinema Mode Toggle */}
@@ -498,7 +498,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
             type="button"
             onClick={() => { void handleSave(); }}
             disabled={saveHint !== "unsaved" || isSaving}
-            className={`h-7 px-2 rounded-md flex items-center justify-center border text-[11px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-2 rounded-md flex items-center justify-center border text-xs ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
             title="Save changes"
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
@@ -507,7 +507,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
             type="button"
             onClick={() => { void handleSaveSubset({ headers: subsetHeaders, rows: subsetRows }); }}
             disabled={subsetHeaders.length === 0}
-            className={`h-7 px-2 rounded-md flex items-center justify-center border text-[11px] ${subsetHeaders.length > 0 ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-2 rounded-md flex items-center justify-center border text-xs ${subsetHeaders.length > 0 ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
             title={isExcel ? "Save sheet to workbook" : "Export CSV"}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> {isExcel ? "Save Sheet" : "Export CSV"}</span>
@@ -547,7 +547,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
 
         {/* Spreadsheet grid */}
         {subsetHeaders.length > 0 && (
-          <div className="mini-grid text-[11px]">
+          <div className="mini-grid text-xs">
             <div className="max-h-[300px] overflow-auto rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)]">
               <div className="p-1">
                 <Spreadsheet
@@ -568,7 +568,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
               type="button"
               key={`${s.name}-${i}`}
               onClick={() => { setActiveSheetIndex(i); setSubsetHeaders(workbookSheets[i].csv.headers); setSubsetRows(workbookSheets[i].csv.rows); }}
-              className={`px-2 py-1 text-[11px] rounded ${i === activeSheetIndex ? 'bg-[var(--bg-secondary)] border border-[var(--border-color)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}
+              className={`px-2 py-1 text-xs rounded ${i === activeSheetIndex ? 'bg-[var(--bg-secondary)] border border-[var(--border-color)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}
               title={s.name}
             >
               {s.name}

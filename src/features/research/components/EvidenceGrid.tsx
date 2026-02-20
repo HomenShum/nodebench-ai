@@ -100,12 +100,12 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           )}
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
             {evidence.source}
           </span>
         </div>
         {evidence.score !== undefined && evidence.score > 0 && (
-          <div className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+          <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
             <TrendingUp className="w-3 h-3" />
             <span>{evidence.score}</span>
           </div>
@@ -124,7 +124,7 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
 
       {/* Footer: Time + Link Icon */}
       <div className="flex items-center justify-between pt-2 border-t border-[color:var(--border-color)]">
-        <div className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)]">
+        <div className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
           <Clock className="w-3 h-3" />
           <span>{timeAgo}</span>
         </div>
@@ -152,7 +152,7 @@ export function EvidenceGrid({ evidence, className = "" }: EvidenceGridProps) {
     <div className={`relative ${className}`}>
       {/* Section Label */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
+        <span className="text-xs font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
           Evidence ({evidence.length})
         </span>
         <div className="flex-1 h-px bg-[color:var(--border-color)]" />

@@ -90,7 +90,7 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
     >
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className={clsx("text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded", badgeColor)}>
+          <span className={clsx("text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded", badgeColor)}>
             {item.source || "News"}
           </span>
           <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-indigo-400" />
@@ -98,7 +98,7 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
         <h4 className="text-sm font-semibold text-gray-900 leading-snug mb-2 line-clamp-2">{item.title}</h4>
         <p className="text-xs text-gray-500 line-clamp-2 mb-3">{item.subtitle || item.type}</p>
       </div>
-      <div className="flex items-center gap-3 border-t border-gray-50 pt-3 text-[11px] text-gray-500">
+      <div className="flex items-center gap-3 border-t border-gray-50 pt-3 text-xs text-gray-500">
         {item.timestamp && <span>{item.timestamp}</span>}
         {item.tags?.length ? <span className="truncate">#{item.tags.slice(0, 2).join(" #")}</span> : null}
         {typeof item.relevanceScore === "number" && (

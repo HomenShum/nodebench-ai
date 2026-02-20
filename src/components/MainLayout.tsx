@@ -505,7 +505,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               >
                 <Search className="w-3.5 h-3.5" />
                 <span className="text-[13px]">Search...</span>
-                <kbd className="ml-auto text-[11px] font-medium text-gray-400 dark:text-gray-400 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
+                <kbd className="ml-auto text-xs font-medium text-gray-400 dark:text-gray-400 bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-gray-300 dark:group-hover:border-white/20">
                   {commandShortcutLabel}
                 </kbd>
               </button>
@@ -532,7 +532,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <Sparkles className="h-3.5 w-3.5" />
                   Research
                   {(userStats?.unreadBriefings ?? 0) > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                       {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
                     </span>
                   )}
@@ -572,7 +572,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   user.image ? (
                     <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
                   ) : (
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
                       {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
                     </div>
                   )
@@ -711,7 +711,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Benchmarks failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto p-6 bg-gray-50 dark:bg-[#09090B]"
+                className="h-full overflow-auto p-6 pb-24 lg:pb-6 bg-gray-50 dark:bg-[#09090B]"
               >
                 <ModelEvalDashboard />
               </LazyView>
@@ -833,7 +833,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </LazyView>
             ) : currentView === "dogfood" ? (
               <LazyView
-                title="Dogfood Review failed to load"
+                title="Quality Review failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
                 className="h-full overflow-auto bg-background"

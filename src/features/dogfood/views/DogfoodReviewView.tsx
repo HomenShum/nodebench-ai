@@ -102,12 +102,12 @@ type DogfoodQaRun = {
 function formatDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString();
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function formatMs(ms: number) {
   if (!Number.isFinite(ms)) return String(ms);
-  return new Date(ms).toLocaleString();
+  return new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function resolveAbsoluteUrl(maybeUrl: string | null | undefined): string | null {
@@ -200,12 +200,12 @@ function OverstoryStatusPanel() {
           <div className="text-sm font-medium text-foreground">
             Overstory QA Orchestration
           </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
+          <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
             multi-agent
           </span>
         </div>
         {ovManifest && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
+          <span className="text-xs px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
             Configured
           </span>
         )}
@@ -246,24 +246,24 @@ function OverstoryStatusPanel() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold">{key}</span>
                       <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${modelBadge[agent.model] || "bg-muted/30 text-muted-foreground"}`}
+                        className={`text-xs px-1.5 py-0.5 rounded font-mono ${modelBadge[agent.model] || "bg-muted/30 text-muted-foreground"}`}
                       >
                         {agent.model}
                       </span>
                     </div>
-                    <div className="text-[11px] opacity-80">
+                    <div className="text-xs opacity-80">
                       {agent.description}
                     </div>
                     <div className="flex gap-1 flex-wrap">
                       {agent.constraints.map((c) => (
                         <span
                           key={c}
-                          className="text-[9px] px-1 py-0.5 rounded bg-black/20 font-mono"
+                          className="text-xs px-1 py-0.5 rounded bg-black/20 font-mono"
                         >
                           {c}
                         </span>
                       ))}
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-black/20 font-mono">
+                      <span className="text-xs px-1 py-0.5 rounded bg-black/20 font-mono">
                         max {agent.maxToolCalls} calls
                       </span>
                     </div>
@@ -280,25 +280,25 @@ function OverstoryStatusPanel() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <div className="rounded-md bg-muted/20 border border-border/50 p-2 text-center">
-                    <div className="text-[10px] text-muted-foreground">Mode</div>
+                    <div className="text-xs text-muted-foreground">Mode</div>
                     <div className="text-xs font-semibold text-foreground">
                       {ovManifest.gatePolicy.mode}
                     </div>
                   </div>
                   <div className="rounded-md bg-muted/20 border border-border/50 p-2 text-center">
-                    <div className="text-[10px] text-muted-foreground">Min Grade</div>
+                    <div className="text-xs text-muted-foreground">Min Grade</div>
                     <div className="text-xs font-semibold text-foreground">
                       {ovManifest.gatePolicy.minStabilityGrade}
                     </div>
                   </div>
                   <div className="rounded-md bg-muted/20 border border-border/50 p-2 text-center">
-                    <div className="text-[10px] text-muted-foreground">Max P0</div>
+                    <div className="text-xs text-muted-foreground">Max P0</div>
                     <div className="text-xs font-semibold text-foreground">
                       {ovManifest.gatePolicy.maxUnresolvedP0}
                     </div>
                   </div>
                   <div className="rounded-md bg-muted/20 border border-border/50 p-2 text-center">
-                    <div className="text-[10px] text-muted-foreground">Auto-fix Iters</div>
+                    <div className="text-xs text-muted-foreground">Auto-fix Iters</div>
                     <div className="text-xs font-semibold text-foreground">
                       {ovManifest.gatePolicy.autoFixMaxIterations}
                     </div>
@@ -315,11 +315,11 @@ function OverstoryStatusPanel() {
                 </div>
                 <div className="rounded-md bg-muted/20 border border-border/50 p-2 space-y-1">
                   {ovManifest.mailProtocol.qaRoutes.map((route, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono">
+                    <div key={i} className="flex items-center gap-1.5 text-xs font-mono">
                       <span className="text-muted-foreground">{route.from}</span>
                       <span className="text-muted-foreground/50">&rarr;</span>
                       <span className="text-muted-foreground">{route.to}</span>
-                      <span className="text-[9px] px-1 rounded bg-muted/40 text-muted-foreground">
+                      <span className="text-xs px-1 rounded bg-muted/40 text-muted-foreground">
                         {route.type}
                       </span>
                       <span className="text-foreground/70 truncate">{route.subject}</span>
@@ -555,9 +555,9 @@ export function DogfoodReviewView() {
       <div className="mx-auto w-full max-w-6xl p-6 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Design Dogfood</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Quality Review</h1>
             <p className="text-sm text-muted-foreground">
-              UI evidence and route-by-route dogfooding. Fix root causes, then publish proof here.
+              UI evidence and route-by-route review. Fix root causes, then publish proof here.
             </p>
             {manifest?.capturedAtIso && (
               <p className="text-xs text-muted-foreground">
@@ -970,14 +970,19 @@ export function DogfoodReviewView() {
                   try {
                     const base = manifest.basePath || "/dogfood/screenshots";
                     const allScreenshots = (manifest.items ?? [])
-                      .filter((it) => it.kind === "route" || it.kind === "interaction" || it.kind === "settings")
-                      .map((it) => ({
-                        label: it.label,
-                        route: it.kind === "route" ? it.label : it.kind,
-                        url: resolveAbsoluteUrl(`${base}/${encodeURIComponent(it.file)}`) ?? "",
-                      }))
+                      .filter((it: any) => it.kind === "route" || it.kind === "interaction" || it.kind === "settings")
+                      .map((it: any) => {
+                        const variantTag = (it.theme && it.viewport) ? ` [${it.theme} ${it.viewport}]` : "";
+                        return {
+                          label: `${it.label}${variantTag}`,
+                          route: it.kind === "route" ? it.label : it.kind,
+                          url: resolveAbsoluteUrl(`${base}/${encodeURIComponent(it.file)}`) ?? "",
+                        };
+                      })
                       .filter((s) => s.url);
 
+                    // Sample evenly across variants: up to 12 screenshots total.
+                    // Group by variant suffix, sample proportionally from each group.
                     const maxUpload = 12;
                     const sampleCount = Math.min(maxUpload, allScreenshots.length);
                     const sampleIndices =
@@ -1069,7 +1074,7 @@ export function DogfoodReviewView() {
                         <div key={`${run._id}-${idx}`} className="rounded-md border border-border/60 bg-card p-3">
                           <div className="flex items-baseline justify-between gap-3">
                             <div className="text-sm font-medium text-foreground truncate">
-                              <span className="mr-2 inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-mono border border-border/60 bg-muted/20">
+                              <span className="mr-2 inline-flex items-center rounded px-1.5 py-0.5 text-xs font-mono border border-border/60 bg-muted/20">
                                 {String(it.severity).toUpperCase()}
                               </span>
                               {it.title}
@@ -1146,7 +1151,7 @@ export function DogfoodReviewView() {
                       return <circle key={i} cx={x} cy={y} r="2" vectorEffect="non-scaling-stroke" className="fill-red-400/80" />;
                     })}
                   </svg>
-                  <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-mono">
+                  <div className="flex justify-between mt-1 text-xs text-muted-foreground font-mono">
                     <span>{qaTrending[0].date}</span>
                     <span>{latest.date}</span>
                   </div>
@@ -1230,7 +1235,7 @@ export function DogfoodReviewView() {
             <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="text-sm font-medium text-foreground">Local QA Score History</div>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono">
                   qa-results.json
                 </span>
               </div>
@@ -1308,7 +1313,7 @@ export function DogfoodReviewView() {
                             return <circle key={i} cx={x} cy={y} r="2.5" vectorEffect="non-scaling-stroke" className={dotColor} />;
                           })}
                       </svg>
-                      <div className="flex justify-between mt-1 text-[10px] text-muted-foreground font-mono">
+                      <div className="flex justify-between mt-1 text-xs text-muted-foreground font-mono">
                         <span>{entries[entries.length - 1]?.ts?.slice(0, 10)}</span>
                         <span>{entries[0]?.ts?.slice(0, 10)}</span>
                       </div>
@@ -1329,18 +1334,18 @@ export function DogfoodReviewView() {
                               {e.grade}
                             </span>
                             <span className="text-sm font-medium text-foreground font-mono w-10 tabular-nums">{e.score}</span>
-                            <div className="flex gap-2 text-[11px] font-mono text-muted-foreground">
+                            <div className="flex gap-2 text-xs font-mono text-muted-foreground">
                               {e.critical > 0 && <span className="text-red-400">{e.critical}C</span>}
                               {e.warning > 0 && <span className="text-amber-400">{e.warning}W</span>}
                               {e.info > 0 && <span className="text-sky-400">{e.info}I</span>}
                             </div>
                             {e.source && (
-                              <span className="text-[10px] px-1 py-0.5 rounded bg-muted/40 text-muted-foreground font-mono">
+                              <span className="text-xs px-1 py-0.5 rounded bg-muted/40 text-muted-foreground font-mono">
                                 {e.source}
                               </span>
                             )}
-                            <span className="ml-auto text-[10px] text-muted-foreground font-mono">
-                              {e.ts ? new Date(e.ts).toLocaleString() : "—"}
+                            <span className="ml-auto text-xs text-muted-foreground font-mono">
+                              {e.ts ? new Date(e.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : "—"}
                             </span>
                           </div>
                         );

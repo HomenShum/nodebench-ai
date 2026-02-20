@@ -66,7 +66,7 @@ export const localDashboardTools: McpTool[] = [
           headers: { "Content-Type": "application/json", "x-mcp-secret": secret },
           body: JSON.stringify({ fn: "getLatestDashboardSnapshot", args: {} }),
         });
-        const snapData = await snapRes.json();
+        const snapData: any = await snapRes.json();
         if (snapData.success && snapData.data) {
           const s = snapData.data;
           db.prepare(`
@@ -88,7 +88,7 @@ export const localDashboardTools: McpTool[] = [
           headers: { "Content-Type": "application/json", "x-mcp-secret": secret },
           body: JSON.stringify({ fn: "getPublicThreads", args: { limit: 100 } }),
         });
-        const threadData = await threadRes.json();
+        const threadData: any = await threadRes.json();
         if (threadData.success && Array.isArray(threadData.data)) {
           const upsert = db.prepare(`
             INSERT OR REPLACE INTO narrative_threads_local

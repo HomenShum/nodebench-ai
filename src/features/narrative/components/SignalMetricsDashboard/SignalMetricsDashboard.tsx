@@ -104,7 +104,7 @@ export function SignalMetricsDashboard({ threadId, className = "" }: SignalMetri
                         style={{ width: `${Math.round(data.avgConfidence * 100)}%` }}
                       />
                     </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                       {Math.round(data.avgConfidence * 100)}%
                     </div>
                   </div>

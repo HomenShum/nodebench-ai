@@ -112,16 +112,16 @@ function DeltaCallout({ delta }: { delta: TrendLineConfig["delta"] }) {
   if (!delta) return null;
   
   const Icon = delta.direction === "up" ? TrendingUp : delta.direction === "down" ? TrendingDown : Minus;
-  const colorClass = delta.direction === "up" ? "text-indigo-600 bg-indigo-50" 
-    : delta.direction === "down" ? "text-red-600 bg-red-50" 
-    : "text-slate-600 bg-slate-50";
+  const colorClass = delta.direction === "up" ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
+    : delta.direction === "down" ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10"
+    : "text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/[0.06]";
   const sign = delta.direction === "up" ? "+" : delta.direction === "down" ? "" : "";
   
   return (
-    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
+    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${colorClass}`}>
       <Icon className="w-3 h-3" />
       <span>{sign}{formatValue(delta.value, "%")}</span>
-      {delta.label && <span className="text-[10px] opacity-70">{delta.label}</span>}
+      {delta.label && <span className="text-xs opacity-70 whitespace-nowrap">{delta.label}</span>}
     </div>
   );
 }
@@ -137,15 +137,15 @@ function ChartHeader({ config, isLoading, onRefresh }: {
       <div className="min-w-0 flex-1">
         {/* Title with unit */}
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide truncate">
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">
             {config.title || "Trend"}
-            {config.yAxisUnit && <span className="text-slate-400 font-normal"> ({config.yAxisUnit})</span>}
+            {config.yAxisUnit && <span className="text-slate-400 dark:text-slate-500 font-normal"> ({config.yAxisUnit})</span>}
           </h3>
           {config.delta && <DeltaCallout delta={config.delta} />}
         </div>
         
         {/* Time window and last updated */}
-        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
           {config.timeWindow && <span>{config.timeWindow}</span>}
           {config.lastUpdated && (
             <>
@@ -597,7 +597,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 initial={false}
                 animate={{ y: tick.y + 3 }}
                 textAnchor="end"
-                className="text-[8px] fill-slate-400 font-mono"
+                className="text-xs fill-slate-400 font-mono"
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {tick.label}
@@ -625,7 +625,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 x={CHART.width - CHART.paddingX + 3}
                 initial={false}
                 animate={{ y: getCoord(0, config.baseline.value).y + 3 }}
-                className="text-[8px] fill-amber-600 font-medium"
+                className="text-xs fill-amber-600 font-medium"
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {config.baseline.label}
@@ -643,7 +643,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                  x={x}
                  y={CHART.height - 3}
                  textAnchor="middle"
-                 className={`text-[8px] font-mono ${muted ? "fill-slate-200" : "fill-slate-400"}`}
+                 className={`text-xs font-mono ${muted ? "fill-slate-200" : "fill-slate-400"}`}
                >
                  {label}
                </text>
@@ -787,7 +787,10 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
              );
            })}
 
-          {annotationPoints.length > 0 && (
+          {annotationPoints.length > 0 && (() => {
+            // Simple collision avoidance: offset labels that would overlap
+            const usedSlots: Array<{ x: number; y: number; w: number }> = [];
+            return (
             <g>
               {annotationPoints.map(({ annotation, coord, label }, idx) => {
                 const color = annotation.sentiment === "negative"
@@ -795,26 +798,35 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                   : annotation.sentiment === "positive"
                     ? "#10b981"
                     : "#64748b";
-                const y = Math.max(CHART.paddingTop + 6, coord.y - 14);
+                const truncLabel = label.length > 20 ? label.slice(0, 18) + "…" : label;
+                const labelW = truncLabel.length * 6.5 + 12;
+                let y = Math.max(CHART.paddingTop + 6, coord.y - 14);
+                // Offset if overlapping a previous label
+                for (const slot of usedSlots) {
+                  if (Math.abs(coord.x - slot.x) < slot.w && Math.abs(y - slot.y) < 20) {
+                    y = slot.y + 22;
+                  }
+                }
+                usedSlots.push({ x: coord.x, y, w: labelW });
                 return (
                   <g key={annotation.id ?? `${coord.x}-${coord.y}-${idx}`}>
                     <circle cx={coord.x} cy={coord.y} r={3} fill={color} />
                     <rect
                       x={coord.x + 6}
                       y={y - 10}
-                      width={label.length * 5.4 + 12}
-                      height={16}
-                      rx={8}
+                      width={labelW}
+                      height={18}
+                      rx={9}
                       fill="#ffffff"
                       stroke="#e2e8f0"
                       strokeWidth={1}
                     />
                     <text
                       x={coord.x + 12}
-                      y={y + 2}
-                      className="text-[8px] fill-slate-600 font-medium"
+                      y={y + 3}
+                      className="text-xs fill-slate-600 font-medium"
                     >
-                      {label}
+                      {truncLabel}
                     </text>
                     {annotation.description && (
                       <title>{annotation.description}</title>
@@ -823,7 +835,8 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 );
               })}
             </g>
-          )}
+            );
+          })()}
 
           {/* Vertical crosshair on hover */}
           {activePoint && (
@@ -870,7 +883,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 activePoint.isPinned ? "ring-2 ring-indigo-400" : ""
               }`}>
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-[9px] uppercase tracking-wider text-indigo-200">
+                  <span className="text-xs uppercase tracking-wider text-indigo-200">
                     {activePoint.pointTooltip?.kicker ?? "Intel"}
                   </span>
                   {activePoint.isPinned && (
@@ -878,15 +891,15 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                   )}
                 </div>
 
-                <div className="font-medium text-[11px] leading-snug">
+                <div className="font-medium text-xs leading-snug">
                   {activePoint.pointTooltip?.title ?? config.xAxisLabels[activePoint.index] ?? `Point ${activePoint.index + 1}`}
                 </div>
                 <div className="text-lg font-bold">
                   {formatValue(activePoint.value, config.yAxisUnit)}
                 </div>
-                <div className="text-slate-400 text-[10px]">{activePoint.label}</div>
+                <div className="text-slate-400 text-xs">{activePoint.label}</div>
                 {activePoint.pointTooltip?.body && (
-                  <div className="mt-1 text-[10px] text-slate-300 leading-relaxed">
+                  <div className="mt-1 text-xs text-slate-300 leading-relaxed">
                     {activePoint.pointTooltip.body}
                   </div>
                 )}
@@ -894,7 +907,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 {/* Evidence count */}
                 {(activePoint.linkedEvidenceIds?.length ?? 0) > 0 && (
                   <div className="mt-2 pt-2 border-t border-slate-700">
-                    <div className="text-[9px] text-slate-400 uppercase tracking-wider">
+                    <div className="text-xs text-slate-400 uppercase tracking-wider">
                       Sources ({activePoint.linkedEvidenceIds?.length})
                     </div>
                     <div className="mt-1 space-y-1">
@@ -909,7 +922,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                               e.stopPropagation();
                               onEvidenceClick?.(id);
                             }}
-                            className="w-full text-left text-[10px] text-slate-200 hover:text-indigo-200 hover:bg-slate-800/60 rounded px-1 py-0.5 transition-colors"
+                            className="w-full text-left text-xs text-slate-200 hover:text-indigo-200 hover:bg-slate-800/60 rounded px-1 py-0.5 transition-colors"
                           >
                             {title}
                             {ev?.source ? <span className="text-slate-500 ml-1">· {ev.source}</span> : null}
@@ -917,7 +930,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                         );
                       })}
                       {(activePoint.linkedEvidenceIds?.length ?? 0) > 3 && (
-                        <div className="text-[9px] text-slate-500 italic px-1">
+                        <div className="text-xs text-slate-500 italic px-1">
                           +{(activePoint.linkedEvidenceIds?.length ?? 0) - 3} more
                         </div>
                       )}

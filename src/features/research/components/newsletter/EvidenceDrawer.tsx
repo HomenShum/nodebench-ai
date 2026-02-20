@@ -65,14 +65,14 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
                             <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                         )}
                     </div>
-                    <p className="text-[10px] text-[color:var(--text-secondary)] truncate">{source.domain}</p>
+                    <p className="text-xs text-[color:var(--text-secondary)] truncate">{source.domain}</p>
                     {source.snippet && (
                         <p className="text-xs text-[color:var(--text-primary)] mt-1 line-clamp-2">{source.snippet}</p>
                     )}
                     {source.citedInSections && source.citedInSections.length > 0 && (
                         <div className="flex gap-1 mt-2 flex-wrap">
                             {source.citedInSections.slice(0, 3).map(section => (
-                                <span key={section} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[9px] rounded font-medium">
+                                <span key={section} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-xs rounded font-medium">
                                     {section.replace(/_/g, ' ')}
                                 </span>
                             ))}
@@ -145,7 +145,7 @@ export function EvidenceDrawer({
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-[color:var(--text-primary)]" />
                     <h2 className="font-semibold text-[color:var(--text-primary)]">Evidence</h2>
-                    <span className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] text-[10px] rounded-full font-medium">
+                    <span className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] text-xs rounded-full font-medium">
                         {sources.length}
                     </span>
                 </div>
@@ -196,7 +196,7 @@ export function EvidenceDrawer({
                         <button
                             key={type}
                             onClick={() => setFilterType(type === 'all' ? null : type)}
-                            className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${(type === 'all' && !filterType) || filterType === type
+                            className={`px-2 py-1 text-xs font-medium rounded transition-colors ${(type === 'all' && !filterType) || filterType === type
                                 ? 'bg-gray-900 text-white'
                                 : 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]'
                                 }`}
@@ -253,7 +253,7 @@ export function EvidenceDrawer({
                                         style={{ width: sources.length > 0 ? `${(verifiedCount / sources.length) * 100}%` : '0%' }}
                                     />
                                 </div>
-                                <p className="text-[10px] text-[color:var(--text-secondary)] mt-1.5">
+                                <p className="text-xs text-[color:var(--text-secondary)] mt-1.5">
                                     {sources.length > 0 ? Math.round((verifiedCount / sources.length) * 100) : 0}% of sources verified
                                 </p>
                             </div>
@@ -279,7 +279,7 @@ export function EvidenceDrawer({
 
             {/* Footer */}
             <div className="px-4 py-3 border-t border-[color:var(--border-color)] bg-[color:var(--bg-primary)]">
-                <p className="text-[10px] text-[color:var(--text-secondary)] text-center">
+                <p className="text-xs text-[color:var(--text-secondary)] text-center">
                     Click any source to open in new tab
                 </p>
             </div>

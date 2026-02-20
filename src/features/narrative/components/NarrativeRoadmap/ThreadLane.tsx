@@ -99,7 +99,7 @@ export function ThreadLane({
               </h3>
 
               {/* Phase Badge */}
-              <div className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${phaseColors.text} ${phaseColors.border} border`}>
+              <div className={`inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-xs font-medium ${phaseColors.text} ${phaseColors.border} border`}>
                 {phaseInfo.icon}
                 {phaseInfo.label}
               </div>
@@ -133,7 +133,7 @@ export function ThreadLane({
               </div>
 
               {/* Event Count */}
-              <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {thread.eventCount} events · {thread.plotTwistCount} twists
               </div>
             </div>
@@ -180,7 +180,7 @@ export function ThreadLane({
                   <div className="w-full h-0.5 bg-gray-100 dark:bg-white/[0.06] rounded" />
                 )}
                 {weekEvents.length > 3 && (
-                  <span className="text-[10px] text-gray-400">+{weekEvents.length - 3}</span>
+                  <span className="text-xs text-gray-400">+{weekEvents.length - 3}</span>
                 )}
               </div>
             </div>

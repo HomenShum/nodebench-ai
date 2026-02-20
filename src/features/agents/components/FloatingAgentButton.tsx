@@ -48,16 +48,17 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
       type="button"
       onClick={toggle}
       className={`
-        fixed z-[100] flex items-center gap-2.5 
-        px-5 py-3 
-        bg-gradient-to-r from-slate-900 to-slate-800 
-        text-white rounded-full 
+        fixed z-[100] flex items-center gap-2.5
+        px-5 py-3
+        bg-gradient-to-r from-slate-900 to-slate-800
+        text-white rounded-full
         shadow-2xl shadow-black/25
         hover:scale-105 hover:shadow-purple-500/20
         active:scale-95
         transition-all duration-300 ease-out
         animate-in slide-in-from-bottom-4 fade-in duration-500
         group
+        lg:hidden
         ${positionClasses[position]}
         ${className}
       `}
@@ -78,7 +79,7 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
       )}
 
       {/* Keyboard shortcut hint */}
-      <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono bg-white/10 rounded border border-white/20 text-white/60">
+      <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono bg-white/10 rounded border border-white/20 text-white/60">
         ⌘K
       </kbd>
     </button>
@@ -99,14 +100,15 @@ export const FloatingAgentIcon: React.FC<{ className?: string }> = ({ className 
       onClick={toggle}
       className={`
         fixed right-6 bottom-6 z-[100]
-        p-4 
+        p-4
         bg-gradient-to-br from-purple-600 to-indigo-700
-        text-white rounded-full 
+        text-white rounded-full
         shadow-xl shadow-purple-500/30
         hover:scale-110 hover:shadow-purple-500/50
         active:scale-95
         transition-all duration-200
         animate-in zoom-in duration-300
+        lg:hidden
         ${className}
       `}
       aria-label="Open AI Agent"

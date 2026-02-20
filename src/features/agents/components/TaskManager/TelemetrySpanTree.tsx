@@ -95,7 +95,7 @@ const spanStatusConfig: Record<SpanStatus, { icon: React.ReactNode; color: strin
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${(ms / 60000).toFixed(1)}m`;
+  return `${(ms / 60000).toFixed(1)} min`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -149,7 +149,7 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
 
         {/* Duration */}
         {span.durationMs !== undefined && (
-          <span className="text-[10px] text-[var(--text-muted)] tabular-nums">
+          <span className="text-xs text-[var(--text-muted)] tabular-nums">
             {formatDuration(span.durationMs)}
           </span>
         )}
@@ -164,7 +164,7 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
           className="ml-8 mt-1 p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
           style={{ marginLeft: `${span.depth * 16 + 32}px` }}
         >
-          <p className="text-[10px] text-red-600 dark:text-red-400">
+          <p className="text-xs text-red-600 dark:text-red-400">
             {span.error.message}
           </p>
         </div>
@@ -223,15 +223,15 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
         <span className="text-xs text-[var(--text-primary)] font-medium">
           {spans.length} spans
         </span>
-        <span className="text-[10px] text-indigo-600">
+        <span className="text-xs text-indigo-600">
           {completedSpans} completed
         </span>
         {errorSpans > 0 && (
-          <span className="text-[10px] text-red-600">
+          <span className="text-xs text-red-600">
             {errorSpans} errors
           </span>
         )}
-        <span className="text-[10px] text-[var(--text-muted)] ml-auto">
+        <span className="text-xs text-[var(--text-muted)] ml-auto">
           Total: {formatDuration(totalDuration)}
         </span>
       </div>

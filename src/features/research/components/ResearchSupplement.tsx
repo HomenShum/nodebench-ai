@@ -220,8 +220,8 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
 
               {/* Updated timestamp */}
               {section.updatedAt && (
-                <div className="mt-2 text-[10px] text-[color:var(--text-secondary)]">
-                  Updated: {new Date(section.updatedAt).toLocaleDateString()}
+                <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
+                  Updated: {new Date(section.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
               )}
             </div>
@@ -292,7 +292,7 @@ export const ResearchSupplementView: React.FC<ResearchSupplementProps> = ({
         <div className="flex items-center gap-4 mt-3 text-xs text-[color:var(--text-secondary)]">
           <span>{supplement.sections.length} sections</span>
           <span>•</span>
-          <span>Updated {new Date(supplement.updatedAt).toLocaleDateString()}</span>
+          <span>Updated {new Date(supplement.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         </div>
       </div>
 

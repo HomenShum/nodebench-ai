@@ -88,12 +88,12 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
           </div>
           <div>
             <h3 className="text-xs font-bold text-[color:var(--text-primary)] uppercase tracking-widest">Global Radar</h3>
-            <p className="text-[9px] text-[color:var(--text-secondary)]">Agent-Curated Intelligence</p>
+            <p className="text-xs text-[color:var(--text-secondary)]">Agent-Curated Intelligence</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 rounded-full border border-green-200">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500 motion-safe:animate-pulse" />
-          <span className="text-[9px] font-bold text-green-700 tracking-wide">LIVE</span>
+          <span className="text-xs font-bold text-green-700 tracking-wide">LIVE</span>
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
               activeTab === tab.id
                 ? 'bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] shadow-sm border border-[color:var(--border-color)]'
                 : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--bg-hover)] hover:text-[color:var(--text-primary)]'
@@ -140,7 +140,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
               >
                 {/* Hover Action Hint */}
                 <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-[9px] bg-blue-600 text-white px-1.5 py-0.5 rounded shadow-sm font-medium">
+                  <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded shadow-sm font-medium">
                     Deep Dive →
                   </span>
                 </div>
@@ -155,21 +155,21 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
                       {signal.title}
                     </h4>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-[10px] text-[color:var(--text-secondary)]">{signal.source}</span>
+                      <span className="text-xs text-[color:var(--text-secondary)]">{signal.source}</span>
                       
                       {/* Smart Badges */}
                       {isViral && (
-                        <span className="text-[9px] font-bold px-1.5 py-0 rounded-sm bg-purple-50 text-purple-600 border border-purple-100 uppercase tracking-tight">
+                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-purple-50 text-purple-600 border border-purple-100 uppercase tracking-tight">
                           Viral
                         </span>
                       )}
                       {!isViral && isTrending && (
-                        <span className="text-[9px] font-bold px-1.5 py-0 rounded-sm bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-tight">
+                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-tight">
                           Hot
                         </span>
                       )}
                       {signal.type === 'signal' && (
-                        <span className="text-[9px] font-bold px-1.5 py-0 rounded-sm bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-tight">
+                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-tight">
                           Signal
                         </span>
                       )}
@@ -188,7 +188,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
                       style={{ width: `${velocity}%` }} 
                     />
                   </div>
-                  <div className="flex items-center gap-0.5 text-[10px] font-mono font-medium text-[color:var(--text-secondary)] min-w-[40px]">
+                  <div className="flex items-center gap-0.5 text-xs font-mono font-medium text-[color:var(--text-secondary)] min-w-[40px]">
                     <Zap className={`w-3 h-3 ${isViral ? 'text-purple-500 fill-purple-500' : 'text-orange-400 fill-orange-400'}`} />
                     {Math.round(velocity)}
                   </div>
@@ -202,7 +202,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       {/* Footer */}
       <button
         type="button"
-        className="w-full py-3 text-[10px] font-bold text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors border-t border-[color:var(--border-color)] uppercase tracking-widest flex items-center justify-center gap-2"
+        className="w-full py-3 text-xs font-bold text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors border-t border-[color:var(--border-color)] uppercase tracking-widest flex items-center justify-center gap-2"
       >
         View Full Intelligence Report <ArrowUpRight className="w-3 h-3" />
       </button>

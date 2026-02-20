@@ -51,10 +51,10 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       />
       <div className="rounded-xl border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/90 px-3 py-2 shadow-sm">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
+          <span className="text-xs font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
             Timeline
           </span>
-          <span className="text-[11px] text-[color:var(--text-secondary)]">
+          <span className="text-xs text-[color:var(--text-secondary)]">
             {clampedActive + 1} / {totalSections}
           </span>
         </div>

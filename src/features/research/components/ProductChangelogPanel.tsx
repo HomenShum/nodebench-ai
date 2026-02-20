@@ -100,12 +100,12 @@ export default function ProductChangelogPanel() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate">{e.version}</span>
                     {e.id === latestId ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-gray-800 dark:text-gray-200 border border-indigo-200 dark:border-indigo-900/50">
+                      <span className="text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-gray-800 dark:text-gray-200 border border-indigo-200 dark:border-indigo-900/50">
                         Latest
                       </span>
                     ) : null}
                   </div>
-                  <div className="text-[11px] text-gray-400 truncate">{e.dateLabel}</div>
+                  <div className="text-xs text-gray-400 truncate">{e.dateLabel}</div>
                 </button>
               ))}
               {filtered.length === 0 ? (
@@ -125,10 +125,10 @@ export default function ProductChangelogPanel() {
               className="bg-white/60 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-5"
             >
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-900 dark:text-gray-100">{e.version}</div>
+                <div className="text-xs font-black uppercase tracking-[0.25em] text-gray-900 dark:text-gray-100">{e.version}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">{e.dateLabel}</div>
                 {e.id === latestId ? (
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-gray-800 dark:text-gray-200 border border-indigo-200 dark:border-indigo-900/50">
+                  <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-gray-800 dark:text-gray-200 border border-indigo-200 dark:border-indigo-900/50">
                     Latest
                   </span>
                 ) : null}

@@ -109,7 +109,7 @@ function LaneCard({ delegation }: LaneCardProps) {
               {agentLabels[delegation.agentName]}
             </span>
             <span className={`
-              flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium
+              flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium
               ${statusColors[delegation.status]}
             `}>
               {statusIcons[delegation.status]}
@@ -128,13 +128,13 @@ function LaneCard({ delegation }: LaneCardProps) {
           {toolsUsed.slice(0, 4).map((tool) => (
             <span
               key={tool}
-              className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-300"
+              className="px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300"
             >
               {tool}
             </span>
           ))}
           {toolsUsed.length > 4 && (
-            <span className="px-2 py-0.5 rounded-full bg-[var(--bg-secondary)]/10 border border-[var(--border-color)]/20 text-[10px] text-[var(--text-muted)]">
+            <span className="px-2 py-0.5 rounded-full bg-[var(--bg-secondary)]/10 border border-[var(--border-color)]/20 text-xs text-[var(--text-muted)]">
               +{toolsUsed.length - 4} more
             </span>
           )}
@@ -201,7 +201,7 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
           {hasActiveDelegations && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/30">
               <span className="w-1.5 h-1.5 bg-blue-400 rounded-full motion-safe:animate-pulse" />
-              <span className="text-[10px] font-medium text-blue-300">LIVE</span>
+              <span className="text-xs font-medium text-blue-300">LIVE</span>
             </span>
           )}
         </div>

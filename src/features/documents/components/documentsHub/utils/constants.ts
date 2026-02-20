@@ -9,7 +9,7 @@ export const sectionHeader = "text-base font-semibold text-[var(--text-secondary
 
 // Tip badge styling
 export const tipBadge =
-  "inline-flex items-center gap-1 px-1.5 py-0 rounded-full border text-[10px] bg-amber-50 text-amber-700 border-amber-200";
+  "inline-flex items-center gap-1 px-1.5 py-0 rounded-full border text-xs bg-amber-50 text-amber-700 border-amber-200";
 
 // Card styling constants
 export const cardBaseClasses =

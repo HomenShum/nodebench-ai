@@ -44,23 +44,23 @@ const statusConfig: Record<TaskSessionStatus, { icon: React.ReactNode; color: st
     bgColor: 'bg-blue-100 dark:bg-blue-900/30',
     label: 'Running' 
   },
-  completed: { 
-    icon: <CheckCircle2 className="w-3.5 h-3.5" />, 
-    color: 'text-indigo-500',
-    bgColor: 'bg-indigo-100 dark:bg-gray-900/30',
-    label: 'Completed' 
+  completed: {
+    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+    color: 'text-indigo-700 dark:text-indigo-300',
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/40',
+    label: 'Completed'
   },
-  failed: { 
-    icon: <AlertCircle className="w-3.5 h-3.5" />, 
-    color: 'text-red-500',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    label: 'Failed' 
+  failed: {
+    icon: <AlertCircle className="w-3.5 h-3.5" />,
+    color: 'text-red-700 dark:text-red-300',
+    bgColor: 'bg-red-100 dark:bg-red-900/40',
+    label: 'Failed'
   },
-  cancelled: { 
-    icon: <XCircle className="w-3.5 h-3.5" />, 
-    color: 'text-amber-500',
-    bgColor: 'bg-amber-100 dark:bg-amber-900/30',
-    label: 'Cancelled' 
+  cancelled: {
+    icon: <XCircle className="w-3.5 h-3.5" />,
+    color: 'text-amber-700 dark:text-amber-300',
+    bgColor: 'bg-amber-100 dark:bg-amber-900/40',
+    label: 'Cancelled'
   },
 };
 
@@ -73,7 +73,7 @@ const typeConfig: Record<TaskSessionType, { icon: React.ReactNode; color: string
   cron: {
     icon: <Timer className="w-3 h-3" />,
     color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30',
-    label: 'Cron'
+    label: 'Automated'
   },
   scheduled: {
     icon: <Calendar className="w-3 h-3" />,
@@ -99,7 +99,7 @@ const typeConfig: Record<TaskSessionType, { icon: React.ReactNode; color: string
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  if (ms < 3600000) return `${(ms / 60000).toFixed(1)}m`;
+  if (ms < 3600000) return `${(ms / 60000).toFixed(1)} min`;
   return `${(ms / 3600000).toFixed(1)}h`;
 }
 
@@ -117,7 +117,7 @@ function formatDate(timestamp: number): string {
   if (isToday) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -149,44 +149,47 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-[var(--text-primary)] truncate">
-            {session.title}
+            {session.title.replace(/^Cron:\s*/i, 'Scheduled: ')}
           </h3>
           {session.description && (
-            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mt-0.5">
+            <p className="text-[13px] leading-snug text-[var(--text-secondary)] line-clamp-2 mt-1">
               {session.description}
             </p>
           )}
         </div>
-        <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium", statusCfg.bgColor, statusCfg.color)}>
+        <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium", statusCfg.bgColor, statusCfg.color)} title={statusCfg.label}>
           {statusCfg.icon}
-          <span className="hidden sm:inline">{statusCfg.label}</span>
+          {session.status !== 'completed' && <span className="hidden sm:inline">{statusCfg.label}</span>}
         </div>
       </div>
 
       {/* Type badge + Meta */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Type badge */}
-        <span className={cn("flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium rounded", typeCfg.color)}>
+        <span className={cn("flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded", typeCfg.color)}>
           {typeCfg.icon}
           {typeCfg.label}
         </span>
 
         {/* Date */}
-        <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
           <Clock className="w-3 h-3" />
           {formatDate(session.startedAt)}
         </span>
 
         {/* Duration */}
         {session.totalDurationMs && (
-          <span className="text-[10px] text-[var(--text-muted)]">
-            {formatDuration(session.totalDurationMs)}
-          </span>
+          <>
+            <span className="text-[var(--text-muted)] opacity-40">·</span>
+            <span className="text-xs text-[var(--text-muted)]">
+              {formatDuration(session.totalDurationMs)}
+            </span>
+          </>
         )}
 
         {/* Tokens */}
         {session.totalTokens && (
-          <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]" title={`${formatTokens(session.totalTokens)} tokens`}>
             <Zap className="w-3 h-3" />
             {formatTokens(session.totalTokens)}
           </span>
@@ -194,7 +197,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 
         {/* Tools count */}
         {session.toolsUsed && session.toolsUsed.length > 0 && (
-          <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]" title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}>
             <Wrench className="w-3 h-3" />
             {session.toolsUsed.length}
           </span>
@@ -204,7 +207,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
       {/* Error message if failed */}
       {session.status === 'failed' && session.errorMessage && (
         <div className="mt-2 p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-          <p className="text-[10px] text-red-600 dark:text-red-400 line-clamp-2">
+          <p className="text-xs text-red-600 dark:text-red-400 line-clamp-2">
             {session.errorMessage}
           </p>
         </div>

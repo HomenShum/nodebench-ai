@@ -620,7 +620,7 @@ function LiveDossierDocumentInner({
                                 {editionLabel}
                             </span>
                             {isStreaming && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wider motion-safe:animate-pulse">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-xs font-bold uppercase tracking-wider motion-safe:animate-pulse">
                                     <span className="w-1.5 h-1.5 bg-white rounded-full" />
                                     Live
                                 </span>
@@ -1212,11 +1212,11 @@ function LiveAgentTicker({
                                 {isActive && (
                                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30">
                                         <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full live-dot" />
-                                        <span className="text-[10px] font-semibold text-indigo-400 uppercase tracking-wider">Live</span>
+                                        <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Live</span>
                                     </span>
                                 )}
                                 {followUpLabel && (
-                                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-[10px] font-medium text-purple-300">
+                                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-xs font-medium text-purple-300">
                                         {followUpLabel}
                                     </span>
                                 )}
@@ -1233,7 +1233,7 @@ function LiveAgentTicker({
                                     <div key={`${role}-${idx}`} className="group relative">
                                         <AgentIcon role={role || "coordinator"} status={status} />
                                         {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 rounded text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                             {roleLabels[role || "coordinator"]} • {status}
                                         </div>
                                     </div>
@@ -1252,10 +1252,10 @@ function LiveAgentTicker({
                         <div className="relative mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-3">
                                 <Activity className="w-3.5 h-3.5 text-purple-400" />
-                                <span className="text-[10px] font-semibold text-purple-300 uppercase tracking-wider">
+                                <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
                                     Tool Activity
                                 </span>
-                                <span className="text-[10px] text-white/40">
+                                <span className="text-xs text-white/40">
                                     {recentSteps.length} recent
                                 </span>
                             </div>
@@ -1272,7 +1272,7 @@ function LiveAgentTicker({
                         <div className="mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-2">
                                 <Zap className="w-3.5 h-3.5 text-amber-400" />
-                                <span className="text-[10px] font-semibold text-amber-300 uppercase tracking-wider">
+                                <span className="text-xs font-semibold text-amber-300 uppercase tracking-wider">
                                     Live Output
                                 </span>
                             </div>

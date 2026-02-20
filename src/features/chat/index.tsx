@@ -88,7 +88,7 @@ export function renderThinkingStep(step: any, index: number): React.ReactNode {
           <div className="font-medium capitalize">{step.type.replace('_', ' ')}</div>
           <div className="mt-1 whitespace-pre-wrap">{step.content}</div>
           {step.toolCall && (
-            <div className="mt-2 p-2 bg-white/50 rounded text-[10px] font-mono">
+            <div className="mt-2 p-2 bg-white/50 rounded text-xs font-mono">
               <div><strong>Tool:</strong> {step.toolCall.name}</div>
               {step.toolCall.args && (
                 <div className="mt-1">

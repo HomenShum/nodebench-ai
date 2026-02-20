@@ -118,9 +118,9 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[11px] text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
+        <div className="text-xs text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
         <div className="flex items-center gap-2">
-          <div className="text-[11px] text-[var(--text-muted)]">
+          <div className="text-xs text-[var(--text-muted)]">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </div>
           <button

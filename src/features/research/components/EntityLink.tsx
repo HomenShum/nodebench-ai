@@ -314,7 +314,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
         <Icon className={`w-3.5 h-3.5 ${colors.icon}`} />
         <span>{name}</span>
         {entity.ticker && (
-          <span className="text-[10px] opacity-60">({entity.ticker})</span>
+          <span className="text-xs opacity-60">({entity.ticker})</span>
         )}
       </motion.button>
 
@@ -374,7 +374,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                 <span className="font-semibold text-[color:var(--text-primary)] text-sm block truncate">
                   {entity.name}
                 </span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.badge}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded ${colors.badge}`}>
                   {formatEntityType(entity.type as ExtendedEntityType)}
                 </span>
               </div>

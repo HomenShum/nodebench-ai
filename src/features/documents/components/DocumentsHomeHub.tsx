@@ -170,7 +170,7 @@ type Status = TaskStatus;
 
 // Shared section header classes for consistent typography across h2/h3
 
-const sectionHeader = "text-base font-semibold text-[var(--text-secondary)]";
+const sectionHeader = "text-base font-semibold text-[var(--text-primary)]";
 
 // Globally scoped TaskRow for reuse across sections (Activity, Agenda, etc.) - NOW IMPORTED FROM documentsHub/rows
 // OLD TaskRowGlobal DEFINITION REMOVED - NOW USING IMPORTED VERSION
@@ -1937,7 +1937,7 @@ export function DocumentsHomeHub({
   const agendaDayLabel = useMemo(() => {
     const d = new Date(agendaStartUtc + offsetMs);
 
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString('en-US', {
       weekday: "long",
       month: "short",
       day: "numeric",
@@ -3148,9 +3148,9 @@ export function DocumentsHomeHub({
           const e = new Date(typeof eMs === "number" ? eMs : sMs!);
 
           if (hasAllDay) {
-            parts.push(`Event time: ${s.toLocaleDateString()}`);
+            parts.push(`Event time: ${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
           } else {
-            const sd = s.toLocaleDateString();
+            const sd = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
             const st = s.toLocaleTimeString([], {
               hour: "2-digit",
@@ -4415,7 +4415,7 @@ export function DocumentsHomeHub({
                 </div>
               )}
 
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
+              <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 Today
               </div>
 
@@ -4535,7 +4535,7 @@ export function DocumentsHomeHub({
 
           {listRange === "week" && (
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
+              <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 This Week
               </div>
 
@@ -4678,7 +4678,7 @@ export function DocumentsHomeHub({
 
           {listRange === "month" && (
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
+              <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 This Month
               </div>
 
@@ -4756,7 +4756,7 @@ export function DocumentsHomeHub({
 
           {listRange === "custom" && customBounds && (
             <div className="mt-4">
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
+              <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 Custom Range
               </div>
 
@@ -5487,7 +5487,7 @@ export function DocumentsHomeHub({
 
                     {isUploading && (
                       <div
-                        className="mb-2 text-[10px] text-[var(--text-secondary)] inline-flex items-center gap-1"
+                        className="mb-2 text-xs text-[var(--text-secondary)] inline-flex items-center gap-1"
                         aria-live="polite"
                         aria-atomic="true"
                       >
@@ -6108,10 +6108,10 @@ export function DocumentsHomeHub({
 
                                   if (hasAllDay) {
                                     parts.push(
-                                      `Event time: ${s.toLocaleDateString()}`,
+                                      `Event time: ${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
                                     );
                                   } else {
-                                    const sd = s.toLocaleDateString();
+                                    const sd = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
                                     const st = s.toLocaleTimeString([], {
                                       hour: "2-digit",
@@ -6556,7 +6556,7 @@ export function DocumentsHomeHub({
           });
 
           toast.success("Task rescheduled", {
-            description: new Date(targetDay).toLocaleDateString(),
+            description: new Date(targetDay).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
 
             action: {
               label: "Undo",
@@ -6601,7 +6601,7 @@ export function DocumentsHomeHub({
           });
 
           toast.success("Event moved", {
-            description: `${new Date(newStart).toLocaleDateString()} ${new Date(newStart).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+            description: `${new Date(newStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} ${new Date(newStart).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
 
             action: {
               label: "Undo",
@@ -6917,7 +6917,7 @@ export function DocumentsHomeHub({
         }
       `}</style>
 
-      <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative premium-scrollbar">
+      <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative premium-scrollbar pb-24 lg:pb-0">
         {/* Premium SaaS layout */}
 
         <div className="flex-1 px-6 sm:px-8 lg:px-12 py-8 relative z-10">
@@ -6940,7 +6940,6 @@ export function DocumentsHomeHub({
                   title={"My Documents"}
                   subtitle={"Upload, organize, and search your files"}
                   date={todayLabel}
-                  accent
                   className="mb-6"
                 />
 
@@ -7061,10 +7060,10 @@ export function DocumentsHomeHub({
                             <FileText className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
                           </div>
                           <p className="text-lg font-semibold text-[var(--text-primary)] mb-1">
-                            Drop a PDF and I'll read it for you
+                            Drop a PDF to extract key points
                           </p>
                           <p className="text-sm text-[var(--text-muted)] max-w-xs">
-                            Drag any file here, or click to browse. I'll extract the key points automatically.
+                            Drag any file here, or click to browse. Key points are extracted automatically.
                           </p>
                         </button>
                       )}
@@ -7806,7 +7805,7 @@ export function DocumentsHomeHub({
                   type="button"
                   onClick={() => !isSubmittingTask && setShowNewTaskModal(false)}
                   disabled={isSubmittingTask}
-                  className="text-[11px] px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+                  className="text-xs px-3 py-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
                 >
                   Cancel
                 </button>
@@ -7816,7 +7815,7 @@ export function DocumentsHomeHub({
                   disabled={
                     !newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask
                   }
-                  className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
+                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700"}`}
                   title={!loggedInUser ? "Please sign in to create tasks" : undefined}
                 >
                   {isSubmittingTask ? "Creating..." : "Create Task"}
@@ -7846,7 +7845,7 @@ export function DocumentsHomeHub({
           <div className="w-[min(520px,calc(100vw-32px))] rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-2xl">
             <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-primary)] rounded-t-xl">
               <div className="text-xs text-[var(--text-secondary)]">
-                Create on {new Date(inlineCreate.dateMs).toLocaleDateString()}
+                Create on {new Date(inlineCreate.dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
 
               <button

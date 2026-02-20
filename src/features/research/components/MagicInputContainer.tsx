@@ -106,13 +106,13 @@ export default function MagicInputContainer({ onRun, onDeepRun, compact = false,
 
             <div className="flex justify-center gap-3 mt-3 text-xs text-[color:var(--text-secondary)]">
                 <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-[10px] font-semibold">Enter</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-xs font-semibold">Enter</kbd>
                     <span className="ml-1">Quick Brief</span>
                 </span>
                 <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-[10px] font-semibold">⌘</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-xs font-semibold">⌘</kbd>
                     <span>+</span>
-                    <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-[10px] font-semibold">Enter</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded text-xs font-semibold">Enter</kbd>
                     <span className="ml-1">Deep Report</span>
                 </span>
             </div>

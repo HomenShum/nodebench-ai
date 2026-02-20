@@ -77,12 +77,12 @@
 
     --text-primary: #FAFAFA;
     --text-secondary: #A1A1AA;
-    --text-muted: #71717A;
+    --text-muted: #8A8A97;
     --bg-primary: #0a0a0e;
     --bg-secondary: #1a1a1f;
     --bg-hover: #2a2a32;
     --bg-tertiary: #201f27;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(255, 255, 255, 0.12);
     --accent-primary: #7C8AE4;
     --accent-secondary: #818CF8;
     --accent-primary-bg: rgba(124, 138, 228, 0.1);
@@ -95,8 +95,16 @@
     @apply border-border;
   }
 
+  /* High-visibility focus rings — 2px solid accent + outer glow for keyboard nav */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
   .dark :focus-visible {
-    box-shadow: 0 0 0 4px rgba(124, 138, 228, 0.2);
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(124, 138, 228, 0.25);
   }
 
   body {
@@ -296,15 +304,15 @@
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.72; }
-  50% { opacity: 0.88; }
+  0%, 100% { opacity: 0.84; }
+  50% { opacity: 0.92; }
 }
 
 /* Tailwind's `animate-pulse` uses a high-contrast opacity swing (1 → 0.5 → 1),
    which reads as a "flash" on large surfaces. Override it to be subtler. */
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.88; }
+  50% { opacity: 0.96; }
 }
 
 .reduce-motion .skeleton-pulse {
@@ -532,10 +540,11 @@
   max-width: 300px;
 }
 
-/* Long URLs and inline code */
+/* Long URLs and inline code — break-word preserves whole words */
 .prose a,
 .prose code {
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Ensure inline elements don't overflow */
@@ -724,13 +733,13 @@
   }
 }
 
-/* View transition fade-in — eliminates flash between route changes */
+/* View transition fade-in — softens route change without harsh opacity-0 flash */
 @keyframes view-fade-in {
-  from { opacity: 0; }
+  from { opacity: 0.96; }
   to   { opacity: 1; }
 }
 .view-enter {
-  animation: view-fade-in 0.12s ease-out both;
+  animation: view-fade-in 0.15s ease-out both;
 }
 
 /* Screen-reader only utility */

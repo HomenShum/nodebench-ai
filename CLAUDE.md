@@ -31,6 +31,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 | `flywheel_continuous` | Continuous poll→diagnose→fix→dogfood loop, never ask to continue | process, analyst_diagnostic, dogfood_verification, product_design_dogfood, completion_traceability |
 | `self_direction` | Never wait — decide, act, verify visually, keep momentum | process, flywheel_continuous, analyst_diagnostic, completion_traceability |
 | `scenario_testing` | Scenario-based tests only — real personas, scale axis, duration axis, no shallow tests | analyst_diagnostic, reexamine_resilience, process, completion_traceability |
+| `gemini_qa_loop` | Gemini 3 Flash vision QA loop — automated scoring, fix strategy, fallback chain | dogfood_verification, product_design_dogfood, flywheel_continuous, analyst_diagnostic, completion_traceability |
 
 **Two-hop discovery**: Follow a rule's `related_` to reach its neighbors, then follow *their* `related_` for second-degree connections. Example: `process` → `a11y` → `keyboard`.
 

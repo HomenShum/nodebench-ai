@@ -32,7 +32,7 @@ export function PageHeroHeader({ icon, title, date, subtitle, presets, className
         )}
       </div>
       {subtitle && (
-        <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-xl">{subtitle}</p>
+        <p className="text-[var(--text-primary)] text-sm leading-relaxed max-w-xl">{subtitle}</p>
       )}
       {presets && (
         <div className="mt-5 pb-2 flex flex-wrap gap-2">{presets}</div>

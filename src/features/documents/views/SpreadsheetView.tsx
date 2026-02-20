@@ -811,7 +811,7 @@ useEffect(() => {
                 <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
                   <span>{formatFileSize(file.fileSize)}</span>
                   <span>{csvData.rows.length.toLocaleString()} rows × {csvData.headers.length} columns</span>
-                  <span className="text-[10px] opacity-80">{saveHint === 'saving' ? 'Saving…' : saveHint === 'saved' ? 'Saved' : saveHint === 'unsaved' ? 'Unsaved changes' : ''}</span>
+                  <span className="text-xs opacity-80">{saveHint === 'saving' ? 'Saving…' : saveHint === 'saved' ? 'Saved' : saveHint === 'unsaved' ? 'Unsaved changes' : ''}</span>
                 </div>
               </div>
             </div>
@@ -1000,7 +1000,7 @@ useEffect(() => {
         }}
       >
         <div className="overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
-          <div className="text-[10px]">
+          <div className="text-xs">
             <Spreadsheet
               data={csvData.rows.map((r) => r.map((c) => ({ value: c })))}
               columnLabels={csvData.headers}

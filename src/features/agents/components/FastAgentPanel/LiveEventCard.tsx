@@ -215,7 +215,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
               {event.title}
             </div>
             {event.toolName && (
-              <div className="text-[10px] font-mono text-[var(--text-secondary)] dark:text-[var(--text-secondary)] truncate">
+              <div className="text-xs font-mono text-[var(--text-secondary)] dark:text-[var(--text-secondary)] truncate">
                 {event.toolName}
               </div>
             )}
@@ -224,12 +224,12 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
           {/* Status badge / Duration */}
           <div className="flex-shrink-0 flex items-center gap-1.5">
             {event.duration !== undefined && event.status === 'success' && (
-              <span className="text-[10px] text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
+              <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
                 {formatDuration(event.duration)}
               </span>
             )}
             {event.status === 'running' && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
+              <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-medium">
                 Running
               </span>
             )}
@@ -238,13 +238,13 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
 
         {/* Details (if any) */}
         {event.details && (
-          <div className="mt-1.5 text-[10px] text-[var(--text-secondary)] dark:text-[var(--text-secondary)] line-clamp-2">
+          <div className="mt-1.5 text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)] line-clamp-2">
             {event.details}
           </div>
         )}
 
         {/* Timestamp */}
-        <div className="mt-1 text-[9px] text-[var(--text-muted)] dark:text-[var(--text-muted)]">
+        <div className="mt-1 text-xs text-[var(--text-muted)] dark:text-[var(--text-muted)]">
           {formatTimestamp(event.timestamp)}
         </div>
       </div>

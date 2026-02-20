@@ -131,7 +131,7 @@ export function StickyTopBar({
                         {/* Verification Badge */}
                         <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${verificationConfig.bg} ${verificationConfig.border} border`}>
                             <VerificationIcon className={`w-3 h-3 ${verificationConfig.color}`} />
-                            <span className={`text-[10px] font-medium ${verificationConfig.color}`}>
+                            <span className={`text-xs font-medium ${verificationConfig.color}`}>
                                 {verificationConfig.label}
                             </span>
                         </div>
@@ -141,7 +141,7 @@ export function StickyTopBar({
                     <div className="flex items-center gap-2">
                         {/* Last Refresh */}
                         {lastRefresh && (
-                            <span className="text-[10px] text-[color:var(--text-secondary)] mr-2">
+                            <span className="text-xs text-[color:var(--text-secondary)] mr-2">
                                 Updated {formatTimeAgo(lastRefresh)}
                             </span>
                         )}
@@ -196,7 +196,7 @@ function formatTimeAgo(date: Date): string {
     if (diffMins < 1) return 'just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 export default StickyTopBar;

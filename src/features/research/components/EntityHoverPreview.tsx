@@ -313,7 +313,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                 </span>
                 {data.freshness && (
                   <span
-                    className={`flex items-center gap-0.5 text-[10px] ${getFreshnessColor(data.freshness.newsAgeDays)}`}
+                    className={`flex items-center gap-0.5 text-xs ${getFreshnessColor(data.freshness.newsAgeDays)}`}
                     title={`Last news: ${data.freshness.newsAgeDays} days ago`}
                   >
                     <Clock className="w-3 h-3" />
@@ -322,11 +322,11 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                 )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${colors.badge}`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${colors.badge}`}>
                   {formatEntityType(data.type)}
                 </span>
                 {data.funding?.stage && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] font-medium">
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] font-medium">
                     {data.funding.stage}
                   </span>
                 )}
@@ -342,7 +342,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           {/* Key Facts */}
           {data.keyFacts && data.keyFacts.length > 0 && (
             <div className="mb-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)] mb-1.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)] mb-1.5">
                 Key Facts
               </div>
               <ul className="space-y-1">
@@ -361,7 +361,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
             <div className="mb-3 p-2 bg-amber-50 border border-amber-100 rounded-lg">
               <div className="flex items-center gap-1 mb-1">
                 <Sparkles className="w-3 h-3 text-amber-500" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-600">
                   Known For
                 </span>
               </div>
@@ -376,7 +376,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
             <div className="mb-3">
               <div className="flex items-center gap-1 mb-1.5">
                 <Users className="w-3 h-3 text-[color:var(--text-secondary)]" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
                   Network
                 </span>
               </div>
@@ -384,7 +384,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                 {data.circleOfInfluence.tier1?.slice(0, 3).map((name, idx) => (
                   <span
                     key={`t1-${idx}`}
-                    className="px-1.5 py-0.5 text-[10px] bg-indigo-100 text-gray-700 rounded"
+                    className="px-1.5 py-0.5 text-xs bg-indigo-100 text-gray-700 rounded"
                     title="Inner circle"
                   >
                     {name}
@@ -393,7 +393,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                 {data.circleOfInfluence.tier2?.slice(0, 2).map((name, idx) => (
                   <span
                     key={`t2-${idx}`}
-                    className="px-1.5 py-0.5 text-[10px] bg-blue-50 text-blue-600 rounded"
+                    className="px-1.5 py-0.5 text-xs bg-blue-50 text-blue-600 rounded"
                     title="Extended network"
                   >
                     {name}
@@ -408,7 +408,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
             <div className="mb-3 flex items-start gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
               <Calendar className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
               <div>
-                <div className="text-[10px] text-gray-500">{data.timelineHighlight.date}</div>
+                <div className="text-xs text-gray-500">{data.timelineHighlight.date}</div>
                 <div className="text-xs text-gray-700 line-clamp-1">{data.timelineHighlight.title}</div>
               </div>
             </div>
@@ -423,7 +423,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
                   {data.funding.totalRaised}
                 </div>
                 {data.funding.lastRound && (
-                  <div className="text-[10px] text-amber-600">
+                  <div className="text-xs text-amber-600">
                     Last: {data.funding.lastRound}
                   </div>
                 )}
@@ -434,14 +434,14 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           {/* Sources */}
           {data.sources && data.sources.length > 0 && (
             <div className="mb-3">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)] mb-1.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)] mb-1.5">
                 Sources
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {data.sources.slice(0, 2).map((source, idx) => (
                   <span
                     key={idx}
-                    className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full ${getCredibilityColor(source.credibility)}`}
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${getCredibilityColor(source.credibility)}`}
                     title={`Credibility: ${source.credibility}`}
                   >
                     {source.credibility === "high" && <CheckCircle2 className="w-2.5 h-2.5" />}

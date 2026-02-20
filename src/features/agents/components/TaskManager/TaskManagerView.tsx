@@ -50,7 +50,7 @@ const statusOptions: { value: TaskSessionStatus | 'all'; label: string; icon: Re
 const typeOptions: { value: TaskSessionType | 'all'; label: string; icon: React.ReactNode }[] = [
   { value: 'all', label: 'All Types', icon: <ListTodo className="w-3.5 h-3.5" /> },
   { value: 'agent', label: 'Agent', icon: <Bot className="w-3.5 h-3.5" /> },
-  { value: 'cron', label: 'Cron', icon: <Timer className="w-3.5 h-3.5" /> },
+  { value: 'cron', label: 'Automated', icon: <Timer className="w-3.5 h-3.5" /> },
   { value: 'swarm', label: 'Swarm', icon: <Users className="w-3.5 h-3.5" /> },
   { value: 'scheduled', label: 'Scheduled', icon: <Calendar className="w-3.5 h-3.5" /> },
 ];
@@ -104,7 +104,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
   const [selectedSessionId, setSelectedSessionId] = useState<Id<"agentTaskSessions"> | null>(null);
   const [statusFilter, setStatusFilter] = useState<TaskSessionStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<TaskSessionType | 'all'>('all');
-  const [dateRange, setDateRange] = useState<string>('week');
+  const [dateRange, setDateRange] = useState<string>('all');
   const [showFilters, setShowFilters] = useState(false);
 
   // Calculate date range
@@ -175,7 +175,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               <Lock className="w-5 h-5 text-[var(--accent-primary)]" />
             )}
             <h1 className="text-lg font-semibold text-[var(--text-primary)]">
-              {isPublic ? 'Public Activity' : 'Task Manager'}
+              {isPublic ? 'Activity' : 'Task Manager'}
             </h1>
           </div>
 
@@ -186,7 +186,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
               showFilters || hasActiveFilters
                 ? "bg-[var(--accent-primary)] text-white"
-                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40"
             )}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -200,7 +200,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
         {/* Stats row */}
         <div className="flex items-center gap-4 text-xs">
           <span className="text-[var(--text-muted)]">
-            {stats.total} sessions
+            {stats.total} {stats.total === 1 ? 'session' : 'sessions'}
           </span>
           {stats.running > 0 && (
             <span className="flex items-center gap-1 text-blue-500">
@@ -215,7 +215,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
             </span>
           )}
           {stats.failed > 0 && (
-            <span className="flex items-center gap-1 text-red-500">
+            <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
               <AlertCircle className="w-3 h-3" />
               {stats.failed} failed
             </span>
@@ -280,21 +280,25 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
       {/* Session list */}
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 text-[var(--text-muted)] motion-safe:animate-spin" />
+          <div className="space-y-2 motion-safe:animate-pulse">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+            ))}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Bot className="w-12 h-12 text-[var(--text-muted)] mb-3" />
-            <p className="text-sm text-[var(--text-secondary)]">
-              {hasActiveFilters ? 'No sessions match your filters' : 'No task sessions yet'}
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-5">
+              <Bot className="w-10 h-10 text-indigo-400" />
+            </div>
+            <p className="text-xl font-semibold text-[var(--text-primary)] mb-2">
+              {hasActiveFilters ? 'No sessions match your filters' : isPublic ? 'No public activity yet' : 'No task sessions yet'}
             </p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
+            <p className="text-sm text-[var(--text-secondary)] max-w-sm">
               {hasActiveFilters
-                ? 'Try adjusting your filters to see more results'
+                ? 'Try clearing the filters — active sessions appear here as agents run research pipelines and workflows.'
                 : isPublic
-                  ? 'Public agent activities will appear here'
-                  : 'Start an agent task to see it here'
+                  ? 'Public AI sessions — automated research pipelines, scheduled tasks, and multi-agent workflows — appear here as they run.'
+                  : 'Start an agent task to see it here.'
               }
             </p>
             {hasActiveFilters && (

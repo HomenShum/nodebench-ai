@@ -94,7 +94,7 @@ const FootnoteEntry: React.FC<{
         <div className="flex items-center gap-2 mb-1">
           <Icon className="w-4 h-4 text-[color:var(--text-secondary)]" />
           <span className="font-medium text-[color:var(--text-primary)] text-sm">{citation.label}</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded border ${badgeColors}`}>
+          <span className={`text-xs px-1.5 py-0.5 rounded border ${badgeColors}`}>
             {citation.type}
           </span>
         </div>
@@ -108,7 +108,7 @@ const FootnoteEntry: React.FC<{
         <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--text-secondary)]">
           {citation.author && <span>{citation.author}</span>}
           {citation.publishedAt && (
-            <span>{new Date(citation.publishedAt).toLocaleDateString()}</span>
+            <span>{new Date(citation.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           )}
           {citation.url && (
             <button
@@ -139,7 +139,7 @@ const FootnoteEntry: React.FC<{
           )}
           {citation.accessedAt && (
             <span className="text-[color:var(--text-secondary)]">
-              Accessed {new Date(citation.accessedAt).toLocaleDateString()}
+              Accessed {new Date(citation.accessedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           )}
         </div>
@@ -147,7 +147,7 @@ const FootnoteEntry: React.FC<{
         {/* Back-links */}
         {showBackLinks && citation.occurrences.length > 0 && (
           <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[color:var(--border-color)]">
-            <span className="text-[10px] text-[color:var(--text-secondary)] uppercase tracking-wider">Jump to:</span>
+            <span className="text-xs text-[color:var(--text-secondary)] uppercase tracking-wider">Jump to:</span>
             {citation.occurrences.map((occ, idx) => (
               <button
                 key={occ.id}

@@ -355,7 +355,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   // Fallback summary if AI generation fails
   const fullSummary = generatedSummary ||
     (digestData
-      ? `${(digestData.marketMovers ?? []).length} market updates and ${(digestData.watchlistRelevant ?? []).length} items matching your tracked topics. ${(digestData.riskAlerts ?? []).length > 0 ? `${(digestData.riskAlerts ?? []).length} risk alerts to monitor.` : ''}`
+      ? `${(digestData.marketMovers ?? []).length} market update${(digestData.marketMovers ?? []).length !== 1 ? 's' : ''} and ${(digestData.watchlistRelevant ?? []).length} item${(digestData.watchlistRelevant ?? []).length !== 1 ? 's' : ''} matching your tracked topics. ${(digestData.riskAlerts ?? []).length > 0 ? `${(digestData.riskAlerts ?? []).length} risk alert${(digestData.riskAlerts ?? []).length !== 1 ? 's' : ''} to monitor.` : ''}`
       : 'Loading your personalized morning briefing...');
 
   // Build citation library from digest data sources
@@ -737,10 +737,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2 mb-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-600 dark:text-gray-400">Executive Synthesis</p>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-gray-600 dark:text-gray-400">Executive Synthesis</p>
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
                 <Activity className="w-2.5 h-2.5 text-amber-600 motion-safe:animate-pulse" />
-                <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-400">LIVE</span>
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">LIVE</span>
               </span>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight tracking-tight">
@@ -748,7 +748,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <Clock className="w-3 h-3 text-gray-400" />
-              <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{lastUpdatedText}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{lastUpdatedText}</p>
             </div>
           </div>
         </div>
@@ -775,7 +775,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     }`}>
                     {stat.value}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {stat.label}
                   </span>
                 </div>
@@ -819,13 +819,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <BarChart3 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                   </div>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">AI Research Brief</span>
-                    <p className="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">AI Research Brief</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
                   <Shield className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                  <span className="text-[9px] font-medium text-gray-600 dark:text-gray-400">Verified</span>
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Verified</span>
                 </div>
               </div>
               <div className="text-[15px] text-gray-800 dark:text-gray-200 leading-relaxed tracking-[-0.01em]">
@@ -855,8 +855,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <ArrowUpRight className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
-                <div className="mt-1.5 text-[10px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{stat.label}</div>
-                <div className="mt-0.5 text-[9px] text-gray-500 dark:text-gray-400">{stat.hint}</div>
+                <div className="mt-1.5 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-widest">{stat.label}</div>
+                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{stat.hint}</div>
               </div>
             ))}
           </div>
@@ -872,9 +872,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="p-1.5 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/30">
                       <Zap className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Top Signals</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Top Signals</span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400">{signalHighlights.length} items</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400">{signalHighlights.length} items</span>
                 </div>
                 <div className="space-y-2">
                   {signalHighlights.slice(0, 3).map((item, idx) => (
@@ -887,7 +887,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         onClick={() => onItemClick?.({ text: item.text, relevance: 'high', linkedEntity: item.linkedEntity })}
                         className="flex items-start gap-3 flex-1 text-left"
                       >
-                        <span className={`shrink-0 px-2 py-1 text-[9px] font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-gray-200/50 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 border border-gray-300/50 dark:border-white/[0.08]'
+                        <span className={`shrink-0 px-2 py-1 text-xs font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-gray-200/50 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 border border-gray-300/50 dark:border-white/[0.08]'
                           : item.label === 'Risk' ? 'bg-rose-100/50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/30'
                             : 'bg-amber-100/50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/30'
                           }`}>
@@ -899,7 +899,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         <button
                           type="button"
                           onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                          className="shrink-0 px-2 py-1 text-[9px] font-mono font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/[0.06] rounded-md border border-gray-200 dark:border-white/[0.08] hover:border-gray-400 dark:hover:border-white/20 transition-all"
+                          className="shrink-0 px-2 py-1 text-xs font-mono font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-white/[0.06] rounded-md border border-gray-200 dark:border-white/[0.08] hover:border-gray-400 dark:hover:border-white/20 transition-all"
                           title={`Open entity: ${item.linkedEntity}`}
                         >
                           {item.linkedEntity}
@@ -917,9 +917,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                       <Globe2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Sources</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Sources</span>
                   </div>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400">{totalSourceCount} items</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{totalSourceCount} items</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topSources.slice(0, 6).map((source, idx) => (
@@ -932,12 +932,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         className="absolute left-0 bottom-0 h-0.5 bg-gradient-to-r from-gray-600 to-amber-600 dark:from-gray-400 dark:to-amber-400 rounded-b-lg transition-all duration-300"
                         style={{ width: `${(source.count / maxSourceCount) * 100}%` }}
                       />
-                      <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300">{source.name}</span>
-                      <span className="text-[10px] font-bold text-gray-800 dark:text-gray-200">{source.count}</span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{source.name}</span>
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">{source.count}</span>
                     </div>
                   ))}
                   {topSources.length > 6 && (
-                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100/30 dark:bg-white/[0.04] text-[10px] text-gray-500 dark:text-gray-400">
+                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100/30 dark:bg-white/[0.04] text-xs text-gray-500 dark:text-gray-400">
                       +{topSources.length - 6} more
                     </span>
                   )}
@@ -954,9 +954,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                       <TrendingUp className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                     </div>
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Trending</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Trending</span>
                   </div>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400">{digestItems.length} signals</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{digestItems.length} signals</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {tagRadar.slice(0, 6).map((tag, idx) => (
@@ -964,7 +964,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={tag.tag}
                       type="button"
                       onClick={() => onItemClick?.({ text: `Track #${tag.tag} and summarize the latest movement.`, relevance: 'medium', linkedEntity: tag.tag })}
-                      className="group px-3 py-1.5 text-[11px] font-medium border border-gray-200 dark:border-white/[0.08] bg-background text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-400 dark:hover:border-white/20 hover:bg-gray-100 dark:hover:bg-white/[0.06] rounded-lg transition-all duration-200"
+                      className="group px-3 py-1.5 text-xs font-medium border border-gray-200 dark:border-white/[0.08] bg-background text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:border-gray-400 dark:hover:border-white/20 hover:bg-gray-100 dark:hover:bg-white/[0.06] rounded-lg transition-all duration-200"
                     >
                       <span className="text-amber-700 dark:text-amber-400">#</span>{tag.tag}
                       <span className="ml-1.5 text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300">({tag.count})</span>
@@ -979,7 +979,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                     <Building2 className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Key Topics</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Key Topics</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topEntities.slice(0, 6).map((entity, idx) => (
@@ -987,7 +987,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={entity}
                       type="button"
                       onClick={() => onEntityClick?.(entity, "company")}
-                      className="group px-3 py-1.5 text-[11px] font-semibold border border-gray-200 dark:border-white/[0.08] bg-gradient-to-br from-background to-gray-100/50 dark:to-white/[0.04] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-white/20 hover:text-gray-900 dark:hover:text-gray-100 rounded-lg transition-all duration-200 hover:shadow-sm"
+                      className="group px-3 py-1.5 text-xs font-semibold border border-gray-200 dark:border-white/[0.08] bg-gradient-to-br from-background to-gray-100/50 dark:to-white/[0.04] text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-white/20 hover:text-gray-900 dark:hover:text-gray-100 rounded-lg transition-all duration-200 hover:shadow-sm"
                     >
                       {entity}
                       <ArrowUpRight className="inline-block ml-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1002,7 +1002,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <div className="p-1.5 rounded-lg bg-gray-800/10 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                     <Zap className="w-3.5 h-3.5 text-gray-700 dark:text-gray-300" />
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Quick Actions</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400">Quick Actions</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {agentLaunchpad.slice(0, 3).map((item, idx) => (
@@ -1010,7 +1010,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={item.label}
                       type="button"
                       onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
-                      className="group flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold border border-gray-300 dark:border-white/[0.1] bg-gradient-to-r from-gray-100 dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/20 text-gray-700 dark:text-gray-300 hover:from-gray-200 dark:hover:from-white/[0.08] hover:to-amber-100/50 hover:border-gray-400 dark:hover:border-white/20 rounded-lg transition-all duration-200"
+                      className="group flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-300 dark:border-white/[0.1] bg-gradient-to-r from-gray-100 dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/20 text-gray-700 dark:text-gray-300 hover:from-gray-200 dark:hover:from-white/[0.08] hover:to-amber-100/50 hover:border-gray-400 dark:hover:border-white/20 rounded-lg transition-all duration-200"
                     >
                       <Sparkles className="w-3 h-3" />
                       {item.label.replace('Deep agent: ', '')}
@@ -1034,6 +1034,27 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             </div>
           )}
 
+          {/* Empty overview state */}
+          {digestSections.length === 0 && !isUsingSampleData && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-white/[0.06] flex items-center justify-center mb-4">
+                <Newspaper className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+              </div>
+              <p className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">Your daily summary is loading</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">Summaries are generated from your tracked sources. Check back shortly or add new sources to get started.</p>
+            </div>
+          )}
+
+          {digestSections.length === 0 && isUsingSampleData && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <p className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-1">No signals yet</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">Connect data sources or track topics to see your personalized daily summary here.</p>
+            </div>
+          )}
+
           {/* Digest Sections Grid - Premium cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {digestSections.map((section, sectionIdx) => (
@@ -1052,11 +1073,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       {React.cloneElement(section.icon as React.ReactElement, { className: "w-5 h-5", strokeWidth: 2 })}
                     </div>
                     <div className="text-left">
-                      <p className="text-base font-bold text-gray-800">{section.title}</p>
+                      <p className="text-base font-bold text-gray-800 dark:text-gray-100">{section.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">{section.items.length} signals</span>
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">{section.items.length} {section.items.length === 1 ? 'signal' : 'signals'}</span>
                         {section.sentiment !== 'neutral' && (
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-amber-100/50 text-amber-700'
+                          <span className={`px-1.5 py-0.5 text-xs font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-amber-100/50 text-amber-700'
                             : 'bg-rose-100/50 text-rose-700'
                             }`}>
                             {section.sentiment}
@@ -1068,7 +1089,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
-                    className="p-2.5 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-200/50 transition-all duration-200"
+                    className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-white/10 transition-all duration-200"
                     aria-expanded={expandedSections.has(section.id)}
                     aria-label={`${expandedSections.has(section.id) ? 'Collapse' : 'Expand'} ${section.title}`}
                   >
@@ -1078,11 +1099,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
                 {/* Section Items */}
                 {expandedSections.has(section.id) && (
-                  <div className="divide-y divide-gray-200/50">
+                  <div className="divide-y divide-gray-200/50 dark:divide-white/10">
                     {section.items.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
-                        className="group/item px-5 py-4 flex items-start justify-between gap-4 hover:bg-gray-100/50 transition-all duration-200"
+                        className="group/item px-5 py-4 flex items-start justify-between gap-4 hover:bg-gray-100/50 dark:hover:bg-white/[0.04] transition-all duration-200"
                       >
                         <div
                           onClick={() => onItemClick?.(item)}
@@ -1092,7 +1113,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                             : item.relevance === 'medium' ? 'bg-amber-600 shadow-sm shadow-amber-500/50'
                               : 'bg-gray-400'
                             } group-hover/item:scale-125`} />
-                          <div className="text-sm font-medium text-gray-700 leading-relaxed group-hover/item:text-gray-900 transition-colors">
+                          <div className="text-sm font-medium text-gray-700 dark:text-gray-200 leading-relaxed group-hover/item:text-gray-900 dark:group-hover/item:text-gray-100 transition-colors">
                             <CrossLinkedText
                               text={item.text}
                               entities={entityLibrary.entities}
@@ -1106,7 +1127,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                             <button
                               type="button"
                               onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                              className="inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold font-mono text-gray-500 bg-gray-100 border border-gray-200 uppercase tracking-tight hover:text-gray-800 hover:border-gray-400 transition-all"
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold font-mono text-gray-500 bg-gray-100 border border-gray-200 uppercase tracking-tight hover:text-gray-800 hover:border-gray-400 transition-all"
                               title={`Open topic: ${item.linkedEntity}`}
                             >
                               {item.linkedEntity}
@@ -1120,7 +1141,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wide ${item.relevance === 'high' ? 'bg-gray-200/50 text-gray-700 border border-gray-300/50'
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${item.relevance === 'high' ? 'bg-gray-200/50 text-gray-700 border border-gray-300/50'
                             : item.relevance === 'medium' ? 'bg-amber-100/50 text-amber-700 border border-amber-200/50'
                               : 'bg-gray-100 text-gray-500 border border-gray-200'
                             }`}>

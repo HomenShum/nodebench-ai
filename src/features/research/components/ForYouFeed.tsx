@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo, useRef } from "react";
+import { motion } from "framer-motion";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import {
@@ -13,6 +14,23 @@ import {
   Minus,
   Plus,
 } from "lucide-react";
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const staggerContainer = {
+  hidden: { opacity: 1 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 12 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] } },
+};
 
 interface DateGroup {
   dateString: string;
@@ -82,7 +100,7 @@ export function ForYouFeed() {
   if (!displayFeed) {
     return (
       <div className="min-h-screen bg-background p-6">
-        <div className="space-y-4 motion-safe:animate-pulse">
+        <div className="space-y-4 no-skeleton-animation" aria-busy="true" aria-live="polite">
           {/* Header skeleton */}
           <div className="flex items-center justify-between mb-6">
             <div className="space-y-2">
@@ -161,6 +179,7 @@ export function ForYouFeed() {
               <button
                 type="button"
                 onClick={() => toggleDateCollapse(group.dateString)}
+                aria-label={isCollapsed ? `Expand ${group.displayLabel} section` : `Collapse ${group.displayLabel} section`}
                 className="w-full group"
               >
                 <div className="flex items-center gap-4 mb-6">
@@ -185,20 +204,48 @@ export function ForYouFeed() {
                 <div className="space-y-8">
                   {/* Hero Story */}
                   {heroItem && (
-                    <HeroCard item={heroItem} onEngagement={handleEngagement} />
+                    prefersReducedMotion() ? (
+                      <HeroCard item={heroItem} onEngagement={handleEngagement} />
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+                      >
+                        <HeroCard item={heroItem} onEngagement={handleEngagement} />
+                      </motion.div>
+                    )
                   )}
 
                   {/* Secondary Stories */}
                   {restItems.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border/60">
-                      {restItems.map((item: any, idx: number) => (
-                        <StoryCard
-                          key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`}
-                          item={item}
-                          onEngagement={handleEngagement}
-                        />
-                      ))}
-                    </div>
+                    prefersReducedMotion() ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border/60">
+                        {restItems.map((item: any, idx: number) => (
+                          <StoryCard
+                            key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`}
+                            item={item}
+                            onEngagement={handleEngagement}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <motion.div
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border/60"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        {restItems.map((item: any, idx: number) => (
+                          <motion.div key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`} variants={staggerItem}>
+                            <StoryCard
+                              item={item}
+                              onEngagement={handleEngagement}
+                            />
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    )
                   )}
                 </div>
               )}
@@ -295,7 +342,7 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
 
           {/* Headline */}
           <h3 className="text-2xl md:text-3xl font-bold text-foreground leading-tight group-hover:text-foreground/90 transition-colors">
-            {item.title}
+            {decodeHtmlEntities(item.title)}
           </h3>
 
           {/* Excerpt */}
@@ -330,8 +377,8 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
         </div>
 
         {/* Visual Element */}
-        <div className="w-full md:w-64 h-40 md:h-auto bg-gradient-to-br from-muted/30 to-muted/60 rounded flex items-center justify-center flex-shrink-0">
-          <span className="text-4xl opacity-30">{getSourceIcon(item)}</span>
+        <div className="w-full md:w-64 h-40 md:h-auto bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-blue-500/10 dark:from-indigo-500/20 dark:via-purple-500/15 dark:to-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-indigo-200/20 dark:border-indigo-400/10">
+          <span className="text-5xl opacity-60">{getSourceIcon(item)}</span>
         </div>
       </div>
     </article>
@@ -363,7 +410,7 @@ const StoryCard = React.memo(function StoryCard({ item, onEngagement }: CardProp
 
         {/* Headline */}
         <h4 className="text-lg font-semibold text-foreground leading-snug group-hover:text-foreground/90 transition-colors line-clamp-2">
-          {item.title}
+          {decodeHtmlEntities(item.title)}
         </h4>
 
         {/* Excerpt */}
@@ -394,11 +441,30 @@ function formatTimeAgo(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
 function cleanSnippet(snippet: string): string {
   if (snippet.startsWith('{') || snippet.startsWith('[')) {
     return 'Read more →';
   }
-  return snippet;
+  // Strip markdown bold/italic syntax that leaks into preview text
+  let clean = decodeHtmlEntities(snippet);
+  clean = clean.replace(/\*\*([^*]+)\*\*/g, '$1'); // **bold** → bold
+  clean = clean.replace(/\*([^*]+)\*/g, '$1');       // *italic* → italic
+  clean = clean.replace(/__([^_]+)__/g, '$1');       // __bold__ → bold
+  clean = clean.replace(/_([^_]+)_/g, '$1');         // _italic_ → italic
+  clean = clean.replace(/#{1,6}\s+/g, '');           // ## headings → remove
+  clean = clean.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1'); // [text](url) → text
+  return clean;
 }
 
 function getDomain(url?: string): string | null {
@@ -416,7 +482,10 @@ function getSourceLabel(item: any): string {
   if (kind === 'daily_brief' || kind === 'daily_snapshot') return 'AI Brief';
 
   const source = item.metadata?.source;
-  if (source) return source;
+  // Sanitize internal system identifiers — never show cron/job names to users
+  if (source && !/CRON|_JOB|SYSTEM_|INTERNAL_/i.test(source)) return source;
+  if (source && /DAILY_BRIEF|BRIEF/i.test(source)) return 'AI Brief';
+  if (source && /CRON|_JOB|SYSTEM_|INTERNAL_/i.test(source)) return 'Automated';
 
   if (item.source === 'trending') return 'Trending';
   if (item.source === 'in_network') return 'Following';

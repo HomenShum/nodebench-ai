@@ -55,11 +55,11 @@ export function SidebarButton({
       <div className="flex flex-col items-start min-w-0">
         <span className="truncate">{label}</span>
         {isActive && subtitle && (
-          <span className="text-[10px] text-gray-500 font-medium truncate">{subtitle}</span>
+          <span className="text-xs text-gray-500 font-medium truncate">{subtitle}</span>
         )}
       </div>
       {badge !== undefined && badge > 0 && (
-        <span className="ml-auto px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-gray-200 dark:bg-white/[0.08] text-gray-600 dark:text-gray-400">
+        <span className="ml-auto px-1.5 py-0.5 text-xs font-semibold rounded-full bg-gray-200 dark:bg-white/[0.08] text-gray-600 dark:text-gray-400">
           {badge > 99 ? '99+' : badge}
         </span>
       )}

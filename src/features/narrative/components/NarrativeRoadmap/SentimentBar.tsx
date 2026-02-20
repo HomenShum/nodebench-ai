@@ -77,7 +77,7 @@ export function SentimentBar({
             {/* Tooltip on hover */}
             {data && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                <div className="bg-gray-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap">
+                <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
                   <span className="font-medium">{indicator}</span>
                   <span className="ml-1">{data.sentiment.replace("_", " ")}</span>
                   {data.delta !== 0 && (

@@ -62,6 +62,13 @@ import { critterTools } from "../tools/critterTools.js";
 import { emailTools } from "../tools/emailTools.js";
 import { rssTools } from "../tools/rssTools.js";
 import { architectTools } from "../tools/architectTools.js";
+import { uiUxDiveTools } from "../tools/uiUxDiveTools.js";
+import { mcpBridgeTools } from "../tools/mcpBridgeTools.js";
+import { uiUxDiveAdvancedTools } from "../tools/uiUxDiveAdvancedTools.js";
+import { skillUpdateTools } from "../tools/skillUpdateTools.js";
+import { overstoryTools } from "../tools/overstoryTools.js";
+import { visualQaTools } from "../tools/visualQaTools.js";
+import { localDashboardTools } from "../tools/localDashboardTools.js";
 import { createMetaTools } from "../tools/metaTools.js";
 import { createProgressiveDiscoveryTools } from "../tools/progressiveDiscoveryTools.js";
 import type { McpTool } from "../types.js";
@@ -105,6 +112,13 @@ const TOOLSET_MAP: Record<string, McpTool[]> = {
   email: emailTools,
   rss: rssTools,
   architect: architectTools,
+  ui_ux_dive: uiUxDiveTools,
+  mcp_bridge: mcpBridgeTools,
+  ui_ux_dive_v2: uiUxDiveAdvancedTools,
+  skill_update: skillUpdateTools,
+  qa_orchestration: overstoryTools,
+  visual_qa: visualQaTools,
+  local_dashboard: localDashboardTools,
 };
 
 const PRESETS: Record<string, string[]> = {

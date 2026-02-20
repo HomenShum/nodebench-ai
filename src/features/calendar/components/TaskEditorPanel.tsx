@@ -320,7 +320,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
-                className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+                className="pill pill--time inline-flex items-center gap-1 text-xs"
                 onClick={() => setShowAssigneeEditor((v) => !v)}
                 aria-expanded={showAssigneeEditor}
                 title="Set assignee"
@@ -329,7 +329,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               </button>
               <button
                 type="button"
-                className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+                className="pill pill--time inline-flex items-center gap-1 text-xs"
                 onClick={() => setShowRefsEditor((v) => !v)}
                 aria-expanded={showRefsEditor}
                 title="Add references"
@@ -338,7 +338,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               </button>
               <button
                 type="button"
-                className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+                className="pill pill--time inline-flex items-center gap-1 text-xs"
                 onClick={() => setShowTagsEditor((v) => !v)}
                 aria-expanded={showTagsEditor}
                 title="Edit tags"
@@ -414,7 +414,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   <button
                     type="button"
                     onClick={() => setAssigneeId("")}
-                    className="text-[11px] px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
                   >
                     Clear
                   </button>
@@ -467,7 +467,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     setNewRefId('');
                   }}
                   disabled={!newRefId.trim()}
-                  className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -477,7 +477,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   {refs.map((r, idx) => {
                     const title = r.kind === 'document' ? docTitleById[r.id] : r.kind === 'task' ? taskTitleById[r.id] : eventTitleById[r.id];
                     return (
-                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
                         <span className="uppercase">{r.kind}</span>
                         <span className="text-[var(--text-muted)]">{title ?? r.id}</span>
                         <button
@@ -501,7 +501,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Tags</label>
               <div className="flex flex-wrap items-center gap-1">
                 {tags.map((t, idx) => (
-                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
                     {t}
                     <button
                       type="button"
@@ -555,7 +555,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   <button
                     type="button"
                     onClick={() => setAssigneeId("")}
-                    className="text-[11px] px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
                   >
                     Clear
                   </button>
@@ -608,7 +608,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     setNewRefId('');
                   }}
                   disabled={!newRefId.trim()}
-                  className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -618,7 +618,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   {refs.map((r, idx) => {
                     const title = r.kind === 'document' ? docTitleById[r.id] : r.kind === 'task' ? taskTitleById[r.id] : eventTitleById[r.id];
                     return (
-                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
                         <span className="uppercase">{r.kind}</span>
                         <span className="text-[var(--text-muted)]">{title ?? r.id}</span>
                         <button
@@ -642,7 +642,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Tags</label>
               <div className="flex flex-wrap items-center gap-1">
                 {tags.map((t, idx) => (
-                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
                     {t}
                     <button
                       type="button"
@@ -717,7 +717,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   <button
                     type="button"
                     onClick={() => setAssigneeId("")}
-                    className="text-[11px] px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
                   >
                     Clear
                   </button>
@@ -770,7 +770,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     setNewRefId('');
                   }}
                   disabled={!newRefId.trim()}
-                  className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -780,7 +780,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   {refs.map((r, idx) => {
                     const title = r.kind === 'document' ? docTitleById[r.id] : r.kind === 'task' ? taskTitleById[r.id] : eventTitleById[r.id];
                     return (
-                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
                         <span className="uppercase">{r.kind}</span>
                         <span className="text-[var(--text-muted)]">{title ?? r.id}</span>
                         <button
@@ -804,7 +804,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Tags</label>
               <div className="flex flex-wrap items-center gap-1">
                 {tags.map((t, idx) => (
-                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
                     {t}
                     <button
                       type="button"
@@ -835,24 +835,24 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           
 
-          <div className="text-[10px] text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
+          <div className="text-xs text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
-          <span className="mr-auto text-[11px] text-[var(--text-muted)]">
+          <span className="mr-auto text-xs text-[var(--text-muted)]">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </span>
           <button
             onClick={handleClose}
-            className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
           >
             Close
           </button>
           <button
             onClick={() => void handleSave()}
             disabled={isSaving || saveHint !== "unsaved"}
-            className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>
@@ -906,7 +906,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
-                className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+                className="pill pill--time inline-flex items-center gap-1 text-xs"
                 onClick={() => setShowAssigneeEditor((v) => !v)}
                 aria-expanded={showAssigneeEditor}
                 title="Set assignee"
@@ -915,7 +915,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               </button>
               <button
                 type="button"
-                className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+                className="pill pill--time inline-flex items-center gap-1 text-xs"
                 onClick={() => setShowRefsEditor((v) => !v)}
                 aria-expanded={showRefsEditor}
                 title="Add references"
@@ -924,7 +924,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               </button>
               <button
                 type="button"
-                className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+                className="pill pill--time inline-flex items-center gap-1 text-xs"
                 onClick={() => setShowTagsEditor((v) => !v)}
                 aria-expanded={showTagsEditor}
                 title="Edit tags"
@@ -996,24 +996,24 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             </div>
           </div>
 
-          <div className="text-[10px] text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
+          <div className="text-xs text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}
         <div className="p-4 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
-          <span className="mr-auto text-[11px] text-[var(--text-muted)]">
+          <span className="mr-auto text-xs text-[var(--text-muted)]">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </span>
           <button
             onClick={handleClose}
-            className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
           >
             Close
           </button>
           <button
             onClick={() => void handleSave()}
             disabled={isSaving || saveHint !== "unsaved"}
-            className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>

@@ -93,14 +93,16 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
               </div>
             </div>
 
-            {/* Citation count */}
-            <div className="text-sm text-[color:var(--text-secondary)]">
-              {searchQuery ? (
-                <span>{filteredCount} of {citationCount} sources</span>
-              ) : (
-                <span>{citationCount} sources</span>
-              )}
-            </div>
+            {/* Citation count — hidden when empty (main area shows full empty state) */}
+            {citationCount > 0 && (
+              <div className="text-sm text-[color:var(--text-secondary)]">
+                {searchQuery ? (
+                  <span>{filteredCount} of {citationCount} {citationCount === 1 ? 'source' : 'sources'}</span>
+                ) : (
+                  <span>{citationCount} {citationCount === 1 ? 'source' : 'sources'}</span>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Search bar */}
@@ -121,11 +123,28 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
         {filteredLibrary.order.length === 0 ? (
-          <div className="text-center py-12">
-            <FileText className="w-12 h-12 text-[color:var(--text-secondary)] mx-auto mb-4" />
-            <p className="text-[color:var(--text-secondary)]">
-              {searchQuery ? "No sources match your search" : "No sources available"}
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-20 h-20 rounded-full bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center mb-5">
+              <FileText className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
+            </div>
+            <p className="text-lg font-semibold text-[color:var(--text-primary)] mb-2">
+              {searchQuery ? "No sources match your search" : "No sources yet"}
             </p>
+            <p className="text-sm text-[color:var(--text-secondary)] max-w-sm mb-5">
+              {searchQuery
+                ? "Try a different search term or clear the filter to see all sources."
+                : "Sources are cited automatically as your daily briefings, signals, and analyses are generated. Start by visiting the Research Hub."}
+            </p>
+            {!searchQuery && (
+              <a
+                href="#"
+                onClick={(e) => { e.preventDefault(); window.location.hash = 'research'; }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                Go to Research Hub
+              </a>
+            )}
           </div>
         ) : (
           <FootnotesSection

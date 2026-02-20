@@ -1,5 +1,16 @@
 import React, { Suspense, useCallback, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ErrorBoundary } from "./ErrorBoundary";
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const pageVariants = {
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.25, 0.1, 0.25, 1] } },
+  exit: { opacity: 0, y: -4, transition: { duration: 0.15 } },
+};
 
 interface LazyViewProps {
   children: React.ReactNode;
@@ -22,10 +33,8 @@ interface LazyViewProps {
  * doesn't take down the entire content area. The parent Suspense
  * handles the loading state; this handles the error state.
  *
- * Usage:
- *   <LazyView title="Usage & Costs failed to load" className="h-full overflow-auto bg-background">
- *     <CostDashboard />
- *   </LazyView>
+ * Includes a subtle fade+slide transition between views that
+ * respects prefers-reduced-motion.
  */
 export function LazyView({ children, title, className, fallback, resetKey, onRetry }: LazyViewProps) {
   const [retry, setRetry] = useState(0);
@@ -37,8 +46,25 @@ export function LazyView({ children, title, className, fallback, resetKey, onRet
     onRetry?.();
   }, [onRetry]);
 
-  const innerClass = className ? `motion-safe:view-enter ${className}` : "motion-safe:view-enter h-full";
-  const content = <div className={innerClass}>{children}</div>;
+  const innerClass = className ? className : "h-full";
+  const reduced = prefersReducedMotion();
+
+  const content = reduced ? (
+    <div className={innerClass}>{children}</div>
+  ) : (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={String(resetKey ?? "view")}
+        className={innerClass}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
 
   return (
     <ErrorBoundary key={boundaryKey} title={title || "Something went wrong"} onRetry={handleRetry}>

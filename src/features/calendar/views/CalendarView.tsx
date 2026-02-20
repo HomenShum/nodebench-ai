@@ -485,7 +485,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           >
             {!collapseEmpty && (
               <div
-                className="text-[10px] pr-2 flex items-center justify-end border-r border-[var(--border-color)]"
+                className="text-xs pr-2 flex items-center justify-end border-r border-[var(--border-color)]"
                 style={{ gridRow: `1 / span ${allDayRows.length}` }}
                 title="All-day or multi-day events appear in this strip"
                 aria-label="All-day events strip"
@@ -583,7 +583,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           }
                           setEditingId(null);
                         }}
-                        className="w-full text-[11px] bg-[var(--bg-primary)]/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-amber-300"
+                        className="w-full text-xs bg-[var(--bg-primary)]/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-amber-300"
                       />
                     ) : (
                       <>
@@ -615,7 +615,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           {!collapseEmpty && (
             <div className="relative">
               {renderedHours.map((h) => (
-                <div key={h} style={{ height: hourHeightLocal }} className="text-[10px] text-[var(--text-muted)] pr-2 pl-2 flex items-start justify-end">
+                <div key={h} style={{ height: hourHeightLocal }} className="text-xs text-[var(--text-muted)] pr-2 pl-2 flex items-start justify-end">
                   {hourLabel(h)}
                 </div>
               ))}
@@ -949,7 +949,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           }
                         }}
                         onBlur={() => setDraft(null)}
-                        className="w-full text-[11px] bg-transparent outline-none focus:ring-0 text-blue-800 placeholder:text-blue-700/60"
+                        className="w-full text-xs bg-transparent outline-none focus:ring-0 text-blue-800 placeholder:text-blue-700/60"
                       />
                     </div>
                   );
@@ -993,7 +993,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                       style={{ top: prefixHeights[i], height: segDisplayPx[i] }}
                     >
                       <button
-                        className="text-[10px] px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/80 shadow-sm hover:bg-[var(--bg-hover)]"
+                        className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/80 shadow-sm hover:bg-[var(--bg-hover)]"
                         onClick={(ev) => { ev.stopPropagation(); setExpandedGaps((prev) => {
                           const set = new Set(prev[dayIdx] ?? []);
                           if (set.has(i)) set.delete(i); else set.add(i);
@@ -1081,14 +1081,14 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                       ) : (
                         <>
                           <div className="text-blue-800 font-medium truncate pr-6">{e.title}</div>
-                          <div className="text-[10px] text-blue-700/80 truncate">
+                          <div className="text-xs text-blue-700/80 truncate">
                             {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             {" - "}
                             {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                           </div>
                           {allDay && (
                             <div className="mt-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-[10px] bg-amber-50 border-amber-200 text-amber-700">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-xs bg-amber-50 border-amber-200 text-amber-700">
                                 All-day
                               </span>
                             </div>

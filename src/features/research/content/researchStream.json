@@ -87,9 +87,9 @@
           "sciFi": 0
         },
         "keyStats": [
-          { "label": "Gap Width", "value": "45 pts", "trend": "up", "context": "Critical Risk" },
-          { "label": "Fail Rate", "value": "12%", "trend": "up", "context": "In Production" },
-          { "label": "Avg Latency", "value": "2.4s", "trend": "up" }
+          { "label": "Accuracy", "value": "55%", "trend": "up", "context": "Improving" },
+          { "label": "Reliability", "value": "88%", "trend": "up", "context": "Stable" },
+          { "label": "Response", "value": "2.4s", "trend": "up" }
         ],
         "capabilities": [
           { "label": "Reasoning", "score": 85, "icon": "brain" },
@@ -225,7 +225,7 @@
           "sciFi": 0
         },
         "keyStats": [
-          { "label": "Gap Width", "value": "10 pts", "trend": "down", "context": "Closing Fast" },
+          { "label": "Accuracy", "value": "90%", "trend": "down", "context": "Improving" },
           { "label": "New Unicorns", "value": "3", "sub": "This Quarter" },
           { "label": "Reliability", "value": "99.9%", "trend": "up" }
         ],
@@ -363,7 +363,7 @@
           "sciFi": 2
         },
         "keyStats": [
-          { "label": "Gap Width", "value": "0 pts", "trend": "flat", "context": "Solved" },
+          { "label": "Accuracy", "value": "100%", "trend": "flat", "context": "Optimal" },
           { "label": "Market Focus", "value": "Apps", "sub": "Transition" },
           { "label": "Agent Uptime", "value": "99.99%" }
         ],

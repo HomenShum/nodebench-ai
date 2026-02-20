@@ -60,7 +60,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
   return (
     <nav aria-label="Main navigation" className="space-y-0.5 mb-6">
       {!isCollapsed && (
-        <div className="px-2 mb-2 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+        <div className="px-2 mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">
           Menu
         </div>
       )}
@@ -120,13 +120,13 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 <div className="flex flex-col items-start">
                   <span className="font-semibold">{item.label}</span>
                   {isActive && (
-                    <span className="text-[10px] text-gray-500 font-medium">{item.desc}</span>
+                    <span className="text-xs text-gray-500 font-medium">{item.desc}</span>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
                 {item.expandable && recentDossiers.length > 0 && (
-                  <span className="text-[10px] bg-gray-100 dark:bg-white/[0.06] text-gray-500 px-1.5 py-0.5 rounded-full font-semibold">
+                  <span className="text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-500 px-1.5 py-0.5 rounded-full font-semibold">
                     {recentDossiers.length}
                   </span>
                 )}
@@ -151,7 +151,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         <FileText className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 shrink-0 transition-colors" />
                         <span className="truncate flex-1 text-left font-medium">{dossier.title || 'Untitled'}</span>
                         {dossier.isAgentUpdating && (
-                          <span className="flex items-center gap-1 text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">
+                          <span className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">
                             <Bot className="w-2.5 h-2.5" />
                             <Loader2 className="w-2 h-2 motion-safe:animate-spin" />
                           </span>
@@ -162,14 +162,14 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                       <button
                         type="button"
                         onClick={() => onNavigate('saved')}
-                        className="w-full px-2.5 py-1.5 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold text-left transition-colors"
+                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold text-left transition-colors"
                       >
                         View all {recentDossiers.length} reports →
                       </button>
                     )}
                   </>
                 ) : (
-                  <div className="px-2.5 py-3 text-[11px] text-gray-400 italic">
+                  <div className="px-2.5 py-3 text-xs text-gray-400 italic">
                     No saved reports yet
                   </div>
                 )}

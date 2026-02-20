@@ -66,7 +66,7 @@ export const TrendRail: React.FC<TrendRailProps> = ({
             className="flex items-center gap-2 px-3 py-2 rounded-full bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-sm hover:shadow-md hover:border-blue-300 transition-all whitespace-nowrap group shrink-0"
           >
             <span className="text-sm font-medium text-[color:var(--text-primary)] group-hover:text-[color:var(--text-primary)]">{trend.label}</span>
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${getDeltaStyle(trend)}`}>
+            <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${getDeltaStyle(trend)}`}>
               {getDeltaIcon(trend)}
               {trend.delta}
             </span>

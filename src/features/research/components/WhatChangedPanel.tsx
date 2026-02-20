@@ -362,7 +362,7 @@ export function WhatChangedPanel({
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {typeof refreshSummary?.dueCount === "number" && refreshSummary.dueCount > 0 && (
-                <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200 rounded-full">
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 rounded-full">
                   {refreshSummary.dueCount} due
                 </span>
               )}
@@ -393,7 +393,7 @@ export function WhatChangedPanel({
           </div>
 
           {/* Refresh Meta */}
-          <div className="flex items-center justify-between gap-2 flex-wrap text-[11px] text-[color:var(--text-muted)]">
+          <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-[color:var(--text-muted)]">
             <span>
               {refreshSummary?.lastFetchedAt
                 ? `Last refresh: ${new Date(refreshSummary.lastFetchedAt).toLocaleString()}`
@@ -556,12 +556,12 @@ export function WhatChangedWidget({
         </div>
         <div className="flex items-center gap-2">
           {criticalCount > 0 && (
-            <span className="px-2 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
               {criticalCount} critical
             </span>
           )}
           {highCount > 0 && (
-            <span className="px-2 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
               {highCount} high
             </span>
           )}
@@ -583,12 +583,12 @@ export function WhatChangedWidget({
                   <p className="text-xs font-medium text-[color:var(--text-primary)] truncate">
                     {diff.changeTitle}
                   </p>
-                  <p className="text-[10px] text-[color:var(--text-muted)] mt-0.5">
+                  <p className="text-xs text-[color:var(--text-muted)] mt-0.5">
                     {source?.name ?? diff.registryId}
                   </p>
                 </div>
                 <span
-                  className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${
+                  className={`px-1.5 py-0.5 text-xs font-medium rounded ${
                     diff.severity === "critical"
                       ? "bg-red-100 text-red-700"
                       : diff.severity === "high"

@@ -252,12 +252,12 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
         {(step.toolName || step.agentName) && (
           <div className="flex items-center gap-2 mt-1">
             {step.toolName && (
-              <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">
+              <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">
                 {step.toolName}
               </span>
             )}
             {step.agentName && (
-              <span className="text-[10px] px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded">
+              <span className="text-xs px-1.5 py-0.5 bg-purple-50 text-purple-600 rounded">
                 {step.agentName}
               </span>
             )}

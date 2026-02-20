@@ -310,8 +310,8 @@ function formatDate(timestamp: number): string {
   } else if (diffDays === 1) {
     return 'Yesterday';
   } else if (diffDays < 7) {
-    return date.toLocaleDateString([], { weekday: 'short' });
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
   } else {
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 }

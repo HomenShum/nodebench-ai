@@ -120,7 +120,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
         className={`
           inline-flex items-center justify-center
           min-w-[1.25rem] h-5 px-1
-          text-[10px] font-semibold
+          text-xs font-semibold
           rounded border
           transition-all duration-150
           cursor-pointer
@@ -130,6 +130,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
         `}
         aria-describedby={showPreview ? tooltipId : undefined}
         aria-label={`Citation ${citation.number}: ${citation.label}`}
+        title={`[${citation.number}] ${citation.type} — ${citation.label}`}
       >
         [{citation.number}]
       </button>
@@ -154,7 +155,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
               <span className="text-xs font-semibold text-[color:var(--text-primary)] line-clamp-1">
                 {citation.label}
               </span>
-              <span className={`ml-auto text-[9px] px-1.5 py-0.5 rounded ${colorClasses}`}>
+              <span className={`ml-auto text-xs px-1.5 py-0.5 rounded ${colorClasses}`}>
                 {citation.type}
               </span>
             </span>
@@ -166,11 +167,11 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
 
             {/* Source info */}
             {(citation.author || citation.publishedAt || citation.pageIndex != null) && (
-              <span className="flex items-center gap-2 text-[10px] text-[color:var(--text-secondary)] border-t border-[color:var(--border-color)] pt-2">
+              <span className="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] border-t border-[color:var(--border-color)] pt-2">
                 {citation.author && <span>{citation.author}</span>}
                 {citation.author && citation.publishedAt && <span>•</span>}
                 {citation.publishedAt && (
-                  <span>{new Date(citation.publishedAt).toLocaleDateString()}</span>
+                  <span>{new Date(citation.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 )}
                 {citation.pageIndex != null && (
                   <>
@@ -185,7 +186,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
 
             {/* URL indicator */}
             {citation.url && (
-              <span className="flex items-center gap-1 text-[10px] text-blue-500">
+              <span className="flex items-center gap-1 text-xs text-blue-500">
                 <ExternalLink className="w-3 h-3" />
                 <span className="truncate">{new URL(citation.url).hostname}</span>
               </span>

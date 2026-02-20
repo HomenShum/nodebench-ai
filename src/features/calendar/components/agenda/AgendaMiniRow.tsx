@@ -115,7 +115,7 @@ function holidayDate(item: any): string | undefined {
       const d = Number(parts[2]);
       if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
         const dt = new Date(y, m - 1, d, 0, 0, 0, 0);
-        return dt.toLocaleDateString();
+        return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       }
     }
   }
@@ -123,7 +123,7 @@ function holidayDate(item: any): string | undefined {
   const ms = typeof item?.dateMs === "number" ? item.dateMs : undefined;
   if (ms) {
     const d = new Date(ms);
-    return d.toLocaleDateString();
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
   return undefined;
 }
@@ -132,7 +132,7 @@ function renderSourceBadge(item: any) {
   const sourceType = item?.sourceType as string | undefined;
   if (!sourceType) return null;
   const isProposed = item?.proposed === true;
-  const base = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] leading-tight";
+  const base = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs leading-tight";
   const pill = isProposed
     ? "border-amber-200 bg-amber-50 text-amber-700"
     : "border-slate-200 bg-slate-50 text-slate-700";
@@ -202,10 +202,10 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
         kind === 'event'
           ? eventContainerClasses(item?.color)
           : kind === 'holiday'
-            ? 'border-purple-200 bg-purple-50'
+            ? 'border-purple-200 dark:border-purple-700/40 bg-purple-50 dark:bg-purple-900/30'
             : kind === 'note'
               ? noteContainerClasses()
-              : 'border-indigo-200 bg-indigo-50'
+              : 'border-indigo-200 dark:border-indigo-700/40 bg-indigo-50 dark:bg-indigo-900/30'
       }`}
       role={onSelect ? "button" : undefined}
       tabIndex={onSelect ? 0 : -1}
@@ -231,18 +231,18 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={String(item?.status ?? 'todo') === 'done' ? 'Mark task as not done' : 'Mark task as done'}
-              className="h-3.5 w-3.5 rounded border-[var(--border-color)] text-indigo-600 focus:ring-1 focus:ring-indigo-500/50 bg-white"
+              className="h-3.5 w-3.5 rounded border-[var(--border-color)] text-indigo-600 focus:ring-1 focus:ring-indigo-500/50 bg-white dark:bg-[var(--bg-primary)]"
             />
           ) : null}
           <span
-            className={`text-[10px] px-1 rounded border ${
+            className={`text-xs px-1 rounded border ${
               kind === 'event'
                 ? eventBadgeClasses(item?.color)
                 : kind === 'holiday'
-                  ? 'border-purple-200 bg-purple-50 text-purple-700'
+                  ? 'border-purple-200 dark:border-purple-700/40 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
                   : kind === 'note'
-                    ? 'border-amber-200 bg-amber-50 text-amber-700'
-                  : 'border-indigo-200 bg-indigo-50 text-gray-700'
+                    ? 'border-amber-200 dark:border-amber-700/40 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                  : 'border-indigo-200 dark:border-indigo-700/40 bg-indigo-50 dark:bg-indigo-900/30 text-gray-700 dark:text-gray-300'
             }`}
           >
             {kind === 'event' ? 'Event' : kind === 'holiday' ? 'Holiday' : kind === 'note' ? 'Note' : 'Task'}
@@ -262,26 +262,26 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
           <div className="flex items-center justify-between gap-2">
             <div className="truncate text-xs font-semibold" title={title}>{title}</div>
             {kind === 'event' ? (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                item?.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                item?.status === 'tentative' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                'bg-indigo-50 text-gray-700 border-indigo-200'
+              <span className={`text-xs px-1.5 py-0.5 rounded border ${
+                item?.status === 'cancelled' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-700/40' :
+                item?.status === 'tentative' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40' :
+                'bg-indigo-50 dark:bg-indigo-900/30 text-gray-700 dark:text-gray-300 border-indigo-200 dark:border-indigo-700/40'
               }`}>
                 {String(item?.status ?? 'confirmed')}
               </span>
             ) : kind === 'task' ? (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
-                item?.status === 'blocked' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                item?.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                item?.status === 'done' ? 'bg-indigo-50 text-gray-700 border-indigo-200' :
-                'bg-slate-50 text-slate-700 border-slate-200'
+              <span className={`text-xs px-1.5 py-0.5 rounded border ${
+                item?.status === 'blocked' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-700/40' :
+                item?.status === 'in_progress' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-700/40' :
+                item?.status === 'done' ? 'bg-indigo-50 dark:bg-indigo-900/30 text-gray-700 dark:text-gray-300 border-indigo-200 dark:border-indigo-700/40' :
+                'bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-700/40'
               }`}>
                 {String(item?.status ?? 'todo')}
               </span>
             ) : kind === 'holiday' ? (
-              <span className="text-[10px] px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">Holiday</span>
+              <span className="text-xs px-1.5 py-0.5 rounded border bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-700/40">Holiday</span>
             ) : (
-              <span className="text-[10px] px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">Note</span>
+              <span className="text-xs px-1.5 py-0.5 rounded border bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/40">Note</span>
             )}
           </div>
           {/* Meta */}
@@ -289,29 +289,29 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
             {kind === 'event' ? (
               <>
                 {time && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">{time}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">{time}</div>
                 )}
                 {item?.location && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">📍 {String(item.location)}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">📍 {String(item.location)}</div>
                 )}
                 {Array.isArray(item?.attendees) && item.attendees.length > 0 && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">👥 {item.attendees.length} attendee{item.attendees.length > 1 ? 's' : ''}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">👥 {item.attendees.length} attendee{item.attendees.length > 1 ? 's' : ''}</div>
                 )}
                 {item?.description && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">
+                  <div className="text-xs text-[var(--text-secondary)]">
                     {String(item.description).slice(0, 120)}{String(item.description).length > 120 ? '…' : ''}
                   </div>
                 )}
                 {item?.proposed && (
                   <div className="flex items-center gap-2 pt-1">
                     <button
-                      className="px-2 py-1 text-[10px] rounded bg-indigo-600 text-white hover:bg-gray-700"
+                      className="px-2 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-gray-700"
                       onClick={(e) => { e.stopPropagation(); onAcceptProposed?.(item?._id as Id<"events">); }}
                     >
                       Accept
                     </button>
                     <button
-                      className="px-2 py-1 text-[10px] rounded border border-slate-200 text-slate-700 hover:bg-slate-100"
+                      className="px-2 py-1 text-xs rounded border border-slate-200 text-slate-700 hover:bg-slate-100"
                       onClick={(e) => { e.stopPropagation(); onDeclineProposed?.(item?._id as Id<"events">); }}
                     >
                       Decline
@@ -322,28 +322,28 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
             ) : kind === 'task' ? (
               <>
                 {typeof item?.dueDate === 'number' && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">Due: {new Date(item.dueDate).toLocaleString()}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">Due: {new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 )}
                 {item?.priority && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">Priority: {String(item.priority)}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">Priority: {String(item.priority)}</div>
                 )}
                 {item?.description && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">
+                  <div className="text-xs text-[var(--text-secondary)]">
                     {String(item.description).slice(0, 120)}{String(item.description).length > 120 ? '…' : ''}
                   </div>
                 )}
               </>
             ) : kind === 'holiday' ? (
               <>
-                <div className="text-[10px] text-[var(--text-secondary)]">Date: {holidayDate(item) ?? ''}</div>
+                <div className="text-xs text-[var(--text-secondary)]">Date: {holidayDate(item) ?? ''}</div>
                 {item?.country && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">Country: {String(item.country)}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">Country: {String(item.country)}</div>
                 )}
               </>
             ) : (
               <>
                 {typeof item?.agendaDate === 'number' && (
-                  <div className="text-[10px] text-[var(--text-secondary)]">Date: {new Date(item.agendaDate).toLocaleDateString()}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">Date: {new Date(item.agendaDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                 )}
               </>
             )}

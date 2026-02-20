@@ -37,13 +37,13 @@ function ActIIChangeView({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-900/10 pb-6">
-        <h2 className="text-3xl font-medium text-gray-950 tracking-tight mb-2">
+      <div className="border-b border-gray-900/10 dark:border-white/10 pb-6">
+        <h2 className="text-3xl font-medium text-gray-950 dark:text-gray-100 tracking-tight mb-2">
           Context Graph
         </h2>
         <div className="flex items-center gap-2">
           <Share2 className="w-3 h-3 text-gray-900" />
-          <span className="text-[10px] font-black text-gray-900/60 uppercase tracking-widest">
+          <span className="text-xs font-black text-gray-900/60 dark:text-gray-400 uppercase tracking-widest">
             Active Narratives
           </span>
         </div>
@@ -58,12 +58,12 @@ function ActIIChangeView({
           drivers.map((signal: any, i: number) => (
             <div key={signal.headline ?? i} className="group cursor-default">
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-900/40 group-hover:bg-gray-900 transition-colors" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-gray-900/50 group-hover:text-gray-900 transition-colors">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-900/40 dark:bg-gray-400/40 group-hover:bg-gray-900 dark:group-hover:bg-gray-300 transition-colors" />
+                <span className="text-xs font-black uppercase tracking-wider text-gray-900/50 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">
                   Node {i + 1}
                 </span>
               </div>
-              <p className="text-sm font-medium text-gray-950 leading-snug pl-4 border-l border-gray-900/10 group-hover:border-gray-900/40 transition-colors">
+              <p className="text-sm font-medium text-gray-950 dark:text-gray-200 leading-snug pl-4 border-l border-gray-900/10 dark:border-white/10 group-hover:border-gray-900/40 dark:group-hover:border-white/30 transition-colors">
                 {signal.headline}
               </p>
             </div>
@@ -84,27 +84,27 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-900/10 pb-6">
-        <h2 className="text-3xl font-medium text-gray-950 tracking-tight mb-2">
+      <div className="border-b border-gray-900/10 dark:border-white/10 pb-6">
+        <h2 className="text-3xl font-medium text-gray-950 dark:text-gray-100 tracking-tight mb-2">
           Signal Velocity
         </h2>
         <div className="flex items-center gap-2">
           <Zap className="w-3 h-3 text-gray-900" />
-          <span className="text-[10px] font-black text-gray-900/60 uppercase tracking-widest">
+          <span className="text-xs font-black text-gray-900/60 dark:text-gray-400 uppercase tracking-widest">
             Processing Rate
           </span>
         </div>
       </div>
 
       {/* Velocity Big Stat */}
-      <div className="py-8 text-center bg-[#f2f1ed] border border-gray-200/50">
+      <div className="py-8 text-center bg-[#f2f1ed] dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/10">
         <span className="text-6xl font-bold text-gray-950 block">{velocity}</span>
-        <span className="text-[10px] font-black text-gray-900/40 uppercase tracking-[0.3em]">Nodes / Hour</span>
+        <span className="text-xs font-black text-gray-900/40 dark:text-gray-500 uppercase tracking-[0.3em]">Nodes / Hour</span>
       </div>
 
       {/* Source Distribution */}
       <div className="space-y-3">
-        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-gray-900/60 mb-2">
+        <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-gray-900/60 mb-2">
           <span>Source Distribution</span>
         </div>
         {(summary?.breakdown || []).slice(0, 4).map((item: { source: string; count: number }) => (
@@ -117,7 +117,7 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
                   style={{ width: `${(item.count / totalNodes) * 100}%` }}
                 />
               </div>
-              <span className="text-[10px] font-mono text-gray-400 w-4 text-right">{item.count}</span>
+              <span className="text-xs font-mono text-gray-400 w-4 text-right">{item.count}</span>
             </div>
           </div>
         ))}

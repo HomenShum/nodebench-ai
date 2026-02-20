@@ -149,11 +149,11 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
                 <div className={`p-1 rounded ${matchConfig.color}`}>
                   <MatchIcon className="w-3 h-3" />
                 </div>
-                <span className="text-[10px] font-medium text-gray-500 truncate flex-1">
+                <span className="text-xs font-medium text-gray-500 truncate flex-1">
                   {item.matchReasons?.[0] || 'Related'}
                 </span>
                 {item.matchScore && item.matchScore >= 30 && (
-                  <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
                     {Math.min(99, item.matchScore)}%
                   </span>
                 )}
@@ -165,16 +165,16 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
               </h4>
 
               {/* Snippet */}
-              <p className="text-[10px] text-gray-500 line-clamp-2 mb-2">
+              <p className="text-xs text-gray-500 line-clamp-2 mb-2">
                 {item.snippet || 'No preview available'}
               </p>
 
               {/* Footer */}
               <div className="flex items-center justify-between">
-                <span className="text-[9px] text-gray-400">
+                <span className="text-xs text-gray-400">
                   {formatTimestamp(item.timestamp)}
                 </span>
-                <div className="flex items-center gap-1 text-[10px] text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 text-xs text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">
                   <span>View</span>
                   <ChevronRight className="w-3 h-3" />
                 </div>
@@ -183,7 +183,7 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
               {/* Source Badge */}
               {item.metadata?.source && (
                 <div className="mt-2 pt-2 border-t border-gray-100">
-                  <span className="text-[9px] text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-gray-400 flex items-center gap-1">
                     <ExternalLink className="w-2.5 h-2.5" />
                     {item.metadata.source}
                   </span>
@@ -197,7 +197,7 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
       {/* "See More" hint if there are more items */}
       {relatedData?.totalCandidates && relatedData.totalCandidates > maxItems && (
         <div className="mt-3 text-center">
-          <span className="text-[10px] text-gray-400">
+          <span className="text-xs text-gray-400">
             +{relatedData.totalCandidates - maxItems} more related items
           </span>
         </div>

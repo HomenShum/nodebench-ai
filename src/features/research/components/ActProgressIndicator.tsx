@@ -31,10 +31,10 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
       className={`rounded-xl border border-[color:var(--border-color)] bg-[#fbfaf2]/90 px-3 py-2 shadow-sm ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-[11px] font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
+        <span className="text-xs font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
           Research Depth
         </span>
-        <span className="text-[11px] text-[color:var(--text-secondary)]">
+        <span className="text-xs text-[color:var(--text-secondary)]">
           {ACTS[safeIndex]?.label ?? "Quick Pulse"}
         </span>
       </div>
@@ -65,7 +65,7 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
                   }`}
                 />
                 <span
-                  className={`text-[9px] font-medium ${
+                  className={`text-xs font-medium ${
                     isActive ? "text-[color:var(--text-primary)]" : "text-[color:var(--text-secondary)]"
                   }`}
                 >

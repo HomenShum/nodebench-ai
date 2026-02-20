@@ -164,7 +164,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                   {isSelected && <Check className="h-4 w-4 text-indigo-600" />}
                 </div>
               </div>
-              <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400">
+              <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
                 <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-white/[0.06] rounded">{model.contextWindow}</span>
               </div>
             </button>

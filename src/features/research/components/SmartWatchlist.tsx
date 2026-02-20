@@ -246,7 +246,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">Watchlist</h3>
-          <span className="flex items-center gap-1 text-[10px] text-[color:var(--text-secondary)]">
+          <span className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 motion-safe:animate-pulse" />
             Live
           </span>
@@ -284,11 +284,11 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
 
       {/* Summary Pills */}
       <div className="flex gap-2 mb-4">
-        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-[10px] font-medium">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 text-green-700 text-xs font-medium">
           <TrendingUp className="w-3 h-3" />
           {gainers} up
         </div>
-        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-[10px] font-medium">
+        <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 text-xs font-medium">
           <TrendingDown className="w-3 h-3" />
           {losers} down
         </div>
@@ -314,7 +314,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                 {/* Delta indicator badge */}
                 {item.deltas && item.deltas.length > 0 && (
                   <span 
-                    className="flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200"
+                    className="flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-200"
                     title={`${item.deltas.length} change${item.deltas.length > 1 ? 's' : ''} detected`}
                   >
                     <Activity className="w-2.5 h-2.5" />
@@ -331,7 +331,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                   </span>
                 )}
               </div>
-              <span className="text-[11px] text-[color:var(--text-secondary)] truncate block">{item.name}</span>
+              <span className="text-xs text-[color:var(--text-secondary)] truncate block">{item.name}</span>
             </div>
 
             {/* Center: Sparkline */}
@@ -349,7 +349,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
               <div className="text-sm font-mono font-semibold text-[color:var(--text-primary)]">
                 ${item.price.toFixed(2)}
               </div>
-              <div className={`text-[11px] font-medium flex items-center justify-end gap-0.5 ${
+              <div className={`text-xs font-medium flex items-center justify-end gap-0.5 ${
                 item.changePercent >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
                 {item.changePercent >= 0 ? (
@@ -454,25 +454,25 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
 
               <div className="grid grid-cols-2 gap-2 text-xs text-[color:var(--text-primary)]">
                 <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-[11px] text-[color:var(--text-secondary)]">Day range</p>
+                  <p className="text-xs text-[color:var(--text-secondary)]">Day range</p>
                   <p className="font-semibold">${detailStats?.dayRange}</p>
                 </div>
                 <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-[11px] text-[color:var(--text-secondary)]">52w range</p>
+                  <p className="text-xs text-[color:var(--text-secondary)]">52w range</p>
                   <p className="font-semibold">${detailStats?.range52w}</p>
                 </div>
                 <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-[11px] text-[color:var(--text-secondary)]">Volume est.</p>
+                  <p className="text-xs text-[color:var(--text-secondary)]">Volume est.</p>
                   <p className="font-semibold">{detailStats?.volume}</p>
                 </div>
                 <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-[11px] text-[color:var(--text-secondary)]">Sentiment</p>
+                  <p className="text-xs text-[color:var(--text-secondary)]">Sentiment</p>
                   <p className="font-semibold">{detailStats?.sentiment}</p>
                 </div>
               </div>
 
               <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3">
-                <p className="text-[11px] font-semibold text-[color:var(--text-secondary)] mb-1">Recent mentions</p>
+                <p className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1">Recent mentions</p>
                 {recentMentions.length === 0 ? (
                   <p className="text-sm text-[color:var(--text-secondary)]">No fresh mentions yet. Try a quick brief.</p>
                 ) : (
@@ -482,7 +482,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                         <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[color:var(--bg-tertiary)]" />
                         <div className="flex-1">
                           <p className="text-sm text-[color:var(--text-primary)] leading-snug">{mention.headline}</p>
-                          <p className="text-[11px] text-[color:var(--text-secondary)]">
+                          <p className="text-xs text-[color:var(--text-secondary)]">
                             {mention.source || 'Signal'}
                             {mention.time ? ` • ${mention.time}` : ''}
                           </p>

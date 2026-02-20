@@ -82,7 +82,7 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
     if (seconds < 60) return `${seconds}s ago`;
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
-    return new Date(timestamp).toLocaleDateString();
+    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const statusColor = job.isDelayed
@@ -110,7 +110,7 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
               {job.displayName}
             </span>
           </div>
-          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-[var(--text-muted)]">
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-[var(--text-muted)]">
             <span className="flex items-center gap-1">
               <RefreshCw className="w-3 h-3" />
               {job.interval}
@@ -122,7 +122,7 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
           </div>
         </div>
         {job.latencyP50 !== null && (
-          <div className="text-right text-[11px]">
+          <div className="text-right text-xs">
             <div className="text-[var(--text-muted)]">P50</div>
             <div className="font-mono text-[var(--text-secondary)]">
               {job.latencyP50 < 1000
@@ -134,7 +134,7 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
       </div>
       {job.queueDepth !== null && job.queueDepth > 0 && (
         <div className="mt-2 pt-2 border-t border-[var(--border-color)]">
-          <span className="text-[11px] text-[var(--text-muted)]">
+          <span className="text-xs text-[var(--text-muted)]">
             Queue depth: <span className="font-mono">{job.queueDepth}</span>
           </span>
         </div>
@@ -172,7 +172,7 @@ export const AutonomousOperationsPanel = memo(function AutonomousOperationsPanel
           </h3>
           <span
             className={cn(
-              "px-1.5 py-0.5 rounded-full text-[10px] font-medium border",
+              "px-1.5 py-0.5 rounded-full text-xs font-medium border",
               healthyCount === totalCount && totalCount > 0
                 ? "bg-green-500/10 text-green-600 border-green-500/20"
                 : healthyCount === 0

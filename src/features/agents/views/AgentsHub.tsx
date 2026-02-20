@@ -76,7 +76,8 @@ function QuickStatsBar() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4 motion-safe:animate-pulse"
+            className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4 no-skeleton-animation"
+            aria-busy="true"
           >
             <div className="h-6 w-12 bg-[var(--bg-secondary)] rounded mb-1" />
             <div className="h-4 w-20 bg-[var(--bg-secondary)] rounded" />
@@ -253,7 +254,7 @@ function ActiveSwarmsSection() {
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Running Tasks
           </h3>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-600 border border-green-500/20">
+          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600 border border-green-500/20">
             {runningSwarms.length}
           </span>
         </div>
@@ -313,7 +314,7 @@ export function AgentsHub() {
   );
 
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative">
+    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative pb-24 lg:pb-0">
       <div className="flex-1 p-8 relative z-10">
         <div className="dashboard-container max-w-7xl mx-auto flex gap-8">
           {/* Main Content */}

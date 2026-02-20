@@ -79,10 +79,10 @@ export function IndustryUpdatesPanel() {
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setSelectedProvider(null)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
               selectedProvider === null
-                ? "bg-[var(--accent-primary)] text-white"
-                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] font-semibold shadow-sm ring-2 ring-[var(--accent-primary)]/30"
+                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50"
             }`}
           >
             All
@@ -91,10 +91,10 @@ export function IndustryUpdatesPanel() {
             <button
               key={provider}
               onClick={() => setSelectedProvider(provider)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
                 selectedProvider === provider
-                  ? "bg-[var(--accent-primary)] text-white"
-                  : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
+                  : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50"
               }`}
             >
               {providerLabels[provider]}
@@ -110,17 +110,19 @@ export function IndustryUpdatesPanel() {
 
       {/* Updates List */}
       {filteredSuggestions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center text-[var(--text-secondary)]">
-          <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/25 flex items-center justify-center mb-4">
+            <AlertCircle className="w-8 h-8 text-indigo-500 dark:text-indigo-300" />
+          </div>
           {selectedProvider ? (
             <>
-              <p className="font-medium text-[var(--text-primary)] mb-1">No updates for this filter</p>
-              <p className="text-sm max-w-sm">Try selecting a different provider or clear the filter to see all updates.</p>
+              <p className="text-base font-semibold text-[var(--text-primary)] mb-2">No updates for this provider</p>
+              <p className="text-sm text-[var(--text-secondary)] max-w-sm">Select a different provider or clear the filter to see all industry news.</p>
             </>
           ) : (
             <>
-              <p className="font-medium text-[var(--text-primary)] mb-1">No updates yet</p>
-              <p className="text-sm max-w-sm">Industry updates are refreshed daily from AI leader feeds. Check back tomorrow.</p>
+              <p className="text-xl font-semibold text-[var(--text-primary)] mb-2">Industry news arrives daily</p>
+              <p className="text-sm text-[var(--text-secondary)] max-w-sm">Updates from Anthropic, OpenAI, Google DeepMind, LangChain, and Vercel AI SDK are collected automatically. Check back tomorrow or select a provider above to filter by source.</p>
             </>
           )}
         </div>
@@ -241,7 +243,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
               </span>
             )}
             <span className="text-xs text-[var(--text-muted)]">
-              {new Date(update.scannedAt).toLocaleDateString()}
+              {new Date(update.scannedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
           <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">

@@ -35,11 +35,11 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
             <Clock className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-[color:var(--text-secondary)]">Overnight Moves</p>
+            <p className="text-xs font-semibold uppercase text-[color:var(--text-secondary)]">Overnight Moves</p>
             <p className="text-sm font-semibold text-[color:var(--text-primary)]">What changed while you were away</p>
           </div>
         </div>
-        <span className="text-[11px] text-[color:var(--text-secondary)] font-semibold">{items.length} updates</span>
+        <span className="text-xs text-[color:var(--text-secondary)] font-semibold">{items.length} updates</span>
       </div>
 
       <div className="divide-y divide-[color:var(--border-color)]">
@@ -55,13 +55,13 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">{item.title}</p>
                   {item.tag && (
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${tagStyles[item.tag]}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${tagStyles[item.tag]}`}>
                       {item.tag === "up" ? "Up" : item.tag === "alert" ? "Alert" : "Watch"}
                     </span>
                   )}
                 </div>
                 <p className="text-[12px] text-[color:var(--text-primary)] line-clamp-2">{item.summary}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-secondary)]">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-secondary)]">
                   {item.date && <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{item.date}</span>}
                   {item.sourceName && (
                     <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{item.sourceName}</span>

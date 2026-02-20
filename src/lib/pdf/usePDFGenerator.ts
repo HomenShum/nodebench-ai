@@ -283,9 +283,9 @@ function getDefaultTitle(reportType: ReportType, metadata?: Record<string, any>)
     case "company-dossier":
       return `Company Dossier - ${metadata?.companyName || "Unknown"}`;
     case "weekly-digest":
-      return `Weekly Digest - ${metadata?.weekLabel || new Date().toLocaleDateString()}`;
+      return `Weekly Digest - ${metadata?.weekLabel || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     default:
-      return `Report - ${new Date().toLocaleDateString()}`;
+      return `Report - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   }
 }
 

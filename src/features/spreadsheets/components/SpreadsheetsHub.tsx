@@ -54,7 +54,7 @@ export function SpreadsheetsHub({
                   Updated {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "-"}
                 </div>
                 {s.dcfSessionId && (
-                  <div className="text-[11px] text-muted-foreground mt-2">
+                  <div className="text-xs text-muted-foreground mt-2">
                     Linked DCF model
                   </div>
                 )}

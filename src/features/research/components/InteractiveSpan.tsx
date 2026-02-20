@@ -156,13 +156,13 @@ export const InteractiveSpan: React.FC<InteractiveSpanProps> = ({
           <span className="flex flex-col gap-1">
             <span className="flex items-center gap-2">
               <VariantIcon className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
+              <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
                 {dataIndex !== undefined ? `Point ${dataIndex}` : "Context"}
               </span>
             </span>
             <span className="text-sm leading-relaxed text-[color:var(--text-primary)] font-sans">{summary}</span>
             {source && (
-              <span className="border-t border-[color:var(--border-color)] pt-2 text-[10px] text-[color:var(--text-secondary)]">
+              <span className="border-t border-[color:var(--border-color)] pt-2 text-xs text-[color:var(--text-secondary)]">
                 Source: {source}
               </span>
             )}

@@ -71,7 +71,7 @@ export function MemoryStatusHeader({
         };
         const { label, className } = config[status];
         return (
-            <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-medium', className)}>
+            <span className={cn('text-xs px-1.5 py-0.5 rounded-full font-medium', className)}>
                 {label}
             </span>
         );

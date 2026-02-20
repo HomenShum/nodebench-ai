@@ -83,7 +83,7 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
                 className={cn(
                     "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
                     "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                    "text-[10px] font-medium transition-all duration-150",
+                    "text-xs font-medium transition-all duration-150",
                     "hover:bg-[var(--bg-tertiary)] hover:shadow-sm",
                     "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)]",
                     getStatusColor()
@@ -108,7 +108,7 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
                 )}>
                     <div className="flex items-center justify-between gap-2 mb-1">
                         <span className="font-medium text-[var(--text-primary)]">{event.title}</span>
-                        <span className="text-[10px] text-[var(--text-muted)]">
+                        <span className="text-xs text-[var(--text-muted)]">
                             {formatTime(event.timestamp)}
                         </span>
                     </div>

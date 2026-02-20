@@ -2115,7 +2115,7 @@ export function FastAgentPanel({
               const topic = (firstUserMsg.text || firstUserMsg.content || '').slice(0, 40);
               if (!topic) return null;
               return (
-                <span className="text-[9px] text-[var(--text-muted)] truncate max-w-[120px] hidden sm:inline" title={firstUserMsg.text || firstUserMsg.content || ''}>
+                <span className="text-xs text-[var(--text-muted)] truncate max-w-[120px] hidden sm:inline" title={firstUserMsg.text || firstUserMsg.content || ''}>
                   {topic}{(firstUserMsg.text || firstUserMsg.content || '').length > 40 ? '...' : ''}
                 </span>
               );
@@ -2138,7 +2138,7 @@ export function FastAgentPanel({
                 aria-expanded={showPersonaPicker}
               >
                 <span>{currentPersona.icon}</span>
-                <span className="hidden sm:inline text-[10px]">{currentPersona.name}</span>
+                <span className="hidden sm:inline text-xs">{currentPersona.name}</span>
                 <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
               {showPersonaPicker && (
@@ -2152,11 +2152,11 @@ export function FastAgentPanel({
                         role="option"
                         aria-selected={p.id === activePersona}
                         onClick={() => { setActivePersona(p.id); setShowPersonaPicker(false); toast.success(`Switched to ${p.name}`); }}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-[11px] text-left transition-colors ${p.id === activePersona ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-medium' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${p.id === activePersona ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] font-medium' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
                       >
                         <span>{p.icon}</span>
                         <span>{p.name}</span>
-                        {p.id === activePersona && <span className="ml-auto text-[9px]">✓</span>}
+                        {p.id === activePersona && <span className="ml-auto text-xs">✓</span>}
                       </button>
                     ))}
                   </div>
@@ -2204,7 +2204,7 @@ export function FastAgentPanel({
                       <Activity className={`w-3.5 h-3.5 ${isStreaming ? 'text-violet-500' : ''}`} />
                       <span>Live Events</span>
                       {liveEvents.filter(e => e.status === 'running').length > 0 && (
-                        <span className="ml-auto px-1.5 py-0.5 text-[9px] bg-violet-500 text-white rounded-full">
+                        <span className="ml-auto px-1.5 py-0.5 text-xs bg-violet-500 text-white rounded-full">
                           {liveEvents.filter(e => e.status === 'running').length}
                         </span>
                       )}
@@ -2298,7 +2298,7 @@ export function FastAgentPanel({
                       >
                         <Bot className="w-3.5 h-3.5" />
                         <span>System Prompt</span>
-                        {systemPrompt && <span className="ml-auto text-[9px] text-green-500">●</span>}
+                        {systemPrompt && <span className="ml-auto text-xs text-green-500">●</span>}
                       </button>
                     )}
 
@@ -2306,7 +2306,7 @@ export function FastAgentPanel({
                     {messagesToRender && messagesToRender.length > 0 && (
                       <>
                         <div className="border-t border-[var(--border-color)] my-1" />
-                        <div className="px-3 py-2 text-[10px] text-[var(--text-muted)] space-y-1">
+                        <div className="px-3 py-2 text-xs text-[var(--text-muted)] space-y-1">
                           <div className="font-medium text-[var(--text-secondary)] text-xs mb-1">Thread Stats</div>
                           <div className="flex justify-between">
                             <span>Messages</span>
@@ -2424,7 +2424,7 @@ export function FastAgentPanel({
               className="flex-1 bg-transparent text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] border-none focus:ring-0 focus:outline-none py-0"
             />
             {searchQuery && (
-              <span className="text-[10px] text-[var(--text-muted)] tabular-nums flex-shrink-0">
+              <span className="text-xs text-[var(--text-muted)] tabular-nums flex-shrink-0">
                 {searchMatches.length > 0 ? `${searchMatchIndex + 1}/${searchMatches.length}` : '0 results'}
               </span>
             )}
@@ -2574,7 +2574,7 @@ export function FastAgentPanel({
                             Live Activity
                           </span>
                           {liveEvents.filter(e => e.status === 'running').length > 0 && (
-                            <span className="px-1.5 py-0.5 text-[9px] bg-violet-500 text-white rounded-full">
+                            <span className="px-1.5 py-0.5 text-xs bg-violet-500 text-white rounded-full">
                               {liveEvents.filter(e => e.status === 'running').length}
                             </span>
                           )}
@@ -2604,7 +2604,7 @@ export function FastAgentPanel({
                               {event.title || event.toolName || event.type.replace(/_/g, ' ')}
                             </span>
                             {event.duration && (
-                              <span className="text-[10px] text-[var(--text-muted)]">{event.duration}ms</span>
+                              <span className="text-xs text-[var(--text-muted)]">{event.duration}ms</span>
                             )}
                           </div>
                         ))}
@@ -2628,7 +2628,7 @@ export function FastAgentPanel({
                     <div className="flex flex-col items-center justify-center h-full py-12 animate-in fade-in duration-500">
                       <div className="text-3xl mb-3">👋</div>
                       <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">How can I help you today?</h3>
-                      <p className="text-[11px] text-[var(--text-muted)] mb-6">Choose a starter or type your own message</p>
+                      <p className="text-xs text-[var(--text-muted)] mb-6">Choose a starter or type your own message</p>
                       <div className="grid grid-cols-2 gap-2 w-full max-w-[360px]">
                         {conversationStarters.map((starter, i) => (
                           <button
@@ -2638,7 +2638,7 @@ export function FastAgentPanel({
                             className="flex items-center gap-2 p-3 rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] transition-all text-left group"
                           >
                             <span className="text-lg">{starter.icon}</span>
-                            <span className="text-[11px] font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">{starter.label}</span>
+                            <span className="text-xs font-medium text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">{starter.label}</span>
                           </button>
                         ))}
                       </div>
@@ -2648,7 +2648,7 @@ export function FastAgentPanel({
                   {/* Conversation Memory Chips */}
                   {activeThreadId && messagesToRender && messagesToRender.length > 2 && (
                     <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                      <span className="text-[9px] font-medium text-[var(--text-muted)] uppercase tracking-wider mr-1">Context:</span>
+                      <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mr-1">Context:</span>
                       {(() => {
                         const topics = new Set<string>();
                         messagesToRender.slice(0, 6).forEach((m: any) => {
@@ -2657,12 +2657,12 @@ export function FastAgentPanel({
                           words.slice(0, 2).forEach((w: string) => topics.add(w.replace(/[^a-zA-Z]/g, '')));
                         });
                         return Array.from(topics).slice(0, 4).map(topic => (
-                          <span key={topic} className="px-2 py-0.5 text-[9px] font-medium bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full text-[var(--text-secondary)]">
+                          <span key={topic} className="px-2 py-0.5 text-xs font-medium bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-full text-[var(--text-secondary)]">
                             {topic}
                           </span>
                         ));
                       })()}
-                      <span className="px-2 py-0.5 text-[9px] font-medium bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-full text-violet-600 dark:text-violet-400">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-full text-violet-600 dark:text-violet-400">
                         {selectedModel}
                       </span>
                     </div>
@@ -2736,14 +2736,14 @@ export function FastAgentPanel({
                       {/* Recent threads / last run */}
                       <div className="px-4 pb-5">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+                          <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
                             Recent chats
                           </div>
                           {threads.length > 0 && (
                             <button
                               type="button"
                               onClick={() => setShowSidebar(true)}
-                              className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] underline underline-offset-2"
+                              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] underline underline-offset-2"
                             >
                               View all
                             </button>
@@ -2784,17 +2784,17 @@ export function FastAgentPanel({
                                         {title}
                                       </div>
                                       {preview ? (
-                                        <div className="text-[11px] text-[var(--text-muted)] truncate mt-0.5">
+                                        <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
                                           {preview}
                                         </div>
                                       ) : (
-                                        <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                                        <div className="text-xs text-[var(--text-muted)] mt-0.5">
                                           No messages yet
                                         </div>
                                       )}
                                     </div>
                                     {ago ? (
-                                      <div className="text-[10px] text-[var(--text-muted)] whitespace-nowrap">
+                                      <div className="text-xs text-[var(--text-muted)] whitespace-nowrap">
                                         {ago}
                                       </div>
                                     ) : null}
@@ -2832,7 +2832,7 @@ export function FastAgentPanel({
                   {pendingApprovals.length > 0 && (
                     <div className="mx-2 mb-2 space-y-1.5" role="alert" aria-label="Actions waiting for your approval">
                       {pendingApprovals.map(approval => (
-                        <div key={approval.id} className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] ${
+                        <div key={approval.id} className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${
                           approval.riskLevel === 'high' ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' :
                           approval.riskLevel === 'medium' ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800' :
                           'bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800'
@@ -2842,8 +2842,8 @@ export function FastAgentPanel({
                             <div className="font-medium text-[var(--text-primary)]">Tool: {approval.toolName}</div>
                             <div className="text-[var(--text-muted)] truncate">{JSON.stringify(approval.args).slice(0, 60)}</div>
                           </div>
-                          <button type="button" onClick={() => approveToolCall(approval.id)} className="px-2 py-1 rounded bg-green-500 text-white text-[10px] font-medium hover:bg-green-600 transition-colors">Approve</button>
-                          <button type="button" onClick={() => rejectToolCall(approval.id)} className="px-2 py-1 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[10px] font-medium hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors">Reject</button>
+                          <button type="button" onClick={() => approveToolCall(approval.id)} className="px-2 py-1 rounded bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition-colors">Approve</button>
+                          <button type="button" onClick={() => rejectToolCall(approval.id)} className="px-2 py-1 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors">Reject</button>
                         </div>
                       ))}
                     </div>
@@ -2853,7 +2853,7 @@ export function FastAgentPanel({
                   {agentHandoffs.length > 0 && (
                     <div className="mx-2 mb-2 flex gap-1.5 overflow-x-auto pb-1" role="status" aria-label="Agent handoffs">
                       {agentHandoffs.map(h => (
-                        <div key={h.id} className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] ${h.status === 'active' ? 'bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800' : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'}`}>
+                        <div key={h.id} className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs ${h.status === 'active' ? 'bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800' : 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${h.status === 'active' ? 'bg-violet-500 motion-safe:animate-pulse' : 'bg-green-500'}`} />
                           <span className="font-medium text-[var(--text-primary)]">{h.fromAgent}</span>
                           <span className="text-[var(--text-muted)]">→</span>
@@ -2882,7 +2882,7 @@ export function FastAgentPanel({
                             return (
                               <div className="flex items-center gap-3 py-2 mb-2">
                                 <div className="flex-1 h-px bg-[var(--border-color)]" />
-                                <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">{label}</span>
+                                <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">{label}</span>
                                 <div className="flex-1 h-px bg-[var(--border-color)]" />
                               </div>
                             );
@@ -3058,7 +3058,7 @@ export function FastAgentPanel({
                   </div>
                   <a
                     href="/sign-in"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg bg-indigo-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
                   >
                     <LogIn className="w-3 h-3" />
                     Sign in
@@ -3080,7 +3080,7 @@ export function FastAgentPanel({
                   <button
                     key={i}
                     type="button"
-                    className="text-[9px] px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                    className="text-xs px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     onClick={() => { setInput(qa.action); }}
                   >
                     {qa.label}
@@ -3096,7 +3096,7 @@ export function FastAgentPanel({
                 <button
                   type="button"
                   onClick={() => setShowFocusPicker(p => !p)}
-                  className="flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                  className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                   title="Focus mode"
                 >
                   {FOCUS_MODES.find(m => m.id === focusMode)?.icon} {FOCUS_MODES.find(m => m.id === focusMode)?.label}
@@ -3110,7 +3110,7 @@ export function FastAgentPanel({
                           key={mode.id}
                           type="button"
                           onClick={() => { setFocusMode(mode.id); setShowFocusPicker(false); }}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-[10px] hover:bg-[var(--bg-secondary)] text-left transition-colors ${focusMode === mode.id ? 'bg-[var(--bg-secondary)] font-semibold' : ''}`}
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-secondary)] text-left transition-colors ${focusMode === mode.id ? 'bg-[var(--bg-secondary)] font-semibold' : ''}`}
                         >
                           <span>{mode.icon}</span>
                           <span>{mode.label}</span>
@@ -3127,7 +3127,7 @@ export function FastAgentPanel({
                   key={tone.id}
                   type="button"
                   onClick={() => setTonePreset(tone.id)}
-                  className={`text-[9px] px-1.5 py-0.5 rounded-md border transition-colors ${tonePreset === tone.id ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] text-[var(--accent-primary)] font-medium' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                  className={`text-xs px-1.5 py-0.5 rounded-md border transition-colors ${tonePreset === tone.id ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] text-[var(--accent-primary)] font-medium' : 'bg-transparent border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                   title={`Tone: ${tone.label}`}
                 >
                   {tone.icon}
@@ -3156,7 +3156,7 @@ export function FastAgentPanel({
                     <button
                       key={i}
                       type="button"
-                      className="smart-action-chip text-[10px]"
+                      className="smart-action-chip text-xs"
                       onClick={() => { setInput(s); }}
                     >
                       {s}
@@ -3171,8 +3171,8 @@ export function FastAgentPanel({
               <div className="mx-3 mt-1 px-3 py-1.5 rounded-t-lg border border-b-0 border-[var(--border-color)] bg-[var(--bg-secondary)] flex items-center gap-2">
                 <div className="w-0.5 h-6 rounded-full bg-[var(--accent-primary)]" />
                 <div className="flex-1 min-w-0">
-                  <span className="text-[9px] text-[var(--text-muted)]">Replying to {(replyToMsg as any).role === 'user' ? 'yourself' : 'AI'}</span>
-                  <p className="text-[10px] text-[var(--text-secondary)] truncate">{((replyToMsg as any).text || (replyToMsg as any).content || '').slice(0, 80)}</p>
+                  <span className="text-xs text-[var(--text-muted)]">Replying to {(replyToMsg as any).role === 'user' ? 'yourself' : 'AI'}</span>
+                  <p className="text-xs text-[var(--text-secondary)] truncate">{((replyToMsg as any).text || (replyToMsg as any).content || '').slice(0, 80)}</p>
                 </div>
                 <button type="button" onClick={() => setReplyToMsgId(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs">&times;</button>
               </div>
@@ -3181,12 +3181,12 @@ export function FastAgentPanel({
             {/* Language Detection Indicator */}
             {detectedLanguage && !isBusy && (
               <div className="mx-3 mt-1 flex items-center gap-1.5">
-                <span className="text-[9px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-medium">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-medium">
                   🌐 {detectedLanguage} detected
                 </span>
                 <button
                   type="button"
-                  className="text-[9px] text-[var(--accent-primary)] hover:underline"
+                  className="text-xs text-[var(--accent-primary)] hover:underline"
                   onClick={() => setInput(`Translate your last response to English`)}
                 >
                   Translate to English
@@ -3214,7 +3214,7 @@ export function FastAgentPanel({
 
             {/* Scheduled Messages Indicator */}
             {scheduledMessages.length > 0 && (
-              <div className="mx-3 mt-1 text-[9px] text-[var(--text-muted)] flex items-center gap-1">
+              <div className="mx-3 mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1">
                 <span>🕐</span>
                 {scheduledMessages.length} scheduled message{scheduledMessages.length > 1 ? 's' : ''} pending
               </div>
@@ -3227,7 +3227,7 @@ export function FastAgentPanel({
                 <button
                   type="button"
                   onClick={isRecording ? stopVoiceInput : startVoiceInput}
-                  className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded-md border transition-all ${isRecording
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-all ${isRecording
                     ? 'bg-red-50 dark:bg-red-900/20 border-red-300 text-red-600 motion-safe:animate-pulse'
                     : 'bg-[var(--bg-secondary)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                   }`}
@@ -3247,7 +3247,7 @@ export function FastAgentPanel({
                     className="w-[50px] h-1 accent-[var(--accent-primary)]"
                     title={`Font size: ${fontSize}px`}
                   />
-                  <span className="text-[10px] text-[var(--text-muted)]">A</span>
+                  <span className="text-xs text-[var(--text-muted)]">A</span>
                 </div>
               </div>
               <FastAgentInputBar
@@ -3305,7 +3305,7 @@ export function FastAgentPanel({
                 <button
                   type="button"
                   onClick={() => setShowAnalytics(true)}
-                  className="opacity-40 hover:opacity-80 text-[9px] transition-opacity"
+                  className="opacity-40 hover:opacity-80 text-xs transition-opacity"
                   title="Analytics"
                 >
                   📊
@@ -3313,7 +3313,7 @@ export function FastAgentPanel({
                 <button
                   type="button"
                   onClick={() => setShowTimeline(p => !p)}
-                  className="opacity-40 hover:opacity-80 text-[9px] transition-opacity"
+                  className="opacity-40 hover:opacity-80 text-xs transition-opacity"
                   title="Conversation timeline"
                 >
                   Timeline
@@ -3384,13 +3384,13 @@ export function FastAgentPanel({
                       <span className="text-[var(--text-secondary)]">{s.desc}</span>
                       <div className="flex items-center gap-1">
                         {s.keys.split('+').map((k) => (
-                          <kbd key={k} className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-[10px] font-mono text-[var(--text-muted)]">{k}</kbd>
+                          <kbd key={k} className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs font-mono text-[var(--text-muted)]">{k}</kbd>
                         ))}
                       </div>
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 text-[10px] text-[var(--text-muted)] text-center">Press <kbd className="px-1 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-[10px] font-mono">?</kbd> or <kbd className="px-1 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-[10px] font-mono">Esc</kbd> to close</p>
+                <p className="mt-4 text-xs text-[var(--text-muted)] text-center">Press <kbd className="px-1 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs font-mono">?</kbd> or <kbd className="px-1 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs font-mono">Esc</kbd> to close</p>
               </div>
             </div>
           </>
@@ -3491,7 +3491,7 @@ export function FastAgentPanel({
                     if (e.key === 'Escape') { setShowCommandPalette(false); setCommandQuery(''); }
                   }}
                 />
-                <kbd className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-[10px] font-mono text-[var(--text-muted)]">Esc</kbd>
+                <kbd className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs font-mono text-[var(--text-muted)]">Esc</kbd>
               </div>
               <div className="overflow-y-auto p-2 space-y-0.5">
                 {[
@@ -3522,7 +3522,7 @@ export function FastAgentPanel({
                   >
                     <span className="text-[var(--text-primary)]">{cmd.label}</span>
                     {cmd.shortcut && (
-                      <kbd className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-[9px] font-mono text-[var(--text-muted)]">{cmd.shortcut}</kbd>
+                      <kbd className="px-1.5 py-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded text-xs font-mono text-[var(--text-muted)]">{cmd.shortcut}</kbd>
                     )}
                   </button>
                 ))}
@@ -3566,16 +3566,16 @@ export function FastAgentPanel({
                       >
                         <div className={`absolute left-[-5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-primary)] ${isUser ? 'bg-[var(--accent-primary)]' : 'bg-green-500'}`} />
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]">{isUser ? 'You' : 'AI'}</span>
-                          <span className="text-[9px] tabular-nums text-[var(--text-muted)]">~{tokEst} tok</span>
+                          <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]">{isUser ? 'You' : 'AI'}</span>
+                          <span className="text-xs tabular-nums text-[var(--text-muted)]">~{tokEst} tok</span>
                         </div>
-                        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 truncate">{text || '(empty)'}</p>
+                        <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">{text || '(empty)'}</p>
                       </div>
                     );
                   })}
                 </div>
               </div>
-              <div className="px-4 py-2 border-t border-[var(--border-color)] text-[10px] text-[var(--text-muted)] flex items-center justify-between">
+              <div className="px-4 py-2 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)] flex items-center justify-between">
                 <span>{messagesToRender.length} messages</span>
                 <span>~{Math.ceil(messagesToRender.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0) / 4).toLocaleString()} tokens total</span>
               </div>
@@ -3599,7 +3599,7 @@ export function FastAgentPanel({
                   const pct = Math.min((tokUsed / contextLimit) * 100, 100);
                   return (
                     <div>
-                      <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)] mb-1">
+                      <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
                         <span>{tokUsed.toLocaleString()} tokens used</span>
                         <span>{(contextLimit / 1000).toFixed(0)}K limit ({selectedModel})</span>
                       </div>
@@ -3622,7 +3622,7 @@ export function FastAgentPanel({
                     ? ((tokEst / Math.max(1, Math.ceil(messagesToRender.reduce((s: number, m: any) => s + (m.text || m.content || '').length, 0) / 4))) * 100)
                     : 0;
                   return (
-                    <div key={idx} className="flex items-center gap-2 px-4 py-1.5 text-[10px]">
+                    <div key={idx} className="flex items-center gap-2 px-4 py-1.5 text-xs">
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUser ? 'bg-[var(--accent-primary)]' : 'bg-green-500'}`} />
                       <span className="font-medium text-[var(--text-secondary)] w-6">{isUser ? 'You' : 'AI'}</span>
                       <span className="flex-1 truncate text-[var(--text-muted)]">{(msg.text || msg.content || '').slice(0, 60)}</span>
@@ -3650,7 +3650,7 @@ export function FastAgentPanel({
                   <span className="text-xs font-semibold text-[var(--text-primary)]">
                     {artifactContent.type === 'html' ? '🌐 HTML Preview' : artifactContent.type === 'svg' ? '🎨 SVG Preview' : `📄 ${artifactContent.language || 'Code'}`}
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]">
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]">
                     {artifactContent.content.length} chars
                   </span>
                 </div>
@@ -3658,7 +3658,7 @@ export function FastAgentPanel({
                   <button
                     type="button"
                     onClick={() => { navigator.clipboard.writeText(artifactContent.content); toast.success('Copied'); }}
-                    className="text-[10px] px-2 py-1 rounded-md hover:bg-[var(--bg-secondary)] text-[var(--text-muted)]"
+                    className="text-xs px-2 py-1 rounded-md hover:bg-[var(--bg-secondary)] text-[var(--text-muted)]"
                   >
                     Copy
                   </button>
@@ -3676,7 +3676,7 @@ export function FastAgentPanel({
                     title="Artifact Preview"
                   />
                 ) : (
-                  <pre className="text-[11px] font-mono p-4 overflow-auto text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed">
+                  <pre className="text-xs font-mono p-4 overflow-auto text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed">
                     {artifactContent.content}
                   </pre>
                 )}
@@ -3740,13 +3740,13 @@ export function FastAgentPanel({
                         ].map((stat, i) => (
                           <div key={i} className="bg-[var(--bg-secondary)] rounded-lg p-3 text-center">
                             <div className="text-lg font-bold text-[var(--text-primary)]">{stat.value}</div>
-                            <div className="text-[10px] text-[var(--text-muted)]">{stat.label}</div>
-                            <div className="text-[9px] text-[var(--text-muted)] mt-0.5">{stat.sub}</div>
+                            <div className="text-xs text-[var(--text-muted)]">{stat.label}</div>
+                            <div className="text-xs text-[var(--text-muted)] mt-0.5">{stat.sub}</div>
                           </div>
                         ))}
                       </div>
                       <div>
-                        <div className="text-[10px] font-semibold text-[var(--text-secondary)] mb-2">Token Distribution</div>
+                        <div className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Token Distribution</div>
                         <div className="flex items-end gap-1 h-[80px]">
                           {messagesToRender.map((msg: any, idx: number) => {
                             const len = Math.ceil((msg.text || msg.content || '').length / 4);
@@ -3768,25 +3768,25 @@ export function FastAgentPanel({
                         </div>
                       </div>
                       <div>
-                        <div className="text-[10px] font-semibold text-[var(--text-secondary)] mb-2">Average Length</div>
+                        <div className="text-xs font-semibold text-[var(--text-secondary)] mb-2">Average Length</div>
                         <div className="space-y-1.5">
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] w-8 text-[var(--text-muted)]">You</span>
+                            <span className="text-xs w-8 text-[var(--text-muted)]">You</span>
                             <div className="flex-1 h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                               <div className="h-full bg-[var(--accent-primary)] rounded-full" style={{ width: `${Math.min((avgUserLen / Math.max(avgUserLen, avgAiLen, 1)) * 100, 100)}%` }} />
                             </div>
-                            <span className="text-[9px] text-[var(--text-muted)] tabular-nums w-12 text-right">{avgUserLen} ch</span>
+                            <span className="text-xs text-[var(--text-muted)] tabular-nums w-12 text-right">{avgUserLen} ch</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] w-8 text-[var(--text-muted)]">AI</span>
+                            <span className="text-xs w-8 text-[var(--text-muted)]">AI</span>
                             <div className="flex-1 h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                               <div className="h-full bg-green-500 rounded-full" style={{ width: `${Math.min((avgAiLen / Math.max(avgUserLen, avgAiLen, 1)) * 100, 100)}%` }} />
                             </div>
-                            <span className="text-[9px] text-[var(--text-muted)] tabular-nums w-12 text-right">{avgAiLen} ch</span>
+                            <span className="text-xs text-[var(--text-muted)] tabular-nums w-12 text-right">{avgAiLen} ch</span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-[9px] text-[var(--text-muted)]">
+                      <div className="text-xs text-[var(--text-muted)]">
                         Context: {contextWindowMsgs.inContext}/{contextWindowMsgs.total} messages in window
                       </div>
                     </>
@@ -3817,9 +3817,9 @@ export function FastAgentPanel({
                         onClick={() => { setActiveThreadId(thread._id); setShowBranchTree(false); }}
                       >
                         <div className={`absolute left-[-5px] top-4 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-primary)] ${isActive ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-muted)]'}`} />
-                        <div className="text-[11px] font-medium text-[var(--text-primary)] truncate">{thread.title || 'Untitled'}</div>
-                        <div className="text-[9px] text-[var(--text-muted)]">
-                          {(thread as any).messageCount || '?'} msgs · {new Date(thread._creationTime).toLocaleDateString()}
+                        <div className="text-xs font-medium text-[var(--text-primary)] truncate">{thread.title || 'Untitled'}</div>
+                        <div className="text-xs text-[var(--text-muted)]">
+                          {(thread as any).messageCount || '?'} msgs · {new Date(thread._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       </div>
                     );
@@ -3851,7 +3851,7 @@ export function FastAgentPanel({
                   key={i}
                   type="button"
                   onClick={() => { item.action(); setContextMenu(null); }}
-                  className="w-full text-left px-3 py-1.5 text-[11px] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                  className="w-full text-left px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   {item.label}
                 </button>
@@ -3873,14 +3873,14 @@ export function FastAgentPanel({
                 {memories.length === 0 && (
                   <div className="text-center py-8 text-[var(--text-muted)] text-xs">
                     <p>No memories saved yet.</p>
-                    <p className="mt-1 text-[10px]">Right-click a message and select "Remember this"</p>
+                    <p className="mt-1 text-xs">Right-click a message and select "Remember this"</p>
                   </div>
                 )}
                 {memories.map(mem => (
                   <div key={mem.id} className="flex items-start gap-2 p-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] text-[var(--text-secondary)]">{mem.text}</p>
-                      <span className="text-[9px] text-[var(--text-muted)]">{new Date(mem.createdAt).toLocaleDateString()}</span>
+                      <p className="text-xs text-[var(--text-secondary)]">{mem.text}</p>
+                      <span className="text-xs text-[var(--text-muted)]">{new Date(mem.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                     <button type="button" onClick={() => removeMemory(mem.id)} className="text-[var(--text-muted)] hover:text-red-500 text-xs flex-shrink-0">&times;</button>
                   </div>
@@ -3900,14 +3900,14 @@ export function FastAgentPanel({
                 <button type="button" onClick={() => setShowImport(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm">&times;</button>
               </div>
               <div className="p-4 space-y-3">
-                <p className="text-[11px] text-[var(--text-muted)]">Paste a ChatGPT or Claude conversation export (JSON format)</p>
+                <p className="text-xs text-[var(--text-muted)]">Paste a ChatGPT or Claude conversation export (JSON format)</p>
                 <textarea
-                  className="w-full h-[120px] p-2 text-[11px] font-mono bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full h-[120px] p-2 text-xs font-mono bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   placeholder='{"messages": [{"role": "user", "content": "..."}, ...]}'
                 />
                 <div className="flex justify-end gap-2">
-                  <button type="button" onClick={() => setShowImport(false)} className="text-[10px] px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)]">Cancel</button>
-                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-[10px] px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white">Import</button>
+                  <button type="button" onClick={() => setShowImport(false)} className="text-xs px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-muted)]">Cancel</button>
+                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white">Import</button>
                 </div>
               </div>
             </div>
@@ -4013,7 +4013,7 @@ function ArtifactsTab({ media, documents, hasThread, onDocumentSelect }: Artifac
         <div className="flex items-center justify-between mb-2">
           <div>
             <p className="text-xs font-semibold text-[var(--text-primary)]">Artifacts</p>
-            <p className="text-[10px] text-[var(--text-muted)]">Evidence the agent discovered, with links and media.</p>
+            <p className="text-xs text-[var(--text-muted)]">Evidence the agent discovered, with links and media.</p>
           </div>
         </div>
 

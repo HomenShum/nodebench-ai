@@ -71,7 +71,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
     };
     const badge = badges[item.sentiment];
     return (
-      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.color}`}>
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border ${badge.color}`}>
         {badge.icon} {badge.label}
       </span>
     );
@@ -87,7 +87,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
     };
     const badge = badges[item.sourceQuality];
     return (
-      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.color}`} title={`Source quality: ${badge.label}`}>
+      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border ${badge.color}`} title={`Source quality: ${badge.label}`}>
         {badge.icon} {badge.label}
       </span>
     );
@@ -96,7 +96,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getVerifiedBadge = () => {
     if (!item.verified) return null;
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border bg-indigo-50 text-gray-700 border-indigo-200" title="Facts verified">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-indigo-50 text-gray-700 border-indigo-200" title="Facts verified">
         ✓ Verified
       </span>
     );
@@ -119,10 +119,10 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         `}
       >
         <div className="flex items-center gap-3 mb-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isSignal ? 'text-blue-300' : 'text-blue-600'}`}>
+          <span className={`text-xs font-bold uppercase tracking-wider ${isSignal ? 'text-blue-300' : 'text-blue-600'}`}>
             {item.sourceIcon ? 'Source' : 'News'}
           </span>
-          <span className="text-[color:var(--border-color)] text-[10px]">•</span>
+          <span className="text-[color:var(--border-color)] text-xs">•</span>
           <span className={`text-xs ${isSignal ? 'text-slate-400' : 'text-[color:var(--text-secondary)]'}`}>{item.timestamp}</span>
         </div>
         <h3 className={`text-base font-semibold leading-snug mb-2 ${isSignal ? 'text-white' : 'text-[color:var(--text-primary)]'}`}>
@@ -136,8 +136,8 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         {safeTags.length > 0 && (
           <div className="flex gap-2 mt-4">
             {safeTags.slice(0, 3).map(tag => (
-              <span key={tag} className={`text-[10px] px-2 py-1 rounded-md ${isSignal ? 'bg-slate-800 text-slate-300' : 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)]'}`}>
-                #{tag}
+              <span key={tag} className={`text-xs px-2 py-1 rounded-md ${isSignal ? 'bg-slate-800 text-slate-300' : 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)]'}`}>
+                #{tag.replace(/_/g, ' ')}
               </span>
             ))}
           </div>
@@ -172,7 +172,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
             {item.type === 'news' && <div className="p-1.5 bg-blue-50 rounded-md text-blue-600 border border-blue-100"><MessageSquare size={12} /></div>}
             {isRepo && <div className="p-1.5 bg-[color:var(--bg-secondary)] rounded-md text-[color:var(--text-primary)] border border-[color:var(--border-color)]"><GitBranch size={12} /></div>}
             {isProduct && <div className="p-1.5 bg-orange-50 rounded-md text-orange-600 border border-orange-100"><Package size={12} /></div>}
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-[color:var(--text-secondary)]">
+            <span className="text-xs uppercase tracking-wider font-semibold text-[color:var(--text-secondary)]">
               {item.type === 'repo' ? 'GitHub' : item.type === 'product' ? 'Product' : item.type}
             </span>
             {getSentimentBadge()}
@@ -180,7 +180,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
           <div className="flex items-center gap-2">
             {/* Relevance Score */}
             {item.relevanceScore && item.relevanceScore > 50 && (
-              <span className="text-[10px] text-purple-500 font-medium flex items-center gap-0.5">
+              <span className="text-xs text-purple-500 font-medium flex items-center gap-0.5">
                 <Zap className="w-3 h-3" />
                 {item.relevanceScore}%
               </span>
@@ -205,7 +205,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-dashed border-[color:var(--border-color)]">
             {item.metrics.map((m, i) => (
               <div key={i} className="flex flex-col">
-                <span className="text-[10px] uppercase text-[color:var(--text-secondary)]">{m.label}</span>
+                <span className="text-xs uppercase text-[color:var(--text-secondary)]">{m.label}</span>
                 <span className="text-sm font-mono font-bold flex items-center gap-1 text-[color:var(--text-primary)]">
                   {m.value}
                   {m.trend === 'up' && <ArrowUpRight className="w-3 h-3 text-green-500" />}
@@ -222,9 +222,9 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
             {item.tags.map((tag, i) => (
               <span
                 key={i}
-                className="text-[10px] px-2 py-0.5 rounded-full border bg-[color:var(--bg-secondary)] border-[color:var(--border-color)] text-[color:var(--text-secondary)]"
+                className="text-xs px-2 py-0.5 rounded-full border bg-[color:var(--bg-secondary)] border-[color:var(--border-color)] text-[color:var(--text-secondary)]"
               >
-                #{tag}
+                #{tag.replace(/_/g, ' ')}
               </span>
             ))}
           </div>

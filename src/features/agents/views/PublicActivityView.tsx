@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Activity, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
 
 // Shared UI components
 import { TopDividerBar } from "@shared/ui/TopDividerBar";
@@ -21,7 +21,7 @@ import { TaskManagerView } from "../components/TaskManager";
 
 export function PublicActivityView() {
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto">
+    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto pb-24 lg:pb-0">
       <div className="flex-1 p-8">
         <div className="max-w-7xl mx-auto">
           {/* Top Divider Bar */}
@@ -35,24 +35,9 @@ export function PublicActivityView() {
           <PageHeroHeader
             icon={<Globe className="w-6 h-6" />}
             title="Public Activity Feed"
-            subtitle="View AI agent activity and public task sessions"
-            accent
+            subtitle="Automated tasks and scheduled workflows — live as they run"
             className="mb-6"
           />
-
-          {/* Activity Info Banner */}
-          <div className="mb-6 p-4 bg-gradient-to-r from-[var(--accent-primary-bg)] to-[var(--bg-secondary)] rounded-lg border border-[var(--accent-primary)]/20">
-            <div className="flex items-center gap-3 mb-2">
-              <Activity className="w-5 h-5 text-[var(--accent-primary)]" />
-              <h3 className="font-semibold text-[var(--text-primary)]">
-                AI Activity
-              </h3>
-            </div>
-            <p className="text-sm text-[var(--text-secondary)]">
-              This feed shows public AI sessions — automated tasks, research pipelines,
-              and multi-agent workflows. View step-by-step execution logs for each session.
-            </p>
-          </div>
 
           {/* Task Manager - Public Mode */}
           <div className="rounded-lg border border-[var(--border-color)] overflow-hidden h-[600px]">

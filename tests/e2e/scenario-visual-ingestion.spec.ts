@@ -780,7 +780,7 @@ test.describe('Scenario: Dogfood video frame artifact validation — frames.json
     expect(frames.items.length, 'frames.json must have items').toBeGreaterThan(0);
 
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
 
     mkdirSync(OUT_DIR, { recursive: true });
 
@@ -836,7 +836,7 @@ test.describe('Scenario: Dogfood video frame artifact validation — frames.json
     expect(frames.items.length, 'frames.json must have items').toBeGreaterThan(0);
 
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
 
     // Wait for video to be ready
     const videoDuration = await page.waitForFunction(() => {
@@ -897,7 +897,7 @@ test.describe('Scenario: Scribe step artifact validation — scribe.json ingesti
     expect(scribe.steps.length, 'scribe.json must have steps').toBeGreaterThan(0);
 
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
 
     // Scroll to scribe section to trigger lazy loading
     await page.getByText('How-to (Scribe-style)').scrollIntoViewIfNeeded();

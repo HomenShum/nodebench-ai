@@ -72,7 +72,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
             <Building className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-[color:var(--text-secondary)]">Deal List</p>
+            <p className="text-xs font-semibold uppercase text-[color:var(--text-secondary)]">Deal List</p>
             <p className="text-sm font-semibold text-[color:var(--text-primary)]">Filter by stage & sector</p>
           </div>
         </div>
@@ -128,17 +128,17 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">{deal.company}</p>
-                  <span className="text-[11px] font-semibold text-[color:var(--text-secondary)]">{deal.amount}</span>
-                  <span className="text-[11px] text-[color:var(--text-secondary)]">• {deal.stage}</span>
-                  <span className="text-[11px] text-[color:var(--text-secondary)]">• {deal.date}</span>
+                  <span className="text-xs font-semibold text-[color:var(--text-secondary)]">{deal.amount}</span>
+                  <span className="text-xs text-[color:var(--text-secondary)]">• {deal.stage}</span>
+                  <span className="text-xs text-[color:var(--text-secondary)]">• {deal.date}</span>
                   {deal.sentiment && (
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${sentimentStyles[deal.sentiment]}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${sentimentStyles[deal.sentiment]}`}>
                       {deal.sentiment === "hot" ? "Hot" : "Watch"}
                     </span>
                   )}
                 </div>
                 <p className="text-[12px] text-[color:var(--text-primary)] line-clamp-2">{deal.summary}</p>
-                <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-[color:var(--text-secondary)]">
+                <div className="flex flex-wrap gap-2 mt-2 text-xs text-[color:var(--text-secondary)]">
                   <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.location}</span>
                   <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.sector}</span>
                   {deal.leads?.[0] && <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">Lead: {deal.leads[0]}</span>}
@@ -187,8 +187,8 @@ export function DealFlyout({
           <div>
             <div className="flex items-center gap-2">
               <p className="text-lg font-semibold text-[color:var(--text-primary)]">{deal.company}</p>
-              <span className="text-[11px] font-semibold text-[color:var(--text-primary)]">{deal.amount}</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]">{deal.stage}</span>
+              <span className="text-xs font-semibold text-[color:var(--text-primary)]">{deal.amount}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]">{deal.stage}</span>
             </div>
             <p className="text-sm text-[color:var(--text-primary)]">{deal.sector} • {deal.location}</p>
           </div>
@@ -207,7 +207,7 @@ export function DealFlyout({
 
           {(deal.foundingYear || deal.location || deal.foundersBackground) && (
             <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3 space-y-1">
-              <div className="text-[11px] font-semibold text-[color:var(--text-secondary)]">Company profile</div>
+              <div className="text-xs font-semibold text-[color:var(--text-secondary)]">Company profile</div>
               <div className="grid grid-cols-2 gap-2 text-[12px] text-[color:var(--text-primary)]">
                 <div>
                   <span className="font-semibold">Founded:</span> {deal.foundingYear || "n/a"}
@@ -225,7 +225,7 @@ export function DealFlyout({
           )}
 
           <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3 space-y-1">
-            <div className="text-[11px] font-semibold text-[color:var(--text-secondary)]">Leads & Co-investors</div>
+            <div className="text-xs font-semibold text-[color:var(--text-secondary)]">Leads & Co-investors</div>
             <p className="text-sm text-[color:var(--text-primary)]">
               Lead: {deal.leads.join(", ")}
               {deal.coInvestors?.length ? ` • Co-investors: ${deal.coInvestors.join(", ")}` : ""}
@@ -234,7 +234,7 @@ export function DealFlyout({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)]">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-[color:var(--text-secondary)]">
+              <div className="flex items-center gap-1 text-xs font-semibold text-[color:var(--text-secondary)]">
                 <Users className="w-3.5 h-3.5" />
                 People
               </div>
@@ -248,7 +248,7 @@ export function DealFlyout({
               </ul>
             </div>
             <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)]">
-              <div className="flex items-center gap-1 text-[11px] font-semibold text-[color:var(--text-secondary)]">
+              <div className="flex items-center gap-1 text-xs font-semibold text-[color:var(--text-secondary)]">
                 <FileText className="w-3.5 h-3.5" />
                 Timeline
               </div>
@@ -264,7 +264,7 @@ export function DealFlyout({
           </div>
 
           <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)] space-y-2">
-            <div className="flex items-center gap-2 text-[11px] font-semibold text-[color:var(--text-secondary)]">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--text-secondary)]">
               <FlaskConical className="w-3.5 h-3.5" />
               Regulatory & Papers
             </div>
@@ -293,7 +293,7 @@ export function DealFlyout({
 
           {deal.sources?.length ? (
             <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)] space-y-2">
-              <div className="flex items-center gap-2 text-[11px] font-semibold text-[color:var(--text-secondary)]">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--text-secondary)]">
                 <FileText className="w-3.5 h-3.5" />
                 Data Room Links
               </div>

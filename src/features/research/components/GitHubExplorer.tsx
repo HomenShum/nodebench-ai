@@ -31,7 +31,7 @@ export function GitHubExplorer() {
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="motion-safe:animate-pulse bg-[var(--bg-secondary)] rounded-lg p-5 space-y-3">
+            <div key={i} className="bg-[var(--bg-secondary)] rounded-lg p-5 space-y-3 no-skeleton-animation" aria-busy="true">
               <div className="h-5 bg-[var(--bg-tertiary)] rounded w-2/3" />
               <div className="h-4 bg-[var(--bg-tertiary)] rounded w-full" />
               <div className="h-3 bg-[var(--bg-tertiary)] rounded w-1/4" />
@@ -138,8 +138,12 @@ function RepoCard({ repo }: RepoCardProps) {
             {repo.description}
           </p>
         </div>
-        <div className={`flex items-center gap-1 px-3 py-1.5 bg-[var(--bg-tertiary)] rounded-md text-sm font-medium ${getPhoenixColor(repo.phoenixScore)}`}>
+        <div
+          className={`flex items-center gap-1 px-3 py-1.5 bg-[var(--bg-tertiary)] rounded-md text-sm font-medium ${getPhoenixColor(repo.phoenixScore)}`}
+          title={`Trending score: ${repo.phoenixScore}/100`}
+        >
           <TrendingUp className="w-4 h-4" />
+          <span className="text-xs opacity-60 mr-0.5">Score</span>
           {repo.phoenixScore}
         </div>
       </div>

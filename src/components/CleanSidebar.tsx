@@ -116,12 +116,12 @@ const devItems = [
 
 // Discovery items
 const discoveryItems = [
-  { icon: Sparkles, label: 'For You', view: 'for-you-feed' as const, subtitle: 'Personalized Feed' },
-  { icon: BookOpen, label: 'Recommendations', view: 'document-recommendations' as const, subtitle: 'Suggested Reads' },
+  { icon: Sparkles, label: 'For You', view: 'for-you-feed' as const, subtitle: 'Personalized feed' },
+  { icon: BookOpen, label: 'Recommendations', view: 'document-recommendations' as const, subtitle: 'Suggested reads' },
   { icon: Zap, label: 'Agent Templates', view: 'agent-marketplace' as const, subtitle: 'Ready-made workflows' },
-  { icon: Github, label: 'GitHub Explorer', view: 'github-explorer' as const, subtitle: 'Repos & Trends' },
-  { icon: GitPullRequest, label: 'PR Suggestions', view: 'pr-suggestions' as const, subtitle: 'Code Reviews' },
-  { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const, subtitle: 'Post Archive' },
+  { icon: Github, label: 'GitHub Explorer', view: 'github-explorer' as const, subtitle: 'Repos & trends' },
+  { icon: GitPullRequest, label: 'PR Suggestions', view: 'pr-suggestions' as const, subtitle: 'Code reviews' },
+  { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const, subtitle: 'Post archive' },
 ];
 
 const moreSectionViews = new Set<string>([
@@ -263,7 +263,7 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={() => setIsMoreOpen(!isMoreOpen)}
-              className="w-full flex items-center justify-between px-2 mb-2 text-[11px] font-medium uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="w-full flex items-center justify-between px-2 mb-2 text-xs font-medium uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <span>More</span>
               {isMoreOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -326,7 +326,7 @@ export function CleanSidebar({
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 mb-2 flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+            <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
               Files
             </span>
             <FolderOpen className="w-3.5 h-3.5 text-gray-300" />
@@ -341,7 +341,7 @@ export function CleanSidebar({
               >
                 <span>Recent Documents</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-gray-100 dark:bg-white/[0.06] text-gray-500 px-1.5 py-0.5 rounded font-medium normal-case">
+                  <span className="text-xs bg-gray-100 dark:bg-white/[0.06] text-gray-500 px-1.5 py-0.5 rounded font-medium normal-case">
                     {recentDocs.length}
                   </span>
                   {isDocsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -430,7 +430,7 @@ export function CleanSidebar({
                 <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                   {isAnonymous ? "Guest User" : (user?.name ?? "User")}
                 </div>
-                <div className="text-[11px] text-gray-500 font-medium">
+                <div className="text-xs text-gray-400 dark:text-gray-400 font-medium">
                   {isAnonymous ? "Limited preview" : "Pro Account"}
                 </div>
               </div>

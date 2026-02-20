@@ -85,7 +85,7 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({ items, onItemClick, 
                 <h2 className="text-xl font-bold text-[color:var(--text-primary)] tracking-tight">
                   {entry.group.title}
                 </h2>
-                <span className="text-[10px] font-bold text-[color:var(--text-secondary)] bg-[color:var(--bg-secondary)] px-2 py-0.5 rounded-full border border-[color:var(--border-color)]">
+                <span className="text-xs font-bold text-[color:var(--text-secondary)] bg-[color:var(--bg-secondary)] px-2 py-0.5 rounded-full border border-[color:var(--border-color)]">
                   {entry.items.length} UPDATES
                 </span>
               </div>
@@ -115,7 +115,7 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({ items, onItemClick, 
               )}
             </div>
             {!last && (
-              <div className="absolute left-[18px] bottom-0 flex items-center gap-2 text-[11px] text-[color:var(--text-secondary)]">
+              <div className="absolute left-[18px] bottom-0 flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
                 <Circle className="w-2 h-2" />
                 Continue
               </div>

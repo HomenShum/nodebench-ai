@@ -83,7 +83,7 @@ export function CalendarDatePopover({
 
   // Handler to open Fast Agent with email event context
   const handleAskAgent = React.useCallback((evt: BriefEvent) => {
-    const shortDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const shortDate = date.toLocaleDateString('en-US', { month: "short", day: "numeric" });
     const timeStr = formatShortTime(evt.startTime, evt.allDay);
     const prompt = evt.proposed
       ? `I have a proposed email event "${evt.title}" on ${shortDate} at ${timeStr}. Can you help me understand this event and decide if I should accept it?${evt.rawSummary ? ` Here's the context: ${evt.rawSummary}` : ""}`
@@ -96,8 +96,8 @@ export function CalendarDatePopover({
     onClose?.();
   }, [date, openWithContext, onClose]);
   const isToday = new Date().toDateString() === date.toDateString();
-  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
-  const shortDate = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const weekday = date.toLocaleDateString('en-US', { weekday: "long" });
+  const shortDate = date.toLocaleDateString('en-US', { month: "short", day: "numeric" });
   const hasEvents = events.length > 0;
   const hasTasks = tasks.length > 0;
   const hasNotes = notes.length > 0;
@@ -124,7 +124,7 @@ export function CalendarDatePopover({
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
             {isToday ? "Today" : weekday}
           </span>
-          <div className="px-2 py-0.5 bg-[var(--bg-primary)]/70 rounded-full border border-[var(--border-color)] text-[10px] font-medium text-[var(--text-secondary)]">
+          <div className="px-2 py-0.5 bg-[var(--bg-primary)]/70 rounded-full border border-[var(--border-color)] text-xs font-medium text-[var(--text-secondary)]">
             {focusLabel}
           </div>
         </div>
@@ -143,7 +143,7 @@ export function CalendarDatePopover({
             </button>
           )}
         </div>
-        <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-[var(--text-secondary)]">
+        <div className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
           <Sun className="w-3.5 h-3.5" />
           {hasEvents
             ? `First: ${formatShortTime(firstEvent?.startTime, firstEvent?.allDay)}`
@@ -166,7 +166,7 @@ export function CalendarDatePopover({
             {/* Holidays */}
             {hasHolidays && (
               <div className="space-y-1.5">
-                <div className="px-1 text-[10px] font-semibold text-purple-500 uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-purple-500 uppercase tracking-wide flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   Holidays
                 </div>
@@ -185,7 +185,7 @@ export function CalendarDatePopover({
             {/* Events */}
             {hasEvents && (
               <div className="space-y-1.5">
-                <div className="px-1 text-[10px] font-semibold text-blue-600 uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-blue-600 uppercase tracking-wide flex items-center gap-1">
                   <CalIcon className="w-3 h-3" />
                   Events
                 </div>
@@ -200,16 +200,16 @@ export function CalendarDatePopover({
                       <div className="flex items-center justify-between gap-2">
                         <div className="text-sm font-medium text-[var(--text-primary)] truncate">{evt.title}</div>
                         {evt.proposed && (
-                          <span className="px-2 py-0.5 text-[10px] rounded-full bg-amber-50 text-amber-700 border border-amber-100">
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-100">
                             Proposed
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                         <span>{formatShortTime(evt.startTime, evt.allDay)}</span>
                         {evt.location && <span className="truncate text-[var(--text-secondary)]">· {evt.location}</span>}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                         {evt.sourceType === "gmail" && <Mail className="w-3.5 h-3.5 text-blue-500" />}
                         {evt.sourceType === "gcal" && <CalIcon className="w-3.5 h-3.5 text-indigo-500" />}
                         {evt.rawSummary && <span className="truncate text-[var(--text-muted)]">{evt.rawSummary}</span>}
@@ -221,7 +221,7 @@ export function CalendarDatePopover({
                             <>
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-indigo-200 bg-indigo-50 text-gray-700 hover:bg-indigo-100"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-indigo-200 bg-indigo-50 text-gray-700 hover:bg-indigo-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onAcceptProposed?.(evt._id);
@@ -232,7 +232,7 @@ export function CalendarDatePopover({
                               </button>
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   onDeclineProposed?.(evt._id);
@@ -246,7 +246,7 @@ export function CalendarDatePopover({
                           {/* Ask Agent button for email events */}
                           <button
                             type="button"
-                            className="inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleAskAgent(evt);
@@ -267,7 +267,7 @@ export function CalendarDatePopover({
             {/* Tasks */}
             {hasTasks && (
               <div className="space-y-1.5">
-                <div className="px-1 text-[10px] font-semibold text-indigo-600 uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-indigo-600 uppercase tracking-wide flex items-center gap-1">
                   <CheckSquare className="w-3 h-3" />
                   Tasks
                 </div>
@@ -280,7 +280,7 @@ export function CalendarDatePopover({
                     <CheckSquare className="w-4 h-4 text-indigo-600" />
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium text-[var(--text-primary)] truncate">{task.title}</div>
-                      <div className="text-[11px] text-[var(--text-secondary)]">
+                      <div className="text-xs text-[var(--text-secondary)]">
                         {formatShortTime(task.dueDate, false)}
                       </div>
                     </div>
@@ -292,7 +292,7 @@ export function CalendarDatePopover({
             {/* Notes */}
             {hasNotes && (
               <div className="space-y-1.5">
-                <div className="px-1 text-[10px] font-semibold text-amber-600 uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-amber-600 uppercase tracking-wide flex items-center gap-1">
                   <StickyNote className="w-3 h-3" />
                   Notes
                 </div>
@@ -312,7 +312,7 @@ export function CalendarDatePopover({
             {/* Files */}
             {hasFiles && (
               <div className="pt-1 border-t border-[var(--border-color)] space-y-1">
-                <div className="px-1 text-[10px] font-semibold text-[var(--text-muted)] uppercase mb-1">Related work</div>
+                <div className="px-1 text-xs font-semibold text-[var(--text-muted)] uppercase mb-1">Related work</div>
                 <div className="space-y-1">
                   {files.slice(0, 4).map((f) => (
                     <div

@@ -97,7 +97,7 @@ export function ActionCard({
           {/* Meta Row */}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium border rounded-full ${status.className}`}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium border rounded-full ${status.className}`}
               title={status.label}
             >
               {status.icon}
@@ -106,14 +106,14 @@ export function ActionCard({
 
             {/* Deliverable badge */}
             {action.deliverable && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200 rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 rounded-full">
                 <FileText className="w-2.5 h-2.5" />
                 {action.deliverable}
               </span>
             )}
 
             {linkedSignals > 0 && (
-              <span className="text-[10px] text-gray-600 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200">
+              <span className="text-xs text-gray-600 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200">
                 Links to {linkedSignals} signal{linkedSignals !== 1 ? "s" : ""}
               </span>
             )}

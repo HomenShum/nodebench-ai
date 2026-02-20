@@ -119,7 +119,7 @@ export function EventMarker({
                       <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
                     )}
                     <span className={`
-                      text-[10px] uppercase tracking-wider font-medium
+                      text-xs uppercase tracking-wider font-medium
                       ${event.significance === "plot_twist" ? "text-red-400" :
                         event.significance === "major" ? "text-purple-400" :
                         event.significance === "moderate" ? "text-blue-400" :
@@ -158,13 +158,13 @@ export function EventMarker({
                   {event.sourceNames.slice(0, 3).map((name, i) => (
                     <span
                       key={i}
-                      className="px-1.5 py-0.5 bg-gray-800 rounded text-[10px] text-gray-400"
+                      className="px-1.5 py-0.5 bg-gray-800 rounded text-xs text-gray-400"
                     >
                       {name}
                     </span>
                   ))}
                   {event.sourceNames.length > 3 && (
-                    <span className="px-1.5 py-0.5 text-[10px] text-gray-500">
+                    <span className="px-1.5 py-0.5 text-xs text-gray-500">
                       +{event.sourceNames.length - 3} more
                     </span>
                   )}
@@ -173,7 +173,7 @@ export function EventMarker({
 
               {/* Contradiction Warning */}
               {event.hasContradictions && (
-                <div className="flex items-center gap-1 mt-2 text-amber-400 text-[10px]">
+                <div className="flex items-center gap-1 mt-2 text-amber-400 text-xs">
                   <AlertTriangle className="w-3 h-3" />
                   <span>Contains contradicting information</span>
                 </div>

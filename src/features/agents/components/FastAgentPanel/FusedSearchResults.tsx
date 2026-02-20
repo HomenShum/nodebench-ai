@@ -136,7 +136,7 @@ function SourceBadge({ source, count, active, onClick }: {
     >
       <Icon className="w-3.5 h-3.5" aria-hidden="true" />
       <span>{config.label}</span>
-      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-white/50 text-[10px]" aria-label={`${count} results`}>{count}</span>
+      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-white/50 text-xs" aria-label={`${count} results`}>{count}</span>
     </button>
   );
 }
@@ -213,7 +213,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
             <h4 className="text-sm font-medium text-[var(--text-primary)] truncate group-hover:text-blue-600">{result.title}</h4>
             {citationNumber !== undefined && (
               <span
-                className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-semibold"
+                className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
                 aria-label={`Citation ${citationNumber}`}
               >
                 {citationNumber}
@@ -221,7 +221,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
             )}
           </div>
           <p className="text-xs text-[var(--text-secondary)] line-clamp-2">{result.snippet}</p>
-          <div className="flex items-center gap-3 mt-2 text-[10px] text-[var(--text-muted)]">
+          <div className="flex items-center gap-3 mt-2 text-xs text-[var(--text-muted)]">
             <span className={cn("px-1.5 py-0.5 rounded", config.color)}>{config.label}</span>
             {result.publishedAt && (
               <span className="flex items-center gap-1">

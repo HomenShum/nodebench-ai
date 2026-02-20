@@ -367,7 +367,7 @@ export function EmptyStateOverlay({ variant = "empty" }: { variant?: "empty" | "
   return (
     <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center ${bg} backdrop-blur-[1px]`}>
       <Icon className={`w-5 h-5 ${color} mb-1`} />
-      <span className="text-[9px] font-medium text-[var(--text-secondary)] uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">{label}</span>
     </div>
   );
 }

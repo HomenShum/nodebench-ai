@@ -67,7 +67,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
             {event.type.replace(/_/g, ' ')}
           </span>
           {event.duration && (
-            <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-0.5">
+            <span className="text-xs text-[var(--text-muted)] flex items-center gap-0.5">
               <Timer className="w-2.5 h-2.5" />
               {event.duration}ms
             </span>
@@ -80,7 +80,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
           {event.title || event.toolName || event.agentName || 'Processing...'}
         </p>
         {event.details && (
-          <p className="text-[10px] text-[var(--text-muted)] truncate mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <p className="text-xs text-[var(--text-muted)] truncate mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             {event.details}
           </p>
         )}
@@ -153,12 +153,12 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
               <div className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 Live Activity
                 {stats.running > 0 && (
-                  <span className="px-1.5 py-0.5 text-[10px] bg-violet-500 text-white rounded-full font-medium">
+                  <span className="px-1.5 py-0.5 text-xs bg-violet-500 text-white rounded-full font-medium">
                     {stats.running}
                   </span>
                 )}
               </div>
-              <div className="text-[10px] text-[var(--text-muted)]">
+              <div className="text-xs text-[var(--text-muted)]">
                 {stats.total} events · {stats.success} completed
               </div>
             </div>
@@ -202,7 +202,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
                 {label}
                 {count > 0 && (
                   <span className={cn(
-                    "px-1 py-0.5 rounded text-[9px] font-semibold",
+                    "px-1 py-0.5 rounded text-xs font-semibold",
                     filter === key ? "bg-violet-200 text-violet-800" : "bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
                   )}>
                     {count}

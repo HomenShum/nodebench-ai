@@ -76,7 +76,7 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
         if (pathname.startsWith('/funding') || pathname.startsWith('/funding-brief')) return { view: 'funding', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith("/onboarding")) return { view: "research", entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/activity') || pathname.startsWith('/public-activity')) return { view: 'activity', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/analytics/hitl')) return { view: 'analytics-hitl', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+        if (pathname.startsWith('/analytics/hitl') || pathname.startsWith('/analytics/review-queue') || pathname.startsWith('/review-queue')) return { view: 'analytics-hitl', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/analytics/components')) return { view: 'analytics-components', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/analytics/recommendations')) return { view: 'analytics-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/cost') || pathname.startsWith('/dashboard/cost')) return { view: 'cost-dashboard', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
@@ -87,8 +87,8 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
         if (pathname.startsWith('/github') || pathname.startsWith('/github-explorer')) return { view: 'github-explorer', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/pr-suggestions') || pathname.startsWith('/prs')) return { view: 'pr-suggestions', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
         if (pathname.startsWith('/linkedin')) return { view: 'linkedin-posts', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/mcp/ledger') || pathname.startsWith('/mcp-ledger')) return { view: 'mcp-ledger', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/dogfood')) return { view: 'dogfood', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+        if (pathname.startsWith('/mcp/ledger') || pathname.startsWith('/mcp-ledger') || pathname.startsWith('/activity-log')) return { view: 'mcp-ledger', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+        if (pathname.startsWith('/dogfood') || pathname.startsWith('/quality-review')) return { view: 'dogfood', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
 
         if (pathname.startsWith('/entity/') || pathname.startsWith('/entity%2f')) {
             const match = (rawPathname || '').match(/^\/entity[\/](.+)$/i);

@@ -65,14 +65,14 @@ export const CostCrossoverCalculator: React.FC = () => {
         <div className="flex items-center gap-2">
           <Sliders className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Cost Crossover</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Cost Crossover</div>
             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Live calculator</div>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setPresentationMode((prev) => !prev)}
-          className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
         >
           {presentationMode ? "Edit" : "Present"}
         </button>
@@ -139,13 +139,13 @@ export const CostCrossoverCalculator: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-3 text-xs text-gray-600 dark:text-gray-400">
         <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] p-3">
-          <div className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-1">
+          <div className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> Cloud
           </div>
           <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">${cloudCost.toFixed(0)}</div>
         </div>
         <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.04] p-3">
-          <div className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-1">
+          <div className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> Local
           </div>
           <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">${localCost.toFixed(0)}</div>
@@ -153,12 +153,12 @@ export const CostCrossoverCalculator: React.FC = () => {
       </div>
 
       <div className="rounded-md border border-gray-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
-        <div className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Cost curve</div>
+        <div className="text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Cost curve</div>
         <svg width={220} height={90} className="w-full">
           <path d={buildPath("cloud")} stroke="#2563eb" strokeWidth={2} fill="none" />
           <path d={buildPath("local")} stroke="#16a34a" strokeWidth={2} fill="none" />
         </svg>
-        <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500">
+        <div className="mt-2 flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
           <span>0M</span>
           <span>200M</span>
         </div>

@@ -91,7 +91,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
         {/* Status indicator */}
         <div className="flex items-center gap-1">
           {isPending && (
-            <span className="text-[10px] text-[var(--text-muted)]">Pending</span>
+            <span className="text-xs text-[var(--text-muted)]">Pending</span>
           )}
           {isRunning && (
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
@@ -107,7 +107,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
 
       {/* Preview text */}
       {(isRunning || isCompleted) && previewText && (
-        <div className="text-[10px] text-[var(--text-secondary)] line-clamp-2 min-h-[2em]">
+        <div className="text-xs text-[var(--text-secondary)] line-clamp-2 min-h-[2em]">
           {isRunning && isStreaming && (
             <span className="inline-block w-1.5 h-3 bg-current motion-safe:animate-pulse mr-0.5" />
           )}
@@ -136,7 +136,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
 
       {/* Error message */}
       {isFailed && task.errorMessage && (
-        <div className="text-[10px] text-red-500 truncate">
+        <div className="text-xs text-red-500 truncate">
           {task.errorMessage}
         </div>
       )}
@@ -181,7 +181,7 @@ const SynthesisLane = memo(function SynthesisLane({
           {(isSynthesizing || isGathering) && (
             <>
               <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
-              <span className="text-[10px]">
+              <span className="text-xs">
                 {isGathering ? "Gathering..." : "Synthesizing..."}
               </span>
             </>
@@ -193,7 +193,7 @@ const SynthesisLane = memo(function SynthesisLane({
       </div>
 
       {isCompleted && mergedResult && (
-        <div className="text-[10px] text-[var(--text-secondary)] line-clamp-3">
+        <div className="text-xs text-[var(--text-secondary)] line-clamp-3">
           {mergedResult.slice(0, 200)}...
         </div>
       )}
@@ -230,7 +230,7 @@ const SwarmProgressBar = memo(function SwarmProgressBar({
       </div>
 
       {/* Status text */}
-      <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
+      <span className="text-xs text-[var(--text-muted)] flex-shrink-0">
         {isActive ? (
           <>
             {progress.completed} of {progress.total}
@@ -277,7 +277,7 @@ export function SwarmLanesView({
           <Zap className="w-3.5 h-3.5 text-green-500" />
           <span>Team completed: {tasks.length} agents</span>
           {swarm.confidence && (
-            <span className="text-[10px]">
+            <span className="text-xs">
               ({Math.round(swarm.confidence * 100)}% confidence)
             </span>
           )}

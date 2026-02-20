@@ -566,7 +566,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-[10px] text-[color:var(--text-secondary)] uppercase font-medium">Sentiment</div>
+              <div className="text-xs text-[color:var(--text-secondary)] uppercase font-medium">Sentiment</div>
               <div className="text-sm font-bold text-[color:var(--text-primary)]">{activeLegacy.marketSentiment}/100</div>
             </div>
           </div>

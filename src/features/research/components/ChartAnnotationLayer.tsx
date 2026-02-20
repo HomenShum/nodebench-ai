@@ -136,7 +136,7 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
                 <text
                   x={x - (annotation.text.length * 3) + 6}
                   y={y + 3}
-                  className="text-[10px]"
+                  className="text-xs"
                   textAnchor="start"
                 >
                   {annotation.icon}
@@ -148,7 +148,7 @@ export const ChartAnnotationLayer: React.FC<ChartAnnotationLayerProps> = ({
                 x={annotation.icon ? x + 4 : x}
                 y={y + 3}
                 textAnchor={annotation.icon ? "start" : textAnchor}
-                className="text-[9px] fill-slate-700 font-medium"
+                className="text-xs fill-slate-700 font-medium"
               >
                 {annotation.text}
               </text>

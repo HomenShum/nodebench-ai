@@ -26,7 +26,7 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
         >
             <div className="flex items-center gap-4 shrink-0 pr-8 border-r border-gray-200 mr-8">
                 <Activity className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-[9px] font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Live Intelligence Flow</span>
+                <span className="text-xs font-black text-gray-900 dark:text-gray-100 uppercase tracking-[0.3em]">Live Intelligence Flow</span>
             </div>
 
             <div className="flex-1 flex items-center gap-12 overflow-hidden whitespace-nowrap">
@@ -38,20 +38,20 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
                         className="flex items-center gap-3"
                     >
                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
-                        <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+                        <span className="text-xs font-mono text-gray-400 uppercase tracking-widest">
                             {res.taskName || 'Analysis Event'}
                         </span>
-                        <span className="text-[10px] font-mono text-gray-900 dark:text-gray-100 font-bold">
+                        <span className="text-xs font-mono text-gray-900 dark:text-gray-100 font-bold">
                             {res.status?.toUpperCase() || 'SUCCESS'}
                         </span>
-                        <span className="text-[10px] italic text-gray-300">
+                        <span className="text-xs italic text-gray-300">
                             {res.output?.slice(0, 40)}...
                         </span>
                     </motion.div>
                 ))}
             </div>
 
-            <div className="flex items-center gap-6 shrink-0 pl-8 border-l border-gray-200 dark:border-white/[0.06] ml-8 text-[9px] font-mono text-gray-400">
+            <div className="flex items-center gap-6 shrink-0 pl-8 border-l border-gray-200 dark:border-white/[0.06] ml-8 text-xs font-mono text-gray-400">
                 <span>Nodes: 142</span>
                 <span>Sec: E2EE</span>
                 <div className="flex items-center gap-2">

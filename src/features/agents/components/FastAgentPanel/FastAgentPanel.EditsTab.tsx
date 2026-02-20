@@ -157,7 +157,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
             <span className="text-xs font-medium text-[var(--text-primary)]">Document Edits</span>
           </div>
           {stats.pending > 0 && (
-            <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
               {stats.pending} pending
             </span>
           )}
@@ -170,7 +170,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "px-2 py-1 text-[10px] font-medium rounded transition-colors flex items-center gap-1",
+                "px-2 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1",
                 filter === f.key
                   ? "bg-blue-100 text-blue-700"
                   : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
@@ -178,7 +178,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
             >
               {f.label}
               {f.count !== undefined && f.count > 0 && (
-                <span className="px-1 bg-white/50 rounded text-[9px]">{f.count}</span>
+                <span className="px-1 bg-white/50 rounded text-xs">{f.count}</span>
               )}
             </button>
           ))}
@@ -230,13 +230,13 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                           <div className="text-xs font-medium text-[var(--text-primary)] truncate">
                             {edit.operation.sectionHint || 'Document Edit'}
                           </div>
-                          <div className="text-[10px] text-[var(--text-secondary)] mt-0.5">
+                          <div className="text-xs text-[var(--text-secondary)] mt-0.5">
                             {new Date(edit.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
                       </div>
                       <span className={cn(
-                        "px-1.5 py-0.5 text-[9px] font-medium rounded",
+                        "px-1.5 py-0.5 text-xs font-medium rounded",
                         config.color,
                         "bg-white/50"
                       )}>
@@ -245,7 +245,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                     </div>
 
                     {edit.errorMessage && (
-                      <div className="mt-2 p-2 bg-red-100 rounded text-[10px] text-red-700">
+                      <div className="mt-2 p-2 bg-red-100 rounded text-xs text-red-700">
                         {edit.errorMessage}
                       </div>
                     )}
@@ -256,14 +256,14 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                     <div className="px-3 pb-3 border-t border-[var(--border-color)]/50">
                       <div className="mt-2 space-y-2">
                         <div>
-                          <div className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">Search:</div>
-                          <pre className="p-2 bg-red-50 border border-red-200 rounded text-[10px] text-red-800 overflow-x-auto whitespace-pre-wrap">
+                          <div className="text-xs font-medium text-[var(--text-secondary)] mb-1">Search:</div>
+                          <pre className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800 overflow-x-auto whitespace-pre-wrap">
                             {edit.operation.search}
                           </pre>
                         </div>
                         <div>
-                          <div className="text-[10px] font-medium text-[var(--text-secondary)] mb-1">Replace:</div>
-                          <pre className="p-2 bg-indigo-50 border border-indigo-200 rounded text-[10px] text-gray-800 overflow-x-auto whitespace-pre-wrap">
+                          <div className="text-xs font-medium text-[var(--text-secondary)] mb-1">Replace:</div>
+                          <pre className="p-2 bg-indigo-50 border border-indigo-200 rounded text-xs text-gray-800 overflow-x-auto whitespace-pre-wrap">
                             {edit.operation.replace}
                           </pre>
                         </div>

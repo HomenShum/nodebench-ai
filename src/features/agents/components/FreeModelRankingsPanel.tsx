@@ -64,7 +64,7 @@ const CapabilityBadge = memo(function CapabilityBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20"
       title={label}
     >
       <Icon className="w-2.5 h-2.5" />
@@ -88,14 +88,14 @@ const ScoreBar = memo(function ScoreBar({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-[var(--text-muted)] w-12">{label}</span>
+      <span className="text-xs text-[var(--text-muted)] w-12">{label}</span>
       <div className="flex-1 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all", color)}
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="text-[10px] font-mono text-[var(--text-secondary)] w-8">
+      <span className="text-xs font-mono text-[var(--text-secondary)] w-8">
         {score}%
       </span>
     </div>
@@ -163,7 +163,7 @@ const ModelRow = memo(function ModelRow({
                 <Trophy className={cn("w-3.5 h-3.5 flex-shrink-0", rankColors[model.rank])} />
               )}
             </div>
-            <div className="text-[11px] text-[var(--text-muted)] truncate">
+            <div className="text-xs text-[var(--text-muted)] truncate">
               {model.openRouterId}
             </div>
           </div>
@@ -172,13 +172,13 @@ const ModelRow = memo(function ModelRow({
         {/* Context & Latency */}
         <div className="flex items-center gap-4 text-right">
           <div>
-            <div className="text-[10px] text-[var(--text-muted)]">Context</div>
+            <div className="text-xs text-[var(--text-muted)]">Context</div>
             <div className="text-sm font-mono text-[var(--text-secondary)]">
               {formatContext(model.contextLength)}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-[var(--text-muted)]">Latency</div>
+            <div className="text-xs text-[var(--text-muted)]">Latency</div>
             <div className="text-sm font-mono text-[var(--text-secondary)]">
               {formatLatency(model.latencyAvgMs)}
             </div>
@@ -230,10 +230,10 @@ const ModelRow = memo(function ModelRow({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center gap-4 mt-2 pt-2 border-t border-[var(--border-color)] text-[10px] text-[var(--text-muted)]">
+      <div className="flex items-center gap-4 mt-2 pt-2 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)]">
         <span>{model.evaluationCount} evals</span>
         <span>
-          Last: {new Date(model.lastEvaluated).toLocaleDateString()}
+          Last: {new Date(model.lastEvaluated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
       </div>
     </div>
@@ -268,7 +268,7 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Free Model Rankings
           </h3>
-          <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-purple-500/10 text-purple-600 border border-purple-500/20">
+          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-600 border border-purple-500/20">
             {activeCount} active
           </span>
         </div>

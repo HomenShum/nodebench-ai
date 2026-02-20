@@ -109,7 +109,7 @@ const SwarmStatusIcon = memo(function SwarmStatusIcon({
     return (
       <div className="relative flex items-center">
         <Loader2 className="w-3 h-3 text-violet-500 motion-safe:animate-spin" />
-        <span className="ml-0.5 text-[9px] text-violet-500 font-medium">
+        <span className="ml-0.5 text-xs text-violet-500 font-medium">
           {completedCount}/{agentCount}
         </span>
       </div>
@@ -180,7 +180,7 @@ const ThreadTab = memo(function ThreadTab({
 
       {/* Keyboard shortcut hint */}
       {index < 9 && (
-        <span className="hidden group-hover:inline text-[9px] text-[var(--text-muted)] ml-0.5 opacity-60">
+        <span className="hidden group-hover:inline text-xs text-[var(--text-muted)] ml-0.5 opacity-60">
           ⌘{index + 1}
         </span>
       )}
@@ -316,7 +316,7 @@ export function ThreadTabBar({
             <div className="absolute top-full left-0 mt-1 w-72 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl z-50 overflow-hidden">
               {/* Query Input */}
               <div className="p-3 border-b border-[var(--border-color)]">
-                <label className="block text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
                   Research Query
                 </label>
                 <input
@@ -339,7 +339,7 @@ export function ThreadTabBar({
 
               {/* Preset Options */}
               <div className="p-2">
-                <div className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider px-2 mb-1.5">
+                <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider px-2 mb-1.5">
                   Agent Presets
                 </div>
                 {AGENT_PRESETS.map((preset) => {
@@ -364,11 +364,11 @@ export function ThreadTabBar({
                         <div className="text-sm font-medium text-[var(--text-primary)]">
                           {preset.name}
                         </div>
-                        <div className="text-[11px] text-[var(--text-muted)]">
+                        <div className="text-xs text-[var(--text-muted)]">
                           {preset.description}
                         </div>
                       </div>
-                      <div className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
+                      <div className="text-xs text-[var(--text-muted)] flex-shrink-0">
                         {preset.agents.length} agents
                       </div>
                     </button>
@@ -378,7 +378,7 @@ export function ThreadTabBar({
 
               {/* Quick tip */}
               <div className="px-3 py-2 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                <div className="text-[10px] text-[var(--text-muted)]">
+                <div className="text-xs text-[var(--text-muted)]">
                   💡 Or type <code className="px-1 py-0.5 bg-[var(--bg-primary)] rounded">/spawn "query"</code> in chat
                 </div>
               </div>
@@ -425,7 +425,7 @@ export function ThreadTabBar({
       </div>
 
       {/* Keyboard hint */}
-      <div className="hidden lg:flex items-center gap-1 px-2 text-[9px] text-[var(--text-muted)] flex-shrink-0">
+      <div className="hidden lg:flex items-center gap-1 px-2 text-xs text-[var(--text-muted)] flex-shrink-0">
         <kbd className="px-1 py-0.5 bg-[var(--bg-secondary)] rounded text-[8px]">⌘1-9</kbd>
         <span>switch</span>
       </div>

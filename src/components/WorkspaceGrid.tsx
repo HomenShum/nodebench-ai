@@ -146,7 +146,7 @@ export function WorkspaceGrid({
                   <FileText className="h-4 w-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
                   <span className="text-xs text-gray-400">
                     {doc._creationTime
-                      ? new Date(doc._creationTime).toLocaleDateString()
+                      ? new Date(doc._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                       : 'Recently'}
                   </span>
                 </div>

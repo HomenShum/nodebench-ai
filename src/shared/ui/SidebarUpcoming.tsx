@@ -43,16 +43,16 @@ function TaskCountBadge({
   return (
     <div className="relative" ref={badgeRef}>
       <div
-        className={`text-[11px] text-[var(--text-secondary)] cursor-pointer transition-colors ${
+        className={`text-xs text-[var(--text-secondary)] cursor-pointer transition-colors ${
           hasItems ? "hover:text-[var(--text-primary)]" : ""
         }`}
         onMouseEnter={hasItems ? handleMouseEnter : undefined}
         onMouseLeave={hasItems ? handleMouseLeave : undefined}
         onClick={() => hasItems && setShowPreview((prev) => !prev)}
       >
-        {totalItems} item{totalItems !== 1 ? "s" : ""}
+        {totalItems === 0 ? "Nothing upcoming" : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
         {taskCount > 0 && (
-          <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 rounded-full dark:bg-amber-900/30 dark:text-amber-300">
+          <span className="ml-1.5 px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full dark:bg-amber-900/30 dark:text-amber-300">
             {taskCount} task{taskCount !== 1 ? "s" : ""}
           </span>
         )}
@@ -81,14 +81,14 @@ function TaskCountBadge({
                   {task.title || "Untitled Task"}
                 </div>
                 {task.dueDate && (
-                  <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                  <div className="text-xs text-[var(--text-muted)] mt-0.5">
                     Due {new Date(task.dueDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 )}
               </div>
             ))}
             {tasks.length > 5 && (
-              <div className="px-3 py-2 text-[10px] text-[var(--text-muted)] text-center bg-[var(--bg-secondary)]">
+              <div className="px-3 py-2 text-xs text-[var(--text-muted)] text-center bg-[var(--bg-secondary)]">
                 +{tasks.length - 5} more task{tasks.length - 5 !== 1 ? "s" : ""}
               </div>
             )}
@@ -127,7 +127,7 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
     <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">Today</div>
+          <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Today</div>
           <TaskCountBadge
             taskCount={upcoming?.counts?.todayTasks ?? 0}
             eventCount={upcoming?.counts?.todayEvents ?? 0}
@@ -203,7 +203,7 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
       </div>
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">This Week</div>
+          <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">This Week</div>
           <TaskCountBadge
             taskCount={upcoming?.counts?.weekTasks ?? 0}
             eventCount={upcoming?.counts?.weekEvents ?? 0}

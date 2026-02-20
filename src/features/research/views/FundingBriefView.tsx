@@ -210,7 +210,7 @@ function FundingCard({
         {event.announcedAt && (
           <span className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" />
-            {new Date(event.announcedAt).toLocaleDateString()}
+            {new Date(event.announcedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         )}
       </div>

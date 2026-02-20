@@ -492,7 +492,7 @@ export function FastAgentInputBar({
     if (hasCalendarEvents) {
       const eventsContext = contextCalendarEvents.map(event => {
         const eventDate = new Date(event.startTime);
-        const dateStr = eventDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        const dateStr = eventDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
         const timeStr = event.allDay ? 'All day' : eventDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
         const endTimeStr = event.endTime ? new Date(event.endTime).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
         return `- **${event.title}**\n  - Date: ${dateStr}\n  - Time: ${event.allDay ? 'All day' : `${timeStr}${endTimeStr ? ` - ${endTimeStr}` : ''}`}${event.location ? `\n  - Location: ${event.location}` : ''}${event.description ? `\n  - Description: ${event.description}` : ''}`;
@@ -754,7 +754,7 @@ export function FastAgentInputBar({
             <button
               type="button"
               onClick={() => setShowModelSelector(!showModelSelector)}
-              className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] hover:bg-[var(--bg-secondary)] rounded-lg transition-all duration-200 border border-transparent hover:border-[var(--border-color)]"
+              className="flex items-center gap-2 px-2.5 py-1.5 text-xs hover:bg-[var(--bg-secondary)] rounded-lg transition-all duration-200 border border-transparent hover:border-[var(--border-color)]"
             >
               <span className="text-[var(--text-secondary)] flex items-center gap-1.5 font-medium">
                 {MODEL_UI_INFO[selectedModel as ApprovedModel]?.isFree && <Gift className="w-3 h-3 text-violet-500" />}
@@ -769,7 +769,7 @@ export function FastAgentInputBar({
                 <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
                 <div className="absolute bottom-full left-0 mb-2 w-64 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto dropdown-enter" style={{ '--dropdown-origin': 'bottom left' } as React.CSSProperties}>
                   <div className="px-3 py-2 border-b border-[var(--border-color)]/50">
-                    <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Select Model</span>
+                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Select Model</span>
                   </div>
                   {APPROVED_MODEL_LIST.map((model) => (
                     <button
@@ -789,9 +789,9 @@ export function FastAgentInputBar({
                           {model.isFree && <Gift className="w-3 h-3 text-violet-500" />}
                           {model.name}
                         </span>
-                        <span className="text-[10px] text-[var(--text-muted)] font-medium">{model.contextWindow}</span>
+                        <span className="text-xs text-[var(--text-muted)] font-medium">{model.contextWindow}</span>
                       </div>
-                      <div className="text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
+                      <div className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                         {model.description}
                       </div>
                     </button>
@@ -867,7 +867,7 @@ export function FastAgentInputBar({
           {/* Calendar Event Context Pills */}
           {contextCalendarEvents.map((event) => {
             const eventDate = new Date(event.startTime);
-            const dateStr = eventDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const dateStr = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const timeStr = event.allDay ? 'All day' : eventDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
             return (
               <div
@@ -878,7 +878,7 @@ export function FastAgentInputBar({
                 <span className="max-w-[120px] truncate" title={`${event.title} - ${dateStr} ${timeStr}`}>
                   {event.title}
                 </span>
-                <span className="text-purple-500 dark:text-purple-400 text-[10px]">
+                <span className="text-purple-500 dark:text-purple-400 text-xs">
                   {dateStr}
                 </span>
                 {onRemoveCalendarEvent && (
@@ -927,7 +927,7 @@ export function FastAgentInputBar({
         {showSlashCommands && (
           <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] shadow-xl overflow-hidden z-50 dropdown-enter" style={{ '--dropdown-origin': 'bottom center' } as React.CSSProperties}>
             <div className="px-3 py-2 border-b border-[var(--border-color)]/50 bg-[var(--bg-secondary)]">
-              <span className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+              <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
                 Slash Commands
               </span>
             </div>
@@ -948,16 +948,16 @@ export function FastAgentInputBar({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{cmd.label}</span>
-                      <code className="text-[10px] px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-muted)]">
+                      <code className="text-xs px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-muted)]">
                         {cmd.command}
                       </code>
                     </div>
-                    <p className="text-[11px] text-[var(--text-muted)] truncate">
+                    <p className="text-xs text-[var(--text-muted)] truncate">
                       {cmd.description}
                     </p>
                   </div>
                   {index === selectedCommandIndex && (
-                    <kbd className="text-[9px] px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-muted)] flex-shrink-0">
+                    <kbd className="text-xs px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-muted)] flex-shrink-0">
                       Tab/Enter
                     </kbd>
                   )}
@@ -965,7 +965,7 @@ export function FastAgentInputBar({
               ))}
             </div>
             <div className="px-3 py-2 border-t border-[var(--border-color)]/50 bg-[var(--bg-secondary)]">
-              <p className="text-[10px] text-[var(--text-muted)]">
+              <p className="text-xs text-[var(--text-muted)]">
                 <kbd className="px-1 py-0.5 bg-[var(--bg-primary)] rounded mr-1">↑/↓</kbd>
                 navigate
                 <kbd className="px-1 py-0.5 bg-[var(--bg-primary)] rounded ml-2 mr-1">Tab</kbd>
@@ -1113,7 +1113,7 @@ export function FastAgentInputBar({
           {input.length > 10 && (() => {
             const words = input.split(/\s+/).filter(Boolean).length;
             return (
-              <span className="text-[9px] tabular-nums text-[var(--text-muted)] whitespace-nowrap px-1">
+              <span className="text-xs tabular-nums text-[var(--text-muted)] whitespace-nowrap px-1">
                 {words}w
               </span>
             );
@@ -1194,7 +1194,7 @@ export function FastAgentInputBar({
 
       {/* Character count only when near limit */}
       {input.length > maxLength * 0.8 && (
-        <div className="mt-1 px-2 text-[10px] text-[var(--text-muted)] text-right">
+        <div className="mt-1 px-2 text-xs text-[var(--text-muted)] text-right">
           {input.length} / {maxLength}
         </div>
       )}

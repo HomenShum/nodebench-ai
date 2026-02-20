@@ -224,6 +224,8 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? 'Close quick capture' : 'Open quick capture'}
+        title={isOpen ? 'Close quick capture' : 'Quick capture — add note, task, or voice memo'}
         className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors ${
           isOpen ? 'bg-gray-800 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
         }`}

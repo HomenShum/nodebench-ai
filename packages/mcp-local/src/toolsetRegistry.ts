@@ -44,6 +44,8 @@ import { mcpBridgeTools } from "./tools/mcpBridgeTools.js";
 import { uiUxDiveAdvancedTools } from "./tools/uiUxDiveAdvancedTools.js";
 import { skillUpdateTools } from "./tools/skillUpdateTools.js";
 import { overstoryTools } from "./tools/overstoryTools.js";
+import { visualQaTools } from "./tools/visualQaTools.js";
+import { localDashboardTools } from "./tools/localDashboardTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -86,6 +88,8 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   ui_ux_dive_v2: uiUxDiveAdvancedTools,
   skill_update: skillUpdateTools,
   qa_orchestration: overstoryTools,
+  visual_qa: visualQaTools,
+  local_dashboard: localDashboardTools,
 };
 
 // Pre-computed tool name → toolset name lookup

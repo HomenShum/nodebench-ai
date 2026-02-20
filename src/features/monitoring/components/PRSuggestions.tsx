@@ -32,7 +32,7 @@ export function PRSuggestions() {
       <div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
           <GitPullRequest className="w-6 h-6" />
-          PR Suggestions
+          Pull Request Suggestions
         </h1>
         <p className="text-sm text-[var(--text-secondary)] mt-1">
           Automated pull request suggestions based on industry updates
@@ -63,10 +63,16 @@ export function PRSuggestions() {
 
       {/* Suggestions List */}
       {suggestions.length === 0 ? (
-        <div className="p-8 text-center text-[var(--text-secondary)]">
-          <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No PR suggestions yet</p>
-          <p className="text-xs mt-2">Run the enhanced industry scan to generate suggestions</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/25 flex items-center justify-center mb-4">
+            <Lightbulb className="w-8 h-8 text-indigo-500 dark:text-indigo-300" />
+          </div>
+          <p className="text-base font-semibold text-[var(--text-primary)] mb-2">No suggestions yet</p>
+          <p className="text-sm text-[var(--text-secondary)] max-w-sm mb-4">Suggestions are generated automatically when the enhanced industry scan detects relevant updates.</p>
+          <button type="button" className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm">
+            <Lightbulb className="w-4 h-4 flex-shrink-0" />
+            Run an enhanced industry scan
+          </button>
         </div>
       ) : (
         <div className="space-y-4">
@@ -187,7 +193,7 @@ function PRCard({ suggestion }: PRCardProps) {
       {/* Footer */}
       <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-muted)]">
         <span>
-          Created {new Date(suggestion.createdAt).toLocaleDateString()}
+          Created {new Date(suggestion.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
         {suggestion.updateId && (
           <a

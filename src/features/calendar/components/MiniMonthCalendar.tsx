@@ -529,7 +529,6 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         timeZone: effectiveTz,
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
         hour12: false,
       }).format(new Date(now));
     } catch {
@@ -617,23 +616,21 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         <CalendarDays className="h-10 w-10 rotate-12" />
       </span>
       {/* Clock + Timezone selector */}
-      <div className="px-4 py-2 border-b border-[var(--border-color)]/80 flex items-center justify-between">
+      <div className="px-4 py-2 border-b border-[var(--border-color)]/80 flex flex-col gap-1.5">
         <div className="font-mono text-xs font-medium text-[var(--text-primary)] tabular-nums" aria-live="polite" aria-label="Current time">
           {clockText}
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-[11px] text-[var(--text-muted)] font-medium" htmlFor="tz-select">Time zone</label>
-          <select
-            id="tz-select"
-            className="h-7 text-[11px] leading-[1rem] bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-color)]/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-            value={effectiveTz || browserTz || "UTC"}
-            onChange={(e) => { void onChangeTimeZone(e.target.value); }}
-          >
-            {tzOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          id="tz-select"
+          aria-label="Timezone"
+          className="h-7 text-xs leading-[1rem] bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-color)]/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all w-full truncate"
+          value={effectiveTz || browserTz || "UTC"}
+          onChange={(e) => { void onChangeTimeZone(e.target.value); }}
+        >
+          {tzOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
       <div className="px-4 py-2.5 border-b border-[var(--border-color)]/80 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -659,7 +656,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         </div>
       </div>
       <div className="p-3">
-        <div className="grid grid-cols-7 text-center text-[11px] text-[var(--text-muted)] mb-2">
+        <div className="grid grid-cols-7 text-center text-xs text-[var(--text-muted)] mb-2">
           {dayLabels.map((lbl, i) => (
             <div key={`lbl_${lbl}_${i}`} className="font-semibold uppercase tracking-wider">{lbl}</div>
           ))}
@@ -685,7 +682,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 tabIndex={0}
                 aria-pressed={pinnedKey === d.key}
                 aria-current={d.isToday ? "date" : undefined}
-                aria-label={`Select ${d.date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`}
+                aria-label={`Select ${d.date.toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric" })}`}
                 onClick={(e) => {
                   e.preventDefault();
                   // Toggle pin on click; keep hover state consistent
@@ -736,7 +733,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                   d.isToday
                     ? "border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm"
                     : "border-transparent hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)]"
-                  } ${d.inMonth ? "text-[var(--text-primary)]" : "text-[var(--text-muted)]"}`}
+                  } ${d.inMonth ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] dark:text-gray-500"}`}
                 title={d.date.toDateString()}
               >
                 <div className="text-[13px] font-semibold">
@@ -915,7 +912,7 @@ function QuickNoteInitializer({
       try {
         const newDocId = await getOrCreateDailyNotes({
           agendaDate: activeStartUtc,
-          dateLabel: activeInfo.date.toLocaleDateString(),
+          dateLabel: activeInfo.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         });
         setDocId(newDocId);
       } catch (e) {

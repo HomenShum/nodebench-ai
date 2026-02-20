@@ -140,9 +140,9 @@ export const TaskRowGlobal = ({
         const e = new Date(typeof eMs === "number" ? eMs : sMs);
 
         if (hasAllDay) {
-          parts.push(`Event time: ${s.toLocaleDateString()}`);
+          parts.push(`Event time: ${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
         } else {
-          const sd = s.toLocaleDateString();
+          const sd = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
           const st = s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           const et = e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
           parts.push(`Event time: ${sd} ${st} - ${et}`);
@@ -345,7 +345,7 @@ export const TaskRowGlobal = ({
                 <>
                   {t.status && (
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-md border ${statusChipClasses(t.status)}`}
+                      className={`text-xs px-1.5 py-0.5 rounded-md border ${statusChipClasses(t.status)}`}
                       title={`Status: ${t.status}`}
                     >
                       {statusLabel(t.status)}
@@ -354,7 +354,7 @@ export const TaskRowGlobal = ({
 
                   {t.priority && (
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-md border ${priorityClasses(t.priority)}`}
+                      className={`text-xs px-1.5 py-0.5 rounded-md border ${priorityClasses(t.priority)}`}
                       title={`Priority: ${t.priority}`}
                     >
                       {String(t.priority).toUpperCase()}
@@ -363,10 +363,10 @@ export const TaskRowGlobal = ({
 
                   {t.dueDate && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                      className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
                       title={`Due ${new Date(t.dueDate).toLocaleString()}`}
                     >
-                      Due {new Date(t.dueDate).toLocaleDateString()}
+                      Due {new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   )}
 
@@ -391,10 +391,10 @@ export const TaskRowGlobal = ({
 
                   {isAllDayEvent(t) && (
                     <span
-                      className="text-[10px] px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
-                      title={`Date ${new Date(t.startTime).toLocaleDateString()}`}
+                      className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                      title={`Date ${new Date(t.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                     >
-                      {new Date(t.startTime).toLocaleDateString()}
+                      {new Date(t.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   )}
 

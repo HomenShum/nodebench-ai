@@ -21,7 +21,7 @@ function formatRelativeTime(timestamp: number): string {
   if (days < 7) return `${days}d`;
   const weeks = Math.floor(days / 7);
   if (weeks < 4) return `${weeks}w`;
-  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 interface FastAgentThreadListProps {
@@ -212,7 +212,7 @@ export function FastAgentThreadList({
 
           return (
             <div key={group}>
-              <h3 className="px-2 mb-1 text-[10px] font-semibold font-mono text-[var(--text-muted)] uppercase tracking-wider">
+              <h3 className="px-2 mb-1 text-xs font-semibold font-mono text-[var(--text-muted)] uppercase tracking-wider">
                 {group}
               </h3>
               <div className="space-y-0.5">
@@ -245,14 +245,14 @@ export function FastAgentThreadList({
                             {thread.title || "New Chat"}
                           </h4>
                         </div>
-                        <p className="text-[10px] text-[var(--text-muted)] truncate pl-[18px]">
+                        <p className="text-xs text-[var(--text-muted)] truncate pl-[18px]">
                           {thread.lastMessage || "No messages yet"}
                         </p>
                       </div>
 
                       {/* Timestamp + Hover Actions */}
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <span className="text-[9px] text-[var(--text-muted)] tabular-nums thread-time">
+                        <span className="text-xs text-[var(--text-muted)] tabular-nums thread-time">
                           {formatRelativeTime(thread.updatedAt || thread._creationTime)}
                         </span>
                         <div className="flex items-center gap-1 thread-actions">
@@ -298,7 +298,7 @@ export function FastAgentThreadList({
               <MessageSquare className="w-5 h-5 opacity-40" />
             </div>
             <p className="font-medium text-[var(--text-secondary)] mb-1">No conversations yet</p>
-            <p className="text-[10px] text-center opacity-70">Start a new chat to begin</p>
+            <p className="text-xs text-center opacity-70">Start a new chat to begin</p>
           </div>
         )}
 
@@ -339,7 +339,7 @@ export function FastAgentThreadList({
         {/* Thread count */}
         {threads.length > 0 && (
           <div className="px-2 py-2 text-center border-t border-[var(--border-color)]/50">
-            <p className="text-[10px] text-[var(--text-muted)]">
+            <p className="text-xs text-[var(--text-muted)]">
               {onLoadMore
                 ? `Showing ${threads.length} threads`
                 : `Showing ${Math.min(displayCount, totalFiltered)} of ${totalFiltered} threads`}

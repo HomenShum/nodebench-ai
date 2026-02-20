@@ -100,7 +100,7 @@ export function ProposalBar({
       <div className="flex items-center gap-2">
         <button
           onClick={applySelected}
-          className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white"
+          className="text-xs px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white"
           title="Apply only the selected lines across all blocks"
         >
           Apply Selected
@@ -108,20 +108,20 @@ export function ProposalBar({
         <div className="relative">
           <button
             onClick={applyAll}
-            className={`text-[11px] px-2 py-0.5 rounded border ${confirmAll ? 'bg-red-600 text-white border-red-600' : ''}`}
+            className={`text-xs px-2 py-0.5 rounded border ${confirmAll ? 'bg-red-600 text-white border-red-600' : ''}`}
             title={confirmAll ? "Click again to confirm Apply All" : "Apply all proposed changes"}
           >
             {confirmAll ? 'Confirm Apply All' : 'Apply All'}
           </button>
           {confirmAll && (
-            <div className="absolute -bottom-7 right-0 text-[10px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded px-2 py-0.5 shadow">
+            <div className="absolute -bottom-7 right-0 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded px-2 py-0.5 shadow">
               Click again to confirm
             </div>
           )}
         </div>
         <button
           onClick={onDismiss}
-          className="text-[11px] px-2 py-0.5 rounded border"
+          className="text-xs px-2 py-0.5 rounded border"
           title="Dismiss proposal"
         >
           Dismiss
@@ -130,14 +130,14 @@ export function ProposalBar({
       <div className="mt-1 flex items-center gap-2">
         <button
           onClick={selectAllAcrossBlocks}
-          className="text-[11px] px-1.5 py-0.5 rounded border"
+          className="text-xs px-1.5 py-0.5 rounded border"
           title="Select all lines across blocks"
         >
           Select All
         </button>
         <button
           onClick={clearAllSelections}
-          className="text-[11px] px-1.5 py-0.5 rounded border"
+          className="text-xs px-1.5 py-0.5 rounded border"
           title="Clear all selections"
         >
           Clear

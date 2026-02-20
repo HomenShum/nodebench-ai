@@ -158,7 +158,7 @@ export function ArtifactCard({
             {artifact.title}
           </span>
           {artifact.language && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/50 dark:bg-black/20 text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-white/50 dark:bg-black/20 text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
               {artifact.language}
             </span>
           )}

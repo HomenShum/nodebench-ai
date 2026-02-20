@@ -478,7 +478,7 @@ export const seedSampleData = mutation({
         toolsUsed: ["web_search", "document_analysis", "summary_generator"],
       },
       {
-        title: "Cron: Daily Signal Ingestion",
+        title: "Scheduled: Daily Signal Ingestion",
         description: "Automated daily collection of market signals from RSS feeds, news APIs, and social media monitoring. Processed 247 new signals.",
         type: "cron" as const,
         status: "completed" as const,
@@ -696,7 +696,7 @@ export const seedHistoricalData = mutation({
       },
       // 7 days ago
       {
-        title: "Cron: Daily Signal Ingestion (7d ago)",
+        title: "Scheduled: Daily Signal Ingestion (7d ago)",
         description: "Historical daily signal ingestion from a week ago.",
         type: "cron" as const,
         status: "completed" as const,

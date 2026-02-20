@@ -91,13 +91,13 @@ export const SourceNode: React.FC<SourceNodeProps> = ({
               {name}
             </span>
             {active && activityCount > 0 && (
-              <span className="flex items-center gap-0.5 text-[9px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded-full font-medium shrink-0">
+              <span className="flex items-center gap-0.5 text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded-full font-medium shrink-0">
                 <Zap className="w-2 h-2" />
                 {activityCount}
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-[9px] text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
             {active ? currentStatus.label : 'Inactive'}
             {trustScore && (
               <span className={`shrink-0 ${trustScore >= 90 ? 'text-green-600' : trustScore >= 75 ? 'text-yellow-600' : 'text-gray-500'}`}>

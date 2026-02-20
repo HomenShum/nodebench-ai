@@ -77,8 +77,8 @@ export default function DualCreateMiniPanel({
       role="dialog"
       aria-label="Create task or event"
     >
-      <div className="text-[11px] text-[var(--text-muted)] mb-2">
-        Create on {new Date(dateMs).toLocaleDateString()}
+      <div className="text-xs text-[var(--text-muted)] mb-2">
+        Create on {new Date(dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {/* Task create card */}
@@ -100,7 +100,7 @@ export default function DualCreateMiniPanel({
             <div className="flex justify-end">
               <button
                 type="button"
-                className="text-[11px] px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
                 onClick={() => void handleCreateTask()}
               >
                 Create Task
@@ -124,7 +124,7 @@ export default function DualCreateMiniPanel({
               placeholder="Event title"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleCreateEvent(); } }}
             />
-            <label className="inline-flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+            <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)]">
               <input
                 type="checkbox"
                 checked={allDay}
@@ -135,7 +135,7 @@ export default function DualCreateMiniPanel({
             <div className="flex justify-end">
               <button
                 type="button"
-                className="text-[11px] px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
                 onClick={() => void handleCreateEvent()}
               >
                 Create Event
@@ -147,7 +147,7 @@ export default function DualCreateMiniPanel({
       <div className="flex items-center justify-end mt-2">
         <button
           type="button"
-          className="text-[11px] px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+          className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
           onClick={onClose}
         >
           Close

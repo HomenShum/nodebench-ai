@@ -72,7 +72,7 @@ function formatRelativeTime(timestamp: number | undefined): string {
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
 
-  return new Date(timestamp).toLocaleDateString();
+  return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatFileSize(bytes: number | undefined): string {
@@ -272,7 +272,7 @@ export function DocumentRow({
           <span className="text-sm font-medium text-[var(--text-primary)] truncate">
             {doc.title}
           </span>
-          <span className="text-[11px] text-[var(--text-muted)] truncate">
+          <span className="text-xs text-[var(--text-muted)] truncate">
             {typeGuess.toUpperCase()} {fileSize ? `• ${formatFileSize(fileSize)}` : ""}
           </span>
         </div>
@@ -286,7 +286,7 @@ export function DocumentRow({
           return (
             <span
               key={i}
-              className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${tagStyle}`}
+              className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${tagStyle}`}
               title={tag.kind ? `${tag.kind}: ${tag.name}` : tag.name}
             >
               #{tag.name}
@@ -294,7 +294,7 @@ export function DocumentRow({
           );
         })}
         {tags.length > 3 && (
-          <span className="text-[10px] text-[var(--text-muted)]">+{tags.length - 3}</span>
+          <span className="text-xs text-[var(--text-muted)]">+{tags.length - 3}</span>
         )}
         {hasAITags && (
           <Sparkles className="w-3 h-3 text-purple-400 ml-0.5" title="AI-generated tags" />
@@ -304,17 +304,17 @@ export function DocumentRow({
       {/* 4. AI Status */}
       <div className="w-28 hidden lg:flex items-center">
         {status.variant === "ready" ? (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 text-[10px] font-medium border border-indigo-500/20">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 text-xs font-medium border border-indigo-500/20">
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
             {status.label}
           </div>
         ) : status.variant === "analyzing" ? (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-medium border border-amber-500/20">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 text-xs font-medium border border-amber-500/20">
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
             {status.label}
           </div>
         ) : (
-          <span className="text-[10px] text-[var(--text-muted)]">{status.label}</span>
+          <span className="text-xs text-[var(--text-muted)]">{status.label}</span>
         )}
       </div>
 

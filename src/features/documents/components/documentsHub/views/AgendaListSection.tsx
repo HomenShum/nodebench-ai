@@ -170,7 +170,7 @@ export function AgendaListSection({
 
     return (
         <div className="mt-4">
-            <div className="text-[11px] uppercase tracking-wide text-[var(--text-muted)] mb-1">
+            <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 {title}
             </div>
 

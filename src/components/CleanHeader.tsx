@@ -35,7 +35,7 @@ export function CleanHeader({
     <div className="bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-color)] px-4 py-2 flex items-center gap-4 transition-colors duration-200">
       {/* Centered Search Bar */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-2xl flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-[var(--accent-primary)]/50 transition-colors">
+        <div className="w-full max-w-2xl flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[var(--accent-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
           <Search className="h-4 w-4 text-[var(--text-secondary)]" />
           <input
             value={quickChatInput}

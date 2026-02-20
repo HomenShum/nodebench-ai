@@ -111,10 +111,10 @@ function ChannelRow({
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{meta.label}</span>
             {meta.providerType === "openclaw" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">OpenClaw</span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">OpenClaw</span>
             )}
             {inFallback && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                 #{fallbackIndex + 1} priority
               </span>
             )}
@@ -419,7 +419,7 @@ export function ChannelPreferencesTab() {
               );
             })}
           </div>
-          <div className="text-[10px] text-blue-500 dark:text-blue-400 mt-1">
+          <div className="text-xs text-blue-500 dark:text-blue-400 mt-1">
             Messages attempt channels left-to-right. If delivery fails, the next channel is tried.
           </div>
         </div>

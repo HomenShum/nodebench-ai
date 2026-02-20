@@ -2539,6 +2539,131 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     },
     phase: "utility",
   },
+
+  // ═══════════════════════════════════════════
+  // VISUAL QA — Deep interaction captures & stability
+  // ═══════════════════════════════════════════
+  {
+    name: "burst_capture",
+    category: "visual_qa",
+    tags: ["burst", "capture", "screenshot", "rapid", "interaction", "deep", "animation", "transition", "hover", "click", "popup", "drawer", "modal", "streaming", "agent", "component"],
+    quickRef: {
+      nextAction: "Burst captured. Run compute_web_stability to measure SSIM across frames, or generate_grid_collage for visual comparison.",
+      nextTools: ["compute_web_stability", "generate_grid_collage", "run_visual_qa_suite"],
+      methodology: "ai_flywheel",
+      tip: "Use burst capture for deep interaction testing — popups, hover states, streaming responses, drawer opens, thread switches. Captures rapid frame sequences during UI transitions.",
+    },
+    phase: "test",
+    complexity: "medium",
+  },
+  {
+    name: "generate_grid_collage",
+    category: "visual_qa",
+    tags: ["grid", "collage", "visual", "comparison", "before-after", "screenshot", "composite", "overview", "review"],
+    quickRef: {
+      nextAction: "Collage generated. Review visually for inconsistencies. Use run_visual_qa_suite for automated scoring.",
+      nextTools: ["run_visual_qa_suite", "compute_web_stability", "analyze_screenshot"],
+      methodology: "ai_flywheel",
+      tip: "Generates a composite grid image from multiple screenshots — useful for comparing dark/light, desktop/mobile, or before/after states side-by-side.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "compute_web_stability",
+    category: "visual_qa",
+    tags: ["stability", "ssim", "structural", "similarity", "flicker", "jank", "layout-shift", "regression", "diff", "frame", "comparison"],
+    quickRef: {
+      nextAction: "Stability computed. If SSIM < 0.95, investigate layout shifts or animation jank. Log issues with tag_ui_bug.",
+      nextTools: ["burst_capture", "tag_ui_bug", "log_gap", "run_visual_qa_suite"],
+      methodology: "ai_flywheel",
+      tip: "Computes block-based SSIM between frame pairs to detect visual instability — layout shifts, flicker, and rendering regressions.",
+    },
+    phase: "test",
+    complexity: "medium",
+  },
+  {
+    name: "run_visual_qa_suite",
+    category: "visual_qa",
+    tags: ["visual", "qa", "suite", "end-to-end", "automated", "gemini", "scoring", "jony-ive", "design", "review", "deep-interaction", "scenario", "agent", "streaming", "popup", "drawer"],
+    quickRef: {
+      nextAction: "QA suite complete. Fix P0/P1 issues first (highest score impact), then P2/P3. Re-run to verify improvements.",
+      nextTools: ["burst_capture", "log_gap", "record_learning", "save_session_note"],
+      methodology: "ai_flywheel",
+      tip: "End-to-end visual QA: captures all routes + deep interactions (agent queries, streaming, popups, drawers) → Gemini scores against Jony Ive design principles → auto-triages by P-level. Formula: 100 - P1×6 - P2×2 - P3×1.",
+    },
+    phase: "verify",
+    complexity: "high",
+  },
+
+  // ═══════════════════════════════════════════
+  // LOCAL DASHBOARD — Daily brief + narrative + ops
+  // ═══════════════════════════════════════════
+  {
+    name: "sync_daily_brief",
+    category: "local_dashboard",
+    tags: ["sync", "daily", "brief", "convex", "sqlite", "pull", "refresh", "narrative", "dashboard", "data"],
+    quickRef: {
+      nextAction: "Data synced. Call get_daily_brief_summary to read the brief, or open_local_dashboard for visual review.",
+      nextTools: ["get_daily_brief_summary", "get_narrative_status", "open_local_dashboard"],
+      methodology: "ai_flywheel",
+      tip: "Pulls latest dashboard snapshot + narrative threads from Convex into local SQLite. Requires CONVEX_SITE_URL and MCP_SECRET env vars.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "get_daily_brief_summary",
+    category: "local_dashboard",
+    tags: ["daily", "brief", "summary", "metrics", "features", "sources", "dashboard", "offline", "local"],
+    quickRef: {
+      nextAction: "Review the brief. Check key signals and source quality. Use get_narrative_status for thread analysis.",
+      nextTools: ["get_narrative_status", "get_ops_dashboard", "open_local_dashboard"],
+      methodology: "ai_flywheel",
+      tip: "Reads from local SQLite — zero network needed. Returns dashboard metrics, features, and source summary from the last sync.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_narrative_status",
+    category: "local_dashboard",
+    tags: ["narrative", "thread", "status", "phase", "emerging", "escalating", "climax", "resolution", "dormant", "story"],
+    quickRef: {
+      nextAction: "Review thread distribution. Focus on escalating/climax threads for timely action. Use get_ops_dashboard for pipeline health.",
+      nextTools: ["get_daily_brief_summary", "get_ops_dashboard", "open_local_dashboard"],
+      methodology: "ai_flywheel",
+      tip: "Returns narrative threads grouped by phase with event counts. Filter by phase to focus on specific lifecycle stages.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_ops_dashboard",
+    category: "local_dashboard",
+    tags: ["ops", "operational", "dashboard", "sync", "tool-call", "frequency", "verification", "health", "monitoring"],
+    quickRef: {
+      nextAction: "Review ops health. If tool error rates are high, investigate root causes. If sync is stale, run sync_daily_brief.",
+      nextTools: ["sync_daily_brief", "get_daily_brief_summary", "open_local_dashboard"],
+      methodology: "ai_flywheel",
+      tip: "Returns last sync info, tool call frequency (24h), active verification cycles, data counts, and privacy mode status.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "open_local_dashboard",
+    category: "local_dashboard",
+    tags: ["open", "dashboard", "browser", "server", "html", "visual", "brief", "narrative", "ops", "local", "ui"],
+    quickRef: {
+      nextAction: "Dashboard is running. Open the URL in a browser to see Brief metrics, Narrative thread lanes, and Ops status.",
+      nextTools: ["sync_daily_brief", "get_daily_brief_summary", "get_narrative_status"],
+      methodology: "ai_flywheel",
+      tip: "Starts the local dashboard server on port 6275 if not already running. Auto-refreshes every 30s from local SQLite.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -2607,6 +2732,8 @@ const CATEGORY_COMPLEXITY: Record<string, "low" | "medium" | "high"> = {
   rss: "low",
   architect: "low",
   qa_orchestration: "low",
+  visual_qa: "medium",
+  local_dashboard: "low",
 };
 
 /** Per-tool complexity overrides (when category default is wrong) */
@@ -3827,6 +3954,37 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "get_narrative_status", action: "Check narrative thread status — dominant story, under-reported angle, evidence scores" },
       { tool: "get_ops_dashboard", action: "Review pipeline health: posting status, tool usage, active workflows" },
       { tool: "open_local_dashboard", action: "Open the local HTML dashboard in the browser for visual review" },
+    ],
+  },
+  deep_interaction: {
+    name: "Deep Interaction Discovery & Capture",
+    description: "Systematically discover, capture, and verify interactive UI behaviors — popups, drawers, streaming responses, hover states, agent conversations, thread management, keyboard shortcuts. Goes beyond static screenshot routes to test real user behavior flows.",
+    steps: [
+      { tool: "dive_auto_discover", action: "Auto-discover interactive components (buttons, drawers, modals, expandable rows) across all routes" },
+      { tool: "start_ui_dive", action: "Start a structured UI dive session to track interaction coverage" },
+      { tool: "burst_capture", action: "Rapid-fire capture during interaction transitions (open drawer, hover tooltip, type in agent panel)" },
+      { tool: "dive_interaction_test", action: "Test specific interaction patterns: click→open→verify, type→submit→stream, hover→preview→dismiss" },
+      { tool: "compute_web_stability", action: "Measure SSIM stability across interaction frames — detect layout shifts, flicker, animation jank" },
+      { tool: "dive_record_test_step", action: "Record each interaction test step with expected vs actual behavior" },
+      { tool: "run_visual_qa_suite", action: "Run full visual QA suite including deep interaction captures" },
+      { tool: "tag_ui_bug", action: "Tag issues found during interaction testing (broken hover, drawer z-index, missing focus trap)" },
+      { tool: "get_dive_report", action: "Generate interaction coverage report — which components were tested, which remain" },
+      { tool: "record_learning", action: "Record interaction patterns, common failure modes, and selector strategies" },
+    ],
+  },
+  gemini_qa: {
+    name: "Gemini Vision QA Loop",
+    description: "Automated UI/UX quality gate — capture screenshots (dark/light × desktop/mobile), send to Gemini Flash for Jony Ive product design review, fix issues, loop until 100/100",
+    steps: [
+      { tool: "check_mcp_setup", action: "Verify Gemini API key (GOOGLE_AI_KEY) and vision domain are ready" },
+      { tool: "start_verification_cycle", action: "Open a verification cycle titled 'Gemini QA Loop' to track progress" },
+      { tool: "save_session_note", action: "Shell: `npx vite build` then `npx playwright test tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1` — capture 4-variant screenshots" },
+      { tool: "save_session_note", action: "Shell: `npm run dogfood:publish` — copy screenshots to public/dogfood/ with variant metadata manifest" },
+      { tool: "save_session_note", action: "Shell: `npx vite build && node scripts/ui/runDogfoodGeminiQa.mjs` — rebuild, launch preview, trigger Gemini QA" },
+      { tool: "log_test_result", action: "Log QA score from public/dogfood/qa-results.json — formula: 100 - P1×6 - P2×2 - P3×1" },
+      { tool: "save_session_note", action: "Fix P1 issues (6pts each) then P2 (2pts) then P3 (1pt) — root-cause each before fixing" },
+      { tool: "get_overstory_qa_gate", action: "Check QA gate for per-route stability grades and issue counts" },
+      { tool: "record_learning", action: "Record QA trajectory and Gemini finding patterns for regression tracking" },
     ],
   },
 };

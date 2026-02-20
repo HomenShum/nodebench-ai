@@ -203,7 +203,7 @@ const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
           <div className="flex items-center gap-2 mt-2 text-xs text-[color:var(--text-secondary)]">
             <span>{item.source}</span>
             <span>•</span>
-            <span>{new Date(item.publishedAt).toLocaleDateString()}</span>
+            <span>{new Date(item.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             {item.url && (
               <>
                 <span>•</span>

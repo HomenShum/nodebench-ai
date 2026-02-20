@@ -257,7 +257,7 @@ function VisualGlimpse({
         <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
           {/* Red margin line */}
           <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed line-clamp-4 ml-4 italic">
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-4 ml-4 italic">
             {doc.contentPreview}
           </p>
         </div>
@@ -279,7 +279,7 @@ function VisualGlimpse({
         <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
           {/* Red margin line */}
           <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed line-clamp-4 ml-4 italic">
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-4 ml-4 italic">
             {doc.contentPreview}
           </p>
         </div>
@@ -297,7 +297,7 @@ function VisualGlimpse({
     if (doc.contentPreview) {
       return renderWithEmptyState(
         <div className="w-full h-full bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-primary)] rounded-lg p-2.5 overflow-hidden">
-          <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed line-clamp-4">
+          <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-4">
             {doc.contentPreview}
           </p>
         </div>
@@ -317,7 +317,7 @@ function VisualGlimpse({
         <CodePreview />
         {/* Hover: Preview Button */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover/code:opacity-100 transition-opacity backdrop-blur-[1px]">
-          <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-[10px] font-medium rounded-full shadow-lg">
+          <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-medium rounded-full shadow-lg">
             <Eye className="w-3 h-3" />
             <span>Preview</span>
           </div>
@@ -607,7 +607,7 @@ export function DocumentCard({
         {/* 3. FOOTER: Minimalist Metadata + Status Dot */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-[var(--border-color)]">
           {/* Left: Type & Size */}
-          <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] min-w-0">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] min-w-0">
             <span className="font-semibold uppercase tracking-wider">
               {typeGuess === 'nbdoc' ? 'DOC' : typeGuess}
             </span>
@@ -630,7 +630,7 @@ export function DocumentCard({
             {aiStatus === 'indexed' ? (
               <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-green-50/80 border border-green-100" title="AI Indexed & Ready">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                <span className="text-[9px] font-semibold text-green-700">AI Ready</span>
+                <span className="text-xs font-semibold text-green-700">AI Ready</span>
               </div>
             ) : aiStatus === 'processing' ? (
               <div className="flex items-center gap-1.5 opacity-70" title="Processing...">
@@ -684,12 +684,12 @@ export function DocumentCard({
         {(isDossier || isLinkedAsset) && (
           <div className="absolute bottom-2 left-2">
             {isDossier && (
-              <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100">
+              <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100">
                 Report
               </span>
             )}
             {isLinkedAsset && !isDossier && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100" title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked"}>
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-medium rounded-md bg-purple-50/90 text-purple-600 border border-purple-100" title={parentDossier ? `Linked to ${parentDossier.title}` : "Linked"}>
                 <Link2 className="h-2 w-2" />
               </span>
             )}

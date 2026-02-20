@@ -48,13 +48,13 @@ export function DealTable({ deals, onDealClick }: DealTableProps) {
             <table className="w-full border-collapse">
                 <thead>
                     <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Company</th>
-                        <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Sector</th>
-                        <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Stage</th>
-                        <th className="text-right py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Amount</th>
-                        <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Lead</th>
-                        <th className="text-left py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Date</th>
-                        <th className="text-center py-3 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">Company</th>
+                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">Sector</th>
+                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">Stage</th>
+                        <th className="text-right py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">Amount</th>
+                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">Lead</th>
+                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">Date</th>
+                        <th className="text-center py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-gray-400">
                             <div className="flex items-center justify-center gap-1">
                                 <TrendingUp className="w-3 h-3" />
                                 <span>Score</span>
@@ -80,10 +80,10 @@ export function DealTable({ deals, onDealClick }: DealTableProps) {
                                         </span>
                                         <ArrowUpRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">{deal.hqLocation}</div>
+                                    <div className="text-xs text-gray-400 mt-0.5">{deal.hqLocation}</div>
                                 </td>
                                 <td className="py-4 px-4">
-                                    <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight border ${sectorColor}`}>
+                                    <span className={`inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-tight border ${sectorColor}`}>
                                         {deal.sector}
                                     </span>
                                 </td>

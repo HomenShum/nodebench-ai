@@ -84,9 +84,9 @@ function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
         </div>
       </div>
       <div className="min-w-0">
-        <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-1 font-outfit">{label}</div>
+        <div className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-1 font-outfit">{label}</div>
         <div className="text-2xl font-bold leading-none tracking-tight text-[color:var(--text-primary)]">{value}</div>
-        {sublabel && <div className="text-[11px] font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
+        {sublabel && <div className="text-xs font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
       </div>
     </div>
   );
@@ -107,7 +107,7 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 text-[10px] font-bold rounded-xl transition-all tracking-[0.1em] uppercase ${isSelected
+      className={`px-4 py-2 text-xs font-bold rounded-xl transition-all tracking-[0.1em] uppercase ${isSelected
         ? "bg-gray-900 text-white shadow-xl shadow-gray-400/20 translate-y-[-1px]"
         : "bg-[color:var(--bg-primary)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] border border-[color:var(--border-color)]"
         }`}
@@ -157,10 +157,10 @@ export function ExecutiveBriefHeader({
   const handleSourceClick = onSourceToggle ?? onSourceFilter;
   // Derive KPI values from quality metrics
   const coverageValue = quality?.coverage
-    ? `${quality.coverage.itemsScanned} items`
+    ? `${quality.coverage.itemsScanned} item${quality.coverage.itemsScanned !== 1 ? 's' : ''}`
     : "—";
   const coverageSublabel = quality?.coverage
-    ? `${quality.coverage.sourcesCount} sources`
+    ? `${quality.coverage.sourcesCount} source${quality.coverage.sourcesCount !== 1 ? 's' : ''}`
     : undefined;
 
   const freshnessValue = quality?.freshness
@@ -197,7 +197,7 @@ export function ExecutiveBriefHeader({
               {effectiveThesis}
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[color:var(--bg-secondary)]/50 rounded-full text-[11px] font-bold text-[color:var(--text-secondary)] uppercase tracking-widest flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[color:var(--bg-secondary)]/50 rounded-full text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-widest flex-shrink-0">
             <Calendar className="w-3 h-3" />
             <span>{effectiveDate}</span>
           </div>
@@ -235,7 +235,7 @@ export function ExecutiveBriefHeader({
       <div className="px-8 py-3 flex items-center gap-8 overflow-x-auto bg-[color:var(--bg-secondary)]/20">
         {/* Time Window */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-widest">Horizon</span>
+          <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-widest">Horizon</span>
           <div className="flex gap-1.5">
             {timeWindows.map((tw) => (
               <FilterChip
@@ -251,7 +251,7 @@ export function ExecutiveBriefHeader({
         {/* Topic Tags */}
         {effectiveTopics.length > 0 && (
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-[10px] font-bold text-[color:var(--text-secondary)] uppercase tracking-widest">Focus</span>
+            <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-widest">Focus</span>
             <div className="flex gap-1.5 flex-wrap">
               {effectiveTopics.slice(0, 6).map((tag) => (
                 <FilterChip

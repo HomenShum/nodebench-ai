@@ -56,7 +56,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                     <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
                         {isAnonymous ? "Guest User" : (user?.name ?? "User")}
                     </div>
-                    <div className="text-[11px] text-[var(--text-secondary)] truncate">
+                    <div className="text-xs text-[var(--text-secondary)] truncate">
                         {isAnonymous ? "Sign in to save your data" : (user?.email ?? "")}
                     </div>
                 </div>
@@ -66,7 +66,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                         <button
                             type="button"
                             onClick={handleGoogleSignIn}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-md bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors shadow-sm"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors shadow-sm"
                         >
                             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                                 <path
@@ -95,7 +95,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                                 <button
                                     type="button"
                                     onClick={() => onOpenSettings("profile")}
-                                    className="px-2 py-1 text-[11px] rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                                    className="px-2 py-1 text-xs rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                                 >
                                     Settings
                                 </button>
@@ -111,7 +111,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                     href="https://railway.com?referralCode=VaLiq9"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors opacity-60 hover:opacity-100"
+                    className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors opacity-60 hover:opacity-100"
                 >
                     Infra powered by Railway 
                 </a>

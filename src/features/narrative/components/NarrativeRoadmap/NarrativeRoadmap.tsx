@@ -114,9 +114,9 @@ export function NarrativeRoadmap({
     return (
       <div className={`bg-[#FAFAFA] dark:bg-white/[0.02] rounded-xl border border-gray-200 dark:border-white/[0.06] p-8 ${className}`}>
         <div className="text-center">
-          <Sparkles className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+          <Sparkles className="w-12 h-12 text-gray-400 dark:text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            No Stories Yet
+            No stories yet
           </h3>
           <p className="text-gray-500 dark:text-gray-400 text-sm font-light max-w-md mx-auto">
             Start tracking topics to build evolving story threads.
@@ -210,7 +210,7 @@ export function NarrativeRoadmap({
                     }`}
                 >
                   <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{week.label}</div>
-                  <div className="text-[10px] text-gray-400 dark:text-gray-500">{week.weekNumber}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500">{week.weekNumber}</div>
                 </div>
               ))}
             </div>

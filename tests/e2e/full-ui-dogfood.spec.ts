@@ -36,6 +36,14 @@ const ROUTES = [
   { path: "/public", name: "public-docs" },
 ];
 
+/** Theme × viewport variants for comprehensive QA coverage */
+const VARIANTS = [
+  { theme: "dark", viewport: { width: 1440, height: 900 }, suffix: "" },
+  { theme: "light", viewport: { width: 1440, height: 900 }, suffix: "-light" },
+  { theme: "dark", viewport: { width: 390, height: 844 }, suffix: "-mobile" },
+  { theme: "light", viewport: { width: 390, height: 844 }, suffix: "-mobile-light" },
+] as const;
+
 async function signInIfPrompted(page: Page) {
   const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
   if (await signInButton.count()) {
@@ -70,11 +78,31 @@ async function ensureNoBlockingModal(page: Page) {
   }
 }
 
-test.describe("Full UI Dogfood", () => {
-  test("dogfood all routes + key interactions", async ({ page }) => {
-    test.setTimeout(12 * 60 * 1000);
+async function setTheme(page: Page, theme: "dark" | "light") {
+  await page.evaluate((t) => {
+    localStorage.setItem(
+      "nodebench-theme",
+      JSON.stringify({
+        mode: t,
+        accentColor: "indigo",
+        density: "comfortable",
+        fontFamily: "Inter",
+        backgroundPattern: "none",
+        reducedMotion: false,
+      }),
+    );
+    localStorage.setItem("theme", t);
+  }, theme);
+}
 
-    await page.addInitScript(() => {
+test.describe("Full UI Dogfood", () => {
+  test("dogfood all routes — dark/light × desktop/mobile", async ({ page }) => {
+    // 4 variants × ~37 routes + interactions ≈ 20 min
+    test.setTimeout(30 * 60 * 1000);
+
+    // Set initial dark theme via evaluate (not addInitScript — that overrides on every nav)
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
       localStorage.setItem(
         "nodebench-theme",
         JSON.stringify({
@@ -88,21 +116,35 @@ test.describe("Full UI Dogfood", () => {
       );
       localStorage.setItem("theme", "dark");
     });
-
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Convex backend not configured")).toHaveCount(0);
     await signInIfPrompted(page);
     await expect(page.locator("#main-content")).toBeVisible();
 
-    for (const route of ROUTES) {
-      await page.goto(route.path, { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(1200);
-      await expect(page.getByText("Something went wrong")).toHaveCount(0);
-      await page.screenshot({
-        path: `test-results/full-ui-dogfood/${route.name}.png`,
-        fullPage: true,
-      });
+    // ─── Capture all routes for each variant ───────────────────────────
+    for (const variant of VARIANTS) {
+      await page.setViewportSize(variant.viewport);
+      await setTheme(page, variant.theme);
+      // Reload to apply theme fully
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(600);
+
+      for (const route of ROUTES) {
+        await page.goto(route.path, { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(1200);
+        await expect(page.getByText("Something went wrong")).toHaveCount(0);
+        await page.screenshot({
+          path: `test-results/full-ui-dogfood/${route.name}${variant.suffix}.png`,
+          fullPage: true,
+        });
+      }
     }
+
+    // ─── Interaction captures (desktop dark only — primary variant) ────
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await setTheme(page, "dark");
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
 
     await ensureNoBlockingModal(page);
 
@@ -171,6 +213,284 @@ test.describe("Full UI Dogfood", () => {
         path: "test-results/full-ui-dogfood/assistant-panel.png",
         fullPage: false,
       });
+      // Close assistant
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(300);
+    }
+
+    // ─── Deep interaction captures — real user behavior scenarios ───────
+    // These test popups, drawers, hover states, and input flows
+    // that only surface during actual human interaction depth.
+
+    // 1. Agent panel — open, type a message, capture thread view
+    await page.goto("/agents", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const agentInput = page.locator("input[placeholder*='Ask anything'], textarea[placeholder*='Ask anything']").first();
+    if (await agentInput.count()) {
+      await agentInput.click();
+      await agentInput.fill("Show me the latest research signals");
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-agent-input.png",
+        fullPage: false,
+      });
+    }
+
+    // 2. Calendar — click a date to open event popover/editor
+    await page.goto("/calendar", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const calendarDay = page.locator("div[role='button'][aria-pressed]").first();
+    if (await calendarDay.count()) {
+      await calendarDay.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-calendar-click.png",
+        fullPage: false,
+      });
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(200);
+    }
+
+    // 3. Research Hub — hover on entity links to trigger hover preview
+    await page.goto("/research", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const entityLink = page.locator("button.border-b-2.border-dashed").first();
+    if (await entityLink.count()) {
+      await entityLink.hover();
+      await page.waitForTimeout(600);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-entity-hover.png",
+        fullPage: false,
+      });
+    }
+
+    // 4. Research Briefing — click a signal card to expand details
+    await page.goto("/research/briefing", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const signalCard = page.locator("button[aria-expanded][type='button']").first();
+    if (await signalCard.count()) {
+      await signalCard.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-signal-expanded.png",
+        fullPage: false,
+      });
+    }
+
+    // 5. Documents — hover a document card for preview
+    await page.goto("/documents", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const docCard = page.locator("div[draggable='true']").first();
+    if (await docCard.count()) {
+      await docCard.hover();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-document-hover.png",
+        fullPage: false,
+      });
+    }
+
+    // 6. GitHub Explorer — click a repo link
+    await page.goto("/github", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const repoLink = page.locator("a[href*='github.com'][target='_blank']").first();
+    if (await repoLink.count()) {
+      await repoLink.hover();
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-github-hover.png",
+        fullPage: false,
+      });
+    }
+
+    // 7. Funding Brief — click a deal entry in list panel
+    await page.goto("/funding", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const dealBtn = page.locator("button[type='button'].w-full.text-left").first();
+    if (await dealBtn.count()) {
+      await dealBtn.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-funding-deal.png",
+        fullPage: false,
+      });
+    }
+
+    // 8. Search input on home — type and see suggestions
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
+    const searchInput = page.locator("input[placeholder*='Ask anything']").first();
+    if (await searchInput.count()) {
+      await searchInput.click();
+      await searchInput.fill("AI agents");
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-search-suggestions.png",
+        fullPage: false,
+      });
+    }
+
+    // 9. Tooltip / hover state on sidebar nav items
+    const sidebarItem = page.locator("nav button, nav a").nth(2);
+    if (await sidebarItem.count()) {
+      await sidebarItem.hover();
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-sidebar-hover.png",
+        fullPage: false,
+      });
+    }
+
+    // ─── Deep agent interaction captures ─────────────────────────────────
+    // Real human use scenarios: querying agent, streaming outputs, panels
+
+    // 10. FastAgentPanel — full chat interaction flow
+    await page.goto("/agents", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    // Try to open the FastAgent panel via FAB or inline trigger
+    const fabBtn = page.locator("button[aria-label*='Agent'], button[aria-label*='agent']").first();
+    if (await fabBtn.count()) {
+      await fabBtn.click();
+      await page.waitForTimeout(800);
+    }
+    // Find the chat input (textarea or input with message placeholder)
+    const chatInput = page.locator("textarea[placeholder*='Message'], textarea[placeholder*='message'], textarea[placeholder*='Ask'], input[placeholder*='Message']").first();
+    if (await chatInput.count()) {
+      await chatInput.click();
+      await chatInput.fill("Analyze the latest AI model benchmarks and compare Claude vs GPT performance");
+      await page.waitForTimeout(300);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-agent-query-typed.png",
+        fullPage: false,
+      });
+      // Submit the query (press Enter)
+      await chatInput.press("Enter");
+      await page.waitForTimeout(2000);
+      // Capture the streaming/response state
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-agent-response-stream.png",
+        fullPage: false,
+      });
+    }
+
+    // 11. FastAgentPanel — thread management (switch threads, create new)
+    const threadTab = page.locator("[data-thread-id], .thread-item, [role='tab']").first();
+    if (await threadTab.count()) {
+      await threadTab.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-agent-thread-switch.png",
+        fullPage: false,
+      });
+    }
+
+    // 12. FastAgentPanel — skills panel / settings
+    const agentSettingsBtn = page.locator("button:has-text('Settings'), button:has-text('Skills'), button[aria-label*='settings']").first();
+    if (await agentSettingsBtn.count()) {
+      await agentSettingsBtn.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-agent-settings.png",
+        fullPage: false,
+      });
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(200);
+    }
+
+    // 13. Swarm lanes / live agent lanes — observe multi-agent execution
+    await page.goto("/agents/live", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    const laneCard = page.locator("[class*='lane'], [class*='agent-card'], [class*='rounded-xl'][class*='border']").first();
+    if (await laneCard.count()) {
+      await laneCard.hover();
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-swarm-lanes.png",
+        fullPage: false,
+      });
+    }
+
+    // 14. Dogfood review gallery — navigate frames and video
+    await page.goto("/dogfood", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    // Click a frame thumbnail to select it
+    const frameThumbnail = page.locator("button:has(img), [class*='aspect-'][class*='rounded']").first();
+    if (await frameThumbnail.count()) {
+      await frameThumbnail.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-dogfood-frame-selected.png",
+        fullPage: false,
+      });
+    }
+
+    // 15. Dogfood QA results panel — check score display and issue list
+    const qaScoreEl = page.locator("[class*='score']").first();
+    if (await qaScoreEl.count()) {
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-dogfood-qa-score.png",
+        fullPage: false,
+      });
+    }
+
+    // 16. Task manager — hover task card for details
+    await page.goto("/activity", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const taskCard = page.locator("[class*='task-card'], [class*='session-card'], div[class*='rounded-lg border'][class*='p-4']").first();
+    if (await taskCard.count()) {
+      await taskCard.hover();
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-task-hover.png",
+        fullPage: false,
+      });
+      await taskCard.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-task-expanded.png",
+        fullPage: false,
+      });
+    }
+
+    // 17. Analytics — hover chart data points for tooltips
+    await page.goto("/analytics/recommendations", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const chartArea = page.locator("svg .recharts-bar-rectangle, svg rect[class*='recharts'], svg .recharts-line-dot").first();
+    if (await chartArea.count()) {
+      await chartArea.hover();
+      await page.waitForTimeout(400);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-analytics-tooltip.png",
+        fullPage: false,
+      });
+    }
+
+    // 18. MCP Ledger — expand a tool row for details
+    await page.goto("/mcp/ledger", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(800);
+    const toolRow = page.locator("tr[role='row'], div[role='row']").first();
+    if (await toolRow.count()) {
+      await toolRow.click();
+      await page.waitForTimeout(500);
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-mcp-tool-expanded.png",
+        fullPage: false,
+      });
+    }
+
+    // 19. Keyboard shortcut discovery — press ? to show shortcuts overlay
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
+    await page.keyboard.press("?");
+    await page.waitForTimeout(500);
+    const shortcutsOverlay = page.locator("[role='dialog'], [class*='shortcuts'], [class*='overlay']").first();
+    if (await shortcutsOverlay.count()) {
+      await page.screenshot({
+        path: "test-results/full-ui-dogfood/interaction-keyboard-shortcuts.png",
+        fullPage: false,
+      });
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(200);
     }
   });
 });

@@ -224,7 +224,7 @@ function formatTimeAgo(timestamp: number): string {
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
-  return new Date(timestamp).toLocaleDateString();
+  return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 /**
@@ -350,13 +350,13 @@ export function ChangeCard({
               {diff.affectedSections.slice(0, 3).map((section) => (
                 <span
                   key={section}
-                  className="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-600 rounded"
+                  className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
                 >
                   {section}
                 </span>
               ))}
               {diff.affectedSections.length > 3 && (
-                <span className="px-1.5 py-0.5 text-[10px] bg-gray-100 text-gray-500 rounded">
+                <span className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded">
                   +{diff.affectedSections.length - 3} more
                 </span>
               )}
@@ -475,7 +475,7 @@ export function ChangeListItem({ diff, source, selected = false, onSelect }: Cha
               <ChangeTypeBadge changeType={diff.changeType} />
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
+          <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
             <span className="truncate">{source?.name ?? diff.registryId}</span>
             <span>•</span>
             <span>{formatTimeAgo(diff.detectedAt)}</span>

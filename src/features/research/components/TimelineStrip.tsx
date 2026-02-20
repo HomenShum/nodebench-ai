@@ -201,15 +201,15 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <Clock className="w-4 h-4 text-[color:var(--text-secondary)]" />
-            <span className="text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider">
-              Temporal Context
+            <span className="text-xs font-semibold text-[color:var(--text-secondary)] tracking-wider">
+              Timeline
             </span>
-            <span className="text-[10px] text-[color:var(--text-secondary)] uppercase tracking-wider hidden sm:inline">
+            <span className="text-xs text-[color:var(--text-secondary)] tracking-wider hidden sm:inline">
               {activePhaseFilter === "all" ? "Showing all phases" : `Filtered: ${activePhaseFilter}`}
             </span>
           </div>
           {/* Phase legend */}
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-xs">
             {(["past", "present", "future"] as TemporalPhase[]).map((phase) => {
               const Icon = getPhaseIcon(phase);
               const colors = getPhaseColors(phase, false);
@@ -235,7 +235,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               <button
                 type="button"
                 onClick={() => setPhaseFilter("all")}
-                className="text-[10px] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] uppercase tracking-wider"
+                className="text-xs text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] uppercase tracking-wider"
                 title="Show all phases"
               >
                 Reset
@@ -391,7 +391,7 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
       <span className="text-xs font-medium whitespace-nowrap max-w-[120px] truncate">
         {event.label}
       </span>
-      <span className="text-[10px] opacity-70 whitespace-nowrap">
+      <span className="text-xs opacity-70 whitespace-nowrap">
         {formatDate(event.date)}
       </span>
       {event.isCurrent && (

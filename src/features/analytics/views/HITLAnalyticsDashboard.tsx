@@ -243,16 +243,33 @@ export default function HITLAnalyticsDashboard() {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State — skeleton grid */}
         {isLoading && (
-          <div className="text-center py-12">
-            <Activity className="motion-safe:animate-spin mx-auto text-gray-400 dark:text-gray-400 mb-2" size={32} />
-            <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
+          <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-28 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+            </div>
           </div>
         )}
 
         {/* Metrics Content */}
-        {!isLoading && metrics && (
+        {!isLoading && metrics && metrics.total === 0 ? (
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-12 text-center">
+            <Activity className="mx-auto text-gray-400 dark:text-gray-300 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              No reviews yet
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Items needing your review will appear here. Reviews are created automatically when a task is flagged for approval.
+            </p>
+          </div>
+        ) : !isLoading && metrics && (
           <>
             {/* Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -266,7 +283,7 @@ export default function HITLAnalyticsDashboard() {
 
               <MetricCard
                 title="Approval Rate"
-                value={`${(metrics.approvalRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.approvalRate * 100).toFixed(1))}%`}
                 subtitle={`${metrics.approved} approved`}
                 icon={<CheckCircle2 size={20} />}
                 color="green"
@@ -274,7 +291,7 @@ export default function HITLAnalyticsDashboard() {
 
               <MetricCard
                 title="Modification Rate"
-                value={`${(metrics.modificationRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.modificationRate * 100).toFixed(1))}%`}
                 subtitle={`${metrics.modified} modified`}
                 icon={<Edit3 size={20} />}
                 color="yellow"
@@ -289,11 +306,18 @@ export default function HITLAnalyticsDashboard() {
               />
             </div>
 
+            {/* Pending notice when total > 0 but no decisions made yet */}
+            {metrics.approvalRate === 0 && metrics.rejectionRate === 0 && metrics.modificationRate === 0 && metrics.total > 0 && (
+              <p className="text-xs text-center text-[color:var(--text-muted)] py-1">
+                Rates populate once reviews are completed — {metrics.total} {metrics.total === 1 ? 'review' : 'reviews'} pending.
+              </p>
+            )}
+
             {/* Second Row Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <MetricCard
                 title="Rejection Rate"
-                value={`${(metrics.rejectionRate * 100).toFixed(1)}%`}
+                value={`${parseFloat((metrics.rejectionRate * 100).toFixed(1))}%`}
                 subtitle={`${metrics.rejected} rejected`}
                 icon={<XCircle size={20} />}
                 color="red"
@@ -484,21 +508,6 @@ export default function HITLAnalyticsDashboard() {
               </div>
             )}
 
-            {/* Empty State */}
-            {metrics.total === 0 && (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-border/60 rounded-lg p-12 text-center">
-                <Activity className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  No Reviews Yet
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Review data will appear here once agents request human input and users respond.
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Make sure the HumanRequestCard component is integrated and agents are using the askHuman tool.
-                </p>
-              </div>
-            )}
           </>
         )}
       </div>

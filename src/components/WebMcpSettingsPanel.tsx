@@ -163,14 +163,14 @@ export function WebMcpSettingsPanel() {
                     <span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
                       {origin.label}
                     </span>
-                    <span className="text-[10px] text-gray-400 truncate">
+                    <span className="text-xs text-gray-400 truncate">
                       {origin.origin}
                     </span>
                   </button>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {origin.discoveredToolCount !== undefined && (
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-xs text-gray-400">
                         {origin.discoveredToolCount} tools
                       </span>
                     )}
@@ -186,16 +186,16 @@ export function WebMcpSettingsPanel() {
 
                 {expandedId === origin._id && (
                   <div className="mt-2 pl-7 space-y-1">
-                    <div className="text-[10px] text-gray-400">
-                      Approved: {origin.approvedAt ? new Date(origin.approvedAt).toLocaleDateString() : "—"}
+                    <div className="text-xs text-gray-400">
+                      Approved: {origin.approvedAt ? new Date(origin.approvedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "—"}
                     </div>
                     {origin.lastDiscoveredAt && (
-                      <div className="text-[10px] text-gray-400">
-                        Last scanned: {new Date(origin.lastDiscoveredAt).toLocaleDateString()}
+                      <div className="text-xs text-gray-400">
+                        Last scanned: {new Date(origin.lastDiscoveredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </div>
                     )}
                     {origin.allowedToolPatterns && origin.allowedToolPatterns.length > 0 && (
-                      <div className="text-[10px] text-gray-400">
+                      <div className="text-xs text-gray-400">
                         Allowed: {origin.allowedToolPatterns.join(", ")}
                       </div>
                     )}

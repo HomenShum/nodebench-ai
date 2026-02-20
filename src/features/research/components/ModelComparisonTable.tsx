@@ -52,7 +52,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
     <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Model Comparison</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Model Comparison</div>
           <div className="text-sm font-semibold text-gray-900">{context ?? modelKey}</div>
         </div>
         <button
@@ -70,7 +70,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
       )}
 
       {comparison?.recommendation && (
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-gray-800 text-[10px] font-bold uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-gray-800 text-xs font-bold uppercase tracking-wider">
           <TrendingUp className="w-3 h-3" />
           {comparison.recommendation}
         </div>
@@ -78,7 +78,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs text-left border-collapse">
-          <thead className="text-[10px] uppercase tracking-widest text-gray-400">
+          <thead className="text-xs uppercase tracking-widest text-gray-400">
             <tr>
               <th className="py-2 pr-2">Model</th>
               <th className="py-2 pr-2">Input $/1M</th>
@@ -109,10 +109,10 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
                           style={{ width: `${Math.min(100, Math.max(0, row.reliabilityScore))}%` }}
                         />
                       </div>
-                      <span className="text-[11px] text-gray-600">{Math.round(row.reliabilityScore)}%</span>
+                      <span className="text-xs text-gray-600">{Math.round(row.reliabilityScore)}%</span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 text-[11px]">n/a</span>
+                    <span className="text-gray-400 text-xs">n/a</span>
                   )}
                 </td>
                 <td className="py-2 text-gray-600">{row.performance || row.notes || "n/a"}</td>

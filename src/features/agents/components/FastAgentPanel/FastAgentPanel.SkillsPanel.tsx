@@ -77,7 +77,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         {/* User custom skills */}
         {userSkills && userSkills.length > 0 && (
           <div className="px-2.5 pt-2 pb-1">
-            <div className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
               Your Skills
             </div>
@@ -101,7 +101,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         {/* Built-in skills */}
         <div className="px-2.5 py-2">
           {userSkills && userSkills.length > 0 && (
-            <div className="text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
               <Zap className="h-3 w-3" />
               Built-in
             </div>
@@ -129,7 +129,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
                       <div className="text-xs font-medium text-[var(--text-primary)] group-hover:text-violet-600 transition-colors truncate">
                         {skill.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </div>
-                      <div className="text-[11px] text-[var(--text-secondary)] line-clamp-1 mt-0.5">
+                      <div className="text-xs text-[var(--text-secondary)] line-clamp-1 mt-0.5">
                         {skill.description}
                       </div>
                     </div>
@@ -143,7 +143,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
       
       {/* Hint footer - minimal */}
       <div className="px-3 py-2 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
-        <p className="text-[10px] text-[var(--text-muted)] text-center">
+        <p className="text-xs text-[var(--text-muted)] text-center">
           Tip: Say "when I say X, do Y" to teach new skills
         </p>
       </div>

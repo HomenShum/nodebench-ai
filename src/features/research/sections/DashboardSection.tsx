@@ -185,7 +185,7 @@ function DashboardSectionInner({
               <ChevronRight className="w-3 h-3 text-slate-600" />
             </button>
           </div>
-          <div className="text-[10px] text-slate-500 font-mono">
+          <div className="text-xs text-slate-500 font-mono">
             {isViewingHistorical ? (
               <span className="text-amber-600 font-medium">{displayDateLabel}</span>
             ) : (
@@ -215,7 +215,7 @@ function DashboardSectionInner({
 
       {availableDates.length > 1 && (
         <div className="mt-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
-          <div className="text-[9px] uppercase tracking-widest text-slate-400 mb-2">
+          <div className="text-xs uppercase tracking-widest text-slate-400 mb-2">
             Historical Data
           </div>
           <div className="flex flex-wrap gap-1">
@@ -224,7 +224,7 @@ function DashboardSectionInner({
                 key={date}
                 type="button"
                 onClick={() => setSelectedDate(date === selectedDate ? null : date)}
-                className={`px-2 py-1 text-[10px] rounded transition-colors ${date === displayDate
+                className={`px-2 py-1 text-xs rounded transition-colors ${date === displayDate
                     ? "bg-indigo-600 text-white font-medium"
                     : "bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)] text-slate-600 border border-slate-200"
                   }`}

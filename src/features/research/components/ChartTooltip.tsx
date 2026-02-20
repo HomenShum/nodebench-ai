@@ -94,7 +94,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
                 transition={{ duration: 2, repeat: Infinity }}
                 className={`w-2 h-2 rounded-full ${colors.accent} ${colors.glow}`}
               />
-              <span className={`font-mono text-[9px] font-bold uppercase tracking-widest ${colors.accentText}/80`}>
+              <span className={`font-mono text-xs font-bold uppercase tracking-widest ${colors.accentText}/80`}>
                 {data.kicker || "Intel Log"}
               </span>
             </div>
@@ -105,7 +105,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
             </h4>
 
             {/* Description body - font-sans per spec */}
-            <p className="relative font-sans text-[11px] leading-relaxed text-slate-300">
+            <p className="relative font-sans text-xs leading-relaxed text-slate-300">
               {data.description}
             </p>
 
@@ -114,7 +114,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
               <div className="relative mt-3 pt-2 border-t border-slate-700/50">
                 <div className="flex items-center gap-1 mb-1.5">
                   <FileText size={10} className={colors.accentText} />
-                  <span className="font-mono text-[8px] uppercase tracking-wide text-slate-400">
+                  <span className="font-mono text-[10px] uppercase tracking-wide text-slate-400">
                     Sources ({data.linkedEvidence.length})
                   </span>
                 </div>
@@ -131,11 +131,11 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
                     >
                       <ExternalLink size={9} className="text-slate-500 mt-0.5 shrink-0 group-hover:text-blue-400" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] text-slate-200 truncate group-hover:text-blue-300 transition-colors">
+                        <p className="text-xs text-slate-200 truncate group-hover:text-blue-300 transition-colors">
                           {ev.title}
                         </p>
                         {ev.source && (
-                          <p className="text-[8px] text-slate-500 truncate">
+                          <p className="text-[10px] text-slate-500 truncate">
                             {ev.source}
                           </p>
                         )}
@@ -143,7 +143,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
                     </button>
                   ))}
                   {data.linkedEvidence.length > 3 && (
-                    <p className="text-[9px] text-slate-500 italic pl-1">
+                    <p className="text-xs text-slate-500 italic pl-1">
                       +{data.linkedEvidence.length - 3} more...
                     </p>
                   )}

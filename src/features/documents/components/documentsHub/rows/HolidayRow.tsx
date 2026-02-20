@@ -27,13 +27,13 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
         const d = Number(parts[2]);
 
         if (!Number.isNaN(y) && !Number.isNaN(m) && !Number.isNaN(d)) {
-          return new Date(y, m - 1, d, 0, 0, 0, 0).toLocaleDateString();
+          return new Date(y, m - 1, d, 0, 0, 0, 0).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
       }
     }
 
     if (typeof h?.dateMs === "number")
-      return new Date(h.dateMs).toLocaleDateString();
+      return new Date(h.dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
     return null;
   };
@@ -74,7 +74,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
             checked
             readOnly
             aria-label="All-day"
-            className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 bg-white"
+            className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 bg-white dark:bg-[var(--bg-primary)]"
           />
 
           <div className="w-7 h-7 rounded-md bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-secondary)] flex items-center justify-center shrink-0">
@@ -87,13 +87,13 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
             </div>
 
             <div className="mt-1 flex items-center gap-2 flex-nowrap overflow-hidden">
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-[10px] bg-amber-50 border-amber-200 text-amber-700">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-xs bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700/40 text-amber-700 dark:text-amber-400">
                 All-day
               </span>
 
               {dateStr && (
                 <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                  className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
                   title={`Date ${dateStr}`}
                 >
                   {dateStr}

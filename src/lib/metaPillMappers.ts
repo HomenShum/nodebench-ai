@@ -225,7 +225,7 @@ const labelDue = (iso?: string) => {
     if (ms < 0) return 'Overdue today';
     if (ms < day) return 'Due today';
     if (ms < 2 * day) return 'Due tomorrow';
-    return `Due ${d.toLocaleDateString()}`;
+    return `Due ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
   } catch {
     return undefined;
   }

@@ -45,6 +45,54 @@ export const getDogfoodQaTrending = query({
   },
 });
 
+export const countMyDogfoodQaRuns = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return 0;
+
+    const runs = await ctx.db
+      .query("dogfoodQaRuns")
+      .withIndex("by_user_createdAt", (q) => q.eq("userId", userId))
+      .collect();
+    return runs.length;
+  },
+});
+
+/**
+ * Get the latest Pro-tier analysis for use as reference context in Flash runs.
+ * Returns the most recent run where model contains "pro" — summary + issues only (no rawText).
+ */
+export const getLatestProAnalysis = internalQuery({
+  args: { source: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const runs = await ctx.db
+      .query("dogfoodQaRuns")
+      .withIndex("by_user_createdAt", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(20);
+
+    const proRun = runs.find((r) => {
+      const isProModel = /pro/i.test(r.model ?? "");
+      const matchesSource = !args.source || r.source === args.source;
+      return isProModel && matchesSource;
+    });
+
+    if (!proRun) return null;
+
+    return {
+      createdAt: proRun.createdAt,
+      model: proRun.model,
+      source: proRun.source,
+      summary: proRun.summary,
+      issues: proRun.issues,
+    };
+  },
+});
+
 export const findMyDogfoodQaRunByInputSha256 = internalQuery({
   args: { inputSha256: v.string() },
   handler: async (ctx, args) => {

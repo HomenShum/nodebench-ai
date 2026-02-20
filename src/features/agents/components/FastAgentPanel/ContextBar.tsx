@@ -58,7 +58,7 @@ export function ContextBar({
             className={cn(
                 "flex items-center gap-2 px-3 py-1.5 min-h-[28px]",
                 "bg-[var(--bg-secondary)] border-b border-[var(--border-color)]",
-                "text-[11px] text-[var(--text-muted)]",
+                "text-xs text-[var(--text-muted)]",
                 "transition-colors duration-150",
                 className
             )}
@@ -76,7 +76,7 @@ export function ContextBar({
                 {constraints.length === 0 ? (
                     <button
                         onClick={onAddConstraint}
-                        className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[var(--bg-tertiary)]"
+                        className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[var(--bg-tertiary)]"
                     >
                         <span>None active</span>
                         <Plus className="w-2.5 h-2.5" />
@@ -87,7 +87,7 @@ export function ContextBar({
                         <span
                             key={constraint.id}
                             className={cn(
-                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium",
                                 getTypeColor(constraint.type),
                                 "group whitespace-nowrap"
                             )}
@@ -112,7 +112,7 @@ export function ContextBar({
                 )}
 
                 {constraints.length > 5 && (
-                    <span className="text-[10px] text-[var(--text-muted)]">
+                    <span className="text-xs text-[var(--text-muted)]">
                         +{constraints.length - 5} more
                     </span>
                 )}

@@ -145,7 +145,7 @@ export function Settings({
             <div className="setting-label">
               <Scale className="h-4 w-4" />
               <span>Arbitrage Mode</span>
-              <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold bg-amber-500/20 text-amber-400 rounded">BETA</span>
+              <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-amber-500/20 text-amber-400 rounded">BETA</span>
             </div>
             <label className="toggle-switch">
               <input
@@ -260,7 +260,7 @@ export function Settings({
                             onChange={(e) => setDraftContent(e.target.value)}
                             rows={2}
                           />
-                          <div className="flex gap-2 text-[11px]">
+                          <div className="flex gap-2 text-xs">
                             <button
                               className="px-2 py-1 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded"
                               onClick={() => saveEditing(pref._id as Id<"userTeachings">)}
@@ -278,7 +278,7 @@ export function Settings({
                       ) : (
                         <>
                           <div>{pref.content}</div>
-                          <div className="flex gap-2 text-[11px] text-[var(--text-secondary)]">
+                          <div className="flex gap-2 text-xs text-[var(--text-secondary)]">
                             <button onClick={() => startEditing(pref)}>Edit</button>
                             <button onClick={() => handleDelete(pref._id as Id<"userTeachings">)}>Delete</button>
                           </div>
@@ -324,7 +324,7 @@ export function Settings({
                             onChange={(e) => setDraftContent(e.target.value)}
                             rows={2}
                           />
-                          <div className="flex gap-2 text-[11px]">
+                          <div className="flex gap-2 text-xs">
                             <button
                               className="px-2 py-1 bg-[var(--bg-primary)] text-[var(--text-primary)] rounded"
                               onClick={() => saveEditing(skill._id as Id<"userTeachings">)}
@@ -347,7 +347,7 @@ export function Settings({
                           <div className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
                             {skill.content}
                           </div>
-                          <div className="flex gap-2 text-[11px] text-[var(--text-secondary)]">
+                          <div className="flex gap-2 text-xs text-[var(--text-secondary)]">
                             <button onClick={() => {
                               setDraftKey(skill.key || skill.category || "");
                               setDraftContent(skill.content || "");

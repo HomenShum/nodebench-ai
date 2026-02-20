@@ -168,7 +168,7 @@ async function main() {
   const baseURL = args.get("baseURL") ?? "http://127.0.0.1:5173";
   const outDir = args.get("outDir") ?? path.resolve(process.cwd(), ".tmp", "dogfood-video");
   const publish = args.get("publish") ?? "blob"; // blob | static | none
-  const settleMs = Number(args.get("settleMs") ?? 900);
+  const settleMs = Number(args.get("settleMs") ?? 2000);
   const headless = (args.get("headless") ?? "true") !== "false";
 
   const stamp = nowStamp();
@@ -196,8 +196,8 @@ async function main() {
     { path: "/benchmarks", name: "Benchmarks" },
     { path: "/funding", name: "Funding Brief" },
     { path: "/activity", name: "Activity" },
-    { path: "/analytics/hitl", name: "Review Queue" },
-    { path: "/analytics/components", name: "Usage Stats" },
+    { path: "/review-queue", name: "Review Queue" },
+    { path: "/analytics/components", name: "Usage & Costs" },
     { path: "/analytics/recommendations", name: "Feedback" },
     { path: "/cost", name: "Usage & Costs" },
     { path: "/industry", name: "Industry News" },
@@ -207,8 +207,8 @@ async function main() {
     { path: "/github", name: "GitHub Explorer" },
     { path: "/pr-suggestions", name: "PR Suggestions" },
     { path: "/linkedin", name: "LinkedIn Archive" },
-    { path: "/mcp/ledger", name: "Tool Usage Ledger" },
-    { path: "/dogfood", name: "Dogfood Gallery" },
+    { path: "/activity-log", name: "Activity Log" },
+    { path: "/quality-review", name: "Quality Review" },
     { path: "/public", name: "Public Docs" },
   ];
 
@@ -216,6 +216,11 @@ async function main() {
     headless,
     viewport: { width: 1440, height: 900 },
     baseURL,
+    colorScheme: "dark",
+    // Suppress motion-safe: animations during recording — avoids opacity-0 flash on every route.
+    // The opacity flash from view-enter (opacity 0→1) across 33 routes reads as seizure-risk
+    // flashing to Gemini. Real users experience smooth SPA transitions; recorder gets freeze-frames.
+    reducedMotion: "reduce",
     recordVideo: {
       dir: outDir,
       size: { width: 1440, height: 900 },
@@ -224,6 +229,7 @@ async function main() {
 
   const page = await context.newPage();
   await setDogfoodLocalStorage(page);
+  // Initial load via full navigation — establishes the SPA shell, auth, localStorage
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await maybeSignIn(page);
   await waitForAppReady(page);
@@ -255,9 +261,21 @@ async function main() {
         await page.waitForTimeout(250);
       }
     }
-    await page.goto(r.path, { waitUntil: "domcontentloaded" });
-    await waitForAppReady(page);
-    await page.waitForTimeout(settleMs);
+
+    if (idx === 0 && r.path === "/") {
+      // Already on home from initial load — no navigation needed, just settle
+      await page.waitForTimeout(settleMs);
+    } else {
+      // SPA client-side navigation via React Router (no full page reload).
+      // This avoids the white-flash from browser page load and lets React Router
+      // handle lazy loading smoothly, keeping the app shell and sidebar stable.
+      await page.evaluate((path) => {
+        history.pushState({}, "", path);
+        window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+      }, r.path);
+      // Allow React Router + lazy chunks time to settle
+      await page.waitForTimeout(settleMs + 100);
+    }
   }
 
   // Key interactions
@@ -292,7 +310,7 @@ async function main() {
       const b = page.getByRole("button", { name: tab }).first();
       if (await b.count()) {
         await b.click({ force: true });
-        await page.waitForTimeout(250);
+        await page.waitForTimeout(500);
       }
     }
     await page.keyboard.press("Escape");

@@ -23,7 +23,7 @@ export function Badge({
   return (
     <span
       className={joinClasses(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold",
         tones[tone] ?? tones.default,
         className
       )}

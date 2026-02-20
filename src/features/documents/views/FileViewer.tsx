@@ -594,7 +594,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     <span>{document.mimeType}</span>
                     {document.lastModified && (
                       <span>
-                        Modified {new Date(document.lastModified).toLocaleDateString()}
+                        Modified {new Date(document.lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     )}
                   </div>

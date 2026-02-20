@@ -125,7 +125,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
         )}
         
         {/* Kind Badge */}
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-[10px] font-medium uppercase tracking-wide">
+        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-xs font-medium uppercase tracking-wide">
           {kind}
         </div>
         
@@ -167,11 +167,11 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
         
         {/* Footer */}
         <div className="mt-2 flex items-center justify-between">
-          <span className={`text-[10px] font-medium ${getProviderColor(provider)}`}>
+          <span className={`text-xs font-medium ${getProviderColor(provider)}`}>
             {getProviderLabel(provider)}
           </span>
           {host && (
-            <span className="text-[10px] text-gray-400 truncate max-w-[80px]">
+            <span className="text-xs text-gray-400 truncate max-w-[80px]">
               {host}
             </span>
           )}
@@ -256,7 +256,7 @@ export function MediaRail({
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div className="h-px flex-1 bg-gray-200"></div>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
           Sources & Media ({sortedArtifacts.length})
         </span>
         <div className="h-px flex-1 bg-gray-200"></div>

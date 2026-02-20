@@ -1,3 +1,8 @@
+/* eslint-disable no-var */
+// Browser globals used inside page.evaluate() callbacks
+declare var localStorage: { clear(): void };
+declare var sessionStorage: { clear(): void };
+
 /**
  * Visual QA tools — burst capture + SSIM stability scoring + grid collage
  * for detecting animation jank, flicker, and visual regressions in web apps.
@@ -312,9 +317,10 @@ export const visualQaTools: McpTool[] = [
             await page0.evaluate(() => {
               try { localStorage.clear(); } catch {}
               try { sessionStorage.clear(); } catch {}
-              if ('caches' in window) {
-                caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-              }
+              try {
+                const w = globalThis as any;
+                if (w.caches) w.caches.keys().then((keys: string[]) => keys.forEach((k: string) => w.caches.delete(k)));
+              } catch {}
             });
           } catch { /* CDP best-effort */ }
           await page0.close();
@@ -341,7 +347,7 @@ export const visualQaTools: McpTool[] = [
               break;
             case "scroll":
               await page.evaluate(
-                (amount: number) => window.scrollBy(0, amount),
+                (amount: number) => (globalThis as any).scrollBy(0, amount),
                 parseInt(pa.value ?? "500", 10)
               );
               break;
@@ -975,9 +981,10 @@ export const visualQaTools: McpTool[] = [
             await page0.evaluate(() => {
               try { localStorage.clear(); } catch {}
               try { sessionStorage.clear(); } catch {}
-              if ('caches' in window) {
-                caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-              }
+              try {
+                const w = globalThis as any;
+                if (w.caches) w.caches.keys().then((keys: string[]) => keys.forEach((k: string) => w.caches.delete(k)));
+              } catch {}
             });
           } catch { /* CDP best-effort */ }
           await page0.close();
@@ -1000,7 +1007,7 @@ export const visualQaTools: McpTool[] = [
               break;
             case "scroll":
               await page.evaluate(
-                (amount: number) => window.scrollBy(0, amount),
+                (amount: number) => (globalThis as any).scrollBy(0, amount),
                 parseInt(pa.value ?? "500", 10)
               );
               break;

@@ -55,7 +55,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-gray-500" />
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Strategy Metrics</div>
+            <div className="text-xs font-bold uppercase tracking-widest text-gray-400">Strategy Metrics</div>
             <div className="text-sm font-semibold text-gray-900">Pivot justification</div>
           </div>
         </div>
@@ -81,18 +81,18 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
       <div className="grid grid-cols-2 gap-2 text-xs">
         {(report?.metrics ?? []).slice(0, 4).map((metric: any, idx: number) => (
           <div key={`${metric.label}-${idx}`} className="rounded-md border border-gray-100 bg-gray-50 p-2">
-            <div className="text-[10px] uppercase tracking-widest text-gray-400">{metric.label}</div>
+            <div className="text-xs uppercase tracking-widest text-gray-400">{metric.label}</div>
             <div className="text-sm font-semibold text-gray-900">
               {metric.value}{metric.unit ? ` ${metric.unit}` : ""}
             </div>
-            {metric.context && <div className="text-[10px] text-gray-400">{metric.context}</div>}
+            {metric.context && <div className="text-xs text-gray-400">{metric.context}</div>}
           </div>
         ))}
       </div>
 
       {report?.risks?.length ? (
-        <div className="text-[11px] text-gray-500">
-          <div className="text-[10px] uppercase tracking-widest text-gray-400">Risks</div>
+        <div className="text-xs text-gray-500">
+          <div className="text-xs uppercase tracking-widest text-gray-400">Risks</div>
           <ul className="list-disc list-inside space-y-1">
             {report.risks.slice(0, 3).map((risk: string, idx: number) => (
               <li key={`${risk}-${idx}`}>{risk}</li>
@@ -102,7 +102,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
       ) : null}
 
       {report?.sources?.length ? (
-        <div className="flex flex-wrap gap-2 text-[10px] text-gray-400">
+        <div className="flex flex-wrap gap-2 text-xs text-gray-400">
           {report.sources.slice(0, 3).map((source: any, idx: number) => (
             <a
               key={`${source.url}-${idx}`}

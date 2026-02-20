@@ -31,33 +31,33 @@ export function ApiUsageDisplay() {
     <div className="p-4 border border-gray-200 dark:border-white/[0.06] rounded-lg space-y-4">
       <div className="flex items-center gap-2 mb-2">
         <Activity className="h-5 w-5 text-blue-600" />
-        <h3 className="font-semibold text-lg">API Usage</h3>
+        <h3 className="font-semibold text-lg">Usage</h3>
       </div>
 
       {/* Overall Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <div className="text-xs text-gray-600 mb-1">Today</div>
-          <div className="text-2xl font-bold text-blue-600">
+        <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-lg">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Today</div>
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {summary.todayTotalCalls}
           </div>
-          <div className="text-xs text-gray-500">API calls</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">requests</div>
         </div>
-        
-        <div className="p-3 bg-green-50 rounded-lg">
-          <div className="text-xs text-gray-600 mb-1">This Month</div>
-          <div className="text-2xl font-bold text-green-600">
+
+        <div className="p-3 bg-green-50 dark:bg-green-500/10 rounded-lg">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">This Month</div>
+          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {summary.monthTotalCalls}
           </div>
-          <div className="text-xs text-gray-500">API calls</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">requests</div>
         </div>
-        
-        <div className="p-3 bg-purple-50 rounded-lg">
-          <div className="text-xs text-gray-600 mb-1">All Time</div>
-          <div className="text-2xl font-bold text-purple-600">
+
+        <div className="p-3 bg-purple-50 dark:bg-purple-500/10 rounded-lg">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">All Time</div>
+          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             {summary.totalCalls}
           </div>
-          <div className="text-xs text-gray-500">API calls</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">requests</div>
         </div>
       </div>
 
@@ -66,8 +66,8 @@ export function ApiUsageDisplay() {
         <div className="p-3 bg-gray-50 dark:bg-white/[0.03] rounded-lg">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Success Rate</span>
-            <span className="text-lg font-bold text-green-600">
-              {((summary.successfulCalls / summary.totalCalls) * 100).toFixed(1)}%
+            <span className="text-lg font-bold text-green-600 dark:text-green-400">
+              {parseFloat(((summary.successfulCalls / summary.totalCalls) * 100).toFixed(1))}%
             </span>
           </div>
           <div className="mt-2 h-2 bg-gray-200 dark:bg-white/[0.06] rounded-full overflow-hidden">

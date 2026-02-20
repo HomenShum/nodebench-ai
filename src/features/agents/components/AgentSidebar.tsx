@@ -83,7 +83,7 @@ const QueuePanel = memo(function QueuePanel() {
           )}>
             {activeCount}
           </div>
-          <div className="text-[10px] text-[var(--text-muted)]">Active</div>
+          <div className="text-xs text-[var(--text-muted)]">Active</div>
         </div>
 
         {/* Pending Approvals */}
@@ -100,7 +100,7 @@ const QueuePanel = memo(function QueuePanel() {
           )}>
             {pendingCount}
           </div>
-          <div className="text-[10px] text-[var(--text-muted)]">Pending</div>
+          <div className="text-xs text-[var(--text-muted)]">Pending</div>
         </div>
       </div>
 
@@ -113,10 +113,10 @@ const QueuePanel = memo(function QueuePanel() {
               className="flex items-center gap-2 p-2 bg-[var(--bg-secondary)] rounded-lg"
             >
               <Loader2 className="w-3 h-3 motion-safe:animate-spin text-[var(--accent-primary)] flex-shrink-0" />
-              <span className="text-[11px] text-[var(--text-secondary)] truncate flex-1">
+              <span className="text-xs text-[var(--text-secondary)] truncate flex-1">
                 {swarm.query?.slice(0, 40) || "Running..."}
               </span>
-              <span className="text-[10px] text-[var(--text-muted)] capitalize">
+              <span className="text-xs text-[var(--text-muted)] capitalize">
                 {swarm.status}
               </span>
             </div>
@@ -163,7 +163,7 @@ const RecentRuns = memo(function RecentRuns() {
           <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           Recent Runs
         </h4>
-        <p className="text-[11px] text-[var(--text-muted)] text-center py-4">
+        <p className="text-xs text-[var(--text-muted)] text-center py-4">
           No recent agent runs
         </p>
       </div>
@@ -193,15 +193,15 @@ const RecentRuns = memo(function RecentRuns() {
             )}
 
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] text-[var(--text-primary)] truncate">
+              <p className="text-xs text-[var(--text-primary)] truncate">
                 {swarm.query?.slice(0, 50) || "Agent run"}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-[var(--text-muted)]">
+                <span className="text-xs text-[var(--text-muted)]">
                   {formatTimeAgo(swarm.createdAt)}
                 </span>
                 {swarm.elapsedMs && (
-                  <span className="text-[10px] text-[var(--text-muted)]">
+                  <span className="text-xs text-[var(--text-muted)]">
                     • {formatTime(swarm.elapsedMs)}
                   </span>
                 )}
@@ -236,22 +236,22 @@ const MemoryStats = memo(function MemoryStats() {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-[var(--text-muted)]">Episodic Memories</span>
-          <span className="text-[11px] font-medium text-[var(--text-primary)]">
+          <span className="text-xs text-[var(--text-muted)]">Episodic Memories</span>
+          <span className="text-xs font-medium text-[var(--text-primary)]">
             {stats.episodicCount}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-[var(--text-muted)]">Key-Value Entries</span>
-          <span className="text-[11px] font-medium text-[var(--text-primary)]">
+          <span className="text-xs text-[var(--text-muted)]">Key-Value Entries</span>
+          <span className="text-xs font-medium text-[var(--text-primary)]">
             {stats.keyValueCount}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-[var(--text-muted)]">Deduplication</span>
-          <span className="text-[11px] font-medium text-green-600">
+          <span className="text-xs text-[var(--text-muted)]">Deduplication</span>
+          <span className="text-xs font-medium text-green-600">
             {stats.deduplicationRate}%
           </span>
         </div>
@@ -259,8 +259,8 @@ const MemoryStats = memo(function MemoryStats() {
         {/* Token Usage Bar */}
         <div className="pt-2 border-t border-[var(--border-color)]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-[var(--text-muted)]">Token Usage</span>
-            <span className="text-[10px] text-[var(--text-muted)]">
+            <span className="text-xs text-[var(--text-muted)]">Token Usage</span>
+            <span className="text-xs text-[var(--text-muted)]">
               {(stats.tokenUsage / 1000).toFixed(1)}k / 50k
             </span>
           </div>
@@ -306,19 +306,19 @@ const QuickStats = memo(function QuickStats() {
           <div className="text-lg font-bold text-[var(--accent-primary)]">
             {stats.total}
           </div>
-          <div className="text-[10px] text-[var(--text-muted)]">Total</div>
+          <div className="text-xs text-[var(--text-muted)]">Total</div>
         </div>
         <div>
           <div className="text-lg font-bold text-green-600">
             {stats.completed}
           </div>
-          <div className="text-[10px] text-[var(--text-muted)]">Success</div>
+          <div className="text-xs text-[var(--text-muted)]">Success</div>
         </div>
         <div>
           <div className="text-lg font-bold text-[var(--text-primary)]">
             {stats.successRate}%
           </div>
-          <div className="text-[10px] text-[var(--text-muted)]">Rate</div>
+          <div className="text-xs text-[var(--text-muted)]">Rate</div>
         </div>
       </div>
     </div>

@@ -151,14 +151,14 @@ export function MentionHoverPreview({ editorContainer, sourceDocumentId }: Menti
         </div>
         <button
           type="button"
-          className="text-[10px] px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+          className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQuickEdit((v) => !v); }}
           title={showQuickEdit ? "Hide Quick Edit" : "Quick Edit"}
         >
           {showQuickEdit ? "Hide" : "Quick Edit"}
         </button>
       </div>
-      <div className="mt-1 text-[11px] text-[var(--text-muted)] whitespace-pre-wrap">
+      <div className="mt-1 text-xs text-[var(--text-muted)] whitespace-pre-wrap">
         {preview?.contentPreview || 'No preview available.'}
       </div>
       {showQuickEdit && (

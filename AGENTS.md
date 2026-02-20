@@ -518,6 +518,29 @@ npm run build
 Review the output in-app:
 - Navigate to `/dogfood` and review: gallery, walkthrough video, scribe steps, Gemini QA runs, and trending issues.
 
+### Gemini QA Loop (automated scoring + fix cycle)
+
+**→ Quick Refs:** `gemini_qa_loop` rule (`.claude/rules/`, `.cursor/rules/`, `.windsurf/rules/`)
+
+Full pipeline for any coding agent (Claude Code, Cursor, Windsurf, Codex):
+
+```bash
+# Full cycle: build → capture → publish → record → score
+npx vite build
+BASE_URL=http://127.0.0.1:4173 npx playwright test tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1
+npm run dogfood:publish
+node scripts/ui/recordDogfoodWalkthrough.mjs --baseURL http://127.0.0.1:4173 --publish static
+BASE_URL=http://127.0.0.1:4173 node scripts/ui/runDogfoodGeminiQa.mjs
+```
+
+Score formula: `100 - P1×6 - P2×2 - P3×1`. Results at `.tmp/dogfood-gemini-qa/screens-qa.json` and `video-qa.json`.
+
+Model: Gemini 3 Flash Preview → gemini-3-flash → gemini-2.0-flash (auto-fallback chain in both `screenshotQa.ts` and `videoQa.ts`).
+
+Loop: read issues → fix P1s first (6 pts each) → batch P2 fixes → rebuild → re-score → repeat until target.
+
+Noise: ±8pt variance per run. Track P1 count trend, not raw score. Cross-check screenshots before fixing — Gemini hallucinates ~1/run.
+
 ## Bug loop (Ralph-style back pressure)
 
 **→ Quick Refs:** `analyst_diagnostic` rule, `critter_check` (check 11: bandaid detection)

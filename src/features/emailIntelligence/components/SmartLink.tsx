@@ -66,11 +66,11 @@ const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source }) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Info className="w-3.5 h-3.5 text-blue-500" />
-            <h4 className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">Context</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">Context</h4>
           </div>
           <p className="text-sm leading-relaxed text-[color:var(--text-primary)] font-sans">{summary}</p>
           {source && (
-            <div className="border-t border-[color:var(--border-color)] pt-2 text-[10px] text-[color:var(--text-secondary)]">Source: {source}</div>
+            <div className="border-t border-[color:var(--border-color)] pt-2 text-xs text-[color:var(--text-secondary)]">Source: {source}</div>
           )}
         </div>
       </span>

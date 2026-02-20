@@ -71,11 +71,11 @@ export function UnifiedRow({
       {/* Right-side metadata */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {isTask && item.dueDate && (
-          <span className="text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-xs text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
             {formatDue(item.dueDate)}
           </span>
         )}
-        <span className="text-[10px] text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
           {formatTimeAgo(item.updatedAt)}
         </span>
 

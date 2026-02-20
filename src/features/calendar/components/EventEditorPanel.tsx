@@ -232,7 +232,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={() => setAllDay((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Toggle all‑day"
           >
             <CalendarDays className="w-3 h-3 opacity-70" /> {allDay ? "All‑day" : "Timed"}
@@ -244,7 +244,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`pill inline-flex items-center gap-1 text-[11px] ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
+                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
                 title={`Set status: ${s}`}
               >
                 {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -255,7 +255,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={() => setShowStartPicker((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set start"
             aria-expanded={showStartPicker}
           >
@@ -264,7 +264,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={() => setShowEndPicker((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set end"
             aria-expanded={showEndPicker}
           >
@@ -274,7 +274,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={() => setShowLocation((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set location"
             aria-expanded={showLocation}
           >
@@ -285,7 +285,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={() => setShowColorPicker((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Set color"
             aria-expanded={showColorPicker}
           >
@@ -296,7 +296,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={() => setShowTagsEditor((v) => !v)}
-            className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+            className="pill pill--time inline-flex items-center gap-1 text-xs"
             title="Edit tags"
             aria-expanded={showTagsEditor}
           >
@@ -355,7 +355,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setColor("")}
-              className="text-[11px] px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+              className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
               title="Clear color"
             >
               Clear
@@ -366,12 +366,12 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
         {showTagsEditor && (
           <div className="flex flex-wrap items-center gap-1 mt-1.5">
             {tags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
                 {t}
                 <button
                   type="button"
                   onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
-                  className="text-[10px] opacity-70 hover:opacity-100"
+                  className="text-xs opacity-70 hover:opacity-100"
                   title="Remove tag"
                 >
                   ×
@@ -381,7 +381,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-[11px] bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
               onKeyDown={(e) => {
                 const el = e.currentTarget;
                 if (e.key === "Enter" || e.key === ",") {
@@ -397,21 +397,21 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
         {/* Location moved to chip with inline input */}
 
-        <div className="text-[10px] text-[var(--text-muted)]">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
+        <div className="text-xs text-[var(--text-muted)]">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
       </div>
 
       {/* Footer */}
       <div className="p-3 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
         <button
           onClick={handleClose}
-          className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+          className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
         >
           Close
         </button>
         <button
           onClick={() => void handleSave()}
           disabled={isSaving}
-          className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+          className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
         >
           <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
         </button>
@@ -475,7 +475,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setAllDay((v) => !v)}
-              className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+              className="pill pill--time inline-flex items-center gap-1 text-xs"
               title="Toggle all‑day"
             >
               <CalendarDays className="w-3 h-3 opacity-70" /> {allDay ? "All‑day" : "Timed"}
@@ -487,7 +487,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   key={s}
                   type="button"
                   onClick={() => setStatus(s)}
-                  className={`pill inline-flex items-center gap-1 text-[11px] ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
+                  className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
                   title={`Set status: ${s}`}
                 >
                   {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -498,7 +498,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setShowStartPicker((v) => !v)}
-              className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+              className="pill pill--time inline-flex items-center gap-1 text-xs"
               title="Set start"
               aria-expanded={showStartPicker}
             >
@@ -507,7 +507,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setShowEndPicker((v) => !v)}
-              className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+              className="pill pill--time inline-flex items-center gap-1 text-xs"
               title="Set end"
               aria-expanded={showEndPicker}
             >
@@ -517,7 +517,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setShowLocation((v) => !v)}
-              className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+              className="pill pill--time inline-flex items-center gap-1 text-xs"
               title="Set location"
               aria-expanded={showLocation}
             >
@@ -528,7 +528,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setShowColorPicker((v) => !v)}
-              className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+              className="pill pill--time inline-flex items-center gap-1 text-xs"
               title="Set color"
               aria-expanded={showColorPicker}
             >
@@ -539,7 +539,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setShowTagsEditor((v) => !v)}
-              className="pill pill--time inline-flex items-center gap-1 text-[11px]"
+              className="pill pill--time inline-flex items-center gap-1 text-xs"
               title="Edit tags"
               aria-expanded={showTagsEditor}
             >
@@ -601,7 +601,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               <button
                 type="button"
                 onClick={() => setColor("")}
-                className="text-[11px] px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+                className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
                 title="Clear color"
               >
                 Clear
@@ -612,12 +612,12 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           {showTagsEditor && (
             <div className="flex flex-wrap items-center gap-1 mt-1.5">
               {tags.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
                   {t}
                   <button
                     type="button"
                     onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
-                    className="text-[10px] opacity-70 hover:opacity-100"
+                    className="text-xs opacity-70 hover:opacity-100"
                     title="Remove tag"
                     aria-label={`Remove tag ${t}`}
                   >
@@ -628,7 +628,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               <input
                 type="text"
                 placeholder="Add tag…"
-                className="text-[11px] bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
                 onKeyDown={(e) => {
                   const el = e.currentTarget;
                   if (e.key === "Enter" || e.key === ",") {
@@ -644,7 +644,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
           {/* Location moved to chip with inline input */}
 
-          <div className="text-[10px] text-[var(--text-muted)]">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
+          <div className="text-xs text-[var(--text-muted)]">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}
@@ -652,7 +652,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <button
             type="button"
             onClick={handleClose}
-            className="text-[11px] px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
           >
             Close
           </button>
@@ -660,7 +660,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             type="button"
             onClick={() => void handleSave()}
             disabled={isSaving}
-            className={`text-[11px] px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>

@@ -1098,7 +1098,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/95 backdrop-blur p-3 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Roadmap Navigator</div>
+                    <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Roadmap Navigator</div>
                     <div className="text-xs font-semibold text-[var(--text-primary)]">
                       Section {activeIndex + 1} of {roadmapNav.length}
                     </div>
@@ -1106,7 +1106,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   <button
                     type="button"
                     onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="inline-flex items-center gap-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2 py-1 text-[10px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex items-center gap-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
                   >
                     <ChevronUp className="h-3 w-3" />
                     Back to top
@@ -1291,7 +1291,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 </div>
 
                 <div className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
-                  <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Jump to</div>
+                  <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Jump to</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {roadmapNav.map((item) => (
                       <RoadmapNavButton key={item.target} item={item} />
@@ -1466,7 +1466,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 ))}
               </div>
               <div className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
-                <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Agent coverage map</div>
+                <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Agent coverage map</div>
                 <div className="mt-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {agentCoverageMap.map((item) => (
                     <AgentCoverageCard key={item.agent} item={item} />
@@ -1529,7 +1529,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                         {s.domains.map((d) => (
                           <span
                             key={d.name}
-                            className="text-[10px] px-1.5 py-0.5 rounded-md border bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                            className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"
                           >
                             {d.name} {"\u00b7"} {d.count}
                           </span>
@@ -1583,7 +1583,7 @@ function SliceStat({ label, value, total, color }: { label: string; value: numbe
       <div className={`h-1.5 w-full rounded ${tint} overflow-hidden mb-1`}>
         <div className={`h-full ${bar}`} style={{ width: `${percent}%` }} />
       </div>
-      <div className={`text-[10px] ${text}`}>{value} {"\u00b7"} {percent}%</div>
+      <div className={`text-xs ${text}`}>{value} {"\u00b7"} {percent}%</div>
     </div>
   );
 }
@@ -1703,7 +1703,7 @@ function SummaryStat({ stat, index }: { stat: RoadmapStat; index: number }) {
           <span>{stat.label}</span>
         </div>
         <div className="mt-2 text-2xl font-semibold text-[var(--text-primary)]">{stat.value}</div>
-        <div className="text-[10px] text-[var(--text-secondary)]">{stat.detail}</div>
+        <div className="text-xs text-[var(--text-secondary)]">{stat.detail}</div>
       </div>
     </div>
   );
@@ -1717,7 +1717,7 @@ function RoadmapPulseCard({ item }: { item: RoadmapPulse }) {
         <div className={`flex h-8 w-8 items-center justify-center rounded-md border ${sectionToneClasses[item.tone]}`}>
           <Icon className="h-4 w-4" />
         </div>
-        <span className="text-[10px] font-semibold text-[var(--text-secondary)]">{item.metric}</span>
+        <span className="text-xs font-semibold text-[var(--text-secondary)]">{item.metric}</span>
       </div>
       <div className="mt-2 text-xs font-semibold text-[var(--text-primary)]">{item.title}</div>
       <div className="text-xs text-[var(--text-secondary)]">{item.description}</div>
@@ -1728,7 +1728,7 @@ function RoadmapPulseCard({ item }: { item: RoadmapPulse }) {
 function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
   return (
     <div className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Workflow at a glance</div>
+      <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Workflow at a glance</div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {steps.map((step, index) => {
           const Icon = step.icon;
@@ -1739,8 +1739,8 @@ function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
                   <Icon className="h-3 w-3" />
                 </div>
                 <div>
-                  <div className="text-[10px] font-semibold text-[var(--text-primary)]">{step.stage}</div>
-                  <div className="text-[10px] text-[var(--text-secondary)]">{step.description}</div>
+                  <div className="text-xs font-semibold text-[var(--text-primary)]">{step.stage}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">{step.description}</div>
                 </div>
               </div>
               {index < steps.length - 1 && <ChevronRight className="h-3 w-3 text-[var(--text-secondary)]" aria-hidden="true" />}
@@ -1760,7 +1760,7 @@ function TagPill({ label, tone = "default" }: { label: string; tone?: "default" 
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   };
   return (
-    <span className={`px-2 py-0.5 text-[10px] rounded-md border ${toneClasses[tone]}`}>
+    <span className={`px-2 py-0.5 text-xs rounded-md border ${toneClasses[tone]}`}>
       {label}
     </span>
   );
@@ -1774,7 +1774,7 @@ function RoadmapNavButton({ item, isActive }: { item: { label: string; target: s
     <button
       type="button"
       aria-current={isActive ? "page" : undefined}
-      className={`px-2.5 py-1 text-[10px] rounded-md border transition hover:bg-[var(--bg-hover)] hover:border-[var(--text-secondary)] ${activeClasses}`}
+      className={`px-2.5 py-1 text-xs rounded-md border transition hover:bg-[var(--bg-hover)] hover:border-[var(--text-secondary)] ${activeClasses}`}
       onClick={() => {
         const element = document.getElementById(item.target);
         if (element) {
@@ -1795,12 +1795,12 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
           <div className="text-sm font-semibold text-[var(--text-primary)]">{persona.name}</div>
           <div className="text-xs text-[var(--text-secondary)]">{persona.focus}</div>
         </div>
-        <span className="text-[10px] px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
+        <span className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]">
           {persona.cadence}
         </span>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Primary deliverables</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Primary deliverables</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {persona.primaryDeliverables.map((deliverable) => (
             <TagPill key={deliverable} label={deliverable} />
@@ -1808,7 +1808,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Signal focus</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Signal focus</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {persona.signalFocus.map((signal) => (
             <TagPill key={signal} label={signal} />
@@ -1816,7 +1816,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Needs</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Needs</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {persona.needs.map((need) => (
             <li key={need}>{need}</li>
@@ -1824,7 +1824,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </ul>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Deep agent backbone</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Deep agent backbone</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {persona.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -1845,7 +1845,7 @@ function PersonaMatrix({ personas }: { personas: PersonaProfile[] }) {
         </div>
       </div>
       <div className="hidden lg:block">
-        <div className="grid grid-cols-[minmax(160px,1fr)_minmax(180px,1.2fr)_minmax(200px,1.2fr)_minmax(220px,1.4fr)] gap-3 text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">
+        <div className="grid grid-cols-[minmax(160px,1fr)_minmax(180px,1.2fr)_minmax(200px,1.2fr)_minmax(220px,1.4fr)] gap-3 text-xs uppercase tracking-wide text-[var(--text-secondary)]">
           <div>Persona</div>
           <div>Cadence</div>
           <div>Primary deliverables</div>
@@ -1879,7 +1879,7 @@ function PersonaMatrix({ personas }: { personas: PersonaProfile[] }) {
             <div className="text-xs font-semibold text-[var(--text-primary)]">{persona.name}</div>
             <div className="text-xs text-[var(--text-secondary)]">{persona.cadence}</div>
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Primary deliverables</div>
+              <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Primary deliverables</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {persona.primaryDeliverables.map((deliverable) => (
                   <TagPill key={`${persona.name}-${deliverable}-mobile`} label={deliverable} />
@@ -1887,7 +1887,7 @@ function PersonaMatrix({ personas }: { personas: PersonaProfile[] }) {
               </div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Signal focus</div>
+              <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Signal focus</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {persona.signalFocus.map((signal) => (
                   <TagPill key={`${persona.name}-${signal}-mobile`} label={signal} />
@@ -1913,7 +1913,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
     <div className="relative rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 overflow-hidden transition-shadow hover:shadow-sm">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${tone.bar}`} />
       <div className="flex items-center justify-between">
-        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-md border ${tone.pill}`}>
+        <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${tone.pill}`}>
           {group.priority}
         </span>
         <div className="text-xs text-[var(--text-secondary)]">{group.label}</div>
@@ -1926,7 +1926,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
               <div className="text-xs text-[var(--text-secondary)] mt-1">{item.summary}</div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Personas</div>
+              <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Personas</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.personas.map((persona) => (
                   <TagPill key={persona} label={persona} />
@@ -1934,7 +1934,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
               </div>
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Agent backbone</div>
+              <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Agent backbone</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.agents.map((agent) => (
                   <TagPill key={agent} label={agent} />
@@ -1956,7 +1956,7 @@ function QualityBarCard({ principle }: { principle: QualityPrinciple }) {
         <div className="text-xs text-[var(--text-secondary)] mt-1">{principle.detail}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Checks</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Checks</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {principle.checks.map((check) => (
             <li key={check}>{check}</li>
@@ -1975,7 +1975,7 @@ function PersonaSegmentCard({ segment }: { segment: PersonaSegment }) {
         <div className="text-xs text-[var(--text-secondary)] mt-1">{segment.description}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Personas</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Personas</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {segment.personas.map((persona) => (
             <TagPill key={persona} label={persona} />
@@ -1983,7 +1983,7 @@ function PersonaSegmentCard({ segment }: { segment: PersonaSegment }) {
         </div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Outcomes</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Outcomes</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {segment.outcomes.map((outcome) => (
             <li key={outcome}>{outcome}</li>
@@ -2002,7 +2002,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
         <div className="text-xs text-[var(--text-secondary)] mt-1">Cadence: {deliverable.cadence}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Outputs</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Outputs</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {deliverable.outputs.map((output) => (
             <li key={output}>{output}</li>
@@ -2010,7 +2010,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
         </ul>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Personas</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Personas</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {deliverable.personas.map((persona) => (
             <TagPill key={persona} label={persona} />
@@ -2018,7 +2018,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
         </div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Agent backbone</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Agent backbone</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {deliverable.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -2052,7 +2052,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
     <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
       <div>
         <div className="text-xs font-semibold text-[var(--text-primary)]">{path.segment}</div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)] mt-2">Entry points</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)] mt-2">Entry points</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {path.entryPoints.map((entry) => (
             <TagPill key={entry} label={entry} />
@@ -2060,7 +2060,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
         </div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Triggers</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Triggers</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {path.triggers.map((trigger) => (
             <li key={trigger}>{trigger}</li>
@@ -2068,7 +2068,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
         </ul>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Outputs</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Outputs</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {path.outputs.map((output) => (
             <li key={output}>{output}</li>
@@ -2076,7 +2076,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
         </ul>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Agent backbone</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Agent backbone</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {path.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -2089,7 +2089,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
 
 function CoverageLegend() {
   return (
-    <div className="flex flex-wrap gap-2 text-[10px] text-[var(--text-secondary)]">
+    <div className="flex flex-wrap gap-2 text-xs text-[var(--text-secondary)]">
       <div className="flex items-center gap-1">
         <TagPill label="Primary" tone="success" />
         <span>Core audience</span>
@@ -2116,9 +2116,9 @@ function CoverageMatrix({ rows, segments }: { rows: CoverageMatrixRow[]; segment
     <div className="space-y-3">
       <div className="hidden md:block">
         <div className="grid grid-cols-[minmax(180px,1.2fr)_repeat(3,minmax(120px,1fr))] gap-2 text-xs">
-          <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Deliverable</div>
+          <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Deliverable</div>
           {segments.map((segment) => (
-            <div key={segment} className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">
+            <div key={segment} className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">
               {segment}
             </div>
           ))}
@@ -2149,7 +2149,7 @@ function CoverageMatrix({ rows, segments }: { rows: CoverageMatrixRow[]; segment
             <div className="mt-2 space-y-2">
               {segments.map((segment) => (
                 <div key={`${row.deliverable}-${segment}`} className="flex items-center justify-between text-xs">
-                  <span className="text-[10px] text-[var(--text-secondary)]">{segment}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{segment}</span>
                   <CoveragePill level={row.coverage[segment]} />
                 </div>
               ))}
@@ -2172,7 +2172,7 @@ function MetricCard({ metric }: { metric: SuccessMetric }) {
         Target: {metric.target}
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Applies to</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Applies to</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {metric.personas.map((persona) => (
             <TagPill key={persona} label={persona} />
@@ -2188,11 +2188,11 @@ function RiskCard({ risk }: { risk: RiskDependency }) {
     <div className="rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 space-y-3 transition-shadow hover:shadow-sm">
       <div className="text-xs font-semibold text-[var(--text-primary)]">{risk.title}</div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Impact</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Impact</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">{risk.impact}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Mitigation</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Mitigation</div>
         <div className="text-xs text-[var(--text-secondary)] mt-1">{risk.mitigation}</div>
       </div>
     </div>
@@ -2213,7 +2213,7 @@ function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
       </div>
       <div className="text-xs text-[var(--text-secondary)]">{phase.focus}</div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Deliverables</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Deliverables</div>
         <ul className="mt-1 space-y-1 text-xs text-[var(--text-secondary)] list-disc pl-4">
           {phase.deliverables.map((item) => (
             <li key={item}>{item}</li>
@@ -2232,7 +2232,7 @@ function OrchestrationCard({ stage }: { stage: OrchestrationStage }) {
         <div className="text-xs text-[var(--text-secondary)] mt-1">{stage.description}</div>
       </div>
       <div>
-        <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)]">Agents</div>
+        <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)]">Agents</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {stage.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -2248,7 +2248,7 @@ function AgentCoverageCard({ item }: { item: AgentCoverage }) {
     <div className="rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold text-[var(--text-primary)]">{item.agent}</div>
-        <span className="text-[10px] text-[var(--text-secondary)]">{item.count} personas</span>
+        <span className="text-xs text-[var(--text-secondary)]">{item.count} personas</span>
       </div>
       <div className="flex flex-wrap gap-1">
         {item.personas.map((persona) => (

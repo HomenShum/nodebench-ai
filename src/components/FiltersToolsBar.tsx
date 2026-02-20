@@ -139,7 +139,9 @@ export default function FiltersToolsBar(props: Props) {
         <button
           onClick={onUploadClick}
           disabled={!loggedInUser || isUploading}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          aria-label={isUploading ? 'Uploading document...' : 'Upload document'}
+          title={isUploading ? 'Uploading...' : 'Upload a document'}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ring-1 ring-indigo-500/50"
         >
           <Plus className="h-4 w-4" />
           <span>{isUploading ? 'Uploading...' : 'Upload'}</span>

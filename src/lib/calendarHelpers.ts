@@ -126,7 +126,7 @@ export const createCalendarDocument = async (
     // Fallback to minimal calendar
     const fallbackContent = [
       { type: 'heading', level: 1, text: title },
-      { type: 'paragraph', text: `*Created: ${now.toLocaleDateString()}*` },
+      { type: 'paragraph', text: `*Created: ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}*` },
       { type: 'paragraph', text: '---' },
       { type: 'heading', level: 2, text: '📅 Today' },
       { type: 'checkListItem', text: 'Add your tasks here', checked: false },

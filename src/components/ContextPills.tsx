@@ -5,7 +5,7 @@ import { FileText, Layers3, History, BookOpen, Wrench, Layout } from "lucide-rea
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-2">
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-secondary)] mb-1 flex items-center gap-1">
+      <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)] mb-1 flex items-center gap-1">
         <span>{title}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -17,7 +17,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Pill({ icon, label, subtle }: { icon?: React.ReactNode; label: string; subtle?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border ${subtle ? "bg-[var(--bg-primary)]/60" : "bg-[var(--accent-primary)]/10"} border-[var(--border-color)] text-[var(--text-primary)] max-w-[160px] truncate`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${subtle ? "bg-[var(--bg-primary)]/60" : "bg-[var(--accent-primary)]/10"} border-[var(--border-color)] text-[var(--text-primary)] max-w-[160px] truncate`}>
       {icon}
       <span className="truncate">{label}</span>
     </span>
@@ -76,7 +76,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
       {/* Tools & MCPs */}
       {toolsMcp.mcpServerName && (
         <Section title="Tools">
-          <Pill icon={<Wrench className="h-3 w-3 text-purple-600" />} label={`${toolsMcp.mcpServerName}${toolsMcp.toolCount ? ` • ${toolsMcp.toolCount} tools` : ""}`} />
+          <Pill icon={<Wrench className="h-3 w-3 text-purple-600" />} label={`${toolsMcp.mcpServerName}${toolsMcp.toolCount ? ` • ${toolsMcp.toolCount} tool${toolsMcp.toolCount !== 1 ? 's' : ''}` : ""}`} />
         </Section>
       )}
 

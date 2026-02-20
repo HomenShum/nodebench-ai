@@ -155,13 +155,13 @@ function SourceItem({ artifact }: SourceItemProps) {
         )}
         
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] font-medium opacity-80">
+          <span className="text-xs font-medium opacity-80">
             {getProviderLabel(provider)}
           </span>
           {host && (
             <>
-              <span className="text-[10px] opacity-50">•</span>
-              <span className="text-[10px] opacity-60 truncate max-w-[150px]">
+              <span className="text-xs opacity-50">•</span>
+              <span className="text-xs opacity-60 truncate max-w-[150px]">
                 {host}
               </span>
             </>

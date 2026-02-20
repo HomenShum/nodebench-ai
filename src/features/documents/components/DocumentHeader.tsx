@@ -29,14 +29,14 @@ function LastEditorDisplay({ userId }: { userId: string }) {
 
   if (!user) {
     return (
-      <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic inline-flex items-center gap-1">
+      <span className="text-xs text-[var(--text-muted)] opacity-60 italic inline-flex items-center gap-1">
         by <span className="inline-block w-16 h-2.5 bg-[var(--bg-hover)] rounded motion-safe:animate-pulse" />
       </span>
     );
   }
 
   return (
-    <span className="text-[10px] text-[var(--text-muted)] opacity-60 italic" title={`User ID: ${userId}`}>
+    <span className="text-xs text-[var(--text-muted)] opacity-60 italic" title={`User ID: ${userId}`}>
       by {user.name || 'Unknown'} ({userId.slice(-8)})
     </span>
   );
@@ -252,7 +252,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                 <Globe className="h-4 w-4 text-[var(--accent-green)]" />
                 <span className="text-sm font-medium text-[var(--text-secondary)]">Public</span>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${(document as any).allowPublicEdit
+                  className={`text-xs px-2 py-0.5 rounded-full border font-medium ${(document as any).allowPublicEdit
                     ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/5'
                     : 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-secondary)]'
                     }`}
@@ -466,7 +466,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                       {/* Remove */}
                       <button
                         onClick={() => void removeTagFromDocument({ documentId: document._id, tagId: t._id as any })}
-                        className="ml-1 px-1 rounded hover:bg-red-100 text-[10px] text-red-600"
+                        className="ml-1 px-1 rounded hover:bg-red-100 text-xs text-red-600"
                         title={`Remove ${t.name}`}
                         aria-label={`Remove ${t.name}`}
                       >
@@ -580,20 +580,20 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                 <>
                   <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
                     <span>updated</span>
-                    <span>{new Date(lastModified).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span>{new Date(lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     <span>{new Date(lastModified).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {lastEditedBy && <LastEditorDisplay userId={lastEditedBy} />}
                     {isRecent && <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full"></span>}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-[var(--text-muted)] opacity-75">
                     <span>created</span>
-                    <span>{new Date(document._creationTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span>{new Date(document._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   </div>
                 </>
               ) : (
                 <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
                   <span>created</span>
-                  <span>{new Date(document._creationTime).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span>{new Date(document._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   <span>{new Date(document._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {isRecent && <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full"></span>}
                 </div>

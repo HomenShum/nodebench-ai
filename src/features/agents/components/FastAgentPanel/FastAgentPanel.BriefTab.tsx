@@ -76,18 +76,18 @@ function TaskCard({
             <span className="text-xs font-medium text-[var(--text-primary)] line-clamp-2">
               {task.name}
             </span>
-            <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-primary)]">
               {task.type}
             </span>
             {isPersonal && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">
                 Personal
               </span>
             )}
             {queuePosition && (
               <span
                 className={cn(
-                  "ml-auto text-[9px] px-1.5 py-0.5 rounded border",
+                  "ml-auto text-xs px-1.5 py-0.5 rounded border",
                   isNextUp
                     ? "bg-indigo-600 text-white border-indigo-600"
                     : "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]",
@@ -97,14 +97,14 @@ function TaskCard({
               </span>
             )}
           </div>
-          <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
             {task.testCriteria}
           </p>
 
           {friendlyNotes && (
             <p
               className={cn(
-                "text-[10px] mt-1",
+                "text-xs mt-1",
                 task.status === "failing" ? "text-red-700" : "text-[var(--text-secondary)]",
               )}
             >
@@ -114,7 +114,7 @@ function TaskCard({
           )}
 
           {resultMarkdown && (
-            <div className="mt-2 text-[11px] text-[var(--text-primary)] whitespace-pre-wrap line-clamp-6">
+            <div className="mt-2 text-xs text-[var(--text-primary)] whitespace-pre-wrap line-clamp-6">
               {resultMarkdown}
             </div>
           )}
@@ -125,7 +125,7 @@ function TaskCard({
               onClick={onRetry}
               disabled={retryDisabled}
               className={cn(
-                "mt-2 gap-1 px-2 py-1 text-[10px] font-medium",
+                "mt-2 gap-1 px-2 py-1 text-xs font-medium",
                 retryDisabled
                   ? "bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed"
                   : buttonDanger,
@@ -453,7 +453,7 @@ export function BriefTab() {
                 <ChevronRight className="w-3 h-3 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
               {isViewingHistorical ? (
                 <span className="text-amber-600 font-medium">
                   {displayDateLabel}
@@ -526,7 +526,7 @@ export function BriefTab() {
         {/* Date pills */}
         {availableDates.length > 1 && (
           <div className="mt-3">
-            <div className="text-[9px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+            <div className="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">
               Historical Briefs
             </div>
             <div className="flex flex-wrap gap-1">
@@ -538,7 +538,7 @@ export function BriefTab() {
                     setSelectedDate(date === selectedDate ? null : date)
                   }
                   className={cn(
-                    "px-2 py-1 text-[10px] rounded transition-colors border",
+                    "px-2 py-1 text-xs rounded transition-colors border",
                     date === displayDate
                       ? "bg-indigo-600 text-white font-medium border-indigo-600"
                       : "bg-white dark:bg-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.06]",
@@ -560,7 +560,7 @@ export function BriefTab() {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {personalFeatures.length > 0 && (
           <div>
-            <div className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
+            <div className="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
               Personalized Tasks
             </div>
             <div className="space-y-2">
@@ -607,7 +607,7 @@ export function BriefTab() {
         )}
 
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
+          <div className="text-xs uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2">
             Global Brief Tasks
           </div>
           <div className="space-y-2">

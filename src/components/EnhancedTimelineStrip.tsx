@@ -136,7 +136,7 @@ export function EnhancedTimelineStrip({
             <Filter className="w-3 h-3" />
             Filter
             {activeFilters.size > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-[10px]">
+              <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-xs">
                 {activeFilters.size}
               </span>
             )}
@@ -223,7 +223,7 @@ export function EnhancedTimelineStrip({
                       <span className="text-xs font-medium whitespace-nowrap max-w-[120px] truncate">
                         {event.label}
                       </span>
-                      <span className="text-[10px] opacity-70 whitespace-nowrap">
+                      <span className="text-xs opacity-70 whitespace-nowrap">
                         {formatEventDate(event.timestamp)}
                       </span>
                     </motion.button>

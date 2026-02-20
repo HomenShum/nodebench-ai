@@ -86,7 +86,7 @@ export function CalendarHomeHub({
 
 
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative">
+    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative pb-24 lg:pb-0">
 
       <div className="flex-1 p-8 relative z-10">
         <div className="dashboard-container max-w-7xl mx-auto flex gap-8">

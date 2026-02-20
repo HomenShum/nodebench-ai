@@ -80,11 +80,11 @@ export default function PopoverMiniDocEditor({
   return (
     <div className="mt-2 rounded-lg p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 transition-all relative z-10 pointer-events-auto" data-inline-editor="true">
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[11px] text-[var(--text-muted)]">
+        <div className="text-xs text-[var(--text-muted)]">
           Press Esc to close · Ctrl/Cmd+S to save{enableCtrlEnter ? " · Ctrl/Cmd+Enter to save" : ""}
         </div>
         <div className="flex items-center gap-2">
-          {title ? <div className="text-[11px] text-[var(--text-muted)]">{title}</div> : null}
+          {title ? <div className="text-xs text-[var(--text-muted)]">{title}</div> : null}
           <button
             className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${dirty ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
             title={saveLabel}

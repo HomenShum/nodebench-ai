@@ -125,7 +125,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
             {task.name}
           </span>
           <span className={cn(
-            "flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium rounded",
+            "flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded",
             typeCfg.color
           )}>
             {typeCfg.icon}
@@ -135,7 +135,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
         
         {/* Description if present */}
         {task.description && (
-          <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 line-clamp-2">
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-2">
             {task.description}
           </p>
         )}
@@ -151,7 +151,7 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
                   style={{ width: `${task.progress * 100}%` }}
                 />
               </div>
-              <span className="text-[9px] text-[var(--text-secondary)]">
+              <span className="text-xs text-[var(--text-secondary)]">
                 {Math.round(task.progress * 100)}%
               </span>
             </div>
@@ -159,14 +159,14 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
           
           {/* Duration */}
           {task.elapsedMs && (
-            <span className="text-[9px] text-[var(--text-muted)]">
+            <span className="text-xs text-[var(--text-muted)]">
               {formatDuration(task.elapsedMs)}
             </span>
           )}
 
           {/* Token usage */}
           {(task.inputTokens || task.outputTokens) && (
-            <span className="text-[9px] text-[var(--text-muted)]">
+            <span className="text-xs text-[var(--text-muted)]">
               {task.inputTokens || 0}→{task.outputTokens || 0} tokens
             </span>
           )}
@@ -217,18 +217,18 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
         {totalTasks > 0 && (
           <div className="flex gap-2">
             {runningTasks > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                 <Clock className="w-3 h-3 motion-safe:animate-pulse" />
                 {runningTasks} running
               </span>
             )}
             {tasksByStatus.pending > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-full">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-full">
                 {tasksByStatus.pending} pending
               </span>
             )}
             {tasksByStatus.error > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded-full">
+              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
                 <AlertCircle className="w-3 h-3" />
                 {tasksByStatus.error} failed
               </span>

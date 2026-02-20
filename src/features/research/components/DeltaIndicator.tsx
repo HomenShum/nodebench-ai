@@ -26,15 +26,15 @@ export function DeltaIndicator({
     const direction = value > 0 ? "up" : value < 0 ? "down" : "flat";
 
     const colorClass = {
-        up: "text-indigo-600",
-        down: "text-red-500",
-        flat: "text-gray-400"
+        up: "text-indigo-600 dark:text-indigo-400",
+        down: "text-red-500 dark:text-red-400",
+        flat: "text-gray-400 dark:text-gray-500"
     }[direction];
 
     const bgClass = {
-        up: "bg-indigo-50",
-        down: "bg-red-50",
-        flat: "bg-gray-50"
+        up: "bg-indigo-50 dark:bg-indigo-950/30",
+        down: "bg-red-50 dark:bg-red-950/30",
+        flat: "bg-gray-100 dark:bg-gray-800/50"
     }[direction];
 
     const Icon = {
@@ -44,7 +44,7 @@ export function DeltaIndicator({
     }[direction];
 
     const sizeClasses = {
-        sm: "text-[10px] px-1.5 py-0.5 gap-1",
+        sm: "text-xs px-1.5 py-0.5 gap-1",
         md: "text-xs px-2 py-1 gap-1.5"
     }[size];
 

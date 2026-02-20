@@ -229,7 +229,7 @@ test.describe('Scenario: Dogfood artifacts ingestion — UI loads screenshots, s
     expect(scribe.steps.length, 'dogfood scribe.json should have steps').toBeGreaterThan(10);
 
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
 
     const frameImgs = page.locator('img[src*="/dogfood/frames/"]');
     await expect(frameImgs.first()).toBeVisible({ timeout: 30_000 });
@@ -267,7 +267,7 @@ test.describe('Scenario: Dogfood artifacts ingestion — UI loads screenshots, s
     const target = frames.items[0].startSec;
 
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
 
     await page.waitForFunction(() => {
       const v = document.querySelector('video') as HTMLVideoElement | null;
@@ -297,7 +297,7 @@ test.describe('Scenario: Live Gemini QA run — optional smoke', () => {
 
     await forceDark(page);
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
 
     await signInIfNeeded(page);
 
@@ -427,7 +427,7 @@ test.describe('Scenario: Gemini QA pipeline — auth, upload, and error states',
     await page.goto('/dogfood', { waitUntil: 'domcontentloaded', timeout: 30_000 });
 
     // Heading must appear
-    await page.getByRole('heading', { name: /design dogfood/i }).waitFor({ timeout: 30_000 });
+    await page.getByRole('heading', { name: /quality review/i }).waitFor({ timeout: 30_000 });
     await capture(page, 'dogfood-before-signin');
 
     // If not signed in, the sign-in CTA appears

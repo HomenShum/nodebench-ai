@@ -279,7 +279,7 @@ export function PostCard({
               >
                 {citation.citationKey}
                 {citation.pageIndex != null && (
-                  <span className="text-[10px] px-1 py-0 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">
+                  <span className="text-xs px-1 py-0 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">
                     p.{citation.pageIndex}
                   </span>
                 )}

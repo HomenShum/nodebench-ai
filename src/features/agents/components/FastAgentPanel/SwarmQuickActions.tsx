@@ -123,11 +123,11 @@ const QuickActionCard = memo(function QuickActionCard({
           <div className="flex-1 min-w-0">
             <h3 className="text-[13px] font-bold text-[var(--text-primary)] flex items-center gap-2">
               {preset.name}
-              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)]">
+              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)]">
                 {preset.agents.length} agents
               </span>
             </h3>
-            <p className="text-[11px] text-[var(--text-secondary)] mt-1 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2 leading-relaxed">
               {preset.description}
             </p>
           </div>
@@ -187,7 +187,7 @@ const QuickActionCard = memo(function QuickActionCard({
               e.stopPropagation();
               setIsExpanded(false);
             }}
-            className="mt-2 text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium transition-colors"
+            className="mt-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium transition-colors"
           >
             Cancel
           </button>
@@ -221,7 +221,7 @@ export function SwarmQuickActions({
           <h2 className="text-sm font-bold text-[var(--text-primary)]">
             Parallel Research
           </h2>
-          <p className="text-[11px] text-[var(--text-muted)]">
+          <p className="text-xs text-[var(--text-muted)]">
             Run multiple AI agents simultaneously
           </p>
         </div>
@@ -235,10 +235,10 @@ export function SwarmQuickActions({
       </div>
 
       {/* Tip */}
-      <p className="mt-4 text-[11px] text-[var(--text-muted)] text-center">
+      <p className="mt-4 text-xs text-[var(--text-muted)] text-center">
         <span className="font-semibold text-[var(--text-secondary)]">Pro tip:</span>{" "}
         Type{" "}
-        <code className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded-md text-[10px] font-mono border border-[var(--border-color)]">
+        <code className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded-md text-xs font-mono border border-[var(--border-color)]">
           /spawn
         </code>{" "}
         in the chat to choose which agents to use

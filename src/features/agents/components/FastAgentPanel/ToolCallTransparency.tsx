@@ -88,7 +88,7 @@ function ConfidenceBadge({ confidence }: { confidence: 'high' | 'medium' | 'low'
   };
 
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${colors[confidence]}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${colors[confidence]}`}>
       {confidence}
     </span>
   );
@@ -132,9 +132,9 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
           {icon}
         </span>
         <span className="text-xs font-medium text-[var(--text-primary)] flex-1">{displayName}</span>
-        <span className="text-[10px] text-[var(--text-muted)] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)]">{category}</span>
+        <span className="text-xs text-[var(--text-muted)] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)]">{category}</span>
         {call.durationMs !== undefined && (
-          <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-0.5">
+          <span className="text-xs text-[var(--text-muted)] flex items-center gap-0.5">
             <Clock className="w-3 h-3" />
             {formatDuration(call.durationMs)}
           </span>
@@ -161,7 +161,7 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
             <div className="mt-2 p-2 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center gap-1.5 mb-1">
                 <Zap className="w-3 h-3 text-violet-500" />
-                <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider">QuickRef</span>
+                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wider">QuickRef</span>
                 <ConfidenceBadge confidence={call.quickRef.confidence} />
               </div>
               <p className="text-xs text-blue-800 dark:text-blue-200 mb-1">
@@ -171,7 +171,7 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
                 <div className="flex items-center gap-1 flex-wrap">
                   <ArrowRight className="w-3 h-3 text-blue-400" />
                   {call.quickRef.nextTools.map((tool) => (
-                    <span key={tool} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300 font-mono">
+                    <span key={tool} className="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-300 font-mono">
                       {tool}
                     </span>
                   ))}
@@ -181,7 +181,7 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
                 <div className="mt-1 flex items-center gap-1 flex-wrap">
                   <BookOpen className="w-3 h-3 text-amber-500" />
                   {call.quickRef.relatedGotchas.slice(0, 3).map((g) => (
-                    <span key={g} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-800/30 text-amber-700 dark:text-amber-300 font-mono">
+                    <span key={g} className="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-800/30 text-amber-700 dark:text-amber-300 font-mono">
                       {g}
                     </span>
                   ))}

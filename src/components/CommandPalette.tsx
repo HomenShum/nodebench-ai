@@ -120,10 +120,10 @@ export function CommandPalette({
             },
             {
                 id: 'nav-dogfood',
-                label: 'Go to Dogfood',
+                label: 'Go to Quality Review',
                 description: 'Design review evidence gallery',
                 icon: <CheckSquare className="w-4 h-4" />,
-                keywords: ['dogfood', 'design', 'review', 'screenshots', 'qa'],
+                keywords: ['quality', 'review', 'design', 'screenshots', 'qa'],
                 section: 'navigation',
                 action: () => {
                     onNavigate?.('dogfood');
@@ -416,9 +416,21 @@ export function CommandPalette({
             backdropClassName="bg-black/50 backdrop-blur-sm"
             contentClassName="w-full max-w-2xl bg-white dark:bg-[#09090B] rounded-xl shadow-2xl dark:shadow-black/40 overflow-hidden border border-gray-200 dark:border-white/[0.06]"
         >
+                    {/* Palette Header */}
+                    <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                        <div className="flex items-center gap-2">
+                            <Command className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Command Palette</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-white/[0.06] rounded text-xs font-mono">ESC</kbd>
+                            <span>to close</span>
+                        </div>
+                    </div>
+
                     {/* Search Input */}
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
-                        <Search className="w-5 h-5 text-gray-400 dark:text-gray-400" />
+                    <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-white/[0.06]">
+                        <Search className="w-5 h-5 text-gray-400 dark:text-gray-400 flex-shrink-0" />
                         <label htmlFor="command-palette-input" className="sr-only">Search commands</label>
                         <input
                             id="command-palette-input"
@@ -426,13 +438,9 @@ export function CommandPalette({
                             type="text"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Type a command or search..."
+                            placeholder="Search commands or navigate…"
                             className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
                         />
-                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-400">
-                            <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-white/[0.06] rounded text-[10px] font-mono dark:text-gray-400">ESC</kbd>
-                            <span>to close</span>
-                        </div>
                     </div>
 
                     {/* Commands List */}
@@ -463,10 +471,10 @@ export function CommandPalette({
                                                 onClick={() => cmd.action()}
                                                 onMouseEnter={() => setSelectedIndex(currentIndex)}
                                                 className={`
-                                                    w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors
+                                                    w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-l-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500
                                                     ${isSelected
-                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-900 dark:text-blue-300'
-                                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]'
+                                                        ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-900 dark:text-blue-200 border-l-blue-500 dark:border-l-blue-400'
+                                                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.04] border-l-transparent'
                                                     }
                                                 `}
                                             >
@@ -501,11 +509,11 @@ export function CommandPalette({
                     <div className="px-4 py-2 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                         <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1">
-                                <kbd className="px-1 py-0.5 bg-white dark:bg-white/[0.06] rounded text-[10px] font-mono border border-gray-200 dark:border-white/[0.06] dark:text-gray-400">↑↓</kbd>
+                                <kbd className="px-1 py-0.5 bg-white dark:bg-white/[0.06] rounded text-xs font-mono border border-gray-200 dark:border-white/[0.06] dark:text-gray-400">↑↓</kbd>
                                 Navigate
                             </span>
                             <span className="flex items-center gap-1">
-                                <kbd className="px-1 py-0.5 bg-white dark:bg-white/[0.06] rounded text-[10px] font-mono border border-gray-200 dark:border-white/[0.06] dark:text-gray-400">↵</kbd>
+                                <kbd className="px-1 py-0.5 bg-white dark:bg-white/[0.06] rounded text-xs font-mono border border-gray-200 dark:border-white/[0.06] dark:text-gray-400">↵</kbd>
                                 Select
                             </span>
                         </div>

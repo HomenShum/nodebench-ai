@@ -183,8 +183,8 @@ async function main() {
     { kind: "route", path: "/github", name: "GitHub Explorer" },
     { kind: "route", path: "/pr-suggestions", name: "PR Suggestions" },
     { kind: "route", path: "/linkedin", name: "LinkedIn Archive" },
-    { kind: "route", path: "/mcp/ledger", name: "Tool Usage Ledger" },
-    { kind: "route", path: "/dogfood", name: "Dogfood Gallery" },
+    { kind: "route", path: "/mcp/ledger", name: "Activity Log" },
+    { kind: "route", path: "/dogfood", name: "Quality Review" },
     { kind: "route", path: "/public", name: "Public Docs" },
     { kind: "interaction", path: "(interaction)", name: "Interaction: Command Palette" },
     { kind: "interaction", path: "(interaction)", name: "Interaction: Settings" },
@@ -195,6 +195,7 @@ async function main() {
     headless,
     viewport: { width: 1440, height: 900 },
     baseURL,
+    serviceWorkers: "block",
   });
 
   const page = await context.newPage();

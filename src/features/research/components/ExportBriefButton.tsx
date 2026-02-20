@@ -45,7 +45,7 @@ function briefToMarkdown(brief: DailyBriefPayload): string {
   // Quality Metrics
   if (brief.quality) {
     lines.push(`## Quality Metrics`);
-    lines.push(`- **Coverage**: ${brief.quality.coverage.itemsScanned} items from ${brief.quality.coverage.sourcesCount} sources`);
+    lines.push(`- **Coverage**: ${brief.quality.coverage.itemsScanned} item${brief.quality.coverage.itemsScanned !== 1 ? 's' : ''} from ${brief.quality.coverage.sourcesCount} source${brief.quality.coverage.sourcesCount !== 1 ? 's' : ''}`);
     lines.push(`- **Freshness**: ${brief.quality.freshness.medianAgeHours}h median age (${brief.quality.freshness.windowLabel})`);
     lines.push(`- **Confidence**: ${brief.quality.confidence.score}% (${brief.quality.confidence.level})`);
     lines.push("");
@@ -206,7 +206,7 @@ export function ExportBriefButton({ brief, className = "" }: ExportBriefButtonPr
 
           <div className="border-t border-slate-100 my-1" />
 
-          <div className="px-3 py-2 text-[10px] text-slate-400 flex items-center gap-1">
+          <div className="px-3 py-2 text-xs text-slate-400 flex items-center gap-1">
             <FileText className="w-3 h-3" />
             Includes provenance metadata
           </div>

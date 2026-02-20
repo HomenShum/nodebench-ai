@@ -159,7 +159,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
             <button
               onClick={() => setScope('thread')}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors",
+                "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors",
                 scope === 'thread'
                   ? "bg-[var(--bg-primary)] shadow-sm text-blue-600"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -171,7 +171,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
             <button
               onClick={() => setScope('global')}
               className={cn(
-                "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] font-medium rounded transition-colors",
+                "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors",
                 scope === 'global'
                   ? "bg-[var(--bg-primary)] shadow-sm text-blue-600"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -209,7 +209,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                "px-2 py-1 text-[10px] font-medium rounded transition-colors",
+                "px-2 py-1 text-xs font-medium rounded transition-colors",
                 filter === f.key
                   ? "bg-blue-100 text-blue-700"
                   : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
@@ -262,16 +262,16 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                     <div className="flex items-center gap-2 mt-1">
                       {task.priority && (
                         <span className={cn(
-                          "px-1.5 py-0.5 text-[9px] font-medium rounded",
+                          "px-1.5 py-0.5 text-xs font-medium rounded",
                           priorityColors[task.priority]
                         )}>
                           {task.priority}
                         </span>
                       )}
                       {task.dueDate && (
-                        <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+                        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
                           <Calendar className="w-3 h-3" />
-                          {new Date(task.dueDate).toLocaleDateString()}
+                          {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       )}
                     </div>

@@ -115,7 +115,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           <span className="text-sm font-semibold text-[var(--text-primary)]">
             {isUser ? 'You' : 'Assistant'}
           </span>
-          <span className="text-[11px] text-[var(--text-muted)]">
+          <span className="text-xs text-[var(--text-muted)]">
             {new Date(message.timestamp).toLocaleTimeString([], { 
               hour: '2-digit', 
               minute: '2-digit' 
@@ -279,7 +279,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               className="flex items-center gap-1.5 py-0.5 bg-transparent border-none cursor-pointer text-xs"
               aria-label={showMetadata ? "Hide message details" : "Show message details"}
             >
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-[10px] font-medium">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs font-medium">
                 <Clock className="h-2.5 w-2.5" />
                 {(message.elapsedMs / 1000).toFixed(1)}s
               </span>
@@ -287,7 +287,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
             {/* Expanded metadata — model + tokens shown on click */}
             {showMetadata && (
-              <div className="mt-1.5 px-2.5 py-2 bg-[var(--bg-tertiary)] rounded-md text-[11px] space-y-0.5">
+              <div className="mt-1.5 px-2.5 py-2 bg-[var(--bg-tertiary)] rounded-md text-xs space-y-0.5">
                 {message.model && (
                   <div className="flex justify-between">
                     <span className="text-[var(--text-muted)]">Model:</span>

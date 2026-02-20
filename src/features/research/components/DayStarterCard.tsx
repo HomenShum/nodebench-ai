@@ -71,7 +71,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-[11px] font-semibold uppercase text-[color:var(--text-secondary)]">Day Starter</p>
+            <p className="text-xs font-semibold uppercase text-[color:var(--text-secondary)]">Day Starter</p>
             <p className="text-sm font-semibold text-[color:var(--text-primary)]">Choose a preset</p>
           </div>
         </div>
@@ -81,7 +81,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
               key={persona}
               type="button"
               onClick={() => onPersonaChange(persona)}
-              className={`px-2 py-1 rounded-full text-[11px] font-semibold border ${
+              className={`px-2 py-1 rounded-full text-xs font-semibold border ${
                 activePersona === persona
                   ? "bg-gray-900 text-white border-gray-900"
                   : "bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] border-[color:var(--border-color)] hover:bg-[color:var(--bg-hover)]"
@@ -103,7 +103,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
                 <p className="text-sm font-semibold text-[color:var(--text-primary)]">{preset.title}</p>
                 <p className="text-[12px] text-[color:var(--text-primary)] leading-relaxed">{preset.subtitle}</p>
                 {isGuest && preset.persona !== "general" && (
-                  <p className="text-[11px] text-amber-600 mt-1">Sign in for full investor/FDA/patent detail.</p>
+                  <p className="text-xs text-amber-600 mt-1">Sign in for full investor/FDA/patent detail.</p>
                 )}
               </div>
             </div>

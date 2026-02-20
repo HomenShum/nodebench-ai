@@ -58,7 +58,7 @@ export function SourcesPanel({ activeSources, onToggleSource }: SourcesPanelProp
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0 ml-2">
                                     {source.trustScore && (
-                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border tabular-nums ${trustColor}`}>
+                                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold border tabular-nums ${trustColor}`}>
                                             {source.trustScore}%
                                         </span>
                                     )}

@@ -96,7 +96,7 @@ const RequestCard = memo(function RequestCard({
               <p className="text-sm font-medium text-[var(--text-primary)] line-clamp-2">
                 {request.question}
               </p>
-              <div className="flex items-center gap-2 mt-1 text-[10px] text-[var(--text-muted)]">
+              <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-muted)]">
                 <Clock className="w-3 h-3" />
                 <span>{timeAgo}</span>
               </div>
@@ -122,7 +122,7 @@ const RequestCard = memo(function RequestCard({
         {/* Expanded Context */}
         {isExpanded && request.context && (
           <div className="mt-3 p-2 bg-[var(--bg-secondary)] rounded-lg text-xs text-[var(--text-secondary)]">
-            <div className="flex items-center gap-1.5 mb-1 text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-medium">
+            <div className="flex items-center gap-1.5 mb-1 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">
               <Bot className="w-3 h-3" />
               Context
             </div>
@@ -359,7 +359,7 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               Pending Approvals
             </h3>
-            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
               {pendingRequests.length}
             </span>
           </div>

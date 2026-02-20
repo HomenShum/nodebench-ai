@@ -21,21 +21,22 @@ interface MetricCardProps {
   value: string | number;
   subtitle?: string;
   icon: React.ReactNode;
+  accent?: boolean;
   trend?: {
     value: number;
     direction: 'up' | 'down' | 'neutral';
   };
 }
 
-function MetricCard({ title, value, subtitle, icon, trend }: MetricCardProps) {
+function MetricCard({ title, value, subtitle, icon, accent, trend }: MetricCardProps) {
   return (
-    <div className="bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className={`bg-white dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] rounded-lg p-4 hover:shadow-md transition-shadow${accent ? ' border-l-2 border-l-indigo-500 dark:border-l-indigo-400' : ''}`}>
       <div className="flex items-start justify-between mb-2">
-        <div className="text-gray-600 dark:text-gray-400 text-sm font-medium">{title}</div>
-        <div className="text-gray-400 dark:text-gray-500">{icon}</div>
+        <div className="text-gray-600 dark:text-gray-300 text-sm font-medium">{title}</div>
+        <div className={accent ? 'text-indigo-500 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-300'}>{icon}</div>
       </div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{value}</div>
-      {subtitle && <div className="text-xs text-gray-500 dark:text-gray-400">{subtitle}</div>}
+      <div className={`text-2xl font-bold mb-1 ${accent ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{value}</div>
+      {subtitle && <div className="text-xs text-gray-500 dark:text-gray-300">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' :
             trend.direction === 'down' ? 'text-red-600' :
@@ -74,8 +75,8 @@ function SourcePerformanceBar({
         <div className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate flex-1">
           {sourceName}
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-          <span className="font-mono">{itemCount} items</span>
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap shrink-0">
+          <span className="font-mono">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
           {impressions > 0 && (
             <>
               <span className="text-gray-300 dark:text-gray-600">|</span>
@@ -98,7 +99,7 @@ function SourcePerformanceBar({
             <>
               <span className="text-gray-300 dark:text-gray-600">|</span>
               <span className="font-semibold text-blue-600">
-                {(ctr * 100).toFixed(1)}% CTR
+                {parseFloat((ctr * 100).toFixed(1))}% CTR
               </span>
             </>
           )}
@@ -137,13 +138,13 @@ function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: Cat
         </div>
       </div>
       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-        <span className="font-mono">{itemCount} items</span>
+        <span className="font-mono">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
         {avgReadTime && avgReadTime > 0 && (
           <>
             <span className="text-gray-300 dark:text-gray-600">|</span>
             <span className="flex items-center gap-1">
               <Clock size={12} />
-              {Math.round(avgReadTime)}s
+              {Math.round(avgReadTime)} sec
             </span>
           </>
         )}
@@ -300,7 +301,7 @@ export default function ComponentMetricsDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <BarChart3 size={32} />
-              Analytics Dashboard
+              Usage & Costs
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Component-level performance metrics for reports
@@ -311,12 +312,22 @@ export default function ComponentMetricsDashboard() {
             {/* Date Selector */}
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-gray-400" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-white/[0.08] dark:bg-white/[0.06] dark:text-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                {/* Formatted date label — always shows readable format */}
+                <span className="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-white/[0.08] rounded-lg bg-white dark:bg-white/[0.06] inline-block min-w-[160px]">
+                  {selectedDate
+                    ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                    : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                {/* Native date input overlaid for picking — invisible but functional */}
+                <input
+                  type="date"
+                  value={selectedDate}
+                  aria-label="Select date"
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                />
+              </div>
             </div>
 
             {/* Range Selector */}
@@ -340,11 +351,19 @@ export default function ComponentMetricsDashboard() {
           </div>
         </div>
 
-        {/* Loading State */}
+        {/* Loading State — skeleton grid */}
         {isLoading && (
-          <div className="text-center py-12">
-            <Activity className="motion-safe:animate-spin mx-auto text-gray-400 dark:text-gray-500 mb-2" size={32} />
-            <p className="text-gray-600 dark:text-gray-400">Loading metrics...</p>
+          <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-28 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-64 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+              <div className="h-64 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
+            </div>
+            <div className="h-48 rounded-lg bg-gray-200 dark:bg-gray-700/50" />
           </div>
         )}
 
@@ -356,28 +375,30 @@ export default function ComponentMetricsDashboard() {
               <MetricCard
                 title="Total Items"
                 value={aggregates.totalItems}
-                subtitle={`From ${aggregates.uniqueSources} sources`}
+                subtitle={aggregates.uniqueSources === 0 ? 'No sources yet' : `From ${aggregates.uniqueSources} ${aggregates.uniqueSources === 1 ? 'source' : 'sources'}`}
                 icon={<BarChart3 size={20} />}
+                accent={aggregates.totalItems > 0}
               />
 
               <MetricCard
                 title="Impressions"
-                value={aggregates.totalImpressions > 0 ? aggregates.totalImpressions : 'Not tracked yet'}
-                subtitle={aggregates.totalImpressions > 0 ? 'Total views' : 'Integrate tracking to see data'}
+                value={aggregates.totalImpressions > 0 ? aggregates.totalImpressions : 0}
+                subtitle={aggregates.totalImpressions > 0 ? 'Total views' : 'No views recorded yet'}
                 icon={<Eye size={20} />}
+                accent={aggregates.totalImpressions > 0}
               />
 
               <MetricCard
                 title="Click-Through Rate"
-                value={aggregates.avgCTR > 0 ? `${(aggregates.avgCTR * 100).toFixed(1)}%` : 'Not tracked yet'}
-                subtitle={aggregates.totalClicks > 0 ? `${aggregates.totalClicks} clicks` : 'Integrate tracking to see data'}
+                value={aggregates.avgCTR > 0 ? `${parseFloat((aggregates.avgCTR * 100).toFixed(1))}%` : '0%'}
+                subtitle={aggregates.totalClicks > 0 ? `${aggregates.totalClicks} clicks` : 'No clicks recorded yet'}
                 icon={<MousePointerClick size={20} />}
               />
 
               <MetricCard
                 title="Avg Read Time"
-                value={aggregates.avgReadTime > 0 ? `${Math.round(aggregates.avgReadTime)}s` : 'Not tracked yet'}
-                subtitle={aggregates.avgReadTime > 0 ? 'Average engagement' : 'Integrate tracking to see data'}
+                value={aggregates.avgReadTime > 0 ? `${Math.round(aggregates.avgReadTime)} sec` : '0 sec'}
+                subtitle={aggregates.avgReadTime > 0 ? 'Average engagement' : 'No read sessions recorded yet'}
                 icon={<Clock size={20} />}
               />
             </div>
@@ -389,7 +410,7 @@ export default function ComponentMetricsDashboard() {
                   Source Performance
                 </h2>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {sourceMetrics.length} sources tracked
+                  {selectedDate}
                 </span>
               </div>
 
@@ -423,13 +444,13 @@ export default function ComponentMetricsDashboard() {
                     Category Breakdown
                   </h2>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {categoryMetrics.length} categories
+                    {categoryMetrics.length === 0 ? 'No categories' : `${categoryMetrics.length} ${categoryMetrics.length === 1 ? 'category' : 'categories'}`}
                   </span>
                 </div>
 
                 {categoryMetrics.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No category data available for {new Date(selectedDate + "T00:00:00Z").toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}
+                    No category data available for {new Date(selectedDate + "T00:00:00Z").toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}
                   </div>
                 ) : (
                   <div className="space-y-1">
@@ -483,14 +504,14 @@ export default function ComponentMetricsDashboard() {
                               {source.sourceName}
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {source.totalItems} items • {source.recordCount} records
+                              {source.totalItems} {source.totalItems === 1 ? 'item' : 'items'} • {source.recordCount} {source.recordCount === 1 ? 'record' : 'records'}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
                           {source.avgCTR > 0 && (
                             <div className="text-sm font-semibold text-blue-600">
-                              {(source.avgCTR * 100).toFixed(1)}% CTR
+                              {parseFloat((source.avgCTR * 100).toFixed(1))}% CTR
                             </div>
                           )}
                           {source.avgEngagement > 0 && (
