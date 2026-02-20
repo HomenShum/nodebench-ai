@@ -87,7 +87,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
    function parseToolsets(): McpTool[] {
     if (cliArgs.includes("--help")) {
       const lines = [
-        "nodebench-mcp v2.17.0 — Development Methodology MCP Server",
+        "nodebench-mcp v2.28.0 — Development Methodology MCP Server",
         "",
         "Usage: nodebench-mcp [options]",
         "",
@@ -1606,7 +1606,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.27.0" },
+  { name: "nodebench-mcp-methodology", version: "2.28.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
