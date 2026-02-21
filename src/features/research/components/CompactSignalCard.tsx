@@ -4,30 +4,30 @@ import { cn } from '@/lib/utils';
 
 // Source icons/colors mapping
 const SOURCE_CONFIG: Record<string, { icon: string; color: string; bg: string }> = {
-  'Hugging Face': { icon: '🤗', color: 'text-yellow-700', bg: 'bg-yellow-50' },
-  'YCombinator': { icon: '🟧', color: 'text-orange-700', bg: 'bg-orange-50' },
-  'TechCrunch': { icon: '📰', color: 'text-green-700', bg: 'bg-green-50' },
-  'ArXiv': { icon: '📄', color: 'text-blue-700', bg: 'bg-blue-50' },
-  'GitHub': { icon: '🐙', color: 'text-purple-700', bg: 'bg-purple-50' },
-  'BioPharma Dive': { icon: '💊', color: 'text-pink-700', bg: 'bg-pink-50' },
-  'FierceBiotech': { icon: '🧬', color: 'text-rose-700', bg: 'bg-rose-50' },
-  'Bloomberg': { icon: '📊', color: 'text-blue-700', bg: 'bg-blue-50' },
-  'Financial Times': { icon: '📈', color: 'text-amber-700', bg: 'bg-amber-50' },
-  'OpenAI Blog': { icon: '🤖', color: 'text-content-secondary', bg: 'bg-indigo-50' },
-  'Google AI Blog': { icon: '🔬', color: 'text-cyan-700', bg: 'bg-cyan-50' },
-  'The Hacker News': { icon: '🔒', color: 'text-red-700', bg: 'bg-red-50' },
-  'default': { icon: '📌', color: 'text-content-secondary', bg: 'bg-surface-secondary' },
+  'Hugging Face': { icon: '🤗', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'YCombinator': { icon: '🟧', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'TechCrunch': { icon: '📰', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'ArXiv': { icon: '📄', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'GitHub': { icon: '🐙', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'BioPharma Dive': { icon: '💊', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'FierceBiotech': { icon: '🧬', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'Bloomberg': { icon: '📊', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'Financial Times': { icon: '📈', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'OpenAI Blog': { icon: '🤖', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'Google AI Blog': { icon: '🔬', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'The Hacker News': { icon: '🔒', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
+  'default': { icon: '📌', color: 'text-content-secondary', bg: 'bg-surface-secondary dark:bg-white/[0.06]' },
 };
 
 const CATEGORY_STYLES: Record<string, { style: string; label: string }> = {
-  'ai_ml': { style: 'bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-300', label: 'AI & ML' },
-  'research': { style: 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300', label: 'Research' },
-  'finance': { style: 'bg-indigo-100 dark:bg-indigo-500/20 text-content dark:text-indigo-300', label: 'Finance' },
-  'startups': { style: 'bg-orange-100 dark:bg-orange-500/20 text-orange-800 dark:text-orange-300', label: 'Startups' },
-  'biotech': { style: 'bg-pink-100 dark:bg-pink-500/20 text-pink-800 dark:text-pink-300', label: 'Biotech' },
-  'tech': { style: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300', label: 'Tech' },
-  'security': { style: 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-300', label: 'Security' },
-  'default': { style: 'bg-surface-secondary dark:bg-white/10 text-content-secondary', label: '' },
+  'ai_ml': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'AI & ML' },
+  'research': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'Research' },
+  'finance': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'Finance' },
+  'startups': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'Startups' },
+  'biotech': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'Biotech' },
+  'tech': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'Tech' },
+  'security': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: 'Security' },
+  'default': { style: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary', label: '' },
 };
 
 interface CompactSignalCardProps {
@@ -120,15 +120,15 @@ export function CompactSignalCard({
           {category && (
             <>
               <span className="text-gray-300 dark:text-content-secondary">•</span>
-              <span className={cn('px-1.5 py-0.5 rounded text-xs font-semibold uppercase tracking-wide whitespace-nowrap', categoryConfig.style)}>
+              <span className={cn('px-1.5 py-0.5 rounded text-xs font-medium whitespace-nowrap', categoryConfig.style)}>
                 {categoryConfig.label || category.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
               </span>
             </>
           )}
           {isHot && (
-            <span className="flex items-center gap-0.5 text-orange-600">
+            <span className="flex items-center gap-0.5 text-content-muted">
               <TrendingUp className="w-2.5 h-2.5" />
-              Hot
+              Trending
             </span>
           )}
         </div>
@@ -137,8 +137,7 @@ export function CompactSignalCard({
       {/* Score / Action */}
       <div className="flex items-center gap-1 shrink-0">
         {score !== undefined && score > 70 && (
-          <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-100 text-content-secondary rounded text-xs font-bold">
-            <Zap className="w-2.5 h-2.5" />
+          <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-surface-secondary dark:bg-white/[0.06] text-content-muted rounded text-xs font-medium">
             {score}
           </div>
         )}

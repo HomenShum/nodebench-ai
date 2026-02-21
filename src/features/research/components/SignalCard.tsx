@@ -32,11 +32,7 @@ function DeltaBadge({ deltaSummary }: DeltaBadgeProps) {
   const isNegative = deltaSummary.includes("-") || deltaSummary.toLowerCase().includes("down")
     || deltaSummary.toLowerCase().includes("decrease");
 
-  const colorClass = isPositive
-    ? "bg-indigo-50 text-content-secondary border-indigo-200"
-    : isNegative
-    ? "bg-red-50 text-red-700 border-red-200"
-    : "bg-amber-50 text-amber-700 border-amber-200";
+  const colorClass = "bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge";
 
   return (
     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
@@ -72,11 +68,11 @@ export function SignalCard({
 
   return (
     <div
-      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-lg overflow-hidden
-                 hover:border-indigo-200 transition-all duration-200"
+      className="group relative bg-surface border border-edge rounded-lg overflow-hidden
+                 hover:border-edge transition-all duration-200"
     >
       {/* Left Accent Border */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500" />
+      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--accent-primary)]" />
 
       {/* Header - Always Visible */}
       <button
@@ -89,8 +85,8 @@ export function SignalCard({
         aria-expanded={isExpanded}
       >
         {/* Signal Number */}
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-100 text-indigo-700
-                        flex items-center justify-center text-xs font-bold mt-0.5">
+        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-surface-secondary dark:bg-white/[0.08] text-content-secondary
+                        flex items-center justify-center text-xs font-semibold mt-0.5">
           {index + 1}
         </div>
 
@@ -98,7 +94,7 @@ export function SignalCard({
         <div className="flex-1 min-w-0">
           {/* Signal Label */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wide flex items-center gap-1">
+            <span className="text-xs font-medium text-content-secondary bg-surface-secondary dark:bg-white/[0.06] px-2 py-0.5 rounded-full flex items-center gap-1">
               <Tag className="w-2.5 h-2.5" />
               {signalLabel}
             </span>
@@ -111,18 +107,18 @@ export function SignalCard({
           </div>
 
           {/* Headline */}
-          <h3 className="text-base font-semibold text-[color:var(--text-primary)] leading-snug group-hover:text-indigo-700 transition-colors">
+          <h3 className="text-base font-semibold text-content leading-snug group-hover:text-content transition-colors">
             {signal.headline}
           </h3>
 
           {/* Meta Row */}
           <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-            <span className="text-xs font-medium text-[color:var(--text-secondary)] uppercase tracking-wide flex items-center gap-1">
+            <span className="text-xs font-medium text-content-secondary flex items-center gap-1">
               <LinkIcon className="w-3 h-3" />
               {evidenceCount} source{evidenceCount !== 1 ? "s" : ""}
             </span>
             {signal.relatedSignalIds && signal.relatedSignalIds.length > 0 && (
-              <span className="text-xs text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+              <span className="text-xs text-content-secondary bg-surface-secondary dark:bg-white/[0.06] px-1.5 py-0.5 rounded">
                 Links to {signal.relatedSignalIds.length} signal{signal.relatedSignalIds.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -130,7 +126,7 @@ export function SignalCard({
         </div>
 
         {/* Expand Toggle */}
-        <div className="flex-shrink-0 text-[color:var(--text-secondary)] group-hover:text-indigo-500 transition-colors">
+        <div className="flex-shrink-0 text-content-secondary group-hover:text-content transition-colors">
           {isExpanded ? (
             <ChevronUp className="w-5 h-5" />
           ) : (
@@ -149,7 +145,7 @@ export function SignalCard({
 
           {/* Synthesis Prose */}
           <div className="prose prose-sm prose-slate max-w-none">
-            <p className="text-[color:var(--text-primary)] leading-relaxed">
+            <p className="text-content leading-relaxed">
               {signal.synthesis}
             </p>
           </div>
@@ -175,12 +171,12 @@ interface SignalListProps {
 export function SignalList({ signals, onSignalClick, className = "" }: SignalListProps) {
   if (!signals || signals.length === 0) {
     return (
-      <div className="text-center py-12 text-[color:var(--text-secondary)]">
-        <div className="w-14 h-14 bg-amber-50 rounded-lg flex items-center justify-center mx-auto mb-4">
-          <Lightbulb className="w-7 h-7 text-amber-500" />
+      <div className="text-center py-12 text-content-secondary">
+        <div className="w-14 h-14 bg-surface-secondary dark:bg-white/[0.06] rounded-lg flex items-center justify-center mx-auto mb-4">
+          <Lightbulb className="w-7 h-7 text-content-muted" />
         </div>
-        <h3 className="text-base font-semibold text-[color:var(--text-primary)] mb-1">No signals yet</h3>
-        <p className="text-sm text-[color:var(--text-secondary)] max-w-xs mx-auto">
+        <h3 className="text-base font-semibold text-content mb-1">No signals yet</h3>
+        <p className="text-sm text-content-secondary max-w-xs mx-auto">
           Signals will appear here as new market insights are detected.
         </p>
       </div>

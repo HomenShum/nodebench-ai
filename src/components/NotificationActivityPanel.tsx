@@ -129,17 +129,17 @@ export function NotificationActivityPanel({
   const styles =
     variant === "hub"
       ? {
-          container: "border border-gray-200/70 bg-[#f2f1ed]/60 p-6 space-y-4 dark:border-white/[0.06] dark:bg-white/[0.02]",
-          title: "text-xs font-black text-content uppercase tracking-[0.3em]",
-          subtitle: "text-xs text-content-secondary font-mono uppercase tracking-wider",
+          container: "border border-edge bg-surface-secondary p-6 space-y-4 dark:border-white/[0.06] dark:bg-white/[0.02]",
+          title: "text-xs font-semibold text-content",
+          subtitle: "text-xs text-content-muted",
           statsGrid: "grid grid-cols-2 gap-2",
-          statCard: "bg-white/80 border border-gray-200/60 px-3 py-2 text-center dark:bg-white/[0.04] dark:border-white/[0.06]",
-          statValue: "text-lg font-bold text-content",
-          statLabel: "text-xs text-content-secondary uppercase tracking-wider",
+          statCard: "bg-surface border border-edge px-3 py-2 text-center dark:bg-white/[0.04] dark:border-white/[0.06]",
+          statValue: "text-base font-semibold text-content",
+          statLabel: "text-xs text-content-muted",
           logList: "space-y-2",
-          logItem: "border border-gray-200/60 bg-white/90 px-3 py-2 dark:border-white/[0.06] dark:bg-white/[0.04]",
+          logItem: "border border-edge bg-surface px-3 py-2 dark:border-white/[0.06] dark:bg-white/[0.04]",
           logTitle: "text-xs font-semibold text-content",
-          logMeta: "text-xs text-content-secondary uppercase tracking-wider",
+          logMeta: "text-xs text-content-muted font-medium",
           logBody: "text-xs text-content-secondary",
           emptyText: "text-xs text-content-muted",
         }
@@ -154,7 +154,7 @@ export function NotificationActivityPanel({
           logList: "space-y-2",
           logItem: "border border-edge rounded p-2 bg-white dark:border-white/[0.06] dark:bg-white/[0.02]",
           logTitle: "text-xs font-semibold text-content line-clamp-1 dark:text-gray-200",
-          logMeta: "text-xs text-content-muted uppercase tracking-wide",
+          logMeta: "text-xs text-content-muted font-medium",
           logBody: "text-xs text-content-secondary line-clamp-2",
           emptyText: "text-xs text-content-secondary",
         };

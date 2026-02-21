@@ -1,5 +1,248 @@
 [
   {
+    "timestamp": "2026-02-21T00:17:29.806Z",
+    "runType": "gemini-qa-rubric",
+    "score": 100,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 7,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "falsePositivesFiltered": 7,
+      "hardFiltered": 0,
+      "llmFiltered": 7,
+      "judgeDetails": [
+        {
+          "issue": "P1Sidebar and Breadcrumb Mismatch",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "The sidebar and breadcrumb may be serving different navigational contexts. Without more information about the user's journey, it's difficult to determine if this is a genuine bug or an intentional design choice."
+        },
+        {
+          "issue": "P2Chart Label Overlaps Data Line",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.7,
+          "reasoning": "Overlapping text in charts is often a screenshot artifact due to compression or rendering differences. The Recharts library is responsive, and the tooltip positioning should prevent overlap on actual devices."
+        },
+        {
+          "issue": "P2Cramped Mini Calendar Header",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "The mini calendar is intentionally compact. 'Squished' or 'cramped' layouts are part of the dense design for power users."
+        },
+        {
+          "issue": "P3Redundant Empty State Text",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "The '0 items' and 'Nothing scheduled' messages may provide different levels of detail or context. While seemingly redundant, it's a design choice, not a bug."
+        },
+        {
+          "issue": "P3Inconsistent Empty State Capitalization",
+          "verdict": "design_opinion",
+          "confidence": 0.6,
+          "reasoning": "Inconsistent capitalization in empty states is a design choice, not a functional bug. While consistency is generally preferred, it doesn't prevent users from completing tasks."
+        },
+        {
+          "issue": "P3Exposed Character Count Metric",
+          "verdict": "design_opinion",
+          "confidence": 0.7,
+          "reasoning": "Displaying the character count in the LinkedIn Posts archive is a design decision. While it might seem like an internal metric, it could be useful for some users. It's not a functional bug."
+        },
+        {
+          "issue": "P2Inconsistent Date and Time Formats",
+          "verdict": "design_opinion",
+          "confidence": 0.8,
+          "reasoning": "Mixed date and time formats are intentional context-dependent formatting. Relative vs. absolute dates and different time formats are often used to provide the most relevant information to the user."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Sidebar and Breadcrumb Mismatch",
+        "P2Chart Label Overlaps Data Line",
+        "P2Cramped Mini Calendar Header",
+        "P3Redundant Empty State Text",
+        "P3Inconsistent Empty State Capitalization",
+        "P3Exposed Character Count Metric",
+        "P2Inconsistent Date and Time Formats"
+      ]
+    },
+    "diagnostics": {
+      "totalRawIssues": 7,
+      "falsePositivesFiltered": 7,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 6,
+      "screenIssueCount": 1
+    },
+    "videoIssues": 6,
+    "screenshotIssues": 1,
+    "videoSummary": "The application features a dense, data-rich interface with a generally dark and modern aesthetic. However, it suffers from several minor polish issues that detract from a 'calm and intentional' feel. Key areas for improvement include resolving navigational mismatches between the sidebar and page headers, fixing cramped layouts in secondary components like the mini-calendar, standardizing capitaliz",
+    "screenSummary": "The NodeBench AI interface demonstrates a high level of craft in its dark and light theme implementations, but it suffers from inconsistent data formatting, redundant mobile headers, and several micro-copy errors that detract from a premium user experience. Information density is high, which is appropriate for a research tool, but requires better labeling of metrics and more consistent semantic co"
+  },
+  {
     "timestamp": "2026-02-20T23:45:43.858Z",
     "runType": "gemini-qa-rubric",
     "score": 100,

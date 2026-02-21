@@ -27,12 +27,12 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200 shadow-sm"
+      className="p-6 bg-surface-secondary dark:bg-white/[0.02] rounded-lg border border-edge"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-purple-100 rounded-lg">
-          <Sunset className="h-6 w-6 text-purple-600" />
+        <div className="p-2 bg-surface-secondary dark:bg-white/[0.06] rounded-lg">
+          <Sunset className="h-6 w-6 text-content-secondary" />
         </div>
         <div>
           <h2 className="text-base font-semibold text-content">Daily Reflection</h2>

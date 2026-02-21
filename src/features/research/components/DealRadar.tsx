@@ -49,11 +49,11 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-indigo-900/30 rounded">
-                        <div className="text-xs font-bold uppercase tracking-widest text-content-secondary dark:text-content-muted">Avg Score</div>
+                    <div className="px-3 py-1.5 bg-surface-secondary dark:bg-white/[0.04] border border-edge rounded">
+                        <div className="text-xs font-medium text-content-secondary dark:text-content-muted">Avg Score</div>
                         <div className="text-base font-semibold text-content">{stats.avgBankerScore}</div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-content-muted uppercase tracking-widest">
+                    <div className="flex items-center gap-2 text-xs text-content-muted">
                         <Building2 className="w-4 h-4" />
                         <span>Last 30 Days</span>
                     </div>
@@ -69,13 +69,13 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             key={option.value}
                             type="button"
                             onClick={() => setActiveTab(option.value as typeof activeTab)}
-                            className={`px-4 py-2 text-xs font-bold uppercase tracking-tight transition-all ${activeTab === option.value
+                            className={`px-4 py-2 text-xs font-medium transition-all ${activeTab === option.value
                                     ? 'bg-gray-900 dark:bg-white/[0.15] text-white'
                                     : 'text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-surface-hover'
                                 }`}
                         >
                             {option.label}
-                            <span className={`ml-2 ${activeTab === option.value ? 'text-indigo-200' : 'text-content-muted'}`}>
+                            <span className={`ml-2 ${activeTab === option.value ? 'text-white/50' : 'text-content-muted'}`}>
                                 ({count})
                             </span>
                         </button>
@@ -87,7 +87,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             <div className="flex items-center gap-4 p-4 bg-surface-secondary dark:bg-white/[0.02] border border-edge">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-content-muted" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Filters</span>
+                    <span className="text-xs font-medium text-content-secondary">Filters</span>
                 </div>
 
                 <select
@@ -124,7 +124,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                             setSectorFilter('all');
                             setMinScore(0);
                         }}
-                        className="ml-auto text-xs font-bold uppercase tracking-widest text-content-secondary hover:text-content dark:hover:text-gray-200 transition-colors"
+                        className="ml-auto text-xs font-medium text-content-secondary hover:text-content dark:hover:text-gray-200 transition-colors"
                     >
                         Clear Filters
                     </button>

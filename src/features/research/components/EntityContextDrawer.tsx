@@ -336,7 +336,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
             </div>
             <div>
               <div className="text-sm font-semibold text-content">{entityName ?? "Entity"}</div>
-              <div className="text-xs uppercase tracking-widest text-content-muted">{entityType}</div>
+              <div className="text-xs text-content-muted">{entityType}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -402,7 +402,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
           {!error && (
             <>
               <div className="space-y-2">
-                <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Summary</div>
+                <div className="text-xs font-medium text-content-muted">Summary</div>
                 <p className="text-sm text-content-secondary leading-relaxed">{summary}</p>
 
                 {/* Freshness Badge */}
@@ -427,7 +427,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {/* Funding Details */}
               {insight?.funding?.lastRound && (
                 <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-xs text-blue-900 space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-blue-600">Latest Round</div>
+                  <div className="text-xs font-medium text-content-secondary">Latest Round</div>
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">{insight.funding.lastRound.roundType}</span>
                     {insight.funding.lastRound.amount && (
@@ -480,7 +480,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                   : "border-amber-200 bg-amber-50 text-amber-900"
                   }`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-widest">
+                    <span className="text-xs font-medium">
                       Banker Readiness
                     </span>
                     <span className={`font-semibold ${insight.personaHooks.JPM_STARTUP_BANKER.failTriggers?.length === 0
@@ -503,7 +503,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {/* Banker-Grade: Financials */}
               {insight?.financials && (
                 <div className="rounded-md border border-indigo-100 bg-indigo-50/50 p-3 text-xs text-content space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-secondary flex items-center gap-1">
+                  <div className="text-xs font-medium text-content-secondary flex items-center gap-1">
                     <DollarSign className="w-3 h-3" /> Financials
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -538,7 +538,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {/* Banker-Grade: Academic Data */}
               {insight?.academicData && (
                 <div className="rounded-md border border-indigo-100 bg-indigo-50/50 p-3 text-xs text-indigo-900 space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-indigo-700 flex items-center gap-1">
+                  <div className="text-xs font-medium text-content-secondary flex items-center gap-1">
                     <Globe className="w-3 h-3" /> Academic Rigor
                   </div>
                   {insight.academicData.methodology && (
@@ -567,7 +567,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {/* Banker-Grade: Technical Specs */}
               {insight?.technicalSpecs && (
                 <div className="rounded-md border border-edge bg-surface-secondary p-3 text-xs text-content space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-secondary">Technical Specs</div>
+                  <div className="text-xs font-medium text-content-secondary">Technical Specs</div>
 
                   {insight.technicalSpecs.repoStats && (
                     <div className="pb-2 border-b border-edge">
@@ -611,7 +611,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {/* Banker-Grade: Ecosystem */}
               {insight?.ecosystem && (
                 <div className="rounded-md border border-amber-100 bg-amber-50/30 p-3 text-xs text-amber-900 space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-amber-700">Ecosystem Impact</div>
+                  <div className="text-xs font-medium text-content-secondary">Ecosystem Impact</div>
 
                   {insight.ecosystem.graph && (
                     <div className="mb-3">
@@ -637,19 +637,19 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               <div className="grid grid-cols-2 gap-3 text-xs text-content-secondary">
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <MapPin className="w-3 h-3" /> HQ
                   </div>
                   <div className="mt-1 font-semibold text-content">{crm.hqLocation || "n/a"}</div>
                 </div>
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <Calendar className="w-3 h-3" /> Founded
                   </div>
                   <div className="mt-1 font-semibold text-content">{crm.foundingYear || "n/a"}</div>
                 </div>
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <Users className="w-3 h-3" /> Founders
                   </div>
                   <div className="mt-1 font-semibold text-content">
@@ -657,25 +657,25 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                   </div>
                 </div>
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <Globe className="w-3 h-3" /> Website
                   </div>
                   <div className="mt-1 font-semibold text-content">{crm.website || "n/a"}</div>
                 </div>
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <DollarSign className="w-3 h-3" /> Funding
                   </div>
                   <div className="mt-1 font-semibold text-content">{crm.totalFunding || "n/a"}</div>
                 </div>
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <Building2 className="w-3 h-3" /> Stage
                   </div>
                   <div className="mt-1 font-semibold text-content">{crm.fundingStage || "n/a"}</div>
                 </div>
                 <div className="rounded-md border border-edge bg-surface-secondary p-3">
-                  <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <Calendar className="w-3 h-3" /> Last round
                   </div>
                   <div className="mt-1 font-semibold text-content">{crm.lastFundingDate || "n/a"}</div>
@@ -684,14 +684,14 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {crm.foundersBackground && (
                 <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Founder background</div>
+                  <div className="text-xs font-medium text-content-muted">Founder background</div>
                   <div className="mt-1 text-sm text-content">{crm.foundersBackground}</div>
                 </div>
               )}
 
               {crm.keyPeople?.length > 0 && (
                 <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Key people</div>
+                  <div className="text-xs font-medium text-content-muted">Key people</div>
                   <ul className="space-y-1">
                     {crm.keyPeople.slice(0, 3).map((person: any, idx: number) => (
                       <li key={`${person.name}-${idx}`} className="text-sm text-content">
@@ -704,14 +704,14 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {crm.investors?.length > 0 && (
                 <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Investors</div>
+                  <div className="text-xs font-medium text-content-muted">Investors</div>
                   <div className="mt-1 text-sm text-content">{crm.investors.slice(0, 4).join(", ")}</div>
                 </div>
               )}
 
               {crm.competitors?.length > 0 && (
                 <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Competitors</div>
+                  <div className="text-xs font-medium text-content-muted">Competitors</div>
                   <div className="mt-1 text-sm text-content">{crm.competitors.slice(0, 4).join(", ")}</div>
                 </div>
               )}
@@ -719,7 +719,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               {stockPrice?.price && (
                 <div className="rounded-md border border-indigo-100 bg-indigo-50 p-3 text-xs text-content">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold uppercase tracking-widest">Stock</span>
+                    <span className="font-medium">Stock</span>
                     <span className="font-semibold">${stockPrice.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                   </div>
                   {stockPrice.asOf && (
@@ -729,7 +729,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               )}
 
               <div className="space-y-2">
-                <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Key facts</div>
+                <div className="text-xs font-medium text-content-muted">Key facts</div>
                 {keyFacts.length > 0 ? (
                   <ul className="list-disc list-inside text-xs text-content-secondary space-y-1">
                     {keyFacts.slice(0, 6).map((fact, idx) => (
@@ -743,7 +743,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {(contextMatches.watchlistMatches.length > 0 || contextMatches.stackMatches.length > 0) && (
                 <div className="space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Your context</div>
+                  <div className="text-xs font-medium text-content-muted">Your context</div>
                   {contextMatches.watchlistMatches.length > 0 && (
                     <div className="text-xs text-content-secondary">
                       Watchlist matches: {contextMatches.watchlistMatches.join(", ")}
@@ -759,7 +759,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {recentNews.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Recent news</div>
+                  <div className="text-xs font-medium text-content-muted">Recent news</div>
                   <div className="space-y-2">
                     {recentNews.slice(0, 5).map((item, idx) => (
                       <button
@@ -782,7 +782,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                         }}
                         className="w-full text-left rounded-md border border-edge bg-surface-secondary px-3 py-2 hover:bg-white transition-colors"
                       >
-                        <div className="flex items-center justify-between text-xs uppercase tracking-widest text-content-muted">
+                        <div className="flex items-center justify-between text-xs text-content-muted">
                           <span>{item.source || "Source"}</span>
                           {item.date && <span>{item.date}</span>}
                         </div>
@@ -795,7 +795,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
               {sources.length > 0 && (
                 <div className="space-y-2">
-                  <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Sources</div>
+                  <div className="text-xs font-medium text-content-muted">Sources</div>
                   <div className="space-y-2">
                     {sources.slice(0, 5).map((source, idx) => (
                       <button
@@ -843,7 +843,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                 contextWebUrls: (sources || []).map((s) => s.url).filter(Boolean),
               });
             }}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white bg-gray-900 hover:bg-black transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gray-900 hover:bg-black transition-colors"
           >
             Ask agent
           </button>

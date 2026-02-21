@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-02-20T23:43:53.400Z",
-  "baseURL": "http://127.0.0.1:4179",
+  "capturedAtIso": "2026-02-21T00:15:16.664Z",
+  "baseURL": "http://127.0.0.1:4173",
   "mime": "video/mp4",
   "publish": "static",
   "chapters": [
@@ -32,7 +32,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.3
+      "startSec": 8.4
     },
     {
       "index": 6,
@@ -74,13 +74,13 @@
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 23.1
+      "startSec": 23.2
     },
     {
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 25.2
+      "startSec": 25.3
     },
     {
       "index": 14,
@@ -122,13 +122,13 @@
       "index": 20,
       "name": "Review Queue",
       "path": "/review-queue",
-      "startSec": 40.1
+      "startSec": 40
     },
     {
       "index": 21,
       "name": "Usage & Costs",
       "path": "/analytics/components",
-      "startSec": 42.2
+      "startSec": 42.1
     },
     {
       "index": 22,
@@ -182,7 +182,7 @@
       "index": 30,
       "name": "LinkedIn Archive",
       "path": "/linkedin",
-      "startSec": 61.1
+      "startSec": 61.2
     },
     {
       "index": 31,
@@ -223,5 +223,5 @@
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-20_154223.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-20_161344.mp4"
 }

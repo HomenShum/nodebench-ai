@@ -92,11 +92,11 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                 hasWorkspaceContent ? 'lg:col-span-8' : 'lg:col-span-full'
             )}>
                 {/* Header */}
-                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-gray-50 border-b border-edge flex items-center justify-between gap-3">
+                <div className="px-4 py-3 bg-surface-secondary dark:bg-white/[0.02] border-b border-edge flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-indigo-600" />
+                        <Zap className="w-4 h-4 text-content-secondary" />
                         <div>
-                            <div className="text-xs font-bold text-content-secondary uppercase tracking-wide">Your Signal Feed</div>
+                            <div className="text-xs font-semibold text-content-secondary">Your Signal Feed</div>
                             <div className="text-xs text-content-secondary">Latest headlines from your tracked sources</div>
                         </div>
                     </div>
@@ -169,7 +169,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                 <div className="lg:col-span-4 bg-white border border-edge rounded-lg overflow-hidden">
                     <div className="px-4 py-3 bg-surface-secondary border-b border-edge">
                         <div className="flex items-center justify-between">
-                            <div className="text-xs font-bold text-content-secondary uppercase tracking-wide">Your Context</div>
+                            <div className="text-xs font-semibold text-content-secondary">Your Context</div>
                             <div className="text-xs text-content-secondary">Quick access</div>
                         </div>
                         <div className="mt-2 inline-flex rounded-lg border border-edge bg-white p-1">

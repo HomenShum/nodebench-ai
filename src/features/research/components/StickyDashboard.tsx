@@ -163,7 +163,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         <div className="relative mb-4">
           {/* Date Pill */}
           <div className="absolute top-0 left-0 z-10">
-            <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-xs tracking-widest gap-2">
+            <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-xs font-medium gap-2">
               <span>{monthLabel}</span>
               <span className="font-bold">{yearLabel || "2025"}</span>
             </div>
@@ -196,7 +196,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         <div className="grid grid-cols-12 gap-3 mb-4">
           {/* LEFT COL (8/12): CAPABILITIES GRID */}
           <div className="col-span-8 flex flex-col justify-end">
-            <div className="text-xs uppercase tracking-widest text-content-muted mb-2 border-b border-edge pb-1">
+            <div className="text-xs font-medium text-content-muted mb-2 border-b border-edge pb-1">
               AI Capabilities
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -253,14 +253,14 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         {/* --- ROW 1: HEADER & ACT INDICATOR --- */}
         <div className="border-b border-gray-900/10 dark:border-white/[0.06] pb-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-4xl font-medium text-gray-950 dark:text-gray-50 tracking-tight">
+            <h2 className="text-2xl font-semibold text-content tracking-tight">
               Pulse
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-gray-900/40 dark:text-content-muted uppercase tracking-widest">
+              <span className="text-xs font-medium text-content-muted">
                 {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
               </span>
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-content-muted motion-safe:animate-pulse" />
             </div>
           </div>
 
@@ -275,7 +275,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
                 {i > 0 && <div className="w-8 h-px bg-surface-secondary" />}
                 <div className={`flex items-center gap-2 transition-opacity duration-500 ${activeAct === act.id ? 'opacity-100' : 'opacity-30 grayscale'
                   }`}>
-                  <span className={`text-xs font-black uppercase tracking-[0.2em] text-content`}>
+                  <span className={`text-xs font-semibold text-content`}>
                     {act.label}
                   </span>
                 </div>
@@ -293,7 +293,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
             return (
               <div key={stat.label} className="flex flex-col min-w-0 max-w-[45%]">
                 <span
-                  className="text-[10px] text-content-secondary uppercase tracking-wider mb-0.5 truncate"
+                  className="text-[10px] text-content-secondary font-medium mb-0.5 truncate"
                   title={stat.label + (statHint ? ` — ${statHint}` : '')}
                 >
                   {stat.label}
@@ -321,7 +321,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
 const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: number, icon: string, delta?: number | null }) => (
   <div className="flex flex-col gap-0.5 mb-3 group overflow-hidden">
     <div className="flex items-baseline gap-1.5 min-w-0">
-      <span className="text-[10px] uppercase tracking-wider text-content-secondary font-bold group-hover:text-content dark:group-hover:text-gray-100 transition-colors leading-none truncate min-w-0 flex-1">{label}</span>
+      <span className="text-[10px] text-content-secondary font-medium group-hover:text-content dark:group-hover:text-gray-100 transition-colors leading-none truncate min-w-0 flex-1">{label}</span>
       <span className="text-[10px] font-mono font-bold text-[color:var(--text-primary)] shrink-0 tabular-nums whitespace-nowrap">{normalizeCapabilityScore(score)}%</span>
       {delta !== undefined && delta !== null && delta !== 0 && (
         <DeltaIndicator value={delta} unit="pts" />
@@ -395,7 +395,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
     <div className="mt-4 pt-4 border-t border-edge">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="px-1.5 py-1 bg-gray-900 dark:bg-surface-secondary text-background dark:text-content text-xs font-bold uppercase tracking-widest">
+          <div className="px-1.5 py-1 bg-gray-900 dark:bg-surface-secondary text-background dark:text-content text-xs font-medium">
             Research
           </div>
           <div className="text-xs font-mono text-content-secondary">
@@ -405,7 +405,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
         {activeStep && (
           <div className="flex items-center gap-2">
             <Loader2 className="w-3 h-3 text-content-secondary motion-safe:animate-spin" />
-            <span className="text-xs font-black text-content uppercase tracking-widest">Live</span>
+            <span className="text-xs font-semibold text-content">Live</span>
           </div>
         )}
       </div>
@@ -436,8 +436,8 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
       )}
 
       {activeStep && (
-        <div className="mt-3 p-3 bg-indigo-50/50 dark:bg-indigo-950/20 border border-gray-900/10 dark:border-white/[0.08]">
-          <p className="text-xs font-mono text-gray-900/60 dark:text-content-muted uppercase tracking-tighter mb-1">Current Task</p>
+        <div className="mt-3 p-3 bg-surface-secondary dark:bg-white/[0.04] border border-edge dark:border-white/[0.08]">
+          <p className="text-xs font-mono text-content-muted mb-1">Current Task</p>
           <p className="text-[12px] font-medium text-gray-950 dark:text-gray-100 italic">
             "{activeStep.name} in progress..."
           </p>

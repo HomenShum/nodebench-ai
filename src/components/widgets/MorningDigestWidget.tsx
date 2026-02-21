@@ -28,12 +28,12 @@ export function MorningDigestWidget({ userName, onNavigate }: MorningDigestWidge
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-amber-200 shadow-sm"
+      className="p-6 bg-surface-secondary dark:bg-white/[0.02] rounded-lg border border-edge"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-amber-100 rounded-lg">
-          <Sun className="h-6 w-6 text-amber-600" />
+        <div className="p-2 bg-surface-secondary dark:bg-white/[0.06] rounded-lg">
+          <Sun className="h-6 w-6 text-content-secondary" />
         </div>
         <div>
           <h2 className="text-base font-semibold text-content">

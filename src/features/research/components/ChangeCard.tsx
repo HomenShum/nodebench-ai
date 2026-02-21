@@ -89,29 +89,29 @@ function SeverityBadge({ severity }: { severity: Severity }) {
     { bg: string; text: string; border: string; icon: React.ReactNode; label: string }
   > = {
     critical: {
-      bg: "bg-red-50",
-      text: "text-red-700",
-      border: "border-red-200",
+      bg: "bg-red-500/10",
+      text: "text-red-400 dark:text-red-300",
+      border: "border-red-500/20",
       icon: <AlertTriangle className="w-3 h-3" />,
       label: "Critical",
     },
     high: {
-      bg: "bg-orange-50",
-      text: "text-orange-700",
-      border: "border-orange-200",
+      bg: "bg-amber-500/10",
+      text: "text-amber-500 dark:text-amber-300",
+      border: "border-amber-500/20",
       icon: <AlertCircle className="w-3 h-3" />,
       label: "High",
     },
     medium: {
-      bg: "bg-amber-50",
-      text: "text-amber-700",
-      border: "border-amber-200",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-secondary",
+      border: "border-edge",
       icon: <Info className="w-3 h-3" />,
       label: "Medium",
     },
     low: {
-      bg: "bg-surface-secondary",
-      text: "text-content-secondary",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-muted",
       border: "border-edge",
       icon: <Info className="w-3 h-3" />,
       label: "Low",
@@ -139,62 +139,62 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
     { bg: string; text: string; icon: React.ReactNode; label: string }
   > = {
     guidance_added: {
-      bg: "bg-indigo-100",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
       text: "text-content-secondary",
       icon: <PlusCircle className="w-3 h-3" />,
       label: "Added",
     },
     guidance_removed: {
-      bg: "bg-red-100",
-      text: "text-red-700",
+      bg: "bg-red-500/10",
+      text: "text-red-400 dark:text-red-300",
       icon: <MinusCircle className="w-3 h-3" />,
       label: "Removed",
     },
     guidance_modified: {
-      bg: "bg-blue-100",
-      text: "text-blue-700",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-secondary",
       icon: <FileText className="w-3 h-3" />,
       label: "Modified",
     },
     breaking_change: {
-      bg: "bg-red-100",
-      text: "text-red-700",
+      bg: "bg-red-500/10",
+      text: "text-red-400 dark:text-red-300",
       icon: <AlertTriangle className="w-3 h-3" />,
       label: "Breaking",
     },
     deprecation: {
-      bg: "bg-amber-100",
-      text: "text-amber-700",
+      bg: "bg-amber-500/10",
+      text: "text-amber-500 dark:text-amber-300",
       icon: <Clock className="w-3 h-3" />,
       label: "Deprecated",
     },
     new_pattern: {
-      bg: "bg-purple-100",
-      text: "text-purple-700",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-secondary",
       icon: <Zap className="w-3 h-3" />,
       label: "New Pattern",
     },
     pricing_change: {
-      bg: "bg-yellow-100",
-      text: "text-yellow-700",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-secondary",
       icon: <Info className="w-3 h-3" />,
       label: "Pricing",
     },
     api_change: {
-      bg: "bg-indigo-100",
-      text: "text-indigo-700",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-secondary",
       icon: <Zap className="w-3 h-3" />,
       label: "API Change",
     },
     model_update: {
-      bg: "bg-indigo-100",
-      text: "text-indigo-700",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-secondary",
       icon: <Zap className="w-3 h-3" />,
       label: "Model Update",
     },
     minor_update: {
-      bg: "bg-surface-secondary",
-      text: "text-content-secondary",
+      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      text: "text-content-muted",
       icon: <Info className="w-3 h-3" />,
       label: "Minor",
     },
@@ -291,19 +291,19 @@ export function ChangeCard({
 
   // Determine accent color based on severity
   const accentColors: Record<Severity, string> = {
-    critical: "from-red-500 to-red-600",
-    high: "from-orange-500 to-orange-600",
-    medium: "from-amber-500 to-amber-600",
-    low: "from-slate-400 to-slate-500",
+    critical: "bg-red-400 dark:bg-red-500",
+    high: "bg-amber-400 dark:bg-amber-500",
+    medium: "bg-content-muted",
+    low: "bg-content-muted",
   };
 
   return (
     <div
-      className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-lg overflow-hidden
-                 hover:border-indigo-200 transition-all duration-200"
+      className="group relative bg-surface border border-edge rounded-lg overflow-hidden
+                 hover:border-edge transition-all duration-200"
     >
       {/* Left Accent Border */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${accentColors[diff.severity]}`} />
+      <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${accentColors[diff.severity]}`} />
 
       {/* Header - Always Visible */}
       <button
@@ -376,7 +376,7 @@ export function ChangeCard({
           {/* Diff Hunks */}
           {diff.diffHunks && diff.diffHunks.length > 0 && (
             <div className="mt-4 space-y-2">
-              <h4 className="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-medium text-content-muted mb-2">
                 Changes
               </h4>
               {diff.diffHunks.map((hunk, i) => (
@@ -388,7 +388,7 @@ export function ChangeCard({
           {/* All Affected Sections */}
           {diff.affectedSections.length > 3 && (
             <div className="mt-4">
-              <h4 className="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-medium text-content-muted mb-2">
                 All Affected Sections
               </h4>
               <div className="flex flex-wrap gap-1">
@@ -424,7 +424,7 @@ export function ChangeCard({
                 type="button"
                 onClick={() => onViewSource?.(source.canonicalUrl)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                         bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors"
+                         bg-surface-secondary dark:bg-white/[0.06] text-content-secondary rounded-lg hover:bg-surface-hover transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 View Source
@@ -447,10 +447,10 @@ interface ChangeListItemProps {
 
 export function ChangeListItem({ diff, source, selected = false, onSelect }: ChangeListItemProps) {
   const severityColor: Record<Severity, string> = {
-    critical: "bg-red-500",
-    high: "bg-orange-500",
-    medium: "bg-amber-500",
-    low: "bg-gray-400",
+    critical: "bg-red-400 dark:bg-red-500",
+    high: "bg-amber-400 dark:bg-amber-500",
+    medium: "bg-content-muted",
+    low: "bg-content-muted",
   };
 
   return (
@@ -459,8 +459,8 @@ export function ChangeListItem({ diff, source, selected = false, onSelect }: Cha
       onClick={onSelect}
       className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
         selected
-          ? "border-indigo-300 bg-indigo-50/60"
-          : "border-[color:var(--border-color)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)]"
+          ? "border-edge bg-surface-secondary dark:bg-white/[0.06]"
+          : "border-edge bg-surface hover:bg-surface-hover"
       }`}
       aria-current={selected}
     >

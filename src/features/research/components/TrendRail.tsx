@@ -31,10 +31,10 @@ export const TrendRail: React.FC<TrendRailProps> = ({
   className = '' 
 }) => {
   const getDeltaStyle = (trend: TrendItem) => {
-    if (trend.type === 'up' || trend.hot) return 'bg-green-100 text-green-700';
-    if (trend.type === 'down') return 'bg-red-100 text-red-600';
-    if (trend.type === 'new') return 'bg-blue-100 text-blue-700';
-    return 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)]';
+    if (trend.type === 'up' || trend.hot) return 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary';
+    if (trend.type === 'down') return 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary';
+    if (trend.type === 'new') return 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary';
+    return 'bg-surface-secondary dark:bg-white/[0.06] text-content-muted';
   };
 
   const getDeltaIcon = (trend: TrendItem) => {
@@ -49,12 +49,12 @@ export const TrendRail: React.FC<TrendRailProps> = ({
     <div className={`w-full overflow-x-auto no-scrollbar py-3 ${className}`}>
       <div className="flex items-center gap-3 px-1">
         {/* Live Signals Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-orange-50 text-orange-600 border border-orange-200 text-xs font-bold whitespace-nowrap shrink-0">
-          <Flame className="w-3.5 h-3.5 fill-orange-500" />
-          <span>LIVE SIGNALS</span>
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border border-edge text-xs font-medium whitespace-nowrap shrink-0">
+          <Flame className="w-3.5 h-3.5 text-content-muted" />
+          <span>Live Signals</span>
           <span className="relative flex h-2 w-2 ml-1">
-            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+            <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-content-muted opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-content-secondary"></span>
           </span>
         </div>
         
@@ -63,15 +63,15 @@ export const TrendRail: React.FC<TrendRailProps> = ({
           <button 
             key={trend.id} 
             onClick={() => onTrendClick?.(trend)}
-            className="flex items-center gap-2 px-3 py-2 rounded-full bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-sm hover:border-blue-300 transition-all whitespace-nowrap group shrink-0"
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-edge hover:border-edge hover:bg-surface-hover transition-all whitespace-nowrap group shrink-0"
           >
-            <span className="text-sm font-medium text-[color:var(--text-primary)] group-hover:text-[color:var(--text-primary)]">{trend.label}</span>
-            <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 ${getDeltaStyle(trend)}`}>
+            <span className="text-sm font-medium text-content group-hover:text-content">{trend.label}</span>
+            <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 ${getDeltaStyle(trend)}`}>
               {getDeltaIcon(trend)}
               {trend.delta}
             </span>
             {trend.hot && (
-              <Zap className="w-3 h-3 text-yellow-500 fill-yellow-400" />
+              <Zap className="w-3 h-3 text-content-muted" />
             )}
           </button>
         ))}

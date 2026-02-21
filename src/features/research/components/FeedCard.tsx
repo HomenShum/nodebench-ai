@@ -65,9 +65,9 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getSentimentBadge = () => {
     if (!item.sentiment) return null;
     const badges = {
-      bullish: { icon: '🐂', label: 'Bullish', color: 'bg-green-50 text-green-700 border-green-200' },
-      bearish: { icon: '🐻', label: 'Bearish', color: 'bg-red-50 text-red-700 border-red-200' },
-      neutral: { icon: '⚖️', label: 'Neutral', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]' },
+      bullish: { icon: '🐂', label: 'Bullish', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
+      bearish: { icon: '🐻', label: 'Bearish', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
+      neutral: { icon: '⚖️', label: 'Neutral', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
     };
     const badge = badges[item.sentiment];
     return (
@@ -80,10 +80,10 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getSourceQualityBadge = () => {
     if (!item.sourceQuality) return null;
     const badges: Record<SourceQualityTier, { icon: string; label: string; color: string }> = {
-      excellent: { icon: '✓', label: 'Excellent', color: 'bg-indigo-50 text-content-secondary border-indigo-200' },
-      good: { icon: '●', label: 'Good', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-      fair: { icon: '◐', label: 'Fair', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-      poor: { icon: '○', label: 'Poor', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] border-[color:var(--border-color)]' },
+      excellent: { icon: '✓', label: 'Excellent', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
+      good: { icon: '●', label: 'Good', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
+      fair: { icon: '◐', label: 'Fair', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
+      poor: { icon: '○', label: 'Poor', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-muted border-edge' },
     };
     const badge = badges[item.sourceQuality];
     return (
@@ -96,7 +96,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getVerifiedBadge = () => {
     if (!item.verified) return null;
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-indigo-50 text-content-secondary border-indigo-200" title="Facts verified">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge" title="Facts verified">
         ✓ Verified
       </span>
     );
@@ -160,19 +160,19 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
       `}
     >
       {item.relevanceScore && item.relevanceScore > 70 && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-[var(--accent-primary)]" />
       )}
 
       <div className="p-5">
         {/* Header: Type badge + Sentiment + Timestamp */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            {isDossier && <div className="p-1.5 bg-purple-50 rounded-md text-purple-600 border border-purple-100"><FileText size={12} /></div>}
-            {isSignal && <div className="p-1.5 bg-blue-50 rounded-md text-blue-600 border border-blue-100"><TrendingUp size={12} /></div>}
-            {item.type === 'news' && <div className="p-1.5 bg-blue-50 rounded-md text-blue-600 border border-blue-100"><MessageSquare size={12} /></div>}
-            {isRepo && <div className="p-1.5 bg-[color:var(--bg-secondary)] rounded-md text-[color:var(--text-primary)] border border-[color:var(--border-color)]"><GitBranch size={12} /></div>}
-            {isProduct && <div className="p-1.5 bg-orange-50 rounded-md text-orange-600 border border-orange-100"><Package size={12} /></div>}
-            <span className="text-xs uppercase tracking-wider font-semibold text-[color:var(--text-secondary)]">
+            {isDossier && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><FileText size={12} /></div>}
+            {isSignal && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><TrendingUp size={12} /></div>}
+            {item.type === 'news' && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><MessageSquare size={12} /></div>}
+            {isRepo && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><GitBranch size={12} /></div>}
+            {isProduct && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><Package size={12} /></div>}
+            <span className="text-xs font-medium text-content-secondary">
               {item.type === 'repo' ? 'GitHub' : item.type === 'product' ? 'Product' : item.type}
             </span>
             {getSentimentBadge()}
@@ -180,8 +180,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
           <div className="flex items-center gap-2">
             {/* Relevance Score */}
             {item.relevanceScore && item.relevanceScore > 50 && (
-              <span className="text-xs text-purple-500 font-medium flex items-center gap-0.5">
-                <Zap className="w-3 h-3" />
+              <span className="text-xs text-content-muted font-medium flex items-center gap-0.5">
                 {item.relevanceScore}%
               </span>
             )}

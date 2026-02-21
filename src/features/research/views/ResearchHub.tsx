@@ -470,13 +470,13 @@ function ResearchHubContent(props: ResearchHubProps) {
   return (
     <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-background overflow-hidden`}>
       {!embedded && (
-        <header className="h-20 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-12 border-b border-edge shadow-sm">
+        <header className="h-16 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-gray-900 dark:bg-white/[0.12] rounded-none flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
-              <div className="text-2xl font-bold tracking-tight text-[color:var(--text-primary)] leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
+              <div className="text-xl font-semibold tracking-tight text-content leading-none cursor-pointer" onClick={onGoHome}>Research Hub</div>
               <div className="text-xs text-content-secondary mt-1 ml-0.5">Research &amp; Insights</div>
             </div>
           </div>
@@ -485,7 +485,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             <button
               type="button"
               onClick={onGoHome}
-              className="flex items-center gap-2 text-xs font-medium text-content-muted uppercase tracking-wider hover:text-content transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-content-muted hover:text-content transition-colors"
             >
               <ArrowRight className="w-3 h-3 rotate-180" />
               <span>Return to Pulse</span>
@@ -502,8 +502,8 @@ function ResearchHubContent(props: ResearchHubProps) {
                       type="button"
                       key={date}
                       onClick={() => setSelectedDate(date)}
-                      className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
-                        ? "bg-gray-950 dark:bg-white/[0.12] text-white shadow-lg"
+                      className={`px-3 py-1 text-xs font-medium transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
+                        ? "bg-gray-900 dark:bg-white/[0.12] text-white"
                         : "text-content-muted hover:text-content"
                         }`}
                     >
@@ -514,7 +514,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-xs font-semibold uppercase tracking-tight transition-all ${!selectedDate ? "bg-gray-950 dark:bg-white/[0.12] text-white" : "text-content-muted"}`}
+                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-gray-900 dark:bg-white/[0.12] text-white" : "text-content-muted"}`}
                   >
                     Latest
                   </button>
@@ -524,13 +524,13 @@ function ResearchHubContent(props: ResearchHubProps) {
               )}
             </div>
 
-            <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-content-secondary uppercase tracking-wider">
-              <div className="w-2 h-2 rounded-full bg-gray-700 dark:bg-gray-400 motion-safe:animate-pulse" />
+            <div className="hidden sm:flex items-center gap-3 text-xs font-medium text-content-secondary">
+              <div className="w-2 h-2 rounded-full bg-content-muted motion-safe:animate-pulse" />
               <span>Secure Feed</span>
             </div>
             <div className="hidden sm:block w-[1px] h-6 bg-edge" />
-            <div className="text-sm font-semibold text-content-secondary font-mono tracking-widest">
-              <span>{briefingDateString?.replace(/-/g, '.').toUpperCase()}</span>
+            <div className="text-sm font-medium text-content-secondary font-mono">
+              <span>{briefingDateString?.replace(/-/g, '.')}</span>
             </div>
           </div>
         </header>
@@ -544,7 +544,7 @@ function ResearchHubContent(props: ResearchHubProps) {
               <button
                 type="button"
                 onClick={onGoHome}
-                className="flex items-center gap-2 text-xs font-medium text-content-secondary uppercase tracking-wider hover:text-content transition-colors"
+                className="flex items-center gap-2 text-xs font-medium text-content-secondary hover:text-content transition-colors"
               >
                 <ArrowRight className="w-3 h-3 rotate-180" />
                 <span>Return to Pulse Overview</span>

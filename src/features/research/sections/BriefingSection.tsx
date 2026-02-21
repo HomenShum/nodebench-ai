@@ -851,8 +851,8 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
       {data.stats && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-y border-edge mb-10 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
           {Object.entries(data.stats).slice(0, 3).map(([key, value]) => (
-            <div key={key} className="p-6 flex flex-col items-center text-center group hover:bg-[#f2f1ed] transition-colors">
-              <p className="text-xs font-black text-gray-900/40 uppercase tracking-[0.2em] mb-3">{key.replace(/_/g, ' ')}</p>
+            <div key={key} className="p-6 flex flex-col items-center text-center group hover:bg-surface-hover transition-colors">
+              <p className="text-xs font-medium text-content-muted mb-3">{key.replace(/_/g, ' ')}</p>
               <p className="text-4xl font-medium text-gray-950">{String(value)}</p>
             </div>
           ))}

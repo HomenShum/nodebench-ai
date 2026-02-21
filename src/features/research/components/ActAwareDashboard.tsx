@@ -38,12 +38,12 @@ function ActIIChangeView({
   return (
     <div className="space-y-6">
       <div className="border-b border-gray-900/10 dark:border-white/10 pb-6">
-        <h2 className="text-3xl font-medium text-gray-950 dark:text-gray-100 tracking-tight mb-2">
+        <h2 className="text-2xl font-semibold text-content tracking-tight mb-2">
           Context Graph
         </h2>
         <div className="flex items-center gap-2">
-          <Share2 className="w-3 h-3 text-content" />
-          <span className="text-xs font-black text-gray-900/60 dark:text-content-muted uppercase tracking-widest">
+          <Share2 className="w-3 h-3 text-content-secondary" />
+          <span className="text-xs font-medium text-content-muted">
             Active Narratives
           </span>
         </div>
@@ -59,7 +59,7 @@ function ActIIChangeView({
             <div key={signal.headline ?? i} className="group cursor-default">
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-900/40 dark:bg-gray-400/40 group-hover:bg-gray-900 dark:group-hover:bg-gray-300 transition-colors" />
-                <span className="text-xs font-black uppercase tracking-wider text-gray-900/50 dark:text-content-muted group-hover:text-content dark:group-hover:text-gray-200 transition-colors">
+                <span className="text-xs font-medium text-content-muted group-hover:text-content transition-colors">
                   Node {i + 1}
                 </span>
               </div>
@@ -85,26 +85,26 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
   return (
     <div className="space-y-6">
       <div className="border-b border-gray-900/10 dark:border-white/10 pb-6">
-        <h2 className="text-3xl font-medium text-gray-950 dark:text-gray-100 tracking-tight mb-2">
+        <h2 className="text-2xl font-semibold text-content tracking-tight mb-2">
           Signal Velocity
         </h2>
         <div className="flex items-center gap-2">
-          <Zap className="w-3 h-3 text-content" />
-          <span className="text-xs font-black text-gray-900/60 dark:text-content-muted uppercase tracking-widest">
+          <Zap className="w-3 h-3 text-content-secondary" />
+          <span className="text-xs font-medium text-content-muted">
             Processing Rate
           </span>
         </div>
       </div>
 
       {/* Velocity Big Stat */}
-      <div className="py-8 text-center bg-[#f2f1ed] dark:bg-white/[0.04] border border-gray-200/50 dark:border-white/10">
+      <div className="py-8 text-center bg-surface-secondary dark:bg-white/[0.04] border border-edge dark:border-white/10">
         <span className="text-6xl font-bold text-gray-950 block">{velocity}</span>
-        <span className="text-xs font-black text-gray-900/40 dark:text-content-secondary uppercase tracking-[0.3em]">Nodes / Hour</span>
+        <span className="text-xs font-medium text-content-muted">Nodes / Hour</span>
       </div>
 
       {/* Source Distribution */}
       <div className="space-y-3">
-        <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-gray-900/60 mb-2">
+        <div className="flex justify-between text-xs font-medium text-content-muted mb-2">
           <span>Source Distribution</span>
         </div>
         {(summary?.breakdown || []).slice(0, 4).map((item: { source: string; count: number }) => (
