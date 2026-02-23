@@ -332,7 +332,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
         initial={{ width: 0 }}
         animate={{ width: `${normalizeCapabilityScore(score)}%` }}
         transition={{ duration: 1.5, ease: "easeOut" }}
-        className="h-full bg-gray-900 dark:bg-surface-secondary rounded-full"
+        className="h-full bg-gray-900 dark:bg-white/70 rounded-full"
       />
     </div>
   </div>
@@ -340,7 +340,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
 
 const BucketColumn = ({ count, color, delta }: { count: number, color: string, delta?: number | null }) => {
   // Map old colors to new theme
-  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-gray-900 dark:bg-surface-secondary' : 'bg-gray-300 dark:bg-gray-500';
+  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-gray-900 dark:bg-white/70' : 'bg-gray-300 dark:bg-gray-500';
 
   return (
     <div className="flex flex-col-reverse gap-[1px] w-full items-center group relative">

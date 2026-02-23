@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-02-19T05:57:33.906Z",
-  "baseURL": "http://127.0.0.1:4176",
+  "capturedAtIso": "2026-02-22T03:15:37.012Z",
+  "baseURL": "http://127.0.0.1:4183",
   "steps": [
     {
       "index": 1,
@@ -275,20 +275,20 @@
     {
       "index": 31,
       "kind": "route",
-      "name": "Tool Usage Ledger",
+      "name": "Activity Log",
       "path": "/mcp/ledger",
-      "title": "31. Tool Usage Ledger",
-      "description": "Navigate to /mcp/ledger to review the Tool Usage Ledger screen.",
-      "image": "/dogfood/scribe/31-tool-usage-ledger.png"
+      "title": "31. Activity Log",
+      "description": "Navigate to /mcp/ledger to review the Activity Log screen.",
+      "image": "/dogfood/scribe/31-activity-log.png"
     },
     {
       "index": 32,
       "kind": "route",
-      "name": "Dogfood Gallery",
+      "name": "Quality Review",
       "path": "/dogfood",
-      "title": "32. Dogfood Gallery",
-      "description": "Navigate to /dogfood to review the Dogfood Gallery screen.",
-      "image": "/dogfood/scribe/32-dogfood-gallery.png"
+      "title": "32. Quality Review",
+      "description": "Navigate to /dogfood to review the Quality Review screen.",
+      "image": "/dogfood/scribe/32-quality-review.png"
     },
     {
       "index": 33,

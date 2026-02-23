@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-02-21T00:15:16.664Z",
-  "baseURL": "http://127.0.0.1:4173",
+  "capturedAtIso": "2026-02-22T03:18:05.849Z",
+  "baseURL": "http://127.0.0.1:4183",
   "mime": "video/mp4",
   "publish": "static",
   "chapters": [
@@ -74,13 +74,13 @@
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 23.2
+      "startSec": 23.1
     },
     {
       "index": 13,
       "name": "Timeline",
       "path": "/timeline",
-      "startSec": 25.3
+      "startSec": 25.2
     },
     {
       "index": 14,
@@ -134,7 +134,7 @@
       "index": 22,
       "name": "Feedback",
       "path": "/analytics/recommendations",
-      "startSec": 44.3
+      "startSec": 44.2
     },
     {
       "index": 23,
@@ -176,7 +176,7 @@
       "index": 29,
       "name": "PR Suggestions",
       "path": "/pr-suggestions",
-      "startSec": 59
+      "startSec": 59.1
     },
     {
       "index": 30,
@@ -223,5 +223,5 @@
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-20_161344.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-21_191631.mp4"
 }

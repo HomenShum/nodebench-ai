@@ -71,9 +71,18 @@ const PublicSignalsLog = lazy(() =>
     default: mod.PublicSignalsLog,
   })),
 );
+// NOTE for Codex: ModelEvalDashboard is still used inside WorkbenchView's
+// "Capability Deep Dive" collapsible section — do not remove this import.
 const ModelEvalDashboard = lazy(() =>
   import("@/features/research/components/ModelEvalDashboard").then((mod) => ({
     default: mod.ModelEvalDashboard,
+  })),
+);
+// WorkbenchView replaces the old ModelEvalDashboard-only /benchmarks route.
+// It wraps ModelEvalDashboard + adds leaderboard, scenario catalog, runs table.
+const WorkbenchView = lazy(() =>
+  import("@/features/benchmarks/views/WorkbenchView").then((mod) => ({
+    default: mod.WorkbenchView,
   })),
 );
 const EntityProfilePage = lazy(() =>
@@ -725,13 +734,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 <PublicSignalsLog />
               </LazyView>
             ) : currentView === "benchmarks" ? (
+              // WorkbenchView has its own scroll container + sticky header
+              // — do NOT add overflow or padding classes on the LazyView wrapper.
               <LazyView
-                title="Benchmarks failed to load"
+                title="Workbench failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto p-6 pb-24 lg:pb-6 bg-surface"
+                className="h-full"
               >
-                <ModelEvalDashboard />
+                <WorkbenchView />
               </LazyView>
             ) : currentView === "funding" ? (
               <LazyView title="Funding Brief failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>

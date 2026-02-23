@@ -91,7 +91,10 @@ function ResearchHubContent(props: ResearchHubProps) {
   const [readerItem, setReaderItem] = useState<ReaderItem | null>(null);
   const [activeEntity, setActiveEntity] = useState<{ name: string; type: "company" | "person" } | null>(null);
   const seededAuditRef = useRef(false);
-  const [activeTab, setActiveTab] = useState<ContentTab>(() => initialTab ?? 'overview');
+  const validTabs: ContentTab[] = ['overview', 'signals', 'briefing', 'forecasts'];
+  const [activeTab, setActiveTab] = useState<ContentTab>(() =>
+    initialTab && validTabs.includes(initialTab) ? initialTab : 'overview'
+  );
 
   // Fetch all brief data (Global + Personal)
   const {

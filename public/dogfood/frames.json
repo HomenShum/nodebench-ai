@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-19T06:00:18.749Z",
+  "capturedAtIso": "2026-02-22T03:18:10.753Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -38,7 +38,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.3,
+      "startSec": 8.4,
       "file": "05-research-briefing.jpg",
       "image": "/dogfood/frames/05-research-briefing.jpg"
     },
@@ -157,7 +157,7 @@
     {
       "index": 20,
       "name": "Review Queue",
-      "path": "/analytics/hitl",
+      "path": "/review-queue",
       "startSec": 40,
       "file": "20-review-queue.jpg",
       "image": "/dogfood/frames/20-review-queue.jpg"
@@ -174,7 +174,7 @@
       "index": 22,
       "name": "Feedback",
       "path": "/analytics/recommendations",
-      "startSec": 44.3,
+      "startSec": 44.2,
       "file": "22-feedback.jpg",
       "image": "/dogfood/frames/22-feedback.jpg"
     },
@@ -230,7 +230,7 @@
       "index": 29,
       "name": "PR Suggestions",
       "path": "/pr-suggestions",
-      "startSec": 59,
+      "startSec": 59.1,
       "file": "29-pr-suggestions.jpg",
       "image": "/dogfood/frames/29-pr-suggestions.jpg"
     },
@@ -244,19 +244,19 @@
     },
     {
       "index": 31,
-      "name": "Tool Usage Ledger",
-      "path": "/mcp/ledger",
+      "name": "Activity Log",
+      "path": "/activity-log",
       "startSec": 63.3,
-      "file": "31-tool-usage-ledger.jpg",
-      "image": "/dogfood/frames/31-tool-usage-ledger.jpg"
+      "file": "31-activity-log.jpg",
+      "image": "/dogfood/frames/31-activity-log.jpg"
     },
     {
       "index": 32,
-      "name": "Dogfood Gallery",
-      "path": "/dogfood",
+      "name": "Quality Review",
+      "path": "/quality-review",
       "startSec": 65.4,
-      "file": "32-dogfood-gallery.jpg",
-      "image": "/dogfood/frames/32-dogfood-gallery.jpg"
+      "file": "32-quality-review.jpg",
+      "image": "/dogfood/frames/32-quality-review.jpg"
     },
     {
       "index": 33,
@@ -286,7 +286,7 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.5,
+      "startSec": 73.4,
       "file": "36-end.jpg",
       "image": "/dogfood/frames/36-end.jpg"
     }

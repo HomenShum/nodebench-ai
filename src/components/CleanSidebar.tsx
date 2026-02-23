@@ -30,6 +30,7 @@ import {
   Linkedin,
   Activity,
   CheckSquare,
+  FlaskConical,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 import { SidebarButton } from "./ui";
@@ -104,10 +105,13 @@ interface CleanSidebarProps {
 }
 
 // Dashboard items
+// NOTE for Codex: Workbench is NOT dev-only — it's a core product surface.
+// Keep FlaskConical here alongside Activity Log + Usage & Costs.
 const dashboardItems = [
   { icon: DollarSign, label: 'Usage & Costs', view: 'cost-dashboard' as const, subtitle: 'Spending trends' },
   { icon: TrendingUp, label: 'Industry News', view: 'industry-updates' as const, subtitle: 'Latest updates' },
   { icon: Activity, label: 'Activity Log', view: 'mcp-ledger' as const, subtitle: 'Request history' },
+  { icon: FlaskConical, label: 'Workbench', view: 'benchmarks' as const, subtitle: 'Model benchmarks' },
 ];
 
 // Dev-only items — hidden in production builds

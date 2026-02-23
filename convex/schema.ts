@@ -6160,6 +6160,50 @@ export default defineSchema({
     .index("by_executed", ["executedAt"]),
 
   /* ------------------------------------------------------------------ */
+  /* WORKBENCH RUNS - Cross-model benchmark on frozen app substrates     */
+  /* NBW Phase 1 schema — execution engine wired in Phase 2             */
+  /* NOTE for Codex: Phase 2 will add appSubstrateId FK once the        */
+  /*   workbenchApps table is created. Keep this table minimal for now. */
+  /* ------------------------------------------------------------------ */
+  workbenchRuns: defineTable({
+    // Identity
+    model: v.string(),              // "claude-sonnet-4-6", "gpt-4o", "gemini-3-flash-preview"
+    provider: v.string(),           // "anthropic" | "openai" | "google" | "open-source"
+    scenarioId: v.string(),         // "ui-transform" | "agent-integration" | "long-run-reliability" | "architect-mode"
+    appSubstrate: v.string(),       // Frozen repo slug, e.g. "chef-todo-v1"
+
+    // Execution state
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+
+    // Scoring (multi-layer rubric, matches QA pipeline layers)
+    compositeScore: v.optional(v.number()),   // 0-100 weighted composite
+    layer0Score: v.optional(v.number()),       // Design compliance (static analysis)
+    layer1Score: v.optional(v.number()),       // Deterministic (build, tests, runtime)
+    layer2Score: v.optional(v.number()),       // Severity rubric (LLM judge)
+    layer3Score: v.optional(v.number()),       // Taste (visual quality)
+    grade: v.optional(v.string()),             // "A" | "B" | "C" | "D" | "F"
+
+    // Operational metrics
+    runDurationMs: v.optional(v.number()),     // Wall-clock ms for the full run
+    toolCallCount: v.optional(v.number()),     // Total MCP tool calls made
+    costUsd: v.optional(v.number()),           // Estimated API cost for the run
+
+    // Artifacts produced (for traceability, Phase 2+)
+    artifactIds: v.optional(v.array(v.string())),
+
+    // Timestamps
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_model", ["model"])
+    .index("by_scenario", ["scenarioId"])
+    .index("by_started", ["startedAt"]),
+
+  /* ------------------------------------------------------------------ */
   /* ACTION DRAFTS - Write operation confirmation flow (P2 enforcement)  */
   /* Enables risk tier gating for write/destructive tool calls           */
   /* ------------------------------------------------------------------ */

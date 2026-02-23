@@ -320,7 +320,7 @@ export function ChangeCard({
         <div className="flex-1 min-w-0">
           {/* Title Row */}
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-[color:var(--text-primary)] leading-tight">
+            <h3 className="text-sm font-semibold text-[color:var(--text-primary)] leading-tight min-w-0 truncate">
               {diff.changeTitle}
             </h3>
             <SeverityBadge severity={diff.severity} />

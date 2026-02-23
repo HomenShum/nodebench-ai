@@ -1,6 +1,6 @@
 # NodeBench Dogfood Walkthrough
 
-Captured: 2026-02-19T05:57:33.906Z
+Captured: 2026-02-22T03:15:37.012Z
 
 This is an auto-generated how-to (Scribe-style) artifact: screenshots + editable step text.
 
@@ -154,15 +154,15 @@ Navigate to /linkedin to review the LinkedIn Archive screen.
 
 ![30. LinkedIn Archive](/dogfood/scribe/30-linkedin-archive.png)
 
-## 31. Tool Usage Ledger
-Navigate to /mcp/ledger to review the Tool Usage Ledger screen.
+## 31. Activity Log
+Navigate to /mcp/ledger to review the Activity Log screen.
 
-![31. Tool Usage Ledger](/dogfood/scribe/31-tool-usage-ledger.png)
+![31. Activity Log](/dogfood/scribe/31-activity-log.png)
 
-## 32. Dogfood Gallery
-Navigate to /dogfood to review the Dogfood Gallery screen.
+## 32. Quality Review
+Navigate to /dogfood to review the Quality Review screen.
 
-![32. Dogfood Gallery](/dogfood/scribe/32-dogfood-gallery.png)
+![32. Quality Review](/dogfood/scribe/32-quality-review.png)
 
 ## 33. Public Docs
 Navigate to /public to review the Public Docs screen.

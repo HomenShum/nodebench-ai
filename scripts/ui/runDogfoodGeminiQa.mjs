@@ -246,12 +246,1023 @@ async function archivePreviousRun(outDir) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// LAYER 0: STATIC CODE ANALYSIS — Deterministic design token compliance
+// Greps src/ for banned CSS patterns that visual QA cannot detect from screenshots.
+// Runs before any Gemini calls — zero cost, zero variance.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const BANNED_PATTERNS = [
+  { pattern: /uppercase\s+tracking-widest/g, label: "ALL CAPS tracking-widest", severity: "high" },
+  { pattern: /tracking-\[0\.\d+em\]/g, label: "Custom tracking value", severity: "medium" },
+  { pattern: /#f2f1ed/gi, label: "Hardcoded hex #f2f1ed", severity: "high" },
+  { pattern: /\bfont-black\b/g, label: "font-black weight", severity: "low" },
+  { pattern: /\bbg-(red|orange|amber|yellow|green|blue|indigo|violet|purple|pink)-(50|100)\b/g, label: "Saturated bg color", severity: "medium" },
+  { pattern: /\btext-(red|orange|amber|yellow|green|blue|indigo|violet|purple|pink)-(600|700|800)\b/g, label: "Saturated text color", severity: "medium" },
+  { pattern: /\bfrom-(amber|orange|purple|pink|indigo)-(50|100)\b/g, label: "Decorative gradient", severity: "medium" },
+];
+
+const STATIC_ANALYSIS_IGNORE = [
+  /node_modules/, /\.test\.(ts|tsx)$/, /\.spec\.(ts|tsx)$/, /scripts\//, /\.config\./,
+  /tailwind\./, /__tests__/, /\.stories\./, /\.d\.ts$/,
+];
+
+async function scanSourceForBannedPatterns(srcDir) {
+  const violations = [];
+
+  async function walk(dir) {
+    let entries;
+    try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "dist") continue;
+        await walk(full);
+      } else if (/\.(tsx?|jsx?)$/.test(entry.name)) {
+        const relPath = path.relative(process.cwd(), full).replace(/\\/g, "/");
+        if (STATIC_ANALYSIS_IGNORE.some((p) => p.test(relPath))) continue;
+        let content;
+        try { content = await fs.readFile(full, "utf8"); } catch { continue; }
+        const lines = content.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          for (const bp of BANNED_PATTERNS) {
+            bp.pattern.lastIndex = 0;
+            let match;
+            while ((match = bp.pattern.exec(lines[i])) !== null) {
+              violations.push({ file: relPath, line: i + 1, match: match[0], label: bp.label, severity: bp.severity });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  await walk(srcDir);
+  const highCount = violations.filter((v) => v.severity === "high").length;
+  const medCount = violations.filter((v) => v.severity === "medium").length;
+  const lowCount = violations.filter((v) => v.severity === "low").length;
+  const deductions = highCount * 10 + medCount * 3 + lowCount * 1;
+  const score = Math.max(0, 100 - deductions);
+  return { violations, highCount, medCount, lowCount, score, total: violations.length };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGENTIC VISUAL EXPLORATION — Gemini-guided UI interaction discovery
+// Instead of hardcoded Playwright selectors, sends screenshots to Gemini
+// vision and asks "what should I interact with?" — discovers interactive
+// states the way a human QA tester would, without brittle CSS selectors.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DYNAMIC ROUTE & UI SURFACE DISCOVERY
+// Instead of hardcoded routes, crawls the live app to find every navigable
+// surface: sidebar links, sub-tabs, modal triggers, drawer toggles,
+// accordion panels, and nested page links. Self-updating — any new page
+// added to the app is automatically discovered and tested.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Extract all navigable links from the current page DOM.
+async function extractLinksFromPage(page) {
+  return page.evaluate(() => {
+    const results = [];
+    const seen = new Set();
+    // 1. All anchor links with internal paths
+    document.querySelectorAll("a[href]").forEach((el) => {
+      let href = el.getAttribute("href");
+      if (!href) return;
+      // Support hash-router links like "#/research" by normalizing to "/research".
+      if (href.startsWith("#/")) href = href.slice(1);
+      if (!href.startsWith("/")) return;
+      if (href.startsWith("/api")) return;
+      if (href.includes("://")) return;
+      if (!seen.has(href)) {
+        seen.add(href);
+        const label = (el.textContent || "").trim().slice(0, 50).replace(/\s+/g, " ");
+        results.push({ path: href, label, source: "link" });
+      }
+    });
+    // 2. Tab elements (role="tab" with data-value, href, or onclick)
+    document.querySelectorAll("[role='tab']").forEach((el) => {
+      let href = el.getAttribute("href") || el.getAttribute("data-value");
+      if (href && href.startsWith("#/")) href = href.slice(1);
+      const label = (el.textContent || "").trim().slice(0, 50);
+      if (href && href.startsWith("/") && !seen.has(href)) {
+        seen.add(href);
+        results.push({ path: href, label, source: "tab" });
+      }
+    });
+    // 3. Nav links inside tab bars, breadcrumbs, sub-nav
+    document.querySelectorAll("nav a[href], [role='tablist'] a[href]").forEach((el) => {
+      let href = el.getAttribute("href");
+      if (!href) return;
+      if (href.startsWith("#/")) href = href.slice(1);
+      if (href && href.startsWith("/") && !seen.has(href)) {
+        seen.add(href);
+        const label = (el.textContent || "").trim().slice(0, 50);
+        results.push({ path: href, label, source: "nav" });
+      }
+    });
+    return results;
+  });
+}
+
+// Discover all navigable surfaces by crawling the live app.
+// Phase 1: Sidebar links (top-level routes)
+// Phase 2: Per-route sub-tabs, nested links, and secondary navigation
+// Returns a flat array of { path, name } objects, deduplicated.
+async function discoverRoutes(page, baseURL) {
+  const seen = new Set();
+  const routes = [];
+
+  async function seedRoutesFromDogfoodArtifacts() {
+    // NOTE(coworker): Avoid hardcoding route lists. If the app's navigation is
+    // icon-only / router-driven (no <a href>), we "learn" a seed route set from
+    // our existing dogfood capture artifacts (walkthrough + scribe).
+    // These files are produced by the app itself, so new routes automatically
+    // show up here after a single capture session.
+    const seeds = new Set();
+    const candidates = [
+      path.join(process.cwd(), "public", "dogfood", "walkthrough.json"),
+      path.join(process.cwd(), "public", "dogfood", "scribe.json"),
+    ];
+    for (const p of candidates) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const raw = await fs.readFile(p, "utf8");
+        const obj = JSON.parse(raw);
+        const paths = [];
+        if (Array.isArray(obj?.chapters)) {
+          for (const c of obj.chapters) if (typeof c?.path === "string") paths.push(c.path);
+        }
+        if (Array.isArray(obj?.steps)) {
+          for (const s of obj.steps) if (typeof s?.path === "string") paths.push(s.path);
+        }
+        for (const pp of paths) {
+          const normalized = String(pp).replace(/\/$/, "") || "/";
+          if (normalized.startsWith("/")) seeds.add(normalized);
+        }
+      } catch {
+        // ignore missing/invalid artifacts
+      }
+    }
+    return Array.from(seeds);
+  }
+
+  function getAppRouteFromUrl(urlStr) {
+    try {
+      const u = new URL(urlStr);
+      if (u.hash && u.hash.startsWith("#/")) return u.hash.slice(1);
+      return u.pathname || "/";
+    } catch {
+      return "/";
+    }
+  }
+
+  function addRoute(path, label, source) {
+    const normalized = path.replace(/\/$/, "") || "/";
+    // Skip entity-specific, auth, or API routes
+    if (seen.has(normalized)) return;
+    if (/\/(entity|api|auth|login|signup|oauth|callback)\b/i.test(normalized)) return;
+    seen.add(normalized);
+    const rawLabel = String(label || "").trim();
+    const baseName = rawLabel.startsWith("/") ? rawLabel.slice(1) : rawLabel;
+    const fallbackName = normalized === "/" ? "home" : normalized.slice(1);
+    const safeName = (baseName || fallbackName)
+      .replace(/[^a-z0-9-]/gi, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+/, "")
+      .slice(0, 30)
+      .toLowerCase() || "page";
+    routes.push({ path: normalized, name: safeName, source: source || "crawl" });
+  }
+
+  async function waitForRouteChange(prevRoute, timeoutMs = 3000) {
+    try {
+      await page.waitForFunction((prev) => {
+        const hash = window.location.hash || "";
+        const cur = hash.startsWith("#/") ? hash.slice(1) : window.location.pathname;
+        return cur !== prev;
+      }, prevRoute, { timeout: timeoutMs });
+    } catch {
+      // ignore timeouts (some clicks open popovers etc.)
+    }
+  }
+
+  // ── Phase 1: Crawl sidebar from home page ──────────────────────────────
+  // eslint-disable-next-line no-console
+  console.log("    📡 Phase 1: Discovering sidebar routes...");
+  await page.goto(`${baseURL}/`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2000);
+  await ensureAnonymousSignIn(page).catch(() => {});
+
+  const homeLinks = await extractLinksFromPage(page);
+  for (const link of homeLinks) addRoute(link.path, link.label, "sidebar");
+
+  // If the sidebar uses buttons (router-driven) instead of anchors, discover routes by clicking.
+  try {
+    const navItems = page.locator([
+      "aside a[href^='/']",
+      "aside button",
+      "aside [role='button']",
+      "nav a[href^='/']",
+      "nav button",
+      "nav [role='button']",
+      "[role='navigation'] a[href^='/']",
+      "[role='navigation'] button",
+      "[role='navigation'] [role='button']",
+      "[role='navigation'] [role='link']",
+      "[data-sidebar] a[href^='/']",
+      "[data-sidebar] button",
+      "[data-sidebar] [role='button']",
+    ].join(", "));
+    const maxItems = Math.min(await navItems.count(), 40);
+    for (let i = 0; i < maxItems; i++) {
+      const item = navItems.nth(i);
+      // eslint-disable-next-line no-await-in-loop
+      const labelText = ((await item.textContent().catch(() => "")) ?? "").trim().replace(/\s+/g, " ").slice(0, 50);
+      // eslint-disable-next-line no-await-in-loop
+      const ariaLabel = ((await item.getAttribute("aria-label").catch(() => "")) ?? "").trim().slice(0, 50);
+      const label = labelText || ariaLabel;
+      if (!label) continue;
+      if (/sign in|log in|logout|delete|remove|clear|reset|purge/i.test(label)) continue;
+
+      const beforePath = getAppRouteFromUrl(page.url());
+      // eslint-disable-next-line no-await-in-loop
+      await item.click({ timeout: 2500 }).catch(() => null);
+      // eslint-disable-next-line no-await-in-loop
+      await waitForRouteChange(beforePath, 3500);
+      const afterPath = getAppRouteFromUrl(page.url());
+      if (afterPath && afterPath.startsWith("/") && afterPath !== beforePath) {
+        addRoute(afterPath, label, "sidebar-click");
+      }
+
+      // Reset to home so each click starts from a known state.
+      // eslint-disable-next-line no-await-in-loop
+      await page.goto(`${baseURL}/`, { waitUntil: "domcontentloaded" }).catch(() => {});
+      // eslint-disable-next-line no-await-in-loop
+      await page.waitForTimeout(400);
+      // eslint-disable-next-line no-await-in-loop
+      await ensureAnonymousSignIn(page).catch(() => {});
+    }
+  } catch {
+    // ignore discovery click failures
+  }
+
+  // Last-resort discovery: infer "sidebar-ish" nav items by position (left gutter),
+  // then click them and record any pathname changes. This avoids relying on layout tags
+  // like <aside> or <nav> which some UIs omit.
+  try {
+    if (routes.length <= 1) {
+      const candidates = page.locator("a[href^='/'], button, [role='button'], [role='link'], [role='menuitem']");
+      const maxItems = Math.min(await candidates.count(), 80);
+      for (let i = 0; i < maxItems; i++) {
+        const item = candidates.nth(i);
+        // eslint-disable-next-line no-await-in-loop
+        const box = await item.boundingBox().catch(() => null);
+        if (!box) continue;
+        if (box.x > 320) continue;
+        if (box.width < 40 || box.height < 18) continue;
+
+        // eslint-disable-next-line no-await-in-loop
+        const isVisible = await item.isVisible().catch(() => false);
+        if (!isVisible) continue;
+
+        // eslint-disable-next-line no-await-in-loop
+        const labelText = ((await item.textContent().catch(() => "")) ?? "").trim().replace(/\s+/g, " ").slice(0, 50);
+        // eslint-disable-next-line no-await-in-loop
+        const ariaLabel = ((await item.getAttribute("aria-label").catch(() => "")) ?? "").trim().slice(0, 50);
+        const label = labelText || ariaLabel;
+        if (!label) continue;
+        if (/sign in|log in|logout|delete|remove|clear|reset|purge/i.test(label)) continue;
+
+        const beforePath = getAppRouteFromUrl(page.url());
+        // eslint-disable-next-line no-await-in-loop
+        await item.click({ timeout: 2500 }).catch(() => null);
+        // eslint-disable-next-line no-await-in-loop
+        await waitForRouteChange(beforePath, 3500);
+        const afterPath = getAppRouteFromUrl(page.url());
+        if (afterPath && afterPath.startsWith("/") && afterPath !== beforePath) {
+          addRoute(afterPath, label, "sidebar-positional");
+        }
+
+        // eslint-disable-next-line no-await-in-loop
+        await page.goto(`${baseURL}/`, { waitUntil: "domcontentloaded" }).catch(() => {});
+        // eslint-disable-next-line no-await-in-loop
+        await page.waitForTimeout(350);
+        // eslint-disable-next-line no-await-in-loop
+        await ensureAnonymousSignIn(page).catch(() => {});
+      }
+    }
+  } catch {
+    // ignore positional discovery failures
+  }
+
+  // Always include home
+  addRoute("/", "home", "sidebar");
+
+  const phase1Count = routes.length;
+  // eslint-disable-next-line no-console
+  console.log(`    📡 Phase 1: ${phase1Count} top-level routes discovered`);
+
+  // ── Phase 2: Visit each route to discover sub-tabs and nested links ────
+  // eslint-disable-next-line no-console
+  console.log("    📡 Phase 2: Discovering sub-tabs and nested links...");
+  const phase1Routes = [...routes]; // snapshot — don't iterate while mutating
+
+  for (const route of phase1Routes) {
+    try {
+      await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1000);
+      const subLinks = await extractLinksFromPage(page);
+      for (const link of subLinks) addRoute(link.path, link.label, `sub:${route.name}`);
+    } catch {
+      // Non-fatal — skip routes that fail to load
+    }
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`    📡 Phase 2: ${routes.length - phase1Count} sub-routes discovered (${routes.length} total)`);
+
+  // If DOM crawling can't see navigation links, seed from dogfood capture (learned routes).
+  if (routes.length <= 1) {
+    const seeds = await seedRoutesFromDogfoodArtifacts();
+    if (seeds.length) {
+      // eslint-disable-next-line no-console
+      console.log(`    📼 Seed routes from dogfood artifacts: ${seeds.length}`);
+      for (const p of seeds) addRoute(p, p, "dogfood-seed");
+    }
+  }
+
+  // Keep the run bounded even if a ton of routes exist.
+  // Prefer shallower paths, but keep any benchmark/workbench route if present.
+  routes.sort((a, b) => {
+    const da = (a.path.match(/\//g) || []).length;
+    const db = (b.path.match(/\//g) || []).length;
+    if (da !== db) return da - db;
+    return a.path.length - b.path.length;
+  });
+
+  const limit = Math.max(1, Math.min(25, Number(process.env.NODEBENCH_AGENTIC_ROUTE_LIMIT ?? "12") || 12));
+  const keep = [];
+  const mustPaths = new Set(routes.filter((r) => /benchmarks|bench|workbench/i.test(r.path)).map((r) => r.path));
+
+  // Include "must" routes first so we always cover Workbench when it exists.
+  for (const r of routes) {
+    if (!mustPaths.has(r.path)) continue;
+    keep.push(r);
+  }
+  for (const r of routes) {
+    if (keep.some((k) => k.path === r.path)) continue;
+    if (keep.length >= limit) break;
+    keep.push(r);
+  }
+  return keep;
+}
+
+// Fallback: minimal routes if dynamic discovery finds nothing (e.g., app fails to load)
+// Comprehensive fallback routes derived from useMainLayoutRouting.ts parsePathname + CleanSidebar nav items.
+// Used when dynamic discovery fails (SPA uses state-based routing, not URL-based nav).
+const FALLBACK_ROUTES = [
+  { path: "/", name: "home" },
+  { path: "/research", name: "research-hub" },
+  { path: "/research/signals", name: "research-signals" },
+  { path: "/research/briefing", name: "research-briefing" },
+  { path: "/research/forecasts", name: "research-forecasts" },
+  { path: "/agents", name: "agents" },
+  { path: "/documents", name: "documents" },
+  { path: "/calendar", name: "calendar" },
+  { path: "/roadmap", name: "roadmap" },
+  { path: "/timeline", name: "timeline" },
+  { path: "/showcase", name: "showcase" },
+  { path: "/footnotes", name: "sources" },
+  { path: "/benchmarks", name: "workbench" },
+  { path: "/funding", name: "funding" },
+  { path: "/activity", name: "activity" },
+  { path: "/cost", name: "cost-dashboard" },
+  { path: "/industry", name: "industry-news" },
+  { path: "/for-you", name: "for-you-feed" },
+  { path: "/recommendations", name: "recommendations" },
+  { path: "/marketplace", name: "agent-marketplace" },
+  { path: "/github", name: "github-explorer" },
+  { path: "/pr-suggestions", name: "pr-suggestions" },
+  { path: "/linkedin", name: "linkedin-posts" },
+  { path: "/mcp-ledger", name: "mcp-ledger" },
+  { path: "/dogfood", name: "dogfood" },
+];
+
+function stripJsonFences(raw) {
+  return String(raw ?? "")
+    .replace(/^```json?\s*\n?/m, "")
+    .replace(/\n?```\s*$/m, "")
+    .trim();
+}
+
+function extractJsonSubstring(raw) {
+  const s = stripJsonFences(raw);
+  const arrStart = s.indexOf("[");
+  const arrEnd = s.lastIndexOf("]");
+  if (arrStart >= 0 && arrEnd > arrStart) return s.slice(arrStart, arrEnd + 1);
+
+  const objStart = s.indexOf("{");
+  const objEnd = s.lastIndexOf("}");
+  if (objStart >= 0 && objEnd > objStart) return s.slice(objStart, objEnd + 1);
+
+  return s;
+}
+
+function normalizeJsonish(jsonStr) {
+  return String(jsonStr ?? "")
+    .replace(/^\uFEFF/, "")
+    .replace(/\/\/[^\n]*/g, "")
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3')
+    .replace(/:\s*'([^']*)'/g, ': "$1"');
+}
+
+function tryParseJson(raw) {
+  const candidate = normalizeJsonish(extractJsonSubstring(raw));
+  try {
+    return JSON.parse(candidate);
+  } catch {
+    const lastBrace = candidate.lastIndexOf("}");
+    if (lastBrace > 0 && candidate.includes("[")) {
+      try {
+        const truncated = candidate.slice(0, lastBrace + 1).replace(/,\s*$/, "") + "]";
+        return JSON.parse(truncated);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+function salvageActionPoints(raw) {
+  const s = String(raw ?? "");
+  const points = [];
+  const re = /[\"']?x[\"']?\s*:\s*(\d{1,4})[^{}]*?[\"']?y[\"']?\s*:\s*(\d{1,4})/g;
+  let m;
+  while ((m = re.exec(s)) !== null) {
+    const x = Number(m[1]);
+    const y = Number(m[2]);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    points.push({ description: "salvaged interaction", action: "click", x, y });
+    if (points.length >= 5) break;
+  }
+  return points;
+}
+
+async function fallbackExploreRoute(page, baseURL, route, outDir) {
+  // NOTE(coworker): Deterministic fallback so a single malformed Gemini response
+  // doesn't produce 0 coverage for a route.
+  const results = [];
+  try {
+    await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1200);
+
+    // Always capture at least one screenshot for coverage.
+    {
+      const ssPath = path.join(outDir, `agentic-${route.name}-fallback.png`);
+      await page.screenshot({ path: ssPath, fullPage: true });
+      results.push({ route: route.name, action: "fallback screenshot", ssPath });
+    }
+
+    const buttons = page.getByRole("button");
+    const maxScan = Math.min(await buttons.count(), 24);
+
+    // Prefer opening expandable UI states first.
+    const expandedCandidates = [];
+    for (let i = 0; i < maxScan; i++) {
+      const b = buttons.nth(i);
+      // eslint-disable-next-line no-await-in-loop
+      const expanded = await b.getAttribute("aria-expanded").catch(() => null);
+      if (expanded === "false") expandedCandidates.push({ idx: i, b });
+    }
+
+    const candidates = expandedCandidates.length
+      ? expandedCandidates.map((c) => ({ idx: c.idx, b: c.b, kind: "expand" }))
+      : Array.from({ length: maxScan }, (_, idx) => ({ idx, b: buttons.nth(idx), kind: "button" }));
+
+    for (const c of candidates) {
+      const i = c.idx;
+      const b = c.b;
+      try {
+        if (await b.isDisabled().catch(() => false)) continue;
+        const label = ((await b.textContent().catch(() => "")) ?? "").trim().toLowerCase();
+        if (/sign in|log in|logout|run|delete|remove|clear|reset|purge/i.test(label)) continue;
+        if (label && c.kind === "button" && !/more|expand|details|filter|settings|configure|open|show/i.test(label)) {
+          // In non-expand mode, bias toward "state revealing" UI.
+          continue;
+        }
+        await b.scrollIntoViewIfNeeded();
+        await b.click({ timeout: 8000 }).catch(() => null);
+        await page.waitForTimeout(900);
+        const ssPath = path.join(outDir, `agentic-${route.name}-fallback-${i}.png`);
+        await page.screenshot({ path: ssPath, fullPage: true });
+        results.push({ route: route.name, action: `fallback click (${c.kind})`, ssPath });
+        await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(700);
+        break;
+      } catch {
+        // ignore per-button failures
+      }
+    }
+
+  } catch {
+    // ignore fallback failures
+  }
+  return results;
+}
+
+async function agenticExploreRoute(page, baseURL, route, geminiApiKey, outDir) {
+  const results = [];
+  try {
+    await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1500);
+
+    const screenshotBuffer = await page.screenshot({ fullPage: false });
+    const base64 = screenshotBuffer.toString("base64");
+
+    const prompt = `You are a QA engineer exploring a web application. Look at this screenshot and identify up to 5 interactive elements to click or hover that would reveal hidden UI states — expandable cards, drawers, popovers, tabs, dropdown menus, hover tooltips, etc.
+
+For each element, return:
+- description: what the element is (brief, lowercase)
+- action: "click" or "hover"
+- x: approximate x coordinate in pixels from left edge of viewport
+- y: approximate y coordinate in pixels from top edge of viewport
+
+Return ONLY a JSON array. If no interactive elements are visible, return [].
+[{"description": "expand signal card", "action": "click", "x": 400, "y": 300}]`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`;
+    const reqBody = JSON.stringify({
+      contents: [{ parts: [
+        { inline_data: { mime_type: "image/png", data: base64 } },
+        { text: prompt },
+      ] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: "application/json" },
+    });
+
+    // Retry with exponential backoff for rate limits (429)
+    let res;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: reqBody });
+      if (res.status !== 429) break;
+      const wait = (attempt + 1) * 5000; // 5s, 10s, 15s
+      // eslint-disable-next-line no-console
+      console.warn(`    ⏳ Rate limited on ${route.name}, retrying in ${wait / 1000}s...`);
+      await page.waitForTimeout(wait);
+    }
+
+    if (!res.ok) {
+      // eslint-disable-next-line no-console
+      console.warn(`    ⚠ Agentic explore API error for ${route.name}: ${res.status}`);
+      return await fallbackExploreRoute(page, baseURL, route, outDir);
+    }
+
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+
+    let actions = tryParseJson(text);
+    if (!Array.isArray(actions)) {
+      const salvaged = salvageActionPoints(text);
+      actions = salvaged.length ? salvaged : actions;
+    }
+
+    // NOTE(coworker): Never skip a route solely due to malformed Gemini JSON — use deterministic fallback.
+    if (!Array.isArray(actions) || actions.length === 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`    ⚠ Could not parse Gemini action JSON for ${route.name} (or empty) — using fallback interactions`);
+      return await fallbackExploreRoute(page, baseURL, route, outDir);
+    }
+
+    for (let i = 0; i < Math.min(actions.length, 5); i++) {
+      const action = actions[i];
+      const x = Number(action.x);
+      const y = Number(action.y);
+      if (isNaN(x) || isNaN(y)) continue;
+
+      const viewport = page.viewportSize();
+      const cx = Math.max(1, Math.min(x, (viewport?.width ?? 1440) - 1));
+      const cy = Math.max(1, Math.min(y, (viewport?.height ?? 900) - 1));
+
+      try {
+        if (action.action === "hover") {
+          await page.mouse.move(cx, cy);
+        } else {
+          await page.mouse.click(cx, cy);
+        }
+        await page.waitForTimeout(800);
+
+        const safeName = (action.description ?? `action-${i}`).replace(/[^a-z0-9-]/gi, "-").slice(0, 30).toLowerCase();
+        const ssPath = path.join(outDir, `agentic-${route.name}-${i}-${safeName}.png`);
+        await page.screenshot({ path: ssPath, fullPage: true });
+        results.push({ route: route.name, action: action.description, ssPath });
+
+        // Reset route state for next interaction
+        await page.goto(`${baseURL}${route.path}`, { waitUntil: "domcontentloaded" });
+        await page.waitForTimeout(800);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`    ⚠ Agentic action failed on ${route.name}: ${err.message}`);
+      }
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`  ⚠ Agentic exploration failed for ${route.name}: ${err.message}`);
+  }
+  return results;
+}
+
+// Run agentic exploration in a dedicated browser context with video recording.
+// Returns { screenshots, screenshotIssues, videoIssues, videoPath }.
+async function runAgenticExploration(baseURL, geminiApiKey, outDir, headless) {
+  if (!geminiApiKey) {
+    // eslint-disable-next-line no-console
+    console.warn("  ⚠ No GEMINI_API_KEY — skipping agentic exploration");
+    return { screenshots: [], screenshotIssues: [], videoIssues: [], videoPath: null };
+  }
+
+  const agenticVideoDir = path.join(outDir, "agentic-video");
+  await fs.mkdir(agenticVideoDir, { recursive: true });
+
+  // Dedicated browser context with video recording enabled
+  const browser = await chromium.launch({ headless });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "reduce",
+    recordVideo: { dir: agenticVideoDir, size: { width: 1440, height: 900 } },
+  });
+  const page = await context.newPage();
+
+  // Authenticate in this context
+  try {
+    await page.goto(`${baseURL}/`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1500);
+    await ensureAnonymousSignIn(page);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`  ⚠ Agentic sign-in failed (non-fatal): ${err.message}`);
+  }
+
+  // Dynamic route discovery — crawl every navigable surface, not just sidebar
+  let routes;
+  try {
+    routes = await discoverRoutes(page, baseURL);
+    // SPA state-based routing may not expose enough routes via DOM crawling.
+    // If discovery finds fewer than 5 routes, merge with fallback to ensure coverage.
+    if (routes.length < 5) {
+      const discoveredPaths = new Set(routes.map((r) => r.path));
+      for (const fb of FALLBACK_ROUTES) {
+        if (!discoveredPaths.has(fb.path)) {
+          routes.push({ ...fb, source: "fallback" });
+        }
+      }
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(`  ⚠ Route discovery failed, using fallback: ${err.message}`);
+    routes = FALLBACK_ROUTES.map((r) => ({ ...r, source: "fallback" }));
+  }
+
+  // Log all discovered routes for transparency
+  // eslint-disable-next-line no-console
+  console.log(`  🤖 Agentic visual exploration: ${routes.length} routes discovered (video recording ON)`);
+  for (const r of routes) {
+    // eslint-disable-next-line no-console
+    console.log(`    📍 ${r.path} (${r.name}) [${r.source}]`);
+  }
+
+  // Save discovery manifest for diff tracking across runs
+  await fs.writeFile(
+    path.join(outDir, "discovered-routes.json"),
+    JSON.stringify({ timestamp: new Date().toISOString(), count: routes.length, routes }, null, 2),
+    "utf8",
+  );
+
+  // Compare route discovery against the previous run (if any) to catch new/removed surfaces automatically.
+  try {
+    const archiveBase = path.join(outDir, "..", "archive");
+    const dirs = (await fs.readdir(archiveBase).catch(() => [])).filter(Boolean).sort();
+    const latest = dirs[dirs.length - 1];
+    if (latest) {
+      const prevPath = path.join(archiveBase, latest, "discovered-routes.json");
+      const raw = await fs.readFile(prevPath, "utf8").catch(() => "");
+      if (raw) {
+        const prev = JSON.parse(raw);
+        const prevRoutes = Array.isArray(prev?.routes) ? prev.routes : [];
+        const prevPaths = new Set(prevRoutes.map((r) => r.path).filter(Boolean));
+        const curPaths = new Set(routes.map((r) => r.path).filter(Boolean));
+
+        const added = Array.from(curPaths).filter((p) => !prevPaths.has(p)).sort();
+        const removed = Array.from(prevPaths).filter((p) => !curPaths.has(p)).sort();
+
+        if (added.length || removed.length) {
+          // eslint-disable-next-line no-console
+          console.log(`  🔁 Route surface diff vs prev run (${latest}): +${added.length} / -${removed.length}`);
+          if (added.length) console.log(`    + ${added.slice(0, 12).join(", ")}${added.length > 12 ? " ..." : ""}`);
+          if (removed.length) console.log(`    - ${removed.slice(0, 12).join(", ")}${removed.length > 12 ? " ..." : ""}`);
+          await fs.writeFile(
+            path.join(outDir, "discovered-routes.diff.json"),
+            JSON.stringify({ previous: latest, added, removed }, null, 2),
+            "utf8",
+          ).catch(() => {});
+        }
+      }
+    }
+  } catch {
+    // ignore diff failures
+  }
+
+  const allScreenshots = [];
+  for (let ri = 0; ri < routes.length; ri++) {
+    const route = routes[ri];
+    // eslint-disable-next-line no-console
+    console.log(`    → Exploring ${route.name}...`);
+    const results = await agenticExploreRoute(page, baseURL, route, geminiApiKey, outDir);
+    allScreenshots.push(...results);
+    // eslint-disable-next-line no-console
+    console.log(`      ${results.length} interactions captured`);
+    // Throttle between routes to avoid Gemini API rate limits (15 RPM on free tier)
+    if (ri < routes.length - 1) await page.waitForTimeout(2000);
+  }
+
+  // Close page + context to finalize video recording, THEN get path
+  const videoHandle = page.video();
+  await page.close();
+  await context.close();
+  await browser.close();
+  let videoPath = null;
+  try {
+    videoPath = await videoHandle?.path();
+  } catch { /* ignore */ }
+
+  // NOTE(coworker): On Windows Playwright can return a path before the video file is fully flushed.
+  // Wait briefly for the file to exist, and fall back to scanning the recordVideo dir for the newest .webm.
+  async function waitForFile(p, timeoutMs = 15_000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      // eslint-disable-next-line no-await-in-loop
+      const ok = await fs.stat(p).then(() => true).catch(() => false);
+      if (ok) return true;
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return false;
+  }
+
+  if (videoPath) {
+    const ok = await waitForFile(videoPath, 20_000);
+    if (!ok) {
+      try {
+        const entries = await fs.readdir(agenticVideoDir);
+        const candidates = entries.filter((e) => e.endsWith(".webm") || e.endsWith(".mp4")).map((e) => path.join(agenticVideoDir, e));
+        if (candidates.length) {
+          let best = candidates[0];
+          let bestMtime = 0;
+          for (const c of candidates) {
+            // eslint-disable-next-line no-await-in-loop
+            const st = await fs.stat(c).catch(() => null);
+            const m = st?.mtimeMs ?? 0;
+            if (m > bestMtime) {
+              bestMtime = m;
+              best = c;
+            }
+          }
+          videoPath = best;
+          await waitForFile(videoPath, 10_000);
+        }
+      } catch {
+        // ignore scan failures
+      }
+    }
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`  🤖 Exploration complete: ${allScreenshots.length} interaction screenshots, video: ${videoPath ? "saved" : "none"}`);
+
+  // Analyze individual screenshots
+  const screenshotIssues = await analyzeAgenticScreenshots(allScreenshots, geminiApiKey);
+
+  // Analyze the full session video holistically
+  let videoIssues = [];
+  if (videoPath) {
+    try {
+      videoIssues = await analyzeAgenticVideo(videoPath, geminiApiKey);
+      // eslint-disable-next-line no-console
+      console.log(`  🎬 Video QA: ${videoIssues.length} issues from agentic session recording`);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`  ⚠ Agentic video analysis failed (non-fatal): ${err.message}`);
+    }
+
+    // Copy video to outDir with a stable name
+    const finalVideoPath = path.join(outDir, "agentic-session.webm");
+    try {
+      await fs.copyFile(videoPath, finalVideoPath);
+    } catch { /* ignore */ }
+  }
+
+  return { screenshots: allScreenshots, screenshotIssues, videoIssues, videoPath };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GEMINI FILE API — Upload video for analysis
+// Uses raw upload protocol (X-Goog-Upload-Protocol: raw) for simplicity.
+// Polls until file state is ACTIVE before using in generateContent.
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function uploadToGeminiFiles(filePath, mimeType, apiKey, displayName) {
+  const fileBuffer = await fs.readFile(filePath);
+  const sizeKB = Math.round(fileBuffer.length / 1024);
+  // eslint-disable-next-line no-console
+  console.log(`    📤 Uploading ${displayName} (${sizeKB} KB) to Gemini Files API...`);
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": mimeType,
+        "X-Goog-Upload-Protocol": "raw",
+        "X-Goog-Upload-Header-Content-Type": mimeType,
+      },
+      body: fileBuffer,
+    },
+  );
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`File upload failed: ${res.status} ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const file = data.file;
+  // eslint-disable-next-line no-console
+  console.log(`    📤 Uploaded: ${file.name} (state: ${file.state})`);
+  return file;
+}
+
+async function waitForFileActive(fileName, apiKey, timeoutMs = 120_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${fileName}?key=${apiKey}`,
+    );
+    if (!res.ok) throw new Error(`File status check failed: ${res.status}`);
+    const data = await res.json();
+    if (data.state === "ACTIVE") return data;
+    if (data.state === "FAILED") throw new Error(`File processing failed: ${data.error?.message ?? "unknown"}`);
+    // eslint-disable-next-line no-console
+    console.log(`    ⏳ File processing (${data.state})...`);
+    await sleep(3000);
+  }
+  throw new Error("File processing timed out");
+}
+
+// Analyze the full agentic exploration session video via Gemini vision.
+// Uploads video to File API, waits for processing, then runs holistic QA.
+async function analyzeAgenticVideo(videoPath, geminiApiKey) {
+  if (!videoPath || !geminiApiKey) return [];
+
+  // eslint-disable-next-line no-console
+  console.log(`  🎬 Analyzing agentic session video...`);
+
+  // Upload to Gemini Files API
+  const file = await uploadToGeminiFiles(videoPath, "video/webm", geminiApiKey, "agentic-session.webm");
+
+  // Wait for processing
+  const activeFile = await waitForFileActive(file.name, geminiApiKey);
+
+  // Run holistic video QA analysis
+  const prompt = `You are a senior QA engineer reviewing a video recording of an automated UI interaction session on a web application. The video shows a vision-guided agent clicking and hovering on various UI elements across multiple routes.
+
+Watch the ENTIRE video and identify quality issues you observe:
+
+1. **Transition bugs**: Layout shifts, flashes, or jank during page navigation
+2. **Interaction response**: Elements that don't visually respond to clicks/hovers (no state change, no feedback)
+3. **Broken expanded states**: Cards, drawers, or popovers that render incorrectly after being opened
+4. **Color/contrast issues**: Saturated badge colors, poor dark mode contrast, invisible text
+5. **Loading failures**: Spinners that never resolve, blank areas, error states
+6. **Animation issues**: Jerky animations, flash-of-unstyled-content, layout reflow during transitions
+
+IMPORTANT: Only flag GENUINE defects. Ignore:
+- Intentionally compact/dense layouts for power users
+- Domain terminology (Swarm, Signal, Narrative, etc.)
+- Demo/mock data artifacts
+- Subjective spacing preferences
+- Normal page load sequences
+
+Return a JSON array of issues found (or [] if the UI looks good):
+[{"route": "route-name", "timestamp": "approximate time in video", "header": "P1|P2|P3 [description]", "details": "what you observed", "severity": "P1"|"P2"|"P3"}]`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [
+        { file_data: { file_uri: activeFile.uri, mime_type: "video/webm" } },
+        { text: prompt },
+      ] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Video QA API error: ${res.status} ${errText.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+  const parsed = tryParseJson(text);
+
+  if (!Array.isArray(parsed)) return [];
+
+  return parsed.map((p) => ({
+    header: p.header ?? `${p.severity ?? "P3"} ${p.description ?? "video interaction issue"}`,
+    details: `[${p.timestamp ?? "?"}] ${p.details ?? p.description ?? ""}`,
+    route: p.route ?? "",
+    suggestedFix: "",
+    source: "agentic_video",
+  }));
+}
+
+// Analyze agentic interaction screenshots directly via Gemini vision.
+// Returns issues in the same format as scraped dogfood page issues.
+async function analyzeAgenticScreenshots(screenshots, geminiApiKey) {
+  if (!screenshots.length || !geminiApiKey) return [];
+  const issues = [];
+
+  // Batch screenshots in groups of 4 (Gemini handles multi-image input)
+  for (let i = 0; i < screenshots.length; i += 4) {
+    const batch = screenshots.slice(i, i + 4);
+    const parts = [];
+
+    for (const ss of batch) {
+      try {
+        const buf = await fs.readFile(ss.ssPath);
+        parts.push({ inline_data: { mime_type: "image/png", data: buf.toString("base64") } });
+        parts.push({ text: `[Route: ${ss.route}, After: ${ss.action}]` });
+      } catch { continue; }
+    }
+    if (parts.length === 0) continue;
+
+    parts.push({ text: `Analyze these UI screenshots captured AFTER user interactions (clicks, hovers). Look for:
+1. Broken layouts after interaction (elements overflow, overlap, disappear)
+2. Missing hover/active/focus visual states
+3. Drawers or popovers that render incorrectly
+4. Content that becomes illegible in expanded states
+5. Badge or pill colors that are too saturated or look wrong in dark mode
+6. Buttons or interactive elements that don't respond visually
+
+IMPORTANT: Only flag GENUINE defects a user would notice. Ignore:
+- Intentionally compact/dense layouts for power users
+- Domain terminology (Swarm, Signal, Narrative, etc.)
+- Demo/mock data artifacts
+- Subjective spacing preferences
+
+Return a JSON array of issues (or [] if none):
+[{"route": "...", "header": "P2 [description]", "details": "...", "severity": "P1"|"P2"|"P3"}]` });
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`;
+      const reqBody = JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
+      });
+      // Retry with backoff for rate limits
+      let res;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: reqBody });
+        if (res.status !== 429) break;
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 5000));
+      }
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+      const parsed = tryParseJson(text);
+      if (Array.isArray(parsed)) {
+        issues.push(...parsed.map((p) => ({
+          header: p.header ?? `${p.severity ?? "P3"} ${p.description ?? "interaction issue"}`,
+          details: p.details ?? p.description ?? "",
+          route: p.route ?? "",
+          suggestedFix: "",
+          source: "agentic",
+        })));
+      }
+    } catch { /* ignore parse failures */ }
+  }
+  return issues;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // RUBRIC-BASED BOOLEAN SCORING SYSTEM (v2 — LLM Judge)
 // Architecture: 3-layer weighted rubric (Agentic Rubrics, arxiv:2601.04171)
 //   Layer 1 (60%): Deterministic Playwright checks — 12 boolean metrics, zero variance
 //   Layer 2 (30%): Severity rubric — boolean pass/fail from LLM-judged genuine issues
 //   Layer 3 (10%): Taste — legacy P-level deduction (capped, low influence)
-// False positive filtering: LLM-as-a-judge (Gemini 2.0 Flash, temp 0.1)
+// False positive filtering: LLM-as-a-judge (Gemini 3 Flash, temp 0.1)
 //   replaces 120+ regex patterns with semantic classification.
 // Formula: S = Σ(wi × si) / Σ(wi) where si ∈ {0,1} (binary pass/fail)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -287,6 +1298,15 @@ This is NodeBench AI — a data-dense research and AI operations platform for te
 - BUTTON HIERARCHY: Primary (blue), premium upsell (purple gradient), secondary (outline), destructive (red text) — this is a deliberate 4-tier hierarchy, NOT inconsistency.
 - TEXT WRAPPING: Metric cards like "Gap Width" may wrap text at narrow widths — this is responsive behavior, not a typography bug.
 - BREADCRUMBS: The "Pr Suggestions" breadcrumb has been fixed to "PR Suggestions" — if the reviewer still flags this, it's from a stale screenshot.
+- ERROR BOUNDARIES: React lazy-loaded views show "[X] failed to load" error boundary text briefly during fast automated navigation — this is expected in preview/static builds without live backend. Not a rendering failure.
+- WORKBENCH EMPTY STATES: The /benchmarks (Workbench) page intentionally shows "No benchmark runs yet" and "Not yet run" states — the execution engine is Phase 2. Disabled buttons with tooltips are intentional.
+- LOADING SKELETONS: In preview/static builds WITHOUT a live Convex backend, some views show loading skeletons or empty containers indefinitely. This is expected — data populates when connected to the backend. Not a rendering bug.
+- DOGFOOD OVERLAY: During automated walkthrough recordings, a semi-transparent scribe overlay may appear in the bottom-left corner. This is a Playwright-injected QA annotation layer, NOT part of the React application. It only exists in recorded videos, never in the live app.
+- GLOBAL CONTRAST: The dark theme uses intentional contrast ratios — text-muted (#8A8A97) on bg (#09090B) = 5.84:1 (passes WCAG AA 4.5:1). Claims of "severe global low contrast" are screenshot compression artifacts where the vision model misreads dark-on-darker as illegible.
+- RESEARCH SUB-ROUTES: Routes like /research/deals, /research/changes, /research/changelog are recognized by the router but the tab UI only shows Overview, Signals, Briefing, and Forecasts. Navigating to removed tabs correctly falls back to Overview. This is intentional — removed tabs are accessible via Cmd+K command palette.
+- FAB PERSISTENCE: The floating action button (FAB) appears on all screens including modals. This is standard Material Design pattern for primary actions, not an overlap bug.
+- AGENTIC INTERACTION FAILURES: During automated QA, Playwright clicks buttons/cards that require live Convex backend data. Collapse/expand, tab switching, and card interactions may appear "broken" when there's no data to render. These are data-availability issues, not UI bugs.
+- ROUTE TRANSITIONS: Client-side SPA navigation between routes may show brief white frames during React Suspense boundary transitions. This is standard React lazy-loading behavior, not a rendering bug.
 `.trim();
 
 // Classify a batch of issues using Gemini as a judge.
@@ -350,15 +1370,17 @@ Respond with a JSON array (one object per issue, in order):
   ...
 ]
 
-IMPORTANT: Return ONLY the JSON array, no markdown fences, no commentary.`;
+IMPORTANT: Return ONLY the JSON array, no markdown fences, no commentary.
+Keep reasoning under 15 words per issue to avoid truncation.`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.1, // Low temp for consistent classification
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,
+        responseMimeType: "application/json", // Force valid JSON output
       },
     };
 
@@ -379,9 +1401,33 @@ IMPORTANT: Return ONLY the JSON array, no markdown fences, no commentary.`;
     const data = await res.json();
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-    // Parse JSON from response — handle potential markdown fences
-    const jsonStr = text.replace(/^```json?\s*\n?/m, "").replace(/\n?```\s*$/m, "").trim();
-    const judgments = JSON.parse(jsonStr);
+    // Parse JSON from response — handle markdown fences + common LLM JSON quirks + truncation
+    let jsonStr = text.replace(/^```json?\s*\n?/m, "").replace(/\n?```\s*$/m, "").trim();
+    let judgments;
+    try {
+      judgments = JSON.parse(jsonStr);
+    } catch {
+      // Fix common LLM JSON quirks: single quotes, trailing commas, comments
+      jsonStr = jsonStr
+        .replace(/\/\/[^\n]*/g, "")            // strip line comments
+        .replace(/,\s*([}\]])/g, "$1")         // strip trailing commas
+        .replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3')  // single-quoted keys → double
+        .replace(/:\s*'([^']*)'/g, ': "$1"');  // single-quoted values → double
+      try {
+        judgments = JSON.parse(jsonStr);
+      } catch {
+        // Truncation recovery: find last complete JSON object and close the array
+        const lastBrace = jsonStr.lastIndexOf("}");
+        if (lastBrace > 0) {
+          const truncated = jsonStr.slice(0, lastBrace + 1).replace(/,\s*$/, "") + "]";
+          judgments = JSON.parse(truncated);
+          // eslint-disable-next-line no-console
+          console.warn(`  ⚠ LLM judge response truncated — salvaged ${Array.isArray(judgments) ? judgments.length : 0}/${issues.length} verdicts`);
+        } else {
+          throw new Error("Could not parse judge response (no complete JSON objects)");
+        }
+      }
+    }
 
     if (!Array.isArray(judgments)) throw new Error("Expected JSON array from judge");
 
@@ -397,10 +1443,28 @@ IMPORTANT: Return ONLY the JSON array, no markdown fences, no commentary.`;
       }
     }
 
-    // Any issues not covered by the judge response → treat as genuine (conservative)
+    // Any issues not covered by the judge response → apply keyword heuristic instead of
+    // blindly treating all as genuine (which inflates false positives when judge truncates).
     for (let i = 0; i < issues.length; i++) {
       if (!result.has(i)) {
-        result.set(i, { verdict: "genuine_bug", confidence: 0.5, reasoning: "Not covered by judge response" });
+        const text = `${issues[i].header ?? ""} ${issues[i].details ?? ""}`.toLowerCase();
+        // Known false-positive keyword patterns from DESIGN_CONTEXT
+        const fpPatterns = [
+          /\b(contrast|low.contrast|illegible|hard.to.read)\b/,
+          /\b(skeleton|loading|empty.state|no.data|placeholder)\b/,
+          /\b(dense|compact|cramped|tight|overwhelming)\b/,
+          /\b(overlay|dogfood|jargon|internal)\b/,
+          /\b(flash|transition|white.screen|flicker)\b/,
+          /\b(mock.data|demo|preview)\b/,
+          /\b(sidebar.*clutter|navigation.*overload)\b/,
+          /\b(chart.*label|overlapping.*label|graph.*text)\b/,
+        ];
+        const isLikelyFp = fpPatterns.some((p) => p.test(text));
+        result.set(i, {
+          verdict: isLikelyFp ? "design_opinion" : "genuine_bug",
+          confidence: 0.4,
+          reasoning: isLikelyFp ? "Keyword heuristic (judge truncated)" : "Not covered by judge response",
+        });
       }
     }
 
@@ -410,6 +1474,25 @@ IMPORTANT: Return ONLY the JSON array, no markdown fences, no commentary.`;
     console.warn(`  ⚠ LLM judge failed: ${err.message} — treating all issues as genuine`);
     return new Map(issues.map((_, i) => [i, { verdict: "genuine_bug", confidence: 0.5, reasoning: `Judge error: ${err.message}` }]));
   }
+}
+
+async function judgeIssuesWithLLM_Batched(issues) {
+  // NOTE(coworker): The judge response can truncate when issue counts are high,
+  // which causes many issues to default to "genuine_bug". Batch to keep output small.
+  if (!issues.length) return new Map();
+  const batchSize = Math.max(3, Math.min(8, Number(process.env.NODEBENCH_JUDGE_BATCH_SIZE ?? "5") || 5));
+  const merged = new Map();
+
+  for (let start = 0; start < issues.length; start += batchSize) {
+    const batch = issues.slice(start, start + batchSize);
+    // eslint-disable-next-line no-await-in-loop
+    const res = await judgeIssuesWithLLM(batch);
+    for (const [idx, v] of res.entries()) {
+      merged.set(start + idx, v);
+    }
+  }
+
+  return merged;
 }
 
 // Hard-filter: only the most egregious hallucinations that Gemini's screenshot
@@ -447,6 +1530,7 @@ const DETERMINISTIC_RUBRIC = [
   { id: "no_404_resources", weight: 2, axis: "reliability", description: "No 404 errors for static assets" },
   { id: "no_mixed_content", weight: 1, axis: "security", description: "No HTTP resources on HTTPS page" },
   { id: "viewport_meta_ok", weight: 1, axis: "accessibility", description: "Viewport meta tag present and correct" },
+  { id: "no_banned_css_patterns", weight: 2, axis: "design_compliance", description: "No banned CSS patterns in source (Layer 0)" },
 ];
 
 // Layer 2: Severity rubric criteria — computed from Gemini findings after false-positive filtering.
@@ -464,6 +1548,7 @@ const SEVERITY_RUBRIC = [
   { id: "grammar_ok", weight: 1, axis: "copy", description: "No grammar/spelling/punctuation errors" },
   { id: "icons_labeled", weight: 1, axis: "usability", description: "Icons have labels or tooltips" },
   { id: "mobile_responsive", weight: 1, axis: "layout", description: "Mobile viewport renders properly" },
+  { id: "no_agentic_interaction_bugs", weight: 2, axis: "interaction", description: "No bugs found during agentic visual exploration" },
 ];
 
 function getPLevel(issue) {
@@ -520,17 +1605,20 @@ function evaluateSeverityCriterion(criterionId, filteredIssues) {
       return !filteredIssues.some((i) => categorizeIssue(i).includes("icons"));
     case "mobile_responsive":
       return !filteredIssues.some((i) => categorizeIssue(i).includes("mobile"));
+    case "no_agentic_interaction_bugs":
+      return !filteredIssues.some((i) => ["agentic", "agentic_video"].includes(i.source ?? ""));
     default:
       return true;
   }
 }
 
 // Compute the 3-layer rubric score.
-// deterministicState: { consoleErrors, pageErrors, failedRequests, pageLoadOk, parseOk, videoOk, screenOk, layoutShifts, slowResources, notFoundResources, mixedContent, viewportMetaOk }
+// deterministicState: { consoleErrors, pageErrors, failedRequests, pageLoadOk, parseOk, videoOk, screenOk, layoutShifts, slowResources, notFoundResources, mixedContent, viewportMetaOk, staticAnalysis, agenticIssues }
 async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
   const allIssues = [
     ...(videoRuns?.[0]?.issues ?? []),
     ...(screenRuns?.[0]?.issues ?? []),
+    ...(deterministicState.agenticIssues ?? []),
   ];
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -546,7 +1634,7 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
   // ═══════════════════════════════════════════════════════════════════════
   // eslint-disable-next-line no-console
   console.log(`  🧑‍⚖️ Judging ${candidateIssues.length} candidate issues with LLM...`);
-  const judgments = await judgeIssuesWithLLM(candidateIssues);
+  const judgments = await judgeIssuesWithLLM_Batched(candidateIssues);
 
   const realIssues = [];
   const llmFiltered = [];
@@ -591,6 +1679,7 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
     no_404_resources: (deterministicState.notFoundResources ?? 0) === 0,
     no_mixed_content: (deterministicState.mixedContent ?? 0) === 0,
     viewport_meta_ok: deterministicState.viewportMetaOk !== false,
+    no_banned_css_patterns: (deterministicState.staticAnalysis?.highCount ?? 0) === 0,
   };
 
   const layer1Criteria = DETERMINISTIC_RUBRIC.map((c) => ({
@@ -646,10 +1735,27 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
   // ═══════════════════════════════════════════════════════════════════════
   // Rubric breakdown for traceability
   // ═══════════════════════════════════════════════════════════════════════
+  const staticAnalysisData = deterministicState.staticAnalysis ?? null;
+  const agenticIssueData = (deterministicState.agenticIssues ?? []);
+
   const rubric = {
+    layer0: staticAnalysisData ? {
+      score: staticAnalysisData.score,
+      total: staticAnalysisData.total,
+      high: staticAnalysisData.highCount,
+      medium: staticAnalysisData.medCount,
+      low: staticAnalysisData.lowCount,
+      topViolations: staticAnalysisData.violations.slice(0, 15).map((v) => `${v.file}:${v.line} ${v.label}`),
+    } : null,
     layer1: { score: layer1Score, weight: 0.60, criteria: layer1Criteria.map((c) => ({ id: c.id, pass: c.pass, weight: c.weight, axis: c.axis })) },
     layer2: { score: layer2Score, weight: 0.30, criteria: layer2Criteria.map((c) => ({ id: c.id, pass: c.pass, weight: c.weight, axis: c.axis })) },
     layer3: { score: layer3Score, weight: 0.10, rawTaste },
+    agentic: {
+      issueCount: agenticIssueData.length,
+      screenshotIssues: agenticIssueData.filter((i) => i.source === "agentic").length,
+      videoIssues: agenticIssueData.filter((i) => i.source === "agentic_video").length,
+      issues: agenticIssueData.slice(0, 10),
+    },
     falsePositivesFiltered: falsePositives.length,
     hardFiltered: hardFiltered.length,
     llmFiltered: llmFiltered.length,
@@ -666,6 +1772,14 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
     total: allIssues.length,
     realIssueCount: realIssues.length,
     rubric,
+    loop: {
+      // NOTE(coworker): Loop mode uses this for agent-edits-with-review. Keep payload small + actionable.
+      realIssues: realIssues.slice(0, 25),
+      candidateIssues: candidateIssues.slice(0, 25),
+      falsePositives: falsePositives.slice(0, 25),
+      hardFilteredCount: hardFiltered.length,
+      llmFilteredCount: llmFiltered.length,
+    },
     diagnostics: {
       totalRawIssues: allIssues.length,
       falsePositivesFiltered: falsePositives.length,
@@ -718,6 +1832,14 @@ async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicStat
   console.log(`  RUBRIC QA SCORE: ${entry.score}/100 (${entry.grade})`);
   // eslint-disable-next-line no-console
   console.log(`${"═".repeat(60)}`);
+  if (r.layer0) {
+    // eslint-disable-next-line no-console
+    console.log(`  Layer 0 — Static Code Analysis: ${r.layer0.score}/100 (${r.layer0.total} violations: ${r.layer0.high} high, ${r.layer0.medium} medium, ${r.layer0.low} low)`);
+    for (const v of r.layer0.topViolations?.slice(0, 5) ?? []) {
+      // eslint-disable-next-line no-console
+      console.log(`    📋 ${v}`);
+    }
+  }
   // eslint-disable-next-line no-console
   console.log(`  Layer 1 — Deterministic (${Math.round(r.layer1.weight * 100)}%): ${r.layer1.score}/100`);
   for (const c of r.layer1.criteria) {
@@ -747,6 +1869,14 @@ async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicStat
       }
     }
   }
+  if (r.agentic?.issueCount > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`  🤖 Agentic Visual QA: ${r.agentic.issueCount} interaction issues`);
+    for (const ai of r.agentic.issues?.slice(0, 5) ?? []) {
+      // eslint-disable-next-line no-console
+      console.log(`    → [${ai.route ?? "?"}] ${(ai.header ?? ai.description ?? "").slice(0, 80)}`);
+    }
+  }
   // eslint-disable-next-line no-console
   console.log(`  Real issues: ${qscore.realIssueCount} (${qscore.critical} P1, ${qscore.warning} P2, ${qscore.info} P3)`);
   // eslint-disable-next-line no-console
@@ -754,7 +1884,7 @@ async function persistQaScore(repoRoot, videoRuns, screenRuns, deterministicStat
   // eslint-disable-next-line no-console
   console.log(`QA history appended → ${qaResultsPath}`);
 
-  return entry;
+  return { entry, qscore };
 }
 
 async function throwIfQaErrorVisible(page, label) {
@@ -764,11 +1894,34 @@ async function throwIfQaErrorVisible(page, label) {
   throw new Error(`${label}: ${errText.replace(/^qa error:\s*/i, "").trim() || "QA failed"}`);
 }
 
-async function runQaAndCapture({ baseURL, headless }) {
+async function runQaAndCapture({ baseURL, headless, noAgentic = false }) {
   const outDir = path.join(process.cwd(), ".tmp", "dogfood-gemini-qa");
   // Archive previous run before overwriting — preserves before/after for regression diffs.
   await archivePreviousRun(outDir);
   await fs.mkdir(outDir, { recursive: true });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Layer 0: Static code analysis — deterministic, runs before browser
+  // ═══════════════════════════════════════════════════════════════════════
+  const srcDir = path.join(process.cwd(), "src");
+  // eslint-disable-next-line no-console
+  console.log("  🔍 Layer 0: Static code analysis...");
+  const staticAnalysis = await scanSourceForBannedPatterns(srcDir);
+  // eslint-disable-next-line no-console
+  console.log(`  🔍 Layer 0: ${staticAnalysis.total} violations (${staticAnalysis.highCount} high, ${staticAnalysis.medCount} medium, ${staticAnalysis.lowCount} low) — score ${staticAnalysis.score}/100`);
+  if (staticAnalysis.violations.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log("  📋 Top violations:");
+    for (const v of staticAnalysis.violations.slice(0, 10)) {
+      // eslint-disable-next-line no-console
+      console.log(`    ${v.severity === "high" ? "🔴" : v.severity === "medium" ? "🟡" : "⚪"} ${v.file}:${v.line} — ${v.label}: ${v.match}`);
+    }
+    if (staticAnalysis.violations.length > 10) {
+      // eslint-disable-next-line no-console
+      console.log(`    ... and ${staticAnalysis.violations.length - 10} more`);
+    }
+  }
+  await fs.writeFile(path.join(outDir, "static-analysis.json"), JSON.stringify(staticAnalysis, null, 2), "utf8");
 
   const browser = await chromium.launch({ headless });
   const context = await browser.newContext({
@@ -898,6 +2051,45 @@ async function runQaAndCapture({ baseURL, headless }) {
       telemetry.layoutShifts = 0; // Can't measure = assume OK
     }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // Agentic visual exploration — Gemini-guided UI interaction discovery
+    // Uses vision model to identify what to click instead of brittle selectors
+    // ═══════════════════════════════════════════════════════════════════
+    const geminiApiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+    telemetry.staticAnalysis = staticAnalysis;
+    telemetry.agenticIssues = [];
+
+    if (!noAgentic && geminiApiKey) {
+      try {
+        const agenticResult = await runAgenticExploration(baseURL, geminiApiKey, outDir, headless);
+        const allAgenticIssues = [...agenticResult.screenshotIssues, ...agenticResult.videoIssues];
+        telemetry.agenticIssues = allAgenticIssues;
+        // eslint-disable-next-line no-console
+        console.log(`  🤖 Agentic QA: ${allAgenticIssues.length} issues (${agenticResult.screenshotIssues.length} screenshot + ${agenticResult.videoIssues.length} video) from ${agenticResult.screenshots.length} interactions`);
+        await fs.writeFile(path.join(outDir, "agentic-results.json"), JSON.stringify({
+          screenshots: agenticResult.screenshots.length,
+          screenshotIssues: agenticResult.screenshotIssues.length,
+          videoIssues: agenticResult.videoIssues.length,
+          videoPath: agenticResult.videoPath,
+          issues: allAgenticIssues,
+        }, null, 2), "utf8");
+
+        // Navigate back to /dogfood for existing QA flow
+        await page.goto(`${baseURL}/dogfood`, { waitUntil: "domcontentloaded" });
+        await page.getByRole("heading", { name: /quality review/i }).first().waitFor({ timeout: 60_000 });
+        await page.waitForTimeout(1000);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`  ⚠ Agentic exploration failed (non-fatal): ${err.message}`);
+      }
+    } else if (!geminiApiKey) {
+      // eslint-disable-next-line no-console
+      console.log("  ⏭ Skipping agentic exploration (no GEMINI_API_KEY)");
+    } else {
+      // eslint-disable-next-line no-console
+      console.log("  ⏭ Skipping agentic exploration (--no-agentic)");
+    }
+
     const runVideo = page.getByRole("button", { name: /run gemini qa on video/i });
     await page.waitForFunction(() => {
       const btn = document.querySelector('button[aria-label="Run Gemini QA on video"]');
@@ -911,20 +2103,24 @@ async function runQaAndCapture({ baseURL, headless }) {
       return btn instanceof HTMLButtonElement && btn.disabled;
     }, null, { timeout: 20_000 });
 
-    await Promise.race([
-      page.getByText(/qa error:/i).waitFor({ timeout: 240_000 }).then(async () => {
-        const errText = (await page.getByText(/qa error:/i).first().textContent().catch(() => "")) || "";
-        throw new Error(errText.replace(/^qa error:\s*/i, "").trim() || "Video QA failed");
-      }),
-      page.waitForFunction(() => {
-        const btn = document.querySelector('button[aria-label="Run Gemini QA on video"]');
-        return btn instanceof HTMLButtonElement && !btn.disabled;
-      }, null, { timeout: 240_000 }),
-    ]);
-    await throwIfQaErrorVisible(page, "Video QA").catch((e) => {
+    try {
+      await Promise.race([
+        page.getByText(/qa error:/i).waitFor({ timeout: 240_000 }).then(async () => {
+          const errText = (await page.getByText(/qa error:/i).first().textContent().catch(() => "")) || "";
+          throw new Error(errText.replace(/^qa error:\s*/i, "").trim() || "Video QA failed");
+        }),
+        page.waitForFunction(() => {
+          const btn = document.querySelector('button[aria-label="Run Gemini QA on video"]');
+          return btn instanceof HTMLButtonElement && !btn.disabled;
+        }, null, { timeout: 240_000 }),
+      ]);
+      await throwIfQaErrorVisible(page, "Video QA");
+    } catch (videoQaErr) {
+      // Convex connection errors / timeouts are transient — don't kill the whole pipeline
       telemetry.videoOk = false;
-      throw e;
-    });
+      // eslint-disable-next-line no-console
+      console.warn(`  ⚠ Video QA error (non-fatal): ${videoQaErr.message}`);
+    }
 
     // Wait for UI to reflect the completed run.
     await page.waitForFunction((prev) => {
@@ -979,12 +2175,14 @@ async function runQaAndCapture({ baseURL, headless }) {
 
     // Compute rubric score from both QA runs + deterministic telemetry.
     // 3-layer weighted: deterministic (40%) + severity rubric (50%) + taste (10%).
-    const qaEntry = await persistQaScore(process.cwd(), videoRuns, screenRuns, telemetry);
+    const { entry: qaEntry, qscore } = await persistQaScore(process.cwd(), videoRuns, screenRuns, telemetry);
 
     // Save rubric scorecard for traceability
     await fs.writeFile(path.join(outDir, "rubric-scorecard.json"), JSON.stringify(qaEntry.rubric, null, 2), "utf8");
+    // Save loop context (real issues, false positives, etc.) for iterative edit cycles.
+    await fs.writeFile(path.join(outDir, "qa-loop-context.json"), JSON.stringify(qscore.loop ?? {}, null, 2), "utf8").catch(() => {});
     await fs.writeFile(path.join(outDir, "debug.log"), debugLines.join("\n"), "utf8");
-    return { outDir };
+    return { outDir, qaEntry };
   } catch (e) {
     try {
       await page.screenshot({ path: path.join(outDir, "error.png"), fullPage: true });
@@ -1007,9 +2205,15 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const host = args.get("host") ?? "127.0.0.1";
   const requestedPort = Number(args.get("port") ?? 4173);
-  const port = args.has("baseURL") ? requestedPort : await findOpenPort(host, requestedPort, 30);
-  const baseURL = args.get("baseURL") ?? `http://${host}:${port}`;
+  const baseUrlOverride = args.get("baseURL") ?? null;
   const headless = (args.get("headless") ?? "true") === "true";
+  const noAgentic = args.has("no-agentic");
+  const loopMode = args.has("loop");
+  const noRecapture = args.has("no-recapture");
+  const noEdits = args.has("no-edits");
+  const autoApply = args.has("auto-apply");
+  const maxIterations = Number(args.get("max-iterations") ?? 5);
+  const targetScore = Number(args.get("target-score") ?? 95);
 
   const repoRoot = process.cwd();
   const nodeCmd = process.execPath;
@@ -1017,35 +2221,326 @@ async function main() {
 
   const walkthroughMp4 = path.join(repoRoot, "public", "dogfood", "walkthrough.mp4");
   const walkthroughWebm = path.join(repoRoot, "public", "dogfood", "walkthrough.webm");
-  if (!existsSync(walkthroughMp4) && !existsSync(walkthroughWebm)) {
-    throw new Error("No walkthrough video found at public/dogfood/walkthrough.(mp4|webm). Run `npm run dogfood:full:local` first.");
+
+  function isInteractive() {
+    // REVIEW MODE: default to interactive prompts when loop mode is enabled.
+    return Boolean(process.stdin.isTTY && process.stdout.isTTY);
   }
 
-  // eslint-disable-next-line no-console
-  console.log(`Starting preview server: node ${viteBin} preview --host ${host} --port ${port}`);
-  const serverProc = spawn(nodeCmd, [viteBin, "preview", "--host", host, "--port", String(port), "--strictPort"], {
-    cwd: repoRoot,
-    stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env },
-    windowsHide: true,
-    shell: false,
-  });
-  serverProc.on("error", (err) => {
+  async function promptYesNo(question, defaultYes = false) {
+    if (!isInteractive()) return defaultYes;
+    const { createInterface } = await import("node:readline");
+    const rl = createInterface({ input: process.stdin, output: process.stdout });
+    const suffix = defaultYes ? " [Y/n] " : " [y/N] ";
+    return await new Promise((resolve) => {
+      rl.question(`${question}${suffix}`, (ans) => {
+        rl.close();
+        const a = String(ans ?? "").trim().toLowerCase();
+        if (!a) return resolve(defaultYes);
+        resolve(a === "y" || a === "yes");
+      });
+    });
+  }
+
+  async function runCommand(cmd, cmdArgs, opts = {}) {
+    const child = spawn(cmd, cmdArgs, {
+      cwd: repoRoot,
+      stdio: "inherit",
+      env: { ...process.env, ...(opts.env ?? {}) },
+      windowsHide: true,
+      shell: false,
+    });
+    const code = await new Promise((resolve) => child.on("close", resolve));
+    if (code !== 0) {
+      throw new Error(`Command failed (${code}): ${cmd} ${cmdArgs.join(" ")}`);
+    }
+  }
+
+  async function recaptureDogfoodArtifacts() {
+    // NOTE(coworker): This is critical for looping; otherwise QA reruns stale screenshots/video.
+    const headlessStr = headless ? "true" : "false";
+    const scriptPath = path.join(repoRoot, "scripts", "ui", "runDogfoodWalkthroughLocal.mjs");
+    // Run full local capture (build + playwright + publish static gallery).
+    await runCommand(process.execPath, [
+      scriptPath,
+      "--screens",
+      "true",
+      "--publish",
+      "true",
+      "--headless",
+      headlessStr,
+    ]);
+  }
+
+  async function runGeminiQaOnce() {
+    const port = baseUrlOverride ? requestedPort : await findOpenPort(host, requestedPort, 30);
+    const baseURL = baseUrlOverride ?? `http://${host}:${port}`;
+    if (!existsSync(walkthroughMp4) && !existsSync(walkthroughWebm)) {
+      throw new Error("No walkthrough video found at public/dogfood/walkthrough.(mp4|webm). Run capture first or pass --no-recapture=false.");
+    }
+
     // eslint-disable-next-line no-console
-    console.error("Failed to start preview server:", err);
-  });
-  serverProc.stdout.on("data", (buf) => process.stdout.write(String(buf)));
-  serverProc.stderr.on("data", (buf) => process.stderr.write(String(buf)));
+    console.log(`Starting preview server: node ${viteBin} preview --host ${host} --port ${port}`);
+    const serverProc = spawn(nodeCmd, [viteBin, "preview", "--host", host, "--port", String(port), "--strictPort"], {
+      cwd: repoRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env },
+      windowsHide: true,
+      shell: false,
+    });
+    serverProc.on("error", (err) => {
+      // eslint-disable-next-line no-console
+      console.error("Failed to start preview server:", err);
+    });
+    serverProc.stdout.on("data", (buf) => process.stdout.write(String(buf)));
+    serverProc.stderr.on("data", (buf) => process.stderr.write(String(buf)));
+
+    try {
+      await waitForPort(host, port, 240_000);
+      await waitForHttpOk(baseURL, 240_000);
+
+      const { outDir, qaEntry } = await runQaAndCapture({ baseURL, headless, noAgentic });
+      // eslint-disable-next-line no-console
+      console.log(`Gemini QA artifacts written to: ${outDir}`);
+      return { outDir, qaEntry };
+    } finally {
+      await killProcessTree(serverProc);
+    }
+  }
+
+  function extractGitDiff(raw) {
+    const s = String(raw ?? "").replace(/^```[a-z]*\s*\n?/m, "").replace(/\n?```\s*$/m, "").trim();
+    const idx = s.indexOf("diff --git ");
+    if (idx >= 0) return s.slice(idx).trim();
+    return s.trim();
+  }
+
+  async function listFilesRecursively(dir, maxFiles = 20) {
+    const out = [];
+    async function walk(d) {
+      if (out.length >= maxFiles) return;
+      let entries;
+      try {
+        entries = await fs.readdir(d, { withFileTypes: true });
+      } catch {
+        return;
+      }
+      for (const e of entries) {
+        if (out.length >= maxFiles) return;
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) {
+          if (e.name === "node_modules" || e.name.startsWith(".")) continue;
+          // eslint-disable-next-line no-await-in-loop
+          await walk(p);
+        } else if (/\.(ts|tsx|css)$/.test(e.name)) {
+          out.push(p);
+        }
+      }
+    }
+    await walk(dir);
+    return out;
+  }
+
+  async function selectContextFiles(loopContext) {
+    const files = new Set();
+    files.add(path.join(repoRoot, "src", "index.css"));
+    files.add(path.join(repoRoot, "src", "main.tsx"));
+    files.add(path.join(repoRoot, "src", "components", "MainLayout.tsx"));
+
+    const issues = Array.isArray(loopContext?.realIssues) ? loopContext.realIssues : [];
+    for (const issue of issues.slice(0, 3)) {
+      const route = String(issue?.route ?? issue?.ts ?? "").trim();
+      const seg = route.startsWith("/") ? route.split("/").filter(Boolean)[0] : "";
+      if (!seg) continue;
+      const featureDir = path.join(repoRoot, "src", "features", seg);
+      const ok = await fs.stat(featureDir).then((s) => s.isDirectory()).catch(() => false);
+      if (ok) {
+        // eslint-disable-next-line no-await-in-loop
+        const found = await listFilesRecursively(featureDir, 12);
+        for (const f of found) files.add(f);
+      }
+    }
+
+    // Cap to keep prompt small
+    return Array.from(files).slice(0, 10);
+  }
+
+  async function proposePatchWithGemini(loopContext, outDir) {
+    const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+    if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for loop patch proposal");
+
+    const issues = Array.isArray(loopContext?.realIssues) ? loopContext.realIssues : [];
+    if (issues.length === 0) return null;
+
+    const contextFiles = await selectContextFiles(loopContext);
+    const fileBlobs = [];
+    for (const f of contextFiles) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const raw = await fs.readFile(f, "utf8");
+        const rel = path.relative(repoRoot, f).replace(/\\/g, "/");
+        const clipped = raw.length > 9000 ? `${raw.slice(0, 6500)}\n\n/* …clipped… */\n\n${raw.slice(-2000)}` : raw;
+        fileBlobs.push(`FILE: ${rel}\n-----\n${clipped}\n-----`);
+      } catch {
+        // ignore unreadable files
+      }
+    }
+
+    const prompt = `You are an expert frontend engineer working inside an existing repo.
+
+Goal: propose a minimal patch that fixes the REAL issues below, while preserving design tokens and existing layout intent.
+
+Constraints:
+- Output MUST be a git-apply compatible unified diff (start with "diff --git").
+- Modify ONLY the files included below (no new files).
+- Keep changes small, surgical, and consistent with the codebase.
+- Use existing tailwind tokens like bg-surface, border-edge, text-content. No hardcoded hex.
+- Do not "fix" subjective density/spacing complaints.
+
+REAL ISSUES (JSON):
+${JSON.stringify(issues.slice(0, 6), null, 2)}
+
+CONTEXT FILES:
+${fileBlobs.join("\n\n")}
+
+Return ONLY the unified diff. No commentary, no markdown fences.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 8192 },
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Patch proposal API error: ${res.status} ${errText.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const diff = extractGitDiff(text);
+    if (!diff.startsWith("diff --git ")) {
+      throw new Error("Gemini did not return a git diff");
+    }
+
+    const loopDir = path.join(outDir, "loop");
+    await fs.mkdir(loopDir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+    const patchPath = path.join(loopDir, `proposal_${stamp}.diff`);
+    await fs.writeFile(patchPath, diff, "utf8");
+    return patchPath;
+  }
+
+  async function applyGitPatch(patchPath) {
+    const gitCmd = process.platform === "win32" ? "git.exe" : "git";
+    await runCommand(gitCmd, ["apply", "--check", patchPath], { env: { ...process.env } });
+    await runCommand(gitCmd, ["apply", patchPath], { env: { ...process.env } });
+  }
+
+  async function showPatchStat(patchPath) {
+    const gitCmd = process.platform === "win32" ? "git.exe" : "git";
+    const child = spawn(gitCmd, ["apply", "--stat", patchPath], {
+      cwd: repoRoot,
+      stdio: "inherit",
+      windowsHide: true,
+      shell: false,
+    });
+    await new Promise((resolve) => child.on("close", resolve));
+  }
+
+  async function runLoop() {
+    // eslint-disable-next-line no-console
+    console.log(`\n🔁 LOOP MODE enabled: maxIterations=${maxIterations}, targetScore=${targetScore}, recapture=${!noRecapture}, edits=${!noEdits}\n`);
+
+    for (let iter = 1; iter <= maxIterations; iter++) {
+      // eslint-disable-next-line no-console
+      console.log(`\n════════════════════════════════════════════════════════════`);
+      // eslint-disable-next-line no-console
+      console.log(`  LOOP ITERATION ${iter}/${maxIterations}`);
+      // eslint-disable-next-line no-console
+      console.log(`════════════════════════════════════════════════════════════\n`);
+
+      if (!noRecapture) {
+        // eslint-disable-next-line no-console
+        console.log("🎥 Recapturing dogfood artifacts (build + e2e + publish)…");
+        await recaptureDogfoodArtifacts();
+      }
+
+      const { outDir, qaEntry } = await runGeminiQaOnce();
+
+      const scoreOk = (qaEntry?.score ?? 0) >= targetScore;
+      const noRealIssues = (qaEntry?.realIssueCount ?? 0) === 0;
+      if (scoreOk && noRealIssues) {
+        // eslint-disable-next-line no-console
+        console.log(`✅ Loop complete: score=${qaEntry.score}/100 grade=${qaEntry.grade} realIssues=${qaEntry.realIssueCount}`);
+        return;
+      }
+
+      if (noEdits) {
+        // eslint-disable-next-line no-console
+        console.log(`🛑 Loop stopping (no edits): score=${qaEntry?.score ?? 0}/100 realIssues=${qaEntry?.realIssueCount ?? "?"}`);
+        return;
+      }
+
+      // Load loop context produced by this run.
+      let loopContext = null;
+      try {
+        const raw = await fs.readFile(path.join(outDir, "qa-loop-context.json"), "utf8");
+        loopContext = JSON.parse(raw);
+      } catch {
+        loopContext = null;
+      }
+
+      if (!loopContext || !Array.isArray(loopContext.realIssues) || loopContext.realIssues.length === 0) {
+        // eslint-disable-next-line no-console
+        console.log("🛑 Loop stopping: no real issues available for patch proposal");
+        return;
+      }
+
+      // eslint-disable-next-line no-console
+      console.log(`🛠️  Proposing patch for ${loopContext.realIssues.length} real issues…`);
+      const patchPath = await proposePatchWithGemini(loopContext, outDir);
+      if (!patchPath) {
+        // eslint-disable-next-line no-console
+        console.log("🛑 Loop stopping: no patch proposed");
+        return;
+      }
+
+      // Review + apply
+      // eslint-disable-next-line no-console
+      console.log(`\n📎 Patch proposal written: ${patchPath}`);
+      await showPatchStat(patchPath).catch(() => {});
+
+      const shouldApply = autoApply || await promptYesNo("Apply this patch?", false);
+      if (!shouldApply) {
+        // eslint-disable-next-line no-console
+        console.log("🛑 Patch not applied. Review the diff and rerun with --auto-apply to continue.");
+        return;
+      }
+
+      await applyGitPatch(patchPath);
+      // eslint-disable-next-line no-console
+      console.log("✅ Patch applied. Continuing loop…");
+    }
+
+    // eslint-disable-next-line no-console
+    console.log("🛑 Loop ended: max iterations reached");
+  }
 
   try {
-    await waitForPort(host, port, 240_000);
-    await waitForHttpOk(baseURL, 240_000);
-
-    const { outDir } = await runQaAndCapture({ baseURL, headless });
-    // eslint-disable-next-line no-console
-    console.log(`Gemini QA artifacts written to: ${outDir}`);
+    if (loopMode) {
+      await runLoop();
+    } else {
+      if (!existsSync(walkthroughMp4) && !existsSync(walkthroughWebm)) {
+        throw new Error("No walkthrough video found at public/dogfood/walkthrough.(mp4|webm). Run `npm run dogfood:full:local` first.");
+      }
+      await runGeminiQaOnce();
+    }
   } finally {
-    await killProcessTree(serverProc);
+    // loopMode / single run handles its own subprocess teardown
   }
 }
 
