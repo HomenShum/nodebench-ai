@@ -117,6 +117,8 @@ test.describe('Scenario: Dark mode sweep — Feb 2026 component fixes', () => {
       localStorage.removeItem('nodebench-theme');
     });
 
+    await page.emulateMedia({ colorScheme: 'dark' });
+
     const routes = [
       '/analytics-recommendations',
       '/analytics-components',

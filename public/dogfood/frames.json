@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-23T06:18:31.066Z",
+  "capturedAtIso": "2026-02-23T22:43:04.372Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -78,7 +78,7 @@
       "index": 10,
       "name": "Workspace: Calendar",
       "path": "/calendar",
-      "startSec": 19,
+      "startSec": 18.9,
       "file": "10-workspace-calendar.jpg",
       "image": "/dogfood/frames/10-workspace-calendar.jpg"
     },
@@ -86,7 +86,7 @@
       "index": 11,
       "name": "Assistants",
       "path": "/agents",
-      "startSec": 21.1,
+      "startSec": 21,
       "file": "11-assistants.jpg",
       "image": "/dogfood/frames/11-assistants.jpg"
     },
@@ -94,7 +94,7 @@
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 23.2,
+      "startSec": 23.1,
       "file": "12-roadmap.jpg",
       "image": "/dogfood/frames/12-roadmap.jpg"
     },
@@ -158,7 +158,7 @@
       "index": 20,
       "name": "Review Queue",
       "path": "/review-queue",
-      "startSec": 40.1,
+      "startSec": 40,
       "file": "20-review-queue.jpg",
       "image": "/dogfood/frames/20-review-queue.jpg"
     },
@@ -230,7 +230,7 @@
       "index": 29,
       "name": "PR Suggestions",
       "path": "/pr-suggestions",
-      "startSec": 59,
+      "startSec": 59.1,
       "file": "29-pr-suggestions.jpg",
       "image": "/dogfood/frames/29-pr-suggestions.jpg"
     },

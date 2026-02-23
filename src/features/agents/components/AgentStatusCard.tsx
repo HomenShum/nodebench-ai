@@ -170,8 +170,8 @@ export const AgentStatusCard = memo(function AgentStatusCard({
   return (
     <div
       className={cn(
-        "bg-[var(--bg-primary)] rounded-container border border-[var(--border-color)]",
-        "transition-all duration-200 hover:shadow-hover",
+        "group bg-[var(--bg-primary)] rounded-container border border-[var(--border-color)]",
+        "transition-all duration-200 hover:shadow-hover hover:bg-[var(--bg-secondary)]",
         isActive && "ring-1 ring-offset-1 ring-offset-[var(--bg-primary)]",
         isActive && config.borderColorClass.replace("border-", "ring-")
       )}
@@ -189,7 +189,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
                 config.borderColorClass
               )}
             >
-              <Icon className={cn("w-5 h-5", config.colorClass)} aria-hidden="true" />
+              <Icon className={cn("w-5 h-5 transition-transform duration-200 group-hover:scale-[1.05]", config.colorClass)} aria-hidden="true" />
             </div>
             <div>
               <h3 className="font-semibold text-[var(--text-primary)] text-sm">

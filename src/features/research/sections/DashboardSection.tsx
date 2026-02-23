@@ -215,7 +215,7 @@ function DashboardSectionInner({
 
       {availableDates.length > 1 && (
         <div className="mt-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
-          <div className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+          <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
             Historical Data
           </div>
           <div className="flex flex-wrap gap-1">

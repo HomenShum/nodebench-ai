@@ -230,7 +230,11 @@ export function CleanSidebar({
   );
 
   return (
-    <aside aria-label="Sidebar navigation" className="h-full flex flex-col bg-surface dark:bg-[#18181B]">
+    <aside
+      aria-label="Sidebar navigation"
+      data-sidebar
+      className="h-full flex flex-col bg-surface"
+    >
       {/* Logo */}
       <div className={`h-14 flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} border-b border-edge`}>
         <div className="flex items-center gap-2.5 min-w-0">
@@ -270,7 +274,7 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={() => setIsMoreOpen(!isMoreOpen)}
-              className="w-full flex items-center justify-between px-2 mb-2 text-xs font-medium uppercase tracking-wider text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors"
+              className="w-full flex items-center justify-between px-2 mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors"
             >
               <span>More</span>
               {isMoreOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -320,7 +324,7 @@ export function CleanSidebar({
             {[...dashboardItems, ...(import.meta.env.DEV ? devItems : [])].map((item) => (
               <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
             ))}
-            <div className="h-px bg-gray-200/60 dark:bg-white/[0.06] mx-2 my-2" />
+            <div className="h-px bg-edge opacity-60 mx-2 my-2" />
             {discoveryItems.map((item) => (
               <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
             ))}
@@ -330,17 +334,17 @@ export function CleanSidebar({
 
       {/* Divider */}
       {!isCollapsed && (
-        <div className="h-px bg-gray-200/60 dark:bg-white/[0.06] mx-4 my-3" />
+        <div className="h-px bg-edge opacity-60 mx-4 my-3" />
       )}
 
       {/* File Explorer — hidden when collapsed */}
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wider text-content-muted">
+            <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-content-muted">
               Files
             </span>
-            <FolderOpen className="w-3.5 h-3.5 text-gray-300" />
+            <FolderOpen className="w-3.5 h-3.5 text-content-muted/60" />
           </div>
 
           {recentDocs.length > 0 && (
@@ -348,7 +352,7 @@ export function CleanSidebar({
               <button
                 type="button"
                 onClick={() => setIsDocsOpen(!isDocsOpen)}
-                className="flex items-center justify-between w-full text-xs font-medium text-content-secondary uppercase tracking-wider mb-2 hover:text-content px-2"
+                className="flex items-center justify-between w-full text-[11px] font-medium text-content-secondary uppercase tracking-[0.16em] mb-2 hover:text-content px-2"
               >
                 <span>Recent Documents</span>
                 <div className="flex items-center gap-2">

@@ -32,11 +32,11 @@ function MetricCard({ title, value, subtitle, icon, accent, trend }: MetricCardP
   return (
     <div className={`bg-surface border border-edge rounded-lg p-4 transition-shadow${accent ? ' border-l-2 border-l-indigo-500 dark:border-l-indigo-400' : ''}`}>
       <div className="flex items-start justify-between mb-2">
-        <div className="text-content-secondary text-sm font-medium">{title}</div>
+        <div className="text-[11px] uppercase tracking-wide text-content-muted font-semibold">{title}</div>
         <div className={accent ? 'text-indigo-500 dark:text-indigo-400' : 'text-content-secondary'}>{icon}</div>
       </div>
-      <div className={`text-2xl font-bold mb-1 ${accent ? 'text-content' : 'text-content-secondary'}`}>{value}</div>
-      {subtitle && <div className="text-xs text-content-secondary">{subtitle}</div>}
+      <div className={`text-2xl font-semibold mb-1 ${accent ? 'text-content' : 'text-content-secondary'}`}>{value}</div>
+      {subtitle && <div className="text-[11px] text-content-secondary">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' :
             trend.direction === 'down' ? 'text-red-600' :
@@ -54,32 +54,72 @@ interface SourcePerformanceBarProps {
   sourceName: string;
   itemCount: number;
   maxCount: number;
+  totalCount?: number;
   clicks?: number;
   impressions?: number;
   ctr?: number;
+}
+
+function normalizeSourceKey(sourceName: string) {
+  const raw = String(sourceName ?? "").trim();
+  if (!raw) return "";
+  return raw.toLowerCase();
+}
+
+function formatSourceLabel(sourceName: string) {
+  const raw = String(sourceName ?? "").trim();
+  if (!raw) return "Unknown";
+
+  const lower = raw.toLowerCase();
+  const roundMap: Record<string, string> = {
+    "series-a": "Series A",
+    "series-b": "Series B",
+    "series-c": "Series C",
+    "series-d": "Series D",
+    "series-d-plus": "Series D+",
+    "seed": "Seed",
+    "pre-seed": "Pre-seed",
+  };
+  if (roundMap[lower]) return roundMap[lower];
+
+  if (lower === "unknown") return "Unknown";
+
+  const acronyms = new Set(["ai", "ml", "ui", "ux", "api", "mcp", "qa", "gpu", "slo"]);
+  const parts = raw.split(/[_-]+/g).filter(Boolean);
+  if (parts.length <= 1) return raw.charAt(0).toUpperCase() + raw.slice(1);
+  return parts
+    .map((p) => {
+      const pl = p.toLowerCase();
+      if (acronyms.has(pl)) return pl.toUpperCase();
+      return pl.charAt(0).toUpperCase() + pl.slice(1);
+    })
+    .join(" ");
 }
 
 function SourcePerformanceBar({
   sourceName,
   itemCount,
   maxCount,
+  totalCount = 0,
   clicks = 0,
   impressions = 0,
   ctr = 0,
 }: SourcePerformanceBarProps) {
   const percentage = maxCount > 0 ? (itemCount / maxCount) * 100 : 0;
+  const ofTotal = totalCount > 0 ? (itemCount / totalCount) * 100 : 0;
+  const title = `${formatSourceLabel(sourceName)} — ${itemCount} ${itemCount === 1 ? "item" : "items"} (${ofTotal.toFixed(1)}% of total)`;
 
   return (
-    <div className="py-2 border-b border-edge last:border-0">
+    <div className="group -mx-2 px-2 py-2 rounded-md border-b border-edge last:border-0 hover:bg-surface-hover/50 transition-colors" title={title}>
       <div className="flex items-center justify-between mb-1">
         <div className="text-sm font-medium text-content-secondary truncate flex-1">
-          {sourceName}
+          {formatSourceLabel(sourceName)}
         </div>
         <div className="flex items-center gap-3 text-xs text-content-secondary whitespace-nowrap shrink-0">
           <span className="font-mono">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
           {impressions > 0 && (
             <>
-              <span className="text-gray-300 dark:text-content-secondary">|</span>
+              <span className="text-content-muted/60">|</span>
               <span className="flex items-center gap-1">
                 <Eye size={12} />
                 {impressions}
@@ -88,7 +128,7 @@ function SourcePerformanceBar({
           )}
           {clicks > 0 && (
             <>
-              <span className="text-gray-300 dark:text-content-secondary">|</span>
+              <span className="text-content-muted/60">|</span>
               <span className="flex items-center gap-1">
                 <MousePointerClick size={12} />
                 {clicks}
@@ -98,16 +138,16 @@ function SourcePerformanceBar({
           {ctr > 0 && (
             <>
               <span className="text-gray-300 dark:text-content-secondary">|</span>
-              <span className="font-semibold text-blue-600">
+              <span className="font-semibold text-blue-600 dark:text-blue-300">
                 {parseFloat((ctr * 100).toFixed(1))}% CTR
               </span>
             </>
           )}
         </div>
       </div>
-      <div className="h-2 bg-surface-secondary dark:bg-white/[0.08] rounded-full overflow-hidden">
+      <div className="h-2 bg-surface-secondary rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
+          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 group-hover:from-indigo-500 group-hover:to-indigo-600"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -122,11 +162,29 @@ interface CategoryBreakdownProps {
   avgReadTime?: number;
 }
 
+function formatCategoryLabel(category) {
+  const raw = String(category ?? "").trim();
+  if (!raw) return "";
+
+  if (raw.toLowerCase() === "ai_ml") return "AI & ML";
+
+  const acronyms = new Set(["ai", "ml", "ui", "ux", "api", "mcp", "qa", "gpu", "slo"]);
+  const parts = raw.split(/[_-]+/g).filter(Boolean);
+  return parts
+    .map((part) => {
+      const lower = part.toLowerCase();
+      if (acronyms.has(lower)) return lower.toUpperCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
 function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: CategoryBreakdownProps) {
+  const label = formatCategoryLabel(category) || category;
   return (
     <div className="flex items-center justify-between py-2 border-b border-edge last:border-0">
       <div className="flex-1">
-        <div className="text-sm font-medium text-content-secondary">{category}</div>
+        <div className="text-sm font-medium text-content-secondary" title={category}>{label}</div>
         <div className="flex items-center gap-2 mt-1">
           <div className="h-1.5 bg-surface-secondary dark:bg-white/[0.08] rounded-full flex-1 max-w-[100px]">
             <div
@@ -222,8 +280,10 @@ export default function ComponentMetricsDashboard() {
     }>();
 
     for (const metric of todayMetrics) {
-      const existing = grouped.get(metric.sourceName) || {
-        sourceName: metric.sourceName,
+      const key = normalizeSourceKey(metric.sourceName);
+      if (key === "all sources") continue; // Avoid confusing aggregate rows in the per-source leaderboard.
+      const existing = grouped.get(key) || {
+        sourceName: formatSourceLabel(metric.sourceName),
         itemCount: 0,
         impressions: 0,
         clicks: 0,
@@ -234,7 +294,7 @@ export default function ComponentMetricsDashboard() {
       existing.impressions += metric.impressions || 0;
       existing.clicks += metric.clicks || 0;
 
-      grouped.set(metric.sourceName, existing);
+      grouped.set(key, existing);
     }
 
     // Calculate CTR for each source
@@ -294,7 +354,7 @@ export default function ComponentMetricsDashboard() {
   const isLoading = todayMetrics === undefined || topSources === undefined;
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-full bg-surface p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -426,6 +486,7 @@ export default function ComponentMetricsDashboard() {
                       sourceName={source.sourceName}
                       itemCount={source.itemCount}
                       maxCount={maxSourceCount}
+                      totalCount={aggregates?.totalItems ?? 0}
                       clicks={source.clicks}
                       impressions={source.impressions}
                       ctr={source.ctr}

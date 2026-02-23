@@ -154,11 +154,11 @@ export function ForYouFeed() {
                 {isPublicMode ? "The Daily Brief" : "For You"}
               </h1>
               <p className="text-sm text-muted-foreground mt-1 font-light">
-                {formatMastheadDate()} · {displayFeed.items.length} stories
+                {formatMastheadDate()} · {displayFeed.items.length} {displayFeed.items.length === 1 ? "story" : "stories"}
               </p>
             </div>
             <div className="text-right">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">
                 {isPublicMode ? "Preview" : "Personalized"}
               </span>
             </div>
@@ -190,7 +190,7 @@ export function ForYouFeed() {
                       <Minus className="w-4 h-4" />
                     )}
                   </div>
-                  <h2 className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+                  <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                     {group.displayLabel}
                   </h2>
                   <div className="flex-1 h-px bg-border/70" />
@@ -256,7 +256,7 @@ export function ForYouFeed() {
         {/* Footer */}
         <footer className="mt-16 pt-8 border-t border-border/70 text-center">
           <p className="text-sm text-muted-foreground font-light">
-            End of feed · {displayFeed.totalCandidates} sources analyzed
+            End of feed · {displayFeed.totalCandidates} {displayFeed.totalCandidates === 1 ? "source" : "sources"} analyzed
           </p>
         </footer>
       </main>
@@ -442,12 +442,30 @@ function formatTimeAgo(timestamp: number): string {
 }
 
 function decodeHtmlEntities(text: string): string {
+  if (!text) return "";
+  
+  if (typeof window !== "undefined") {
+    try {
+      const doc = new DOMParser().parseFromString(text, "text/html");
+      return doc.documentElement.textContent || text;
+    } catch {
+      // fallback
+    }
+  }
+
   return text
     .replace(/&apos;/g, "'")
     .replace(/&quot;/g, '"')
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/&rsquo;/g, "’")
+    .replace(/&lsquo;/g, "‘")
+    .replace(/&rdquo;/g, "”")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
+    .replace(/&nbsp;/g, " ")
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
@@ -458,6 +476,9 @@ function cleanSnippet(snippet: string): string {
   }
   // Strip markdown bold/italic syntax that leaks into preview text
   let clean = decodeHtmlEntities(snippet);
+  // Fix common singular/plural glitches that leak from upstream sources (keeps UI polished).
+  clean = clean.replace(/\b1\s+comments\b/gi, "1 comment");
+  clean = clean.replace(/\b1\s+points\b/gi, "1 point");
   clean = clean.replace(/\*\*([^*]+)\*\*/g, '$1'); // **bold** → bold
   clean = clean.replace(/\*([^*]+)\*/g, '$1');       // *italic* → italic
   clean = clean.replace(/__([^_]+)__/g, '$1');       // __bold__ → bold

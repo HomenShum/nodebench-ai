@@ -55,7 +55,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-content-secondary" />
           <div>
-            <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Strategy Metrics</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Strategy Metrics</div>
             <div className="text-sm font-semibold text-content">Pivot justification</div>
           </div>
         </div>
@@ -81,7 +81,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
       <div className="grid grid-cols-2 gap-2 text-xs">
         {(report?.metrics ?? []).slice(0, 4).map((metric: any, idx: number) => (
           <div key={`${metric.label}-${idx}`} className="rounded-md border border-edge bg-surface-secondary p-2">
-            <div className="text-xs uppercase tracking-widest text-content-muted">{metric.label}</div>
+            <div className="text-xs uppercase tracking-wider text-content-muted">{metric.label}</div>
             <div className="text-sm font-semibold text-content">
               {metric.value}{metric.unit ? ` ${metric.unit}` : ""}
             </div>
@@ -92,7 +92,7 @@ export const StrategyMetricsPanel: React.FC<StrategyMetricsPanelProps> = ({ titl
 
       {report?.risks?.length ? (
         <div className="text-xs text-content-secondary">
-          <div className="text-xs uppercase tracking-widest text-content-muted">Risks</div>
+          <div className="text-xs uppercase tracking-wider text-content-muted">Risks</div>
           <ul className="list-disc list-inside space-y-1">
             {report.risks.slice(0, 3).map((risk: string, idx: number) => (
               <li key={`${risk}-${idx}`}>{risk}</li>

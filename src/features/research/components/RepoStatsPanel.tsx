@@ -68,7 +68,7 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
     <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Repo Momentum</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Repo Momentum</div>
           <div className="text-sm font-semibold text-content">{stats?.repoFullName ?? "GitHub Repo"}</div>
         </div>
         <button
@@ -88,19 +88,19 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
 
       <div className="grid grid-cols-3 gap-3 text-xs text-content-secondary">
         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-wider text-content-muted">
             <Star className="w-3 h-3" /> Stars/day
           </div>
           <div className="text-lg font-semibold text-content">{starsPerDay}</div>
         </div>
         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-wider text-content-muted">
             <GitBranch className="w-3 h-3" /> Commits/wk
           </div>
           <div className="text-lg font-semibold text-content">{commitsPerWeek}</div>
         </div>
         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-          <div className="flex items-center gap-1 text-xs uppercase tracking-widest text-content-muted">
+          <div className="flex items-center gap-1 text-xs uppercase tracking-wider text-content-muted">
             <Clock className="w-3 h-3" /> Last push
           </div>
           <div className="text-sm font-semibold text-content">{lastPush}</div>
@@ -109,14 +109,14 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-content-muted mb-1">Star Velocity</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-content-muted mb-1">Star Velocity</div>
           <Sparkline
             data={starHistory.map((item: any) => item.delta ?? item.stars ?? 0)}
             stroke="#111827"
           />
         </div>
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-content-muted mb-1">Commit Velocity</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-content-muted mb-1">Commit Velocity</div>
           <SparkBars
             data={commitHistory.map((item: any) => item.commits ?? 0)}
             color="#0f172a"

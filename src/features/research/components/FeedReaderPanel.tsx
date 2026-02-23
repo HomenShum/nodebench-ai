@@ -304,7 +304,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             {readerState.status === "ready" && (
               <div className="mt-8 pt-6 border-t border-[color:var(--border-color)]">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-[color:var(--text-secondary)]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
                     Source Matrix
                   </span>
                   <span className="text-xs text-[color:var(--text-secondary)]">

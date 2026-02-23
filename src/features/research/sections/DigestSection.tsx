@@ -26,7 +26,7 @@ interface DigestSectionProps {
 }
 
 function DigestSectionInner({
-  userName = 'there',
+  userName,
   onItemClick,
   onEntityClick,
   onRefresh,

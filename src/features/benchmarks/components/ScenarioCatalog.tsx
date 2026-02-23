@@ -29,7 +29,7 @@ export const WORKBENCH_SCENARIOS: WorkbenchScenario[] = [
     id: "ui-transform",
     name: "UI Transformation",
     description:
-      "Transform a frozen app UI from incomplete → polished. Layout, typography, a11y, visual regression.",
+      "Transform a frozen app UI from incomplete → polished. Layout, typography, accessibility, visual regression.",
     subtasks: 4,
     estimatedMin: 30,
     icon: Paintbrush2,
@@ -39,7 +39,7 @@ export const WORKBENCH_SCENARIOS: WorkbenchScenario[] = [
     id: "agent-integration",
     name: "Agent Integration",
     description:
-      "Add a new agent workflow end-to-end: tool → orchestrator → Convex persistence → UI render + citations.",
+      "Add a new agent workflow end-to-end: tool → orchestrator → persistence → UI render + citations.",
     subtasks: 5,
     estimatedMin: 45,
     icon: Workflow,
@@ -59,13 +59,43 @@ export const WORKBENCH_SCENARIOS: WorkbenchScenario[] = [
     id: "architect-mode",
     name: "Architect Mode",
     description:
-      "Plan mode review → tradeoff doc → implementation → tests. Measures systems thinking + execution.",
+      "Plan review → tradeoff doc → implementation → tests. Measures systems thinking + execution.",
     subtasks: 4,
     estimatedMin: 45,
     icon: Building2,
     rubricAxes: ["plan_quality", "unforced_errors", "test_additions", "refactor_quality"],
   },
 ];
+
+function formatEstimatedDuration(estimatedMin: number) {
+  if (estimatedMin < 60) return `~${estimatedMin}m`;
+  const hours = Math.floor(estimatedMin / 60);
+  const minutes = estimatedMin % 60;
+  if (minutes === 0) return `~${hours}h`;
+  return `~${hours}h ${minutes}m`;
+}
+
+function formatAxisLabel(axis: string) {
+  const axisLabels: Record<string, string> = {
+    design_compliance: "Design",
+    layout: "Layout",
+    accessibility: "A11y",
+    visual_qa: "Visual QA",
+    tool_correctness: "Tool correctness",
+    artifact_integrity: "Artifact integrity",
+    citations: "Citations",
+    replay_determinism: "Replay",
+    completion_probability: "Completion",
+    graceful_degradation: "Graceful degrade",
+    slo_adherence: "SLOs",
+    cost_efficiency: "Cost",
+    plan_quality: "Plan quality",
+    unforced_errors: "Unforced errors",
+    test_additions: "Tests",
+    refactor_quality: "Refactor",
+  };
+  return axisLabels[axis] ?? axis.replace(/_/g, " ");
+}
 
 // ─── Scenario stats shape ─────────────────────────────────────────────────────
 
@@ -125,15 +155,13 @@ function ScenarioRow({
   stat?: ScenarioStat;
 }) {
   const Icon = scenario.icon;
-  const durationLabel =
-    scenario.estimatedMin >= 60
-      ? `~${scenario.estimatedMin / 60}h`
-      : `~${scenario.estimatedMin}m`;
+  const durationLabel = formatEstimatedDuration(scenario.estimatedMin);
+  const metaLabel = `${scenario.subtasks} subtasks · ${durationLabel}`;
 
   return (
     <div
       className="
-        flex items-start gap-3 px-4 py-3 rounded-lg
+        flex items-start gap-3 px-6 py-4 rounded-lg
         border border-edge hover:border-content-muted/30
         bg-surface-secondary hover:bg-surface
         transition-colors group cursor-default
@@ -158,28 +186,26 @@ function ScenarioRow({
         <p className="text-xs text-content-muted mt-0.5 leading-relaxed">
           {scenario.description}
         </p>
-        {/* Chips row */}
-        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-          <Chip>{scenario.subtasks} subtasks</Chip>
-          <Chip>{durationLabel}</Chip>
-          {scenario.rubricAxes.slice(0, 2).map((axis) => (
-            <Chip key={axis}>{axis.replace(/_/g, " ")}</Chip>
-          ))}
+        <div className="mt-2 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-content-muted">{metaLabel}</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {scenario.rubricAxes.slice(0, 3).map((axis) => (
+              <Chip key={axis}>{formatAxisLabel(axis)}</Chip>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Run button — disabled, Phase 2 */}
-      <div className="flex-none self-center">
+      <div className="flex-none self-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <button
           disabled
           title="Benchmark execution coming in Phase 2 — configure a workbench app first"
           className="
-            flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium
-            bg-surface border border-edge text-content-muted
-            opacity-40 cursor-not-allowed
-            group-hover:opacity-60 transition-opacity
+            flex items-center gap-1.5 px-2.5 py-1 rounded border border-edge
+            bg-surface-secondary text-[11px] font-medium text-content-muted
+            opacity-60 cursor-not-allowed
           "
-          aria-label={`Run ${scenario.name} benchmark (coming soon)`}
         >
           <Play className="w-3 h-3" />
           Run

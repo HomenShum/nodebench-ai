@@ -1033,7 +1033,18 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          .sort((a, b) => {
+            const aRootTop = a.rootBounds?.top ?? 0;
+            const bRootTop = b.rootBounds?.top ?? 0;
+            const aDistanceToTop = Math.abs(a.boundingClientRect.top - aRootTop);
+            const bDistanceToTop = Math.abs(b.boundingClientRect.top - bRootTop);
+
+            if (aDistanceToTop !== bDistanceToTop) {
+              return aDistanceToTop - bDistanceToTop;
+            }
+
+            return b.intersectionRatio - a.intersectionRatio;
+          });
 
         if (visible.length > 0) {
           setActiveSection(visible[0].target.id);
@@ -1106,7 +1117,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   <button
                     type="button"
                     onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="inline-flex items-center gap-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex items-center gap-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2 py-1 text-xs text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:text-content active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                   >
                     <ChevronUp className="h-3 w-3" />
                     Back to top
@@ -1549,7 +1560,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] flex items-center justify-center shadow-sm"
+              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:text-content active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 flex items-center justify-center shadow-sm"
             >
               {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>
@@ -1768,13 +1779,13 @@ function TagPill({ label, tone = "default" }: { label: string; tone?: "default" 
 
 function RoadmapNavButton({ item, isActive }: { item: { label: string; target: string }; isActive?: boolean }) {
   const activeClasses = isActive
-    ? "border-indigo-500/40 bg-indigo-500/10 text-content-secondary"
+    ? "border-indigo-500/40 bg-indigo-500/10 text-content-secondary ring-1 ring-indigo-500/20"
     : "border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)]";
   return (
     <button
       type="button"
       aria-current={isActive ? "page" : undefined}
-      className={`px-2.5 py-1 text-xs rounded-md border transition hover:bg-[var(--bg-hover)] hover:border-[var(--text-secondary)] ${activeClasses}`}
+      className={`px-2.5 py-1 text-xs rounded-md border transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-indigo-300 dark:hover:border-indigo-500/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${activeClasses}`}
       onClick={() => {
         const element = document.getElementById(item.target);
         if (element) {

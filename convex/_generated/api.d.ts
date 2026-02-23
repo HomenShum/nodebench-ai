@@ -433,6 +433,7 @@ import type * as domains_evaluation_testAnthropicApi from "../domains/evaluation
 import type * as domains_evaluation_testDirectApi from "../domains/evaluation/testDirectApi.js";
 import type * as domains_evaluation_testLlmJudge from "../domains/evaluation/testLlmJudge.js";
 import type * as domains_evaluation_validators from "../domains/evaluation/validators.js";
+import type * as domains_evaluation_workbenchQueries from "../domains/evaluation/workbenchQueries.js";
 import type * as domains_financial_balanceSheetFetcher from "../domains/financial/balanceSheetFetcher.js";
 import type * as domains_financial_corporateActions from "../domains/financial/corporateActions.js";
 import type * as domains_financial_corrections from "../domains/financial/corrections.js";
@@ -1462,6 +1463,7 @@ declare const fullApi: ApiFromModules<{
   "domains/evaluation/testDirectApi": typeof domains_evaluation_testDirectApi;
   "domains/evaluation/testLlmJudge": typeof domains_evaluation_testLlmJudge;
   "domains/evaluation/validators": typeof domains_evaluation_validators;
+  "domains/evaluation/workbenchQueries": typeof domains_evaluation_workbenchQueries;
   "domains/financial/balanceSheetFetcher": typeof domains_financial_balanceSheetFetcher;
   "domains/financial/corporateActions": typeof domains_financial_corporateActions;
   "domains/financial/corrections": typeof domains_financial_corrections;

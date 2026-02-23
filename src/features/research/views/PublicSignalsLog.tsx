@@ -46,6 +46,15 @@ function formatKindLabel(kind: string): string {
 
 /** Sanitize markdown content from API — replace raw slugs with readable labels,
  *  hide nonsensical trend indicators (e.g., "0.0% (Rising)"). */
+function formatUrlLabel(url: string) {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 function sanitizeSignalMarkdown(raw: string): string {
   let text = raw;
   // Map common category slugs to readable labels
@@ -68,6 +77,7 @@ function sanitizeSignalMarkdown(raw: string): string {
 
 export function PublicSignalsLog() {
   const [day, setDay] = useState<string>(() => utcDayString());
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const today = utcDayString();
   const isToday = day === today;
 
@@ -179,4 +189,3 @@ export function PublicSignalsLog() {
     </div>
   );
 }
-

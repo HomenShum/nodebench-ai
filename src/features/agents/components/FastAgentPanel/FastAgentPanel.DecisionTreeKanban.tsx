@@ -109,7 +109,7 @@ export function DecisionTreeKanban({
   return (
     <div className={`space-y-4 font-sans ${className}`}>
       {/* Header Stats */}
-      <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] uppercase tracking-widest border-b border-[var(--border-color)] pb-2">
+      <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">
         <div className="flex items-center gap-2">
           <PhaseIndicator status={graph.status} />
           <span>{graph.phase}</span>

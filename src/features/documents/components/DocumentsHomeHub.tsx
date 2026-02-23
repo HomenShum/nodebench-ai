@@ -7050,21 +7050,67 @@ export function DocumentsHomeHub({
 
                     {(docViewMode === "list" || docViewMode === "cards") &&
                       filteredDocuments.length === 0 && (
-                        <button
-                          type="button"
-                          onClick={() => open()}
-                          className="w-full flex flex-col items-center justify-center py-20 text-center rounded-lg border-2 border-dashed border-edge hover:border-indigo-300 dark:hover:border-indigo-500/30 bg-gray-50/50 dark:bg-white/[0.02] hover:bg-indigo-50/50 dark:hover:bg-indigo-500/[0.04] transition-all duration-300 cursor-pointer group"
-                        >
-                          <div className="w-14 h-14 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center mb-4 transition-transform duration-200">
-                            <FileText className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+                        <div className="w-full rounded-lg border border-dashed border-edge bg-surface-secondary/40 dark:bg-white/[0.02]">
+                          <button
+                            type="button"
+                            onClick={() => open()}
+                            className="w-full flex flex-col items-center justify-center py-16 px-6 text-center rounded-lg hover:bg-surface-hover/40 transition-colors cursor-pointer group"
+                          >
+                            <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 border border-indigo-200/60 dark:border-indigo-800/30 flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-[1.02]">
+                              <FileText className="w-7 h-7 text-indigo-500 dark:text-indigo-400" />
+                            </div>
+                            <p className="text-lg font-semibold text-[var(--text-primary)] mb-1">
+                              Drop a PDF to extract key points
+                            </p>
+                            <p className="text-sm text-[var(--text-muted)] max-w-xs">
+                              Drag any file here, or click to browse. Key points are extracted automatically.
+                            </p>
+                          </button>
+
+                          {/* Suggested actions (Notion-style) */}
+                          <div className="px-6 pb-6 flex flex-wrap justify-center gap-2">
+                            <button
+                              type="button"
+                              className="btn-outline-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                open();
+                              }}
+                            >
+                              Upload
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-ghost-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleCreateDocument("text");
+                              }}
+                            >
+                              New document
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-ghost-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleCreateDocument("calendar");
+                              }}
+                            >
+                              New calendar
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-ghost-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleCreateTimelineDoc();
+                              }}
+                            >
+                              Create timeline
+                            </button>
                           </div>
-                          <p className="text-lg font-semibold text-[var(--text-primary)] mb-1">
-                            Drop a PDF to extract key points
-                          </p>
-                          <p className="text-sm text-[var(--text-muted)] max-w-xs">
-                            Drag any file here, or click to browse. Key points are extracted automatically.
-                          </p>
-                        </button>
+                        </div>
                       )}
 
                     {docViewMode === "list" ? (

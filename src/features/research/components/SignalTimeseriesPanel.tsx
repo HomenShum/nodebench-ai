@@ -64,7 +64,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
       <div className="flex items-center gap-2">
         <Activity className="w-4 h-4 text-content-secondary" />
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Signal Momentum</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Signal Momentum</div>
           <div className="text-sm font-semibold text-content">{keyword}</div>
         </div>
       </div>
@@ -98,7 +98,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
 
       {activePoint && (
         <div className="rounded-md border border-edge bg-surface-secondary px-3 py-2 text-xs text-content-secondary">
-          <div className="text-xs uppercase tracking-widest text-content-muted">Active day</div>
+          <div className="text-xs uppercase tracking-wider text-content-muted">Active day</div>
           <div className="font-semibold text-content">
             {activePoint.date} • {activePoint.count} hits
           </div>
@@ -107,7 +107,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
 
       {activeEvents.length > 0 && (
         <div className="space-y-2 text-xs text-content-secondary">
-          <div className="text-xs uppercase tracking-widest text-content-muted">Mapped events</div>
+          <div className="text-xs uppercase tracking-wider text-content-muted">Mapped events</div>
           {activeEvents.map((event: any, idx: number) => (
             <a
               key={`${event.title}-${idx}`}
@@ -125,7 +125,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
 
       {ledgerRows.length > 0 && (
         <div className="space-y-2 text-xs text-content-secondary">
-          <div className="text-xs uppercase tracking-widest text-content-muted">Event ledger</div>
+          <div className="text-xs uppercase tracking-wider text-content-muted">Event ledger</div>
           <div className="space-y-1">
             {ledgerRows.map((row: any, idx: number) => (
               <div

@@ -1,6 +1,6 @@
 # NodeBench Dogfood Walkthrough
 
-Captured: 2026-02-23T06:15:54.227Z
+Captured: 2026-02-23T22:40:10.583Z
 
 This is an auto-generated how-to (Scribe-style) artifact: screenshots + editable step text.
 

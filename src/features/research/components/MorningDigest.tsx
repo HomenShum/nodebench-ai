@@ -125,7 +125,7 @@ function extractEntity(text: string): string | undefined {
 }
 
 export const MorningDigest: React.FC<MorningDigestProps> = ({
-  userName = 'there',
+  userName = '',
   onItemClick,
   onEntityClick,
   onRefresh
@@ -478,12 +478,26 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   // Calculate last updated time
   const lastUpdatedText = useMemo(() => {
+    const formatAge = (minsRaw: number) => {
+      const mins = Math.max(0, Math.round(minsRaw));
+      if (mins < 1) return "just now";
+      if (mins < 60) return `${mins}m ago`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    };
+
     if (cachedSummary?.generatedAt) {
       const mins = Math.round((Date.now() - cachedSummary.generatedAt) / 60000);
-      return `AI summary ${mins < 1 ? 'just now' : `${mins}m ago`}${isFromCache ? ' (cached)' : ''}`;
+      const age = formatAge(mins);
+      return `Summary updated ${age}${isFromCache ? " · cached" : ""}`;
     }
     if (digestData?.lastUpdated) {
-      return `Updated ${Math.round((Date.now() - digestData.lastUpdated) / 60000)} min ago`;
+      // Clamp negative values to avoid showing "Updated -1 min ago" when clocks are slightly out of sync
+      // (e.g., preview build timestamp jitter).
+      const mins = Math.max(0, Math.round((Date.now() - digestData.lastUpdated) / 60000));
+      return `Updated ${formatAge(mins)}`;
     }
     return 'Fetching latest…';
   }, [digestData?.lastUpdated, cachedSummary?.generatedAt, isFromCache]);
@@ -744,7 +758,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </span>
             </div>
             <p className="text-2xl font-bold text-content leading-tight tracking-tight">
-              Good morning, <span className="text-content-secondary">{userName}</span>
+              Good morning{userName ? (
+                <>
+                  , <span className="text-content-secondary">{userName}</span>
+                </>
+              ) : null}
             </p>
             <div className="flex items-center gap-2 mt-1.5">
               <Clock className="w-3 h-3 text-content-muted" />
@@ -798,6 +816,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               className="p-2.5 rounded-lg text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
               title={isExpanded ? 'Collapse' : 'Expand'}
               aria-expanded={isExpanded}
+              aria-label={isExpanded ? 'Collapse digest' : 'Expand digest'}
             >
               {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -819,7 +838,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <BarChart3 className="w-4 h-4 text-content-secondary" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">AI Research Brief</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">AI Research Brief</span>
                     <p className="text-xs text-content-secondary mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
                   </div>
                 </div>
@@ -855,7 +874,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <ArrowUpRight className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
-                <div className="mt-1.5 text-xs font-semibold text-content-secondary uppercase tracking-widest">{stat.label}</div>
+                <div className="mt-1.5 text-xs font-semibold text-content-secondary uppercase tracking-wider">{stat.label}</div>
                 <div className="mt-0.5 text-xs text-content-secondary">{stat.hint}</div>
               </div>
             ))}
@@ -872,7 +891,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="p-1.5 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/30">
                       <Zap className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Top Signals</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">Top Signals</span>
                   </div>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-content-secondary">{signalHighlights.length} items</span>
                 </div>
@@ -917,7 +936,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                       <Globe2 className="w-3.5 h-3.5 text-content-secondary" />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Sources</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">Sources</span>
                   </div>
                   <span className="text-xs text-content-secondary">{totalSourceCount} items</span>
                 </div>
@@ -954,7 +973,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                       <TrendingUp className="w-3.5 h-3.5 text-content-secondary" />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Trending</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">Trending</span>
                   </div>
                   <span className="text-xs text-content-secondary">{digestItems.length} signals</span>
                 </div>
@@ -979,7 +998,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <div className="p-1.5 rounded-lg bg-gray-200/50 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                     <Building2 className="w-3.5 h-3.5 text-content-secondary" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Key Topics</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">Key Topics</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topEntities.slice(0, 6).map((entity, idx) => (
@@ -1002,7 +1021,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <div className="p-1.5 rounded-lg bg-gray-800/10 dark:bg-white/[0.06] border border-gray-300/50 dark:border-white/[0.06]">
                     <Zap className="w-3.5 h-3.5 text-content-secondary" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">Quick Actions</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">Quick Actions</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {agentLaunchpad.slice(0, 3).map((item, idx) => (
@@ -1075,7 +1094,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     <div className="text-left">
                       <p className="text-base font-bold text-content">{section.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs font-semibold text-content-secondary uppercase tracking-widest">{section.items.length} {section.items.length === 1 ? 'signal' : 'signals'}</span>
+                        <span className="text-xs font-semibold text-content-secondary uppercase tracking-wider">{section.items.length} {section.items.length === 1 ? 'signal' : 'signals'}</span>
                         {section.sentiment !== 'neutral' && (
                           <span className={`px-1.5 py-0.5 text-xs font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-amber-100/50 text-amber-700'
                             : 'bg-rose-100/50 text-rose-700'
@@ -1138,6 +1157,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                             onClick={() => onItemClick?.(item)}
                             className="p-1.5 rounded-lg text-content-secondary hover:text-content hover:bg-gray-200/50 transition-all"
                             title="Open signal"
+                            aria-label="Open signal details"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>

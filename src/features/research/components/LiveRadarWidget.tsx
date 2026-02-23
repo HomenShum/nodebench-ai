@@ -87,7 +87,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
             <Activity className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-[color:var(--text-primary)] uppercase tracking-widest">Global Radar</h3>
+            <h3 className="text-xs font-bold text-[color:var(--text-primary)] uppercase tracking-wider">Global Radar</h3>
             <p className="text-xs text-[color:var(--text-secondary)]">Agent-Curated Intelligence</p>
           </div>
         </div>
@@ -202,7 +202,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       {/* Footer */}
       <button
         type="button"
-        className="w-full py-3 text-xs font-bold text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors border-t border-[color:var(--border-color)] uppercase tracking-widest flex items-center justify-center gap-2"
+        className="w-full py-3 text-xs font-bold text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors border-t border-[color:var(--border-color)] uppercase tracking-wider flex items-center justify-center gap-2"
       >
         View Full Intelligence Report <ArrowUpRight className="w-3 h-3" />
       </button>

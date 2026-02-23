@@ -544,7 +544,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
             <h3 className="text-sm font-semibold text-content mb-4">Value Analysis: Pass Rate vs Total Cost</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left">
-                <thead className="text-xs uppercase tracking-widest text-content-muted border-b border-edge">
+                <thead className="text-xs uppercase tracking-wider text-content-muted border-b border-edge">
                   <tr>
                     <th className="py-2 pr-4">Model</th>
                     <th className="py-2 pr-4">Provider</th>
@@ -610,7 +610,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
         <h3 className="text-sm font-semibold text-content mb-4">Detailed Results</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="text-xs uppercase tracking-widest text-content-muted border-b border-edge">
+            <thead className="text-xs uppercase tracking-wider text-content-muted border-b border-edge">
               <tr>
                 <th className="py-2 pr-4">Model</th>
                 <th className="py-2 pr-4">Provider</th>

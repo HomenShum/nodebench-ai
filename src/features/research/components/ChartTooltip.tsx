@@ -94,7 +94,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
                 transition={{ duration: 2, repeat: Infinity }}
                 className={`w-2 h-2 rounded-full ${colors.accent} ${colors.glow}`}
               />
-              <span className={`font-mono text-xs font-bold uppercase tracking-widest ${colors.accentText}/80`}>
+              <span className={`font-mono text-xs font-bold uppercase tracking-wider ${colors.accentText}/80`}>
                 {data.kicker || "Intel Log"}
               </span>
             </div>

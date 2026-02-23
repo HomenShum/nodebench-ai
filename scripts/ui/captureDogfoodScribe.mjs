@@ -1,5 +1,5 @@
 import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 
 function parseArgs(argv) {
@@ -150,6 +150,7 @@ async function main() {
   await mkdir(outRoot, { recursive: true });
   const capturedAtIso = new Date().toISOString();
   const userDataDir = path.resolve(process.cwd(), ".tmp", "dogfood-scribe-userdata");
+  await rm(userDataDir, { recursive: true, force: true });
   await mkdir(userDataDir, { recursive: true });
 
   const steps = [

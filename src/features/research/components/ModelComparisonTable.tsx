@@ -52,7 +52,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
     <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Model Comparison</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Model Comparison</div>
           <div className="text-sm font-semibold text-content">{context ?? modelKey}</div>
         </div>
         <button
@@ -78,7 +78,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs text-left border-collapse">
-          <thead className="text-xs uppercase tracking-widest text-content-muted">
+          <thead className="text-xs uppercase tracking-wider text-content-muted">
             <tr>
               <th className="py-2 pr-2">Model</th>
               <th className="py-2 pr-2">Input $/1M</th>

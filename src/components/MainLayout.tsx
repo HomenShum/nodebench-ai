@@ -8,7 +8,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 
-import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, Zap, Menu, X as CloseIcon, Search as SearchIcon, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
@@ -422,7 +422,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
 
   return (
-    <div className="h-screen flex bg-background transition-colors duration-200">
+    <div className="h-screen flex bg-surface transition-colors duration-200">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -434,7 +434,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       {/* Sidebar - Resizable Width on Desktop, Overlay on Mobile */}
       <div
         className={`
-           flex-shrink-0 h-full bg-gray-50/80 dark:bg-[#18181B]/80 backdrop-blur-xl border-r border-edge z-50 transition-[transform,width] duration-200
+           flex-shrink-0 h-full bg-surface border-r border-edge z-50 transition-[transform,width] duration-200
            lg:relative lg:translate-x-0
            fixed inset-y-0 left-0
            ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
@@ -472,7 +472,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
       {/* Sidebar Resize Handle - Desktop Only */}
       <div
-        className="hidden lg:block w-1 bg-surface-secondary hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0"
+        className="hidden lg:block w-1 bg-surface-secondary hover:bg-surface-hover cursor-col-resize transition-colors duration-200 flex-shrink-0"
         onMouseDown={startSidebarResizing}
       />
 
@@ -490,7 +490,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover dark:hover:bg-white/[0.06] transition-colors"
+                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover dark:hover:bg-white/[0.06] transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -498,13 +498,17 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
               {/* Breadcrumb */}
               <nav className="flex items-center gap-1 text-[13px] min-w-0">
-                <button
-                  type="button"
-                  onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
-                  className="text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors shrink-0"
-                >
-                  Home
-                </button>
+                {currentView === 'research' && showResearchDossier ? (
+                  <span className="font-medium text-content truncate">Research Hub</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
+                    className="text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm px-1"
+                  >
+                    Home
+                  </button>
+                )}
                 {currentView !== 'research' && (
                   <>
                     <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary shrink-0" />
@@ -513,104 +517,99 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     </span>
                   </>
                 )}
-                {currentView === 'research' && showResearchDossier && (
-                  <>
-                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary shrink-0" />
-                    <span className="font-medium text-content truncate">Research Hub</span>
-                  </>
-                )}
               </nav>
             </div>
 
-            {/* Center: Cmd+K search trigger */}
-            <div className="hidden sm:flex flex-1 justify-center px-4">
-              <button
-                type="button"
-                onClick={commandPalette.toggle}
-                aria-label="Open command palette"
-                data-testid="open-command-palette"
-                className="flex items-center gap-2 px-3 py-1.5 w-full max-w-xs rounded-lg border border-edge bg-surface-secondary text-content-muted hover:bg-surface-hover hover:border-edge dark:hover:border-white/10 transition-all duration-150 group"
-              >
-                <Search className="w-3.5 h-3.5" />
-                <span className="text-[13px]">Search...</span>
-                <kbd className="ml-auto text-xs font-medium text-content-muted bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-edge dark:group-hover:border-white/20">
-                  {commandShortcutLabel}
-                </kbd>
-              </button>
-            </div>
-
-            {/* Right: actions */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              {/* Research Hub CTA */}
-              {currentView === 'research' && showResearchDossier ? (
-                <button
-                  type="button"
-                  onClick={() => setShowResearchDossier(false)}
-                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/10 transition-colors"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Home
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
-                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-gray-900 dark:bg-white/[0.12] text-white hover:bg-gray-800 dark:hover:bg-white/[0.16] shadow-sm transition-colors relative"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Research
-                  {(userStats?.unreadBriefings ?? 0) > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                      {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {/* Fast Agent toggle */}
-              <button
-                type="button"
-                onClick={() => setShowFastAgent((open) => !open)}
-                aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
-                className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-150 ${showFastAgent
-                  ? 'bg-gray-900 dark:bg-indigo-500/20 text-white dark:text-indigo-300 shadow-sm'
-                  : 'text-content-secondary hover:text-content hover:bg-surface-hover'
-                }`}
-              >
-                <Zap className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Assistant</span>
-                {!showFastAgent && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500/80 rounded-full" />
-                )}
-              </button>
-
-              {/* Divider */}
-              <div className="w-px h-5 bg-gray-200/60 dark:bg-white/[0.06] mx-0.5" />
-
-              {/* Settings / Profile */}
-              <button
-                type="button"
-                onClick={() => openSettings(user ? "profile" : "usage")}
-                className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-colors"
-                aria-label="Settings"
-                data-testid="open-settings"
-              >
-                {user ? (
-                  user.image ? (
-                    <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
-                  ) : (
-                    <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                      {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
-                    </div>
-                  )
-                ) : (
-                  <div className="h-6 w-6 rounded-full bg-surface-secondary flex items-center justify-center text-content-secondary">
-                    <SettingsIcon className="h-4 w-4" />
-                  </div>
-                )}
-              </button>
-            </div>
+          {/* Center: Cmd+K search trigger */}
+          <div className="hidden sm:flex flex-1 justify-center px-4">
+            <button
+              type="button"
+              onClick={commandPalette.toggle}
+              aria-label="Open command palette"
+              data-testid="open-command-palette"
+              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30"
+            >
+              <Search className="h-4 w-4 text-content-muted group-hover:text-content-secondary transition-colors" />
+              <span className="flex-1 text-left group-hover:text-content-secondary transition-colors">Search...</span>
+              <kbd className="ml-auto text-xs font-medium text-content-muted bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-indigo-300 dark:group-hover:border-indigo-500/30 transition-colors shadow-sm">
+                {commandShortcutLabel}
+              </kbd>
+            </button>
           </div>
+
+          {/* Right: actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Research Hub CTA */}
+            {currentView === 'research' && showResearchDossier ? (
+              <button
+                type="button"
+                onClick={() => setShowResearchDossier(false)}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-hover dark:hover:bg-white/10 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Home
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-gray-900 dark:bg-white/[0.12] text-white hover:bg-gray-800 dark:hover:bg-white/[0.16] shadow-sm transition-all duration-200 relative active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Research
+                {(userStats?.unreadBriefings ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Fast Agent toggle */}
+            <button
+              type="button"
+              onClick={() => setShowFastAgent((open) => !open)}
+              aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+                showFastAgent
+                  ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300"
+                  : "bg-surface text-content hover:bg-surface-hover"
+              }`}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Assistant</span>
+              {!showFastAgent && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500/80 rounded-full" />
+              )}
+            </button>
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-gray-200/60 dark:bg-white/[0.06] mx-0.5" />
+
+            {/* Settings / Profile */}
+            <button
+              type="button"
+              onClick={() => openSettings(user ? "profile" : "usage")}
+              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              aria-label="Settings"
+              data-testid="open-settings"
+            >
+              {user ? (
+                user.image ? (
+                  <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
+                ) : (
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                    {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
+                  </div>
+                )
+              ) : (
+                <div className="h-6 w-6 rounded-full bg-surface-secondary flex items-center justify-center text-content-secondary border border-edge/50 shadow-sm">
+                  <SettingsIcon className="h-4 w-4" />
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
 
           {showGuestWorkspaceCta && (
             <div className="px-4 sm:px-6 py-2.5 bg-muted/30 border-b border-border/60 flex items-center gap-3">
@@ -656,6 +655,8 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     }}
                     onEnterWorkspace={() => setCurrentView("documents")}
                     onOpenFastAgent={() => setShowFastAgent(true)}
+                    onOpenAgents={() => setCurrentView("agents")}
+                    onOpenWorkbench={() => setCurrentView("benchmarks")}
                   />
                 ) : (
                   <ResearchHub
@@ -757,7 +758,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Review Queue failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <HITLAnalyticsDashboard />
               </LazyView>
@@ -766,7 +767,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Usage & Costs failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <ComponentMetricsDashboard />
               </LazyView>
@@ -775,7 +776,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Feedback failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <RecommendationFeedbackDashboard />
               </LazyView>
@@ -784,7 +785,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Cost Dashboard failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackCost}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <CostDashboard />
               </LazyView>
@@ -793,7 +794,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Industry News failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackIndustry}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <IndustryUpdatesPanel />
               </LazyView>
@@ -802,7 +803,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="For You feed failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <ForYouFeed />
               </LazyView>
@@ -811,7 +812,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Recommendations failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDocuments}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <DocumentRecommendations />
               </LazyView>
@@ -820,7 +821,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Agent Templates failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackAgents}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <AgentMarketplace />
               </LazyView>
@@ -829,7 +830,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="GitHub Explorer failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <GitHubExplorer />
               </LazyView>
@@ -838,7 +839,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="PR Suggestions failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <PRSuggestions />
               </LazyView>
@@ -847,7 +848,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="LinkedIn Archive failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDocuments}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <LinkedInPostArchiveView />
               </LazyView>
@@ -856,7 +857,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Activity Log failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <McpToolLedgerView />
               </LazyView>
@@ -865,7 +866,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 title="Quality Review failed to load"
                 resetKey={viewResetKey}
                 fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-background pb-20 lg:pb-0"
+                className="h-full overflow-auto bg-surface pb-24"
               >
                 <DogfoodReviewView />
               </LazyView>
@@ -947,7 +948,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       <div className="lg:hidden">
         {fastAgentHasMounted && (
           <ErrorBoundary title="Fast Agent Panel Error">
-            <Suspense fallback={showFastAgent ? <div className="fixed inset-0 z-overlay bg-background flex items-center justify-center text-sm text-muted-foreground">Loading assistant...</div> : null}>
+            <Suspense fallback={showFastAgent ? <div className="fixed inset-0 z-overlay bg-surface flex items-center justify-center text-sm text-muted-foreground">Loading assistant...</div> : null}>
               <FastAgentPanel
                 isOpen={showFastAgent}
                 onClose={() => setShowFastAgent(false)}

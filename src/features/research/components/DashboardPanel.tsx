@@ -26,13 +26,13 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse"></span>
             {data.phaseLabel}
           </motion.div>
-          <div className="text-xs font-bold uppercase tracking-widest text-[color:var(--text-secondary)]">
+          <div className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">
             Live Metrics
           </div>
         </div>
 
         <div className="mb-10">
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-widest text-[color:var(--text-secondary)]">Market Sentiment</h4>
+          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-[color:var(--text-secondary)]">Market Sentiment</h4>
           <div className="flex items-end gap-3 mb-2">
             <span className="text-5xl font-bold tracking-tighter text-[color:var(--text-primary)]">{data.marketSentiment}</span>
             <span className="mb-1.5 text-sm font-medium text-[color:var(--text-secondary)]">/ 100</span>

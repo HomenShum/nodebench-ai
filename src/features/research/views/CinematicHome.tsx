@@ -15,9 +15,11 @@ interface CinematicHomeProps {
     onEnterHub: (tab?: "overview" | "signals" | "briefing" | "forecasts") => void;
     onEnterWorkspace: () => void;
     onOpenFastAgent: () => void;
+    onOpenWorkbench?: () => void;
+    onOpenAgents?: () => void;
 }
 
-export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFastAgent }: CinematicHomeProps) {
+export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFastAgent, onOpenWorkbench, onOpenAgents }: CinematicHomeProps) {
     const [inputValue, setInputValue] = useState('');
     const [isDragOver, setIsDragOver] = useState(false);
     const reduceMotion = useMemo(() => prefersReducedMotion(), []);
@@ -60,7 +62,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
     }, [onOpenFastAgent]);
 
     return (
-        <div className="min-h-full bg-background flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-full bg-surface flex flex-col items-center justify-center p-6 relative overflow-hidden">
 
             {/* Background Atmosphere */}
             <div className="absolute inset-0 pointer-events-none">
@@ -126,9 +128,10 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <div className={`
                         relative flex items-center gap-3 px-5 py-4 rounded-lg border-2 transition-all duration-200
                         bg-white/90 dark:bg-white/[0.06] backdrop-blur-xl shadow-lg dark:shadow-none
+                        focus-within:border-indigo-400 dark:focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/10
                         ${isDragOver
                             ? 'border-indigo-400 dark:border-indigo-500 shadow-indigo-100 dark:shadow-none ring-4 ring-indigo-100 dark:ring-indigo-500/10'
-                            : 'border-edge hover:border-edge dark:hover:border-white/[0.12] hover:shadow-xl'
+                            : 'border-edge hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-xl'
                         }
                     `}>
                         {isDragOver ? (
@@ -154,7 +157,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-shrink-0 p-2 rounded-lg bg-gray-900 dark:bg-indigo-600 text-white hover:bg-indigo-600 dark:hover:bg-indigo-500 transition-colors"
+                                    className="flex-shrink-0 p-2 rounded-lg bg-gray-900 dark:bg-indigo-600 text-white hover:bg-gray-800 dark:hover:bg-indigo-500 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1a1a1f]"
                                     aria-label="Send"
                                 >
                                     <Send className="w-4 h-4" />
@@ -174,7 +177,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <button
                         type="button"
                         onClick={() => onEnterHub()}
-                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1"
+                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm px-1"
                     >
                         Browse What's New <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -182,10 +185,39 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <button
                         type="button"
                         onClick={onEnterWorkspace}
-                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm px-1"
                     >
                         Your Workspace
                     </button>
+                </motion.div>
+
+                {/* Quick Start blocks — guides first-time users (Vercel-style) */}
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.5 }}
+                    className="w-full mt-8"
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <QuickStartCard
+                            title="Run a benchmark"
+                            desc="Compare models on real app tasks."
+                            icon={<Sparkles className="w-4 h-4" />}
+                            onClick={() => (onOpenWorkbench ? onOpenWorkbench() : onEnterHub())}
+                        />
+                        <QuickStartCard
+                            title="Create an assistant"
+                            desc="Kick off a workflow with tools."
+                            icon={<Shield className="w-4 h-4" />}
+                            onClick={() => (onOpenAgents ? onOpenAgents() : onOpenFastAgent())}
+                        />
+                        <QuickStartCard
+                            title="View latest briefing"
+                            desc="Signals, sources, and actions."
+                            icon={<ArrowRight className="w-4 h-4" />}
+                            onClick={() => onEnterHub("briefing")}
+                        />
+                    </div>
                 </motion.div>
 
                 {/* Single insight hint — max 1, subtle */}
@@ -233,6 +265,37 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
 // --- SUB-COMPONENTS ---
 
+function QuickStartCard({ title, desc, icon, onClick }: {
+    title: string;
+    desc: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="
+                group w-full text-left rounded-lg border border-edge
+                bg-white/70 dark:bg-white/[0.04] backdrop-blur-sm
+                px-4 py-3 transition-all duration-200 
+                hover:bg-white dark:hover:bg-white/[0.06] hover:border-indigo-200 dark:hover:border-indigo-500/30
+                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50
+            "
+        >
+            <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg border border-edge bg-surface-secondary flex items-center justify-center text-content-secondary transition-transform duration-200 group-hover:scale-[1.02]">
+                    {icon}
+                </div>
+                <div className="min-w-0">
+                    <div className="text-sm font-semibold text-content leading-tight">{title}</div>
+                    <div className="text-xs text-content-muted mt-0.5">{desc}</div>
+                </div>
+            </div>
+        </button>
+    );
+}
+
 function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
     title: string,
     desc: string,
@@ -244,13 +307,15 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
     const isDark = variant === 'dark';
 
     return (
-        <div
+        <button
+            type="button"
             onClick={onClick}
             className={`
-                group relative p-6 cursor-pointer overflow-hidden border rounded-lg transition-all duration-300
+                group relative p-6 text-left cursor-pointer overflow-hidden border rounded-lg transition-all duration-300
+                active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50
                 ${isDark
                     ? 'bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:from-black hover:to-gray-900 shadow-lg hover:shadow-xl'
-                    : 'bg-white/80 dark:bg-white/[0.04] backdrop-blur-sm border-edge text-content hover:bg-white dark:hover:bg-white/[0.06] hover:border-edge dark:hover:border-white/[0.1] dark:hover:shadow-none'
+                    : 'bg-white/80 dark:bg-white/[0.04] backdrop-blur-sm border-edge text-content hover:bg-white dark:hover:bg-white/[0.06] hover:border-indigo-200 dark:hover:border-indigo-500/30 dark:hover:shadow-none'
                 }
             `}
         >
@@ -279,6 +344,6 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
                     `} />
                 </div>
             </div>
-        </div>
+        </button>
     );
 }

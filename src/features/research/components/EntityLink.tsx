@@ -396,7 +396,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                     e.stopPropagation();
                     window.location.href = `/documents/${entity.dossierId}`;
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                 >
                   <FileText className="w-3 h-3" />
                   <span>View Dossier</span>
@@ -412,7 +412,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                       detail: { entity }
                     }));
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                 >
                   <FileText className="w-3 h-3" />
                   <span>Create Dossier</span>
@@ -441,4 +441,3 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
 };
 
 export default EntityLink;
-

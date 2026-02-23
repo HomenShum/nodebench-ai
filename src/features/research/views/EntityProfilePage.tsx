@@ -204,7 +204,7 @@ const StatCard: React.FC<{
   <div className="rounded-lg border border-edge bg-background p-4">
     <div className="flex items-center gap-2 mb-1">
       {icon && <span className="text-content-muted">{icon}</span>}
-      <span className="text-xs font-bold text-content-muted uppercase tracking-widest">
+      <span className="text-xs font-bold text-content-muted uppercase tracking-wider">
         {label}
       </span>
     </div>
@@ -484,13 +484,13 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-surface-secondary rounded-lg">
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-2">
+                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
                         Known For
                       </p>
                       <p className="text-[color:var(--text-primary)]">{adaptiveProfile.executiveSummary.whatTheyreKnownFor}</p>
                     </div>
                     <div className="p-4 bg-surface-secondary rounded-lg">
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-2">
+                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
                         Current Focus
                       </p>
                       <p className="text-[color:var(--text-primary)]">{adaptiveProfile.executiveSummary.currentFocus}</p>
@@ -498,7 +498,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   </div>
                   {adaptiveProfile.executiveSummary.keyInsight && (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-2">
+                      <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">
                         Key Insight
                       </p>
                       <p className="text-amber-900 leading-relaxed">
@@ -565,7 +565,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {adaptiveProfile.circleOfInfluence && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div className="p-4 bg-indigo-50 rounded-lg">
-                        <p className="text-xs font-bold text-content-secondary uppercase tracking-widest mb-2">
+                        <p className="text-xs font-bold text-content-secondary uppercase tracking-wider mb-2">
                           Inner Circle
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -577,7 +577,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                         </div>
                       </div>
                       <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-2">
+                        <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
                           Extended Network
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -589,7 +589,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                         </div>
                       </div>
                       <div className="p-4 bg-surface-secondary rounded-lg">
-                        <p className="text-xs font-bold text-content-secondary uppercase tracking-widest mb-2">
+                        <p className="text-xs font-bold text-content-secondary uppercase tracking-wider mb-2">
                           Broader Ecosystem
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -708,7 +708,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Investors */}
                   {(funding.investors || crm?.investors) && (
                     <div>
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-2">
+                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
                         Investors
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -729,7 +729,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Banker Takeaway */}
                   {funding.bankerTakeaway && (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-2">
+                      <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">
                         Banker Takeaway
                       </p>
                       <p className="text-amber-900 leading-relaxed">
@@ -752,7 +752,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Founders */}
                   {crm?.founders && crm.founders.length > 0 && (
                     <div>
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-2">
+                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
                         Founders
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -904,7 +904,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       key={persona}
                       className="p-3 rounded-lg border border-edge bg-background"
                     >
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-widest mb-1">
+                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-1">
                         {persona.replace(/_/g, " ")}
                       </p>
                       <p className="text-sm text-[color:var(--text-primary)]">{hook}</p>

@@ -29,6 +29,11 @@ import { ScenarioCatalog } from "../components/ScenarioCatalog";
 import { WorkbenchRunsTable } from "../components/WorkbenchRunsTable";
 import { api } from "../../../../convex/_generated/api";
 
+// Workbench live data is opt-in until the backing Convex functions are deployed
+// in the current environment. This avoids noisy runtime errors in QA/dev sessions
+// where the UI lands before backend rollout.
+const WORKBENCH_LIVE_DATA_ENABLED = import.meta.env.VITE_ENABLE_WORKBENCH_LIVE_DATA === "1";
+
 // Lazy-load the existing eval charts (heavy recharts bundle — split it out)
 const ModelEvalDashboard = lazy(() =>
   import("@/features/research/components/ModelEvalDashboard").then((mod) => ({
@@ -52,8 +57,8 @@ function WorkbenchHeader() {
               Workbench
             </h1>
             <p className="text-xs text-content-muted mt-0.5 max-w-md">
-              Benchmark agent models on frozen app substrates + realistic task ladders.
-              Compare UI quality, tool use, reliability, and architecture across providers.
+              Benchmark models on frozen baseline apps and realistic task ladders.
+              Compare UI craft, tool use, reliability, and engineering rigor across providers.
             </p>
           </div>
         </div>
@@ -111,7 +116,7 @@ function CapabilityDeepDive() {
             Capability Deep Dive
           </span>
           <p className="text-xs text-content-muted mt-0.5">
-            Tool-call eval results (Jan 2026) — pass rates, latency, cost across 10 scenarios
+            Evaluation results — pass rates, latency, and cost across scenarios
           </p>
         </div>
         {open ? (
@@ -145,7 +150,7 @@ export function WorkbenchView() {
     <div className="flex flex-col h-full overflow-y-auto bg-surface">
       <WorkbenchHeader />
 
-      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-6 space-y-8 pb-16">
+      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-6 space-y-8 pb-24">
         {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
             If `useQuery` throws (missing function/schema), fall back to static empty states
             instead of a hard error page. */}
@@ -162,20 +167,31 @@ export function WorkbenchView() {
 
 function WorkbenchData() {
   // NOTE(coworker): Phase 1 UI is read-only. Phase 2 will add actions to start runs.
-  const leaderboard = useQuery(api.domains.evaluation.workbenchQueries.getWorkbenchLeaderboard);
-  const scenarioStats = useQuery(api.domains.evaluation.workbenchQueries.getScenarioStats);
-  const runs = useQuery(api.domains.evaluation.workbenchQueries.listWorkbenchRuns, { limit: 25 });
+  // Keep these subscriptions skipped by default so missing backend deployments do not
+  // throw runtime errors in the frontend.
+  const leaderboard = useQuery(
+    api.domains.evaluation.workbenchQueries.getWorkbenchLeaderboard,
+    WORKBENCH_LIVE_DATA_ENABLED ? {} : "skip",
+  );
+  const scenarioStats = useQuery(
+    api.domains.evaluation.workbenchQueries.getScenarioStats,
+    WORKBENCH_LIVE_DATA_ENABLED ? {} : "skip",
+  );
+  const runs = useQuery(
+    api.domains.evaluation.workbenchQueries.listWorkbenchRuns,
+    WORKBENCH_LIVE_DATA_ENABLED ? { limit: 25 } : "skip",
+  );
 
   return (
     <>
       {/* 1. Model leaderboard — score strip */}
-      <ModelLeaderboard liveScores={leaderboard ?? undefined} />
+      <ModelLeaderboard liveScores={WORKBENCH_LIVE_DATA_ENABLED ? (leaderboard ?? undefined) : undefined} />
 
       {/* 2. Scenario catalog — 4 task ladders */}
-      <ScenarioCatalog scenarioStats={scenarioStats ?? undefined} />
+      <ScenarioCatalog scenarioStats={WORKBENCH_LIVE_DATA_ENABLED ? (scenarioStats ?? undefined) : undefined} />
 
       {/* 3. Runs table — empty state in Phase 1 */}
-      <WorkbenchRunsTable runs={runs} />
+      <WorkbenchRunsTable runs={WORKBENCH_LIVE_DATA_ENABLED ? runs : []} />
     </>
   );
 }

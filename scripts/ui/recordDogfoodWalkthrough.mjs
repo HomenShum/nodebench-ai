@@ -1,6 +1,6 @@
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { chromium } from "playwright";
@@ -174,6 +174,7 @@ async function main() {
   const stamp = nowStamp();
   await mkdir(outDir, { recursive: true });
   const userDataDir = path.join(outDir, "userdata");
+  await rm(userDataDir, { recursive: true, force: true });
   await mkdir(userDataDir, { recursive: true });
 
   const routes = [

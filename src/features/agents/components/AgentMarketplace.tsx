@@ -43,10 +43,10 @@ export function AgentMarketplace() {
         <button
           type="button"
           onClick={() => setSelectedCategory(undefined)}
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+          className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
             selectedCategory === undefined
-              ? "bg-[var(--accent-primary)] text-white"
-              : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "bg-surface text-content-secondary border border-edge hover:bg-surface-hover hover:text-content"
           }`}
         >
           All Categories
@@ -56,10 +56,10 @@ export function AgentMarketplace() {
             key={category}
             type="button"
             onClick={() => setSelectedCategory(category)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
+            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-200 capitalize active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
               selectedCategory === category
-                ? "bg-[var(--accent-primary)] text-white"
-                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "bg-indigo-600 text-white shadow-sm"
+                : "bg-surface text-content-secondary border border-edge hover:bg-surface-hover hover:text-content"
             }`}
           >
             {category}
@@ -98,63 +98,63 @@ function AgentCard({ agent, rank }: AgentCardProps) {
   };
 
   return (
-    <div className="bg-[var(--bg-secondary)] rounded-lg p-5 space-y-4">
+    <div className="bg-surface rounded-lg p-5 border border-edge shadow-sm hover:shadow-md transition-shadow duration-200 space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className={`text-2xl font-bold ${getRankColor(rank)}`}>
+          <div className={`text-2xl font-bold ${getRankColor(rank)} w-8`}>
             #{rank}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] capitalize">
+            <h3 className="text-lg font-semibold text-content capitalize tracking-tight">
               {agent.agentType} Agent
             </h3>
           </div>
         </div>
-        <div className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded-md text-sm font-medium" title="Phoenix Score: composite of success rate, usage, and latency">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-md text-sm font-semibold border border-green-500/20" title="Phoenix Score: composite of success rate, usage, and latency">
           <TrendingUp className="w-4 h-4" />
           {agent.phoenixScore}
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle className="w-4 h-4 text-green-500" />
-            <span className="text-xs text-[var(--text-secondary)]">Success Rate</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider">Success Rate</span>
           </div>
-          <div className="text-base font-semibold text-[var(--text-primary)]">
+          <div className="text-lg font-semibold text-content">
             {Math.round(agent.successRate * 100)}%
           </div>
         </div>
 
-        <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Play className="w-4 h-4 text-blue-500" />
-            <span className="text-xs text-[var(--text-secondary)]">Total Runs</span>
+        <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Play className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider">Total Runs</span>
           </div>
-          <div className="text-base font-semibold text-[var(--text-primary)]">
+          <div className="text-lg font-semibold text-content">
             {agent.usageCount.toLocaleString()}
           </div>
         </div>
 
-        <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4 text-purple-500" />
-            <span className="text-xs text-[var(--text-secondary)]">Avg Latency</span>
+        <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Clock className="w-3.5 h-3.5 text-violet-500" />
+            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider">Avg Latency</span>
           </div>
-          <div className="text-base font-semibold text-[var(--text-primary)]">
+          <div className="text-lg font-semibold text-content">
             {(agent.avgLatencyMs / 1000).toFixed(1)}s
           </div>
         </div>
 
-        <div className="bg-[var(--bg-tertiary)] rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <Zap className="w-4 h-4 text-yellow-500" />
-            <span className="text-xs text-[var(--text-secondary)]" title="Composite ranking: success rate + usage + speed">Overall Score</span>
+        <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider" title="Composite ranking: success rate + usage + speed">Overall Score</span>
           </div>
-          <div className="text-base font-semibold text-[var(--text-primary)]">
+          <div className="text-lg font-semibold text-content">
             {agent.phoenixScore}
           </div>
         </div>

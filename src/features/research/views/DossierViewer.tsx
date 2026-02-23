@@ -503,7 +503,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 <h1 className="text-5xl font-black tracking-tight text-black mb-1">
                   TODAY'S REPORT
                 </h1>
-                <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-widest">Research Report</p>
+                <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-wider">Research Report</p>
               </div>
               <div className="flex items-center justify-between text-xs text-[color:var(--text-primary)]">
                 <span className="uppercase tracking-wide">Vol. 1, No. 1</span>

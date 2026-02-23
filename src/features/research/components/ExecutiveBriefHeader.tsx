@@ -197,7 +197,7 @@ export function ExecutiveBriefHeader({
               {effectiveThesis}
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[color:var(--bg-secondary)]/50 rounded-full text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-widest flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[color:var(--bg-secondary)]/50 rounded-full text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-wider flex-shrink-0">
             <Calendar className="w-3 h-3" />
             <span>{effectiveDate}</span>
           </div>
@@ -235,7 +235,7 @@ export function ExecutiveBriefHeader({
       <div className="px-8 py-3 flex items-center gap-8 overflow-x-auto bg-[color:var(--bg-secondary)]/20">
         {/* Time Window */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-widest">Horizon</span>
+          <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Horizon</span>
           <div className="flex gap-1.5">
             {timeWindows.map((tw) => (
               <FilterChip
@@ -251,7 +251,7 @@ export function ExecutiveBriefHeader({
         {/* Topic Tags */}
         {effectiveTopics.length > 0 && (
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-widest">Focus</span>
+            <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Focus</span>
             <div className="flex gap-1.5 flex-wrap">
               {effectiveTopics.slice(0, 6).map((tag) => (
                 <FilterChip

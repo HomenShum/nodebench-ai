@@ -50,7 +50,8 @@ function TaskCountBadge({
         onMouseLeave={hasItems ? handleMouseLeave : undefined}
         onClick={() => hasItems && setShowPreview((prev) => !prev)}
       >
-        {totalItems === 0 ? "Nothing upcoming" : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
+        {/* Avoid repeating "Nothing upcoming" across Today/Week sections; the list body already shows an empty state. */}
+        {totalItems === 0 ? "—" : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
         {taskCount > 0 && (
           <span className="ml-1.5 px-1.5 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full dark:bg-amber-900/30 dark:text-amber-300">
             {taskCount} task{taskCount !== 1 ? "s" : ""}
@@ -304,4 +305,3 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
     </div>
   );
 }
-

@@ -51,7 +51,7 @@ export const RepoSignalPanel: React.FC<RepoSignalPanelProps> = ({ title, summary
         <div className="flex items-center gap-2">
           <Network className="w-4 h-4 text-content-secondary" />
           <div>
-            <div className="text-xs font-bold uppercase tracking-widest text-content-muted">Moat Pressure</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Moat Pressure</div>
             <div className="text-sm font-semibold text-content">Open-source challengers</div>
           </div>
         </div>

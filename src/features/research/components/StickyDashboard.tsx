@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo } from "react";
 import NumberFlow from "@number-flow/react";
 import { motion } from "framer-motion";
-import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ShieldAlert, Code, Vote, Cpu, Activity, Zap, Brain, Lock, PieChart, CheckCircle2, Circle, Loader2, Clock } from "lucide-react";
 import EnhancedLineChart, { type ChartDataPointContext } from "./EnhancedLineChart";
 import type { DashboardState, MarketShareSegment } from "@/features/research/types";
 import { formatBriefMonthYear } from "@/lib/briefDate";
@@ -160,21 +160,31 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
       <div className="z-10 transition-all duration-500 shadow-none space-y-5">
 
         {/* --- ROW 1: HEADER & CHART --- */}
-        <div className="relative mb-4">
-          {/* Date Pill */}
-          <div className="absolute top-0 left-0 z-10">
+        <div className="mb-4">
+          {/* Header row: date pill + time window (avoid overlapping the chart header) */}
+          <div className="flex items-start justify-between gap-2">
             <div className="flex items-center bg-black text-white px-2 py-1 rounded-[4px] text-xs font-medium gap-2">
               <span>{monthLabel}</span>
               <span className="font-bold">{yearLabel || "2025"}</span>
             </div>
+            <div className="text-[10px] text-content-muted flex items-center gap-2 pt-0.5">
+              <span>{safeCharts.trendLine?.timeWindow ?? "Last 7 days"}</span>
+              <span className="text-content-muted/60">·</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                Updated today
+              </span>
+            </div>
           </div>
 
-          {/* Line Chart */}
-          <div className="h-[180px] w-full mt-2">
+          {/* Line Chart (compact header; limit annotations to reduce label collisions) */}
+          <div className="h-[170px] w-full mt-2">
             {safeCharts.trendLine ? (
               <EnhancedLineChart
+                compact
                 config={{
                   ...safeCharts.trendLine,
+                  annotations: (safeCharts.trendLine.annotations ?? []).slice(0, 4),
                   timeWindow: safeCharts.trendLine.timeWindow ?? "Last 7 days",
                   yAxisUnit: safeCharts.trendLine.yAxisUnit ?? "%",
                   lastUpdated: "today",
@@ -193,9 +203,9 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         </div>
 
         {/* --- ROW 2: SPLIT GRID (Capabilities vs Donut) --- */}
-        <div className="grid grid-cols-12 gap-3 mb-4">
-          {/* LEFT COL (8/12): CAPABILITIES GRID */}
-          <div className="col-span-8 flex flex-col justify-end">
+        <div className="grid grid-cols-1 gap-4 mb-4">
+          {/* Capabilities */}
+          <div className="flex flex-col justify-end">
             <div className="text-xs font-medium text-content-muted mb-2 border-b border-edge pb-1">
               AI Capabilities
             </div>
@@ -215,11 +225,11 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
             </div>
           </div>
 
-          {/* RIGHT COL (4/12): DONUT & BUCKETS */}
-          <div className="col-span-4 flex flex-col justify-between h-full">
+          {/* Market share + readiness */}
+          <div className="flex flex-col justify-between">
             {/* Donut - Only render if we have data */}
             {safeCharts.marketShare.length > 0 ? (
-              <div className="flex justify-center items-center relative h-20 mb-2">
+              <div className="flex justify-center items-center relative h-20 mb-2 overflow-hidden">
                 <DonutChart data={safeCharts.marketShare} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden px-1">
                   <span className="text-[10px] font-bold uppercase text-content-muted leading-none mb-0.5 truncate max-w-full">
@@ -462,4 +472,3 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
 };
 
 export default StickyDashboard;
-

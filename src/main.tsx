@@ -7,6 +7,29 @@ import "./index.css";
 import App from "./App";
 import { ToastProvider } from "./components/ui";
 
+// NOTE(coworker): Theme bootstrap for Playwright + QA stability.
+// Apply the resolved theme class before React renders to avoid a white flash
+// and to keep dark-mode luminance checks deterministic.
+if (typeof window !== "undefined") {
+  try {
+    const root = document.documentElement;
+    const savedPrefs = localStorage.getItem("nodebench-theme");
+    const legacyMode = localStorage.getItem("theme");
+    const prefs = savedPrefs ? (JSON.parse(savedPrefs) as { mode?: string } | null) : null;
+    const mode = prefs?.mode ?? legacyMode ?? "system";
+    const resolved =
+      mode === "system"
+        ? window.matchMedia?.("(prefers-color-scheme: dark)")?.matches
+          ? "dark"
+          : "light"
+        : mode;
+    if (resolved === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
+  } catch {
+    // Ignore malformed localStorage values.
+  }
+}
+
 declare global {
   interface Window {
     __nodebenchHasUserGesture?: boolean;

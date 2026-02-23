@@ -68,15 +68,15 @@ const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
       dot: "bg-gray-400",
     },
     present: {
-      bg: isActive ? "bg-blue-600" : "bg-blue-50 hover:bg-blue-100",
-      text: isActive ? "text-white" : "text-blue-700",
-      border: isActive ? "border-blue-600" : "border-blue-200",
+      bg: isActive ? "bg-blue-600 dark:bg-blue-500" : "bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20",
+      text: isActive ? "text-white" : "text-blue-700 dark:text-blue-300",
+      border: isActive ? "border-blue-600 dark:border-blue-500" : "border-blue-200 dark:border-blue-500/25",
       dot: "bg-blue-500",
     },
     future: {
-      bg: isActive ? "bg-purple-600" : "bg-purple-50 hover:bg-purple-100",
-      text: isActive ? "text-white" : "text-purple-700",
-      border: isActive ? "border-purple-600" : "border-purple-200",
+      bg: isActive ? "bg-purple-600 dark:bg-purple-500" : "bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20",
+      text: isActive ? "text-white" : "text-purple-700 dark:text-purple-300",
+      border: isActive ? "border-purple-600 dark:border-purple-500" : "border-purple-200 dark:border-purple-500/25",
       dot: "bg-purple-400",
     },
   };
@@ -254,11 +254,11 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               style={{ width: `${progressInfo.phasePercentages.past}%` }}
             />
             <div
-              className="h-full bg-blue-200"
+              className="h-full bg-blue-500/20 dark:bg-blue-500/25"
               style={{ width: `${progressInfo.phasePercentages.present}%` }}
             />
             <div
-              className="h-full bg-purple-200"
+              className="h-full bg-purple-500/20 dark:bg-purple-500/25"
               style={{ width: `${progressInfo.phasePercentages.future}%` }}
             />
           </div>
@@ -271,7 +271,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           />
           {/* Current position marker */}
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-2 border-blue-600 rounded-full shadow-sm"
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-surface border-2 border-blue-600 dark:border-blue-400 rounded-full shadow-sm"
             initial={false}
             animate={{ left: `calc(${progressInfo.percentage}% - 6px)` }}
             transition={{ duration: 0.3, ease: "easeOut" }}

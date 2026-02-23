@@ -157,6 +157,16 @@ const RecentRuns = memo(function RecentRuns() {
     return `${days}d ago`;
   };
 
+  const focusCommandBar = () => {
+    if (typeof document === "undefined") return;
+    const target = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      "textarea[placeholder*='Ask'], input[placeholder*='Ask'], textarea[placeholder*='agent'], input[placeholder*='agent']"
+    );
+    if (!target) return;
+    target.scrollIntoView({ block: "center", behavior: "smooth" });
+    target.focus();
+  };
+
   if (recentSwarms.length === 0) {
     return (
       <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-3">
@@ -164,14 +174,23 @@ const RecentRuns = memo(function RecentRuns() {
           <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           Recent Runs
         </h4>
-        <div className="flex flex-col items-center py-4 gap-2">
-          <PlayCircle className="w-5 h-5 text-[var(--text-muted)] opacity-40" />
-          <p className="text-xs text-[var(--text-muted)] text-center">
-            No recent agent runs
+        <div className="flex flex-col items-center py-5 px-2 gap-2 text-center">
+          <div className="w-9 h-9 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center">
+            <PlayCircle className="w-4 h-4 text-[var(--text-muted)]" />
+          </div>
+          <p className="text-xs font-semibold text-[var(--text-primary)]">
+            No recent runs
           </p>
-          <span className="text-[10px] text-[var(--accent-primary)] cursor-pointer hover:underline">
+          <p className="text-[11px] leading-relaxed text-[var(--text-muted)] max-w-[220px]">
+            Start your first agent task to populate this timeline with duration and outcome history.
+          </p>
+          <button
+            type="button"
+            onClick={focusCommandBar}
+            className="mt-1 px-2.5 py-1.5 rounded-md text-[11px] font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+          >
             Start a task
-          </span>
+          </button>
         </div>
       </div>
     );

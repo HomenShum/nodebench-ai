@@ -10,14 +10,9 @@
 
 import React from 'react';
 import {
-  CheckCircle2,
-  Circle,
   Clock,
-  AlertCircle,
-  Loader2,
   Zap,
   Wrench,
-  XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskSession, TaskSessionStatus, TaskSessionType } from './types';
@@ -26,63 +21,48 @@ import type { TaskSession, TaskSessionStatus, TaskSessionType } from './types';
 // STATUS CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-const statusConfig: Record<TaskSessionStatus, { icon: React.ReactNode; color: string; bgColor: string; label: string }> = {
+const statusConfig: Record<TaskSessionStatus, { dotColor: string; label: string }> = {
   pending: {
-    icon: <Circle className="w-3.5 h-3.5" />,
-    color: 'text-[var(--text-muted)]',
-    bgColor: 'bg-[var(--bg-hover)]',
+    dotColor: 'bg-[var(--text-muted)]',
     label: 'Pending'
   },
   running: { 
-    icon: <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />, 
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+    dotColor: 'bg-blue-500',
     label: 'Running' 
   },
   completed: {
-    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
-    color: 'text-indigo-700 dark:text-indigo-300',
-    bgColor: 'bg-indigo-100 dark:bg-indigo-900/40',
+    dotColor: 'bg-indigo-500',
     label: 'Completed'
   },
   failed: {
-    icon: <AlertCircle className="w-3.5 h-3.5" />,
-    color: 'text-red-700 dark:text-red-300',
-    bgColor: 'bg-red-100 dark:bg-red-900/40',
+    dotColor: 'bg-red-500',
     label: 'Failed'
   },
   cancelled: {
-    icon: <XCircle className="w-3.5 h-3.5" />,
-    color: 'text-amber-700 dark:text-amber-300',
-    bgColor: 'bg-amber-100 dark:bg-amber-900/40',
+    dotColor: 'bg-amber-500',
     label: 'Cancelled'
   },
 };
 
-const typeConfig: Record<TaskSessionType, { dotColor: string; color: string; label: string }> = {
+const typeConfig: Record<TaskSessionType, { dotColor: string; label: string }> = {
   manual: {
     dotColor: 'bg-purple-500',
-    color: 'text-content-muted',
     label: 'Manual'
   },
   cron: {
     dotColor: 'bg-orange-500',
-    color: 'text-content-muted',
     label: 'Automated'
   },
   scheduled: {
     dotColor: 'bg-blue-500',
-    color: 'text-content-muted',
     label: 'Scheduled'
   },
   agent: {
     dotColor: 'bg-indigo-500',
-    color: 'text-content-muted',
     label: 'Agent'
   },
   swarm: {
     dotColor: 'bg-indigo-500',
-    color: 'text-content-muted',
     label: 'Swarm'
   },
 };
@@ -152,22 +132,28 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
             </p>
           )}
         </div>
-        <div className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium", statusCfg.bgColor, statusCfg.color)} title={statusCfg.label}>
-          {statusCfg.icon}
-          {session.status !== 'completed' && <span className="hidden sm:inline">{statusCfg.label}</span>}
+        <div className="inline-flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]" title={statusCfg.label}>
+          <span
+            className={cn(
+              "w-2 h-2 rounded-full shrink-0",
+              statusCfg.dotColor,
+              session.status === 'running' && "motion-safe:animate-pulse"
+            )}
+          />
+          <span className="hidden sm:inline">{statusCfg.label}</span>
         </div>
       </div>
 
       {/* Type badge + Meta */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Type badge */}
-        <span className={cn("flex items-center gap-1.5 text-xs", typeCfg.color)}>
+        <span className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
           <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", typeCfg.dotColor)} />
-          {typeCfg.label}
+          <span>{typeCfg.label}</span>
         </span>
 
         {/* Date */}
-        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+        <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
           <Clock className="w-3 h-3" />
           {formatDate(session.startedAt)}
         </span>
@@ -175,8 +161,8 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
         {/* Duration */}
         {session.totalDurationMs && (
           <>
-            <span className="text-[var(--text-muted)] opacity-40">·</span>
-            <span className="text-xs text-[var(--text-muted)]">
+            <span className="text-[var(--text-muted)] opacity-35">·</span>
+            <span className="text-[11px] text-[var(--text-muted)]">
               {formatDuration(session.totalDurationMs)}
             </span>
           </>
@@ -184,7 +170,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 
         {/* Tokens */}
         {session.totalTokens && (
-          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]" title={`${formatTokens(session.totalTokens)} tokens`}>
+          <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]" title={`${formatTokens(session.totalTokens)} tokens`}>
             <Zap className="w-3 h-3" />
             {formatTokens(session.totalTokens)}
           </span>
@@ -192,7 +178,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 
         {/* Tools count */}
         {session.toolsUsed && session.toolsUsed.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]" title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}>
+          <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]" title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}>
             <Wrench className="w-3 h-3" />
             {session.toolsUsed.length}
           </span>
@@ -212,5 +198,3 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 }
 
 export default TaskSessionCard;
-
-

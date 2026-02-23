@@ -103,6 +103,56 @@ function isLowSignalSummary(summary?: string | null): boolean {
   return LOW_SIGNAL_SUMMARY_PATTERNS.some((pattern) => pattern.test(summary));
 }
 
+function coerceUserFacingSummary(summary?: unknown): string {
+  const raw = typeof summary === "string" ? summary : summary == null ? "" : String(summary);
+  const s = raw.trim();
+  if (!s) return "Summary pending.";
+
+  // If the backend returns structured JSON as a string, extract a human-readable field.
+  if (s.startsWith("{") || s.startsWith("[")) {
+    try {
+      const parsed: any = JSON.parse(s);
+
+      if (typeof parsed === "string") return parsed.trim() || "Summary pending.";
+
+      if (Array.isArray(parsed)) {
+        const firstStr = parsed.find((v) => typeof v === "string" && v.trim());
+        if (typeof firstStr === "string") return firstStr.trim();
+
+        const firstObj = parsed.find((v) => v && typeof v === "object");
+        if (firstObj && typeof firstObj === "object") {
+          const preferred = ["summary", "overview", "description", "text", "oneLiner", "brief"];
+          for (const k of preferred) {
+            const v = (firstObj as any)[k];
+            if (typeof v === "string" && v.trim()) return v.trim();
+          }
+        }
+
+        return "Summary pending.";
+      }
+
+      if (parsed && typeof parsed === "object") {
+        const preferred = ["summary", "overview", "description", "text", "executiveSummary", "companySummary", "whatTheyDo", "oneLiner", "brief"];
+        for (const k of preferred) {
+          const v = (parsed as any)[k];
+          if (typeof v === "string" && v.trim()) return v.trim();
+          if (v && typeof v === "object") {
+            const inner = (v as any).text ?? (v as any).summary ?? (v as any).overview ?? null;
+            if (typeof inner === "string" && inner.trim()) return inner.trim();
+          }
+        }
+
+        const firstString = Object.values(parsed).find((v) => typeof v === "string" && v.trim());
+        if (typeof firstString === "string") return firstString.trim();
+      }
+    } catch {
+      // Not valid JSON; fall through to raw rendering.
+    }
+  }
+
+  return s;
+}
+
 function filterLowSignalFacts(facts: string[]) {
   return facts.filter((fact) => !LOW_SIGNAL_FACT_PATTERNS.some((pattern) => pattern.test(fact)));
 }
@@ -295,7 +345,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
     }
   }, [isOpen]);
 
-  const summary = insight?.summary ?? "Summary pending.";
+  const summary = coerceUserFacingSummary(insight?.summary);
   const crm = insight?.crmFields ?? {};
   const keyFacts: string[] = filterLowSignalFacts(insight?.keyFacts ?? []);
   const sources: Array<{ name?: string; url?: string; snippet?: string }> = insight?.sources ?? [];
@@ -854,4 +904,3 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 };
 
 export default EntityContextDrawer;
-

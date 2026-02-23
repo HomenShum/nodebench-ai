@@ -80,11 +80,10 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${
-                  isActive
+                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-all duration-200 border-l-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${isActive
                     ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
                     : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
-                }`}
+                  }`}
               >
                 <Icon className="w-4 h-4" />
               </button>
@@ -104,11 +103,10 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }
               }}
               aria-current={isActive ? 'page' : undefined}
-              className={`w-full flex items-center justify-between px-2.5 py-2 text-[13px] font-medium rounded-md transition-all duration-150 group border-l-2 ${
-                isActive
-                  ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
-                  : 'border-l-transparent text-content-secondary hover:bg-surface-hover hover:text-content'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${isActive
+                  ? 'bg-black/[0.06] dark:bg-white/[0.08] text-content'
+                  : 'text-content-secondary hover:bg-surface-hover hover:text-content'
+                }`}
             >
               <div className="flex items-center gap-2.5">
                 <div className={`w-7 h-7 rounded-md flex items-center justify-center transition-colors ${
@@ -147,7 +145,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         key={dossier.id}
                         type="button"
                         onClick={() => onDossierSelect?.(dossier.id)}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-150 group"
+                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-200 group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
                       >
                         <FileText className="w-3.5 h-3.5 text-content-muted group-hover:text-content-secondary dark:group-hover:text-gray-300 shrink-0 transition-colors" />
                         <span className="truncate flex-1 text-left font-medium">{dossier.title || 'Untitled'}</span>
@@ -163,7 +161,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                       <button
                         type="button"
                         onClick={() => onNavigate('saved')}
-                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold text-left transition-colors"
+                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm"
                       >
                         View all {recentDossiers.length} reports →
                       </button>

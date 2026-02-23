@@ -36,7 +36,7 @@ export function SidebarButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md transition-colors duration-150 w-full text-left border-l-2',
+        'group flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md transition-colors duration-150 w-[calc(100%-0.5rem)] mx-1 text-left border-l-2',
         isActive
           ? 'border-l-[var(--accent-primary,#5E6AD2)] bg-black/[0.06] dark:bg-white/[0.08] text-content'
           : 'border-l-transparent text-content-secondary hover:bg-surface-hover hover:text-content',
@@ -44,8 +44,8 @@ export function SidebarButton({
       )}
     >
       <span className={cn(
-        'w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full',
-        isActive ? 'text-content' : 'text-content-muted'
+        'w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full transition-opacity',
+        isActive ? 'text-content opacity-100' : 'text-content-muted opacity-40 group-hover:opacity-100'
       )}>
         {icon}
       </span>
