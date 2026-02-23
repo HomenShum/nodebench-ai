@@ -9,19 +9,14 @@
  */
 
 import React from 'react';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Clock, 
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
   AlertCircle,
   Loader2,
-  Bot,
-  Calendar,
-  Timer,
   Zap,
-  Users,
   Wrench,
-  PlayCircle,
   XCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -64,30 +59,30 @@ const statusConfig: Record<TaskSessionStatus, { icon: React.ReactNode; color: st
   },
 };
 
-const typeConfig: Record<TaskSessionType, { icon: React.ReactNode; color: string; label: string }> = {
+const typeConfig: Record<TaskSessionType, { dotColor: string; color: string; label: string }> = {
   manual: {
-    icon: <PlayCircle className="w-3 h-3" />,
-    color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30',
+    dotColor: 'bg-purple-500',
+    color: 'text-content-muted',
     label: 'Manual'
   },
   cron: {
-    icon: <Timer className="w-3 h-3" />,
-    color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30',
+    dotColor: 'bg-orange-500',
+    color: 'text-content-muted',
     label: 'Automated'
   },
   scheduled: {
-    icon: <Calendar className="w-3 h-3" />,
-    color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30',
+    dotColor: 'bg-blue-500',
+    color: 'text-content-muted',
     label: 'Scheduled'
   },
   agent: {
-    icon: <Bot className="w-3 h-3" />,
-    color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30',
+    dotColor: 'bg-indigo-500',
+    color: 'text-content-muted',
     label: 'Agent'
   },
   swarm: {
-    icon: <Users className="w-3 h-3" />,
-    color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30',
+    dotColor: 'bg-indigo-500',
+    color: 'text-content-muted',
     label: 'Swarm'
   },
 };
@@ -166,8 +161,8 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
       {/* Type badge + Meta */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Type badge */}
-        <span className={cn("flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded", typeCfg.color)}>
-          {typeCfg.icon}
+        <span className={cn("flex items-center gap-1.5 text-xs", typeCfg.color)}>
+          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", typeCfg.dotColor)} />
           {typeCfg.label}
         </span>
 

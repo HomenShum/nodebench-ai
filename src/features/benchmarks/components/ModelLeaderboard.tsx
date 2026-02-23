@@ -203,7 +203,7 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
     <div
       className="
         flex-none w-44 rounded-lg border border-edge bg-surface-secondary
-        p-3 flex flex-col gap-2
+        px-3 py-2 flex flex-col gap-1.5
         hover:border-content-muted/30 transition-colors
       "
     >

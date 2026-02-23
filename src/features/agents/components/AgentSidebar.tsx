@@ -20,6 +20,7 @@ import {
   Activity,
   TrendingUp,
   BarChart3,
+  PlayCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
@@ -163,9 +164,15 @@ const RecentRuns = memo(function RecentRuns() {
           <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
           Recent Runs
         </h4>
-        <p className="text-xs text-[var(--text-muted)] text-center py-4">
-          No recent agent runs
-        </p>
+        <div className="flex flex-col items-center py-4 gap-2">
+          <PlayCircle className="w-5 h-5 text-[var(--text-muted)] opacity-40" />
+          <p className="text-xs text-[var(--text-muted)] text-center">
+            No recent agent runs
+          </p>
+          <span className="text-[10px] text-[var(--accent-primary)] cursor-pointer hover:underline">
+            Start a task
+          </span>
+        </div>
       </div>
     );
   }

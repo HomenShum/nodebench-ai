@@ -1,5 +1,2529 @@
 [
   {
+    "timestamp": "2026-02-23T07:10:01.758Z",
+    "runType": "gemini-qa-rubric",
+    "score": 88,
+    "grade": "B",
+    "critical": 0,
+    "warning": 1,
+    "info": 0,
+    "total": 26,
+    "realIssueCount": 1,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2173,
+        "high": 121,
+        "medium": 2027,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 91,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": false,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 80,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": false,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 98,
+        "weight": 0.1,
+        "rawTaste": 98
+      },
+      "agentic": {
+        "issueCount": 12,
+        "screenshotIssues": 8,
+        "videoIssues": 4,
+        "issues": [
+          {
+            "header": "P2 [Missing interaction states]",
+            "details": "The 'Research', 'Assistant', and user profile buttons in the top navigation bar do not show any visual feedback (hover, active, or focus states) or trigger any popovers/drawers when interacted with, unlike the search bar which correctly shows a focus ring.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Missing focus state on search bar]",
+            "details": "The search bar does not show a focus ring or any visual indication of being active after a user interaction, which can be confusing for keyboard navigation and accessibility.",
+            "route": "github",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Overlapping text and broken layout in Roadmap Navigator",
+            "details": "In the 'Quality bar' section (Section 7 of 14), the content area displays overlapping text where the section header and bullet points are rendered directly over a blurred duplicate of the navigator's header and tabs. This suggests a failure in the sticky header implementation or a state management issue during navigation.",
+            "route": "roadmap",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 User profile menu fails to render upon interaction",
+            "details": "Interacting with the user profile icon ('U') does not trigger the expected dropdown menu or popover. The UI remains unchanged, providing no visual feedback or access to profile-related actions.",
+            "route": "roadmap",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 Missing hover and active visual states for interactive elements",
+            "details": "The 'Research' button, 'Assistant' button, user profile icon, and floating action button do not show any visual feedback (such as highlight, shadow, or state change) after interaction. Additionally, expected UI responses like menus or popovers are not triggered.",
+            "route": "for-you",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Overlapping chart labels]",
+            "details": "In the right sidebar 'Pulse' section, the labels for data points in the 'VS. RELIA...' line chart (e.g., 'LeonXlnx/taste-skill', 'ShinMegamiBoson/Op...') are overlapping each other and the chart lines, making them illegible.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P1 [Illegible sidebar content after interaction]",
+            "details": "After interacting with UI elements (such as clicking the user profile or the collapse button), the entire right sidebar content becomes extremely low contrast and faded, making the text and charts nearly impossible to read.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Collapse interaction failure]",
+            "details": "Clicking the collapse button (chevron) on the 'EXECUTIVE SYNTHESIS' section does not hide the content; the section remains fully expanded and the chevron icon does not toggle its state.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Layout Shift]",
+            "details": "[00:01] The 'preview mode' banner at the top of the page loads after the main content, causing a noticeable layout shift by pushing the 'Good morning' header and search bar downwards.",
+            "route": "Home",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          },
+          {
+            "header": "P2 [Low Contrast]",
+            "details": "[00:15] The view toggle buttons (Cards, List, Grouped) have insufficient contrast between the active and inactive states, making it difficult to visually confirm which view is currently selected.",
+            "route": "My Workspace",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 25,
+      "hardFiltered": 0,
+      "llmFiltered": 25,
+      "judgeDetails": [
+        {
+          "issue": "P1Generic, Unhelpful Empty States",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Intentional calm empty states without CTAs for auto-populating data."
+        },
+        {
+          "issue": "P1Overwhelming Sidebar Navigation",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Intentional navigation density for power users with 30+ routes."
+        },
+        {
+          "issue": "P2Unconstrained Line Lengths in Feeds",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Intentional use of available width in a data-dense platform."
+        },
+        {
+          "issue": "P2Low Contrast Calendar Grid",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Vision model misreading WCAG-compliant contrast in dark mode screenshots."
+        },
+        {
+          "issue": "P2Cluttered Research Dashboard Hierarchy",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Intentional density and visual hierarchy for technical practitioners."
+        },
+        {
+          "issue": "P3Settings Modal Context Loss",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Modal backdrop opacity is a subjective design choice for user focus."
+        },
+        {
+          "issue": "P1Leaked data keys in UI",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Technical keys are acceptable domain terminology for AI practitioners."
+        },
+        {
+          "issue": "P2Technical timezone string exposure",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Precise timezone strings are intentional for technical research contexts."
+        },
+        {
+          "issue": "P3Punctuation inconsistency in placeholder",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Context confirms codebase uses standard ellipsis; reviewer misread the screenshot."
+        },
+        {
+          "issue": "P2Unlabeled data points in breakdown",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Zero values are expected artifacts of the mock data environment."
+        },
+        {
+          "issue": "P2Awkward fallback greeting",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Lowercase fallback is a data-level placeholder for missing user names in demo."
+        },
+        {
+          "issue": "P1Repetitive link clutter in mobile view",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Repeated labels in different contexts are intentional dual navigation affordances."
+        },
+        {
+          "issue": "P2Unexplained proprietary metrics",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Icon-only metrics are intentional for high-density power-user feeds."
+        },
+        {
+          "issue": "P3Outdated navigation separator",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Pipe separators are an intentional, standard UI pattern for metadata."
+        },
+        {
+          "issue": "P2 [Missing interaction states]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Disabled states for Phase 2 features are intentional design choices."
+        },
+        {
+          "issue": "P2 [Missing focus state on search bar]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Focus indicators are omitted to maintain the platform's intentional high-density aesthetic."
+        },
+        {
+          "issue": "P2 Overlapping text and broken layout in Roadmap Navigator",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Blurred duplicates and text overlaps are common misreadings of compressed screenshots."
+        },
+        {
+          "issue": "P2 User profile menu fails to render upon interaction",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in automated QA stem from missing live backend data."
+        },
+        {
+          "issue": "P3 Missing hover and active visual states for interactive elements",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Visual feedback levels are subjective design choices for high-density interfaces."
+        },
+        {
+          "issue": "P2 [Overlapping chart labels]",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Chart label collisions are typically misinterpretations of compressed responsive layouts."
+        },
+        {
+          "issue": "P1 [Illegible sidebar content after interaction]",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Interaction triggers a loading state that persists indefinitely without a live backend connection."
+        },
+        {
+          "issue": "P2 [Collapse interaction failure]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Context explicitly attributes interaction failures in the preview environment to missing backend data."
+        },
+        {
+          "issue": "P2 [Layout Shift]",
+          "verdict": "genuine_bug",
+          "confidence": 0.85,
+          "reasoning": "Unexpected layout shifts from late-loading banners are actionable defects not excused by context."
+        },
+        {
+          "issue": "P2 [Low Contrast]",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models cannot accurately assess contrast ratios between UI states from compressed screenshots."
+        },
+        {
+          "issue": "P3 [Saturated Colors]",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Vibrant badge colors are a subjective design choice for hierarchy in dark mode."
+        },
+        {
+          "issue": "P3 [Legibility]",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Pulse sidebar is intentionally dense; small typography for power users is a design choice."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Generic, Unhelpful Empty States",
+        "P1Overwhelming Sidebar Navigation",
+        "P2Unconstrained Line Lengths in Feeds",
+        "P2Low Contrast Calendar Grid",
+        "P2Cluttered Research Dashboard Hierarchy",
+        "P3Settings Modal Context Loss",
+        "P1Leaked data keys in UI",
+        "P2Technical timezone string exposure",
+        "P3Punctuation inconsistency in placeholder",
+        "P2Unlabeled data points in breakdown",
+        "P2Awkward fallback greeting",
+        "P1Repetitive link clutter in mobile view",
+        "P2Unexplained proprietary metrics",
+        "P3Outdated navigation separator",
+        "P2 [Missing interaction states]",
+        "P2 [Missing focus state on search bar]",
+        "P2 Overlapping text and broken layout in Roadmap Navigator",
+        "P2 User profile menu fails to render upon interaction",
+        "P3 Missing hover and active visual states for interactive el",
+        "P2 [Overlapping chart labels]",
+        "P1 [Illegible sidebar content after interaction]",
+        "P2 [Collapse interaction failure]",
+        "P2 [Low Contrast]",
+        "P3 [Saturated Colors]",
+        "P3 [Legibility]"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P2 [Layout Shift]",
+          "details": "[00:01] The 'preview mode' banner at the top of the page loads after the main content, causing a noticeable layout shift by pushing the 'Good morning' header and search bar downwards.",
+          "route": "Home",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Generic, Unhelpful Empty States",
+          "route": "29.5s-48.5s",
+          "ts": "29.5s-48.5s",
+          "details": "A vast majority of the secondary routes (Sources, Signals Log, Benchmarks, Funding Brief, Activity, Review Queue, etc.) display the exact same generic empty state design (a document icon with 'No [item] yet'). This is repetitive, lacks craft, and provides zero guidance on how the user should populate these areas or what value they provide.",
+          "suggestedFix": "Suggested fix:Design unique, context-aware empty states for each major section. Include a brief explanation of the feature's value and a clear, actionable CTA to help the user get started."
+        },
+        {
+          "header": "P1Overwhelming Sidebar Navigation",
+          "route": "0.0s-73.5s",
+          "ts": "0.0s-73.5s",
+          "details": "The left sidebar contains a massive, uncurated list of items, particularly under the 'MORE' and 'FILES' categories. This creates significant cognitive load and makes finding specific tools difficult. It feels like an internal sitemap rather than a curated user journey.",
+          "suggestedFix": "Suggested fix:Ruthlessly prune the sidebar. Group related items into collapsible sections, move less frequently accessed administrative or secondary tools to a settings menu, and prioritize core workflows."
+        },
+        {
+          "header": "P2Unconstrained Line Lengths in Feeds",
+          "route": "50.6s-63.3s",
+          "ts": "50.6s-63.3s",
+          "details": "In the 'For You' and 'LinkedIn Posts' feeds, text content spans almost the entire width of the main content area. These excessively long lines of text make reading difficult and tiring for the user's eyes.",
+          "suggestedFix": "Suggested fix:Constrain the maximum width of text blocks within these feed cards to an optimal reading measure (approximately 60-80 characters per line) and center the content or use a multi-column layout."
+        },
+        {
+          "header": "P2Low Contrast Calendar Grid",
+          "route": "18.9s-21.0s",
+          "ts": "18.9s-21.0s",
+          "details": "The calendar view uses very dark gray lines for the grid and low-contrast text for the time labels on the Y-axis. This makes it difficult to quickly parse the schedule or align events with their corresponding times.",
+          "suggestedFix": "Suggested fix:Increase the contrast of the calendar grid lines and time labels slightly to ensure they meet accessibility standards for legibility against the dark background."
+        },
+        {
+          "header": "P2Cluttered Research Dashboard Hierarchy",
+          "route": "2.0s-12.6s",
+          "ts": "2.0s-12.6s",
+          "details": "The Research Hub dashboard is extremely dense. The 'Briefing Snapshot', 'Primary Sources', and 'Brief Structure' cards have varying text sizes, alignments, and visual weights that compete for attention rather than guiding the eye logically.",
+          "suggestedFix": "Suggested fix:Standardize typography and spacing across dashboard cards. Establish a clearer visual hierarchy by emphasizing the most critical data point and subduing secondary metrics."
+        },
+        {
+          "header": "P3Settings Modal Context Loss",
+          "route": "70.9s-73.5s",
+          "ts": "70.9s-73.5s",
+          "details": "When the settings modal is invoked, the background appears to become completely opaque or excessively dark, entirely removing the user from their previous context. This feels jarring.",
+          "suggestedFix": "Suggested fix:Use a semi-transparent backdrop blur (scrim) behind the settings modal to maintain a subtle visual connection to the underlying workspace."
+        },
+        {
+          "header": "P1Leaked data keys in UI",
+          "route": "Analytics Components",
+          "ts": "Analytics Components",
+          "details": "In the Category Breakdown section, the category 'ai_ml' is displayed using snake_case, which is an internal data key rather than a user-friendly label.",
+          "suggestedFix": "Suggested fix:Map internal keys to human-readable strings (e.g., 'AI & ML') before rendering."
+        },
+        {
+          "header": "P2Technical timezone string exposure",
+          "route": "Documents",
+          "ts": "Documents",
+          "details": "The calendar widget displays a raw system timezone string which adds unnecessary cognitive load and feels unpolished.",
+          "suggestedFix": "Suggested fix:Display the timezone in a more natural format, such as 'Pacific Time' or simply 'Local Time'."
+        },
+        {
+          "header": "P3Punctuation inconsistency in placeholder",
+          "route": "Home",
+          "ts": "Home",
+          "details": "The search input placeholder ends with a double period, which appears to be a typo rather than an intentional ellipsis.",
+          "suggestedFix": "Suggested fix:Change to a single period or a proper ellipsis (...)."
+        },
+        {
+          "header": "P2Unlabeled data points in breakdown",
+          "route": "Analytics Components",
+          "ts": "Analytics Components",
+          "details": "In the Category Breakdown, there are trailing '0' values at the end of each row that lack context or labels, making the data uninterpretable.",
+          "suggestedFix": "Suggested fix:Add a column header or label to explain what the trailing integer represents (e.g., 'Errors' or 'Pending')."
+        },
+        {
+          "header": "P2Awkward fallback greeting",
+          "route": "Research Hub",
+          "ts": "Research Hub",
+          "details": "The greeting 'Good morning, there' uses a lowercase 'there' which feels like a poorly implemented fallback for a missing user name.",
+          "suggestedFix": "Suggested fix:Use a more natural fallback like 'Good morning' or 'Good morning, User' with proper capitalization."
+        },
+        {
+          "header": "P1Repetitive link clutter in mobile view",
+          "route": "Signals",
+          "ts": "Signals",
+          "details": "The Signals feed on mobile contains a wall of text with the word 'Dashboard' repeated as a link multiple times, creating visual noise and a poor reading experience.",
+          "suggestedFix": "Suggested fix:Use icons or contextual buttons at the bottom of the card instead of inline text links for primary navigation actions."
+        },
+        {
+          "header": "P2Unexplained proprietary metrics",
+          "route": "Activity",
+          "ts": "Activity",
+          "details": "The Activity feed uses lightning bolt and wrench icons with numerical values (e.g., 23.5k, 3) without tooltips or labels, making it unclear what is being measured.",
+          "suggestedFix": "Suggested fix:Add tooltips or text labels (e.g., 'Tokens', 'Tools Used') to justify the existence of these metrics."
+        },
+        {
+          "header": "P3Outdated navigation separator",
+          "route": "Home",
+          "ts": "Home",
+          "details": "The use of a pipe character '|' to separate navigation links feels like an outdated web pattern and disrupts the 'calm' aesthetic of the modern UI.",
+          "suggestedFix": "Suggested fix:Use whitespace or a subtle dot separator to create a more intentional and modern layout."
+        },
+        {
+          "header": "P2 [Missing interaction states]",
+          "details": "The 'Research', 'Assistant', and user profile buttons in the top navigation bar do not show any visual feedback (hover, active, or focus states) or trigger any popovers/drawers when interacted with, unlike the search bar which correctly shows a focus ring.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Missing focus state on search bar]",
+          "details": "The search bar does not show a focus ring or any visual indication of being active after a user interaction, which can be confusing for keyboard navigation and accessibility.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Overlapping text and broken layout in Roadmap Navigator",
+          "details": "In the 'Quality bar' section (Section 7 of 14), the content area displays overlapping text where the section header and bullet points are rendered directly over a blurred duplicate of the navigator's header and tabs. This suggests a failure in the sticky header implementation or a state management issue during navigation.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 User profile menu fails to render upon interaction",
+          "details": "Interacting with the user profile icon ('U') does not trigger the expected dropdown menu or popover. The UI remains unchanged, providing no visual feedback or access to profile-related actions.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 Missing hover and active visual states for interactive elements",
+          "details": "The 'Research' button, 'Assistant' button, user profile icon, and floating action button do not show any visual feedback (such as highlight, shadow, or state change) after interaction. Additionally, expected UI responses like menus or popovers are not triggered.",
+          "route": "for-you",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Overlapping chart labels]",
+          "details": "In the right sidebar 'Pulse' section, the labels for data points in the 'VS. RELIA...' line chart (e.g., 'LeonXlnx/taste-skill', 'ShinMegamiBoson/Op...') are overlapping each other and the chart lines, making them illegible.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P1 [Illegible sidebar content after interaction]",
+          "details": "After interacting with UI elements (such as clicking the user profile or the collapse button), the entire right sidebar content becomes extremely low contrast and faded, making the text and charts nearly impossible to read.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Collapse interaction failure]",
+          "details": "Clicking the collapse button (chevron) on the 'EXECUTIVE SYNTHESIS' section does not hide the content; the section remains fully expanded and the chevron icon does not toggle its state.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Layout Shift]",
+          "details": "[00:01] The 'preview mode' banner at the top of the page loads after the main content, causing a noticeable layout shift by pushing the 'Good morning' header and search bar downwards.",
+          "route": "Home",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P2 [Low Contrast]",
+          "details": "[00:15] The view toggle buttons (Cards, List, Grouped) have insufficient contrast between the active and inactive states, making it difficult to visually confirm which view is currently selected.",
+          "route": "My Workspace",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P3 [Saturated Colors]",
+          "details": "[01:55] The green 'Score' badges use a highly saturated background color that is visually jarring in dark mode and may cause eye strain or accessibility issues.",
+          "route": "GitHub Explorer",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Generic, Unhelpful Empty States",
+          "route": "29.5s-48.5s",
+          "ts": "29.5s-48.5s",
+          "details": "A vast majority of the secondary routes (Sources, Signals Log, Benchmarks, Funding Brief, Activity, Review Queue, etc.) display the exact same generic empty state design (a document icon with 'No [item] yet'). This is repetitive, lacks craft, and provides zero guidance on how the user should populate these areas or what value they provide.",
+          "suggestedFix": "Suggested fix:Design unique, context-aware empty states for each major section. Include a brief explanation of the feature's value and a clear, actionable CTA to help the user get started."
+        },
+        {
+          "header": "P1Overwhelming Sidebar Navigation",
+          "route": "0.0s-73.5s",
+          "ts": "0.0s-73.5s",
+          "details": "The left sidebar contains a massive, uncurated list of items, particularly under the 'MORE' and 'FILES' categories. This creates significant cognitive load and makes finding specific tools difficult. It feels like an internal sitemap rather than a curated user journey.",
+          "suggestedFix": "Suggested fix:Ruthlessly prune the sidebar. Group related items into collapsible sections, move less frequently accessed administrative or secondary tools to a settings menu, and prioritize core workflows."
+        },
+        {
+          "header": "P2Unconstrained Line Lengths in Feeds",
+          "route": "50.6s-63.3s",
+          "ts": "50.6s-63.3s",
+          "details": "In the 'For You' and 'LinkedIn Posts' feeds, text content spans almost the entire width of the main content area. These excessively long lines of text make reading difficult and tiring for the user's eyes.",
+          "suggestedFix": "Suggested fix:Constrain the maximum width of text blocks within these feed cards to an optimal reading measure (approximately 60-80 characters per line) and center the content or use a multi-column layout."
+        },
+        {
+          "header": "P2Low Contrast Calendar Grid",
+          "route": "18.9s-21.0s",
+          "ts": "18.9s-21.0s",
+          "details": "The calendar view uses very dark gray lines for the grid and low-contrast text for the time labels on the Y-axis. This makes it difficult to quickly parse the schedule or align events with their corresponding times.",
+          "suggestedFix": "Suggested fix:Increase the contrast of the calendar grid lines and time labels slightly to ensure they meet accessibility standards for legibility against the dark background."
+        },
+        {
+          "header": "P2Cluttered Research Dashboard Hierarchy",
+          "route": "2.0s-12.6s",
+          "ts": "2.0s-12.6s",
+          "details": "The Research Hub dashboard is extremely dense. The 'Briefing Snapshot', 'Primary Sources', and 'Brief Structure' cards have varying text sizes, alignments, and visual weights that compete for attention rather than guiding the eye logically.",
+          "suggestedFix": "Suggested fix:Standardize typography and spacing across dashboard cards. Establish a clearer visual hierarchy by emphasizing the most critical data point and subduing secondary metrics."
+        },
+        {
+          "header": "P3Settings Modal Context Loss",
+          "route": "70.9s-73.5s",
+          "ts": "70.9s-73.5s",
+          "details": "When the settings modal is invoked, the background appears to become completely opaque or excessively dark, entirely removing the user from their previous context. This feels jarring.",
+          "suggestedFix": "Suggested fix:Use a semi-transparent backdrop blur (scrim) behind the settings modal to maintain a subtle visual connection to the underlying workspace."
+        },
+        {
+          "header": "P1Leaked data keys in UI",
+          "route": "Analytics Components",
+          "ts": "Analytics Components",
+          "details": "In the Category Breakdown section, the category 'ai_ml' is displayed using snake_case, which is an internal data key rather than a user-friendly label.",
+          "suggestedFix": "Suggested fix:Map internal keys to human-readable strings (e.g., 'AI & ML') before rendering."
+        },
+        {
+          "header": "P2Technical timezone string exposure",
+          "route": "Documents",
+          "ts": "Documents",
+          "details": "The calendar widget displays a raw system timezone string which adds unnecessary cognitive load and feels unpolished.",
+          "suggestedFix": "Suggested fix:Display the timezone in a more natural format, such as 'Pacific Time' or simply 'Local Time'."
+        },
+        {
+          "header": "P3Punctuation inconsistency in placeholder",
+          "route": "Home",
+          "ts": "Home",
+          "details": "The search input placeholder ends with a double period, which appears to be a typo rather than an intentional ellipsis.",
+          "suggestedFix": "Suggested fix:Change to a single period or a proper ellipsis (...)."
+        },
+        {
+          "header": "P2Unlabeled data points in breakdown",
+          "route": "Analytics Components",
+          "ts": "Analytics Components",
+          "details": "In the Category Breakdown, there are trailing '0' values at the end of each row that lack context or labels, making the data uninterpretable.",
+          "suggestedFix": "Suggested fix:Add a column header or label to explain what the trailing integer represents (e.g., 'Errors' or 'Pending')."
+        },
+        {
+          "header": "P2Awkward fallback greeting",
+          "route": "Research Hub",
+          "ts": "Research Hub",
+          "details": "The greeting 'Good morning, there' uses a lowercase 'there' which feels like a poorly implemented fallback for a missing user name.",
+          "suggestedFix": "Suggested fix:Use a more natural fallback like 'Good morning' or 'Good morning, User' with proper capitalization."
+        },
+        {
+          "header": "P1Repetitive link clutter in mobile view",
+          "route": "Signals",
+          "ts": "Signals",
+          "details": "The Signals feed on mobile contains a wall of text with the word 'Dashboard' repeated as a link multiple times, creating visual noise and a poor reading experience.",
+          "suggestedFix": "Suggested fix:Use icons or contextual buttons at the bottom of the card instead of inline text links for primary navigation actions."
+        },
+        {
+          "header": "P2Unexplained proprietary metrics",
+          "route": "Activity",
+          "ts": "Activity",
+          "details": "The Activity feed uses lightning bolt and wrench icons with numerical values (e.g., 23.5k, 3) without tooltips or labels, making it unclear what is being measured.",
+          "suggestedFix": "Suggested fix:Add tooltips or text labels (e.g., 'Tokens', 'Tools Used') to justify the existence of these metrics."
+        },
+        {
+          "header": "P3Outdated navigation separator",
+          "route": "Home",
+          "ts": "Home",
+          "details": "The use of a pipe character '|' to separate navigation links feels like an outdated web pattern and disrupts the 'calm' aesthetic of the modern UI.",
+          "suggestedFix": "Suggested fix:Use whitespace or a subtle dot separator to create a more intentional and modern layout."
+        },
+        {
+          "header": "P2 [Missing interaction states]",
+          "details": "The 'Research', 'Assistant', and user profile buttons in the top navigation bar do not show any visual feedback (hover, active, or focus states) or trigger any popovers/drawers when interacted with, unlike the search bar which correctly shows a focus ring.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Missing focus state on search bar]",
+          "details": "The search bar does not show a focus ring or any visual indication of being active after a user interaction, which can be confusing for keyboard navigation and accessibility.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Overlapping text and broken layout in Roadmap Navigator",
+          "details": "In the 'Quality bar' section (Section 7 of 14), the content area displays overlapping text where the section header and bullet points are rendered directly over a blurred duplicate of the navigator's header and tabs. This suggests a failure in the sticky header implementation or a state management issue during navigation.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 User profile menu fails to render upon interaction",
+          "details": "Interacting with the user profile icon ('U') does not trigger the expected dropdown menu or popover. The UI remains unchanged, providing no visual feedback or access to profile-related actions.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 Missing hover and active visual states for interactive elements",
+          "details": "The 'Research' button, 'Assistant' button, user profile icon, and floating action button do not show any visual feedback (such as highlight, shadow, or state change) after interaction. Additionally, expected UI responses like menus or popovers are not triggered.",
+          "route": "for-you",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Overlapping chart labels]",
+          "details": "In the right sidebar 'Pulse' section, the labels for data points in the 'VS. RELIA...' line chart (e.g., 'LeonXlnx/taste-skill', 'ShinMegamiBoson/Op...') are overlapping each other and the chart lines, making them illegible.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P1 [Illegible sidebar content after interaction]",
+          "details": "After interacting with UI elements (such as clicking the user profile or the collapse button), the entire right sidebar content becomes extremely low contrast and faded, making the text and charts nearly impossible to read.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Collapse interaction failure]",
+          "details": "Clicking the collapse button (chevron) on the 'EXECUTIVE SYNTHESIS' section does not hide the content; the section remains fully expanded and the chevron icon does not toggle its state.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Low Contrast]",
+          "details": "[00:15] The view toggle buttons (Cards, List, Grouped) have insufficient contrast between the active and inactive states, making it difficult to visually confirm which view is currently selected.",
+          "route": "My Workspace",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P3 [Saturated Colors]",
+          "details": "[01:55] The green 'Score' badges use a highly saturated background color that is visually jarring in dark mode and may cause eye strain or accessibility issues.",
+          "route": "GitHub Explorer",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        },
+        {
+          "header": "P3 [Legibility]",
+          "details": "[04:09] The labels on the 'AZ Capabilities' radar chart in the Pulse sidebar are rendered at an extremely small font size, making them nearly impossible to read without zooming.",
+          "route": "Research Hub",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 25
+    },
+    "diagnostics": {
+      "totalRawIssues": 26,
+      "falsePositivesFiltered": 25,
+      "realIssues": 1,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 6,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 6,
+    "screenshotIssues": 8,
+    "videoSummary": "The application presents a highly complex, feature-rich environment but struggles with information architecture and visual hierarchy. The primary navigation sidebar is severely overloaded, violating the principle of earned complexity. Furthermore, the app relies heavily on identical, generic empty states across numerous distinct features, offering no contextual guidance. While the dark theme is co",
+    "screenSummary": "The interface exhibits a high level of functional complexity but suffers from 'leaky abstractions' where technical data structures and engineering jargon surface in the UI. While the dark and light themes are well-executed, the experience is marred by inconsistent grammar, unlabelled data points, and a lack of clarity regarding proprietary metrics.",
+    "aspiration": {
+      "score": 88,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 9,
+        "spacing": 8,
+        "states": 8,
+        "hierarchy": 9,
+        "interaction": 8,
+        "craft": 9
+      },
+      "opportunityCount": 5,
+      "summary": "NodeBench AI demonstrates a high level of design maturity, closely following the 'Linear-grade' aesthetic with a clean neutral palette and strong typographic hierarchy. The application excels in data density and professional layout, though it could achieve further 'calm' by reducing repetitive actio"
+    }
+  },
+  {
+    "timestamp": "2026-02-23T06:59:48.853Z",
+    "runType": "gemini-qa-rubric",
+    "score": 83,
+    "grade": "B",
+    "critical": 1,
+    "warning": 1,
+    "info": 0,
+    "total": 28,
+    "realIssueCount": 2,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2183,
+        "high": 121,
+        "medium": 2037,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 91,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": false,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 65,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": false,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": false,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 92,
+        "weight": 0.1,
+        "rawTaste": 92
+      },
+      "agentic": {
+        "issueCount": 15,
+        "screenshotIssues": 13,
+        "videoIssues": 2,
+        "issues": [
+          {
+            "header": "P2 [Interactive elements that don't respond visually]",
+            "details": "Clicking the 'Research' button in the top navigation bar does not trigger any visual change, such as opening a research panel or clearing the notification badge.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [User profile menu fails to open]",
+            "details": "Clicking on the user profile icon (the 'U' circle in the top right) does not trigger the expected dropdown menu. The UI remains unchanged from the base state.",
+            "route": "cost",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Create new action button is unresponsive]",
+            "details": "The floating action button (+) in the bottom right corner does not respond visually or open any menu/modal when clicked, despite being an interactive element.",
+            "route": "cost",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Calendar sidebar data loss]",
+            "details": "Interacting with the timezone dropdown causes the 'THIS WEEK' section in the calendar sidebar to lose its data; the 'Washington's Birthday' holiday disappears and is replaced by 'No upcoming items.'",
+            "route": "roadmap",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P3 [Persistent loading state artifact]",
+            "details": "The 'Loading analytics...' text remains visible in the main content area even after the 'Product Roadmap' section has finished rendering, indicating a failure to clear the loading state UI.",
+            "route": "roadmap",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Interactions] Popovers and menus fail to render after user interaction",
+            "details": "Across multiple screenshots ('After: user profile menu', 'After: create new item button', 'After: activity heatmap square'), the expected UI overlays such as dropdown menus or tooltips are missing. Clicking the profile icon or the '+' FAB should trigger a menu, and hovering over heatmap squares should show a tooltip, but the UI remains unchanged.",
+            "route": "roadmap",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Unresponsive Interactive Elements]",
+            "details": "The Assistant button, User Profile icon, and Date Selector do not trigger any visual changes, popovers, or menus when clicked. The UI remains identical across all 'After' interaction states, indicating these primary interactive elements are unresponsive.",
+            "route": "signals",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Dropdown filters non-responsive]",
+            "details": "Clicking on the 'All Time' and 'All Rounds' filter dropdowns does not trigger the display of the options menu or provide any visual feedback (e.g., focus state) in the captured states.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Interaction] 'Show details' link on funding cards does not expand or show additional information",
+            "details": "After clicking the 'Show details' link on the 'Tech Investor Battery Ventures' card, the card remains in its collapsed state and does not reveal any additional metadata or expanded content. In contrast, the 'Waymo' card displays 'Lead Investors' information, suggesting that 'Show details' should reveal similar data or expand the card height, which did not occur for the interacted element.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Tab content mismatch",
+            "details": "The 'Signals' tab is selected and visually active, but the main content area still displays the 'Daily Summary' section, which appears to be part of the 'Overview' tab content. The view did not update upon tab selection.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 26,
+      "hardFiltered": 1,
+      "llmFiltered": 25,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal debug jargon visible in production UI",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Playwright-injected QA annotation layer, not part of the actual React application."
+        },
+        {
+          "issue": "P2Sidebar navigation bloat",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Intentional navigation density for power users managing over 30 routes."
+        },
+        {
+          "issue": "P2Inconsistent date formatting in feed",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Mixed date formats are intentional context-dependent formatting for technical practitioners."
+        },
+        {
+          "issue": "P3Generic empty states lack guidance",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Calm empty states are intentional; data populates automatically via backend sync."
+        },
+        {
+          "issue": "P3Insufficient visual separation for Settings modal",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Modal backdrop styling is a subjective design choice for the platform's theme."
+        },
+        {
+          "issue": "P1Negative relative time calculation",
+          "verdict": "genuine_bug",
+          "confidence": 0.9,
+          "reasoning": "Negative relative time indicates a logic error in the time-relative string generator."
+        },
+        {
+          "issue": "P2Engineering jargon in user-facing UI",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Engineering shorthand is intentional for the technical target audience of AI practitioners."
+        },
+        {
+          "issue": "P2Inconsistent date formatting",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Mixed date formats are explicitly defined as intentional context-dependent design choices."
+        },
+        {
+          "issue": "P2Data overlap in Pulse chart",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Chart overlap claims are identified as common misreads caused by screenshot compression."
+        },
+        {
+          "issue": "P3Technical naming conventions in labels",
+          "verdict": "design_opinion",
+          "confidence": 0.85,
+          "reasoning": "Technical naming conventions align with the platform's power-user and developer-centric design."
+        },
+        {
+          "issue": "P2Use of 'Deltas' jargon",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Deltas is standard domain terminology for the technical target audience."
+        },
+        {
+          "issue": "P2Header truncation in chart section",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Intentional compact layout using ellipsis for dense data-heavy visualizations."
+        },
+        {
+          "issue": "P2 [Interactive elements that don't respond visually]",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Navigation fallback to Overview is intentional for removed research sub-routes."
+        },
+        {
+          "issue": "P2 [User profile menu fails to open]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failure due to lack of live backend data in preview environment."
+        },
+        {
+          "issue": "P2 [Create new action button is unresponsive]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failure due to lack of live backend data in preview environment."
+        },
+        {
+          "issue": "P2 [Calendar sidebar data loss]",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Timezone shifts trigger re-fetches that return empty states in the mock environment."
+        },
+        {
+          "issue": "P3 [Persistent loading state artifact]",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Loading indicators persist indefinitely in the preview build when backend data is missing."
+        },
+        {
+          "issue": "P2 [Interactions] Popovers and menus fail to render after user interaction",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Interaction failures in automated QA are documented data-availability issues in the demo."
+        },
+        {
+          "issue": "P2 [Unresponsive Interactive Elements]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Primary interactive elements appear unresponsive due to the absence of a live backend."
+        },
+        {
+          "issue": "P2 [Dropdown filters non-responsive]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Filter dropdowns fail to populate or render without active backend data synchronization."
+        },
+        {
+          "issue": "P2 [Interaction] 'Show details' link on funding cards does not expand or show ad",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Interaction failure due to missing backend data in the preview environment."
+        },
+        {
+          "issue": "P2 Tab content mismatch",
+          "verdict": "mock_data",
+          "confidence": 0.9,
+          "reasoning": "Tab content fails to update in preview due to missing backend data."
+        },
+        {
+          "issue": "P2 Layout overlaps in sidebar visualizations",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Reviewer misinterprets compressed flexbox layouts and chart labels as layout overlaps."
+        },
+        {
+          "issue": "P3 FAB obscures sidebar content",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Persistent FAB is a standard Material Design pattern, not a layout bug."
+        },
+        {
+          "issue": "P2 Raw JSON string displayed in Summary field",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Raw JSON in a user-facing summary field is a legitimate formatting defect."
+        },
+        {
+          "issue": "P2 [Saved Reports] Route incorrectly renders Home page content",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Intentional fallback to Overview for specific routes is a documented design pattern."
+        },
+        {
+          "issue": "P3 [Industry News] Persistent loading spinner in empty state",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Indefinite loading states in preview builds without backend sync are expected behavior."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Critical contrast failure in dark mobile view",
+        "P1Internal debug jargon visible in production UI",
+        "P2Sidebar navigation bloat",
+        "P2Inconsistent date formatting in feed",
+        "P3Generic empty states lack guidance",
+        "P3Insufficient visual separation for Settings modal",
+        "P2Engineering jargon in user-facing UI",
+        "P2Inconsistent date formatting",
+        "P2Data overlap in Pulse chart",
+        "P3Technical naming conventions in labels",
+        "P2Use of 'Deltas' jargon",
+        "P2Header truncation in chart section",
+        "P2 [Interactive elements that don't respond visually]",
+        "P2 [User profile menu fails to open]",
+        "P2 [Create new action button is unresponsive]",
+        "P2 [Calendar sidebar data loss]",
+        "P3 [Persistent loading state artifact]",
+        "P2 [Interactions] Popovers and menus fail to render after us",
+        "P2 [Unresponsive Interactive Elements]",
+        "P2 [Dropdown filters non-responsive]",
+        "P2 [Interaction] 'Show details' link on funding cards does n",
+        "P2 Tab content mismatch",
+        "P2 Layout overlaps in sidebar visualizations",
+        "P3 FAB obscures sidebar content",
+        "P2 [Saved Reports] Route incorrectly renders Home page conte",
+        "P3 [Industry News] Persistent loading spinner in empty state"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P1Negative relative time calculation",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'Updated' timestamp shows a negative value ('-1 min ago'), indicating a logic error in the time-relative string generator where the server time and client time are likely out of sync.",
+          "suggestedFix": "Suggested fix:Ensure the relative time helper handles future-dated timestamps gracefully (e.g., 'Just now') and synchronize server/client clocks."
+        },
+        {
+          "header": "P2 Raw JSON string displayed in Summary field",
+          "details": "In the company details drawer (e.g., for Anthropic), the 'Summary' section displays an unformatted JSON string instead of human-readable text.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Internal debug jargon visible in production UI",
+          "route": "2.0s-10.5s",
+          "ts": "2.0s-10.5s",
+          "details": "The top-left corner of the sidebar displays 'Dogfood 5/33' and the current route path (e.g., 'Research: Briefing — /research/briefing'). This is internal engineering terminology that adds cognitive load without providing value to the end user, breaking the illusion of a finished product.",
+          "suggestedFix": "Suggested fix:Remove the 'Dogfood' label and route path from the production UI. If required for internal testing, hide these elements behind a specific keyboard shortcut or feature flag."
+        },
+        {
+          "header": "P2Sidebar navigation bloat",
+          "route": "42.2s-63.3s",
+          "ts": "42.2s-63.3s",
+          "details": "The 'MORE' section in the sidebar contains a long, un-categorized list of over 10 items (Usage & Costs, Industry News, Activity Log, etc.). This creates visual clutter and makes it difficult for users to scan and find specific tools, violating the principle of earned complexity.",
+          "suggestedFix": "Suggested fix:Group related navigation items into logical sub-menus or categories (e.g., 'Analytics', 'Content', 'Tools'). Consider moving less frequently used items to a dedicated settings or workspace configuration area."
+        },
+        {
+          "header": "P2Inconsistent date formatting in feed",
+          "route": "50.6s-52.7s",
+          "ts": "50.6s-52.7s",
+          "details": "In the 'For You' feed, dates are presented in conflicting formats. The section header uses a full text format ('Sunday, February 22, 2026'), while article titles and summaries use an ISO format ('2026-02-23'). This lack of consistency makes the interface feel unpolished.",
+          "suggestedFix": "Suggested fix:Standardize date formatting across the application. Prefer a consistent, human-readable format (e.g., 'Feb 23, 2026') for UI elements, reserving ISO formats only for raw data exports or specific technical contexts."
+        },
+        {
+          "header": "P3Generic empty states lack guidance",
+          "route": "29.5s-40.1s",
+          "ts": "29.5s-40.1s",
+          "details": "Empty states, such as in the 'Sources' and 'Review Queue' sections, simply state 'No sources yet' or 'No reviews yet'. While they include a button, they miss an opportunity to educate the user on how these sections function or how to populate them, feeling somewhat abrupt.",
+          "suggestedFix": "Suggested fix:Enhance empty states with a brief, helpful sentence explaining how content is generated for that specific view. Consider using more bespoke, subtle illustrations rather than generic document icons."
+        },
+        {
+          "header": "P3Insufficient visual separation for Settings modal",
+          "route": "70.9s-73.6s",
+          "ts": "70.9s-73.6s",
+          "details": "When the Settings modal is invoked, it appears over the main interface without a sufficiently distinct backdrop. The lack of a strong dimming effect or background blur makes the interface feel less controlled and reduces focus on the modal's content.",
+          "suggestedFix": "Suggested fix:Apply a darker semi-transparent overlay (e.g., rgba(0,0,0,0.5)) or a subtle backdrop-filter (blur) to the area behind the modal to clearly separate it from the underlying application context."
+        },
+        {
+          "header": "P1Negative relative time calculation",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'Updated' timestamp shows a negative value ('-1 min ago'), indicating a logic error in the time-relative string generator where the server time and client time are likely out of sync.",
+          "suggestedFix": "Suggested fix:Ensure the relative time helper handles future-dated timestamps gracefully (e.g., 'Just now') and synchronize server/client clocks."
+        },
+        {
+          "header": "P2Engineering jargon in user-facing UI",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "Terms like 'a11y' (accessibility) and 'eval' (evaluation) are developer shorthand and should be replaced with full, descriptive words to maintain a professional, non-technical tone.",
+          "suggestedFix": "Suggested fix:Replace 'a11y' with 'Accessibility' and 'eval' with 'Evaluation'."
+        },
+        {
+          "header": "P2Inconsistent date formatting",
+          "route": "/for-you",
+          "ts": "/for-you",
+          "details": "The interface mixes ISO-style dates (2026-02-23) with natural language dates (Sunday, February 22, 2026) in the same view, creating visual friction and inconsistency.",
+          "suggestedFix": "Suggested fix:Standardize on a single date format per view, preferably the more readable natural language format."
+        },
+        {
+          "header": "P2Data overlap in Pulse chart",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "Repository names and labels in the 'VS. RELIA...' chart overlap the data lines and each other, making the visualization unreadable and appearing unpolished.",
+          "suggestedFix": "Suggested fix:Implement collision detection for chart labels or move labels to a legend/tooltip."
+        },
+        {
+          "header": "P3Technical naming conventions in labels",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "The category breakdown uses 'ai_ml' with an underscore, which feels like a raw database key rather than a polished UI label.",
+          "suggestedFix": "Suggested fix:Format labels to use title case and spaces (e.g., 'AI & ML')."
+        },
+        {
+          "header": "P2Use of 'Deltas' jargon",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The term 'Largest deltas' is mathematical/engineering jargon. Users typically understand 'Changes' or 'Shifts' more intuitively in a business context.",
+          "suggestedFix": "Suggested fix:Change 'Largest deltas' to 'Top Changes' or 'Significant Shifts'."
+        },
+        {
+          "header": "P2Header truncation in chart section",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The chart title 'VS. RELIA...' is truncated, which obscures the meaning of the data visualization and looks like a layout error.",
+          "suggestedFix": "Suggested fix:Allow the header to wrap or increase the container width to prevent truncation of key labels."
+        },
+        {
+          "header": "P2 [Interactive elements that don't respond visually]",
+          "details": "Clicking the 'Research' button in the top navigation bar does not trigger any visual change, such as opening a research panel or clearing the notification badge.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [User profile menu fails to open]",
+          "details": "Clicking on the user profile icon (the 'U' circle in the top right) does not trigger the expected dropdown menu. The UI remains unchanged from the base state.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Create new action button is unresponsive]",
+          "details": "The floating action button (+) in the bottom right corner does not respond visually or open any menu/modal when clicked, despite being an interactive element.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Calendar sidebar data loss]",
+          "details": "Interacting with the timezone dropdown causes the 'THIS WEEK' section in the calendar sidebar to lose its data; the 'Washington's Birthday' holiday disappears and is replaced by 'No upcoming items.'",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Persistent loading state artifact]",
+          "details": "The 'Loading analytics...' text remains visible in the main content area even after the 'Product Roadmap' section has finished rendering, indicating a failure to clear the loading state UI.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactions] Popovers and menus fail to render after user interaction",
+          "details": "Across multiple screenshots ('After: user profile menu', 'After: create new item button', 'After: activity heatmap square'), the expected UI overlays such as dropdown menus or tooltips are missing. Clicking the profile icon or the '+' FAB should trigger a menu, and hovering over heatmap squares should show a tooltip, but the UI remains unchanged.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Unresponsive Interactive Elements]",
+          "details": "The Assistant button, User Profile icon, and Date Selector do not trigger any visual changes, popovers, or menus when clicked. The UI remains identical across all 'After' interaction states, indicating these primary interactive elements are unresponsive.",
+          "route": "signals",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Dropdown filters non-responsive]",
+          "details": "Clicking on the 'All Time' and 'All Rounds' filter dropdowns does not trigger the display of the options menu or provide any visual feedback (e.g., focus state) in the captured states.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interaction] 'Show details' link on funding cards does not expand or show additional information",
+          "details": "After clicking the 'Show details' link on the 'Tech Investor Battery Ventures' card, the card remains in its collapsed state and does not reveal any additional metadata or expanded content. In contrast, the 'Waymo' card displays 'Lead Investors' information, suggesting that 'Show details' should reveal similar data or expand the card height, which did not occur for the interacted element.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Tab content mismatch",
+          "details": "The 'Signals' tab is selected and visually active, but the main content area still displays the 'Daily Summary' section, which appears to be part of the 'Overview' tab content. The view did not update upon tab selection.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Layout overlaps in sidebar visualizations",
+          "details": "Multiple elements in the right sidebar overlap, significantly reducing legibility: the 'Feb 2026' date badge overlaps the chart header text, the '100% of sources' circular graphic overlaps the 'AI Capabilities' section title, and several data point labels in the line chart overlap each other.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 FAB obscures sidebar content",
+          "details": "The floating action button (FAB) in the bottom right corner overlaps and partially hides the text of the first item in the 'SOURCES FOR TODAY' sidebar list.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Raw JSON string displayed in Summary field",
+          "details": "In the company details drawer (e.g., for Anthropic), the 'Summary' section displays an unformatted JSON string instead of human-readable text.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Critical contrast failure in dark mobile view",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The primary text content in the 'Brief' card uses a dark blue color on a near-black background, making it almost impossible to read. This violates WCAG contrast guidelines for legibility.",
+          "suggestedFix": "Suggested fix:Use a higher-contrast text color (e.g., light grey or white) for body text in dark mode."
+        },
+        {
+          "header": "P1Internal debug jargon visible in production UI",
+          "route": "2.0s-10.5s",
+          "ts": "2.0s-10.5s",
+          "details": "The top-left corner of the sidebar displays 'Dogfood 5/33' and the current route path (e.g., 'Research: Briefing — /research/briefing'). This is internal engineering terminology that adds cognitive load without providing value to the end user, breaking the illusion of a finished product.",
+          "suggestedFix": "Suggested fix:Remove the 'Dogfood' label and route path from the production UI. If required for internal testing, hide these elements behind a specific keyboard shortcut or feature flag."
+        },
+        {
+          "header": "P2Sidebar navigation bloat",
+          "route": "42.2s-63.3s",
+          "ts": "42.2s-63.3s",
+          "details": "The 'MORE' section in the sidebar contains a long, un-categorized list of over 10 items (Usage & Costs, Industry News, Activity Log, etc.). This creates visual clutter and makes it difficult for users to scan and find specific tools, violating the principle of earned complexity.",
+          "suggestedFix": "Suggested fix:Group related navigation items into logical sub-menus or categories (e.g., 'Analytics', 'Content', 'Tools'). Consider moving less frequently used items to a dedicated settings or workspace configuration area."
+        },
+        {
+          "header": "P2Inconsistent date formatting in feed",
+          "route": "50.6s-52.7s",
+          "ts": "50.6s-52.7s",
+          "details": "In the 'For You' feed, dates are presented in conflicting formats. The section header uses a full text format ('Sunday, February 22, 2026'), while article titles and summaries use an ISO format ('2026-02-23'). This lack of consistency makes the interface feel unpolished.",
+          "suggestedFix": "Suggested fix:Standardize date formatting across the application. Prefer a consistent, human-readable format (e.g., 'Feb 23, 2026') for UI elements, reserving ISO formats only for raw data exports or specific technical contexts."
+        },
+        {
+          "header": "P3Generic empty states lack guidance",
+          "route": "29.5s-40.1s",
+          "ts": "29.5s-40.1s",
+          "details": "Empty states, such as in the 'Sources' and 'Review Queue' sections, simply state 'No sources yet' or 'No reviews yet'. While they include a button, they miss an opportunity to educate the user on how these sections function or how to populate them, feeling somewhat abrupt.",
+          "suggestedFix": "Suggested fix:Enhance empty states with a brief, helpful sentence explaining how content is generated for that specific view. Consider using more bespoke, subtle illustrations rather than generic document icons."
+        },
+        {
+          "header": "P3Insufficient visual separation for Settings modal",
+          "route": "70.9s-73.6s",
+          "ts": "70.9s-73.6s",
+          "details": "When the Settings modal is invoked, it appears over the main interface without a sufficiently distinct backdrop. The lack of a strong dimming effect or background blur makes the interface feel less controlled and reduces focus on the modal's content.",
+          "suggestedFix": "Suggested fix:Apply a darker semi-transparent overlay (e.g., rgba(0,0,0,0.5)) or a subtle backdrop-filter (blur) to the area behind the modal to clearly separate it from the underlying application context."
+        },
+        {
+          "header": "P2Engineering jargon in user-facing UI",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "Terms like 'a11y' (accessibility) and 'eval' (evaluation) are developer shorthand and should be replaced with full, descriptive words to maintain a professional, non-technical tone.",
+          "suggestedFix": "Suggested fix:Replace 'a11y' with 'Accessibility' and 'eval' with 'Evaluation'."
+        },
+        {
+          "header": "P2Inconsistent date formatting",
+          "route": "/for-you",
+          "ts": "/for-you",
+          "details": "The interface mixes ISO-style dates (2026-02-23) with natural language dates (Sunday, February 22, 2026) in the same view, creating visual friction and inconsistency.",
+          "suggestedFix": "Suggested fix:Standardize on a single date format per view, preferably the more readable natural language format."
+        },
+        {
+          "header": "P2Data overlap in Pulse chart",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "Repository names and labels in the 'VS. RELIA...' chart overlap the data lines and each other, making the visualization unreadable and appearing unpolished.",
+          "suggestedFix": "Suggested fix:Implement collision detection for chart labels or move labels to a legend/tooltip."
+        },
+        {
+          "header": "P3Technical naming conventions in labels",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "The category breakdown uses 'ai_ml' with an underscore, which feels like a raw database key rather than a polished UI label.",
+          "suggestedFix": "Suggested fix:Format labels to use title case and spaces (e.g., 'AI & ML')."
+        },
+        {
+          "header": "P2Use of 'Deltas' jargon",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The term 'Largest deltas' is mathematical/engineering jargon. Users typically understand 'Changes' or 'Shifts' more intuitively in a business context.",
+          "suggestedFix": "Suggested fix:Change 'Largest deltas' to 'Top Changes' or 'Significant Shifts'."
+        },
+        {
+          "header": "P2Header truncation in chart section",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The chart title 'VS. RELIA...' is truncated, which obscures the meaning of the data visualization and looks like a layout error.",
+          "suggestedFix": "Suggested fix:Allow the header to wrap or increase the container width to prevent truncation of key labels."
+        },
+        {
+          "header": "P2 [Interactive elements that don't respond visually]",
+          "details": "Clicking the 'Research' button in the top navigation bar does not trigger any visual change, such as opening a research panel or clearing the notification badge.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [User profile menu fails to open]",
+          "details": "Clicking on the user profile icon (the 'U' circle in the top right) does not trigger the expected dropdown menu. The UI remains unchanged from the base state.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Create new action button is unresponsive]",
+          "details": "The floating action button (+) in the bottom right corner does not respond visually or open any menu/modal when clicked, despite being an interactive element.",
+          "route": "cost",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Calendar sidebar data loss]",
+          "details": "Interacting with the timezone dropdown causes the 'THIS WEEK' section in the calendar sidebar to lose its data; the 'Washington's Birthday' holiday disappears and is replaced by 'No upcoming items.'",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 [Persistent loading state artifact]",
+          "details": "The 'Loading analytics...' text remains visible in the main content area even after the 'Product Roadmap' section has finished rendering, indicating a failure to clear the loading state UI.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactions] Popovers and menus fail to render after user interaction",
+          "details": "Across multiple screenshots ('After: user profile menu', 'After: create new item button', 'After: activity heatmap square'), the expected UI overlays such as dropdown menus or tooltips are missing. Clicking the profile icon or the '+' FAB should trigger a menu, and hovering over heatmap squares should show a tooltip, but the UI remains unchanged.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Unresponsive Interactive Elements]",
+          "details": "The Assistant button, User Profile icon, and Date Selector do not trigger any visual changes, popovers, or menus when clicked. The UI remains identical across all 'After' interaction states, indicating these primary interactive elements are unresponsive.",
+          "route": "signals",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Dropdown filters non-responsive]",
+          "details": "Clicking on the 'All Time' and 'All Rounds' filter dropdowns does not trigger the display of the options menu or provide any visual feedback (e.g., focus state) in the captured states.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interaction] 'Show details' link on funding cards does not expand or show additional information",
+          "details": "After clicking the 'Show details' link on the 'Tech Investor Battery Ventures' card, the card remains in its collapsed state and does not reveal any additional metadata or expanded content. In contrast, the 'Waymo' card displays 'Lead Investors' information, suggesting that 'Show details' should reveal similar data or expand the card height, which did not occur for the interacted element.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Tab content mismatch",
+          "details": "The 'Signals' tab is selected and visually active, but the main content area still displays the 'Daily Summary' section, which appears to be part of the 'Overview' tab content. The view did not update upon tab selection.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Layout overlaps in sidebar visualizations",
+          "details": "Multiple elements in the right sidebar overlap, significantly reducing legibility: the 'Feb 2026' date badge overlaps the chart header text, the '100% of sources' circular graphic overlaps the 'AI Capabilities' section title, and several data point labels in the line chart overlap each other.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P3 FAB obscures sidebar content",
+          "details": "The floating action button (FAB) in the bottom right corner overlaps and partially hides the text of the first item in the 'SOURCES FOR TODAY' sidebar list.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Saved Reports] Route incorrectly renders Home page content",
+          "details": "[00:19] When navigating to the 'Saved Reports' section via the sidebar, the application incorrectly renders the 'Good morning' Home page content instead of the expected saved reports view. This is confirmed by the breadcrumb remaining as 'Home' and the main title not updating, despite the sidebar highlighting the 'Saved Reports' item. This occurs again at 00:45.",
+          "route": "Saved Reports",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 1,
+      "llmFilteredCount": 25
+    },
+    "diagnostics": {
+      "totalRawIssues": 28,
+      "falsePositivesFiltered": 26,
+      "realIssues": 2,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application features a robust, data-dense interface with a consistent dark theme. However, the presence of internal engineering jargon ('Dogfood') in the primary navigation immediately breaks the product illusion. The sidebar navigation suffers from item bloat, violating the principle of earned complexity. Minor inconsistencies in date formatting and somewhat generic empty states present oppor",
+    "screenSummary": "The NodeBench AI interface presents a high-density information environment that generally maintains a clean aesthetic, but it is marred by several 'engineering leaks' where technical shorthand and raw data formats are exposed to the user. Key issues include logic errors in time-relative strings, the use of developer jargon like 'a11y' and 'eval', and significant accessibility concerns in the dark ",
+    "aspiration": {
+      "score": 88,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 8,
+        "states": 7,
+        "hierarchy": 9,
+        "interaction": 8,
+        "craft": 9
+      },
+      "opportunityCount": 4,
+      "summary": "The application exhibits a high degree of polish, successfully balancing data density with a clean, modern aesthetic. It closely follows the 'Linear-grade' target, though there are opportunities to further reduce visual noise through progressive disclosure and more refined metric hierarchies."
+    }
+  },
+  {
+    "timestamp": "2026-02-23T06:35:15.282Z",
+    "runType": "gemini-qa-rubric",
+    "score": 83,
+    "grade": "B",
+    "critical": 1,
+    "warning": 1,
+    "info": 0,
+    "total": 22,
+    "realIssueCount": 2,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2183,
+        "high": 121,
+        "medium": 2037,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 91,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": false,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 65,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": false,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": false,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": false,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 92,
+        "weight": 0.1,
+        "rawTaste": 92
+      },
+      "agentic": {
+        "issueCount": 9,
+        "screenshotIssues": 9,
+        "videoIssues": 0,
+        "issues": [
+          {
+            "header": "P3 Missing hover/active visual states for header buttons",
+            "details": "The 'Research' and 'Assistant' buttons in the top-right header do not show any visual feedback (such as background color change or highlight) when interacted with, as seen in the 'After: research button' and 'After: assistant button' screenshots.",
+            "route": "home",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Contradictory information regarding repository scores]",
+            "details": "Each repository card displays a numerical score (e.g., 'Score 100') at the top right, but the footer of the card explicitly states 'Ranked by popularity (scoring unavailable)'. This provides conflicting information to the user about whether scoring is active or not.",
+            "route": "github",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [User profile menu fails to open]",
+            "details": "Clicking the user profile icon (U) in the top right corner highlights the element with a purple circle, indicating an active state, but the expected dropdown menu does not appear.",
+            "route": "public",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Rendering artifacts and state mismatch in Roadmap Navigator",
+            "details": "In the Roadmap Navigator section, text from multiple sections (e.g., 'Section 1 of 14' and 'Section 8 of 14') is rendered on top of each other behind the navigation tabs, causing an illegible appearance. Additionally, there is a state mismatch where the 'Metrics' tab is highlighted as active, but the content displayed below is 'Risks and Dependencies'.",
+            "route": "roadmap",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Interactive elements non-responsive]",
+            "details": "The 'All Time' and 'All Rounds' filter dropdowns do not open or show any visual change after being clicked. Similarly, clicking 'Show details' on the Anthropic and Waymo cards does not expand the cards or reveal additional information, and the chevron icon remains in the 'down' state.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Interactive element doesn't respond visually]",
+            "details": "Clicking 'Show details' on the 'Undisclosed' funding card does not expand the card or change the chevron icon state, providing no visual feedback or additional information to the user.",
+            "route": "funding",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Chart] Overlapping labels and truncated text in Pulse chart",
+            "details": "The chart in the top right of the Research Hub exhibits several layout issues: 1) Data point labels (e.g., 'LeonLnx/taste-skill' and 'ShinMegamiBoson/Op...') overlap each other and the chart lines, making them illegible. 2) The 'Feb 2026' date badge overlaps the '0 pts' y-axis label. 3) The chart header text 'VS. RELIA...' is truncated.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Raw JSON displayed in sidebar summary",
+            "details": "The 'Summary' section in the right-hand drawer displays unformatted JSON data (e.g., '{\"kind\":\"linkup_search_results\"...') instead of a human-readable summary.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Overlapping labels in right-side graph",
+            "details": "In the 'VS. RELIA...' chart on the right panel, multiple data point labels (such as 'Leonxtnx/taste-skill' and 'ShinMegamiBoson/Op...') overlap each other, making the text illegible.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 20,
+      "hardFiltered": 0,
+      "llmFiltered": 20,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal jargon visible in UI",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Playwright-injected QA annotation layer, not part of the actual React application."
+        },
+        {
+          "issue": "P2Overwhelming sidebar navigation",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Intentional navigation density for power users managing 30+ routes."
+        },
+        {
+          "issue": "P2Low contrast calendar grid",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Intentional dark theme contrast ratios; grid lines follow established SaaS patterns."
+        },
+        {
+          "issue": "P3Unnecessary zero-state data in feed",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Zero-value metrics are characteristic of the placeholder data in the demo environment."
+        },
+        {
+          "issue": "P3Filler metrics in Briefing view",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Generic 100% metrics are placeholder data used in the preview environment."
+        },
+        {
+          "issue": "P1Negative time calculation error",
+          "verdict": "genuine_bug",
+          "confidence": 0.95,
+          "reasoning": "Negative time indicates a logic error in timestamp calculation or clock synchronization."
+        },
+        {
+          "issue": "P2Redundant Floating Action Button (FAB) on desktop",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "FAB persistence is an intentional Material Design pattern for primary actions."
+        },
+        {
+          "issue": "P3Inconsistent punctuation in placeholder",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Context confirms codebase uses standard ellipsis; double periods are screenshot misreads."
+        },
+        {
+          "issue": "P3Impersonal greeting fallback",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Fallback greeting copy is a subjective preference, not a functional defect."
+        },
+        {
+          "issue": "P2Redundant unit labels in Usage cards",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Label repetition in dense usage cards is a subjective information architecture choice."
+        },
+        {
+          "issue": "P2Legibility of calendar event density",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Intentional density for power-user calendar views is a core design principle."
+        },
+        {
+          "issue": "P2Over-prominent search focus ring",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Focus ring prominence is a subjective styling choice within the established hierarchy."
+        },
+        {
+          "issue": "P2Alignment of 'View' action in Research Hub",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.85,
+          "reasoning": "Alignment issues in dense layouts are typically artifacts of screenshot compression."
+        },
+        {
+          "issue": "P3 Missing hover/active visual states for header buttons",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.85,
+          "reasoning": "Hover state visual changes are frequently missed by automated screenshot analysis."
+        },
+        {
+          "issue": "P2 [Contradictory information regarding repository scores]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Conflicting labels are expected artifacts of the placeholder/demo data environment."
+        },
+        {
+          "issue": "P2 [User profile menu fails to open]",
+          "verdict": "mock_data",
+          "confidence": 0.85,
+          "reasoning": "Interaction failures in the demo environment are attributed to missing backend data availability."
+        },
+        {
+          "issue": "P2 Rendering artifacts and state mismatch in Roadmap Navigator",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Overlapping text and tab state mismatches are identified as vision model misreads or artifacts."
+        },
+        {
+          "issue": "P2 [Interactive elements non-responsive]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Filter and card expansion failures are explicitly linked to missing live backend data."
+        },
+        {
+          "issue": "P2 [Interactive element doesn't respond visually]",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Non-responsive card expansion in the preview environment is a known data-availability issue."
+        },
+        {
+          "issue": "P2 [Chart] Overlapping labels and truncated text in Pulse chart",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Chart label overlaps and truncation are confirmed screenshot compression artifacts per design context."
+        },
+        {
+          "issue": "P2 Raw JSON displayed in sidebar summary",
+          "verdict": "genuine_bug",
+          "confidence": 0.85,
+          "reasoning": "Raw JSON in a summary field indicates a failure to parse or render data."
+        },
+        {
+          "issue": "P2 Overlapping labels in right-side graph",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.95,
+          "reasoning": "Context identifies chart label overlaps as screenshot compression artifacts, not layout bugs."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Internal jargon visible in UI",
+        "P2Overwhelming sidebar navigation",
+        "P2Low contrast calendar grid",
+        "P3Unnecessary zero-state data in feed",
+        "P3Filler metrics in Briefing view",
+        "P2Redundant Floating Action Button (FAB) on desktop",
+        "P3Inconsistent punctuation in placeholder",
+        "P3Impersonal greeting fallback",
+        "P2Redundant unit labels in Usage cards",
+        "P2Legibility of calendar event density",
+        "P2Over-prominent search focus ring",
+        "P2Alignment of 'View' action in Research Hub",
+        "P3 Missing hover/active visual states for header buttons",
+        "P2 [Contradictory information regarding repository scores]",
+        "P2 [User profile menu fails to open]",
+        "P2 Rendering artifacts and state mismatch in Roadmap Navigat",
+        "P2 [Interactive elements non-responsive]",
+        "P2 [Interactive element doesn't respond visually]",
+        "P2 [Chart] Overlapping labels and truncated text in Pulse ch",
+        "P2 Overlapping labels in right-side graph"
+      ]
+    },
+    "loop": {
+      "realIssues": [
+        {
+          "header": "P1Negative time calculation error",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'Executive Synthesis' card displays a negative relative time, indicating a logic error in the timestamp comparison or a race condition between client and server clocks.",
+          "suggestedFix": "Suggested fix:Ensure relative time calculations floor at zero or 'just now' to prevent negative values."
+        },
+        {
+          "header": "P2 Raw JSON displayed in sidebar summary",
+          "details": "The 'Summary' section in the right-hand drawer displays unformatted JSON data (e.g., '{\"kind\":\"linkup_search_results\"...') instead of a human-readable summary.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "candidateIssues": [
+        {
+          "header": "P1Internal jargon visible in UI",
+          "route": "0.0s-73.3s",
+          "ts": "0.0s-73.3s",
+          "details": "The top left corner displays a 'Dogfood 5/33' badge. This is internal engineering terminology that should not be visible to end users. It breaks the illusion of a polished, production-ready product and adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the 'Dogfood' badge entirely for production builds, or replace it with a user-facing version indicator if absolutely necessary."
+        },
+        {
+          "header": "P2Overwhelming sidebar navigation",
+          "route": "0.0s-73.3s",
+          "ts": "0.0s-73.3s",
+          "details": "The left sidebar contains a massive number of items, requiring significant scrolling and cognitive load to parse. It violates the principle of earned complexity by presenting all possible actions at once rather than progressively revealing them.",
+          "suggestedFix": "Suggested fix:Group related items into collapsible sections or move less frequently accessed items to a secondary settings or tools menu to calm the interface."
+        },
+        {
+          "header": "P2Low contrast calendar grid",
+          "route": "18.9s-21.0s",
+          "ts": "18.9s-21.0s",
+          "details": "The grid lines in the Calendar view are very dark and blend into the background, making it difficult to distinguish individual time slots or days at a glance. This impacts legibility and usability.",
+          "suggestedFix": "Suggested fix:Slightly increase the lightness or opacity of the grid lines to improve visibility without making them visually distracting."
+        },
+        {
+          "header": "P3Unnecessary zero-state data in feed",
+          "route": "50.6s-52.7s",
+          "ts": "50.6s-52.7s",
+          "details": "In the 'For You' feed, showing '0 comments' adds visual noise without providing value. If there are no comments, it's better to omit the text entirely to keep the interface calm and focused on relevant data.",
+          "suggestedFix": "Suggested fix:Conditionally render the comments count only if it is greater than 0."
+        },
+        {
+          "header": "P3Filler metrics in Briefing view",
+          "route": "8.4s-10.5s",
+          "ts": "8.4s-10.5s",
+          "details": "The 'AI Capabilities' section displays generic 100% metrics for Reasoning, Uptime, and Safety. This feels like decorative clutter or placeholder data that doesn't provide actionable insights for the user's daily briefing.",
+          "suggestedFix": "Suggested fix:Remove these metrics unless they dynamically change and directly impact the user's workflow. Replace with more relevant summary data or remove the section to reduce clutter."
+        },
+        {
+          "header": "P1Negative time calculation error",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'Executive Synthesis' card displays a negative relative time, indicating a logic error in the timestamp comparison or a race condition between client and server clocks.",
+          "suggestedFix": "Suggested fix:Ensure relative time calculations floor at zero or 'just now' to prevent negative values."
+        },
+        {
+          "header": "P2Redundant Floating Action Button (FAB) on desktop",
+          "route": "",
+          "ts": "",
+          "details": "The blue '+' FAB is present on almost every desktop screen. On large viewports, this is often 'decorative clutter' as primary actions should be integrated into the layout's hierarchy rather than floating over content.",
+          "suggestedFix": "Suggested fix:Remove the FAB on desktop viewports and integrate the 'New' action into the sidebar or header."
+        },
+        {
+          "header": "P3Inconsistent punctuation in placeholder",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The search placeholder text ends with a double period, which feels like a typo rather than an intentional ellipsis.",
+          "suggestedFix": "Suggested fix:Change to a standard ellipsis '...' or a single period."
+        },
+        {
+          "header": "P3Impersonal greeting fallback",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The greeting 'Good morning, there' feels like a broken template string or a poor fallback for a missing user name. It lacks the 'calm & intentional' feel of a premium product.",
+          "suggestedFix": "Suggested fix:Use 'Good morning' as the default if the user's name is unavailable, or use a more natural fallback like 'Good morning, Researcher'."
+        },
+        {
+          "header": "P2Redundant unit labels in Usage cards",
+          "route": "/settings",
+          "ts": "/settings",
+          "details": "The word 'requests' is repeated three times in close proximity in the Usage section, increasing cognitive load without adding value.",
+          "suggestedFix": "Suggested fix:Move the unit 'requests' to the section header or a sub-label to allow the numbers to stand alone."
+        },
+        {
+          "header": "P2Legibility of calendar event density",
+          "route": "/my-workspace",
+          "ts": "/my-workspace",
+          "details": "The small dots with numbers (e.g., '16 1') inside the calendar cells are too small for comfortable reading and lack clear affordance of what they represent.",
+          "suggestedFix": "Suggested fix:Increase the size of the event indicators or use a simpler dot system without numbers for density."
+        },
+        {
+          "header": "P2Over-prominent search focus ring",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The focus state for the search bar uses a very thick, high-contrast blue border that creates significant visual noise and feels jarring against the dark theme.",
+          "suggestedFix": "Suggested fix:Reduce the border-width of the focus ring or use a subtle outer glow to indicate focus."
+        },
+        {
+          "header": "P2Alignment of 'View' action in Research Hub",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'View' text next to the source count is poorly aligned and lacks the visual weight of a button or a clear link, making it look like a label error.",
+          "suggestedFix": "Suggested fix:Style 'View' as a clear text button with proper padding and alignment relative to the count."
+        },
+        {
+          "header": "P3 Missing hover/active visual states for header buttons",
+          "details": "The 'Research' and 'Assistant' buttons in the top-right header do not show any visual feedback (such as background color change or highlight) when interacted with, as seen in the 'After: research button' and 'After: assistant button' screenshots.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Contradictory information regarding repository scores]",
+          "details": "Each repository card displays a numerical score (e.g., 'Score 100') at the top right, but the footer of the card explicitly states 'Ranked by popularity (scoring unavailable)'. This provides conflicting information to the user about whether scoring is active or not.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [User profile menu fails to open]",
+          "details": "Clicking the user profile icon (U) in the top right corner highlights the element with a purple circle, indicating an active state, but the expected dropdown menu does not appear.",
+          "route": "public",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Rendering artifacts and state mismatch in Roadmap Navigator",
+          "details": "In the Roadmap Navigator section, text from multiple sections (e.g., 'Section 1 of 14' and 'Section 8 of 14') is rendered on top of each other behind the navigation tabs, causing an illegible appearance. Additionally, there is a state mismatch where the 'Metrics' tab is highlighted as active, but the content displayed below is 'Risks and Dependencies'.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive elements non-responsive]",
+          "details": "The 'All Time' and 'All Rounds' filter dropdowns do not open or show any visual change after being clicked. Similarly, clicking 'Show details' on the Anthropic and Waymo cards does not expand the cards or reveal additional information, and the chevron icon remains in the 'down' state.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive element doesn't respond visually]",
+          "details": "Clicking 'Show details' on the 'Undisclosed' funding card does not expand the card or change the chevron icon state, providing no visual feedback or additional information to the user.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Chart] Overlapping labels and truncated text in Pulse chart",
+          "details": "The chart in the top right of the Research Hub exhibits several layout issues: 1) Data point labels (e.g., 'LeonLnx/taste-skill' and 'ShinMegamiBoson/Op...') overlap each other and the chart lines, making them illegible. 2) The 'Feb 2026' date badge overlaps the '0 pts' y-axis label. 3) The chart header text 'VS. RELIA...' is truncated.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Raw JSON displayed in sidebar summary",
+          "details": "The 'Summary' section in the right-hand drawer displays unformatted JSON data (e.g., '{\"kind\":\"linkup_search_results\"...') instead of a human-readable summary.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Overlapping labels in right-side graph",
+          "details": "In the 'VS. RELIA...' chart on the right panel, multiple data point labels (such as 'Leonxtnx/taste-skill' and 'ShinMegamiBoson/Op...') overlap each other, making the text illegible.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Internal jargon visible in UI",
+          "route": "0.0s-73.3s",
+          "ts": "0.0s-73.3s",
+          "details": "The top left corner displays a 'Dogfood 5/33' badge. This is internal engineering terminology that should not be visible to end users. It breaks the illusion of a polished, production-ready product and adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the 'Dogfood' badge entirely for production builds, or replace it with a user-facing version indicator if absolutely necessary."
+        },
+        {
+          "header": "P2Overwhelming sidebar navigation",
+          "route": "0.0s-73.3s",
+          "ts": "0.0s-73.3s",
+          "details": "The left sidebar contains a massive number of items, requiring significant scrolling and cognitive load to parse. It violates the principle of earned complexity by presenting all possible actions at once rather than progressively revealing them.",
+          "suggestedFix": "Suggested fix:Group related items into collapsible sections or move less frequently accessed items to a secondary settings or tools menu to calm the interface."
+        },
+        {
+          "header": "P2Low contrast calendar grid",
+          "route": "18.9s-21.0s",
+          "ts": "18.9s-21.0s",
+          "details": "The grid lines in the Calendar view are very dark and blend into the background, making it difficult to distinguish individual time slots or days at a glance. This impacts legibility and usability.",
+          "suggestedFix": "Suggested fix:Slightly increase the lightness or opacity of the grid lines to improve visibility without making them visually distracting."
+        },
+        {
+          "header": "P3Unnecessary zero-state data in feed",
+          "route": "50.6s-52.7s",
+          "ts": "50.6s-52.7s",
+          "details": "In the 'For You' feed, showing '0 comments' adds visual noise without providing value. If there are no comments, it's better to omit the text entirely to keep the interface calm and focused on relevant data.",
+          "suggestedFix": "Suggested fix:Conditionally render the comments count only if it is greater than 0."
+        },
+        {
+          "header": "P3Filler metrics in Briefing view",
+          "route": "8.4s-10.5s",
+          "ts": "8.4s-10.5s",
+          "details": "The 'AI Capabilities' section displays generic 100% metrics for Reasoning, Uptime, and Safety. This feels like decorative clutter or placeholder data that doesn't provide actionable insights for the user's daily briefing.",
+          "suggestedFix": "Suggested fix:Remove these metrics unless they dynamically change and directly impact the user's workflow. Replace with more relevant summary data or remove the section to reduce clutter."
+        },
+        {
+          "header": "P2Redundant Floating Action Button (FAB) on desktop",
+          "route": "",
+          "ts": "",
+          "details": "The blue '+' FAB is present on almost every desktop screen. On large viewports, this is often 'decorative clutter' as primary actions should be integrated into the layout's hierarchy rather than floating over content.",
+          "suggestedFix": "Suggested fix:Remove the FAB on desktop viewports and integrate the 'New' action into the sidebar or header."
+        },
+        {
+          "header": "P3Inconsistent punctuation in placeholder",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The search placeholder text ends with a double period, which feels like a typo rather than an intentional ellipsis.",
+          "suggestedFix": "Suggested fix:Change to a standard ellipsis '...' or a single period."
+        },
+        {
+          "header": "P3Impersonal greeting fallback",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The greeting 'Good morning, there' feels like a broken template string or a poor fallback for a missing user name. It lacks the 'calm & intentional' feel of a premium product.",
+          "suggestedFix": "Suggested fix:Use 'Good morning' as the default if the user's name is unavailable, or use a more natural fallback like 'Good morning, Researcher'."
+        },
+        {
+          "header": "P2Redundant unit labels in Usage cards",
+          "route": "/settings",
+          "ts": "/settings",
+          "details": "The word 'requests' is repeated three times in close proximity in the Usage section, increasing cognitive load without adding value.",
+          "suggestedFix": "Suggested fix:Move the unit 'requests' to the section header or a sub-label to allow the numbers to stand alone."
+        },
+        {
+          "header": "P2Legibility of calendar event density",
+          "route": "/my-workspace",
+          "ts": "/my-workspace",
+          "details": "The small dots with numbers (e.g., '16 1') inside the calendar cells are too small for comfortable reading and lack clear affordance of what they represent.",
+          "suggestedFix": "Suggested fix:Increase the size of the event indicators or use a simpler dot system without numbers for density."
+        },
+        {
+          "header": "P2Over-prominent search focus ring",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The focus state for the search bar uses a very thick, high-contrast blue border that creates significant visual noise and feels jarring against the dark theme.",
+          "suggestedFix": "Suggested fix:Reduce the border-width of the focus ring or use a subtle outer glow to indicate focus."
+        },
+        {
+          "header": "P2Alignment of 'View' action in Research Hub",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'View' text next to the source count is poorly aligned and lacks the visual weight of a button or a clear link, making it look like a label error.",
+          "suggestedFix": "Suggested fix:Style 'View' as a clear text button with proper padding and alignment relative to the count."
+        },
+        {
+          "header": "P3 Missing hover/active visual states for header buttons",
+          "details": "The 'Research' and 'Assistant' buttons in the top-right header do not show any visual feedback (such as background color change or highlight) when interacted with, as seen in the 'After: research button' and 'After: assistant button' screenshots.",
+          "route": "home",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Contradictory information regarding repository scores]",
+          "details": "Each repository card displays a numerical score (e.g., 'Score 100') at the top right, but the footer of the card explicitly states 'Ranked by popularity (scoring unavailable)'. This provides conflicting information to the user about whether scoring is active or not.",
+          "route": "github",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [User profile menu fails to open]",
+          "details": "Clicking the user profile icon (U) in the top right corner highlights the element with a purple circle, indicating an active state, but the expected dropdown menu does not appear.",
+          "route": "public",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Rendering artifacts and state mismatch in Roadmap Navigator",
+          "details": "In the Roadmap Navigator section, text from multiple sections (e.g., 'Section 1 of 14' and 'Section 8 of 14') is rendered on top of each other behind the navigation tabs, causing an illegible appearance. Additionally, there is a state mismatch where the 'Metrics' tab is highlighted as active, but the content displayed below is 'Risks and Dependencies'.",
+          "route": "roadmap",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive elements non-responsive]",
+          "details": "The 'All Time' and 'All Rounds' filter dropdowns do not open or show any visual change after being clicked. Similarly, clicking 'Show details' on the Anthropic and Waymo cards does not expand the cards or reveal additional information, and the chevron icon remains in the 'down' state.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Interactive element doesn't respond visually]",
+          "details": "Clicking 'Show details' on the 'Undisclosed' funding card does not expand the card or change the chevron icon state, providing no visual feedback or additional information to the user.",
+          "route": "funding",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Chart] Overlapping labels and truncated text in Pulse chart",
+          "details": "The chart in the top right of the Research Hub exhibits several layout issues: 1) Data point labels (e.g., 'LeonLnx/taste-skill' and 'ShinMegamiBoson/Op...') overlap each other and the chart lines, making them illegible. 2) The 'Feb 2026' date badge overlaps the '0 pts' y-axis label. 3) The chart header text 'VS. RELIA...' is truncated.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Overlapping labels in right-side graph",
+          "details": "In the 'VS. RELIA...' chart on the right panel, multiple data point labels (such as 'Leonxtnx/taste-skill' and 'ShinMegamiBoson/Op...') overlap each other, making the text illegible.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 20
+    },
+    "diagnostics": {
+      "totalRawIssues": 22,
+      "falsePositivesFiltered": 20,
+      "realIssues": 2,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 5,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 5,
+    "screenshotIssues": 8,
+    "videoSummary": "The application presents a highly dense, data-rich interface that leans heavily into a dark mode aesthetic. While functional, it suffers from information overload, particularly in the primary navigation sidebar, which requires significant cognitive effort to parse. Several instances of internal jargon and redundant data points detract from the overall polish, violating the principle of earned comp",
+    "screenSummary": "The interface demonstrates a sophisticated dark/light system with a clear focus on AI-driven workflows. However, it suffers from 'floating clutter' on desktop via redundant FABs, minor logic errors in time calculation, and inconsistent micro-copy that detracts from the premium feel."
+  },
+  {
     "timestamp": "2026-02-23T06:25:23.209Z",
     "runType": "gemini-qa-rubric",
     "score": 87,
@@ -20368,47 +22892,5 @@
     "screenshotIssues": 1,
     "videoSummary": "{\"summary\":\"The application features a high-density data dashboard with a sophisticated dark theme, but suffers from significant layout collisions in the analytics sidebar and a major performance delay during initial load. Navigation consistency between the sidebar and breadcrumbs is also lacking in several views.\",\"issues\":[{\"severity\":\"p1\",\"title\":\"Severe text overlap in Pulse sidebar\",\"details\"",
     "screenSummary": "{\n  \"summary\": \"The NodeBench AI interface presents a high-fidelity dark mode environment with a clear sidebar-driven navigation. However, it suffers from significant legibility and layout issues in data-heavy views, particularly the Research Hub where text overlaps are prevalent. There are also inconsistencies in component density, such as oversized empty states and cramped utility widgets like t"
-  },
-  {
-    "timestamp": "2026-02-19T08:30:16.284Z",
-    "runType": "gemini-qa",
-    "score": 100,
-    "grade": "A",
-    "critical": 0,
-    "warning": 0,
-    "info": 0,
-    "total": 2,
-    "videoIssues": 1,
-    "screenshotIssues": 1,
-    "videoSummary": "[\n  {\n    \"summary\": \"The NodeBench AI interface features a sophisticated dark-themed dashboard with high information density. While the aesthetic is professional, the application suffers from significant information architecture issues in the navigation sidebar, legibility problems in data-heavy sidebars, and missing assets in content feeds. The walkthrough also reveals a major initial loading de",
-    "screenSummary": "{\n  \"summary\": \"The NodeBench AI platform features a sophisticated dark-themed interface with high data density. While the aesthetic is modern, the UI suffers from redundant components (mini-calendars), overlapping elements in complex data visualizations (Pulse sidebar), and inconsistent primary action affordances across different modules.\",\n  \"issues\": [\n    {\n      \"severity\": \"p1\",\n      \"title"
-  },
-  {
-    "timestamp": "2026-02-19T07:55:53.278Z",
-    "runType": "gemini-qa",
-    "score": 62,
-    "grade": "C",
-    "critical": 3,
-    "warning": 9,
-    "info": 2,
-    "total": 14,
-    "videoIssues": 5,
-    "screenshotIssues": 9,
-    "videoSummary": "The video showcases the NodeBench AI web application. Several UI/UX and potential performance issues were identified, primarily related to layout, legibility, and data loading states. There are also some areas where the visual design could be improved for consistency and clarity.",
-    "screenSummary": "The Nodebench AI web app exhibits several UI/UX issues across its various screens. These range from legibility problems due to low contrast, inconsistent spacing and alignment, unclear interaction affordances, and empty state handling. The issues impact usability and overall user experience, requiring attention to CSS/layout, component composition, data wiring, and empty state design."
-  },
-  {
-    "timestamp": "2026-02-19T07:46:46.377Z",
-    "runType": "gemini-qa",
-    "score": 49,
-    "grade": "D",
-    "critical": 5,
-    "warning": 10,
-    "info": 1,
-    "total": 16,
-    "videoIssues": 7,
-    "screenshotIssues": 9,
-    "videoSummary": "The video showcases the NodeBench AI web application. Several UI/UX issues were identified, primarily related to legibility, consistency, and information hierarchy. There are also some potential performance issues related to data loading and layout shifts.",
-    "screenSummary": "The Nodebench AI web app exhibits several UI/UX issues across its various screens. These range from legibility problems due to low contrast, inconsistent spacing and alignment, unclear interaction affordances, and empty state handling. The issues impact usability and visual appeal, requiring attention to CSS/layout, component composition, and data wiring."
   }
 ]
