@@ -50,7 +50,8 @@ export function IndustryUpdatesPanel() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-inner">
+      <div className="nb-page-frame space-y-6">
       <PageHeroHeader
         icon={<TrendingUp className="w-5 h-5" />}
         title="Industry News"
@@ -149,6 +150,7 @@ export function IndustryUpdatesPanel() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -495,7 +495,7 @@ function ResearchHubContent(props: ResearchHubProps) {
             </button>
           )}
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             {/* Historical Date Selector */}
             <div className="flex items-center gap-2 p-1 bg-gray-100/50 dark:bg-white/[0.04] border border-edge">
               {availableDates && availableDates.length > 0 ? (

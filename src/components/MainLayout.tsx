@@ -8,7 +8,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 
-import { Sparkles, Zap, Menu, X as CloseIcon, Search as SearchIcon, ChevronRight, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight, Settings as SettingsIcon } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";

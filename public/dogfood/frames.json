@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-23T22:43:04.372Z",
+  "capturedAtIso": "2026-02-23T23:25:13.605Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -94,7 +94,7 @@
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 23.1,
+      "startSec": 23.2,
       "file": "12-roadmap.jpg",
       "image": "/dogfood/frames/12-roadmap.jpg"
     },
@@ -158,7 +158,7 @@
       "index": 20,
       "name": "Review Queue",
       "path": "/review-queue",
-      "startSec": 40,
+      "startSec": 40.1,
       "file": "20-review-queue.jpg",
       "image": "/dogfood/frames/20-review-queue.jpg"
     },
@@ -214,7 +214,7 @@
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 54.8,
+      "startSec": 54.9,
       "file": "27-agent-templates.jpg",
       "image": "/dogfood/frames/27-agent-templates.jpg"
     },
@@ -222,7 +222,7 @@
       "index": 28,
       "name": "GitHub Explorer",
       "path": "/github",
-      "startSec": 56.9,
+      "startSec": 57,
       "file": "28-github-explorer.jpg",
       "image": "/dogfood/frames/28-github-explorer.jpg"
     },
@@ -262,7 +262,7 @@
       "index": 33,
       "name": "Public Docs",
       "path": "/public",
-      "startSec": 67.5,
+      "startSec": 67.6,
       "file": "33-public-docs.jpg",
       "image": "/dogfood/frames/33-public-docs.jpg"
     },
@@ -270,7 +270,7 @@
       "index": 34,
       "name": "Interaction: Command Palette",
       "path": "(interaction)",
-      "startSec": 69.6,
+      "startSec": 69.7,
       "file": "34-interaction-command-palette.jpg",
       "image": "/dogfood/frames/34-interaction-command-palette.jpg"
     },
@@ -278,7 +278,7 @@
       "index": 35,
       "name": "Interaction: Settings",
       "path": "(interaction)",
-      "startSec": 70.9,
+      "startSec": 71,
       "file": "35-interaction-settings.jpg",
       "image": "/dogfood/frames/35-interaction-settings.jpg"
     },
@@ -286,7 +286,7 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.6,
+      "startSec": 73.7,
       "file": "36-end.jpg",
       "image": "/dogfood/frames/36-end.jpg"
     }

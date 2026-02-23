@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-23T22:42:57.858Z",
+  "capturedAtIso": "2026-02-23T23:25:06.581Z",
   "baseURL": "http://127.0.0.1:4178",
   "mime": "video/mp4",
   "publish": "static",
@@ -74,7 +74,7 @@
       "index": 12,
       "name": "Roadmap",
       "path": "/roadmap",
-      "startSec": 23.1
+      "startSec": 23.2
     },
     {
       "index": 13,
@@ -122,7 +122,7 @@
       "index": 20,
       "name": "Review Queue",
       "path": "/review-queue",
-      "startSec": 40
+      "startSec": 40.1
     },
     {
       "index": 21,
@@ -164,13 +164,13 @@
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 54.8
+      "startSec": 54.9
     },
     {
       "index": 28,
       "name": "GitHub Explorer",
       "path": "/github",
-      "startSec": 56.9
+      "startSec": 57
     },
     {
       "index": 29,
@@ -200,28 +200,28 @@
       "index": 33,
       "name": "Public Docs",
       "path": "/public",
-      "startSec": 67.5
+      "startSec": 67.6
     },
     {
       "index": 34,
       "name": "Interaction: Command Palette",
       "path": "(interaction)",
-      "startSec": 69.6
+      "startSec": 69.7
     },
     {
       "index": 35,
       "name": "Interaction: Settings",
       "path": "(interaction)",
-      "startSec": 70.9
+      "startSec": 71
     },
     {
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.6
+      "startSec": 73.7
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-23_144107.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-23_152316.mp4"
 }

@@ -106,18 +106,20 @@ export const LinkedInPostArchiveView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame-narrow">
       {/* Header - always visible */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border/60">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="sticky top-0 z-10 nb-surface-card border-edge/70">
+        <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-lg flex items-center justify-center">
                 <Linkedin className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-foreground">LinkedIn Posts</h1>
-                <p className="text-xs text-muted-foreground">
+                <h1 className="type-page-title text-content">LinkedIn Posts</h1>
+                <p className="text-xs text-content-muted">
                   {stats
                     ? `${stats.totalPosts} ${stats.totalPosts === 1 ? 'post' : 'posts'} across ${stats.recentDates.length} ${stats.recentDates.length === 1 ? 'day' : 'days'}`
                     : "\u00A0"}
@@ -127,7 +129,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
 
             {stats && (
               <div className="hidden sm:flex items-center gap-3">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1 text-xs text-content-muted">
                   <BarChart3 className="w-3.5 h-3.5" />
                   <span>{stats.byType.length} post types</span>
                 </div>
@@ -137,7 +139,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
 
           {/* Filter chips - always visible */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <Filter className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+            <Filter className="w-3.5 h-3.5 text-content-muted flex-shrink-0" />
             {POST_TYPE_FILTERS.map((filter) => {
               const count = stats
                 ? filter.key === "all"
@@ -150,13 +152,13 @@ export const LinkedInPostArchiveView: React.FC = () => {
                   key={filter.key}
                   onClick={() => handleFilterChange(filter.key)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeFilter === filter.key
-                        ? "bg-gray-900 text-white"
-                        : "bg-card text-muted-foreground hover:bg-muted/30 border border-border/60"
+                        ? "bg-[var(--accent-primary)] text-white"
+                        : "bg-surface text-content-muted hover:bg-surface-hover border border-edge"
                       }`}
                   >
                   {filter.label}
                   {count > 0 && (
-                    <span className={`ml-1.5 ${activeFilter === filter.key ? "text-white/80" : "text-muted-foreground"}`}>
+                    <span className={`ml-1.5 ${activeFilter === filter.key ? "text-white/80" : "text-content-muted"}`}>
                       {count}
                     </span>
                   )}
@@ -168,11 +170,11 @@ export const LinkedInPostArchiveView: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="px-4 py-6">
         {dateGroups.length === 0 && !isFirstLoad ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Linkedin className="w-8 h-8 text-blue-400" />
+            <div className="w-16 h-16 bg-[var(--accent-primary-bg)] rounded-lg flex items-center justify-center mx-auto mb-4">
+              <Linkedin className="w-8 h-8 text-[var(--accent-primary)]" />
             </div>
             <h2 className="text-lg font-semibold text-foreground mb-2">No posts found</h2>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
@@ -187,7 +189,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
             {[1, 2, 3].map((i) => (
               <div key={i}>
                 <div className="h-4 bg-muted/40 rounded w-48 mb-3" />
-                <div className="bg-card border border-border/60 rounded-lg p-4 space-y-2">
+                <div className="nb-surface-card p-4 space-y-2">
                   <div className="h-3 bg-muted/30 rounded w-24" />
                   <div className="h-3 bg-muted/30 rounded w-full" />
                   <div className="h-3 bg-muted/30 rounded w-3/4" />
@@ -248,7 +250,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
               <div className="flex justify-center pt-4 pb-8">
                 <button
                   onClick={loadMore}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-card border border-border/60 rounded-lg text-sm font-medium text-foreground hover:bg-muted/20 transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-surface border border-edge rounded-lg text-sm font-medium text-content hover:bg-surface-hover transition-colors shadow-sm"
                 >
                   <Loader2 className="w-4 h-4 text-muted-foreground" />
                   Load {Math.min(LOAD_MORE_INCREMENT, dateGroups.length - visibleGroups)} more days
@@ -260,6 +262,8 @@ export const LinkedInPostArchiveView: React.FC = () => {
             )}
           </div>
         )}
+      </div>
+        </div>
       </div>
     </div>
   );

@@ -159,6 +159,23 @@
            transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2
            focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
   }
+
+  /* Route-level shell primitives to keep page rhythm/color consistent */
+  .nb-page-shell {
+    @apply h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative pb-24 lg:pb-0;
+  }
+  .nb-page-inner {
+    @apply flex-1 px-6 sm:px-8 lg:px-10 py-8 relative z-10;
+  }
+  .nb-page-frame {
+    @apply w-full max-w-7xl mx-auto;
+  }
+  .nb-page-frame-narrow {
+    @apply w-full max-w-5xl mx-auto;
+  }
+  .nb-surface-card {
+    @apply rounded-xl border border-edge bg-surface shadow-sm;
+  }
 }
 
 /* Preserve serif in editorial/research views */

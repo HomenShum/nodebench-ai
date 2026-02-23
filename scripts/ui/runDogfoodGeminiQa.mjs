@@ -276,6 +276,31 @@ async function archivePreviousRun(outDir) {
   }
 }
 
+async function waitForDogfoodReady(page, timeoutMs = 120_000) {
+  try {
+    await page.getByRole("heading", { name: /quality review/i }).first().waitFor({ timeout: timeoutMs });
+    return;
+  } catch (err) {
+    const boundaryVisible = await page
+      .getByText(/something went wrong/i)
+      .first()
+      .isVisible()
+      .catch(() => false);
+
+    if (boundaryVisible) {
+      const bodyText = await page.locator("body").innerText().catch(() => "");
+      const summary =
+        bodyText
+          .replace(/\s+/g, " ")
+          .match(/something went wrong.{0,220}/i)?.[0]
+          ?.trim() ?? "Something went wrong";
+      throw new Error(`Dogfood page failed to render: ${summary}`);
+    }
+
+    throw err;
+  }
+}
+
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // LAYER 0: STATIC CODE ANALYSIS â€” Deterministic design token compliance
 // Greps src/ for banned CSS patterns that visual QA cannot detect from screenshots.
@@ -2428,7 +2453,7 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
 
   try {
     await page.goto(`${baseURL}/dogfood`, { waitUntil: "domcontentloaded" });
-    await page.getByRole("heading", { name: /quality review/i }).first().waitFor({ timeout: 120_000 });
+    await waitForDogfoodReady(page, 120_000);
     await ensureAnonymousSignIn(page);
 
     // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -2492,7 +2517,7 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
 
         // Navigate back to /dogfood for existing QA flow
         await page.goto(`${baseURL}/dogfood`, { waitUntil: "domcontentloaded" });
-        await page.getByRole("heading", { name: /quality review/i }).first().waitFor({ timeout: 60_000 });
+        await waitForDogfoodReady(page, 60_000);
         await page.waitForTimeout(1000);
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -2714,6 +2739,7 @@ async function main() {
   const noAgentic = args.has("no-agentic");
   const loopMode = args.has("loop");
   const noRecapture = args.has("no-recapture");
+  const noBuild = args.has("no-build");
   const noEdits = args.has("no-edits");
   const autoApply = args.has("auto-apply");
   const maxIterations = Number(args.get("max-iterations") ?? 5);
@@ -2782,6 +2808,14 @@ async function main() {
   }
 
   async function runGeminiQaOnce() {
+    // NOTE(coworker): Preview serves whatever is already in dist/. In loop mode with
+    // --no-recapture (or in single-run mode), we must build so QA validates current edits.
+    if (!noBuild && (!loopMode || noRecapture)) {
+      // eslint-disable-next-line no-console
+      console.log("Building app for QA preview...");
+      await runCommand(nodeCmd, [viteBin, "build"]);
+    }
+
     const port = baseUrlOverride ? requestedPort : await findOpenPort(host, requestedPort, 30);
     const baseURL = baseUrlOverride ?? `http://${host}:${port}`;
     if (!existsSync(walkthroughMp4) && !existsSync(walkthroughWebm)) {

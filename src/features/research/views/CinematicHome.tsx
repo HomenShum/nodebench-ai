@@ -63,13 +63,6 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
 
     return (
         <div className="min-h-full bg-surface flex flex-col items-center justify-center p-6 relative overflow-hidden">
-
-            {/* Background Atmosphere */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/20 dark:bg-indigo-500/[0.06] rounded-full blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-100/20 dark:bg-indigo-500/[0.06] rounded-full blur-[120px]" />
-            </div>
-
             {/* Main Content — Centered */}
             <div className="relative z-10 flex flex-col items-center w-full max-w-2xl">
 
@@ -78,41 +71,14 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.15 }}
-                    className="text-center mb-6"
+                    className="text-center mb-8"
                 >
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-950 dark:text-gray-50 tracking-tight">
+                    <h1 className="text-3xl md:text-4xl font-bold text-content tracking-tight">
                         {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
                     </h1>
-                    <p className="mt-2 text-sm text-content-secondary">
+                    <p className="mt-3 text-sm text-content-secondary">
                         Your AI research workspace — signals, briefs, and agents in one place.
                     </p>
-                </motion.div>
-
-                {/* Signature Orb — The visual identity, prominent above the input */}
-                <motion.div
-                    initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
-                    className="relative mb-8 flex items-center justify-center"
-                >
-                    <div className="w-44 h-44 md:w-56 md:h-56 relative flex items-center justify-center">
-                        {/* Rotating outer rings — reduced from 4 to 2 for lower motion budget */}
-                        <div className={`absolute inset-0 will-change-transform ${reduceMotion ? '' : 'motion-safe:animate-spin-slow'}`}>
-                            <div className="absolute inset-0 rounded-full border border-gray-300/80 dark:border-white/[0.1] scale-100" />
-                            <div className="absolute inset-0 rounded-full border border-indigo-300/30 dark:border-indigo-500/[0.1] scale-[1.3]" />
-                        </div>
-                        {/* Glow halo */}
-                        <div className="absolute inset-0 rounded-full bg-indigo-200/20 dark:bg-indigo-500/[0.08] blur-2xl scale-[1.3]" />
-                        {/* Pulsing core */}
-                        <div className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-white dark:bg-[#1a1a1f] shadow-[0_0_80px_rgba(99,102,241,0.15)] dark:shadow-[0_0_80px_rgba(99,102,241,0.12)] border border-gray-200/80 dark:border-white/[0.08] overflow-hidden ${reduceMotion ? '' : 'motion-safe:animate-pulse-subtle'}`}>
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/60 via-white to-violet-100/40 dark:from-indigo-500/[0.12] dark:via-transparent dark:to-violet-500/[0.08] rounded-full" />
-                            {/* Inner dot — brand mark */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-3 h-3 rounded-full bg-indigo-500/60 dark:bg-indigo-400/50 shadow-[0_0_20px_rgba(99,102,241,0.4)]" />
-                            </div>
-                            {/* Scanning line removed — decoration without meaning */}
-                        </div>
-                    </div>
                 </motion.div>
 
                 {/* Hero Input — The ONE action */}

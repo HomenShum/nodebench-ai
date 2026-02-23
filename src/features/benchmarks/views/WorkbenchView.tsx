@@ -147,10 +147,11 @@ function CapabilityDeepDive() {
 
 export function WorkbenchView() {
   return (
-    <div className="flex flex-col h-full overflow-y-auto bg-surface">
+    <div className="nb-page-shell flex flex-col">
       <WorkbenchHeader />
 
-      <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-6 space-y-8 pb-24">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-8">
         {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
             If `useQuery` throws (missing function/schema), fall back to static empty states
             instead of a hard error page. */}
@@ -160,6 +161,7 @@ export function WorkbenchView() {
 
         {/* 4. Existing eval charts — collapsible deep dive */}
         <CapabilityDeepDive />
+        </div>
       </div>
     </div>
   );

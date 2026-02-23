@@ -99,8 +99,9 @@ export function ForYouFeed() {
 
   if (!displayFeed) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="space-y-4 no-skeleton-animation" aria-busy="true" aria-live="polite">
+      <div className="nb-page-shell">
+        <div className="nb-page-inner">
+          <div className="nb-page-frame-narrow space-y-4 no-skeleton-animation" aria-busy="true" aria-live="polite">
           {/* Header skeleton */}
           <div className="flex items-center justify-between mb-6">
             <div className="space-y-2">
@@ -112,7 +113,7 @@ export function ForYouFeed() {
           {/* Card grid skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3">
+              <div key={i} className="nb-surface-card p-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-muted/60 rounded-lg" />
                   <div className="flex-1 space-y-2">
@@ -127,6 +128,7 @@ export function ForYouFeed() {
               </div>
             ))}
           </div>
+          </div>
         </div>
       </div>
     );
@@ -134,23 +136,29 @@ export function ForYouFeed() {
 
   if (!displayFeed.items?.length) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-6">
-          <h2 className="text-xl font-light text-foreground mb-2">Nothing to show yet</h2>
-          <p className="text-muted-foreground text-sm font-light">Check back soon for the latest updates.</p>
+      <div className="nb-page-shell">
+        <div className="nb-page-inner">
+          <div className="nb-page-frame-narrow">
+            <div className="nb-surface-card text-center max-w-md mx-auto px-6 py-12">
+              <h2 className="text-xl font-light text-foreground mb-2">Nothing to show yet</h2>
+              <p className="text-muted-foreground text-sm font-light">Check back soon for the latest updates.</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background text-foreground">
+    <div ref={containerRef} className="nb-page-shell text-foreground">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame-narrow">
       {/* Masthead */}
-      <header className="border-b border-border/70">
-        <div className="max-w-4xl mx-auto px-6 py-6">
+      <header className="nb-surface-card border-edge/80">
+        <div className="px-6 py-6">
           <div className="flex items-baseline justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className="type-page-title">
                 {isPublicMode ? "The Daily Brief" : "For You"}
               </h1>
               <p className="text-sm text-muted-foreground mt-1 font-light">
@@ -167,7 +175,7 @@ export function ForYouFeed() {
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="px-6 py-8">
         {dateGroups.map((group: DateGroup, groupIndex: number) => {
           const isCollapsed = collapsedDates.has(group.dateString);
           const heroItem = group.items[0];
@@ -260,6 +268,8 @@ export function ForYouFeed() {
           </p>
         </footer>
       </main>
+        </div>
+      </div>
     </div>
   );
 }
@@ -366,7 +376,7 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
             <button
               type="button"
               onClick={handleSave}
-              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-indigo-700 bg-indigo-50 dark:text-indigo-200 dark:bg-indigo-500/20' : 'text-muted-foreground hover:text-foreground/80 hover:bg-muted/40'
+              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]' : 'text-muted-foreground hover:text-foreground/80 hover:bg-muted/40'
                 }`}
               title={saved ? "Saved" : "Save for later"}
               aria-label={saved ? "Saved" : "Save for later"}
@@ -377,7 +387,7 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
         </div>
 
         {/* Visual Element */}
-        <div className="w-full md:w-64 h-40 md:h-auto bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-blue-500/10 dark:from-indigo-500/20 dark:via-purple-500/15 dark:to-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0 border border-indigo-200/20 dark:border-indigo-400/10">
+        <div className="w-full md:w-64 h-40 md:h-auto bg-gradient-to-br from-[var(--accent-primary-bg)] via-[var(--bg-secondary)] to-[var(--accent-primary-bg)] rounded-lg flex items-center justify-center flex-shrink-0 border border-edge/70">
           <span className="text-5xl opacity-60">{getSourceIcon(item)}</span>
         </div>
       </div>

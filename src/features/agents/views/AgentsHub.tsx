@@ -84,11 +84,11 @@ function QuickStatsBar() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4 no-skeleton-animation"
+            className="bg-surface rounded-lg border border-edge p-4 no-skeleton-animation"
             aria-busy="true"
           >
-            <div className="h-6 w-12 bg-[var(--bg-secondary)] rounded mb-1" />
-            <div className="h-4 w-20 bg-[var(--bg-secondary)] rounded" />
+            <div className="h-6 w-12 bg-surface-secondary rounded mb-1" />
+            <div className="h-4 w-20 bg-surface-secondary rounded" />
           </div>
         ))}
       </div>
@@ -100,13 +100,13 @@ function QuickStatsBar() {
       value: stats.totalAgents,
       label: "AI Assistants",
       icon: Bot,
-      color: "text-[var(--accent-primary)]",
+      color: "text-indigo-600 dark:text-indigo-400",
     },
     {
       value: stats.activeNow,
       label: "Active Now",
       icon: Activity,
-      color: stats.activeNow > 0 ? "text-green-600" : "text-[var(--text-muted)]",
+      color: stats.activeNow > 0 ? "text-green-600" : "text-content-muted",
     },
     {
       value: stats.tasksCompleted,
@@ -135,7 +135,7 @@ function QuickStatsBar() {
         return (
           <div
             key={item.label}
-            className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-4"
+            className="bg-surface rounded-lg border border-edge p-4"
           >
             <div className="flex items-center gap-2">
               <Icon className={cn("w-4 h-4", item.color)} />
@@ -143,7 +143,7 @@ function QuickStatsBar() {
                 {item.value}
               </span>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-1">{item.label}</p>
+            <p className="text-xs text-content-muted mt-1">{item.label}</p>
           </div>
         );
       })}
@@ -250,16 +250,16 @@ function ActiveSwarmsSection() {
   }
 
   return (
-    <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+    <div className="bg-surface rounded-lg border border-edge">
       {/* Header */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-[var(--bg-hover)] transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+          <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="text-sm font-semibold text-content">
             Running Tasks
           </h3>
           <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600 border border-green-500/20">
@@ -267,21 +267,21 @@ function ActiveSwarmsSection() {
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+          <ChevronUp className="w-4 h-4 text-content-muted" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+          <ChevronDown className="w-4 h-4 text-content-muted" />
         )}
       </button>
 
       {/* Content */}
       {isExpanded && (
-        <div className="border-t border-[var(--border-color)]">
-          <Suspense fallback={<div className="p-4 text-xs text-[var(--text-muted)]">Loading swarm...</div>}>
+        <div className="border-t border-edge">
+          <Suspense fallback={<div className="p-4 text-xs text-content-muted">Loading swarm...</div>}>
             {runningSwarms.map((swarm) => (
               <SwarmLanesView
                 key={swarm.swarmId}
                 threadId={swarm.threadId}
-                className="border-b last:border-b-0 border-[var(--border-color)]"
+                className="border-b last:border-b-0 border-edge"
               />
             ))}
           </Suspense>
@@ -324,9 +324,9 @@ export function AgentsHub() {
   );
 
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative pb-24 lg:pb-0">
-      <div className="flex-1 p-8 relative z-10">
-        <div className="dashboard-container max-w-7xl mx-auto flex gap-8">
+    <div className="h-full w-full bg-surface overflow-y-auto relative pb-24 lg:pb-0">
+      <div className="flex-1 p-6 relative z-10">
+        <div className="dashboard-container max-w-6xl mx-auto flex gap-6">
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Top Divider Bar */}
@@ -368,8 +368,8 @@ export function AgentsHub() {
             {/* Agent Status Grid */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-4 h-4 text-[var(--accent-primary)]" />
-                <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h2 className="text-sm font-semibold text-content">
                   Available Agents
                 </h2>
               </div>
@@ -392,34 +392,34 @@ export function AgentsHub() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
-                  <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                  <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <h2 className="text-sm font-semibold text-content">
                     Task History
                   </h2>
                 </div>
                 <a
                   href="/#activity"
-                  className="flex items-center gap-1 text-xs text-[var(--accent-primary)] hover:underline"
+                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
                   Public Feed <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
-              <div className="rounded-lg border border-[var(--border-color)] overflow-hidden h-[500px]">
-                <Suspense fallback={<div className="h-full flex items-center justify-center text-xs text-[var(--text-muted)]">Loading tasks...</div>}>
+              <div className="rounded-lg border border-edge overflow-hidden h-[500px]">
+                <Suspense fallback={<div className="h-full flex items-center justify-center text-xs text-content-muted">Loading tasks...</div>}>
                   <TaskManagerView isPublic={false} className="h-full" />
                 </Suspense>
               </div>
             </div>
 
             {/* Coming Soon Banner */}
-            <div className="p-6 bg-gradient-to-r from-[var(--accent-primary-bg)] to-[var(--bg-secondary)] rounded-lg border border-[var(--accent-primary)]/20">
+            <div className="p-6 bg-gradient-to-r from-indigo-500/10 to-[var(--bg-secondary)] rounded-lg border border-indigo-500/30/20">
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
-                <h3 className="font-semibold text-[var(--text-primary)]">
+                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-semibold text-content">
                   Background Research Active
                 </h3>
               </div>
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="text-sm text-content-secondary">
                 AI is continuously researching in the background — scanning news, processing signals,
                 and publishing updates at no extra cost.
                 More powerful analysis runs when you ask for deep research.

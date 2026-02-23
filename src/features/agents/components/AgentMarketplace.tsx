@@ -19,7 +19,7 @@ export function AgentMarketplace() {
 
   if (!rankedAgents) {
     return (
-      <div className="p-8 text-center text-[var(--text-secondary)]">
+      <div className="p-6 text-center text-content-secondary">
         Loading agent marketplace...
       </div>
     );
@@ -29,11 +29,11 @@ export function AgentMarketplace() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-content flex items-center gap-2">
           <Zap className="w-6 h-6" />
           Automations
         </h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
+        <p className="text-sm text-content-secondary mt-1">
           Discover top-performing agents ranked by success rate and usage
         </p>
       </div>
@@ -69,7 +69,7 @@ export function AgentMarketplace() {
 
       {/* Agent List */}
       {rankedAgents.length === 0 ? (
-        <div className="p-8 text-center text-[var(--text-secondary)]">
+        <div className="p-6 text-center text-content-secondary">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No agents found for this category</p>
         </div>
@@ -94,7 +94,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
     if (rank === 1) return "text-yellow-500";
     if (rank === 2) return "text-content-muted";
     if (rank === 3) return "text-orange-600";
-    return "text-[var(--text-secondary)]";
+    return "text-content-secondary";
   };
 
   return (

@@ -16,7 +16,6 @@ export const BENCHMARK_MODELS: Array<{
   { id: "gpt-5-mini", displayName: "GPT-5 Mini", provider: "openai", providerLabel: "OpenAI", evalSlug: "gpt-5-mini" },
   { id: "deepseek-v3.2", displayName: "DeepSeek V3", provider: "open-source", providerLabel: "DeepSeek", evalSlug: "deepseek-v3.2" },
   { id: "qwen3-235b", displayName: "Qwen 3 235B", provider: "open-source", providerLabel: "Alibaba", evalSlug: "qwen3-235b" },
-  { id: "minimax-m2.1", displayName: "MiniMax M2", provider: "open-source", providerLabel: "MiniMax", evalSlug: "minimax-m2.1" },
 ];
 
 const PROVIDER_COLORS: Record<string, string> = {
@@ -167,7 +166,7 @@ export function ModelLeaderboard({
         <span className="text-xs text-content-muted">All time</span>
       </div>
 
-      <div className="scrollbar-none flex gap-3 overflow-x-auto pb-1">
+      <div className="scrollbar-none flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
         {entries.map((entry) => (
           <ModelCard key={entry.modelId} entry={entry} />
         ))}
@@ -188,7 +187,7 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
   })();
 
   return (
-    <div className="flex-none w-48 rounded-lg border border-edge bg-surface-secondary p-6 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
+    <div className="flex-none w-48 snap-start rounded-lg border border-edge bg-surface-secondary p-6 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
       <div className="flex items-start justify-between gap-1">
         <span className="text-sm font-semibold leading-tight text-content">{entry.displayName}</span>
         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${providerBadgeClass}`}>

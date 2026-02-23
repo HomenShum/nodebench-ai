@@ -79,7 +79,7 @@ function formatAxisLabel(axis: string) {
   const axisLabels: Record<string, string> = {
     design_compliance: "Design",
     layout: "Layout",
-    accessibility: "A11y",
+    accessibility: "Accessibility",
     visual_qa: "Visual QA",
     tool_correctness: "Tool correctness",
     artifact_integrity: "Artifact integrity",

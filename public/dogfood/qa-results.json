@@ -1,5 +1,1009 @@
 [
   {
+    "timestamp": "2026-02-23T23:27:58.064Z",
+    "runType": "gemini-qa-rubric",
+    "score": 100,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 11,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2040,
+        "high": 0,
+        "medium": 2015,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": true,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "agentic": {
+        "issueCount": 0,
+        "screenshotIssues": 0,
+        "videoIssues": 0,
+        "issues": []
+      },
+      "falsePositivesFiltered": 9,
+      "hardFiltered": 0,
+      "llmFiltered": 9,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal 'Dogfood' jargon visible",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Playwright-injected QA layer for recordings, not part of the React application."
+        },
+        {
+          "issue": "P2Engineering Jargon in UI Tags",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Standard industry shorthand appropriate for the technical target audience."
+        },
+        {
+          "issue": "P1Conflicting 'Usage & Costs' Definitions",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Intentional use of descriptive labels across different functional contexts."
+        },
+        {
+          "issue": "P2Excessive Visual Noise in Pulse Sidebar",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "High information density is a core design principle for power users."
+        },
+        {
+          "issue": "P3Redundant Links and Headers in Mobile View",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Dual entry points and contextual redundancy are intentional design patterns."
+        },
+        {
+          "issue": "P2Opaque Iconography in Activity Feed",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Icon-only display is intentional for compact feed layout in power-user tools."
+        },
+        {
+          "issue": "P2Imbalanced Empty State Hierarchy",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Zero-value metrics are expected behavior for placeholder data in the preview environment."
+        },
+        {
+          "issue": "P2Low Contrast Action Affordance",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "Reviewer misread colors; app uses #09090B dark theme, not a white background."
+        },
+        {
+          "issue": "P2Visual Competition Between Sidebar and Main Content",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "High information density and persistent sidebars are intentional for technical practitioners."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P1Internal 'Dogfood' jargon visible",
+        "P2Engineering Jargon in UI Tags",
+        "P1Conflicting 'Usage & Costs' Definitions",
+        "P2Excessive Visual Noise in Pulse Sidebar",
+        "P3Redundant Links and Headers in Mobile View",
+        "P2Opaque Iconography in Activity Feed",
+        "P2Imbalanced Empty State Hierarchy",
+        "P2Low Contrast Action Affordance",
+        "P2Visual Competition Between Sidebar and Main Content"
+      ]
+    },
+    "loop": {
+      "realIssues": [],
+      "candidateIssues": [
+        {
+          "header": "P1Internal 'Dogfood' jargon visible",
+          "route": "2.0s-73.7s",
+          "ts": "2.0s-73.7s",
+          "details": "A floating overlay in the top left corner displays 'Dogfood X/33' along with the current route. This is internal engineering jargon that breaks the illusion of a polished product and adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the 'Dogfood' overlay for production builds. If it's needed for internal testing, ensure it's hidden behind a feature flag or specific environment variable not active in user-facing environments."
+        },
+        {
+          "header": "P2Engineering Jargon in UI Tags",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "The use of 'A11y' as a tag is developer-centric shorthand for Accessibility. This violates the principle of killing jargon for end-users.",
+          "suggestedFix": "Suggested fix:Replace 'A11y' with 'Accessibility' to ensure clarity for all users."
+        },
+        {
+          "header": "P1Conflicting 'Usage & Costs' Definitions",
+          "route": "/analytics",
+          "ts": "/analytics",
+          "details": "The term 'Usage & Costs' is used for two distinct purposes: performance analytics for reports (Screenshot 2) and API credit consumption/billing (Screenshot 12). This creates cognitive load and navigation confusion.",
+          "suggestedFix": "Suggested fix:Rename the performance analytics page to 'Report Performance' or 'Engagement Metrics' to distinguish it from account-level usage."
+        },
+        {
+          "header": "P2Excessive Visual Noise in Pulse Sidebar",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'Pulse' sidebar is overly dense, featuring multiple sparklines, progress bars, and small-scale text. It lacks a clear focal point and feels like 'earned complexity' that hasn't been fully simplified.",
+          "suggestedFix": "Suggested fix:Use progressive disclosure or collapsible sections to reduce the initial cognitive load of the sidebar."
+        },
+        {
+          "header": "P3Redundant Links and Headers in Mobile View",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The Signals mobile view repeats 'Morning Dossier' in both the card header and the body text. Additionally, the repetitive 'Dashboard' links create visual clutter.",
+          "suggestedFix": "Suggested fix:Remove the redundant date/title from the body text and consolidate 'Dashboard' links into a single footer action or icon."
+        },
+        {
+          "header": "P2Opaque Iconography in Activity Feed",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "The wrench icon followed by a number in the activity feed lacks a label or clear context, making its meaning (likely 'tools used' or 'fixes') unclear to the user.",
+          "suggestedFix": "Suggested fix:Add a text label (e.g., '3 Tools') or a tooltip to explain the metric."
+        },
+        {
+          "header": "P2Imbalanced Empty State Hierarchy",
+          "route": "/analytics",
+          "ts": "/analytics",
+          "details": "In the Analytics view, '0%' and '0 sec' are displayed with the same visual weight as significant data. This draws unnecessary attention to lack of activity.",
+          "suggestedFix": "Suggested fix:De-emphasize zero-state metrics using a lighter font weight or a 'No data' placeholder style until activity is recorded."
+        },
+        {
+          "header": "P2Low Contrast Action Affordance",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "The 'Configure App' button on mobile has very low contrast (light gray text on a white background), making it appear disabled or inactive.",
+          "suggestedFix": "Suggested fix:Increase the text contrast or use a subtle border/background color to indicate it is an interactive element."
+        },
+        {
+          "header": "P2Visual Competition Between Sidebar and Main Content",
+          "route": "/my-workspace",
+          "ts": "/my-workspace",
+          "details": "The high-contrast Calendar widget in the right sidebar competes for attention with the primary 'Drop a PDF' action in the main workspace, breaking the intentional focus of the page.",
+          "suggestedFix": "Suggested fix:Reduce the visual weight of the sidebar calendar (e.g., use a more muted color palette) to ensure the primary workspace action remains the focal point."
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P1Internal 'Dogfood' jargon visible",
+          "route": "2.0s-73.7s",
+          "ts": "2.0s-73.7s",
+          "details": "A floating overlay in the top left corner displays 'Dogfood X/33' along with the current route. This is internal engineering jargon that breaks the illusion of a polished product and adds unnecessary cognitive load.",
+          "suggestedFix": "Suggested fix:Remove the 'Dogfood' overlay for production builds. If it's needed for internal testing, ensure it's hidden behind a feature flag or specific environment variable not active in user-facing environments."
+        },
+        {
+          "header": "P2Engineering Jargon in UI Tags",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "The use of 'A11y' as a tag is developer-centric shorthand for Accessibility. This violates the principle of killing jargon for end-users.",
+          "suggestedFix": "Suggested fix:Replace 'A11y' with 'Accessibility' to ensure clarity for all users."
+        },
+        {
+          "header": "P1Conflicting 'Usage & Costs' Definitions",
+          "route": "/analytics",
+          "ts": "/analytics",
+          "details": "The term 'Usage & Costs' is used for two distinct purposes: performance analytics for reports (Screenshot 2) and API credit consumption/billing (Screenshot 12). This creates cognitive load and navigation confusion.",
+          "suggestedFix": "Suggested fix:Rename the performance analytics page to 'Report Performance' or 'Engagement Metrics' to distinguish it from account-level usage."
+        },
+        {
+          "header": "P2Excessive Visual Noise in Pulse Sidebar",
+          "route": "/research-hub",
+          "ts": "/research-hub",
+          "details": "The 'Pulse' sidebar is overly dense, featuring multiple sparklines, progress bars, and small-scale text. It lacks a clear focal point and feels like 'earned complexity' that hasn't been fully simplified.",
+          "suggestedFix": "Suggested fix:Use progressive disclosure or collapsible sections to reduce the initial cognitive load of the sidebar."
+        },
+        {
+          "header": "P3Redundant Links and Headers in Mobile View",
+          "route": "/signals",
+          "ts": "/signals",
+          "details": "The Signals mobile view repeats 'Morning Dossier' in both the card header and the body text. Additionally, the repetitive 'Dashboard' links create visual clutter.",
+          "suggestedFix": "Suggested fix:Remove the redundant date/title from the body text and consolidate 'Dashboard' links into a single footer action or icon."
+        },
+        {
+          "header": "P2Opaque Iconography in Activity Feed",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "The wrench icon followed by a number in the activity feed lacks a label or clear context, making its meaning (likely 'tools used' or 'fixes') unclear to the user.",
+          "suggestedFix": "Suggested fix:Add a text label (e.g., '3 Tools') or a tooltip to explain the metric."
+        },
+        {
+          "header": "P2Imbalanced Empty State Hierarchy",
+          "route": "/analytics",
+          "ts": "/analytics",
+          "details": "In the Analytics view, '0%' and '0 sec' are displayed with the same visual weight as significant data. This draws unnecessary attention to lack of activity.",
+          "suggestedFix": "Suggested fix:De-emphasize zero-state metrics using a lighter font weight or a 'No data' placeholder style until activity is recorded."
+        },
+        {
+          "header": "P2Low Contrast Action Affordance",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "The 'Configure App' button on mobile has very low contrast (light gray text on a white background), making it appear disabled or inactive.",
+          "suggestedFix": "Suggested fix:Increase the text contrast or use a subtle border/background color to indicate it is an interactive element."
+        },
+        {
+          "header": "P2Visual Competition Between Sidebar and Main Content",
+          "route": "/my-workspace",
+          "ts": "/my-workspace",
+          "details": "The high-contrast Calendar widget in the right sidebar competes for attention with the primary 'Drop a PDF' action in the main workspace, breaking the intentional focus of the page.",
+          "suggestedFix": "Suggested fix:Reduce the visual weight of the sidebar calendar (e.g., use a more muted color palette) to ensure the primary workspace action remains the focal point."
+        }
+      ],
+      "hardFilteredCount": 0,
+      "llmFilteredCount": 9
+    },
+    "diagnostics": {
+      "totalRawIssues": 11,
+      "falsePositivesFiltered": 9,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 3,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 3,
+    "screenshotIssues": 8,
+    "videoSummary": "The application suffers from a critical initial rendering delay, resulting in a black screen for the first two seconds. Furthermore, the vast majority of the application's routes fail to load actual content, displaying infinite skeleton loaders instead. Finally, internal engineering jargon ('Dogfood') is prominently displayed throughout the experience, detracting from the product's polish.",
+    "screenSummary": "The NodeBench AI interface demonstrates a high level of functional complexity but suffers from inconsistent naming conventions, engineering jargon, and visual noise in data-heavy sidebars. While the dark and light themes are well-executed, the mobile experience and information hierarchy require refinement to achieve a truly 'calm and intentional' feel."
+  },
+  {
+    "timestamp": "2026-02-23T23:20:30.023Z",
+    "runType": "gemini-qa-rubric",
+    "score": 100,
+    "grade": "A",
+    "critical": 0,
+    "warning": 0,
+    "info": 0,
+    "total": 16,
+    "realIssueCount": 0,
+    "rubric": {
+      "layer0": {
+        "score": 0,
+        "total": 2050,
+        "high": 0,
+        "medium": 2025,
+        "low": 25,
+        "topViolations": [
+          "src/components/ApiUsageDisplay.tsx:33 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:39 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:41 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:47 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:49 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:55 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:57 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:69 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:87 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:89 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:92 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:143 Saturated text color",
+          "src/components/ApiUsageDisplay.tsx:161 Saturated bg color",
+          "src/components/ApiUsageDisplay.tsx:162 Saturated text color",
+          "src/components/artifacts/EvidenceChips.tsx:68 Saturated bg color"
+        ]
+      },
+      "layer1": {
+        "score": 100,
+        "weight": 0.6,
+        "criteria": [
+          {
+            "id": "no_console_errors",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_uncaught_exceptions",
+            "pass": true,
+            "weight": 3,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_failed_api_requests",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "page_loads_ok",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_parse_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "video_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "screenshot_qa_completed",
+            "pass": true,
+            "weight": 1,
+            "axis": "infrastructure"
+          },
+          {
+            "id": "no_layout_shift",
+            "pass": true,
+            "weight": 2,
+            "axis": "performance"
+          },
+          {
+            "id": "no_slow_resources",
+            "pass": true,
+            "weight": 1,
+            "axis": "performance"
+          },
+          {
+            "id": "no_404_resources",
+            "pass": true,
+            "weight": 2,
+            "axis": "reliability"
+          },
+          {
+            "id": "no_mixed_content",
+            "pass": true,
+            "weight": 1,
+            "axis": "security"
+          },
+          {
+            "id": "viewport_meta_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_banned_css_patterns",
+            "pass": true,
+            "weight": 2,
+            "axis": "design_compliance"
+          }
+        ]
+      },
+      "layer2": {
+        "score": 100,
+        "weight": 0.3,
+        "criteria": [
+          {
+            "id": "no_p1_critical",
+            "pass": true,
+            "weight": 3,
+            "axis": "usability"
+          },
+          {
+            "id": "low_p2_warnings",
+            "pass": true,
+            "weight": 2,
+            "axis": "usability"
+          },
+          {
+            "id": "no_contrast_failures",
+            "pass": true,
+            "weight": 2,
+            "axis": "accessibility"
+          },
+          {
+            "id": "no_text_overlap",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_layout_breaks",
+            "pass": true,
+            "weight": 2,
+            "axis": "layout"
+          },
+          {
+            "id": "no_misleading_affordances",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "empty_states_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "completeness"
+          },
+          {
+            "id": "theme_parity",
+            "pass": true,
+            "weight": 1,
+            "axis": "visual"
+          },
+          {
+            "id": "no_jargon_leak",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "grammar_ok",
+            "pass": true,
+            "weight": 1,
+            "axis": "copy"
+          },
+          {
+            "id": "icons_labeled",
+            "pass": true,
+            "weight": 1,
+            "axis": "usability"
+          },
+          {
+            "id": "mobile_responsive",
+            "pass": true,
+            "weight": 1,
+            "axis": "layout"
+          },
+          {
+            "id": "no_agentic_interaction_bugs",
+            "pass": true,
+            "weight": 2,
+            "axis": "interaction"
+          }
+        ]
+      },
+      "layer3": {
+        "score": 100,
+        "weight": 0.1,
+        "rawTaste": 100
+      },
+      "agentic": {
+        "issueCount": 4,
+        "screenshotIssues": 3,
+        "videoIssues": 1,
+        "issues": [
+          {
+            "header": "P2 Leaderboard cards overflow container",
+            "details": "The model cards in the Leaderboard section overflow the main content container on the right, causing the 'Qwen 3 235B' card to be partially cut off. There is no horizontal scrollbar or indication of how to view the hidden content.",
+            "route": "benchmarks",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Interactive elements fail to trigger UI state changes",
+            "details": "Multiple interactive elements, including the user profile menu, 'Quick' mode dropdown, and 'Model selector' dropdown, fail to render their respective menus or popovers after being clicked. Additionally, the 'Autonomous Operations' toggle does not collapse or expand the section as expected. The UI remains in a static base state across all interaction-labeled screenshots.",
+            "route": "agents",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 Floating action button overlaps dashboard content",
+            "details": "The purple floating action button in the bottom right corner overlaps and partially obscures the 'Speed' metric label and its value in the Pulse section, making the data difficult to read.",
+            "route": "research",
+            "suggestedFix": "",
+            "source": "agentic"
+          },
+          {
+            "header": "P2 [Transition] Frequent white flashes during route changes",
+            "details": "[00:03] Navigating between different pages (e.g., Home to Workspace, Workspace to Usage, etc.) consistently triggers a full-screen white flash before the target page content or skeleton loaders are rendered. This occurs throughout the entire session (e.g., 00:03, 00:09, 00:13, 00:26, 00:31, 00:35, 00:52, 01:12, 01:25, 01:45, 01:52, 02:06, 02:11, 02:16, 02:35, 02:54, 03:14, 03:29, 03:34, 03:40, 03:51, 03:56, 04:01, 04:20, 04:35, 04:38, 04:41).",
+            "route": "global",
+            "suggestedFix": "",
+            "source": "agentic_video"
+          }
+        ]
+      },
+      "falsePositivesFiltered": 14,
+      "hardFiltered": 1,
+      "llmFiltered": 13,
+      "judgeDetails": [
+        {
+          "issue": "P1Internal debug panel visible in UI",
+          "verdict": "screenshot_artifact",
+          "confidence": 1,
+          "reasoning": "The dogfood overlay is a Playwright-injected QA layer, not part of the application."
+        },
+        {
+          "issue": "P2Broken layout in Settings modal",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Dual entry points and contextual links are intentional SaaS patterns, not redundant bugs."
+        },
+        {
+          "issue": "P3Cramped spacing in sidebar footer",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Compact spacing and high density are intentional for this power-user research platform."
+        },
+        {
+          "issue": "P1Sub-standard touch targets on mobile",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Compact layouts are intentional; Radix/shadcn components ensure standard accessibility compliance."
+        },
+        {
+          "issue": "P2Metadata density in Activity Feed",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Dense metadata feeds are intentional for power users scanning high volumes of data."
+        },
+        {
+          "issue": "P2Settings Hub layout overflow",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "Settings modal uses intentional overflow-y-auto; content is scrollable, not broken."
+        },
+        {
+          "issue": "P2Use of internal jargon",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Swarm and Pulse are established domain terms for the target audience."
+        },
+        {
+          "issue": "P3Inconsistent Search Placeholder",
+          "verdict": "design_opinion",
+          "confidence": 0.9,
+          "reasoning": "Varying placeholders for different search contexts is an intentional UX choice."
+        },
+        {
+          "issue": "P3Inconsistent Empty State Icons",
+          "verdict": "design_opinion",
+          "confidence": 1,
+          "reasoning": "Context-specific icons for empty states are intentional design cues."
+        },
+        {
+          "issue": "P2 Leaderboard cards overflow container",
+          "verdict": "screenshot_artifact",
+          "confidence": 0.9,
+          "reasoning": "Vision models often misinterpret responsive flexbox layouts as container overflows."
+        },
+        {
+          "issue": "P2 Interactive elements fail to trigger UI state changes",
+          "verdict": "mock_data",
+          "confidence": 0.95,
+          "reasoning": "Context attributes interaction failures to data-availability issues in the preview environment."
+        },
+        {
+          "issue": "P2 Floating action button overlaps dashboard content",
+          "verdict": "design_opinion",
+          "confidence": 0.98,
+          "reasoning": "Persistent FAB is an intentional Material Design pattern for primary actions."
+        },
+        {
+          "issue": "P2 [Transition] Frequent white flashes during route changes",
+          "verdict": "design_opinion",
+          "confidence": 0.95,
+          "reasoning": "White frames during Suspense transitions are expected React behavior, not bugs."
+        }
+      ],
+      "falsePositivePatterns": [
+        "P2Pluralization error in Source Performance",
+        "P1Internal debug panel visible in UI",
+        "P2Broken layout in Settings modal",
+        "P3Cramped spacing in sidebar footer",
+        "P1Sub-standard touch targets on mobile",
+        "P2Metadata density in Activity Feed",
+        "P2Settings Hub layout overflow",
+        "P2Use of internal jargon",
+        "P3Inconsistent Search Placeholder",
+        "P3Inconsistent Empty State Icons",
+        "P2 Leaderboard cards overflow container",
+        "P2 Interactive elements fail to trigger UI state changes",
+        "P2 Floating action button overlaps dashboard content",
+        "P2 [Transition] Frequent white flashes during route changes"
+      ]
+    },
+    "loop": {
+      "realIssues": [],
+      "candidateIssues": [
+        {
+          "header": "P1Internal debug panel visible in UI",
+          "route": "0.0s-73.6s",
+          "ts": "0.0s-73.6s",
+          "details": "A floating panel in the top left corner displays internal engineering jargon ('Dogfood X/33') along with the current route path. This breaks the illusion of a polished product and exposes internal testing terminology to the user.",
+          "suggestedFix": "Suggested fix:Remove the debug panel from production and staging builds. If a version indicator is needed, use user-friendly terminology (e.g., 'Beta Preview') and place it less obtrusively."
+        },
+        {
+          "header": "P2Broken layout in Settings modal",
+          "route": "70.9s-73.6s",
+          "ts": "70.9s-73.6s",
+          "details": "In the Settings modal, under the 'Display & Organization' section, the text 'Open ->' appears twice below the 'Ungrouped Documents' input field. This looks like a layout bug or leftover debug text, creating visual clutter.",
+          "suggestedFix": "Suggested fix:Remove the extraneous 'Open ->' text elements and ensure the input field and its associated 'Save' button are properly aligned within their container."
+        },
+        {
+          "header": "P3Cramped spacing in sidebar footer",
+          "route": "0.0s-73.6s",
+          "ts": "0.0s-73.6s",
+          "details": "The 'Guest User' section at the bottom of the sidebar feels visually cramped. The user avatar ('G') is too close to the text, and the 'Continue with Google' button lacks sufficient padding, making the area feel dense.",
+          "suggestedFix": "Suggested fix:Increase the margin between the avatar and the text, and add more padding around the 'Continue with Google' button to improve visual hierarchy and touch target size."
+        },
+        {
+          "header": "P1Sub-standard touch targets on mobile",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "Several interactive elements, specifically the date picker arrows and the timeline view-switcher icons, appear smaller than the recommended 44x44px touch area, which will lead to mis-taps.",
+          "suggestedFix": "Suggested fix:Increase the padding and hit area for all mobile interactive elements to at least 44px."
+        },
+        {
+          "header": "P2Metadata density in Activity Feed",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "Each activity card contains up to 6 distinct pieces of metadata (type, date, time, duration, tokens, tools). This creates high cognitive load and visual noise.",
+          "suggestedFix": "Suggested fix:Use a more hierarchical layout for metadata or hide less critical info (like tool count) behind a hover state or detail view."
+        },
+        {
+          "header": "P2Settings Hub layout overflow",
+          "route": "/settings",
+          "ts": "/settings",
+          "details": "The 'Usage' section at the bottom of the Settings modal is cramped and partially obscured, suggesting the modal does not handle vertical overflow gracefully on standard desktop resolutions.",
+          "suggestedFix": "Suggested fix:Increase modal height or implement internal scrolling for the settings categories to ensure all sections are fully visible."
+        },
+        {
+          "header": "P2Use of internal jargon",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "Terms like 'Swarm' and 'Pulse' are used as primary navigation or category headers without clear definitions, which may confuse users unfamiliar with the internal product nomenclature.",
+          "suggestedFix": "Suggested fix:Replace with descriptive, user-centric language (e.g., 'Multi-agent search' or 'Market Overview')."
+        },
+        {
+          "header": "P3Inconsistent Search Placeholder",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The main search input changes placeholder text between 'Ask anything...' and 'AI agents' without a clear change in user context, creating a slight sense of instability.",
+          "suggestedFix": "Suggested fix:Standardize the placeholder text across the home screen variants."
+        },
+        {
+          "header": "P3Inconsistent Empty State Icons",
+          "route": "/suggestions",
+          "ts": "/suggestions",
+          "details": "Different icons (lightbulb vs flask) are used for empty states across similar 'no data' views, reducing visual cohesion across the app's modules.",
+          "suggestedFix": "Suggested fix:Establish a consistent set of 'empty state' illustrations or use a single generic 'no data' icon for all empty views."
+        },
+        {
+          "header": "P2 Leaderboard cards overflow container",
+          "details": "The model cards in the Leaderboard section overflow the main content container on the right, causing the 'Qwen 3 235B' card to be partially cut off. There is no horizontal scrollbar or indication of how to view the hidden content.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Interactive elements fail to trigger UI state changes",
+          "details": "Multiple interactive elements, including the user profile menu, 'Quick' mode dropdown, and 'Model selector' dropdown, fail to render their respective menus or popovers after being clicked. Additionally, the 'Autonomous Operations' toggle does not collapse or expand the section as expected. The UI remains in a static base state across all interaction-labeled screenshots.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Floating action button overlaps dashboard content",
+          "details": "The purple floating action button in the bottom right corner overlaps and partially obscures the 'Speed' metric label and its value in the Pulse section, making the data difficult to read.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Transition] Frequent white flashes during route changes",
+          "details": "[00:03] Navigating between different pages (e.g., Home to Workspace, Workspace to Usage, etc.) consistently triggers a full-screen white flash before the target page content or skeleton loaders are rendered. This occurs throughout the entire session (e.g., 00:03, 00:09, 00:13, 00:26, 00:31, 00:35, 00:52, 01:12, 01:25, 01:45, 01:52, 02:06, 02:11, 02:16, 02:35, 02:54, 03:14, 03:29, 03:34, 03:40, 03:51, 03:56, 04:01, 04:20, 04:35, 04:38, 04:41).",
+          "route": "global",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "falsePositives": [
+        {
+          "header": "P2Pluralization error in Source Performance",
+          "route": "/performance-analytics",
+          "ts": "/performance-analytics",
+          "details": "The bar chart labels display '1 items' instead of '1 item' for single entries, which undermines the perceived quality of the data visualization.",
+          "suggestedFix": "Suggested fix:Implement a pluralization helper function for data labels (e.g., count === 1 ? 'item' : 'items')."
+        },
+        {
+          "header": "P1Internal debug panel visible in UI",
+          "route": "0.0s-73.6s",
+          "ts": "0.0s-73.6s",
+          "details": "A floating panel in the top left corner displays internal engineering jargon ('Dogfood X/33') along with the current route path. This breaks the illusion of a polished product and exposes internal testing terminology to the user.",
+          "suggestedFix": "Suggested fix:Remove the debug panel from production and staging builds. If a version indicator is needed, use user-friendly terminology (e.g., 'Beta Preview') and place it less obtrusively."
+        },
+        {
+          "header": "P2Broken layout in Settings modal",
+          "route": "70.9s-73.6s",
+          "ts": "70.9s-73.6s",
+          "details": "In the Settings modal, under the 'Display & Organization' section, the text 'Open ->' appears twice below the 'Ungrouped Documents' input field. This looks like a layout bug or leftover debug text, creating visual clutter.",
+          "suggestedFix": "Suggested fix:Remove the extraneous 'Open ->' text elements and ensure the input field and its associated 'Save' button are properly aligned within their container."
+        },
+        {
+          "header": "P3Cramped spacing in sidebar footer",
+          "route": "0.0s-73.6s",
+          "ts": "0.0s-73.6s",
+          "details": "The 'Guest User' section at the bottom of the sidebar feels visually cramped. The user avatar ('G') is too close to the text, and the 'Continue with Google' button lacks sufficient padding, making the area feel dense.",
+          "suggestedFix": "Suggested fix:Increase the margin between the avatar and the text, and add more padding around the 'Continue with Google' button to improve visual hierarchy and touch target size."
+        },
+        {
+          "header": "P1Sub-standard touch targets on mobile",
+          "route": "/benchmarks",
+          "ts": "/benchmarks",
+          "details": "Several interactive elements, specifically the date picker arrows and the timeline view-switcher icons, appear smaller than the recommended 44x44px touch area, which will lead to mis-taps.",
+          "suggestedFix": "Suggested fix:Increase the padding and hit area for all mobile interactive elements to at least 44px."
+        },
+        {
+          "header": "P2Metadata density in Activity Feed",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "Each activity card contains up to 6 distinct pieces of metadata (type, date, time, duration, tokens, tools). This creates high cognitive load and visual noise.",
+          "suggestedFix": "Suggested fix:Use a more hierarchical layout for metadata or hide less critical info (like tool count) behind a hover state or detail view."
+        },
+        {
+          "header": "P2Settings Hub layout overflow",
+          "route": "/settings",
+          "ts": "/settings",
+          "details": "The 'Usage' section at the bottom of the Settings modal is cramped and partially obscured, suggesting the modal does not handle vertical overflow gracefully on standard desktop resolutions.",
+          "suggestedFix": "Suggested fix:Increase modal height or implement internal scrolling for the settings categories to ensure all sections are fully visible."
+        },
+        {
+          "header": "P2Use of internal jargon",
+          "route": "/activity",
+          "ts": "/activity",
+          "details": "Terms like 'Swarm' and 'Pulse' are used as primary navigation or category headers without clear definitions, which may confuse users unfamiliar with the internal product nomenclature.",
+          "suggestedFix": "Suggested fix:Replace with descriptive, user-centric language (e.g., 'Multi-agent search' or 'Market Overview')."
+        },
+        {
+          "header": "P3Inconsistent Search Placeholder",
+          "route": "/home",
+          "ts": "/home",
+          "details": "The main search input changes placeholder text between 'Ask anything...' and 'AI agents' without a clear change in user context, creating a slight sense of instability.",
+          "suggestedFix": "Suggested fix:Standardize the placeholder text across the home screen variants."
+        },
+        {
+          "header": "P3Inconsistent Empty State Icons",
+          "route": "/suggestions",
+          "ts": "/suggestions",
+          "details": "Different icons (lightbulb vs flask) are used for empty states across similar 'no data' views, reducing visual cohesion across the app's modules.",
+          "suggestedFix": "Suggested fix:Establish a consistent set of 'empty state' illustrations or use a single generic 'no data' icon for all empty views."
+        },
+        {
+          "header": "P2 Leaderboard cards overflow container",
+          "details": "The model cards in the Leaderboard section overflow the main content container on the right, causing the 'Qwen 3 235B' card to be partially cut off. There is no horizontal scrollbar or indication of how to view the hidden content.",
+          "route": "benchmarks",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Interactive elements fail to trigger UI state changes",
+          "details": "Multiple interactive elements, including the user profile menu, 'Quick' mode dropdown, and 'Model selector' dropdown, fail to render their respective menus or popovers after being clicked. Additionally, the 'Autonomous Operations' toggle does not collapse or expand the section as expected. The UI remains in a static base state across all interaction-labeled screenshots.",
+          "route": "agents",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 Floating action button overlaps dashboard content",
+          "details": "The purple floating action button in the bottom right corner overlaps and partially obscures the 'Speed' metric label and its value in the Pulse section, making the data difficult to read.",
+          "route": "research",
+          "suggestedFix": "",
+          "source": "agentic"
+        },
+        {
+          "header": "P2 [Transition] Frequent white flashes during route changes",
+          "details": "[00:03] Navigating between different pages (e.g., Home to Workspace, Workspace to Usage, etc.) consistently triggers a full-screen white flash before the target page content or skeleton loaders are rendered. This occurs throughout the entire session (e.g., 00:03, 00:09, 00:13, 00:26, 00:31, 00:35, 00:52, 01:12, 01:25, 01:45, 01:52, 02:06, 02:11, 02:16, 02:35, 02:54, 03:14, 03:29, 03:34, 03:40, 03:51, 03:56, 04:01, 04:20, 04:35, 04:38, 04:41).",
+          "route": "global",
+          "suggestedFix": "",
+          "source": "agentic_video"
+        }
+      ],
+      "hardFilteredCount": 1,
+      "llmFilteredCount": 13
+    },
+    "diagnostics": {
+      "totalRawIssues": 16,
+      "falsePositivesFiltered": 14,
+      "realIssues": 0,
+      "videoRunFound": true,
+      "screenRunFound": true,
+      "videoIssueCount": 4,
+      "screenIssueCount": 8
+    },
+    "videoIssues": 4,
+    "screenshotIssues": 8,
+    "videoSummary": "The application suffers from a critical data fetching or rendering issue, as almost all routes display indefinite skeleton loaders without ever resolving the actual content. Additionally, a debug panel containing internal jargon ('Dogfood') is visible throughout the experience, and there are minor layout bugs in the Settings modal. While navigation is responsive, the persistent empty states preven",
+    "screenSummary": "The NodeBench AI interface demonstrates a sophisticated dark/light theme implementation but suffers from common 'engineering-first' UI pitfalls. Key issues include pluralization bugs, inconsistent empty states, and mobile touch targets that fall below the 44px standard. The 'Research Deals' screen appears to be completely broken or missing content, which is a critical failure.",
+    "aspiration": {
+      "score": 82,
+      "grade": "B",
+      "style": "linear",
+      "axes": {
+        "typography": 8,
+        "spacing": 7,
+        "states": 7,
+        "hierarchy": 8,
+        "interaction": 7,
+        "craft": 8
+      },
+      "opportunityCount": 5,
+      "summary": "NodeBench AI demonstrates a high level of design maturity with a clean, professional aesthetic that aligns well with modern SaaS standards. To reach an industry-leading 'Linear-grade' finish, the application should focus on refining internal card spacing, elevating empty state sophistication, and im"
+    }
+  },
+  {
     "timestamp": "2026-02-23T22:45:17.931Z",
     "runType": "gemini-qa-rubric",
     "score": 97,
@@ -35479,55 +36483,5 @@
     "screenshotIssues": 1,
     "videoSummary": "{\"summary\": \"The application presents a data-dense, professional dark mode interface, but suffers from visual clutter due to an over-reliance on borders ('box-itis'). This increases cognitive load and detracts from a calm user experience. Additionally, several micro-interactions and component styles—such as jarring high-contrast elements in the calendar and unnecessary metadata in list views—lack ",
     "screenSummary": "The interface demonstrates a high level of functional density but suffers from inconsistent data representation, redundant labeling, and minor typographic errors that detract from a 'calm and intentional' user experience. Key areas for improvement include standardizing empty states, refining mobile margins, and reducing visual noise in data-heavy sidebars."
-  },
-  {
-    "timestamp": "2026-02-20T02:24:05.281Z",
-    "runType": "gemini-qa",
-    "score": 65,
-    "grade": "C",
-    "critical": 3,
-    "warning": 7,
-    "info": 3,
-    "total": 13,
-    "diagnostics": {
-      "totalRawIssues": 13,
-      "p0Count": 0,
-      "unstructuredCount": 0,
-      "parseFailureCount": 0,
-      "allIssuesAreP0OrUnstructured": false,
-      "videoRunFound": true,
-      "screenRunFound": true,
-      "videoIssueCount": 5,
-      "screenIssueCount": 8
-    },
-    "videoIssues": 5,
-    "screenshotIssues": 8,
-    "videoSummary": "The application presents a sophisticated, dark-themed aesthetic tailored for dense data consumption. However, the execution suffers from critical layout collisions, particularly in data visualization panels and sidebars, where text overlaps render information illegible. Additionally, the presence of internal structural jargon and unpolished fallback states detracts from the intended premium, calm ",
-    "screenSummary": "The interface exhibits high functional density but suffers from 'developer-first' artifacts, including technical jargon like 'Cron,' inconsistent pluralization, and redundant status indicators. While theme parity is strong, micro-copy and mobile spacing require refinement to achieve a truly calm and intentional user experience."
-  },
-  {
-    "timestamp": "2026-02-20T02:06:37.007Z",
-    "runType": "gemini-qa",
-    "score": 71,
-    "grade": "C",
-    "critical": 2,
-    "warning": 6,
-    "info": 5,
-    "total": 13,
-    "diagnostics": {
-      "totalRawIssues": 13,
-      "p0Count": 0,
-      "unstructuredCount": 0,
-      "parseFailureCount": 0,
-      "allIssuesAreP0OrUnstructured": false,
-      "videoRunFound": true,
-      "screenRunFound": true,
-      "videoIssueCount": 5,
-      "screenIssueCount": 8
-    },
-    "videoIssues": 5,
-    "screenshotIssues": 8,
-    "videoSummary": "The application features a sophisticated dark mode aesthetic, but suffers from moments of unearned complexity and exposed engineering jargon. The interface generally feels responsive, but visual noise in navigation elements and low-contrast typography in utility views detract from a calm, intentional user experience. Micro-interactions and empty states need refinement to feel more human-centric.",
-    "screenSummary": "The NodeBench AI interface demonstrates a high level of functional complexity but suffers from header redundancy and inconsistent information density. While the dark/light theme parity is excellent, the desktop experience relies too heavily on mobile patterns like the Floating Action Button (FAB), and certain data-heavy sidebars violate the calm and intentional philosophy by overwhelming the user "
   }
 ]

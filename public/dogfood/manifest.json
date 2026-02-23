@@ -1,8 +1,8 @@
 {
-  "capturedAtIso": "2026-02-23T22:36:52.020Z",
+  "capturedAtIso": "2026-02-23T23:22:17.848Z",
   "basePath": "/dogfood/screenshots",
   "variants": {
-    "darkDesktop": 47,
+    "darkDesktop": 48,
     "lightDesktop": 33,
     "darkMobile": 33,
     "lightMobile": 33
@@ -1001,6 +1001,13 @@
       "label": "Timeline",
       "theme": "light",
       "viewport": "mobile"
+    },
+    {
+      "file": "assistant-panel.png",
+      "kind": "interaction",
+      "label": "Assistant Panel",
+      "theme": "dark",
+      "viewport": "desktop"
     },
     {
       "file": "command-palette.png",

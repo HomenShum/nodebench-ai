@@ -53,7 +53,8 @@ export function CostDashboard() {
   const hasData = metrics.totalRequests > 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-inner">
+      <div className="nb-page-frame space-y-6">
       <PageHeroHeader
         icon={<DollarSign className="w-5 h-5" />}
         title="Usage & Costs"
@@ -319,10 +320,10 @@ export function CostDashboard() {
         </div>
       </div>
       </>)}
+      </div>
     </div>
   );
 }
-
 // Helper component for metric cards
 interface MetricCardProps {
   icon: React.ReactNode;

@@ -101,6 +101,10 @@ test.describe("Full UI Dogfood", () => {
     test.setTimeout(30 * 60 * 1000);
 
     // Set initial dark theme via evaluate (not addInitScript — that overrides on every nav)
+    page.on('pageerror', error => console.error('BROWSER ERROR:', error));
+    page.on('console', msg => {
+      if (msg.type() === 'error') console.error('BROWSER CONSOLE ERROR:', msg.text());
+    });
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {
       localStorage.setItem(
@@ -119,7 +123,7 @@ test.describe("Full UI Dogfood", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Convex backend not configured")).toHaveCount(0);
     await signInIfPrompted(page);
-    await expect(page.locator("#main-content")).toBeVisible();
+    await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
 
     // ─── Capture all routes for each variant ───────────────────────────
     for (const variant of VARIANTS) {

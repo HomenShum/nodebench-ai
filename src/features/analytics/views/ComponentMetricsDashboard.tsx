@@ -15,6 +15,7 @@ import {
   ChevronUp,
   RefreshCw,
 } from 'lucide-react';
+import { PageHeroHeader } from '@/shared/ui/PageHeroHeader';
 
 interface MetricCardProps {
   title: string;
@@ -355,20 +356,16 @@ export default function ComponentMetricsDashboard() {
 
   return (
     <div className="min-h-full bg-surface p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-content flex items-center gap-2">
-              <BarChart3 size={32} />
-              Usage & Costs
-            </h1>
-            <p className="text-content-secondary mt-1">
-              Component-level performance metrics for reports
-            </p>
-          </div>
+        <div className="flex items-start justify-between gap-4">
+          <PageHeroHeader
+            icon={<BarChart3 size={24} />}
+            title="Usage & Costs"
+            subtitle="Component-level performance metrics for reports"
+          />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 mt-1">
             {/* Date Selector */}
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-content-muted" />
