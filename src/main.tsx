@@ -59,6 +59,27 @@ if (typeof window !== "undefined" && window.__nodebenchHasUserGesture !== true) 
   window.addEventListener("touchstart", mark, true);
 }
 
+// Global safety guard: suppress beforeunload confirmation prompts until the browser has observed
+// an actual user activation. Some third-party libraries register beforeunload handlers that may
+// attempt to show a confirmation dialog even during automated navigation, which Chromium blocks
+// and logs as a console error. This keeps long-running QA / Playwright sessions clean.
+if (typeof window !== "undefined") {
+  window.addEventListener(
+    "beforeunload",
+    (e) => {
+      try {
+        const ua = (navigator as any)?.userActivation;
+        if (ua && ua.hasBeenActive === false) {
+          e.stopImmediatePropagation();
+        }
+      } catch {
+        // ignore
+      }
+    },
+    { capture: true }
+  );
+}
+
 function MissingConvexUrlScreen() {
   const example = `VITE_CONVEX_URL="https://your-deployment.convex.cloud"`;
   return (

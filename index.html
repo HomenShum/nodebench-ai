@@ -38,6 +38,48 @@
         }
       })();
     </script>
+    <script>
+      // Guard beforeunload handlers until the browser has a real user activation.
+      // Some third-party libs register beforeunload prompts that Chromium blocks (and logs as an error)
+      // when navigation happens without a user gesture (common in automated QA / Playwright).
+      (function () {
+        try {
+          var origAdd = window.addEventListener;
+          var origRemove = window.removeEventListener;
+          var beforeUnloadMap = new WeakMap();
+
+          window.addEventListener = function (type, listener, options) {
+            if (type === "beforeunload" && typeof listener === "function") {
+              var wrapped = beforeUnloadMap.get(listener);
+              if (!wrapped) {
+                wrapped = function (e) {
+                  try {
+                    var ua = navigator.userActivation;
+                    if (ua && ua.hasBeenActive === false) return;
+                  } catch {
+                    // ignore
+                  }
+                  return listener.call(this, e);
+                };
+                beforeUnloadMap.set(listener, wrapped);
+              }
+              return origAdd.call(this, type, wrapped, options);
+            }
+            return origAdd.call(this, type, listener, options);
+          };
+
+          window.removeEventListener = function (type, listener, options) {
+            if (type === "beforeunload" && typeof listener === "function") {
+              var wrapped = beforeUnloadMap.get(listener);
+              return origRemove.call(this, type, wrapped || listener, options);
+            }
+            return origRemove.call(this, type, listener, options);
+          };
+        } catch {
+          // ignore
+        }
+      })();
+    </script>
     <style>
       html,
       body {

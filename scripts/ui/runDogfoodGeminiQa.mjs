@@ -678,6 +678,15 @@ function normalizeJsonish(jsonStr) {
     .replace(/:\s*'([^']*)'/g, ': "$1"');
 }
 
+function getGeminiCandidateText(data) {
+  const parts = Array.isArray(data?.candidates?.[0]?.content?.parts) ? data.candidates[0].content.parts : [];
+  return parts
+    .map((p) => (typeof p?.text === "string" ? p.text : ""))
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
 function tryParseJson(raw) {
   const candidate = normalizeJsonish(extractJsonSubstring(raw));
   try {
@@ -820,7 +829,7 @@ Return ONLY a JSON array. If no interactive elements are visible, return [].
     }
 
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+    const text = getGeminiCandidateText(data) || "[]";
 
     let actions = tryParseJson(text);
     if (!Array.isArray(actions)) {
@@ -1174,7 +1183,7 @@ Return a JSON array of issues found (or [] if the UI looks good):
   }
 
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+  const text = getGeminiCandidateText(data) || "[]";
   const parsed = tryParseJson(text);
 
   if (!Array.isArray(parsed)) return [];
@@ -1240,7 +1249,7 @@ Return a JSON array of issues (or [] if none):
       }
       if (!res.ok) continue;
       const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
+      const text = getGeminiCandidateText(data) || "[]";
       const parsed = tryParseJson(text);
       if (Array.isArray(parsed)) {
         issues.push(...parsed.map((p) => ({
@@ -1399,7 +1408,7 @@ Keep reasoning under 15 words per issue to avoid truncation.`;
     }
 
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const text = getGeminiCandidateText(data);
 
     // Parse JSON from response — handle markdown fences + common LLM JSON quirks + truncation
     let jsonStr = text.replace(/^```json?\s*\n?/m, "").replace(/\n?```\s*$/m, "").trim();
@@ -1894,7 +1903,303 @@ async function throwIfQaErrorVisible(page, label) {
   throw new Error(`${label}: ${errText.replace(/^qa error:\s*/i, "").trim() || "QA failed"}`);
 }
 
-async function runQaAndCapture({ baseURL, headless, noAgentic = false }) {
+function getDesignStyleGuidance(style) {
+  const s = String(style ?? "linear").toLowerCase();
+  if (s === "vercel") {
+    return "Vercel-grade: minimal, neutral palette, subtle borders, strong typography hierarchy, generous whitespace, crisp alignment, and motion only when it clarifies state.";
+  }
+  if (s === "chatgpt" || s === "openai") {
+    return "ChatGPT-grade: high legibility, calm surfaces, clean spacing rhythm, subtle separators, predictable focus states, and simple interactions that feel instant.";
+  }
+  if (s === "ive" || s === "jony" || s === "jony-ive") {
+    return "Jony Ive-grade craft: remove ornamental chrome, prioritize typography + negative space, unify radii and stroke weights, restrained color, and calm physical-feeling micro-interactions.";
+  }
+  return "Linear-grade: dense-but-calm, consistent spacing system, subtle borders, restrained color, clean type scale, fast and crisp interactions, and quiet empty/loading states.";
+}
+
+async function collectDesignScreens(outDir, style, maxImages = 10) {
+  // NOTE(coworker): Avoid hardcoding route lists. Learn screens from the app's dogfood manifest.
+  // Always include /benchmarks if present, then add a small representative subset.
+  const manifestPath = path.join(process.cwd(), "public", "dogfood", "manifest.json");
+  const basePath = path.join(process.cwd(), "public", "dogfood", "screenshots");
+
+  let manifest = null;
+  try {
+    const raw = await fs.readFile(manifestPath, "utf8");
+    manifest = JSON.parse(raw);
+  } catch {
+    manifest = null;
+  }
+
+  const items = Array.isArray(manifest?.items) ? manifest.items : [];
+  const routeItems = items.filter((i) => i.kind === "route" && i.viewport === "desktop");
+  const interactionItems = items.filter((i) => i.kind !== "route" && i.viewport === "desktop");
+
+  function toScreen(i) {
+    const file = String(i?.file ?? "");
+    const full = path.join(basePath, file);
+    return {
+      file,
+      fullPath: full,
+      label: String(i?.label ?? ""),
+      kind: String(i?.kind ?? ""),
+      theme: String(i?.theme ?? ""),
+      viewport: String(i?.viewport ?? ""),
+    };
+  }
+
+  const screens = [];
+  const seenFiles = new Set();
+  function add(i) {
+    const s = toScreen(i);
+    if (!s.file) return;
+    if (seenFiles.has(s.file)) return;
+    if (!existsSync(s.fullPath)) return;
+    seenFiles.add(s.file);
+    screens.push(s);
+  }
+
+  const wantLightFirst = ["vercel", "linear", "ive", "jony", "jony-ive"].includes(String(style ?? "").toLowerCase());
+  const primaryTheme = wantLightFirst ? "light" : "dark";
+  const secondaryTheme = primaryTheme === "light" ? "dark" : "light";
+
+  const bench = routeItems.filter((i) => /benchmarks/i.test(String(i?.file ?? "")) || /benchmarks/i.test(String(i?.label ?? "")));
+  for (const t of [primaryTheme, secondaryTheme]) {
+    const match = bench.find((i) => i.theme === t);
+    if (match) add(match);
+  }
+
+  const cmd = interactionItems.find((i) => /command palette/i.test(String(i?.label ?? "")) && i.theme === primaryTheme);
+  if (cmd) add(cmd);
+  const settings = interactionItems.find((i) => /account|settings/i.test(String(i?.label ?? "")) && i.theme === primaryTheme);
+  if (settings) add(settings);
+
+  const byTheme = routeItems.filter((i) => i.theme === primaryTheme);
+  const priority = ["Home", "Research", "Agents", "Activity", "Timeline", "Documents"];
+  for (const label of priority) {
+    const match = byTheme.find((i) => String(i?.label ?? "").toLowerCase().includes(label.toLowerCase()));
+    if (match) add(match);
+  }
+  for (const i of byTheme) {
+    if (screens.length >= maxImages) break;
+    add(i);
+  }
+
+  try {
+    const entries = await fs.readdir(outDir);
+    const agentic = entries.filter((e) => e.startsWith("agentic-") && e.endsWith(".png")).slice(0, 4);
+    for (const f of agentic) {
+      if (screens.length >= maxImages) break;
+      const fullPath = path.join(outDir, f);
+      if (!existsSync(fullPath)) continue;
+      screens.push({ file: f, fullPath, label: f.replace(/^agentic-/, "").replace(/\.png$/, ""), kind: "agentic", theme: "", viewport: "desktop" });
+    }
+  } catch {
+    // ignore
+  }
+
+  return screens.slice(0, maxImages);
+}
+
+async function runDesignOpportunityQa(outDir, style, maxImages = 10) {
+  const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+  if (!GEMINI_API_KEY) {
+    // eslint-disable-next-line no-console
+    console.warn("  ⚠ No GEMINI_API_KEY — skipping design opportunity QA");
+    return { opportunities: [], summary: "" };
+  }
+
+  const guidance = getDesignStyleGuidance(style);
+  const screens = await collectDesignScreens(outDir, style, maxImages);
+  await fs.writeFile(path.join(outDir, "design-screens.json"), JSON.stringify({ style, count: screens.length, screens }, null, 2), "utf8").catch(() => {});
+  if (screens.length === 0) return { opportunities: [], summary: "" };
+
+  const parts = [];
+  for (const s of screens) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const buf = await fs.readFile(s.fullPath);
+      parts.push({ inline_data: { mime_type: "image/png", data: buf.toString("base64") } });
+      parts.push({ text: `[Screen] file=${s.file} label=${s.label} kind=${s.kind} theme=${s.theme} viewport=${s.viewport}` });
+    } catch {
+      // ignore per-screen failures
+    }
+  }
+
+  parts.push({
+    text: `You are a world-class design reviewer scoring a web application against industry-grade reference patterns.
+This is NOT bug-finding — you are identifying UPLIFT OPPORTUNITIES to match the best SaaS/AI products.
+
+Overall style target: ${guidance}
+
+REFERENCE DESIGN PATTERNS (score against these):
+
+VERCEL:
+- Typography: Inter/Geist font, 3 weights max (400/500/600), 16px base, 1.5 line-height
+- Spacing: 4px unit grid, consistent 8/16/24/32/48px rhythm. No random pixel values
+- Color: Neutral palette (gray-50→gray-950), single accent color, subtle borders (1px gray-200/800)
+- Empty states: Clean illustration + explanatory copy + single CTA. Never bare white space
+- Loading: Skeleton with subtle pulse animation matching content shape (not generic rectangles)
+- Tables: Clean row hover, no heavy zebra striping, subtle column separators
+- Cards: Minimal shadow (shadow-sm), consistent border-radius (8px), generous internal padding
+
+LINEAR:
+- Density: Dense-but-calm — tight spacing but with breathing room between sections
+- Status: Color-coded dots (green/amber/red/gray) for state, never text badges for status
+- Lists: Hover reveals actions, no always-visible action buttons cluttering rows
+- Typography: Strong hierarchy — section titles semibold, items regular, metadata muted
+- Motion: Instant transitions (<150ms), spring physics on open/close, no gratuitous delays
+- Keyboard: Every action reachable via keyboard shortcut, visible in tooltips
+
+CHATGPT:
+- Interaction feedback: Instant visual response on every click (button pulse, background shift, icon spin)
+- Progressive disclosure: Start minimal, reveal detail on demand (expandable sections, hover info)
+- Conversation UX: Clear turn-taking, typing indicators, streaming token reveal
+- Simplicity: Max 3-4 actions visible per context. More behind overflow menus
+- Empty states: Friendly microcopy, suggested actions, zero technical language
+
+STRIPE:
+- Data density: Dense metric displays with clear visual hierarchy (large number → label → sparkline)
+- Tables: Sortable columns, pagination, filter chips — all inline, no modal interruptions
+- Charts: Clean axes, muted gridlines, single accent for primary metric, tooltip on hover
+- Detail views: Master-detail pattern, sidebar flyout, breadcrumb navigation
+- Copy: Professional, concise. Labels under 3 words, descriptions under 15 words
+
+NOTION:
+- Blocks: Everything is a composable block — consistent spacing between blocks (8px)
+- Hover affordances: Drag handles, action menus appear on hover, never clutter default view
+- Typography: Large page titles (28-32px), clean heading hierarchy (H1→H2→H3)
+- Whitespace: Generous margins (64px+ page margin), max-width content containers (720px)
+- Icons: Consistent icon family, 20px default size, muted gray default, accent on active
+
+SCORING AXES (rate each 0-10):
+1. TYPOGRAPHY: Weight differentiation, size scale, line-height, font consistency
+2. SPACING: Consistent rhythm (4/8/16/24px grid), section breathing, internal padding
+3. STATES: Empty states, loading skeletons, error states, hover/focus/active feedback
+4. HIERARCHY: Primary/secondary/tertiary content layers clearly distinguishable
+5. INTERACTION: Click feedback, hover reveals, transitions, keyboard shortcuts visible
+6. CRAFT: Alignment precision, border consistency, radius uniformity, color restraint
+
+CONSTRAINTS:
+- Respect the product intent: data-dense power-user tool. Do NOT suggest "add more whitespace everywhere"
+- Suggest SMALL, HIGH-LEVERAGE changes (CSS tweaks, spacing adjustments, state improvements)
+- Each opportunity must reference which reference app pattern it draws from
+- Avoid suggesting new color palettes — assume existing neutral design tokens
+- Focus on what would make the BIGGEST visual quality jump with the LEAST code change
+
+Return a JSON object:
+{
+  "summary": "2-3 sentences on overall design quality vs industry grade",
+  "aspirationScore": 0-100,
+  "axes": {
+    "typography": { "score": 0-10, "note": "brief" },
+    "spacing": { "score": 0-10, "note": "brief" },
+    "states": { "score": 0-10, "note": "brief" },
+    "hierarchy": { "score": 0-10, "note": "brief" },
+    "interaction": { "score": 0-10, "note": "brief" },
+    "craft": { "score": 0-10, "note": "brief" }
+  },
+  "opportunities": [
+    {
+      "priority": "P1"|"P2"|"P3",
+      "screenFile": "filename.png",
+      "area": "header|sidebar|cards|table|empty_state|forms|motion|typography|color|a11y",
+      "reference": "vercel|linear|chatgpt|stripe|notion",
+      "opportunity": "what to improve",
+      "why": "why this matters — reference the specific app pattern",
+      "fixHint": "a concrete CSS/component change",
+      "verify": "how to confirm improvement",
+      "confidence": 0.0-1.0
+    }
+  ]
+}
+Return ONLY JSON.`,
+  });
+
+  // Count image parts for diagnostic logging
+  const imageParts = parts.filter((p) => p.inline_data);
+  const textParts = parts.filter((p) => p.text);
+  const totalImageBytes = imageParts.reduce((sum, p) => sum + (p.inline_data?.data?.length ?? 0), 0);
+  // eslint-disable-next-line no-console
+  console.log(`    📸 ${imageParts.length} images (${(totalImageBytes * 0.75 / 1024 / 1024).toFixed(1)}MB) + ${textParts.length} text parts`);
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 8192, responseMimeType: "application/json" },
+      }),
+    });
+  } catch (fetchErr) {
+    // eslint-disable-next-line no-console
+    console.warn(`    ⚠ Design QA fetch failed: ${fetchErr.message}`);
+    await fs.writeFile(path.join(outDir, "design-opportunities.error.txt"), `fetch error: ${fetchErr.message}\n${fetchErr.stack}`, "utf8").catch(() => {});
+    await fs.writeFile(path.join(outDir, "design-opportunities.json"), JSON.stringify({ style, summary: "", aspirationScore: null, axes: {}, opportunities: [], error: fetchErr.message }, null, 2), "utf8").catch(() => {});
+    return { opportunities: [], summary: "", aspirationScore: null, axes: {} };
+  }
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    // eslint-disable-next-line no-console
+    console.warn(`    ⚠ Design QA API error: ${res.status} — ${errText.slice(0, 300)}`);
+    await fs.writeFile(path.join(outDir, "design-opportunities.error.txt"), `HTTP ${res.status}\n${errText}`, "utf8").catch(() => {});
+    await fs.writeFile(path.join(outDir, "design-opportunities.json"), JSON.stringify({ style, summary: "", aspirationScore: null, axes: {}, opportunities: [], error: `HTTP ${res.status}` }, null, 2), "utf8").catch(() => {});
+    return { opportunities: [], summary: "", aspirationScore: null, axes: {} };
+  }
+
+  const data = await res.json();
+  const text = getGeminiCandidateText(data);
+  await fs.writeFile(path.join(outDir, "design-opportunities.response.json"), JSON.stringify(data, null, 2), "utf8").catch(() => {});
+  await fs.writeFile(path.join(outDir, "design-opportunities.raw.txt"), text, "utf8").catch(() => {});
+
+  // Detect safety blocks / empty candidates
+  const blockReason = data?.candidates?.[0]?.finishReason;
+  const promptFeedback = data?.promptFeedback?.blockReason;
+  if (!text && (blockReason || promptFeedback)) {
+    // eslint-disable-next-line no-console
+    console.warn(`    ⚠ Design QA blocked by Gemini: finishReason=${blockReason}, promptFeedback=${promptFeedback}`);
+  }
+  if (!text) {
+    // eslint-disable-next-line no-console
+    console.warn(`    ⚠ Design QA returned empty text — Gemini may have filtered the response`);
+    await fs.writeFile(path.join(outDir, "design-opportunities.json"), JSON.stringify({ style, summary: "", aspirationScore: null, axes: {}, opportunities: [], error: "empty response", finishReason: blockReason, promptFeedback }, null, 2), "utf8").catch(() => {});
+    return { opportunities: [], summary: "", aspirationScore: null, axes: {} };
+  }
+
+  // Try direct JSON.parse first (Gemini responseMimeType returns clean JSON),
+  // then fall back to tryParseJson which runs extractJsonSubstring (prefers arrays over objects,
+  // which can strip the wrapper object and lose aspirationScore/axes/summary).
+  let parsedDirect = null;
+  try {
+    parsedDirect = JSON.parse(text);
+  } catch {
+    // not valid JSON — fall through to tryParseJson
+  }
+  const parsedAny = parsedDirect ?? tryParseJson(text);
+  const parsed = parsedAny && typeof parsedAny === "object" && !Array.isArray(parsedAny) ? parsedAny : null;
+  if (!parsedAny) {
+    // eslint-disable-next-line no-console
+    console.warn(`    ⚠ Design QA JSON parse failed — raw text length: ${text.length}`);
+    await fs.writeFile(path.join(outDir, "design-opportunities.json"), JSON.stringify({ style, summary: "", aspirationScore: null, axes: {}, opportunities: [], error: "parse_failed", rawLength: text.length }, null, 2), "utf8").catch(() => {});
+    return { opportunities: [], summary: "", aspirationScore: null, axes: {} };
+  }
+
+  const opportunities =
+    Array.isArray(parsedAny) ? parsedAny :
+      Array.isArray(parsed?.opportunities) ? parsed.opportunities : [];
+  const summary = String(parsed?.summary ?? "");
+  const aspirationScore = typeof parsed?.aspirationScore === "number" ? parsed.aspirationScore : null;
+  const axes = parsed?.axes ?? {};
+
+  await fs.writeFile(path.join(outDir, "design-opportunities.json"), JSON.stringify({ style, summary, aspirationScore, axes, opportunities }, null, 2), "utf8");
+  return { opportunities, summary, aspirationScore, axes };
+}
+
+async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = false, designStyle = "linear", designMaxImages = 10 }) {
   const outDir = path.join(process.cwd(), ".tmp", "dogfood-gemini-qa");
   // Archive previous run before overwriting — preserves before/after for regression diffs.
   await archivePreviousRun(outDir);
@@ -2181,6 +2486,79 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false }) {
     await fs.writeFile(path.join(outDir, "rubric-scorecard.json"), JSON.stringify(qaEntry.rubric, null, 2), "utf8");
     // Save loop context (real issues, false positives, etc.) for iterative edit cycles.
     await fs.writeFile(path.join(outDir, "qa-loop-context.json"), JSON.stringify(qscore.loop ?? {}, null, 2), "utf8").catch(() => {});
+
+    if (design) {
+      try {
+        // eslint-disable-next-line no-console
+        console.log(`  🎨 Design aspiration QA (${designStyle}, benchmarked against Vercel/Linear/ChatGPT/Stripe/Notion)...`);
+        const { opportunities, summary, aspirationScore, axes } = await runDesignOpportunityQa(outDir, designStyle, designMaxImages);
+        // eslint-disable-next-line no-console
+        console.log(`\n${"─".repeat(60)}`);
+        if (aspirationScore !== null) {
+          const aGrade = aspirationScore >= 90 ? "A" : aspirationScore >= 75 ? "B" : aspirationScore >= 60 ? "C" : aspirationScore >= 40 ? "D" : "F";
+          // eslint-disable-next-line no-console
+          console.log(`  ASPIRATION SCORE: ${aspirationScore}/100 (${aGrade}) — vs ${designStyle} + industry grade`);
+        }
+        if (axes && Object.keys(axes).length > 0) {
+          const axisLabels = { typography: "Typography", spacing: "Spacing", states: "States", hierarchy: "Hierarchy", interaction: "Interaction", craft: "Craft" };
+          for (const [key, val] of Object.entries(axes)) {
+            const label = axisLabels[key] ?? key;
+            const s = val?.score ?? "?";
+            const bar = typeof s === "number" ? "█".repeat(s) + "░".repeat(10 - s) : "??????????";
+            const note = val?.note ?? "";
+            // eslint-disable-next-line no-console
+            console.log(`    ${bar} ${s}/10 ${label}${note ? ` — ${note.slice(0, 60)}` : ""}`);
+          }
+        }
+        if (summary) {
+          // eslint-disable-next-line no-console
+          console.log(`  Summary: ${summary.slice(0, 200)}`);
+        }
+        // eslint-disable-next-line no-console
+        console.log(`  🎨 ${opportunities.length} uplift opportunities:`);
+        for (const opp of opportunities.slice(0, 8)) {
+          // eslint-disable-next-line no-console
+          console.log(`    ${opp.priority ?? "P3"} [${opp.reference ?? "?"}] ${(opp.opportunity ?? "").slice(0, 70)}`);
+          if (opp.fixHint) {
+            // eslint-disable-next-line no-console
+            console.log(`       Fix: ${opp.fixHint.slice(0, 80)}`);
+          }
+        }
+        if (opportunities.length > 8) {
+          // eslint-disable-next-line no-console
+          console.log(`    ... and ${opportunities.length - 8} more (see design-opportunities.json)`);
+        }
+        // eslint-disable-next-line no-console
+        console.log(`${"─".repeat(60)}`);
+
+        // Patch qa-results.json with aspiration score so the dashboard can display it
+        if (aspirationScore !== null || opportunities.length > 0) {
+          try {
+            const qaResultsPath = path.join(process.cwd(), "public", "dogfood", "qa-results.json");
+            const qaRaw = await fs.readFile(qaResultsPath, "utf8");
+            const qaHistory = JSON.parse(qaRaw);
+            if (Array.isArray(qaHistory) && qaHistory.length > 0) {
+              qaHistory[0].aspiration = {
+                score: aspirationScore,
+                grade: aspirationScore !== null ? (aspirationScore >= 90 ? "A" : aspirationScore >= 75 ? "B" : aspirationScore >= 60 ? "C" : aspirationScore >= 40 ? "D" : "F") : null,
+                style: designStyle,
+                axes: Object.fromEntries(Object.entries(axes).map(([k, v]) => [k, v?.score ?? null])),
+                opportunityCount: opportunities.length,
+                summary: summary.slice(0, 300),
+              };
+              await fs.writeFile(qaResultsPath, JSON.stringify(qaHistory, null, 2), "utf8");
+            }
+          } catch {
+            // non-fatal — aspiration score already in design-opportunities.json
+          }
+        }
+      } catch (designErr) {
+        // eslint-disable-next-line no-console
+        console.warn(`  ⚠ Design opportunity QA failed (non-fatal): ${designErr.message}`);
+        // eslint-disable-next-line no-console
+        console.warn(`    Stack: ${(designErr.stack ?? "").split("\n").slice(0, 3).join(" → ")}`);
+      }
+    }
     await fs.writeFile(path.join(outDir, "debug.log"), debugLines.join("\n"), "utf8");
     return { outDir, qaEntry };
   } catch (e) {
@@ -2214,6 +2592,11 @@ async function main() {
   const autoApply = args.has("auto-apply");
   const maxIterations = Number(args.get("max-iterations") ?? 5);
   const targetScore = Number(args.get("target-score") ?? 95);
+  const design = !args.has("no-design"); // Design aspiration scoring ON by default
+  const designStyle = args.get("design-style") ?? "linear";
+  const designMaxImages = Number(args.get("design-max-images") ?? 10);
+  const designEdits = args.has("design-edits");
+  const targetAspiration = Number(args.get("target-aspiration") ?? 90);
 
   const repoRoot = process.cwd();
   const nodeCmd = process.execPath;
@@ -2299,7 +2682,7 @@ async function main() {
       await waitForPort(host, port, 240_000);
       await waitForHttpOk(baseURL, 240_000);
 
-      const { outDir, qaEntry } = await runQaAndCapture({ baseURL, headless, noAgentic });
+      const { outDir, qaEntry } = await runQaAndCapture({ baseURL, headless, noAgentic, design, designStyle, designMaxImages });
       // eslint-disable-next-line no-console
       console.log(`Gemini QA artifacts written to: ${outDir}`);
       return { outDir, qaEntry };
@@ -2365,6 +2748,36 @@ async function main() {
     return Array.from(files).slice(0, 10);
   }
 
+  async function selectDesignContextFiles(designReport) {
+    // NOTE(coworker): Keep design patch prompts token-safe by scoping to a small,
+    // relevant set of "design system + page surface" files.
+    const files = new Set();
+    files.add(path.join(repoRoot, "src", "index.css"));
+    files.add(path.join(repoRoot, "tailwind.config.js"));
+    files.add(path.join(repoRoot, "src", "components", "CleanSidebar.tsx"));
+    files.add(path.join(repoRoot, "src", "components", "MainLayout.tsx"));
+
+    const opportunities = Array.isArray(designReport?.opportunities) ? designReport.opportunities : [];
+    const hint = JSON.stringify(opportunities.slice(0, 8));
+    const wantsBench = /benchmarks|workbench/i.test(hint);
+    const wantsSidebar = /sidebar|nav|navigation/i.test(hint);
+
+    if (wantsBench) {
+      const featureDir = path.join(repoRoot, "src", "features", "benchmarks");
+      const ok = await fs.stat(featureDir).then((s) => s.isDirectory()).catch(() => false);
+      if (ok) {
+        const found = await listFilesRecursively(featureDir, 12);
+        for (const f of found) files.add(f);
+      }
+    }
+
+    if (wantsSidebar) {
+      files.add(path.join(repoRoot, "src", "components", "CleanSidebar.tsx"));
+    }
+
+    return Array.from(files).slice(0, 10);
+  }
+
   async function proposePatchWithGemini(loopContext, outDir) {
     const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for loop patch proposal");
@@ -2420,7 +2833,7 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
     }
 
     const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const text = getGeminiCandidateText(data);
     const diff = extractGitDiff(text);
     if (!diff.startsWith("diff --git ")) {
       throw new Error("Gemini did not return a git diff");
@@ -2430,6 +2843,80 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
     await fs.mkdir(loopDir, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
     const patchPath = path.join(loopDir, `proposal_${stamp}.diff`);
+    await fs.writeFile(patchPath, diff, "utf8");
+    return patchPath;
+  }
+
+  async function proposeDesignPatchWithGemini(designReport, outDir) {
+    const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+    if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for design patch proposal");
+
+    const opportunities = Array.isArray(designReport?.opportunities) ? designReport.opportunities : [];
+    if (opportunities.length === 0) return null;
+
+    const contextFiles = await selectDesignContextFiles(designReport);
+    const fileBlobs = [];
+    for (const f of contextFiles) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const raw = await fs.readFile(f, "utf8");
+        const rel = path.relative(repoRoot, f).replace(/\\/g, "/");
+        const clipped = raw.length > 9000 ? `${raw.slice(0, 6500)}\n\n/* ...clipped... */\n\n${raw.slice(-2000)}` : raw;
+        fileBlobs.push(`FILE: ${rel}\n-----\n${clipped}\n-----`);
+      } catch {
+        // ignore unreadable files
+      }
+    }
+
+    const guidance = getDesignStyleGuidance(designStyle);
+    const prompt = `You are an expert product designer + frontend engineer working inside an existing repo.
+
+Goal: propose a minimal patch that improves UI craft toward ${designStyle} + industry-grade references (Vercel/Linear/ChatGPT/Stripe/Notion), without changing core UX flows.
+
+Constraints:
+- Output MUST be a git-apply compatible unified diff (start with "diff --git").
+- Modify ONLY the files included below (no new files).
+- Keep changes small, surgical, and consistent with the codebase.
+- Use existing tailwind tokens like bg-surface, border-edge, text-content. No hardcoded hex.
+- Honor prefers-reduced-motion (avoid flashy animations).
+- Prefer fixes that improve consistency (spacing rhythm, type hierarchy, hover/focus states, alignment).
+
+STYLE TARGET:
+${guidance}
+
+TOP OPPORTUNITIES (JSON):
+${JSON.stringify(opportunities.slice(0, 6), null, 2)}
+
+CONTEXT FILES:
+${fileBlobs.join("\n\n")}
+
+Return ONLY the unified diff. No commentary, no markdown fences.`;
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 8192 },
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`Design patch proposal API error: ${res.status} ${errText.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    const text = getGeminiCandidateText(data);
+    const diff = extractGitDiff(text);
+    if (!diff.startsWith("diff --git ")) {
+      throw new Error("Gemini did not return a git diff for design patch");
+    }
+
+    const loopDir = path.join(outDir, "loop");
+    await fs.mkdir(loopDir, { recursive: true });
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "_").slice(0, 19);
+    const patchPath = path.join(loopDir, `proposal_design_${stamp}.diff`);
     await fs.writeFile(patchPath, diff, "utf8");
     return patchPath;
   }
@@ -2473,7 +2960,28 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
 
       const scoreOk = (qaEntry?.score ?? 0) >= targetScore;
       const noRealIssues = (qaEntry?.realIssueCount ?? 0) === 0;
-      if (scoreOk && noRealIssues) {
+
+      let designReport = null;
+      let aspirationScore = null;
+      let aspirationOk = true;
+      let hasDesignOpportunities = false;
+      if (designEdits && design) {
+        try {
+          const raw = await fs.readFile(path.join(outDir, "design-opportunities.json"), "utf8");
+          designReport = JSON.parse(raw);
+          aspirationScore = typeof designReport?.aspirationScore === "number" ? designReport.aspirationScore : null;
+          const opps = Array.isArray(designReport?.opportunities) ? designReport.opportunities : [];
+          hasDesignOpportunities = opps.length > 0;
+          aspirationOk = aspirationScore === null ? true : aspirationScore >= targetAspiration;
+        } catch {
+          designReport = null;
+          aspirationScore = null;
+          aspirationOk = true;
+          hasDesignOpportunities = false;
+        }
+      }
+
+      if (scoreOk && noRealIssues && aspirationOk) {
         // eslint-disable-next-line no-console
         console.log(`✅ Loop complete: score=${qaEntry.score}/100 grade=${qaEntry.grade} realIssues=${qaEntry.realIssueCount}`);
         return;
@@ -2495,6 +3003,35 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
       }
 
       if (!loopContext || !Array.isArray(loopContext.realIssues) || loopContext.realIssues.length === 0) {
+        if (designEdits && design && !aspirationOk && hasDesignOpportunities && designReport) {
+          // eslint-disable-next-line no-console
+          console.log(`Design uplift: aspiration ${aspirationScore ?? "?"}/100 < ${targetAspiration}. Proposing patch...`);
+
+          const designPatchPath = await proposeDesignPatchWithGemini(designReport, outDir);
+          if (!designPatchPath) {
+            // eslint-disable-next-line no-console
+            console.log("Loop stopping: no design patch proposed");
+            return;
+          }
+
+          // Review + apply (same flow as bug patches)
+          // eslint-disable-next-line no-console
+          console.log(`\nPatch proposal written: ${designPatchPath}`);
+          await showPatchStat(designPatchPath).catch(() => {});
+
+          const shouldApply = autoApply || await promptYesNo("Apply this patch?", false);
+          if (!shouldApply) {
+            // eslint-disable-next-line no-console
+            console.log("Patch not applied. Review the diff and rerun with --auto-apply to continue.");
+            return;
+          }
+
+          await applyGitPatch(designPatchPath);
+          // eslint-disable-next-line no-console
+          console.log("Patch applied. Continuing loop...");
+          continue;
+        }
+
         // eslint-disable-next-line no-console
         console.log("🛑 Loop stopping: no real issues available for patch proposal");
         return;

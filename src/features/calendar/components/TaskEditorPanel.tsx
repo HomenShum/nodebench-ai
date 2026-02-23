@@ -193,6 +193,9 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (saveHint === "unsaved") {
         if (!didUserEditRef.current) return;
+        // Chromium blocks (and logs an error for) beforeunload prompts that fire without a prior user gesture.
+        // Gate prompts behind an explicit gesture so long-running automated navigations don't accumulate errors.
+        if (typeof window !== "undefined" && (window as any).__nodebenchHasUserGesture !== true) return;
         e.preventDefault();
         e.returnValue = "";
       }

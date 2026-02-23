@@ -52,7 +52,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       const saved = localStorage.getItem('nodebench-theme');
       if (saved) return { ...DEFAULT_THEME, ...JSON.parse(saved) };
 
+      // NOTE(coworker): Legacy support — some tests/older builds persisted a plain
+      // `theme=dark|light` key without the full ThemePreferences payload.
+      const legacyMode = localStorage.getItem('theme');
+
       const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
+      if (legacyMode === 'dark' || legacyMode === 'light') {
+        return { ...DEFAULT_THEME, mode: legacyMode, reducedMotion: prefersReducedMotion };
+      }
+
       return { ...DEFAULT_THEME, reducedMotion: prefersReducedMotion };
     } catch {
       return DEFAULT_THEME;
