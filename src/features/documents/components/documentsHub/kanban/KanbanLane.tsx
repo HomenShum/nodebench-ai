@@ -34,7 +34,7 @@ export function KanbanLane({ laneId, density, children }: KanbanLaneProps) {
               : laneId === "events"
                 ? "bg-amber-500/5"
                 : "bg-slate-500/5"
-      } ${isOver ? "ring-1 ring-[var(--accent-primary)]/40" : ""}`}
+      } ${isOver ? "ring-1 ring-indigo-500/40" : ""}`}
     >
       {children}
     </div>
