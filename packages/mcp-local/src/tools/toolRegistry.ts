@@ -2664,6 +2664,49 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "utility",
     complexity: "low",
   },
+
+  // ═══════════════════════════════════════════
+  // DESIGN GOVERNANCE — Spec enforcement & compliance
+  // ═══════════════════════════════════════════
+  {
+    name: "get_design_spec",
+    category: "design_governance",
+    tags: ["design", "governance", "spec", "tokens", "colors", "typography", "spacing", "components", "rules", "system"],
+    quickRef: {
+      nextAction: "Review the spec. Use check_design_compliance on specific files, or get_design_violations for a full scan.",
+      nextTools: ["check_design_compliance", "get_design_violations"],
+      methodology: "ai_flywheel",
+      tip: "Returns the machine-readable design governance spec — approved colors, typography classes, component primitives, spacing scale, uppercase policy. Read before making UI changes.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "check_design_compliance",
+    category: "design_governance",
+    tags: ["design", "compliance", "lint", "check", "validate", "file", "violations", "governance", "tokens", "patterns"],
+    quickRef: {
+      nextAction: "Fix the reported violations. Re-run check_design_compliance to verify. Then run get_design_violations for remaining issues.",
+      nextTools: ["get_design_violations", "get_design_spec"],
+      methodology: "ai_flywheel",
+      tip: "Validates a single file against the design governance spec. Returns violations with line numbers, severity, and fix suggestions.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "get_design_violations",
+    category: "design_governance",
+    tags: ["design", "violations", "scan", "audit", "governance", "bulk", "report", "compliance", "quality", "lint"],
+    quickRef: {
+      nextAction: "Focus on high-severity violations first. Use check_design_compliance on the worst files. Fix and re-scan.",
+      nextTools: ["check_design_compliance", "get_design_spec", "log_gap"],
+      methodology: "ai_flywheel",
+      tip: "Scans entire src/ for design governance violations. Filter by severity or category. Returns top files and fix suggestions.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -2734,6 +2777,7 @@ const CATEGORY_COMPLEXITY: Record<string, "low" | "medium" | "high"> = {
   qa_orchestration: "low",
   visual_qa: "medium",
   local_dashboard: "low",
+  design_governance: "low",
 };
 
 /** Per-tool complexity overrides (when category default is wrong) */

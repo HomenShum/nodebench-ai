@@ -50,6 +50,7 @@ import { skillUpdateTools } from "../tools/skillUpdateTools.js";
 import { overstoryTools } from "../tools/overstoryTools.js";
 import { visualQaTools } from "../tools/visualQaTools.js";
 import { localDashboardTools } from "../tools/localDashboardTools.js";
+import { designGovernanceTools } from "../tools/designGovernanceTools.js";
 import { getQuickRef, hybridSearch, TOOL_REGISTRY, SEARCH_MODES, ALL_REGISTRY_ENTRIES, WORKFLOW_CHAINS, tokenize, buildDenseIndex, getToolComplexity } from "../tools/toolRegistry.js";
 import type { McpTool } from "../types.js";
 
@@ -96,6 +97,7 @@ const domainTools: McpTool[] = [
   ...overstoryTools,
   ...visualQaTools,
   ...localDashboardTools,
+  ...designGovernanceTools,
 ];
 const metaTools = createMetaTools(domainTools);
 const allToolsWithoutDiscovery = [...domainTools, ...metaTools];
@@ -111,7 +113,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 describe("Static: tool structure", () => {
   it("should have 184 tools total", () => {
     // domain tools + 3 meta tools (findTools, getMethodology, check_mcp_setup) + 3 progressive discovery tools
-    expect(allTools.length).toBe(222);
+    expect(allTools.length).toBe(225);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {

@@ -54,7 +54,7 @@ export function createProgressiveDiscoveryTools(
               "research_writing", "flicker_detection", "figma_flow",
               "boilerplate", "benchmark", "session_memory", "gaia_solvers",
               "toon", "pattern", "git_workflow", "seo", "voice_bridge",
-              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "visual_qa", "local_dashboard", "progressive_discovery", "meta", "openclaw", "webmcp",
+              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "visual_qa", "local_dashboard", "design_governance", "progressive_discovery", "meta", "openclaw", "webmcp",
             ],
             description: "Filter by tool category (optional)",
           },

@@ -46,6 +46,7 @@ import { skillUpdateTools } from "./tools/skillUpdateTools.js";
 import { overstoryTools } from "./tools/overstoryTools.js";
 import { visualQaTools } from "./tools/visualQaTools.js";
 import { localDashboardTools } from "./tools/localDashboardTools.js";
+import { designGovernanceTools } from "./tools/designGovernanceTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -90,6 +91,7 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   qa_orchestration: overstoryTools,
   visual_qa: visualQaTools,
   local_dashboard: localDashboardTools,
+  design_governance: designGovernanceTools,
 };
 
 // Pre-computed tool name → toolset name lookup

@@ -60,7 +60,7 @@ const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "f
 const PRESETS: Record<string, string[]> = {
   default: DEFAULT_TOOLSETS,
   // Themed presets — bridge between default (50 tools) and full (175 tools)
-  web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa"],
+  web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance"],
   research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs"],
   data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web"],
   devops:       [...DEFAULT_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
@@ -87,7 +87,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
    function parseToolsets(): McpTool[] {
     if (cliArgs.includes("--help")) {
       const lines = [
-        "nodebench-mcp v2.28.0 — Development Methodology MCP Server",
+        "nodebench-mcp v2.29.0 — Development Methodology MCP Server",
         "",
         "Usage: nodebench-mcp [options]",
         "",
@@ -1606,7 +1606,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.28.0" },
+  { name: "nodebench-mcp-methodology", version: "2.29.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
