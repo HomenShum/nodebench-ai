@@ -502,7 +502,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -516,7 +516,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <button
                     type="button"
                     onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
-                    className="text-content-muted hover:text-content-secondary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 rounded-sm px-1"
+                    className="text-content-muted hover:text-content-secondary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm px-1"
                   >
                     Home
                   </button>
@@ -539,11 +539,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               onClick={commandPalette.toggle}
               aria-label="Open command palette"
               data-testid="open-command-palette"
-              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 hover:border-indigo-500/30/30"
+              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:border-primary/30"
             >
               <Search className="h-4 w-4 text-content-muted group-hover:text-content-secondary transition-colors" />
               <span className="flex-1 text-left group-hover:text-content-secondary transition-colors">Search...</span>
-              <kbd className="ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded px-1.5 py-0.5 font-mono group-hover:border-indigo-500/30/30 transition-colors shadow-sm">
+              <kbd className="ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded px-1.5 py-0.5 font-mono group-hover:border-primary/30 transition-colors shadow-sm">
                 {commandShortcutLabel}
               </kbd>
             </button>
@@ -556,7 +556,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setShowResearchDossier(false)}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-hover dark:hover:bg-white/10 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+                className="hidden sm:inline-flex items-center gap-1.5 btn-ghost-sm"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Home
@@ -565,12 +565,12 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all duration-200 relative active:scale-[0.98] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+                className="hidden sm:inline-flex items-center gap-1.5 btn-primary-sm relative"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Research
                 {(userStats?.unreadBriefings ?? 0) > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full inline-flex items-center justify-center font-bold">
                     {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
                   </span>
                 )}
@@ -582,16 +582,18 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               type="button"
               onClick={() => setShowFastAgent((open) => !open)}
               aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 ${
+              aria-pressed={showFastAgent}
+              data-testid="assistant-toggle"
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 showFastAgent
-                  ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                  ? "bg-[var(--accent-primary-bg)] text-content"
                   : "bg-surface text-content hover:bg-surface-hover"
               }`}
             >
               <Zap className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Assistant</span>
               {!showFastAgent && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-600/80 rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary/80" />
               )}
             </button>
 
@@ -602,7 +604,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             <button
               type="button"
               onClick={() => openSettings(user ? "profile" : "usage")}
-              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Settings"
               data-testid="open-settings"
             >
@@ -633,9 +635,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 type="button"
                 onClick={handleAnonymousSignIn}
                 disabled={isAnonSigningIn}
-                className="ml-auto px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="ml-auto inline-flex min-w-[96px] items-center justify-center px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                aria-busy={isAnonSigningIn}
               >
-                {isAnonSigningIn ? "Signing in..." : "Sign in"}
+                <span className="inline-flex items-center gap-1.5">
+                  {isAnonSigningIn && (
+                    <span className="h-3 w-3 rounded-full border border-primary-foreground/60 border-t-transparent motion-safe:animate-spin motion-reduce:animate-none" />
+                  )}
+                  <span>{isAnonSigningIn ? "Signing in" : "Sign in"}</span>
+                </span>
               </button>
               <button
                 type="button"
