@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Skeleton, SkeletonText, SkeletonCircle, SkeletonCard, SkeletonBadge } from './Skeleton';
+import { SignatureOrb } from '../../shared/ui/SignatureOrb';
 
 type ViewType = 'default' | 'documents' | 'calendar' | 'agents' | 'settings' | 'dashboard' | 'cost-dashboard' | 'industry-updates';
 
@@ -46,19 +47,8 @@ export function ViewSkeleton({ variant = 'default' }: ViewSkeletonProps) {
 
 function DefaultViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-48" rounded="lg" />
-        <Skeleton className="h-4 w-72" />
-      </div>
-
-      {/* Content grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
+    <div className="p-6 flex flex-col items-center justify-center min-h-[400px]">
+      <SignatureOrb variant="loading" />
     </div>
   );
 }

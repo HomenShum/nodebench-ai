@@ -1,4 +1,5 @@
 import React, { ReactNode } from "react";
+import { SignatureOrb } from "./SignatureOrb";
 
 interface PageHeroHeaderProps {
   icon?: ReactNode; // Emoji or icon element before title
@@ -17,8 +18,9 @@ interface PageHeroHeaderProps {
  */
 export function PageHeroHeader({ icon, title, date, subtitle, presets, className, accent = false }: PageHeroHeaderProps) {
   return (
-    <div className={className}>
-      <div className="flex items-center justify-between gap-4 mb-2">
+    <div className={`relative ${className ?? ""}`}>
+      <SignatureOrb variant="ambient" className="top-[-100px] right-[-80px] opacity-60" />
+      <div className="relative flex items-center justify-between gap-4 mb-2">
         <h1 className="type-page-title text-content flex items-center gap-3">
           {icon && <span className="text-xl opacity-90">{icon}</span>}
           {accent ? (

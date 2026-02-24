@@ -10,8 +10,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import { SignatureOrb } from '../../shared/ui/SignatureOrb';
 
-type EmptyStateVariant = 'documents' | 'search' | 'inbox' | 'tasks' | 'error' | 'success';
+type EmptyStateVariant = 'documents' | 'search' | 'inbox' | 'tasks' | 'error' | 'success' | 'orb';
 
 interface EmptyStateProps {
   variant?: EmptyStateVariant;
@@ -215,9 +216,15 @@ export function EmptyState({
         className
       )}
     >
-      <div className="w-32 h-32 mb-6">
-        {illustrations[variant]}
-      </div>
+      {variant === 'orb' ? (
+        <div className="mb-4">
+          <SignatureOrb variant="empty" />
+        </div>
+      ) : (
+        <div className="w-32 h-32 mb-6">
+          {illustrations[variant]}
+        </div>
+      )}
       
       <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
       

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DEFAULT_MODEL, MODEL_UI_INFO } from "@shared/llm/approvedModels";
+import { SignatureOrb } from "@/shared/ui/SignatureOrb";
 
 // ============================================================================
 // Types & Constants
@@ -124,22 +125,29 @@ export interface AgentStatusCardProps {
 // ============================================================================
 
 const StatusIndicator = memo(function StatusIndicator({ status }: { status: AgentStatus }) {
+  const isLive = status === "active" || status === "running";
   const statusConfig = {
-    active: { dot: "status-dot running", label: "Active", icon: null },
-    running: { dot: "status-dot running", label: "Running", icon: Loader2 },
-    idle: { dot: "status-dot pending", label: "Idle", icon: null },
-    paused: { dot: "status-dot paused", label: "Paused", icon: null },
+    active: { label: "Active" },
+    running: { label: "Running" },
+    idle: { dot: "status-dot pending", label: "Idle" },
+    paused: { dot: "status-dot paused", label: "Paused" },
     error: { dot: "status-dot error", label: "Error", icon: AlertCircle },
     complete: { dot: "status-dot complete", label: "Complete", icon: CheckCircle },
   };
 
   const config = statusConfig[status];
-  const Icon = config.icon;
+  const Icon = "icon" in config ? config.icon : null;
 
   return (
     <div className="flex items-center gap-1.5" role="status" aria-label={`Agent status: ${config.label}`}>
-      <span className={cn("agent-dashboard", config.dot)} aria-hidden="true" />
-      {Icon && <Icon className="w-3 h-3 motion-safe:animate-spin" aria-hidden="true" />}
+      {isLive ? (
+        <SignatureOrb variant="indicator" />
+      ) : (
+        <>
+          {"dot" in config && <span className={cn("agent-dashboard", config.dot)} aria-hidden="true" />}
+          {Icon && <Icon className="w-3 h-3" aria-hidden="true" />}
+        </>
+      )}
       <span className="text-xs font-medium text-content-secondary">
         {config.label}
       </span>

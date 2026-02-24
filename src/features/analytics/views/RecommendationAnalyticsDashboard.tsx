@@ -15,6 +15,7 @@ import {
   PieChart,
   Activity,
 } from 'lucide-react';
+import { SignatureOrb } from '../../../shared/ui/SignatureOrb';
 
 interface MetricCardProps {
   title: string;
@@ -197,18 +198,10 @@ export default function RecommendationAnalyticsDashboard() {
           </div>
         </div>
 
-        {/* Loading State — skeleton grid */}
+        {/* Loading State */}
         {isLoading && (
-          <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-28 rounded-lg bg-surface-secondary/50" />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-48 rounded-lg bg-surface-secondary/50" />
-              <div className="h-48 rounded-lg bg-surface-secondary/50" />
-            </div>
+          <div className="flex items-center justify-center py-16 no-skeleton-animation" aria-busy="true" aria-live="polite">
+            <SignatureOrb variant="loading" />
           </div>
         )}
 
@@ -373,16 +366,7 @@ export default function RecommendationAnalyticsDashboard() {
             {/* Empty State */}
             {metrics.total === 0 && (
               <div className="bg-surface border border-edge rounded-lg p-12 text-center">
-                <BarChart3 className="mx-auto text-content-muted mb-4" size={48} />
-                <h3 className="text-lg font-semibold text-content mb-2">
-                  No Recommendation Data Yet
-                </h3>
-                <p className="text-content-secondary mb-4">
-                  Recommendation feedback will appear here once users interact with suggestions.
-                </p>
-                <p className="text-sm text-content-secondary">
-                  Make sure the RecommendationPanel component is integrated into your app.
-                </p>
+                <SignatureOrb variant="empty" message="No recommendation data yet — feedback will appear here once users interact with suggestions." />
               </div>
             )}
           </>

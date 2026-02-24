@@ -6,6 +6,7 @@
 import React, { useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useMutation } from "convex/react";
+import { SignatureOrb } from "../../../shared/ui/SignatureOrb";
 import { api } from "../../../../convex/_generated/api";
 import {
   Bookmark,
@@ -141,9 +142,8 @@ export function ForYouFeed() {
       <div className="nb-page-shell">
         <div className="nb-page-inner">
           <div className="nb-page-frame-narrow">
-            <div className="nb-surface-card text-center max-w-md mx-auto px-6 py-12">
-              <h2 className="text-xl font-light text-content mb-2">Nothing to show yet</h2>
-              <p className="text-content-muted text-sm font-light">Check back soon for the latest updates.</p>
+            <div className="text-center max-w-md mx-auto px-6 py-12">
+              <SignatureOrb variant="empty" message="Nothing to show yet — check back soon for the latest updates." />
             </div>
           </div>
         </div>
