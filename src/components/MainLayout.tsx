@@ -726,7 +726,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   onGridModeToggle={() => setIsGridMode((v) => !v)}
                 />
               </LazyView>
-            ) : currentView === "roadmap" ? (
+            ) : currentView === "roadmap" || currentView === "timeline" ? (
               <LazyView title="Roadmap failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <TimelineRoadmapView />
               </LazyView>
