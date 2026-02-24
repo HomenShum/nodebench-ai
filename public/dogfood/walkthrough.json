@@ -1,6 +1,6 @@
 {
-  "capturedAtIso": "2026-02-23T23:25:06.581Z",
-  "baseURL": "http://127.0.0.1:4178",
+  "capturedAtIso": "2026-02-24T03:18:44.745Z",
+  "baseURL": "http://127.0.0.1:4177",
   "mime": "video/mp4",
   "publish": "static",
   "chapters": [
@@ -32,7 +32,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.3
+      "startSec": 8.4
     },
     {
       "index": 6,
@@ -110,13 +110,13 @@
       "index": 18,
       "name": "Funding Brief",
       "path": "/funding",
-      "startSec": 35.8
+      "startSec": 35.9
     },
     {
       "index": 19,
       "name": "Activity",
       "path": "/activity",
-      "startSec": 37.9
+      "startSec": 38
     },
     {
       "index": 20,
@@ -146,19 +146,19 @@
       "index": 24,
       "name": "Industry News",
       "path": "/industry",
-      "startSec": 48.5
+      "startSec": 48.6
     },
     {
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 50.6
+      "startSec": 50.7
     },
     {
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 52.7
+      "startSec": 52.8
     },
     {
       "index": 27,
@@ -182,19 +182,19 @@
       "index": 30,
       "name": "LinkedIn Archive",
       "path": "/linkedin",
-      "startSec": 61.2
+      "startSec": 61.3
     },
     {
       "index": 31,
       "name": "Activity Log",
       "path": "/activity-log",
-      "startSec": 63.3
+      "startSec": 63.4
     },
     {
       "index": 32,
       "name": "Quality Review",
       "path": "/quality-review",
-      "startSec": 65.4
+      "startSec": 65.5
     },
     {
       "index": 33,
@@ -218,10 +218,10 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.7
+      "startSec": 73.6
     }
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-23_152316.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-02-23_191656.mp4"
 }

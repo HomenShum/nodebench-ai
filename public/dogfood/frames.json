@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-02-23T23:25:13.605Z",
+  "capturedAtIso": "2026-02-24T03:18:51.164Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -38,7 +38,7 @@
       "index": 5,
       "name": "Research: Briefing",
       "path": "/research/briefing",
-      "startSec": 8.3,
+      "startSec": 8.4,
       "file": "05-research-briefing.jpg",
       "image": "/dogfood/frames/05-research-briefing.jpg"
     },
@@ -142,7 +142,7 @@
       "index": 18,
       "name": "Funding Brief",
       "path": "/funding",
-      "startSec": 35.8,
+      "startSec": 35.9,
       "file": "18-funding-brief.jpg",
       "image": "/dogfood/frames/18-funding-brief.jpg"
     },
@@ -150,7 +150,7 @@
       "index": 19,
       "name": "Activity",
       "path": "/activity",
-      "startSec": 37.9,
+      "startSec": 38,
       "file": "19-activity.jpg",
       "image": "/dogfood/frames/19-activity.jpg"
     },
@@ -190,7 +190,7 @@
       "index": 24,
       "name": "Industry News",
       "path": "/industry",
-      "startSec": 48.5,
+      "startSec": 48.6,
       "file": "24-industry-news.jpg",
       "image": "/dogfood/frames/24-industry-news.jpg"
     },
@@ -198,7 +198,7 @@
       "index": 25,
       "name": "For You",
       "path": "/for-you",
-      "startSec": 50.6,
+      "startSec": 50.7,
       "file": "25-for-you.jpg",
       "image": "/dogfood/frames/25-for-you.jpg"
     },
@@ -206,7 +206,7 @@
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 52.7,
+      "startSec": 52.8,
       "file": "26-recommendations.jpg",
       "image": "/dogfood/frames/26-recommendations.jpg"
     },
@@ -238,7 +238,7 @@
       "index": 30,
       "name": "LinkedIn Archive",
       "path": "/linkedin",
-      "startSec": 61.2,
+      "startSec": 61.3,
       "file": "30-linkedin-archive.jpg",
       "image": "/dogfood/frames/30-linkedin-archive.jpg"
     },
@@ -246,7 +246,7 @@
       "index": 31,
       "name": "Activity Log",
       "path": "/activity-log",
-      "startSec": 63.3,
+      "startSec": 63.4,
       "file": "31-activity-log.jpg",
       "image": "/dogfood/frames/31-activity-log.jpg"
     },
@@ -254,7 +254,7 @@
       "index": 32,
       "name": "Quality Review",
       "path": "/quality-review",
-      "startSec": 65.4,
+      "startSec": 65.5,
       "file": "32-quality-review.jpg",
       "image": "/dogfood/frames/32-quality-review.jpg"
     },
@@ -286,7 +286,7 @@
       "index": 36,
       "name": "End",
       "path": "(end)",
-      "startSec": 73.7,
+      "startSec": 73.6,
       "file": "36-end.jpg",
       "image": "/dogfood/frames/36-end.jpg"
     }

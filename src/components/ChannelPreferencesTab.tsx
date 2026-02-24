@@ -380,9 +380,9 @@ export function ChannelPreferencesTab() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="text-xs text-content-secondary">
-            <span className="font-medium text-blue-600">{enabledCount}</span> enabled,{" "}
-            <span className="font-medium text-green-600">{optedInCount}</span> consented
+          <div className="text-[10px] text-content-muted">
+            <span className="font-semibold text-content-secondary">{enabledCount}</span> enabled,{" "}
+            <span className="font-semibold text-content-secondary">{optedInCount}</span> consented
           </div>
           <button
             className="btn-primary-sm flex items-center gap-1.5"
@@ -450,8 +450,8 @@ export function ChannelPreferencesTab() {
       {/* Security notice */}
       <div className="rounded-lg border border-edge bg-surface p-3">
         <div className="flex items-start gap-2">
-          <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
+          <Shield className="h-4 w-4 text-content-muted mt-0.5 flex-shrink-0" />
+          <div className="text-xs text-content-secondary space-y-1 text-inherit">
             <div className="font-medium">Security Notes</div>
             <ul className="list-disc pl-4 space-y-0.5 text-content-secondary">
               <li>WhatsApp (Baileys) uses an unofficial API — Meta may ban accounts. Use WhatsApp Business API for production.</li>

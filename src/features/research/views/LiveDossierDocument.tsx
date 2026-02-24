@@ -97,7 +97,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     }, [isCompany, isPerson, entityName]);
 
     return (
-        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-surface-secondary to-purple-50/30 dark:from-surface-secondary/50 dark:to-purple-900/10 rounded-lg border border-edge dark:border-edge">
+        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-surface-secondary to-[var(--accent-primary-bg)] dark:from-surface-secondary/50 dark:to-[var(--accent-primary-bg)] rounded-lg border border-edge dark:border-edge">
             <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                     <Sparkles className="w-5 h-5 text-primary" />
@@ -108,7 +108,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
             </div>
             <p className="text-sm text-content dark:text-content-secondary mb-6 flex items-center gap-2 flex-wrap">
                 <span>Run a focused follow-up and append results to this live report.</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 dark:bg-surface-secondary text-white dark:text-content rounded-full text-xs font-medium">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-content dark:bg-surface-secondary text-white dark:text-content rounded-full text-xs font-medium">
                     <span className="h-1.5 w-1.5 rounded-full bg-surface"></span>
                     No refresh needed
                 </span>
@@ -700,9 +700,9 @@ function LiveDossierDocumentInner({
                         prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
                         prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2
                         prose-ul:my-4 prose-ul:space-y-1.5 prose-ol:my-4 prose-ol:space-y-1.5 prose-li:my-0 prose-li:leading-relaxed
-                        prose-blockquote:border-l-4 prose-blockquote:border-purple-400 dark:prose-blockquote:border-purple-600 prose-blockquote:bg-purple-50/50 dark:prose-blockquote:bg-purple-900/10 prose-blockquote:pl-5 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:rounded-r-lg prose-blockquote:text-content dark:prose-blockquote:text-content prose-blockquote:not-italic
+                        prose-blockquote:border-l-4 prose-blockquote:border-edge prose-blockquote:bg-surface-secondary/60 dark:prose-blockquote:bg-surface-secondary/40 prose-blockquote:pl-5 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:rounded-r-lg prose-blockquote:text-content dark:prose-blockquote:text-content prose-blockquote:not-italic
                         prose-hr:my-10 prose-hr:border-border/50
-                        prose-code:bg-surface-secondary dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
+                        prose-code:bg-surface-secondary dark:prose-code:bg-surface-secondary prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
                         prose-table:text-base
                         prose-strong:text-foreground prose-strong:font-semibold
                         prose-em:text-content dark:prose-em:text-content-secondary
@@ -720,7 +720,7 @@ function LiveDossierDocumentInner({
 
                     {/* Streaming cursor */}
                     {isStreaming && (
-                        <span className="inline-block w-2.5 h-6 bg-purple-500 ml-1 motion-safe:animate-pulse align-middle rounded-sm"></span>
+                        <span className="inline-block w-2.5 h-6 bg-[var(--accent-primary)] ml-1 motion-safe:animate-pulse align-middle rounded-sm"></span>
                     )}
                 </article>
 
@@ -806,12 +806,12 @@ function LiveDossierDocumentInner({
                             type="button"
                             onClick={() => handleFollowUp("Synthesize all the above information into a single, comprehensive, and well-structured final report. Remove redundancies and organize logically.")}
                             disabled={isAppending}
-                            className={`group flex items-center gap-3 px-8 py-4 bg-gray-900 dark:bg-surface-secondary text-white dark:text-content rounded-full font-semibold text-base shadow-xl hover:bg-gray-800 dark:hover:bg-white transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
+                            className={`group flex items-center gap-3 px-8 py-4 bg-[var(--accent-primary)] dark:bg-[var(--accent-primary)] text-white rounded-full font-semibold text-base shadow-xl hover:bg-[var(--accent-primary-hover)] dark:hover:bg-[var(--accent-primary-hover)] transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
                         >
                             {isAppending ? (
-                                <Loader2 className="w-5 h-5 motion-safe:animate-spin text-purple-400" />
+                                <Loader2 className="w-5 h-5 motion-safe:animate-spin text-white/80" />
                             ) : (
-                                <Sparkles className="w-5 h-5 text-purple-400 group-hover:motion-safe:animate-pulse" />
+                                <Sparkles className="w-5 h-5 text-white/80 group-hover:motion-safe:animate-pulse" />
                             )}
                             <span className="tracking-wide">
                                 {isAppending ? 'Synthesizing Report...' : 'Synthesize Final Report'}
@@ -856,8 +856,8 @@ function EmptyState() {
         <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-16">
             <div className="text-center">
                 {/* Icon container - rounded-lg for consistency */}
-                <div className="inline-flex items-center justify-center p-6 rounded-lg bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 mb-6">
-                    <FileText className="w-10 h-10 text-purple-600 dark:text-purple-400" />
+                <div className="inline-flex items-center justify-center p-6 rounded-lg bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary dark:from-[var(--accent-primary-bg)] dark:to-surface-secondary/70 mb-6">
+                    <FileText className="w-10 h-10 text-[var(--accent-primary)]" />
                 </div>
 
                 {/* Heading */}
@@ -882,7 +882,7 @@ function EmptyState() {
                         <span>Media discovery</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
-                        <Link2 className="w-4 h-4 text-blue-500" />
+                        <Link2 className="w-4 h-4 text-[var(--accent-primary)]" />
                         <span>Inline citations</span>
                     </div>
                 </div>
@@ -932,7 +932,7 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-hover/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-hover/50 dark:hover:bg-surface-hover/50 transition-colors text-left"
                 aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
@@ -994,7 +994,7 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-hover/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-hover/50 dark:hover:bg-surface-hover/50 transition-colors text-left"
                 aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
@@ -1103,8 +1103,8 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 
     const statusColors = {
         pending: "bg-content-secondary/20 text-content-secondary border-content-secondary/30",
-        running: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-        complete: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+        running: "bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-[var(--accent-primary)]/30",
+        complete: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
         error: "bg-red-500/20 text-red-400 border-red-500/30",
     };
 
@@ -1112,7 +1112,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
         <div className={`relative w-8 h-8 rounded-lg border flex items-center justify-center transition-all duration-300 ${statusColors[status]}`}>
             {icons[role] || <Bot className="w-3.5 h-3.5" />}
             {status === "running" && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-blue-400 rounded-full live-dot" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[var(--accent-primary)] rounded-full live-dot" />
             )}
         </div>
     );
@@ -1122,15 +1122,15 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
     const statusIcons = {
         pending: <Loader2 className="w-3 h-3 text-content-secondary" />,
-        running: <Loader2 className="w-3 h-3 text-blue-400 motion-safe:animate-spin" />,
-        complete: <CheckCircle2 className="w-3 h-3 text-indigo-400" />,
+        running: <Loader2 className="w-3 h-3 text-[var(--accent-primary)] motion-safe:animate-spin" />,
+        complete: <CheckCircle2 className="w-3 h-3 text-emerald-400" />,
         error: <AlertCircle className="w-3 h-3 text-red-400" />,
     };
 
     const statusBg = {
         pending: "bg-content-secondary/10 border-content-secondary/20",
-        running: "bg-blue-500/10 border-blue-500/20",
-        complete: "bg-indigo-500/10 border-indigo-500/20",
+        running: "bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/20",
+        complete: "bg-emerald-500/10 border-emerald-500/20",
         error: "bg-red-500/10 border-red-500/20",
     };
 
@@ -1210,13 +1210,13 @@ function LiveAgentTicker({
                                     Multi-Agent Research
                                 </h3>
                                 {isActive && (
-                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30">
-                                        <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full live-dot" />
-                                        <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Live</span>
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30">
+                                        <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full live-dot" />
+                                        <span className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">Live</span>
                                     </span>
                                 )}
                                 {followUpLabel && (
-                                    <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-xs font-medium text-purple-300">
+                                    <span className="px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30 text-xs font-medium text-[var(--accent-primary)]">
                                         {followUpLabel}
                                     </span>
                                 )}
@@ -1233,7 +1233,7 @@ function LiveAgentTicker({
                                     <div key={`${role}-${idx}`} className="group relative">
                                         <AgentIcon role={role || "coordinator"} status={status} />
                                         {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 rounded text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-surface border border-edge rounded text-xs text-content whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                             {roleLabels[role || "coordinator"]} • {status}
                                         </div>
                                     </div>
@@ -1251,8 +1251,8 @@ function LiveAgentTicker({
                     {recentSteps.length > 0 && (
                         <div className="relative mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-3">
-                                <Activity className="w-3.5 h-3.5 text-purple-400" />
-                                <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
+                                <Activity className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                                <span className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">
                                     Tool Activity
                                 </span>
                                 <span className="text-xs text-white/40">
@@ -1271,15 +1271,15 @@ function LiveAgentTicker({
                     {isActive && liveOutput && (
                         <div className="mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-2">
-                                <Zap className="w-3.5 h-3.5 text-amber-400" />
-                                <span className="text-xs font-semibold text-amber-300 uppercase tracking-wider">
+                                <Zap className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                                <span className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">
                                     Live Output
                                 </span>
                             </div>
                             <div className="bg-black/20 rounded-lg p-3 border border-white/5">
                                 <p className="text-xs text-white/80 font-mono leading-relaxed">
                                     {truncateText(liveOutput, 200)}
-                                    <span className="typewriter-cursor text-purple-400" />
+                                    <span className="typewriter-cursor text-[var(--accent-primary)]" />
                                 </p>
                             </div>
                         </div>

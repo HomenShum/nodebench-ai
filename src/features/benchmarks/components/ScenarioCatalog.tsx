@@ -1,5 +1,5 @@
 /**
- * ScenarioCatalog — 4 task ladders as Linear issue-list rows
+ * ScenarioCatalog — 4 benchmark scenarios as Linear issue-list rows
  *
  * Each scenario card shows: icon, name, description, subtask count, estimated
  * duration, run count badge, status dot, and a (disabled) Run button.
@@ -229,7 +229,7 @@ export function ScenarioCatalog({
         <h2 className="text-xs font-semibold text-content-muted">
           Scenarios
         </h2>
-        <span className="text-xs text-content-muted">4 task ladders</span>
+        <span className="text-xs text-content-muted">4 scenarios</span>
       </div>
 
       <div className="space-y-2">

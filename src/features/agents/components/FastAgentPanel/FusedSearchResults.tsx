@@ -96,13 +96,13 @@ export interface FusedSearchResultsProps {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SOURCE_CONFIG: Record<SearchSource, { icon: React.ElementType; label: string; color: string }> = {
-  linkup: { icon: Globe, label: "Web", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  sec: { icon: Building2, label: "SEC", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  rag: { icon: Database, label: "Internal", color: "bg-purple-100 text-purple-700 border-purple-200" },
+  linkup: { icon: Globe, label: "Web", color: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20" },
+  sec: { icon: Building2, label: "SEC", color: "bg-surface-secondary text-content-secondary border-edge" },
+  rag: { icon: Database, label: "Internal", color: "bg-surface-secondary text-content-secondary border-edge" },
   documents: { icon: FileText, label: "Docs", color: "bg-green-100 text-green-700 border-green-200" },
   news: { icon: Newspaper, label: "News", color: "bg-red-100 text-red-700 border-red-200" },
   youtube: { icon: Youtube, label: "YouTube", color: "bg-rose-100 text-rose-700 border-rose-200" },
-  arxiv: { icon: BookOpen, label: "arXiv", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  arxiv: { icon: BookOpen, label: "arXiv", color: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20" },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -148,7 +148,7 @@ function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
 
   return (
     <div
-      className="mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200"
+      className="mb-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20"
       role="alert"
       aria-live="polite"
     >
@@ -160,18 +160,18 @@ function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 rounded"
+        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1 rounded"
         aria-expanded={expanded}
         aria-controls="source-error-details"
       >
-        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" aria-hidden="true" />
-        <span className="text-sm font-medium text-amber-800">
+        <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" aria-hidden="true" />
+        <span className="text-sm font-medium text-rose-600">
           {errors.length} source{errors.length > 1 ? 's' : ''} unavailable
         </span>
-        {expanded ? <ChevronUp className="w-4 h-4 ml-auto text-amber-600" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 ml-auto text-amber-600" aria-hidden="true" />}
+        {expanded ? <ChevronUp className="w-4 h-4 ml-auto text-rose-600" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 ml-auto text-rose-600" aria-hidden="true" />}
       </button>
       {expanded && (
-        <ul id="source-error-details" className="mt-2 space-y-1 text-xs text-amber-700">
+        <ul id="source-error-details" className="mt-2 space-y-1 text-xs text-rose-600">
           {errors.map((e, i) => (
             <li key={i} className="flex items-center gap-2">
               <span className="font-medium">{SOURCE_CONFIG[e.source]?.label || e.source}:</span>
@@ -210,10 +210,10 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-medium text-content truncate group-hover:text-blue-600">{result.title}</h4>
+            <h4 className="text-sm font-medium text-content truncate group-hover:text-[var(--accent-primary-hover)]">{result.title}</h4>
             {citationNumber !== undefined && (
               <span
-                className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-semibold"
+                className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] flex items-center justify-center text-xs font-semibold"
                 aria-label={`Citation ${citationNumber}`}
               >
                 {citationNumber}
@@ -309,7 +309,7 @@ export function FusedSearchResults({
             {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
           </span>
           {activeSources.size < sourcesQueried.length && (
-            <button type="button" onClick={resetFilters} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+            <button type="button" onClick={resetFilters} className="text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:underline flex items-center gap-1">
               <X className="w-3 h-3" /> Reset filters
             </button>
           )}
@@ -363,7 +363,7 @@ export function FusedSearchResults({
         <button
           type="button"
           onClick={() => setShowAll(!showAll)}
-          className="w-full py-2 text-sm text-violet-600 hover:text-violet-700 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1 rounded"
+          className="w-full py-2 text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1 rounded"
           aria-expanded={showAll}
           aria-label={showAll ? "Show fewer results" : `Show ${filteredResults.length - INITIAL_COUNT} more results`}
         >

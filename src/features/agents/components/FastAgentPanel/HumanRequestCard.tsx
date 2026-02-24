@@ -138,7 +138,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
     <div
       className={cn(
         "rounded-lg border-2 p-4 shadow-md animate-in slide-in-from-top-2 duration-300",
-        isPending && "border-amber-400 bg-amber-50",
+        isPending && "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)]",
         isAnswered && "border-green-400 bg-green-50",
         isCancelled && "border-content-muted bg-surface-secondary"
       )}
@@ -147,11 +147,11 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
       <div className="flex items-start gap-3 mb-3">
         <div className={cn(
           "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
-          isPending && "bg-amber-100",
+          isPending && "bg-[var(--accent-primary-bg)]",
           isAnswered && "bg-green-100",
           isCancelled && "bg-surface-hover"
         )}>
-          {isPending && <MessageCircleQuestion className="h-5 w-5 text-amber-600" />}
+          {isPending && <MessageCircleQuestion className="h-5 w-5 text-[var(--accent-primary)]" />}
           {isAnswered && <CheckCircle2 className="h-5 w-5 text-green-600" />}
           {isCancelled && <X className="h-5 w-5 text-content-secondary" />}
         </div>
@@ -160,7 +160,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
           <div className="flex items-center gap-2 mb-1">
             <h3 className={cn(
               "text-sm font-semibold",
-              isPending && "text-amber-900",
+              isPending && "text-content",
               isAnswered && "text-green-900",
               isCancelled && "text-content"
             )}>
@@ -177,7 +177,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
           {/* Question */}
           <p className={cn(
             "text-sm font-medium mb-2",
-            isPending && "text-amber-800",
+            isPending && "text-content",
             isAnswered && "text-green-800",
             isCancelled && "text-content"
           )}>
@@ -207,8 +207,8 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
                   "px-3 py-1.5 rounded-md text-sm font-medium transition-all",
                   "border-2",
                   selectedOption === option
-                    ? "border-amber-500 bg-amber-100 text-amber-900"
-                    : "border-edge bg-surface text-content hover:border-amber-400 hover:bg-amber-50"
+                    ? "border-[var(--accent-primary)] bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
+                    : "border-edge bg-surface text-content hover:border-[var(--accent-primary)]/40 hover:bg-[var(--accent-primary-bg)]"
                 )}
               >
                 {option}
@@ -226,7 +226,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             onChange={(e) => setResponse(e.target.value)}
             placeholder="Type your response..."
             rows={2}
-            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -255,7 +255,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             disabled={isSubmitting || (!selectedOption && !response.trim())}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-              "bg-amber-500 text-white hover:bg-amber-600",
+              "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >

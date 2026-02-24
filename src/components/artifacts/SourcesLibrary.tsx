@@ -59,10 +59,10 @@ function getKindIcon(kind: ArtifactKind) {
 
 function getProviderColor(provider: ArtifactProvider | undefined): string {
   switch (provider) {
-    case "youtube": return "bg-rose-50/50 dark:bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30";
-    case "sec": return "bg-sky-50/50 dark:bg-sky-500/5 text-sky-600 dark:text-sky-400 border-sky-100 dark:border-sky-900/30";
-    case "twitter": return "bg-sky-50/50 dark:bg-sky-500/5 text-sky-600 dark:text-sky-400 border-sky-100 dark:border-sky-900/30";
-    case "linkedin": return "bg-sky-50/50 dark:bg-sky-500/5 text-sky-700 dark:text-sky-400 border-sky-100 dark:border-sky-900/30";
+    case "youtube": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
+    case "sec": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
+    case "twitter": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
+    case "linkedin": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
     case "crunchbase": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
     case "github": return "bg-surface-secondary text-content border-edge";
     case "news": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";

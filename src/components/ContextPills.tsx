@@ -36,7 +36,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
       {/* Focused context */}
       {focused && (
         <Section title="Focused node + surrounding">
-          <Pill icon={<Layers3 className="h-3 w-3 text-blue-500" />} label={`Doc ${focused.documentId.slice(0, 6)} · Node ${focused.blockId?.slice(0, 6) || "-"}`} />
+          <Pill icon={<Layers3 className="h-3 w-3 text-slate-400" />} label={`Doc ${focused.documentId.slice(0, 6)} · Node ${focused.blockId?.slice(0, 6) || "-"}`} />
           {focused.beforeIds?.slice(0, 2).map((id) => (
             <Pill key={`b-${id}`} subtle icon={<FileText className="h-3 w-3 text-content-secondary" />} label={`Prev ${id.slice(0, 6)}`} />
           ))}
@@ -50,7 +50,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
       {viewingDocs.length > 0 && (
         <Section title="Viewing">
           {viewingDocs.map((d) => (
-            <Pill key={d.id} icon={<FileText className="h-3 w-3 text-indigo-600" />} label={d.title || d.id} />
+            <Pill key={d.id} icon={<FileText className="h-3 w-3 text-slate-400" />} label={d.title || d.id} />
           ))}
         </Section>
       )}
@@ -59,7 +59,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
       {previousDocs.length > 0 && (
         <Section title="Previously viewed">
           {previousDocs.slice(0, 6).map((d) => (
-            <Pill key={d.id} icon={<History className="h-3 w-3 text-amber-600" />} label={d.title || d.id} />
+            <Pill key={d.id} icon={<History className="h-3 w-3 text-slate-400" />} label={d.title || d.id} />
           ))}
         </Section>
       )}
@@ -68,7 +68,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
       {contextDocs.length > 0 && (
         <Section title="Context docs">
           {contextDocs.map((d) => (
-            <Pill key={d.id} icon={<BookOpen className="h-3 w-3 text-indigo-600" />} label={d.title || d.id} />
+            <Pill key={d.id} icon={<BookOpen className="h-3 w-3 text-slate-400" />} label={d.title || d.id} />
           ))}
         </Section>
       )}
@@ -76,14 +76,14 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
       {/* Tools & MCPs */}
       {toolsMcp.mcpServerName && (
         <Section title="Tools">
-          <Pill icon={<Wrench className="h-3 w-3 text-purple-600" />} label={`${toolsMcp.mcpServerName}${toolsMcp.toolCount ? ` • ${toolsMcp.toolCount} tool${toolsMcp.toolCount !== 1 ? 's' : ''}` : ""}`} />
+          <Pill icon={<Wrench className="h-3 w-3 text-slate-400" />} label={`${toolsMcp.mcpServerName}${toolsMcp.toolCount ? ` • ${toolsMcp.toolCount} tool${toolsMcp.toolCount !== 1 ? 's' : ''}` : ""}`} />
         </Section>
       )}
 
       {/* UI-level Interface info */}
       {uiInfo && uiInfo.summary && (
         <Section title="Interface">
-          <Pill icon={<Layout className="h-3 w-3 text-sky-600" />} label={uiInfo.summary} />
+          <Pill icon={<Layout className="h-3 w-3 text-slate-400" />} label={uiInfo.summary} />
         </Section>
       )}
     </>

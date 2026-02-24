@@ -1,8 +1,8 @@
 {
-  "capturedAtIso": "2026-02-23T23:22:17.848Z",
+  "capturedAtIso": "2026-02-24T00:15:32.654Z",
   "basePath": "/dogfood/screenshots",
   "variants": {
-    "darkDesktop": 48,
+    "darkDesktop": 47,
     "lightDesktop": 33,
     "darkMobile": 33,
     "lightMobile": 33
@@ -544,13 +544,6 @@
       "file": "interaction-calendar-click.png",
       "kind": "route",
       "label": "Interaction Calendar Click",
-      "theme": "dark",
-      "viewport": "desktop"
-    },
-    {
-      "file": "interaction-document-hover.png",
-      "kind": "route",
-      "label": "Interaction Document Hover",
       "theme": "dark",
       "viewport": "desktop"
     },

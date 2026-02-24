@@ -21,7 +21,7 @@ const DossierViewer = lazy(() =>
 
 const viewFallback = (
   <div className="flex items-center justify-center h-full bg-surface">
-    <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500/30"></div>
+    <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]/30"></div>
   </div>
 );
 
@@ -140,7 +140,7 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
           </div>
         ) : (document === undefined) ? (
           <div className="flex items-center justify-center h-full bg-surface">
-            <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500/30"></div>
+            <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]/30"></div>
           </div>
         ) : (document === null) ? (
           <div className="flex items-center justify-center h-full bg-surface">

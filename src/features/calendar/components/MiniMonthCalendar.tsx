@@ -612,7 +612,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   return (
     <div className="relative bg-gradient-to-br from-surface to-surface-secondary/50 border border-edge/60 rounded-lg overflow-visible shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)]">
       {/* Singular watermark for mini calendar */}
-      <span className="document-card__bg document-row__bg text-blue-500" aria-hidden>
+      <span className="document-card__bg document-row__bg text-[var(--accent-primary)]" aria-hidden>
         <CalendarDays className="h-10 w-10 rotate-12" />
       </span>
       {/* Clock + Timezone selector */}
@@ -623,7 +623,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
         <select
           id="tz-select"
           aria-label="Timezone"
-          className="h-7 text-xs leading-[1rem] bg-surface text-content border border-edge/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all w-full truncate"
+          className="h-7 text-xs leading-[1rem] bg-surface text-content border border-edge/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-[var(--accent-primary)] transition-all w-full truncate"
           value={effectiveTz || browserTz || "UTC"}
           onChange={(e) => { void onChangeTimeZone(e.target.value); }}
         >
@@ -666,15 +666,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
             const m = markers[d.key] ?? { events: 0, tasks: 0, holidays: 0, notes: 0, emailProposed: 0, maxPriority: 0 };
             const _hasMarkers = m.events > 0 || m.tasks > 0 || m.holidays > 0 || m.notes > 0 || m.emailProposed > 0;
             const pr = m.maxPriority ?? 0;
-            const priorityRing = pr >= 4
-              ? "ring-2 ring-red-500"
-              : pr === 3
-              ? "ring-2 ring-amber-500"
-              : pr === 2
-              ? "ring-2 ring-yellow-500"
-              : pr === 1
-              ? "ring-2 ring-indigo-500"
-              : "";
+            const priorityRing = pr >= 1 ? "ring-2 ring-[var(--accent-primary)]/70" : "";
             return (
               <div
                 key={d.key}
@@ -729,15 +721,15 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 }}
                 onMouseEnter={() => setHoveredKey(d.key)}
                 onMouseLeave={() => setHoveredKey((cur) => (cur === d.key ? null : cur))}
-                className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px] ${
+                className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] min-h-[44px] min-w-[44px] ${
                   d.isToday
-                    ? "border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm"
+                    ? "border-[var(--accent-primary)]/40 bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary shadow-sm"
                     : "border-transparent hover:bg-surface-hover hover:border-edge"
                   } ${d.inMonth ? "text-content" : "text-content-muted dark:text-content-secondary"}`}
                 title={d.date.toDateString()}
               >
                 <div className="text-[13px] font-semibold">
-                  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${d.isToday ? "bg-blue-500 text-white shadow-sm" : ""} ${priorityRing}`}>
+                  <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${d.isToday ? "bg-[var(--accent-primary)] text-white shadow-sm" : ""} ${priorityRing}`}>
                     {d.date.getDate()}
                   </span>
                 </div>
@@ -746,28 +738,28 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                     {/* Top row: events (left), email proposed (center), holidays (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
-                        <span className={`inline-block w-1 h-1 rounded-full ${m.events > 0 ? "bg-blue-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-blue-600" : "text-content-muted"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
+                        <span className={`inline-block w-1 h-1 rounded-full ${m.events > 0 ? "bg-[var(--accent-primary)]" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-[var(--accent-primary)]" : "text-content-muted"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
                       </span>
                       {/* Email proposed events (pulsing orange dot) */}
                       <span className="relative inline-flex items-center" title="Proposed email events needing confirmation">
-                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${m.emailProposed > 0 ? "bg-orange-500 motion-safe:animate-pulse" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-semibold w-3 text-center ${m.emailProposed > 0 ? "text-orange-600" : "text-content-muted"}`}>{m.emailProposed > 0 ? fmtSmall(m.emailProposed) : ""}</span>
+                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${m.emailProposed > 0 ? "bg-[var(--accent-primary)] motion-safe:animate-pulse" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-semibold w-3 text-center ${m.emailProposed > 0 ? "text-[var(--accent-primary)]" : "text-content-muted"}`}>{m.emailProposed > 0 ? fmtSmall(m.emailProposed) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
-                        <span className={`inline-block w-1 h-1 rounded-full ${m.holidays > 0 ? "bg-purple-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.holidays > 0 ? "text-purple-600" : "text-content-muted"}`}>{m.holidays > 0 ? fmtSmall(m.holidays) : ""}</span>
+                        <span className={`inline-block w-1 h-1 rounded-full ${m.holidays > 0 ? "bg-[var(--accent-primary)]" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.holidays > 0 ? "text-[var(--accent-primary)]" : "text-content-muted"}`}>{m.holidays > 0 ? fmtSmall(m.holidays) : ""}</span>
                       </span>
                     </div>
                     {/* Bottom row: tasks (left), notes (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
-                        <span className={`inline-block w-1 h-1 rounded-full ${m.tasks > 0 ? "bg-indigo-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-indigo-600" : "text-content-muted"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
+                        <span className={`inline-block w-1 h-1 rounded-full ${m.tasks > 0 ? "bg-[var(--accent-primary)]" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-[var(--accent-primary)]" : "text-content-muted"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
-                        <span className={`inline-block w-1 h-1 rounded-full ${m.notes > 0 ? "bg-amber-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.notes > 0 ? "text-amber-600" : "text-content-muted"}`}>{m.notes > 0 ? fmtSmall(m.notes) : ""}</span>
+                        <span className={`inline-block w-1 h-1 rounded-full ${m.notes > 0 ? "bg-[var(--accent-primary)]" : "opacity-0"}`} />
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.notes > 0 ? "text-[var(--accent-primary)]" : "text-content-muted"}`}>{m.notes > 0 ? fmtSmall(m.notes) : ""}</span>
                       </span>
                     </div>
                   </div>

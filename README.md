@@ -25,6 +25,8 @@ NodeBench AI now includes **6 major enhancements** that bring it to the **top 10
 
 - [Complete Implementation Guide](./docs/INDUSTRY_ENHANCEMENTS_2026.md) - Comprehensive patterns and integration examples
 - [Deployment Summary](./docs/IMPLEMENTATION_COMPLETE.md) - Files delivered, cost analysis, testing validation
+- [UI Design System](./docs/DESIGN_SYSTEM.md) - Persistent theme contract, route convergence rules, and token standards
+- [UI QA Manual](./docs/QA_MANUAL.md) - End-to-end UI QA pipeline, route checklist, and visual consistency gate
 - [Cost Dashboard Component](./src/components/CostDashboard.tsx) - Real-time metrics UI
 - [Prompt Caching Utilities](./convex/domains/agents/mcp_tools/models/promptCaching.ts) - 90% savings on swarms
 - [OpenTelemetry Logger](./convex/domains/observability/telemetry.ts) - Distributed tracing

@@ -166,7 +166,12 @@ export function ModelLeaderboard({
         <span className="text-xs text-content-muted">All time</span>
       </div>
 
-      <div className="scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto px-1 pr-3 sm:pr-4 pb-1 snap-x snap-mandatory">
+      <div className="xl:hidden scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto px-1 pr-3 sm:pr-4 pb-1 snap-x snap-mandatory">
+        {entries.map((entry) => (
+          <ModelCard key={entry.modelId} entry={entry} compact />
+        ))}
+      </div>
+      <div className="hidden xl:grid xl:grid-cols-6 xl:gap-4">
         {entries.map((entry) => (
           <ModelCard key={entry.modelId} entry={entry} />
         ))}
@@ -175,8 +180,9 @@ export function ModelLeaderboard({
   );
 }
 
-function ModelCard({ entry }: { entry: LeaderboardEntry }) {
+function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compact?: boolean }) {
   const providerBadgeClass = PROVIDER_COLORS[entry.provider] ?? "bg-surface-secondary text-content-muted";
+  const sizingClass = compact ? "flex-none w-[11.25rem] sm:w-48 snap-start" : "min-w-0";
 
   const runMeta = (() => {
     if (!entry.lastRunAt) return null;
@@ -191,7 +197,7 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
       : { dotClass: "bg-emerald-500/70", label: "Seeded" };
 
   return (
-    <div className="nb-surface-card flex-none w-[11.25rem] sm:w-48 snap-start bg-surface p-4 sm:p-4 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
+    <div className={`nb-surface-card ${sizingClass} bg-surface p-4 sm:p-4 flex flex-col gap-2 hover:border-content-muted/30 transition-colors`}>
       <div className="flex items-start justify-between gap-1">
         <span className="text-sm font-semibold leading-tight text-content">{entry.displayName}</span>
         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${providerBadgeClass}`}>

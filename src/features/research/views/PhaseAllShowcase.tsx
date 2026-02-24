@@ -1,5 +1,5 @@
 /**
- * PhaseAllShowcase - Demo page for AI-2027.com-like components
+ * PhaseAllShowcase - Demo page for multi-source research components
  * 
  * Showcases all Phase All components:
  * - Phase 1: Citation & Provenance (FootnoteMarker, FootnotesSection)
@@ -175,7 +175,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
             )}
             <div>
               <h1 className="text-base font-semibold text-content">Phase All Showcase</h1>
-              <p className="text-sm text-content-secondary">AI-2027.com-like Visual Multi-Source Research Components</p>
+              <p className="text-sm text-content-secondary">Visual multi-source research components</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -199,20 +199,6 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
 
       <div className="nb-page-inner">
         <main className="nb-page-frame space-y-12">
-          {/* Phase 2: Timeline Strip */}
-          {(activeSection === 'all' || activeSection === 'timeline') && (
-            <section className="space-y-4">
-              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-                Phase 2: Timeline Strip
-              </h2>
-              <TimelineStrip
-                events={sampleTimelineEvents}
-                activeEventId="3"
-                onEventClick={() => {}}
-              />
-            </section>
-          )}
-
           {/* Phase 1: Citations */}
           {(activeSection === 'all' || activeSection === 'citations') && (
             <section className="space-y-4">
@@ -228,6 +214,20 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
                 </p>
                 <FootnotesSection library={sampleCitations} />
               </div>
+            </section>
+          )}
+
+          {/* Phase 2: Timeline Strip */}
+          {(activeSection === 'all' || activeSection === 'timeline') && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+                Phase 2: Timeline Strip
+              </h2>
+              <TimelineStrip
+                events={sampleTimelineEvents}
+                activeEventId="3"
+                onEventClick={() => {}}
+              />
             </section>
           )}
 
@@ -281,4 +281,3 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
     </div>
   );
 }
-

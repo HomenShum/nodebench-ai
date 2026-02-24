@@ -2,14 +2,14 @@
  * WorkbenchView — /benchmarks route
  *
  * NodeBench Workbench: realistic cross-model benchmark on frozen app substrates.
- * Compares GPT/Claude/Gemini/Open-source on 4 task ladders (scenarios) that
+ * Compares GPT/Claude/Gemini/Open-source on 4 benchmark scenarios that
  * mirror real engineering work: UI transformation, agent integration, long-run
  * reliability, and architect mode.
  *
  * Layout zones:
  *   1. Header — title, subtitle, CTA buttons (Configure App / Run)
  *   2. Model Leaderboard — horizontal score strip
- *   3. Scenario Catalog — 4 task ladder rows (Linear issue-list style)
+ *   3. Scenario Catalog — 4 scenario rows (Linear issue-list style)
  *   4. Runs Table — recent runs with score, grade, duration, status
  *   5. Capability Deep Dive — existing ModelEvalDashboard charts (expandable)
  *
@@ -57,7 +57,7 @@ function WorkbenchHeader() {
               Workbench
             </h1>
             <p className="type-caption mt-0.5 max-w-md">
-              Benchmark models on frozen baseline apps and realistic task ladders.
+              Benchmark models on frozen baseline apps and realistic scenarios.
               Compare UI craft, tool use, reliability, and engineering rigor across providers.
             </p>
           </div>
@@ -182,7 +182,7 @@ function WorkbenchData() {
       {/* 1. Model leaderboard — score strip */}
       <ModelLeaderboard liveScores={WORKBENCH_LIVE_DATA_ENABLED ? (leaderboard ?? undefined) : undefined} />
 
-      {/* 2. Scenario catalog — 4 task ladders */}
+      {/* 2. Scenario catalog — 4 scenarios */}
       <ScenarioCatalog scenarioStats={WORKBENCH_LIVE_DATA_ENABLED ? (scenarioStats ?? undefined) : undefined} />
 
       {/* 3. Runs table — empty state in Phase 1 */}

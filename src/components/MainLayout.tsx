@@ -188,6 +188,14 @@ const prefetchRoutes = () => {
     // during rapid dogfood navigation and QA capture loops.
     import("@/features/benchmarks/views/WorkbenchView").catch(() => {});
     import("@/features/dogfood/views/DogfoodReviewView").catch(() => {});
+    // NOTE(coworker): Keep primary "More" section routes warm to avoid blank transitions.
+    import("@/features/analytics/views/ComponentMetricsDashboard").catch(() => {});
+    import("@/components/IndustryUpdatesPanel").catch(() => {});
+    import("@/components/CostDashboard").catch(() => {});
+    import("@/features/research/components/ForYouFeed").catch(() => {});
+    import("@/features/agents/views/PublicActivityView").catch(() => {});
+    import("@/features/research/components/GitHubExplorer").catch(() => {});
+    import("@/features/monitoring/components/PRSuggestions").catch(() => {});
   };
   if ("requestIdleCallback" in window) {
     (window as any).requestIdleCallback(prefetch, { timeout: 3000 });
@@ -494,7 +502,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover dark:hover:bg-white/[0.06] transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -508,14 +516,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <button
                     type="button"
                     onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
-                    className="text-content-muted hover:text-content-secondary dark:hover:text-gray-300 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm px-1"
+                    className="text-content-muted hover:text-content-secondary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 rounded-sm px-1"
                   >
                     Home
                   </button>
                 )}
                 {currentView !== 'research' && (
                   <>
-                    <ChevronRight className="w-3 h-3 text-gray-300 dark:text-content-secondary shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-content-muted shrink-0" />
                     <span className="font-medium text-content truncate">
                       {VIEW_TITLES[currentView] || (currentView === 'entity' ? entityName || 'Entity' : selectedDocumentId ? 'My Documents' : 'My Workspace')}
                     </span>
@@ -531,11 +539,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               onClick={commandPalette.toggle}
               aria-label="Open command palette"
               data-testid="open-command-palette"
-              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 hover:border-indigo-300 dark:hover:border-indigo-500/30"
+              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 hover:border-[var(--accent-primary)]/30"
             >
               <Search className="h-4 w-4 text-content-muted group-hover:text-content-secondary transition-colors" />
               <span className="flex-1 text-left group-hover:text-content-secondary transition-colors">Search...</span>
-              <kbd className="ml-auto text-xs font-medium text-content-muted bg-white dark:bg-white/[0.06] border border-gray-200/80 dark:border-white/10 rounded px-1.5 py-0.5 font-mono group-hover:border-indigo-300 dark:group-hover:border-indigo-500/30 transition-colors shadow-sm">
+              <kbd className="ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded px-1.5 py-0.5 font-mono group-hover:border-[var(--accent-primary)]/30 transition-colors shadow-sm">
                 {commandShortcutLabel}
               </kbd>
             </button>
@@ -557,7 +565,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm transition-all duration-200 relative active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm transition-all duration-200 relative active:scale-[0.98] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Research
@@ -588,13 +596,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             </button>
 
             {/* Divider */}
-            <div className="w-px h-5 bg-gray-200/60 dark:bg-white/[0.06] mx-0.5" />
+            <div className="w-px h-5 bg-edge mx-0.5" />
 
             {/* Settings / Profile */}
             <button
               type="button"
               onClick={() => openSettings(user ? "profile" : "usage")}
-              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               aria-label="Settings"
               data-testid="open-settings"
             >
@@ -602,7 +610,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 user.image ? (
                   <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
                 ) : (
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-hover)] flex items-center justify-center text-white text-xs font-bold">
                     {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
                   </div>
                 )
@@ -920,7 +928,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         {/* Resize Handle between Main and AI Chat Panel */}
         {showFastAgent && (
           <div
-            className="hidden lg:block w-1 bg-surface-secondary hover:bg-gray-400 dark:hover:bg-white/[0.12] cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
+            className="hidden lg:block w-1 bg-surface-secondary hover:bg-surface-hover cursor-col-resize transition-colors duration-200 flex-shrink-0 z-10"
             onMouseDown={startAgentResizing}
           />
         )}

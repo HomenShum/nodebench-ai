@@ -51,30 +51,30 @@ interface CleanSidebarProps {
   selectedDocumentId?: Id<"documents"> | null;
   onDocumentSelect?: (docId: Id<"documents">) => void;
   currentView?:
-    | 'documents'
-    | 'calendar'
-    | 'roadmap'
-    | 'timeline'
-    | 'public'
-    | 'agents'
-    | 'research'
-    | 'signals'
-    | 'benchmarks'
-    | 'funding'
-    | 'activity'
-    | 'entity'
-    | 'footnotes'
-    | 'showcase'
-    | 'cost-dashboard'
-    | 'industry-updates'
-    | 'for-you-feed'
-    | 'document-recommendations'
-    | 'agent-marketplace'
-    | 'github-explorer'
-    | 'pr-suggestions'
-    | 'linkedin-posts'
-    | 'mcp-ledger'
-    | 'dogfood';
+  | 'documents'
+  | 'calendar'
+  | 'roadmap'
+  | 'timeline'
+  | 'public'
+  | 'agents'
+  | 'research'
+  | 'signals'
+  | 'benchmarks'
+  | 'funding'
+  | 'activity'
+  | 'entity'
+  | 'footnotes'
+  | 'showcase'
+  | 'cost-dashboard'
+  | 'industry-updates'
+  | 'for-you-feed'
+  | 'document-recommendations'
+  | 'agent-marketplace'
+  | 'github-explorer'
+  | 'pr-suggestions'
+  | 'linkedin-posts'
+  | 'mcp-ledger'
+  | 'dogfood';
   onViewChange?: (view:
     | 'documents'
     | 'calendar'
@@ -218,11 +218,10 @@ export function CleanSidebar({
         type="button"
         aria-label={label}
         onClick={() => onViewChange?.(view as any)}
-        className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${
-          currentView === view
+        className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${currentView === view
             ? 'border-l-[var(--accent-primary)] bg-[var(--accent-primary-bg)] text-content'
             : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
-        }`}
+          }`}
       >
         <Icon className="w-4 h-4" />
       </button>
@@ -274,7 +273,7 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={() => setIsMoreOpen(!isMoreOpen)}
-              className="w-full flex items-center justify-between px-2 mb-2 text-[11px] font-medium uppercase tracking-[0.16em] text-content-muted hover:text-content-secondary transition-colors"
+              className="w-full flex items-center justify-between px-2 mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-content-muted/80 hover:text-content-secondary transition-colors"
             >
               <span>More</span>
               {isMoreOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
@@ -341,7 +340,7 @@ export function CleanSidebar({
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 mb-2 flex items-center justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-content-muted">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-content-muted/80">
               Files
             </span>
             <FolderOpen className="w-3.5 h-3.5 text-content-muted/60" />
@@ -352,7 +351,7 @@ export function CleanSidebar({
               <button
                 type="button"
                 onClick={() => setIsDocsOpen(!isDocsOpen)}
-                className="flex items-center justify-between w-full text-[11px] font-medium text-content-secondary uppercase tracking-[0.16em] mb-2 hover:text-content px-2"
+                className="flex items-center justify-between w-full text-[10px] font-semibold text-content-muted/80 uppercase tracking-[0.2em] mb-2 hover:text-content px-2"
               >
                 <span>Recent Documents</span>
                 <div className="flex items-center gap-2">

@@ -317,24 +317,23 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   };
 
   const getFileIcon = (fileType: string) => {
-    // Align colors with global document themes for consistency across cards and viewers
-    // csv/excel: emerald, image: cyan, video: violet (purple), audio: amber, pdf: red, text: gray, code: blue
+    // Align viewer accents to shared tokens while preserving semantic error/media colors.
     switch (fileType) {
       case 'csv':
       case 'excel':
-        return <Table className="h-8 w-8 text-indigo-500" />;
+        return <Table className="h-8 w-8 text-[var(--accent-primary)]" />;
       case 'image':
         return <ImageIcon className="h-8 w-8 text-cyan-500" />;
       case 'video':
-        return <FileVideo className="h-8 w-8 text-violet-500" />;
+        return <FileVideo className="h-8 w-8 text-[var(--accent-primary)]" />;
       case 'audio':
-        return <FileAudio className="h-8 w-8 text-amber-500" />;
+        return <FileAudio className="h-8 w-8 text-[var(--accent-primary)]" />;
       case 'pdf':
         return <FileText className="h-8 w-8 text-red-500" />;
       case 'text':
         return <FileText className="h-8 w-8 text-content-secondary" />;
       case 'code':
-        return <Code2 className="h-8 w-8 text-blue-500" />;
+        return <Code2 className="h-8 w-8 text-[var(--accent-primary)]" />;
       default:
         return <File className="h-8 w-8 text-content-muted" />;
     }
@@ -549,7 +548,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             <a
               href={storageUrl}
               download={file.fileName}
-              className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-600 dark:text-indigo-400/80 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors"
             >
               <Download className="h-4 w-4" />
               Download {file.fileName}
@@ -612,10 +611,10 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     </button>
                     {isImageOrVideo && (
                       <>
-                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit height" aria-label="Fit height">
+                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit height" aria-label="Fit height">
                           <StretchVertical strokeWidth={1.25} className="h-4 w-4" />
                         </button>
-                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit width" aria-label="Fit width">
+                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit width" aria-label="Fit width">
                           <StretchHorizontal strokeWidth={1.25} className="h-4 w-4" />
                         </button>
                       </>
