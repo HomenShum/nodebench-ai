@@ -188,26 +188,26 @@ function MediaSection({
   return (
     <div
       className={`
-        border-b border-[var(--border-color)]
+        border-b border-edge
         ${isHighlighted ? 'bg-[var(--accent-primary-bg)] ring-2 ring-[var(--accent-primary)] ring-inset' : ''}
         transition-all duration-200
       `}
     >
       <button
         onClick={onToggle}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--bg-hover)] transition-colors"
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-[var(--text-secondary)]" />
-          <span className="font-medium text-sm text-[var(--text-primary)]">{title}</span>
-          <span className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded-full">
+          <Icon className="h-4 w-4 text-content-secondary" />
+          <span className="font-medium text-sm text-content">{title}</span>
+          <span className="text-xs text-[var(--text-tertiary)] bg-surface-secondary px-2 py-0.5 rounded-full">
             {count}
           </span>
         </div>
         {isExpanded ? (
-          <ChevronDown className="h-4 w-4 text-[var(--text-secondary)]" />
+          <ChevronDown className="h-4 w-4 text-content-secondary" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
+          <ChevronRight className="h-4 w-4 text-content-secondary" />
         )}
       </button>
       {isExpanded && <div>{children}</div>}
@@ -227,11 +227,11 @@ function VideoCard({ video, onClick }: VideoCardProps) {
   return (
     <div
       onClick={onClick}
-      className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200"
+      className="group cursor-pointer rounded-lg overflow-hidden border border-edge hover:border-indigo-500/30 transition-all duration-200"
       style={{ willChange: 'transform, box-shadow' }}
     >
       {/* Thumbnail */}
-      <div className="relative aspect-video bg-[color:var(--bg-secondary)]">
+      <div className="relative aspect-video bg-surface-secondary">
         <img
           src={video.thumbnail}
           alt={video.caption || 'Video'}
@@ -253,8 +253,8 @@ function VideoCard({ video, onClick }: VideoCardProps) {
       </div>
       {/* Caption */}
       {video.caption && (
-        <div className="p-2 bg-[var(--bg-primary)]">
-          <p className="text-xs text-[var(--text-secondary)] line-clamp-2 group-hover:text-[var(--text-primary)] transition-colors">{video.caption}</p>
+        <div className="p-2 bg-surface">
+          <p className="text-xs text-content-secondary line-clamp-2 group-hover:text-content transition-colors">{video.caption}</p>
         </div>
       )}
     </div>
@@ -273,7 +273,7 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
   return (
     <div
       onClick={onClick}
-      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 group relative"
+      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-edge hover:border-indigo-500/30 transition-all duration-200 group relative"
     >
       <img
         src={image.url}
@@ -285,7 +285,7 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-            <ImageIcon className="h-5 w-5 text-[color:var(--text-primary)]" />
+            <ImageIcon className="h-5 w-5 text-content" />
           </div>
         </div>
       </div>
@@ -367,7 +367,7 @@ function DocumentCard({ document, onDocumentClick }: DocumentCardProps) {
         target={isLocalDocument ? undefined : "_blank"}
         rel={isLocalDocument ? undefined : "noopener noreferrer"}
         onClick={handleClick}
-        className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all duration-200 group cursor-pointer bg-[var(--bg-primary)]"
+        className="block p-3 rounded-lg border border-edge hover:border-indigo-500/30 transition-all duration-200 group cursor-pointer bg-surface"
       >
       <div className="flex gap-3">
         {document.thumbnail && (
@@ -379,11 +379,11 @@ function DocumentCard({ document, onDocumentClick }: DocumentCardProps) {
           />
         )}
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-primary)] transition-colors duration-200">
+          <h4 className="text-sm font-medium text-content line-clamp-2 group-hover:text-indigo-600 dark:text-indigo-400 transition-colors duration-200">
             {document.title}
           </h4>
           {document.description && (
-            <p className="text-xs text-[var(--text-secondary)] line-clamp-1 mt-1">
+            <p className="text-xs text-content-secondary line-clamp-1 mt-1">
               {document.description}
             </p>
           )}
@@ -412,15 +412,15 @@ function VideoPlayerModal({ video, onClose }: VideoPlayerModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/75" onClick={onClose} />
-      <div className="relative bg-[color:var(--bg-primary)] rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div className="relative bg-surface rounded-lg max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
-          <h3 className="font-semibold text-[var(--text-primary)]">
+        <div className="flex items-center justify-between p-4 border-b border-edge">
+          <h3 className="font-semibold text-content">
             {video.caption || 'Video'}
           </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
             title="Close"
           >
             <X className="h-5 w-5" />
@@ -439,12 +439,12 @@ function VideoPlayerModal({ video, onClose }: VideoPlayerModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--border-color)]">
+        <div className="p-4 border-t border-edge">
           <a
             href={video.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:underline"
+            className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             Watch on YouTube <ExternalLink className="h-4 w-4" />
           </a>
@@ -491,7 +491,7 @@ function ImageLightbox({ images, currentIndex, onClose, onNavigate }: ImageLight
     >
       <div className="absolute inset-0 bg-black/90" onClick={onClose} />
 
-      <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex flex-col p-4">
+      <div className="relative max-w-6xl max-h-[90vh] w-full h-full flex flex-col p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 z-10">
           <div className="text-white">

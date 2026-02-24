@@ -141,7 +141,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
                 width={barWidth}
                 height={barHeight}
                 fill="currentColor"
-                className="text-[color:var(--text-primary)]"
+                className="text-content"
                 rx={2}
               />
               <text
@@ -177,7 +177,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
-          className="text-[color:var(--text-primary)]"
+          className="text-content"
         />
         {data.map((d, i) => {
           const value = Number(d.value || d.count || 0);
@@ -190,7 +190,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
               cy={y}
               r={3}
               fill="currentColor"
-              className="text-[color:var(--text-primary)]"
+              className="text-content"
             />
           );
         })}
@@ -200,7 +200,7 @@ const FallbackChart: React.FC<FallbackChartProps> = ({ data, intent }) => {
 
   // Generic placeholder
   return (
-    <div className="flex items-center justify-center h-full text-[color:var(--text-secondary)] text-sm">
+    <div className="flex items-center justify-center h-full text-content-secondary text-sm">
       <span>Chart preview not available</span>
     </div>
   );
@@ -357,15 +357,15 @@ export const SafeVegaChart: React.FC<SafeVegaChartProps> = ({
   }
 
   return (
-    <div className={`rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] overflow-hidden ${className}`}>
+    <div className={`rounded-lg border border-edge bg-surface overflow-hidden ${className}`}>
       {showHeader && (
-        <div className="flex items-center justify-between px-3 py-2 border-b border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50">
-          <div className="flex items-center gap-2 text-[color:var(--text-primary)]">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-edge bg-surface-secondary/50">
+          <div className="flex items-center gap-2 text-content">
             {INTENT_ICONS[artifact.intent]}
             <span className="text-xs font-medium">{INTENT_LABELS[artifact.intent]}</span>
           </div>
           {artifact.rationale && (
-            <span className="text-xs text-[color:var(--text-secondary)] truncate max-w-[200px]" title={artifact.rationale}>
+            <span className="text-xs text-content-secondary truncate max-w-[200px]" title={artifact.rationale}>
               {artifact.rationale}
             </span>
           )}

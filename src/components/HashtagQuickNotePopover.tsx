@@ -112,7 +112,7 @@ export default function HashtagQuickNotePopover({
         maxHeight: "420px",
         zIndex: 9999,
       }}
-      className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-2xl overflow-hidden"
+      className="bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden"
     >
       <HashtagContent dossierId={dossierId} hashtag={hashtag || ""} onClose={onClose} />
     </div>,
@@ -159,9 +159,9 @@ function HashtagContent({
   if (document === undefined) {
     return (
       <div className="p-6 space-y-4">
-        <div className="motion-safe:animate-pulse h-6 w-32 bg-[var(--bg-secondary)] rounded" />
-        <div className="motion-safe:animate-pulse h-4 w-full bg-[var(--bg-secondary)] rounded" />
-        <div className="motion-safe:animate-pulse h-4 w-3/4 bg-[var(--bg-secondary)] rounded" />
+        <div className="motion-safe:animate-pulse h-6 w-32 bg-surface-secondary rounded" />
+        <div className="motion-safe:animate-pulse h-4 w-full bg-surface-secondary rounded" />
+        <div className="motion-safe:animate-pulse h-4 w-3/4 bg-surface-secondary rounded" />
       </div>
     );
   }
@@ -169,7 +169,7 @@ function HashtagContent({
   if (!document) {
     return (
       <div className="p-6">
-        <p className="text-sm text-[var(--text-muted)]">Hashtag document not found</p>
+        <p className="text-sm text-content-muted">Hashtag document not found</p>
       </div>
     );
   }
@@ -245,10 +245,10 @@ function HashtagContent({
   return (
     <div className="flex flex-col h-full max-h-[420px]">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-edge bg-surface-secondary">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)]">#{hashtag}</h3>
-          <span className="text-xs text-[var(--text-muted)] bg-[var(--bg-primary)] px-2 py-1 rounded">
+          <h3 className="text-lg font-semibold text-content">#{hashtag}</h3>
+          <span className="text-xs text-content-muted bg-surface px-2 py-1 rounded">
             {contextItems.length} related {contextItems.length === 1 ? "document" : "documents"}
           </span>
         </div>
@@ -256,24 +256,24 @@ function HashtagContent({
           <button
             onClick={handleReindex}
             disabled={isReindexing}
-            className="px-2 py-1 text-xs border rounded-md hover:bg-[var(--bg-hover)] disabled:opacity-60"
+            className="px-2 py-1 text-xs border rounded-md hover:bg-surface-hover disabled:opacity-60"
             title="Re-index your documents into Enhanced RAG so hashtag search uses LLM validation"
           >
             {isReindexing ? "Re-indexing…" : "Re-index RAG"}
           </button>
           <button
             onClick={handleOpenFullDossier}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+            className="p-2 hover:bg-surface-hover rounded-md transition-colors"
             title="Open full document"
           >
-            <ExternalLink className="w-4 h-4 text-[var(--text-muted)]" />
+            <ExternalLink className="w-4 h-4 text-content-muted" />
           </button>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+            className="p-2 hover:bg-surface-hover rounded-md transition-colors"
             title="Close"
           >
-            <X className="w-4 h-4 text-[var(--text-muted)]" />
+            <X className="w-4 h-4 text-content-muted" />
           </button>
         </div>
       </div>
@@ -282,12 +282,12 @@ function HashtagContent({
       <div className="flex-1 overflow-y-auto">
         {contextItems.length === 0 ? (
           <div className="text-center py-8 px-6">
-            <p className="text-sm text-[var(--text-muted)] italic">
+            <p className="text-sm text-content-muted italic">
               No related documents found yet. Context is being gathered...
             </p>
             <button
               onClick={handleOpenFullDossier}
-              className="mt-4 text-sm text-[var(--accent-primary)] hover:underline"
+              className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
             >
               Open full document to see details
             </button>
@@ -313,11 +313,11 @@ function HashtagContent({
                       handleOpenFullDossier();
                     }
                   }}
-                  className="block p-3 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] transition-all group cursor-pointer"
+                  className="block p-3 rounded-lg border border-edge hover:border-indigo-500/30 transition-all group cursor-pointer"
                 >
                   <div className="flex gap-3">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 group-hover:text-[var(--accent-primary)] transition-colors">
+                      <h4 className="text-sm font-medium text-content line-clamp-2 group-hover:text-indigo-600 dark:text-indigo-400 transition-colors">
                         {item.matchType === "hybrid" ? "🎯" :
                          item.matchType === "exact" || item.matchType === "exact-title" || item.matchType === "exact-hybrid" ? "📍" :
                          item.matchType === "exact-content" ? "📄" :
@@ -325,7 +325,7 @@ function HashtagContent({
                         {item.title}
                       </h4>
                       {item.snippet && (
-                        <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">
+                        <p className="text-xs text-content-muted mt-1 line-clamp-2">
                           {item.snippet}
                         </p>
                       )}
@@ -339,8 +339,8 @@ function HashtagContent({
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
-        <p className="text-xs text-[var(--text-muted)]">
+      <div className="px-6 py-3 border-t border-edge bg-surface-secondary">
+        <p className="text-xs text-content-muted">
           💡 <strong>Tip:</strong> Double-click the hashtag to open the full document view
         </p>
       </div>

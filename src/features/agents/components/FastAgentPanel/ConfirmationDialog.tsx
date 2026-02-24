@@ -41,16 +41,16 @@ export function ConfirmationDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="bg-surface rounded-lg shadow-xl max-w-md w-full mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+        <div className="flex items-center justify-between p-4 border-b border-edge">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-yellow-600" />
-            <h3 className="font-semibold text-[var(--text-primary)]">{title}</h3>
+            <h3 className="font-semibold text-content">{title}</h3>
           </div>
           <button
             onClick={onCancel}
-            className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+            className="text-content-muted hover:text-content-secondary transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -58,14 +58,14 @@ export function ConfirmationDialog({
 
         {/* Body */}
         <div className={`p-4 border-l-4 ${variantStyles[variant]}`}>
-          <p className="text-[var(--text-primary)]">{message}</p>
+          <p className="text-content">{message}</p>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t bg-[var(--bg-secondary)]">
+        <div className="flex items-center justify-end gap-2 p-4 border-t bg-surface-secondary">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-[var(--text-primary)] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] transition-colors"
+            className="px-4 py-2 text-sm font-medium text-content bg-surface border border-edge rounded-md hover:bg-surface-hover transition-colors"
           >
             {cancelLabel}
           </button>

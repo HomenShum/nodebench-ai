@@ -86,10 +86,10 @@ export function CalendarHomeHub({
 
 
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto relative pb-24 lg:pb-0">
+    <div className="nb-page-shell">
 
-      <div className="flex-1 p-8 relative z-10">
-        <div className="dashboard-container max-w-7xl mx-auto flex gap-8">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame flex gap-8">
           <div className="flex-1 min-w-0">
             <TopDividerBar
               left={
@@ -105,13 +105,13 @@ export function CalendarHomeHub({
               onQuickAddTask={handleAddTaskForDate}
             />
           </div>
-          <aside ref={sidebarRef} className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)] relative z-20`}>
+          <aside ref={sidebarRef} className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-edge bg-surface relative z-20`}>
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] flex items-center justify-center shadow-sm"
+              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-edge bg-surface text-content-secondary hover:bg-surface-hover flex items-center justify-center shadow-sm"
             >
               {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>

@@ -24,13 +24,13 @@ export function VideoCard({ video, className }: VideoCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group block rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-[var(--border-color)]",
-        "transition-all duration-200 bg-[var(--bg-primary)]",
+        "group block rounded-lg overflow-hidden border border-edge hover:border-edge",
+        "transition-all duration-200 bg-surface",
         className
       )}
     >
       {/* Thumbnail with play button overlay */}
-      <div className="relative aspect-video bg-[var(--bg-hover)]">
+      <div className="relative aspect-video bg-surface-hover">
         <img
           src={thumbnailUrl}
           alt={video.title}
@@ -48,18 +48,18 @@ export function VideoCard({ video, className }: VideoCardProps) {
 
       {/* Video metadata */}
       <div className="p-3">
-        <h3 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
+        <h3 className="text-sm font-medium text-content line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
           {video.title}
         </h3>
-        <p className="text-xs text-[var(--text-secondary)] line-clamp-1">
+        <p className="text-xs text-content-secondary line-clamp-1">
           {video.channel}
         </p>
       </div>
 
       {/* External link indicator */}
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div className="bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
-          <ExternalLink className="h-3 w-3 text-[var(--text-primary)]" />
+        <div className="bg-surface/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+          <ExternalLink className="h-3 w-3 text-content" />
         </div>
       </div>
     </a>
@@ -88,10 +88,10 @@ export function VideoCarousel({ videos, title = "Related Videos" }: VideoCarouse
       {/* Section header */}
       <div className="flex items-center gap-2 mb-3">
         <div className="h-px flex-1 bg-[var(--border-color)]"></div>
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-content flex items-center gap-2">
           <Play className="h-4 w-4 text-red-600" />
           {title}
-          <span className="text-xs font-normal text-[var(--text-secondary)]">
+          <span className="text-xs font-normal text-content-secondary">
             ({showAll ? videos.length : Math.min(videos.length, INITIAL_DISPLAY_COUNT)}{hasMore && !showAll ? `/${videos.length}` : ''})
           </span>
         </h3>
@@ -116,7 +116,7 @@ export function VideoCarousel({ videos, title = "Related Videos" }: VideoCarouse
         <div className="flex justify-center mt-3">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-[var(--text-primary)] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)] transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm text-content bg-surface border border-edge rounded-lg hover:bg-surface-hover hover:border-edge transition-colors"
           >
             {showAll ? (
               <>

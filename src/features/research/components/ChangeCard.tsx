@@ -320,17 +320,17 @@ export function ChangeCard({
         <div className="flex-1 min-w-0">
           {/* Title Row */}
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-[color:var(--text-primary)] leading-tight min-w-0 truncate">
+            <h3 className="text-sm font-semibold text-content leading-tight min-w-0 truncate">
               {diff.changeTitle}
             </h3>
             <SeverityBadge severity={diff.severity} />
           </div>
 
           {/* Source & Time */}
-          <div className="flex items-center gap-2 text-xs text-[color:var(--text-muted)] mb-2">
+          <div className="flex items-center gap-2 text-xs text-content-muted mb-2">
             {source && (
               <>
-                <span className="font-medium text-[color:var(--text-secondary)]">
+                <span className="font-medium text-content-secondary">
                   {source.name}
                 </span>
                 <span>•</span>
@@ -340,7 +340,7 @@ export function ChangeCard({
           </div>
 
           {/* Summary */}
-          <p className="text-sm text-[color:var(--text-secondary)] line-clamp-2">
+          <p className="text-sm text-content-secondary line-clamp-2">
             {diff.changeSummary}
           </p>
 
@@ -365,14 +365,14 @@ export function ChangeCard({
         </div>
 
         {/* Expand/Collapse Indicator */}
-        <div className="flex-shrink-0 text-[color:var(--text-muted)]">
+        <div className="flex-shrink-0 text-content-muted">
           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </div>
       </button>
 
       {/* Expanded Content */}
       {isExpanded && (
-        <div className="pl-5 pr-4 pb-4 border-t border-[color:var(--border-color)]">
+        <div className="pl-5 pr-4 pb-4 border-t border-edge">
           {/* Diff Hunks */}
           {diff.diffHunks && diff.diffHunks.length > 0 && (
             <div className="mt-4 space-y-2">
@@ -406,7 +406,7 @@ export function ChangeCard({
 
           {/* Classification Metadata */}
           {diff.classifiedBy && (
-            <div className="mt-4 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
+            <div className="mt-4 flex items-center gap-2 text-xs text-content-muted">
               <span>Classified by: {diff.classifiedBy}</span>
               {diff.classificationConfidence && (
                 <>
@@ -468,19 +468,19 @@ export function ChangeListItem({ diff, source, selected = false, onSelect }: Cha
         <span className={`mt-1.5 h-2 w-2 rounded-full ${severityColor[diff.severity]}`} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-semibold text-[color:var(--text-primary)] leading-tight line-clamp-2">
+            <p className="text-xs font-semibold text-content leading-tight line-clamp-2">
               {diff.changeTitle}
             </p>
             <span className="flex-shrink-0">
               <ChangeTypeBadge changeType={diff.changeType} />
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
+          <div className="mt-1 flex items-center gap-2 text-xs text-content-muted">
             <span className="truncate">{source?.name ?? diff.registryId}</span>
             <span>•</span>
             <span>{formatTimeAgo(diff.detectedAt)}</span>
           </div>
-          <p className="mt-1 text-xs text-[color:var(--text-secondary)] line-clamp-2">
+          <p className="mt-1 text-xs text-content-secondary line-clamp-2">
             {diff.changeSummary}
           </p>
         </div>
@@ -507,7 +507,7 @@ export function ChangeCardList({
 }: ChangeCardListProps) {
   if (diffs.length === 0) {
     return (
-      <div className="text-center py-8 text-[color:var(--text-muted)]">
+      <div className="text-center py-8 text-content-muted">
         <Info className="w-8 h-8 mx-auto mb-2 opacity-50" />
         <p className="text-sm">{emptyMessage}</p>
       </div>

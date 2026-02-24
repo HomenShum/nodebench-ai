@@ -352,7 +352,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           for (const mark of node.marks) {
             if (mark.type === 'bold') text = <strong key={idx}>{text}</strong>;
             if (mark.type === 'italic') text = <em key={idx}>{text}</em>;
-            if (mark.type === 'code') text = <code key={idx} className="bg-[var(--bg-secondary)] px-1 rounded">{text}</code>;
+            if (mark.type === 'code') text = <code key={idx} className="bg-surface-secondary px-1 rounded">{text}</code>;
             if (mark.type === 'link') {
               const href = mark.attrs?.href;
               const isLocalDocument = href?.startsWith('/documents/');
@@ -364,7 +364,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   <a
                     key={idx}
                     href={href}
-                    className="text-[var(--accent-primary)] hover:underline cursor-pointer"
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                     onClick={(e) => handleDocumentLinkClick(docId, e)}
                   >
                     {text}
@@ -376,7 +376,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   <a
                     key={idx}
                     href={href}
-                    className="text-[var(--accent-primary)] hover:underline"
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -406,10 +406,10 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         return <p className="mb-2">{renderContent(node.content)}</p>;
 
       case 'blockquote':
-        return <blockquote className="border-l-4 border-[var(--accent-primary)] pl-4 italic my-4">{renderContent(node.content)}</blockquote>;
+        return <blockquote className="border-l-4 border-indigo-500/30 pl-4 italic my-4">{renderContent(node.content)}</blockquote>;
 
       case 'codeBlock':
-        return <pre className="bg-[var(--bg-secondary)] p-4 rounded my-4 overflow-x-auto"><code>{renderContent(node.content)}</code></pre>;
+        return <pre className="bg-surface-secondary p-4 rounded my-4 overflow-x-auto"><code>{renderContent(node.content)}</code></pre>;
 
       case 'video': {
         const videoUrl = node.attrs?.url;
@@ -431,7 +431,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             );
           }
         }
-        return <div className="text-[var(--text-muted)] my-2">Video: {videoUrl}</div>;
+        return <div className="text-content-muted my-2">Video: {videoUrl}</div>;
       }
 
       case 'image':
@@ -439,7 +439,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
 
       case 'file':
         return (
-          <a href={node.attrs?.url} target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline my-2 block">
+          <a href={node.attrs?.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline my-2 block">
             📄 {node.attrs?.name || node.attrs?.caption || 'Download file'}
           </a>
         );
@@ -484,8 +484,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 motion-safe:animate-spin text-[var(--accent-primary)] mx-auto" />
-          <p className="text-sm text-[var(--text-secondary)]">Loading report...</p>
+          <Loader2 className="h-8 w-8 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400 mx-auto" />
+          <p className="text-sm text-content-secondary">Loading report...</p>
         </div>
       </div>
     );
@@ -496,16 +496,16 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
     return (
       <div className="h-full overflow-y-auto bg-[#f8f6f1] editorial-layout">
         <div className="max-w-[1100px] mx-auto px-6 py-8">
-          <div className="bg-[color:var(--bg-primary)] shadow-lg border border-[color:var(--border-color)]">
+          <div className="bg-surface shadow-lg border border-edge">
             {/* Masthead */}
             <div className="border-b-4 border-black px-8 pt-6 pb-3">
-              <div className="text-center border-b border-[color:var(--border-color)] pb-3 mb-2">
+              <div className="text-center border-b border-edge pb-3 mb-2">
                 <h1 className="text-5xl font-black tracking-tight text-black mb-1">
                   TODAY'S REPORT
                 </h1>
-                <p className="text-xs text-[color:var(--text-primary)] uppercase tracking-wider">Research Report</p>
+                <p className="text-xs text-content uppercase tracking-wider">Research Report</p>
               </div>
-              <div className="flex items-center justify-between text-xs text-[color:var(--text-primary)]">
+              <div className="flex items-center justify-between text-xs text-content">
                 <span className="uppercase tracking-wide">Vol. 1, No. 1</span>
                 <span>
                   {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US", {
@@ -520,7 +520,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             </div>
 
             {/* Document Title */}
-            <div className="px-8 pt-6 pb-4 border-b border-[color:var(--border-color)]">
+            <div className="px-8 pt-6 pb-4 border-b border-edge">
               <h2 className="text-3xl font-bold text-black leading-tight">
                 {document?.title || 'Untitled Research'}
               </h2>
@@ -530,7 +530,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="px-8 py-6">
               <div className="prose prose-sm max-w-none">
                 {tipTapContent ? (
-                  <div className="text-[color:var(--text-primary)] leading-relaxed">
+                  <div className="text-content leading-relaxed">
                     {tipTapContent.content.map((node, idx) => (
                       <div key={idx} className="mb-4">
                         {renderTipTapNode(node)}
@@ -538,14 +538,14 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                     ))}
                   </div>
                 ) : (
-                  <div className="text-sm text-[color:var(--text-secondary)] italic">
+                  <div className="text-sm text-content-secondary italic">
                     No content available.
                   </div>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="mt-6 pt-3 text-xs border-t-2 border-[color:var(--border-color)] text-[color:var(--text-primary)]">
+              <div className="mt-6 pt-3 text-xs border-t-2 border-edge text-content">
                 <p>Analyzed {mediaCounts.total} media assets • Compiled on {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US")}</p>
               </div>
             </div>
@@ -558,15 +558,15 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
   // If in unified editor mode, render full-width editor
   if (viewMode === 'unified') {
     return (
-      <div className="h-full flex flex-col bg-[var(--bg-primary)]">
+      <div className="h-full flex flex-col bg-surface">
         {/* Header with view mode toggle */}
-        <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+        <div className="border-b border-edge bg-surface">
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+              <h2 className="text-lg font-semibold text-content">
                 {document?.title || 'Untitled Report'}
               </h2>
-              <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+              <div className="flex items-center gap-2 text-xs text-content-muted">
                 <span>{mediaCounts.total} media assets</span>
               </div>
             </div>
@@ -574,7 +574,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
               <button
                 type="button"
                 onClick={() => setViewMode('split')}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded border border-edge bg-surface-secondary hover:bg-surface-hover transition-colors"
                 title="Switch to classic split panel view"
               >
                 <LayoutList className="h-4 w-4" />
@@ -587,7 +587,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         {/* Full-width Unified Editor */}
         <div className="flex-1 overflow-hidden">
           <ErrorBoundary title="Failed to load editor">
-            <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+            <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
               <UnifiedEditor documentId={documentId} />
             </Suspense>
           </ErrorBoundary>
@@ -598,32 +598,32 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
 
   // Default: Split panel mode (classic view) - Clean style without gradients
   return (
-    <div className="h-full flex flex-col bg-[var(--bg-secondary)] relative overflow-hidden">
+    <div className="h-full flex flex-col bg-surface-secondary relative overflow-hidden">
 
       {/* Modern Compact Header with Breadcrumbs */}
-      <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)] shadow-sm">
+      <div className="border-b border-edge bg-surface shadow-sm">
         {/* Top Row: Breadcrumbs + View Toggles */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--border-color)]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-edge">
           {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-[var(--text-secondary)]">
-            <Home className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-            <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />
-            <span className="text-[var(--text-muted)] hidden sm:inline">Reports</span>
-            <ChevronRight className="h-3 w-3 text-[var(--text-muted)] hidden sm:inline" />
-            <span className="text-[var(--text-primary)] font-semibold truncate max-w-[200px] sm:max-w-xs">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-content-secondary">
+            <Home className="h-3.5 w-3.5 text-content-muted" />
+            <ChevronRight className="h-3 w-3 text-content-muted" />
+            <span className="text-content-muted hidden sm:inline">Reports</span>
+            <ChevronRight className="h-3 w-3 text-content-muted hidden sm:inline" />
+            <span className="text-content font-semibold truncate max-w-[200px] sm:max-w-xs">
               {document?.title || 'Untitled Report'}
             </span>
           </div>
 
           {/* View Mode Toggles */}
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5 bg-[var(--bg-secondary)] rounded-lg p-0.5 border border-[var(--border-color)]">
+            <div className="flex items-center gap-0.5 bg-surface-secondary rounded-lg p-0.5 border border-edge">
               <button
                 type="button"
                 onClick={() => setViewMode('split')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'split'
                   ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                  : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                   }`}
                 title="Classic view"
                 aria-label="Switch to classic view"
@@ -636,7 +636,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 onClick={() => setViewMode('unified')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'unified'
                   ? 'bg-[var(--accent-primary)] text-white shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                  : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                   }`}
                 title="Edit mode"
                 aria-label="Switch to edit mode"
@@ -660,17 +660,17 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         </div>
 
         {/* Bottom Row: Search + Filters + Stats */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[var(--bg-secondary)]/30">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-surface-secondary/30">
           {/* Search Bar */}
           <div className="flex items-center gap-2 flex-1 sm:max-w-md">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-content-muted" />
               <input
                 type="text"
                 placeholder="Search media..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent transition-all placeholder:text-[var(--text-muted)]"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent transition-all placeholder:text-content-muted"
                 aria-label="Search media"
               />
             </div>
@@ -679,13 +679,13 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="relative hidden sm:block">
               <button
                 type="button"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-edge rounded-lg hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] whitespace-nowrap"
                 title="Filter by type"
                 aria-label={`Filter by ${filterType}`}
               >
-                <Filter className="h-4 w-4 text-[var(--text-secondary)]" />
-                <span className="capitalize text-[var(--text-secondary)]">{filterType}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+                <Filter className="h-4 w-4 text-content-secondary" />
+                <span className="capitalize text-content-secondary">{filterType}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-content-muted" />
               </button>
             </div>
 
@@ -693,13 +693,13 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="relative hidden sm:block">
               <button
                 type="button"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:bg-[var(--bg-hover)] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-edge rounded-lg hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] whitespace-nowrap"
                 title="Sort by"
                 aria-label={`Sort by ${sortBy}`}
               >
-                <SortAsc className="h-4 w-4 text-[var(--text-secondary)]" />
-                <span className="capitalize text-[var(--text-secondary)]">{sortBy}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+                <SortAsc className="h-4 w-4 text-content-secondary" />
+                <span className="capitalize text-content-secondary">{sortBy}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-content-muted" />
               </button>
             </div>
           </div>
@@ -729,9 +729,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
       <div className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 lg:p-6">
         <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
           {/* Top Left: Videos */}
-          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
-              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <div className="border border-edge rounded-lg overflow-hidden flex flex-col bg-surface shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface-secondary/50">
+              <h4 className="text-sm font-semibold text-content flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-red-500/10">
                   <Video className="h-4 w-4 text-red-500" />
                 </div>
@@ -751,9 +751,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                     {mergedMedia.videos.map((video, idx) => (
                       <div
                         key={idx}
-                        className="group cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 pressable"
+                        className="group cursor-pointer rounded-lg overflow-hidden border border-edge/40 hover:border-edge/60 transition-all duration-300 pressable"
                       >
-                        <div className="relative aspect-video bg-gradient-to-br from-[color:var(--bg-secondary)] to-[color:var(--bg-secondary)]">
+                        <div className="relative aspect-video bg-gradient-to-br from-surface-secondary to-surface-secondary">
                           <img
                             src={video.thumbnail}
                             alt={video.title || 'Video'}
@@ -770,8 +770,8 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                           </div>
                         </div>
                         {video.title && (
-                          <div className="p-3 bg-gradient-to-r from-[var(--bg-primary)]/80 to-[var(--bg-secondary)]/60 backdrop-blur-sm">
-                            <p className="text-xs font-medium text-[var(--text-secondary)] line-clamp-2">{video.title}</p>
+                          <div className="p-3 bg-gradient-to-r from-surface/80 to-surface-secondary/60 backdrop-blur-sm">
+                            <p className="text-xs font-medium text-content-secondary line-clamp-2">{video.title}</p>
                           </div>
                         )}
                       </div>
@@ -779,7 +779,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                <div className="flex items-center justify-center h-full text-content-muted text-sm">
                   No videos available
                 </div>
               )}
@@ -787,9 +787,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* Top Right: Images */}
-          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
-              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <div className="border border-edge rounded-lg overflow-hidden flex flex-col bg-surface shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface-secondary/50">
+              <h4 className="text-sm font-semibold text-content flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-blue-500/10">
                   <ImageIcon className="h-4 w-4 text-blue-500" />
                 </div>
@@ -808,7 +808,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   {mergedMedia.images.map((image, idx) => (
                     <div
                       key={idx}
-                      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-[var(--border-color)]/40 hover:border-[var(--border-color)]/60 transition-all duration-300 group relative pressable"
+                      className="aspect-square cursor-pointer rounded-lg overflow-hidden border border-edge/40 hover:border-edge/60 transition-all duration-300 group relative pressable"
                     >
                       <img
                         src={image.url}
@@ -821,7 +821,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                <div className="flex items-center justify-center h-full text-content-muted text-sm">
                   No images available
                 </div>
               )}
@@ -829,9 +829,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* Bottom Left: AI Chat Transcript (Read-only Main Dossier Content) */}
-          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
-              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <div className="border border-edge rounded-lg overflow-hidden flex flex-col bg-surface shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface-secondary/50">
+              <h4 className="text-sm font-semibold text-content flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-purple-500/10">
                   <Sparkles className="h-4 w-4 text-purple-500" />
                 </div>
@@ -841,19 +841,19 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 type="button"
                 onClick={() => setShowAnalysisPopover(!showAnalysisPopover)}
                 disabled={isAnalyzing || selectableFiles.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-edge bg-surface hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm font-medium"
                 title="Analyze files"
                 aria-label="Analyze files with AI"
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
-                    <span className="hidden sm:inline text-[var(--text-secondary)]">Analyzing...</span>
+                    <Loader2 className="h-4 w-4 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400" />
+                    <span className="hidden sm:inline text-content-secondary">Analyzing...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
-                    <span className="hidden sm:inline text-[var(--text-secondary)]">Analyze</span>
+                    <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                    <span className="hidden sm:inline text-content-secondary">Analyze</span>
                   </>
                 )}
               </button>
@@ -861,7 +861,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="flex-1 overflow-y-auto p-4">
               {tipTapContent ? (
                 <div className="prose prose-sm max-w-none">
-                  <div className="text-[var(--text-primary)]">
+                  <div className="text-content">
                     {tipTapContent.content.map((node, idx) => (
                       <div key={idx} className="mb-3">
                         {renderTipTapNode(node)}
@@ -870,7 +870,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                <div className="flex items-center justify-center h-full text-content-muted text-sm">
                   No transcript available
                 </div>
               )}
@@ -878,9 +878,9 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
           </div>
 
           {/* Bottom Right: Quick Notes (Editable Separate Document) */}
-          <div className="border border-[var(--border-color)] rounded-lg overflow-hidden flex flex-col bg-[var(--bg-primary)] shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50">
-              <h4 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <div className="border border-edge rounded-lg overflow-hidden flex flex-col bg-surface shadow-sm transition-all duration-300 min-h-[300px] lg:min-h-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface-secondary/50">
+              <h4 className="text-sm font-semibold text-content flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-blue-500/10">
                   <Edit3 className="h-4 w-4 text-blue-500" />
                 </div>
@@ -890,12 +890,12 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="flex-1 overflow-hidden">
               {quickNotesDocId ? (
                 <ErrorBoundary title="Failed to load notes">
-                  <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+                  <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
                     <UnifiedEditor documentId={quickNotesDocId} mode="quickNote" editable={true} autoCreateIfEmpty={true} />
                   </Suspense>
                 </ErrorBoundary>
               ) : (
-                <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                <div className="flex items-center justify-center h-full text-content-muted text-sm">
                   Loading quick notes...
                 </div>
               )}
@@ -935,7 +935,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
         <div className="h-full overflow-y-auto opacity-0 animate-[fadeIn_0.6s_ease-out_0.2s_forwards]">
           <div className="max-w-4xl mx-auto px-6 py-8">
             <ErrorBoundary title="Failed to load editor">
-              <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+              <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
                 <UnifiedEditor documentId={documentId} mode="full" editable={true} autoCreateIfEmpty={true} />
               </Suspense>
             </ErrorBoundary>
@@ -996,14 +996,14 @@ function AnalysisPopover({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-label="Analyze report files">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-[var(--bg-primary)] rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-[var(--border-color)]">
+      <div className="relative bg-surface rounded-lg max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-2xl border border-edge">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
-          <h3 className="font-semibold text-[var(--text-primary)]">Analyze Report Files</h3>
+        <div className="flex items-center justify-between p-4 border-b border-edge">
+          <h3 className="font-semibold text-content">Analyze Report Files</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+            className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
             title="Close"
             aria-label="Close dialog"
           >
@@ -1016,22 +1016,22 @@ function AnalysisPopover({
           {/* File Selection */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-[var(--text-primary)]">
+              <label className="text-sm font-medium text-content">
                 Select Files ({selectedFiles.size} of {files.length})
               </label>
               <button
                 type="button"
                 onClick={onToggleAll}
-                className="text-xs text-[var(--accent-primary)] hover:underline"
+                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 {allSelected ? 'Deselect All' : 'Select All'}
               </button>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto border border-[var(--border-color)] rounded-lg p-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto border border-edge rounded-lg p-2">
               {files.map((file) => (
                 <label
                   key={file.id}
-                  className="flex items-center gap-2 p-2 hover:bg-[var(--bg-hover)] rounded cursor-pointer"
+                  className="flex items-center gap-2 p-2 hover:bg-surface-hover rounded cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -1041,8 +1041,8 @@ function AnalysisPopover({
                   />
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {getFileIcon(file.type)}
-                    <span className="text-sm text-[var(--text-primary)] truncate">{file.title}</span>
-                    <span className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded-full flex-shrink-0">
+                    <span className="text-sm text-content truncate">{file.title}</span>
+                    <span className="text-xs text-[var(--text-tertiary)] bg-surface-secondary px-2 py-0.5 rounded-full flex-shrink-0">
                       {file.type}
                     </span>
                   </div>
@@ -1053,13 +1053,13 @@ function AnalysisPopover({
 
           {/* Analysis Prompt */}
           <div>
-            <label className="text-sm font-medium text-[var(--text-primary)] block mb-2">
+            <label className="text-sm font-medium text-content block mb-2">
               Analysis Prompt
             </label>
             <textarea
               value={analysisPrompt}
               onChange={(e) => onPromptChange(e.target.value)}
-              className="w-full h-32 p-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+              className="w-full h-32 p-3 border border-edge rounded-lg bg-surface text-content resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
               placeholder="Enter your analysis prompt..."
             />
           </div>
@@ -1072,21 +1072,21 @@ function AnalysisPopover({
               onChange={(e) => onSaveDefaultChange(e.target.checked)}
               className="flex-shrink-0"
             />
-            <span className="text-sm text-[var(--text-secondary)]">
+            <span className="text-sm text-content-secondary">
               Remember as default prompt
             </span>
           </label>
 
           {/* Progress */}
           {isAnalyzing && (
-            <div className="p-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
+            <div className="p-3 bg-surface-secondary rounded-lg border border-edge">
               <div className="flex items-center gap-2 mb-2">
-                <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
-                <span className="text-sm text-[var(--text-primary)]">
+                <Loader2 className="h-4 w-4 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400" />
+                <span className="text-sm text-content">
                   Analyzing {progress.current} of {progress.total} files...
                 </span>
               </div>
-              <div className="w-full bg-[var(--bg-primary)] rounded-full h-2">
+              <div className="w-full bg-surface rounded-full h-2">
                 <div
                   className="bg-[var(--accent-primary)] h-2 rounded-full transition-all"
                   style={{ width: `${(progress.current / progress.total) * 100}%` }}
@@ -1097,12 +1097,12 @@ function AnalysisPopover({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-[var(--border-color)]">
+        <div className="flex items-center justify-end gap-2 p-4 border-t border-edge">
           <button
             type="button"
             onClick={onClose}
             disabled={isAnalyzing}
-            className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover text-content disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>

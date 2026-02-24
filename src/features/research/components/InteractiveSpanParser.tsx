@@ -43,6 +43,7 @@ export interface InteractiveSpanParserProps {
 export const parseSmartLinks = (
   text: string,
   linksData?: Record<string, SmartLinkMeta>,
+  keyPrefix = "smartlink",
 ): React.ReactNode[] => {
   const regex = /<SmartLink id=['"]([^'"]+)['"]>(.*?)<\/SmartLink>/g;
   const parts: Array<string | { id: string; label: string }> = [];
@@ -63,11 +64,11 @@ export const parseSmartLinks = (
 
   return parts.map((part, idx) => {
     if (typeof part === "string") {
-      return <React.Fragment key={idx}>{part}</React.Fragment>;
+      return <React.Fragment key={`${keyPrefix}-text-${idx}`}>{part}</React.Fragment>;
     }
     const link = linksData?.[part.id];
     return (
-      <SmartLink key={`${part.id}-${idx}`} summary={link?.summary} source={link?.source}>
+      <SmartLink key={`${keyPrefix}-${part.id}-${idx}`} summary={link?.summary} source={link?.source}>
         {part.label}
       </SmartLink>
     );
@@ -83,9 +84,10 @@ const parseEntitiesAndSmartLinks = (
   entities?: EntityLibrary,
   onEntityClick?: (entity: Entity) => void,
   entityEnrichment?: Record<string, EntityHoverData>,
+  keyPrefix = "entity",
 ): React.ReactNode[] => {
   if (!entities || Object.keys(entities.entities).length === 0) {
-    return parseSmartLinks(text, linksData);
+    return parseSmartLinks(text, linksData, `${keyPrefix}-smartlinks`);
   }
 
   const nodes: React.ReactNode[] = [];
@@ -96,7 +98,7 @@ const parseEntitiesAndSmartLinks = (
   while ((match = entityRegex.exec(text)) !== null) {
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      nodes.push(...parseSmartLinks(before, linksData));
+      nodes.push(...parseSmartLinks(before, linksData, `${keyPrefix}-before-${match.index}`));
     }
 
     const entityId = match[1];
@@ -112,7 +114,7 @@ const parseEntitiesAndSmartLinks = (
 
       nodes.push(
         <EntityLink
-          key={`entity-${entityId}-${match.index}`}
+          key={`${keyPrefix}-entity-${entityId}-${match.index}`}
           entity={displayEntity}
           displayName={displayName}
           onClick={onEntityClick}
@@ -123,7 +125,7 @@ const parseEntitiesAndSmartLinks = (
     } else {
       nodes.push(
         <span
-          key={`entity-missing-${entityId}-${match.index}`}
+          key={`${keyPrefix}-entity-missing-${entityId}-${match.index}`}
           className="text-orange-500 text-xs italic"
           title={`Entity not found: ${entityId}`}
         >
@@ -138,7 +140,7 @@ const parseEntitiesAndSmartLinks = (
   if (lastIndex < text.length) {
     const rest = text.slice(lastIndex);
     if (rest) {
-      nodes.push(...parseSmartLinks(rest, linksData));
+      nodes.push(...parseSmartLinks(rest, linksData, `${keyPrefix}-rest-${lastIndex}`));
     }
   }
 
@@ -156,10 +158,18 @@ const parseCitationsEntitiesAndSmartLinks = (
   onCitationClick?: (citation: Citation) => void,
   onEntityClick?: (entity: Entity) => void,
   entityEnrichment?: Record<string, EntityHoverData>,
+  keyPrefix = "citation",
 ): React.ReactNode[] => {
   // If no citations, delegate to entity parser
   if (!citations || Object.keys(citations.citations).length === 0) {
-    return parseEntitiesAndSmartLinks(text, linksData, entities, onEntityClick, entityEnrichment);
+    return parseEntitiesAndSmartLinks(
+      text,
+      linksData,
+      entities,
+      onEntityClick,
+      entityEnrichment,
+      `${keyPrefix}-entities`,
+    );
   }
 
   const nodes: React.ReactNode[] = [];
@@ -171,7 +181,16 @@ const parseCitationsEntitiesAndSmartLinks = (
     // Add text before the citation (parse for entities)
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      nodes.push(...parseEntitiesAndSmartLinks(before, linksData, entities, onEntityClick, entityEnrichment));
+      nodes.push(
+        ...parseEntitiesAndSmartLinks(
+          before,
+          linksData,
+          entities,
+          onEntityClick,
+          entityEnrichment,
+          `${keyPrefix}-before-${match.index}`,
+        ),
+      );
     }
 
     const citationId = match[1];
@@ -186,7 +205,7 @@ const parseCitationsEntitiesAndSmartLinks = (
 
       nodes.push(
         <FootnoteMarker
-          key={`cite-${citationId}-${match.index}`}
+          key={`${keyPrefix}-cite-${citationId}-${match.index}`}
           citation={displayCitation}
           onClick={onCitationClick}
         />,
@@ -194,7 +213,7 @@ const parseCitationsEntitiesAndSmartLinks = (
     } else {
       nodes.push(
         <span
-          key={`cite-missing-${citationId}-${match.index}`}
+          key={`${keyPrefix}-cite-missing-${citationId}-${match.index}`}
           className="text-red-500 text-xs"
           title={`Citation not found: ${citationId}`}
         >
@@ -210,7 +229,16 @@ const parseCitationsEntitiesAndSmartLinks = (
   if (lastIndex < text.length) {
     const rest = text.slice(lastIndex);
     if (rest) {
-      nodes.push(...parseEntitiesAndSmartLinks(rest, linksData, entities, onEntityClick, entityEnrichment));
+      nodes.push(
+        ...parseEntitiesAndSmartLinks(
+          rest,
+          linksData,
+          entities,
+          onEntityClick,
+          entityEnrichment,
+          `${keyPrefix}-rest-${lastIndex}`,
+        ),
+      );
     }
   }
 
@@ -258,7 +286,18 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   while ((match = tokenRegex.exec(text)) !== null) {
     const before = text.slice(lastIndex, match.index);
     if (before) {
-      nodes.push(...parseCitationsEntitiesAndSmartLinks(before, smartLinks, citations, entities, onCitationClick, onEntityClick, entityEnrichment));
+      nodes.push(
+        ...parseCitationsEntitiesAndSmartLinks(
+          before,
+          smartLinks,
+          citations,
+          entities,
+          onCitationClick,
+          onEntityClick,
+          entityEnrichment,
+          `token-before-${match.index}`,
+        ),
+      );
     }
 
     const rawContent = match[1].trim();
@@ -295,7 +334,18 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   if (lastIndex < text.length) {
     const rest = text.slice(lastIndex);
     if (rest) {
-      nodes.push(...parseCitationsEntitiesAndSmartLinks(rest, smartLinks, citations, entities, onCitationClick, onEntityClick, entityEnrichment));
+      nodes.push(
+        ...parseCitationsEntitiesAndSmartLinks(
+          rest,
+          smartLinks,
+          citations,
+          entities,
+          onCitationClick,
+          onEntityClick,
+          entityEnrichment,
+          `token-rest-${lastIndex}`,
+        ),
+      );
     }
   }
 

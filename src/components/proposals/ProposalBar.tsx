@@ -90,11 +90,11 @@ export function ProposalBar({
 
   return (
     <div
-      className="fixed top-3 right-3 z-[70] rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)]/90 backdrop-blur px-3 py-2 shadow"
+      className="fixed top-3 right-3 z-[70] rounded-md border border-edge bg-surface/90 backdrop-blur px-3 py-2 shadow"
       role="region"
       aria-label="AI proposal controls"
     >
-      <div className="text-xs text-[var(--text-secondary)] mb-1">
+      <div className="text-xs text-content-secondary mb-1">
         {counts.blocks} block{counts.blocks !== 1 ? "s" : ""} • {counts.selected} selected • +{counts.totalAdds} −{counts.totalDels}
       </div>
       <div className="flex items-center gap-2">
@@ -114,7 +114,7 @@ export function ProposalBar({
             {confirmAll ? 'Confirm Apply All' : 'Apply All'}
           </button>
           {confirmAll && (
-            <div className="absolute -bottom-7 right-0 text-xs bg-[var(--bg-primary)] border border-[var(--border-color)] rounded px-2 py-0.5 shadow">
+            <div className="absolute -bottom-7 right-0 text-xs bg-surface border border-edge rounded px-2 py-0.5 shadow">
               Click again to confirm
             </div>
           )}

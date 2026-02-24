@@ -35,7 +35,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
       memory_write: { icon: Database, color: 'text-cyan-600', bg: 'bg-cyan-100' },
       thinking: { icon: Cpu, color: 'text-violet-600', bg: 'bg-violet-100' },
     };
-    return configs[event.type] || { icon: Zap, color: 'text-[var(--text-muted)]', bg: 'bg-[var(--bg-secondary)]' };
+    return configs[event.type] || { icon: Zap, color: 'text-content-muted', bg: 'bg-surface-secondary' };
   }, [event.type]);
 
   const Icon = config.icon;
@@ -45,7 +45,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
     <div className="relative flex items-start gap-2.5 py-2 group">
       {/* Timeline connector */}
       {!isLast && (
-        <div className="absolute left-[11px] top-8 bottom-0 w-px bg-[var(--border-color)]" />
+        <div className="absolute left-[11px] top-6 bottom-0 w-px bg-[var(--border-color)]" />
       )}
       
       {/* Icon */}
@@ -67,7 +67,7 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
             {event.type.replace(/_/g, ' ')}
           </span>
           {event.duration && (
-            <span className="text-xs text-[var(--text-muted)] flex items-center gap-0.5">
+            <span className="text-xs text-content-muted flex items-center gap-0.5">
               <Timer className="w-2.5 h-2.5" />
               {event.duration}ms
             </span>
@@ -76,11 +76,11 @@ function EventItem({ event, isLast }: { event: LiveEvent; isLast: boolean }) {
             <span className="w-1.5 h-1.5 rounded-full bg-violet-500 motion-safe:animate-pulse" />
           )}
         </div>
-        <p className="text-xs text-[var(--text-primary)] truncate">
+        <p className="text-xs text-content truncate">
           {event.title || event.toolName || event.agentName || 'Processing...'}
         </p>
         {event.details && (
-          <p className="text-xs text-[var(--text-muted)] truncate mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <p className="text-xs text-content-muted truncate mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             {event.details}
           </p>
         )}
@@ -137,20 +137,20 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
 
   return (
     <div className={cn(
-      "flex flex-col h-full bg-[var(--bg-primary)] border-l border-[var(--border-color)]",
+      "flex flex-col h-full bg-surface border-l border-edge",
       className
     )}>
       {/* Header - Matches FastAgentPanel header style */}
-      <div className="flex-shrink-0 px-3 py-3 border-b border-[var(--border-color)]">
+      <div className="flex-shrink-0 px-3 py-3 border-b border-edge">
         {/* Title row */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Activity className={cn(
               "w-4 h-4",
-              isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
+              isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-content-muted"
             )} />
             <div>
-              <div className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <div className="text-sm font-semibold text-content flex items-center gap-2">
                 Live Activity
                 {stats.running > 0 && (
                   <span className="px-1.5 py-0.5 text-xs bg-violet-500 text-white rounded-full font-medium">
@@ -158,7 +158,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
                   </span>
                 )}
               </div>
-              <div className="text-xs text-[var(--text-muted)]">
+              <div className="text-xs text-content-muted">
                 {stats.total} events · {stats.success} completed
               </div>
             </div>
@@ -168,7 +168,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
             {onClear && events.length > 0 && (
               <button
                 onClick={onClear}
-                className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 transition-colors"
+                className="p-1.5 rounded-md text-content-muted hover:text-red-500 hover:bg-red-50 transition-colors"
                 title="Clear all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -176,7 +176,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
             )}
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+              className="p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-secondary transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -195,7 +195,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
                   "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors border",
                   filter === key
                     ? "bg-violet-50 border-violet-200 text-violet-700"
-                    : "bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                    : "bg-surface-secondary hover:bg-surface-hover text-content-secondary border-edge"
                 )}
               >
                 <Icon className="w-3 h-3" />
@@ -203,7 +203,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
                 {count > 0 && (
                   <span className={cn(
                     "px-1 py-0.5 rounded text-xs font-semibold",
-                    filter === key ? "bg-violet-200 text-violet-800" : "bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
+                    filter === key ? "bg-violet-200 text-violet-800" : "bg-surface-secondary text-content-muted"
                   )}>
                     {count}
                   </span>
@@ -225,17 +225,17 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center mb-3",
-              "bg-[var(--bg-secondary)]"
+              "bg-surface-secondary"
             )}>
               <Activity className={cn(
                 "w-5 h-5",
-                isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
+                isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-content-muted"
               )} />
             </div>
-            <p className="text-sm font-medium text-[var(--text-primary)] mb-1">
+            <p className="text-sm font-medium text-content mb-1">
               {isStreaming ? 'Listening...' : 'No Activity Yet'}
             </p>
-            <p className="text-xs text-[var(--text-muted)] max-w-[180px]">
+            <p className="text-xs text-content-muted max-w-[180px]">
               {isStreaming 
                 ? 'Events will appear as the agent works'
                 : 'Start a conversation to see live events'}
@@ -256,7 +256,7 @@ export function LiveEventsPanel({ events, onClose, onClear, isStreaming, classNa
 
       {/* Footer - Jump to latest */}
       {!autoScroll && events.length > 3 && (
-        <div className="flex-shrink-0 px-3 py-2 border-t border-[var(--border-color)]">
+        <div className="flex-shrink-0 px-3 py-2 border-t border-edge">
           <button
             onClick={() => {
               setAutoScroll(true);

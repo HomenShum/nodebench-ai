@@ -163,10 +163,10 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
   `.trim();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="nb-page-shell">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-edge">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="nb-page-frame px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (
               <button type="button" onClick={onBack} className="p-2 hover:bg-surface-hover rounded-lg transition-colors" aria-label="Go back">
@@ -185,8 +185,8 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
                 type="button"
                 onClick={() => setActiveSection(id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors ${activeSection === id
-                    ? 'bg-gray-900 dark:bg-surface-secondary text-white dark:text-content'
-                    : 'bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1]'
+                    ? 'bg-[var(--accent-primary)] text-white'
+                    : 'bg-surface-secondary text-content-secondary hover:bg-surface hover:text-content'
                   }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -197,85 +197,87 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-12">
-        {/* Phase 2: Timeline Strip */}
-        {(activeSection === 'all' || activeSection === 'timeline') && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-              Phase 2: Timeline Strip
-            </h2>
-            <TimelineStrip
-              events={sampleTimelineEvents}
-              activeEventId="3"
-              onEventClick={() => {}}
-            />
-          </section>
-        )}
+      <div className="nb-page-inner">
+        <main className="nb-page-frame space-y-12">
+          {/* Phase 2: Timeline Strip */}
+          {(activeSection === 'all' || activeSection === 'timeline') && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+                Phase 2: Timeline Strip
+              </h2>
+              <TimelineStrip
+                events={sampleTimelineEvents}
+                activeEventId="3"
+                onEventClick={() => {}}
+              />
+            </section>
+          )}
 
-        {/* Phase 1: Citations */}
-        {(activeSection === 'all' || activeSection === 'citations') && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-              Phase 1: Citation & Provenance
-            </h2>
-            <div className="bg-surface rounded-lg border border-edge p-6 space-y-4">
-              <p className="text-content-secondary leading-relaxed">
-                Inline footnote markers: Research shows <FootnoteMarker citation={sampleCitations.citations['arxiv-001']} />
-                that AI development is accelerating. Financial data <FootnoteMarker citation={sampleCitations.citations['sec-10k']} />
-                confirms market growth. Industry leaders <FootnoteMarker citation={sampleCitations.citations['quote-altman']} />
-                remain optimistic.
-              </p>
-              <FootnotesSection library={sampleCitations} />
-            </div>
-          </section>
-        )}
-
-        {/* Phase 3: Entity Linking */}
-        {(activeSection === 'all' || activeSection === 'entities') && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-              Phase 3: Entity Linking
-            </h2>
-            <div className="bg-surface rounded-lg border border-edge p-6 space-y-6">
-              <div className="flex flex-wrap gap-3">
-                {Object.values(sampleEntities.entities).map((entity) => (
-                  <EntityLink key={entity.id} entity={entity} onClick={() => {}} />
-                ))}
+          {/* Phase 1: Citations */}
+          {(activeSection === 'all' || activeSection === 'citations') && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+                Phase 1: Citation & Provenance
+              </h2>
+              <div className="bg-surface rounded-lg border border-edge p-6 space-y-4">
+                <p className="text-content-secondary leading-relaxed">
+                  Inline footnote markers: Research shows <FootnoteMarker citation={sampleCitations.citations['arxiv-001']} />
+                  that AI development is accelerating. Financial data <FootnoteMarker citation={sampleCitations.citations['sec-10k']} />
+                  confirms market growth. Industry leaders <FootnoteMarker citation={sampleCitations.citations['quote-altman']} />
+                  remain optimistic.
+                </p>
+                <FootnotesSection library={sampleCitations} />
               </div>
-              <div className="border-t border-edge pt-4">
-                <h3 className="text-sm font-semibold text-content-secondary mb-2">Interactive Span Parser Demo:</h3>
-                <div className="text-content-secondary leading-relaxed">
-                  <InteractiveSpanParser
-                    text={sampleTextWithTokens}
-                    citations={sampleCitations}
-                    entities={sampleEntities}
-                  />
+            </section>
+          )}
+
+          {/* Phase 3: Entity Linking */}
+          {(activeSection === 'all' || activeSection === 'entities') && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+                Phase 3: Entity Linking
+              </h2>
+              <div className="bg-surface rounded-lg border border-edge p-6 space-y-6">
+                <div className="flex flex-wrap gap-3">
+                  {Object.values(sampleEntities.entities).map((entity) => (
+                    <EntityLink key={entity.id} entity={entity} onClick={() => {}} />
+                  ))}
+                </div>
+                <div className="border-t border-edge pt-4">
+                  <h3 className="text-sm font-semibold text-content-secondary mb-2">Interactive Span Parser Demo:</h3>
+                  <div className="text-content-secondary leading-relaxed">
+                    <InteractiveSpanParser
+                      text={sampleTextWithTokens}
+                      citations={sampleCitations}
+                      entities={sampleEntities}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          )}
 
-        {/* Phase 5: Research Supplements */}
-        {(activeSection === 'all' || activeSection === 'supplements') && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-              Phase 5: Research Supplements
-            </h2>
-            <ResearchSupplementView supplement={sampleSupplement} />
-          </section>
-        )}
+          {/* Phase 5: Research Supplements */}
+          {(activeSection === 'all' || activeSection === 'supplements') && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+                Phase 5: Research Supplements
+              </h2>
+              <ResearchSupplementView supplement={sampleSupplement} />
+            </section>
+          )}
 
-        {/* Phase 6: Email Digest */}
-        {(activeSection === 'all' || activeSection === 'digest') && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-              Phase 6: Email Digest Preview
-            </h2>
-            <EmailDigestPreview digest={sampleDigest} />
-          </section>
-        )}
-      </main>
+          {/* Phase 6: Email Digest */}
+          {(activeSection === 'all' || activeSection === 'digest') && (
+            <section className="space-y-4">
+              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+                Phase 6: Email Digest Preview
+              </h2>
+              <EmailDigestPreview digest={sampleDigest} />
+            </section>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

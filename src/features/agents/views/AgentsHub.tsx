@@ -84,7 +84,7 @@ function QuickStatsBar() {
         {[...Array(6)].map((_, i) => (
           <div
             key={i}
-            className="bg-surface rounded-lg border border-edge p-4 no-skeleton-animation"
+            className="nb-surface-card p-4 no-skeleton-animation"
             aria-busy="true"
           >
             <div className="h-6 w-12 bg-surface-secondary rounded mb-1" />
@@ -100,7 +100,7 @@ function QuickStatsBar() {
       value: stats.totalAgents,
       label: "AI Assistants",
       icon: Bot,
-      color: "text-indigo-600 dark:text-indigo-400",
+      color: "text-[var(--accent-primary)]",
     },
     {
       value: stats.activeNow,
@@ -135,7 +135,7 @@ function QuickStatsBar() {
         return (
           <div
             key={item.label}
-            className="bg-surface rounded-lg border border-edge p-4"
+            className="nb-surface-card p-4"
           >
             <div className="flex items-center gap-2">
               <Icon className={cn("w-4 h-4", item.color)} />
@@ -250,7 +250,7 @@ function ActiveSwarmsSection() {
   }
 
   return (
-    <div className="bg-surface rounded-lg border border-edge">
+    <div className="nb-surface-card">
       {/* Header */}
       <button
         type="button"
@@ -258,8 +258,8 @@ function ActiveSwarmsSection() {
         className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="text-sm font-semibold text-content">
+          <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
+          <h3 className="type-section-title text-content">
             Running Tasks
           </h3>
           <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600 border border-green-500/20">
@@ -324,9 +324,9 @@ export function AgentsHub() {
   );
 
   return (
-    <div className="h-full w-full bg-surface overflow-y-auto relative pb-24 lg:pb-0">
-      <div className="flex-1 p-6 relative z-10">
-        <div className="dashboard-container max-w-6xl mx-auto flex gap-6">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame flex gap-6">
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             {/* Top Divider Bar */}
@@ -368,8 +368,8 @@ export function AgentsHub() {
             {/* Agent Status Grid */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-sm font-semibold text-content">
+                <Activity className="w-4 h-4 text-[var(--accent-primary)]" />
+                <h2 className="type-section-title text-content">
                   Available Agents
                 </h2>
               </div>
@@ -392,19 +392,19 @@ export function AgentsHub() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <h2 className="text-sm font-semibold text-content">
+                  <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <h2 className="type-section-title text-content">
                     Task History
                   </h2>
                 </div>
                 <a
                   href="/#activity"
-                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="flex items-center gap-1 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:underline"
                 >
                   Public Feed <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
-              <div className="rounded-lg border border-edge overflow-hidden h-[500px]">
+              <div className="nb-surface-card overflow-hidden h-[500px]">
                 <Suspense fallback={<div className="h-full flex items-center justify-center text-xs text-content-muted">Loading tasks...</div>}>
                   <TaskManagerView isPublic={false} className="h-full" />
                 </Suspense>
@@ -412,9 +412,9 @@ export function AgentsHub() {
             </div>
 
             {/* Coming Soon Banner */}
-            <div className="p-6 bg-gradient-to-r from-indigo-500/10 to-[var(--bg-secondary)] rounded-lg border border-indigo-500/30/20">
+            <div className="nb-surface-card p-6 bg-gradient-to-r from-[var(--accent-primary-bg)] to-surface-secondary">
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
                 <h3 className="font-semibold text-content">
                   Background Research Active
                 </h3>

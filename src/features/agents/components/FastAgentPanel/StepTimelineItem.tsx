@@ -32,7 +32,7 @@ const statusIcons = {
 
 // Status colors
 const statusColors = {
-  pending: 'text-[var(--text-muted)]',
+  pending: 'text-content-muted',
   running: 'text-violet-500',
   complete: 'text-green-500',
   error: 'text-red-500',
@@ -75,11 +75,11 @@ const StepTimelineItemComponent = memo(
         {/* Timeline Node - GPU-accelerated with transform */}
         <div
           className={cn(
-            'absolute left-2 top-1 w-4 h-4 rounded-full border-2 bg-[var(--bg-primary)] flex items-center justify-center transition-all duration-300',
+            'absolute left-2 top-1 w-4 h-4 rounded-full border-2 bg-surface flex items-center justify-center transition-all duration-300',
             step.status === 'complete' && 'border-green-500',
             step.status === 'running' && 'border-violet-500',
             step.status === 'error' && 'border-red-500',
-            step.status === 'pending' && 'border-[var(--border-color)]'
+            step.status === 'pending' && 'border-edge'
           )}
         >
           <StatusIcon
@@ -94,7 +94,7 @@ const StepTimelineItemComponent = memo(
         {/* Step Content - Smooth transitions */}
         <div
           className={cn(
-            'bg-[var(--bg-primary)] border rounded-lg p-3 shadow-sm transition-all duration-200',
+            'bg-surface border rounded-lg p-3 shadow-sm transition-all duration-200',
             step.status === 'error' && 'border-red-200 bg-red-50',
             step.status === 'running' && 'border-blue-200 bg-blue-50',
             step.status === 'complete' && 'border-green-200',
@@ -128,18 +128,18 @@ const StepTimelineItemComponent = memo(
             {/* Step Title and Metadata */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[var(--text-primary)]">{step.title}</span>
+                <span className="text-sm font-medium text-content">{step.title}</span>
                 {step.elapsedMs && (
-                  <span className="text-xs text-[var(--text-secondary)]">({step.elapsedMs}ms)</span>
+                  <span className="text-xs text-content-secondary">({step.elapsedMs}ms)</span>
                 )}
               </div>
               {step.toolName && (
                 <button
                   onClick={handleToolResultClick}
-                  className="text-xs text-[var(--text-secondary)] mt-0.5 hover:text-blue-600 transition-colors duration-150"
+                  className="text-xs text-content-secondary mt-0.5 hover:text-blue-600 transition-colors duration-150"
                 >
                   Tool:{' '}
-                  <code className="bg-[var(--bg-hover)] px-1 rounded hover:bg-blue-100 cursor-pointer">
+                  <code className="bg-surface-hover px-1 rounded hover:bg-blue-100 cursor-pointer">
                     {step.toolName}
                   </code>
                 </button>
@@ -155,7 +155,7 @@ const StepTimelineItemComponent = memo(
                     isExpanded && 'rotate-90'
                   )}
                 >
-                  <ChevronRight className="h-4 w-4 text-[var(--text-muted)]" />
+                  <ChevronRight className="h-4 w-4 text-content-muted" />
                 </div>
               </div>
             )}
@@ -163,14 +163,14 @@ const StepTimelineItemComponent = memo(
 
           {/* Expanded Details - Smooth opacity transition */}
           {isExpanded && hasDetails && (
-            <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-2 motion-safe:animate-fadeIn">
+            <div className="mt-3 pt-3 border-t border-edge space-y-2 motion-safe:animate-fadeIn">
               {step.description && (
-                <div className="text-xs text-[var(--text-secondary)]">{step.description}</div>
+                <div className="text-xs text-content-secondary">{step.description}</div>
               )}
               {step.result && (
                 <div className="text-xs">
-                  <div className="font-medium text-[var(--text-primary)] mb-2">Results:</div>
-                  <pre className="bg-[var(--bg-secondary)] p-2 rounded text-xs overflow-auto max-h-40 text-[var(--text-primary)]">
+                  <div className="font-medium text-content mb-2">Results:</div>
+                  <pre className="bg-surface-secondary p-2 rounded text-xs overflow-auto max-h-40 text-content">
                     {typeof step.result === 'string'
                       ? step.result
                       : JSON.stringify(step.result, null, 2)}

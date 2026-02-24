@@ -62,9 +62,10 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
     }, [onOpenFastAgent]);
 
     return (
-        <div className="min-h-full bg-surface flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* Main Content — Centered */}
-            <div className="relative z-10 flex flex-col items-center w-full max-w-2xl">
+        <div className="nb-page-shell">
+            <div className="nb-page-inner flex items-center justify-center">
+                {/* Main Content — Centered */}
+                <div className="nb-page-frame-narrow relative z-10 flex flex-col items-center w-full max-w-3xl">
 
                 {/* Greeting */}
                 <motion.div
@@ -73,7 +74,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     transition={{ duration: 0.3, delay: 0.15 }}
                     className="text-center mb-8"
                 >
-                    <h1 className="text-3xl md:text-4xl font-bold text-content tracking-tight">
+                    <h1 className="type-page-title md:text-3xl text-content">
                         {greeting?.greeting || "Welcome"}{userStats?.userName ? `, ${userStats.userName}` : ""}
                     </h1>
                     <p className="mt-3 text-sm text-content-secondary">
@@ -92,18 +93,18 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     onDrop={handleDrop}
                 >
                     <div className={`
-                        relative flex items-center gap-3 px-5 py-4 rounded-lg border-2 transition-all duration-200
-                        bg-white/90 dark:bg-white/[0.06] backdrop-blur-xl shadow-lg dark:shadow-none
-                        focus-within:border-indigo-400 dark:focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-500/10
+                        relative flex items-center gap-3 px-5 py-4 rounded-lg border transition-all duration-200
+                        bg-surface shadow-sm
+                        focus-within:border-[var(--accent-primary)] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/10
                         ${isDragOver
-                            ? 'border-indigo-400 dark:border-indigo-500 shadow-indigo-100 dark:shadow-none ring-4 ring-indigo-100 dark:ring-indigo-500/10'
-                            : 'border-edge hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-xl'
+                            ? 'border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/10'
+                            : 'border-edge hover:border-content-muted/30 hover:shadow-md'
                         }
                     `}>
                         {isDragOver ? (
                             <div className="flex items-center gap-3 w-full py-1">
-                                <Upload className="w-5 h-5 text-indigo-500 motion-safe:animate-bounce" />
-                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">Drop your file here...</span>
+                                <Upload className="w-5 h-5 text-[var(--accent-primary)] motion-safe:animate-bounce" />
+                                <span className="text-[var(--accent-primary)] font-medium">Drop your file here...</span>
                             </div>
                         ) : (
                             <>
@@ -117,13 +118,13 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Ask anything or upload a file..."
-                                    className="flex-1 bg-transparent text-base text-content placeholder:text-content-muted dark:placeholder-gray-500 outline-none"
+                                    className="flex-1 bg-transparent text-base text-content placeholder:text-content-muted outline-none"
                                     autoFocus
                                 />
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-shrink-0 p-2 rounded-lg bg-gray-900 dark:bg-indigo-600 text-white hover:bg-gray-800 dark:hover:bg-indigo-500 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#1a1a1f]"
+                                    className="flex-shrink-0 p-2 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
                                     aria-label="Send"
                                 >
                                     <Send className="w-4 h-4" />
@@ -143,15 +144,15 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <button
                         type="button"
                         onClick={() => onEnterHub()}
-                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm px-1"
+                        className="hover:text-[var(--accent-primary)] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 rounded-sm px-1"
                     >
                         Browse What's New <ArrowRight className="w-3.5 h-3.5" />
                     </button>
-                    <span className="text-gray-300 dark:text-content-secondary">|</span>
+                    <span className="text-content-muted/40">|</span>
                     <button
                         type="button"
                         onClick={onEnterWorkspace}
-                        className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-sm px-1"
+                        className="hover:text-[var(--accent-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 rounded-sm px-1"
                     >
                         Your Workspace
                     </button>
@@ -224,6 +225,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                         icon={<Shield className="w-5 h-5" />}
                     />
                 </motion.div>
+                </div>
             </div>
         </div>
     );
@@ -242,11 +244,10 @@ function QuickStartCard({ title, desc, icon, onClick }: {
             type="button"
             onClick={onClick}
             className="
-                group w-full text-left rounded-lg border border-edge
-                bg-white/70 dark:bg-white/[0.04] backdrop-blur-sm
-                px-4 py-3 transition-all duration-200 
-                hover:bg-white dark:hover:bg-white/[0.06] hover:border-indigo-200 dark:hover:border-indigo-500/30
-                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50
+                group nb-surface-card w-full text-left
+                px-4 py-3 transition-all duration-200
+                hover:bg-surface-hover hover:border-edge
+                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50
             "
         >
             <div className="flex items-start gap-3">
@@ -277,22 +278,22 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
             type="button"
             onClick={onClick}
             className={`
-                group relative p-6 text-left cursor-pointer overflow-hidden border rounded-lg transition-all duration-300
-                active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50
+                group relative p-6 text-left cursor-pointer overflow-hidden border rounded-xl transition-all duration-200
+                active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50
                 ${isDark
-                    ? 'bg-gradient-to-br from-gray-900 to-gray-950 border-gray-800 text-white hover:from-black hover:to-gray-900 shadow-lg hover:shadow-xl'
-                    : 'bg-white/80 dark:bg-white/[0.04] backdrop-blur-sm border-edge text-content hover:bg-white dark:hover:bg-white/[0.06] hover:border-indigo-200 dark:hover:border-indigo-500/30 dark:hover:shadow-none'
+                    ? 'bg-surface-secondary border-edge text-content hover:bg-surface-hover shadow-sm'
+                    : 'bg-surface border-edge text-content hover:bg-surface-hover shadow-sm'
                 }
             `}
         >
             <div className="relative z-10 flex flex-col h-full">
                 <div className={`w-9 h-9 mb-4 flex items-center justify-center rounded-lg border
-                    ${isDark ? 'bg-white/10 border-white/10 text-indigo-400' : 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-800/30 text-indigo-600 dark:text-indigo-400'}
+                    ${isDark ? 'bg-surface border-edge text-[var(--accent-primary)]' : 'bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/15 text-[var(--accent-primary)]'}
                 `}>
                     {icon}
                 </div>
 
-                <h3 className="text-lg font-bold mb-1.5 tracking-tight">{title}</h3>
+                <h3 className="text-lg font-semibold mb-1.5 tracking-tight">{title}</h3>
                 <p className={`text-sm leading-relaxed mb-5
                     ${isDark ? 'text-content-muted' : 'text-content-secondary'}
                 `}>
@@ -300,14 +301,10 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
                 </p>
 
                 <div className="mt-auto flex items-center gap-2">
-                    <span className={`text-sm font-semibold transition-all duration-200
-                        ${isDark ? 'text-white' : 'text-content'}
-                    `}>
+                    <span className="text-sm font-semibold transition-all duration-200 text-content">
                         {btnText}
                     </span>
-                    <ArrowRight className={`w-4 h-4 transition-transform duration-200 group-hover:translate-x-1
-                        ${isDark ? 'text-indigo-400' : 'text-indigo-600 dark:text-indigo-400'}
-                    `} />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 text-[var(--accent-primary)]" />
                 </div>
             </div>
         </button>

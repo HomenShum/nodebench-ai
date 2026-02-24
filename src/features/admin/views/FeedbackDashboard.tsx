@@ -102,13 +102,13 @@ export function FeedbackDashboard() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+          <h1 className="text-2xl font-bold text-content mb-2">
             Access Denied
           </h1>
-          <p className="text-[var(--text-secondary)]">
+          <p className="text-content-secondary">
             You don't have permission to access the admin dashboard.
           </p>
-          <p className="text-sm text-[var(--text-muted)] mt-2">
+          <p className="text-sm text-content-muted mt-2">
             Contact hshum2018@gmail.com for access.
           </p>
         </div>
@@ -126,16 +126,16 @@ export function FeedbackDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-surface p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+              <h1 className="text-3xl font-bold text-content">
                 Admin Feedback Dashboard
               </h1>
-              <p className="text-[var(--text-secondary)] mt-1">
+              <p className="text-content-secondary mt-1">
                 {adminAccess.email} • Last updated:{" "}
                 {new Date().toLocaleTimeString()}
               </p>
@@ -152,7 +152,7 @@ export function FeedbackDashboard() {
 
         {/* Overview Stats */}
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
+          <h2 className="text-base font-semibold text-content mb-4">
             Overview - Last {filters.dateRange === "7d" ? "7" : filters.dateRange === "30d" ? "30" : "90"} Days
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -194,7 +194,7 @@ export function FeedbackDashboard() {
                   Trending Issues
                 </span>
               </div>
-              <ul className="space-y-1 text-sm text-[var(--text-secondary)]">
+              <ul className="space-y-1 text-sm text-content-secondary">
                 {stats.trending
                   .filter((t) => t.alert)
                   .map((issue, idx) => (
@@ -218,7 +218,7 @@ export function FeedbackDashboard() {
 
         {/* Feedback by Detector */}
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
+          <h2 className="text-base font-semibold text-content mb-4">
             Feedback by Detector
           </h2>
           <DetectorTable
@@ -230,17 +230,17 @@ export function FeedbackDashboard() {
         {/* Recent Feedback */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-[var(--text-primary)]">
+            <h2 className="text-base font-semibold text-content">
               Recent Feedback
             </h2>
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)]" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-content-muted" />
               <input
                 type="text"
                 placeholder="Search by user email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                className="pl-10 pr-4 py-2 rounded border border-edge bg-surface-secondary text-content"
               />
             </div>
           </div>
@@ -258,7 +258,7 @@ export function FeedbackDashboard() {
 
         {/* Top Complaints */}
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-4">
+          <h2 className="text-base font-semibold text-content mb-4">
             Top Complaints (Last 7 Days)
           </h2>
           <TopComplaints complaints={feedbackData.stats.topComplaints} />
@@ -291,9 +291,9 @@ function StatCard({
   };
 
   return (
-    <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
-      <div className="text-sm text-[var(--text-secondary)] mb-1">{label}</div>
-      <div className="text-2xl font-bold text-[var(--text-primary)] mb-1">
+    <div className="p-4 rounded-lg border border-edge bg-surface-secondary">
+      <div className="text-sm text-content-secondary mb-1">{label}</div>
+      <div className="text-2xl font-bold text-content mb-1">
         {value.toLocaleString()}
       </div>
       {percentage !== undefined && (
@@ -314,7 +314,7 @@ function StatCard({
               <span className="text-green-500">{change}%</span>
             </>
           )}
-          <span className="text-[var(--text-muted)]">vs last period</span>
+          <span className="text-content-muted">vs last period</span>
         </div>
       )}
     </div>

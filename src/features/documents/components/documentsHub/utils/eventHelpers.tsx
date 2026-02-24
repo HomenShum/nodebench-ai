@@ -36,7 +36,7 @@ export const isAllDayEvent = (ev: any) => {
 export const renderEventTime = (e: any) => {
   if (isAllDayEvent(e)) {
     return (
-      <span className="text-xs text-[var(--text-secondary)]">All day</span>
+      <span className="text-xs text-content-secondary">All day</span>
     );
   }
 
@@ -45,7 +45,7 @@ export const renderEventTime = (e: any) => {
 
   if (!start) {
     return (
-      <span className="text-xs text-[var(--text-secondary)]">No time</span>
+      <span className="text-xs text-content-secondary">No time</span>
     );
   }
 
@@ -62,7 +62,7 @@ export const renderEventTime = (e: any) => {
   const endStr = end ? formatTime(end) : "";
 
   return (
-    <span className="text-xs text-[var(--text-secondary)]">
+    <span className="text-xs text-content-secondary">
       {startStr}
       {endStr && ` - ${endStr}`}
     </span>

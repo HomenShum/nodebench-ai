@@ -140,7 +140,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
         "rounded-lg border-2 p-4 shadow-md animate-in slide-in-from-top-2 duration-300",
         isPending && "border-amber-400 bg-amber-50",
         isAnswered && "border-green-400 bg-green-50",
-        isCancelled && "border-[var(--text-muted)] bg-[var(--bg-secondary)]"
+        isCancelled && "border-content-muted bg-surface-secondary"
       )}
     >
       {/* Header */}
@@ -149,11 +149,11 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
           "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
           isPending && "bg-amber-100",
           isAnswered && "bg-green-100",
-          isCancelled && "bg-[var(--bg-hover)]"
+          isCancelled && "bg-surface-hover"
         )}>
           {isPending && <MessageCircleQuestion className="h-5 w-5 text-amber-600" />}
           {isAnswered && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-          {isCancelled && <X className="h-5 w-5 text-[var(--text-secondary)]" />}
+          {isCancelled && <X className="h-5 w-5 text-content-secondary" />}
         </div>
         
         <div className="flex-1 min-w-0">
@@ -162,13 +162,13 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
               "text-sm font-semibold",
               isPending && "text-amber-900",
               isAnswered && "text-green-900",
-              isCancelled && "text-[var(--text-primary)]"
+              isCancelled && "text-content"
             )}>
               {isPending && 'Agent needs your input'}
               {isAnswered && 'Answered'}
               {isCancelled && 'Cancelled'}
             </h3>
-            <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+            <div className="flex items-center gap-1 text-xs text-content-secondary">
               <Clock className="h-3 w-3" />
               <span>{new Date(request._creationTime).toLocaleTimeString()}</span>
             </div>
@@ -179,14 +179,14 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             "text-sm font-medium mb-2",
             isPending && "text-amber-800",
             isAnswered && "text-green-800",
-            isCancelled && "text-[var(--text-primary)]"
+            isCancelled && "text-content"
           )}>
             {request.question}
           </p>
           
           {/* Context */}
           {request.context && (
-            <p className="text-xs text-[var(--text-secondary)] mb-3 italic">
+            <p className="text-xs text-content-secondary mb-3 italic">
               {request.context}
             </p>
           )}
@@ -196,7 +196,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
       {/* Options (if provided) */}
       {isPending && request.options && request.options.length > 0 && (
         <div className="mb-3">
-          <p className="text-xs font-medium text-[var(--text-primary)] mb-2">Quick options:</p>
+          <p className="text-xs font-medium text-content mb-2">Quick options:</p>
           <div className="flex flex-wrap gap-2">
             {request.options.map((option, idx) => (
               <button
@@ -208,7 +208,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
                   "border-2",
                   selectedOption === option
                     ? "border-amber-500 bg-amber-100 text-amber-900"
-                    : "border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:border-amber-400 hover:bg-amber-50"
+                    : "border-edge bg-surface text-content hover:border-amber-400 hover:bg-amber-50"
                 )}
               >
                 {option}
@@ -226,7 +226,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             onChange={(e) => setResponse(e.target.value)}
             placeholder="Type your response..."
             rows={2}
-            className="w-full px-3 py-2 border border-[var(--border-color)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -234,15 +234,15 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
               }
             }}
           />
-          <p className="text-xs text-[var(--text-secondary)] mt-1">Ctrl/Cmd + Enter to send</p>
+          <p className="text-xs text-content-secondary mt-1">Ctrl/Cmd + Enter to send</p>
         </div>
       )}
 
       {/* Answered response */}
       {isAnswered && request.response && (
-        <div className="mb-3 p-3 bg-[var(--bg-primary)] rounded-md border border-green-200">
+        <div className="mb-3 p-3 bg-surface rounded-md border border-green-200">
           <p className="text-xs font-medium text-green-700 mb-1">Your response:</p>
-          <p className="text-sm text-[var(--text-primary)]">{request.response}</p>
+          <p className="text-sm text-content">{request.response}</p>
         </div>
       )}
 
@@ -271,7 +271,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             aria-label="Cancel request"
             className={cn(
               "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-              "border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]",
+              "border border-edge bg-surface text-content hover:bg-surface-hover",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >
@@ -302,7 +302,7 @@ export function HumanRequestList({ requests, onRespond }: HumanRequestListProps)
       {/* Pending requests first */}
       {pendingRequests.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide flex items-center gap-2">
+          <h3 className="text-xs font-semibold text-content-secondary uppercase tracking-wide flex items-center gap-2">
             <MessageCircleQuestion className="h-4 w-4" />
             Pending Requests ({pendingRequests.length})
           </h3>
@@ -319,7 +319,7 @@ export function HumanRequestList({ requests, onRespond }: HumanRequestListProps)
       {/* Answered requests (collapsed by default) */}
       {answeredRequests.length > 0 && (
         <details className="group">
-          <summary className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide cursor-pointer list-none flex items-center gap-2 hover:text-[var(--text-primary)]">
+          <summary className="text-xs font-semibold text-content-secondary uppercase tracking-wide cursor-pointer list-none flex items-center gap-2 hover:text-content">
             <CheckCircle2 className="h-4 w-4" />
             Answered Requests ({answeredRequests.length})
           </summary>

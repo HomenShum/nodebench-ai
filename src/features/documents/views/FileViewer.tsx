@@ -282,7 +282,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   if (!fileDocument) {
     return (
       <div className={`flex items-center justify-center h-64 ${className}`}>
-        <div className="flex items-center gap-2 text-[var(--text-muted)]">
+        <div className="flex items-center gap-2 text-content-muted">
           <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
           Loading file...
         </div>
@@ -332,11 +332,11 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       case 'pdf':
         return <FileText className="h-8 w-8 text-red-500" />;
       case 'text':
-        return <FileText className="h-8 w-8 text-[var(--text-secondary)]" />;
+        return <FileText className="h-8 w-8 text-content-secondary" />;
       case 'code':
         return <Code2 className="h-8 w-8 text-blue-500" />;
       default:
-        return <File className="h-8 w-8 text-[var(--text-muted)]" />;
+        return <File className="h-8 w-8 text-content-muted" />;
     }
   };
 
@@ -378,7 +378,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     if (sheetLoading) {
       return (
         <div className="flex items-center justify-center h-32">
-          <div className="flex items-center gap-2 text-[var(--text-muted)]">
+          <div className="flex items-center gap-2 text-content-muted">
             <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
             Loading spreadsheet...
           </div>
@@ -404,12 +404,12 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       <div className="w-full h-full min-h-0">
         {/* Sheet tabs for Excel workbooks */}
         {sheetList.length > 1 && (
-          <div className="flex items-center gap-2 px-2 py-1 border-b border-[var(--border-color)] overflow-x-auto">
+          <div className="flex items-center gap-2 px-2 py-1 border-b border-edge overflow-x-auto">
             {sheetList.map((s, i) => (
               <button
                 key={`${s.name}-${i}`}
                 onClick={() => setActiveSheet(i)}
-                className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${i === activeSheet ? 'bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}
+                className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${i === activeSheet ? 'bg-surface-secondary border border-edge text-content' : 'hover:bg-surface-hover text-content-secondary'}`}
                 title={s.name}
               >
                 {s.name}
@@ -417,10 +417,10 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             ))}
           </div>
         )}
-        <div className="w-full h-[calc(100%-2rem)] overflow-auto rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-2">
+        <div className="w-full h-[calc(100%-2rem)] overflow-auto rounded-lg border border-edge bg-surface p-2">
           <Suspense
             fallback={
-              <div className="flex items-center gap-2 text-[var(--text-muted)] p-2">
+              <div className="flex items-center gap-2 text-content-muted p-2">
                 <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
                 Loading spreadsheet...
               </div>
@@ -452,9 +452,9 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             className={
               zoomMode === 'fit'
                 ? (fitAxis === 'height'
-                  ? "h-full w-auto object-contain rounded-lg border border-[var(--border-color)]"
-                  : "w-full h-auto object-contain rounded-lg border border-[var(--border-color)]")
-                : "max-w-none max-h-none object-contain rounded-lg border border-[var(--border-color)]"
+                  ? "h-full w-auto object-contain rounded-lg border border-edge"
+                  : "w-full h-auto object-contain rounded-lg border border-edge")
+                : "max-w-none max-h-none object-contain rounded-lg border border-edge"
             }
           />
         </div>
@@ -469,7 +469,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       <div className="w-full h-full min-h-0">
         <iframe
           src={zoomMode === 'fit' ? withPdfZoom(storageUrl, 'fit') : withPdfZoom(storageUrl, Math.round(zoom * 100))}
-          className="w-full h-full border border-[var(--border-color)] rounded-lg"
+          className="w-full h-full border border-edge rounded-lg"
           title={file.fileName}
         />
       </div>
@@ -483,7 +483,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       <div className="w-full h-full min-h-0">
         <iframe
           src={storageUrl}
-          className="w-full h-full border border-[var(--border-color)] rounded-lg bg-white"
+          className="w-full h-full border border-edge rounded-lg bg-white"
           title={file.fileName}
         />
       </div>
@@ -494,7 +494,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     if (!storageUrl) return renderGenericContent();
 
     return (
-      <div className="w-full h-full min-h-0 overflow-auto flex items-center justify-center bg-black rounded-lg border border-[var(--border-color)]">
+      <div className="w-full h-full min-h-0 overflow-auto flex items-center justify-center bg-black rounded-lg border border-edge">
         <div
           className={
             zoomMode === 'fit'
@@ -542,14 +542,14 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       <div className="flex flex-col items-center justify-center h-32 gap-4">
         {getFileIcon(resolvedType || 'unknown')}
         <div className="text-center">
-          <p className="text-sm text-[var(--text-secondary)] mb-2">
+          <p className="text-sm text-content-secondary mb-2">
             Preview not available for this file type
           </p>
           {storageUrl && (
             <a
               href={storageUrl}
               download={file.fileName}
-              className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary)]/80 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-600 dark:text-indigo-400/80 transition-colors"
             >
               <Download className="h-4 w-4" />
               Download {file.fileName}
@@ -561,10 +561,10 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
   };
 
   return (
-    <div className={`w-full h-full bg-[var(--bg-primary)] ${className}`}>
+    <div className={`w-full h-full bg-surface ${className}`}>
       <div className="flex h-full flex-col">
         {/* Fixed header (constrained width to match app header) */}
-        <div className="border-b border-[var(--border-color)]">
+        <div className="border-b border-edge">
           <div className="max-w-4xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -578,7 +578,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                       window.dispatchEvent(new CustomEvent('nodebench:goBack'));
                     }
                   }}
-                  className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors mr-2"
+                  className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors mr-2"
                   title="Go back"
                   aria-label="Go back"
                 >
@@ -586,10 +586,10 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                 </button>
                 {getFileIcon(resolvedType || 'unknown')}
                 <div>
-                  <h3 className="text-lg font-medium text-[var(--text-primary)]">
+                  <h3 className="text-lg font-medium text-content">
                     {document.title}
                   </h3>
-                  <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
+                  <div className="flex items-center gap-4 text-xs text-content-muted">
                     <span>{formatFileSize(file.fileSize)}</span>
                     <span>{document.mimeType}</span>
                     {document.lastModified && (
@@ -603,27 +603,27 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
 
               <div className="flex items-center gap-2">
                 {canZoom && (
-                  <div className="flex items-center gap-1 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-sm p-1">
-                    <button type="button" onClick={zoomOut} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Zoom out" aria-label="Zoom out" disabled={zoomMode === 'manual' ? zoom <= ZOOM_MIN : false}>
+                  <div className="flex items-center gap-1 rounded-lg border border-edge bg-surface/80 backdrop-blur-sm p-1">
+                    <button type="button" onClick={zoomOut} className="p-1 rounded-md hover:bg-surface-hover" title="Zoom out" aria-label="Zoom out" disabled={zoomMode === 'manual' ? zoom <= ZOOM_MIN : false}>
                       <ZoomOut strokeWidth={1.25} className="h-4 w-4" />
                     </button>
-                    <button type="button" onClick={zoomFit} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Fit to view" aria-label="Fit to view">
+                    <button type="button" onClick={zoomFit} className="p-1 rounded-md hover:bg-surface-hover" title="Fit to view" aria-label="Fit to view">
                       <RotateCcw strokeWidth={1.25} className="h-4 w-4" />
                     </button>
                     {isImageOrVideo && (
                       <>
-                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`} title="Fit height" aria-label="Fit height">
+                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit height" aria-label="Fit height">
                           <StretchVertical strokeWidth={1.25} className="h-4 w-4" />
                         </button>
-                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`} title="Fit width" aria-label="Fit width">
+                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit width" aria-label="Fit width">
                           <StretchHorizontal strokeWidth={1.25} className="h-4 w-4" />
                         </button>
                       </>
                     )}
-                    <button type="button" onClick={zoomIn} className="p-1 rounded-md hover:bg-[var(--bg-hover)]" title="Zoom in" aria-label="Zoom in" disabled={zoomMode === 'manual' ? zoom >= ZOOM_MAX : false}>
+                    <button type="button" onClick={zoomIn} className="p-1 rounded-md hover:bg-surface-hover" title="Zoom in" aria-label="Zoom in" disabled={zoomMode === 'manual' ? zoom >= ZOOM_MAX : false}>
                       <ZoomIn strokeWidth={1.25} className="h-4 w-4" />
                     </button>
-                    <span className="ml-1 text-xs text-[var(--text-secondary)] px-1 py-0.5 rounded bg-[var(--bg-secondary)]/70">
+                    <span className="ml-1 text-xs text-content-secondary px-1 py-0.5 rounded bg-surface-secondary/70">
                       {zoomMode === 'fit' ? (isImageOrVideo ? `Fit (${fitAxis === 'height' ? 'H' : 'W'})` : 'Fit') : `${Math.round(zoom * 100)}%`}
                     </span>
                   </div>
@@ -634,27 +634,27 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     type="button"
                     onClick={handleOpenAnalysisPopover}
                     disabled={isAnalyzing}
-                    className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-60"
+                    className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors disabled:opacity-60"
                     title="Analyze with AI and add to Quick notes"
                     aria-label="Analyze file with AI"
                   >
                     {isAnalyzing ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   </button>
                   {showPromptPopover && (
-                    <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3" role="dialog" aria-label="File analysis prompt">
-                      <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">Analysis prompt</div>
+                    <div className="absolute z-20 right-0 mt-2 w-[360px] bg-surface border border-edge rounded-lg shadow-lg p-3" role="dialog" aria-label="File analysis prompt">
+                      <div className="text-sm font-medium mb-2 text-content">Analysis prompt</div>
                       <textarea
-                        className="w-full h-28 text-xs p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                        className="w-full h-28 text-xs p-2 rounded border border-edge bg-surface-secondary text-content"
                         value={analysisPrompt}
                         onChange={(e) => setAnalysisPrompt(e.target.value)}
                       />
                       <div className="mt-2 flex items-center justify-between">
-                        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                        <label className="flex items-center gap-2 text-xs text-content-muted">
                           <input type="checkbox" checked={savePromptDefault} onChange={(e) => setSavePromptDefault(e.target.checked)} />
                           Remember as default
                         </label>
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
+                          <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover">Cancel</button>
                           <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
                         </div>
                       </div>
@@ -667,7 +667,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     <button
                       type="button"
                       onClick={() => window.open(storageUrl, '_blank')}
-                      className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
+                      className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors"
                       title="Open in new tab"
                       aria-label="Open in new tab"
                     >
@@ -676,7 +676,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     <a
                       href={storageUrl}
                       download={file.fileName}
-                      className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
+                      className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors"
                       title="Download file"
                     >
                       <Download className="h-4 w-4" />
@@ -702,13 +702,13 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
               title="Double-click to reset layout"
             />
             <Panel ref={notesPanelRef} defaultSize={35} minSize={0} collapsible>
-              <div className="h-full border-l border-[var(--border-color)] p-4 overflow-auto">
+              <div className="h-full border-l border-edge p-4 overflow-auto">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-[var(--text-primary)]">Quick notes</h4>
+                  <h4 className="text-sm font-medium text-content">Quick notes</h4>
                   <button
                     type="button"
                     onClick={toggleNotes}
-                    className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="p-1 rounded border border-edge bg-surface-secondary hover:bg-surface-hover"
                     title={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
                     aria-label={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
                     aria-expanded={!notesCollapsed}
@@ -718,7 +718,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                 </div>
                 <div className="min-h-[240px]">
                   <ErrorBoundary title="Failed to load notes">
-                    <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+                    <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
                       <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
                     </Suspense>
                   </ErrorBoundary>

@@ -32,7 +32,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
   const colorClasses = {
     green: 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900/30',
     red: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30',
-    blue: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/30',
+    blue: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/25',
     yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/30',
     gray: 'bg-surface-secondary text-content-secondary border-edge',
   };
@@ -151,12 +151,13 @@ export default function RecommendationAnalyticsDashboard() {
   const isLoading = acceptanceData === undefined || rejectionReasons === undefined;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-content flex items-center gap-2">
+            <h1 className="type-page-title text-content flex items-center gap-2">
               <BarChart3 size={32} />
               Recommendation Analytics
             </h1>
@@ -184,7 +185,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge dark:border-white/[0.06] rounded-lg text-sm bg-white dark:bg-white/[0.06] text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-edge dark:border-white/[0.06] rounded-lg text-sm bg-surface dark:bg-white/[0.06] text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -305,9 +306,9 @@ export default function RecommendationAnalyticsDashboard() {
                   <div className="text-xs text-content-secondary dark:text-content-muted mt-1">Dismissed</div>
                 </div>
 
-                <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900/30">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{metrics.snoozed}</div>
-                  <div className="text-xs text-blue-700 dark:text-blue-500 mt-1">Snoozed</div>
+                <div className="text-center p-3 bg-[var(--accent-primary-bg)] rounded-lg border border-[var(--accent-primary)]/25">
+                  <div className="text-2xl font-bold text-[var(--accent-primary)]">{metrics.snoozed}</div>
+                  <div className="text-xs text-[var(--accent-primary)] mt-1">Snoozed</div>
                 </div>
               </div>
             </div>
@@ -343,14 +344,14 @@ export default function RecommendationAnalyticsDashboard() {
 
             {/* Insights */}
             {metrics.total > 0 && (
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/30 rounded-lg p-4">
+              <div className="bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/25 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <PieChart className="text-blue-600 dark:text-blue-400 mt-0.5" size={20} />
+                  <PieChart className="text-[var(--accent-primary)] mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">
+                    <h3 className="font-semibold text-[var(--accent-primary)] mb-1">
                       Insights
                     </h3>
-                    <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                    <ul className="text-sm text-content-secondary space-y-1">
                       {metrics.acceptanceRate > 0.5 && (
                         <li>✓ High acceptance rate ({(metrics.acceptanceRate * 100).toFixed(0)}%) - recommendations are valuable</li>
                       )}
@@ -392,6 +393,7 @@ export default function RecommendationAnalyticsDashboard() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

@@ -610,20 +610,20 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
   // onClickDay removed; click now toggles a pinned preview. Use action buttons to view day/week.
 
   return (
-    <div className="relative bg-gradient-to-br from-[var(--bg-primary)] to-[var(--bg-secondary)]/50 border border-[var(--border-color)]/60 rounded-lg overflow-visible shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)]">
+    <div className="relative bg-gradient-to-br from-surface to-surface-secondary/50 border border-edge/60 rounded-lg overflow-visible shadow-[0_2px_8px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)]">
       {/* Singular watermark for mini calendar */}
       <span className="document-card__bg document-row__bg text-blue-500" aria-hidden>
         <CalendarDays className="h-10 w-10 rotate-12" />
       </span>
       {/* Clock + Timezone selector */}
-      <div className="px-4 py-2 border-b border-[var(--border-color)]/80 flex flex-col gap-1.5">
-        <div className="font-mono text-xs font-medium text-[var(--text-primary)] tabular-nums" aria-live="polite" aria-label="Current time">
+      <div className="px-4 py-2 border-b border-edge/80 flex flex-col gap-1.5">
+        <div className="font-mono text-xs font-medium text-content tabular-nums" aria-live="polite" aria-label="Current time">
           {clockText}
         </div>
         <select
           id="tz-select"
           aria-label="Timezone"
-          className="h-7 text-xs leading-[1rem] bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-color)]/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all w-full truncate"
+          className="h-7 text-xs leading-[1rem] bg-surface text-content border border-edge/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all w-full truncate"
           value={effectiveTz || browserTz || "UTC"}
           onChange={(e) => { void onChangeTimeZone(e.target.value); }}
         >
@@ -632,31 +632,31 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
           ))}
         </select>
       </div>
-      <div className="px-4 py-2.5 border-b border-[var(--border-color)]/80 flex items-center justify-between">
+      <div className="px-4 py-2.5 border-b border-edge/80 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="text-base font-semibold text-[var(--text-primary)] tracking-tight">{monthLabel}</div>
+          <div className="text-base font-semibold text-content tracking-tight">{monthLabel}</div>
         </div>
         <div className="flex items-center gap-1">
           <button
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]/60 shadow-sm transition-all duration-200 hover:shadow"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge/60 shadow-sm transition-all duration-200 hover:shadow"
             onClick={goPrev}
             aria-label="Previous month"
             title="Previous month"
           >
-            <span className="text-[var(--text-muted)] text-lg">‹</span>
+            <span className="text-content-muted text-lg">‹</span>
           </button>
           <button
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]/60 shadow-sm transition-all duration-200 hover:shadow"
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge/60 shadow-sm transition-all duration-200 hover:shadow"
             onClick={goNext}
             aria-label="Next month"
             title="Next month"
           >
-            <span className="text-[var(--text-muted)] text-lg">›</span>
+            <span className="text-content-muted text-lg">›</span>
           </button>
         </div>
       </div>
       <div className="p-3">
-        <div className="grid grid-cols-7 text-center text-xs text-[var(--text-muted)] mb-2">
+        <div className="grid grid-cols-7 text-center text-xs text-content-muted mb-2">
           {dayLabels.map((lbl, i) => (
             <div key={`lbl_${lbl}_${i}`} className="font-semibold uppercase tracking-wider">{lbl}</div>
           ))}
@@ -732,8 +732,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                 className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-h-[44px] min-w-[44px] ${
                   d.isToday
                     ? "border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-sm"
-                    : "border-transparent hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)]"
-                  } ${d.inMonth ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] dark:text-content-secondary"}`}
+                    : "border-transparent hover:bg-surface-hover hover:border-edge"
+                  } ${d.inMonth ? "text-content" : "text-content-muted dark:text-content-secondary"}`}
                 title={d.date.toDateString()}
               >
                 <div className="text-[13px] font-semibold">
@@ -747,27 +747,27 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.events > 0 ? "bg-blue-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-blue-600" : "text-[var(--text-muted)]"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.events > 0 ? "text-blue-600" : "text-content-muted"}`}>{m.events > 0 ? fmtSmall(m.events) : ""}</span>
                       </span>
                       {/* Email proposed events (pulsing orange dot) */}
                       <span className="relative inline-flex items-center" title="Proposed email events needing confirmation">
                         <span className={`inline-block w-1.5 h-1.5 rounded-full ${m.emailProposed > 0 ? "bg-orange-500 motion-safe:animate-pulse" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-semibold w-3 text-center ${m.emailProposed > 0 ? "text-orange-600" : "text-[var(--text-muted)]"}`}>{m.emailProposed > 0 ? fmtSmall(m.emailProposed) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-semibold w-3 text-center ${m.emailProposed > 0 ? "text-orange-600" : "text-content-muted"}`}>{m.emailProposed > 0 ? fmtSmall(m.emailProposed) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.holidays > 0 ? "bg-purple-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.holidays > 0 ? "text-purple-600" : "text-[var(--text-muted)]"}`}>{m.holidays > 0 ? fmtSmall(m.holidays) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.holidays > 0 ? "text-purple-600" : "text-content-muted"}`}>{m.holidays > 0 ? fmtSmall(m.holidays) : ""}</span>
                       </span>
                     </div>
                     {/* Bottom row: tasks (left), notes (right) */}
                     <div className="flex items-center justify-between">
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.tasks > 0 ? "bg-indigo-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-indigo-600" : "text-[var(--text-muted)]"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.tasks > 0 ? "text-indigo-600" : "text-content-muted"}`}>{m.tasks > 0 ? fmtSmall(m.tasks) : ""}</span>
                       </span>
                       <span className="relative inline-flex items-center">
                         <span className={`inline-block w-1 h-1 rounded-full ${m.notes > 0 ? "bg-amber-500" : "opacity-0"}`} />
-                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.notes > 0 ? "text-amber-600" : "text-[var(--text-muted)]"}`}>{m.notes > 0 ? fmtSmall(m.notes) : ""}</span>
+                        <span className={`ml-0.5 text-[8px] leading-none font-medium w-3 text-center ${m.notes > 0 ? "text-amber-600" : "text-content-muted"}`}>{m.notes > 0 ? fmtSmall(m.notes) : ""}</span>
                       </span>
                     </div>
                   </div>
@@ -833,7 +833,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       }}
                     />
                     {editTarget && (
-                      <div className="mt-2 w-80 max-w-[20rem] rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] shadow-lg p-2">
+                      <div className="mt-2 w-80 max-w-[20rem] rounded-lg border border-edge bg-surface shadow-lg p-2">
                         {editTarget.kind === "create" && (
                           <DualCreateMiniPanel
                             dateMs={editTarget.dateMs}

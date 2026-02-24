@@ -103,7 +103,7 @@ function TimelineEntry({ item }: TimelineEntryProps) {
                 )}
               />
             )}
-            <span className="text-sm text-[color:var(--text-primary)] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
+            <span className="text-sm text-content group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
               {item.title}
             </span>
           </div>

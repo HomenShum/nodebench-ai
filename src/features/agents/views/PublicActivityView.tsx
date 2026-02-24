@@ -21,9 +21,9 @@ import { TaskManagerView } from "../components/TaskManager";
 
 export function PublicActivityView() {
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto pb-24 lg:pb-0">
-      <div className="flex-1 p-8">
-        <div className="max-w-7xl mx-auto">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame">
           {/* Top Divider Bar */}
           <TopDividerBar
             left={
@@ -40,7 +40,7 @@ export function PublicActivityView() {
           />
 
           {/* Task Manager - Public Mode */}
-          <div className="rounded-lg border border-[var(--border-color)] overflow-hidden h-[600px]">
+          <div className="nb-surface-card overflow-hidden h-[600px]">
             <TaskManagerView isPublic={true} className="h-full" />
           </div>
         </div>

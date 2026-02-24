@@ -31,7 +31,7 @@ export function InlineAgentProgress({
   if (!latestAssistant) {
     return (
       <div className="inline-agent-progress">
-        <div className="flex items-center gap-2 text-sm text-[color:var(--text-primary)]">
+        <div className="flex items-center gap-2 text-sm text-content">
           <Clock className="h-4 w-4 motion-safe:animate-pulse" />
           <span>🤖 Thinking...</span>
           {onViewInPanel && threadId && (
@@ -63,12 +63,12 @@ export function InlineAgentProgress({
   }
 
   return (
-    <div className="inline-agent-progress border border-[color:var(--border-color)] rounded-lg p-3 my-2 bg-[color:var(--bg-secondary)]">
+    <div className="inline-agent-progress border border-edge rounded-lg p-3 my-2 bg-surface-secondary">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)] hover:text-[color:var(--text-primary)]"
+          className="flex items-center gap-2 text-sm font-medium text-content hover:text-content"
         >
           {isExpanded ? (
             <ChevronDown className="h-4 w-4" />
@@ -94,7 +94,7 @@ export function InlineAgentProgress({
         <div className="space-y-2">
           {/* Reasoning */}
           {reasoningParts.length > 0 && (
-            <div className="text-xs text-[color:var(--text-primary)] italic">
+            <div className="text-xs text-content italic">
               {reasoningParts.map((part: any, idx: number) => (
                 <div key={idx}>{part.text}</div>
               ))}
@@ -126,14 +126,14 @@ export function InlineAgentProgress({
                 return (
                   <div
                     key={idx}
-                    className="flex items-center gap-2 text-xs bg-[color:var(--bg-primary)] rounded px-2 py-1 border border-[color:var(--border-color)]"
+                    className="flex items-center gap-2 text-xs bg-surface rounded px-2 py-1 border border-edge"
                   >
                     <span className={statusColor}>{statusIcon}</span>
-                    <span className="font-mono text-[color:var(--text-primary)]">
+                    <span className="font-mono text-content">
                       {part.toolName || 'Tool'}
                     </span>
                     {isResult && (
-                      <span className="text-[color:var(--text-secondary)] truncate max-w-[200px]">
+                      <span className="text-content-secondary truncate max-w-[200px]">
                         {typeof part.result === 'string'
                           ? part.result.substring(0, 50)
                           : 'Completed'}
@@ -147,7 +147,7 @@ export function InlineAgentProgress({
 
           {/* Status Message */}
           {isStreaming && (
-            <div className="text-xs text-[color:var(--text-secondary)] italic">
+            <div className="text-xs text-content-secondary italic">
               Agent is working...
             </div>
           )}

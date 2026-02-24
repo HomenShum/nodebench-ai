@@ -129,10 +129,10 @@ export function MessageStream({
   
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1.5">Start a conversation</h3>
-          <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+          <h3 className="text-lg font-semibold text-content mb-1.5">Start a conversation</h3>
+          <p className="text-sm text-content-muted leading-relaxed">
             Ask me anything! I can help with research, writing, coding, and more.
           </p>
         </div>
@@ -143,7 +143,7 @@ export function MessageStream({
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--border-color)] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[var(--text-muted)]"
+      className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--border-color)] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-content-muted"
     >
       <div className="px-4 py-5 max-w-[900px] mx-auto">
         {messages.map((message, index) => {
@@ -176,9 +176,9 @@ export function MessageStream({
                 onClick={() => onSendFollowUp(suggestion)}
                 className={cn(
                   "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-                  "text-xs font-medium text-[var(--text-secondary)]",
-                  "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                  "hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--text-muted)]",
+                  "text-xs font-medium text-content-secondary",
+                  "bg-surface-secondary border border-edge",
+                  "hover:bg-surface-secondary hover:text-content hover:border-content-muted",
                   "transition-all duration-150 cursor-pointer"
                 )}
               >
@@ -191,7 +191,7 @@ export function MessageStream({
 
         {/* Completion traceability — remind user of original request in long threads */}
         {originalRequest && !isStreaming && (
-          <div className="mt-2 mb-4 pl-10 text-xs text-[var(--text-muted)] italic">
+          <div className="mt-2 mb-4 pl-10 text-xs text-content-muted italic">
             Re: &ldquo;{originalRequest}&rdquo;
           </div>
         )}

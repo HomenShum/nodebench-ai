@@ -43,8 +43,8 @@ function TaskCountBadge({
   return (
     <div className="relative" ref={badgeRef}>
       <div
-        className={`text-xs text-[var(--text-secondary)] cursor-pointer transition-colors ${
-          hasItems ? "hover:text-[var(--text-primary)]" : ""
+        className={`text-xs text-content-secondary cursor-pointer transition-colors ${
+          hasItems ? "hover:text-content" : ""
         }`}
         onMouseEnter={hasItems ? handleMouseEnter : undefined}
         onMouseLeave={hasItems ? handleMouseLeave : undefined}
@@ -62,12 +62,12 @@ function TaskCountBadge({
       {/* Hover preview popover */}
       {showPreview && tasks.length > 0 && (
         <div
-          className="absolute right-0 top-full mt-2 z-50 w-64 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
+          className="absolute right-0 top-full mt-2 z-50 w-64 bg-surface border border-edge rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
-            <div className="text-xs font-medium text-[var(--text-primary)]">
+          <div className="px-3 py-2 bg-surface-secondary border-b border-edge">
+            <div className="text-xs font-medium text-content">
               Tasks Due Today
             </div>
           </div>
@@ -75,21 +75,21 @@ function TaskCountBadge({
             {tasks.slice(0, 5).map((task: any) => (
               <div
                 key={task._id}
-                className="px-3 py-2 hover:bg-[var(--bg-hover)] cursor-pointer border-b border-[var(--border-color)] last:border-b-0"
+                className="px-3 py-2 hover:bg-surface-hover cursor-pointer border-b border-edge last:border-b-0"
                 onClick={() => onTaskClick?.(String(task._id))}
               >
-                <div className="text-sm text-[var(--text-primary)] line-clamp-1">
+                <div className="text-sm text-content line-clamp-1">
                   {task.title || "Untitled Task"}
                 </div>
                 {task.dueDate && (
-                  <div className="text-xs text-[var(--text-muted)] mt-0.5">
+                  <div className="text-xs text-content-muted mt-0.5">
                     Due {new Date(task.dueDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 )}
               </div>
             ))}
             {tasks.length > 5 && (
-              <div className="px-3 py-2 text-xs text-[var(--text-muted)] text-center bg-[var(--bg-secondary)]">
+              <div className="px-3 py-2 text-xs text-content-muted text-center bg-surface-secondary">
                 +{tasks.length - 5} more task{tasks.length - 5 !== 1 ? "s" : ""}
               </div>
             )}
@@ -128,7 +128,7 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
     <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">Today</div>
+          <div className="text-xs uppercase tracking-wide text-content-muted">Today</div>
           <TaskCountBadge
             taskCount={upcoming?.counts?.todayTasks ?? 0}
             eventCount={upcoming?.counts?.todayEvents ?? 0}
@@ -198,13 +198,13 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
             />
           ))}
           {!((upcoming?.today?.holidays?.length ?? 0) || (upcoming?.today?.events?.length ?? 0) || (upcoming?.today?.tasks?.length ?? 0)) && (
-            <div className="text-sm text-[var(--text-secondary)]">Nothing scheduled.</div>
+            <div className="text-sm text-content-secondary">Nothing scheduled.</div>
           )}
         </div>
       </div>
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs uppercase tracking-wide text-[var(--text-muted)]">This Week</div>
+          <div className="text-xs uppercase tracking-wide text-content-muted">This Week</div>
           <TaskCountBadge
             taskCount={upcoming?.counts?.weekTasks ?? 0}
             eventCount={upcoming?.counts?.weekEvents ?? 0}
@@ -274,7 +274,7 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
             />
           ))}
           {!((upcoming?.sevenDays?.holidays?.length ?? 0) || (upcoming?.sevenDays?.events?.length ?? 0) || (upcoming?.sevenDays?.tasks?.length ?? 0)) && (
-            <div className="text-sm text-[var(--text-secondary)]">No upcoming items.</div>
+            <div className="text-sm text-content-secondary">No upcoming items.</div>
           )}
         </div>
       </div>

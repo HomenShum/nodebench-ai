@@ -197,7 +197,7 @@ function ScenarioRow({
       </div>
 
       {/* Run button — disabled, Phase 2 */}
-      <div className="flex-none self-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div className="flex-none self-center">
         <button
           disabled
           title="Benchmark execution coming in Phase 2 — configure a workbench app first"

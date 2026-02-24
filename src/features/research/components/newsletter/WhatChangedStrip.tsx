@@ -79,7 +79,7 @@ export function WhatChangedStrip({
 
             {/* Last Updated */}
             {lastUpdated && (
-                <span className="text-xs text-[color:var(--text-secondary)]">
+                <span className="text-xs text-content-secondary">
                     {formatTimeAgo(lastUpdated)}
                 </span>
             )}
@@ -88,7 +88,7 @@ export function WhatChangedStrip({
             {onViewDiff && (
                 <button
                     onClick={onViewDiff}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[color:var(--text-primary)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg border border-[color:var(--border-color)] transition-colors"
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-content bg-surface hover:bg-surface-hover rounded-lg border border-edge transition-colors"
                 >
                     <Eye className="w-3 h-3" />
                     View diff

@@ -42,26 +42,28 @@ export function ProactiveFeed() {
   // Check if user has not granted consent
   if (consentStatus && !consentStatus.hasConsent) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] p-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="nb-page-shell">
+        <div className="nb-page-inner">
+          <div className="nb-page-frame-narrow">
           <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 mb-4">
-              <Sparkles className="w-8 h-8 text-blue-500" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--accent-primary-bg)] mb-4">
+              <Sparkles className="w-8 h-8 text-[var(--accent-primary)]" />
             </div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">
+            <h1 className="type-page-title text-content mb-2">
               Enable Smart Alerts
             </h1>
-            <p className="text-[var(--text-secondary)] mb-6 max-w-md mx-auto">
+            <p className="text-content-secondary mb-6 max-w-md mx-auto">
               Let your AI assistant work for you. Get meeting prep, follow-up reminders, and daily
               briefs automatically.
             </p>
             <button
               type="button"
               onClick={() => setShowOnboarding(true)}
-              className="px-6 py-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600 font-medium"
+              className="px-6 py-3 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] font-medium transition-colors"
             >
               Get Started
             </button>
+          </div>
           </div>
         </div>
 
@@ -75,30 +77,35 @@ export function ProactiveFeed() {
   // Loading state
   if (!opportunities || !usage || !summary) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
-        <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      <div className="nb-page-shell">
+        <div className="nb-page-inner">
+          <div className="nb-page-frame-narrow flex items-center justify-center min-h-[40vh]">
+            <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-primary)]" />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <Sparkles className="w-8 h-8 text-blue-500" />
+              <h1 className="type-page-title text-content flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-[var(--accent-primary)]" />
                 Alerts & Insights
               </h1>
-              <p className="text-[var(--text-secondary)] mt-1">
+              <p className="text-content-secondary mt-1">
                 Your personalized opportunities and recommendations
               </p>
             </div>
             <a
               href="/settings/proactive"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-secondary text-content hover:bg-surface-secondary"
             >
               <Settings className="w-4 h-4" />
               Settings
@@ -140,7 +147,7 @@ export function ProactiveFeed() {
 
         {/* Filters */}
         <div className="flex items-center gap-2 mb-6">
-          <span className="text-sm font-medium text-[var(--text-secondary)]">
+          <span className="text-sm font-medium text-content-secondary">
             Filter:
           </span>
           {[
@@ -156,8 +163,8 @@ export function ProactiveFeed() {
               className={cn(
                 "px-3 py-1.5 rounded text-sm font-medium transition-colors",
                 statusFilter === filter.value
-                  ? "bg-blue-500 text-white"
-                  : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+                  ? "bg-[var(--accent-primary)] text-white"
+                  : "bg-surface-secondary text-content-secondary hover:bg-surface-secondary"
               )}
             >
               {filter.label}
@@ -168,13 +175,13 @@ export function ProactiveFeed() {
         {/* Opportunities List */}
         {opportunities.length === 0 ? (
           <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--bg-secondary)] mb-4">
-              <Sparkles className="w-8 h-8 text-[var(--text-muted)]" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-surface-secondary mb-4">
+              <Sparkles className="w-8 h-8 text-content-muted" />
             </div>
-            <h3 className="text-base font-semibold text-[var(--text-primary)] mb-2">
+            <h3 className="text-base font-semibold text-content mb-2">
               No opportunities yet
             </h3>
-            <p className="text-[var(--text-secondary)]">
+            <p className="text-content-secondary">
               We're analyzing your activity. Check back soon for personalized insights!
             </p>
           </div>
@@ -185,6 +192,7 @@ export function ProactiveFeed() {
             ))}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -202,21 +210,21 @@ function StatCard({
   color?: "blue" | "green" | "purple" | "red";
 }) {
   const colorClasses = {
-    blue: "text-blue-500 bg-blue-500/10",
+    blue: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
     green: "text-green-500 bg-green-500/10",
-    purple: "text-purple-500 bg-purple-500/10",
+    purple: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
     red: "text-red-500 bg-red-500/10",
   };
 
   return (
-    <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+    <div className="p-4 rounded-lg border border-edge bg-surface-secondary">
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("p-2 rounded", colorClasses[color])}>
           <Icon className="w-4 h-4" />
         </div>
-        <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+        <span className="text-sm text-content-secondary">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-[var(--text-primary)]">{value}</div>
+      <div className="text-2xl font-bold text-content">{value}</div>
     </div>
   );
 }
@@ -235,7 +243,7 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      detected: "bg-blue-500/20 text-blue-600",
+      detected: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
       approved: "bg-green-500/20 text-green-600",
       completed: "bg-gray-500/20 text-content-secondary",
       dismissed: "bg-gray-500/20 text-content-secondary",
@@ -244,21 +252,21 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
   };
 
   return (
-    <div className="p-6 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-blue-500/50 transition-colors">
+    <div className="p-6 rounded-lg border border-edge bg-surface-secondary hover:border-[var(--accent-primary)]/40 transition-colors">
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 p-3 rounded-lg bg-blue-500/10">
-          <Icon className="w-6 h-6 text-blue-500" />
+        <div className="flex-shrink-0 p-3 rounded-lg bg-[var(--accent-primary-bg)]">
+          <Icon className="w-6 h-6 text-[var(--accent-primary)]" />
         </div>
         <div className="flex-1">
           <div className="flex items-start justify-between mb-2">
             <div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+              <h3 className="text-lg font-semibold text-content">
                 {opportunity.type
                   .split("_")
                   .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
                   .join(" ")}
               </h3>
-              <p className="text-[var(--text-secondary)] mt-1">
+              <p className="text-content-secondary mt-1">
                 {opportunity.trigger.whyNow}
               </p>
             </div>
@@ -277,7 +285,7 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
               {opportunity.type === "daily_brief" && opportunity.suggestedActions[0].config?.sections ? (
                 <DailyBriefSections sections={opportunity.suggestedActions[0].config.sections} />
               ) : (
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="text-sm text-content-secondary">
                   {opportunity.suggestedActions[0].description}
                 </p>
               )}
@@ -285,15 +293,15 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
           )}
 
           <div className="flex items-center gap-4 mt-4">
-            <button type="button" className="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 text-sm font-medium">
+            <button type="button" className="px-4 py-2 rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] text-sm font-medium transition-colors">
               View Details
             </button>
             {opportunity.status !== "completed" && opportunity.status !== "dismissed" && (
               <>
-                <button type="button" className="px-4 py-2 rounded bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)] text-sm font-medium">
+                <button type="button" className="px-4 py-2 rounded bg-surface-secondary text-content hover:bg-[var(--bg-quaternary)] text-sm font-medium">
                   Mark Complete
                 </button>
-                <button type="button" className="px-4 py-2 rounded bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-quaternary)] text-sm font-medium">
+                <button type="button" className="px-4 py-2 rounded bg-surface-secondary text-content-secondary hover:bg-[var(--bg-quaternary)] text-sm font-medium">
                   Dismiss
                 </button>
               </>
@@ -309,27 +317,27 @@ function DailyBriefSections({ sections }: { sections: any[] }) {
   return (
     <div className="space-y-4">
       {sections.map((section, idx) => (
-        <div key={idx} className="border-l-2 border-blue-500 pl-4">
-          <h4 className="font-semibold text-[var(--text-primary)] mb-2">
+        <div key={idx} className="border-l-2 border-[var(--accent-primary)] pl-4">
+          <h4 className="font-semibold text-content mb-2">
             {section.title}
           </h4>
           {section.items && section.items.length > 0 ? (
             <ul className="space-y-2">
               {section.items.map((item: any, itemIdx: number) => (
-                <li key={itemIdx} className="text-sm text-[var(--text-secondary)]">
+                <li key={itemIdx} className="text-sm text-content-secondary">
                   <div className="flex items-start gap-2">
-                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span className="text-[var(--accent-primary)] mt-0.5">•</span>
                     <div className="flex-1">
-                      <div className="font-medium text-[var(--text-primary)]">
+                      <div className="font-medium text-content">
                         {item.title}
                       </div>
                       {item.description && (
-                        <div className="text-[var(--text-muted)] mt-0.5">
+                        <div className="text-content-muted mt-0.5">
                           {item.description}
                         </div>
                       )}
                       {item.time && (
-                        <div className="text-xs text-[var(--text-muted)] mt-0.5">
+                        <div className="text-xs text-content-muted mt-0.5">
                           {item.time}
                         </div>
                       )}
@@ -339,7 +347,7 @@ function DailyBriefSections({ sections }: { sections: any[] }) {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-[var(--text-muted)] italic">No items</p>
+            <p className="text-sm text-content-muted italic">No items</p>
           )}
         </div>
       ))}

@@ -31,7 +31,7 @@ export default function PopoverMiniEditor(props: PopoverMiniEditorProps) {
   }
   // spreadsheet
   return (
-    <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading spreadsheet…</div>}>
+    <Suspense fallback={<div className="text-xs text-content-secondary">Loading spreadsheet…</div>}>
       <SpreadsheetMiniEditor documentId={props.documentId} onClose={props.onClose} />
     </Suspense>
   );

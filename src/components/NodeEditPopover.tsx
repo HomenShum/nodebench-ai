@@ -37,7 +37,7 @@ export function NodeEditPopover({ documentId, nodeId, isVisible, position }: Nod
 
   return (
     <div
-      className="fixed z-50 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3 max-w-xs pointer-events-none"
+      className="fixed z-50 bg-surface-secondary border border-edge rounded-lg shadow-lg p-3 max-w-xs pointer-events-none"
       style={{
         left: position.x,
         top: position.y - 10,
@@ -45,23 +45,23 @@ export function NodeEditPopover({ documentId, nodeId, isVisible, position }: Nod
       }}
     >
       <div className="flex flex-col gap-1.5">
-        <div className="text-xs font-medium text-[var(--text-primary)]">
+        <div className="text-xs font-medium text-content">
           Last edited
         </div>
         <div className="flex flex-col gap-0.5">
-          <div className="text-xs text-[var(--text-secondary)]">
+          <div className="text-xs text-content-secondary">
             <span className="font-medium">
               {user?.name || 'Unknown User'}
             </span>
-            <span className="text-[var(--text-muted)] ml-1">
+            <span className="text-content-muted ml-1">
               ({nodeEditInfo.editedBy.slice(-8)})
             </span>
           </div>
-          <div className="text-xs text-[var(--text-muted)]">
+          <div className="text-xs text-content-muted">
             {formatTime(nodeEditInfo.editedAt)}
           </div>
           {nodeEditInfo.content && (
-            <div className="text-xs text-[var(--text-muted)] italic mt-1 truncate">
+            <div className="text-xs text-content-muted italic mt-1 truncate">
               "{nodeEditInfo.content.slice(0, 50)}..."
             </div>
           )}

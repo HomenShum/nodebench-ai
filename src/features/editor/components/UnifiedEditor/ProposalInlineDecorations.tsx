@@ -196,13 +196,13 @@ export const ProposalInlineDecorations: React.FC<ProposalInlineDecorationsProps>
         key={`inline-proposal-${blk.id}`}
         contentEditable={false}
         data-nodebench-overlay
-        className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
+        className="rounded-md border border-edge bg-surface text-content shadow-sm"
         style={{ position: 'fixed', top, left, width: panelWidth, zIndex: 60, pointerEvents: 'auto' }}
         aria-live="polite"
         onMouseDown={(e) => { e.stopPropagation(); }}
         onClick={(e) => { e.stopPropagation(); }}
       >
-        <div className="px-3 py-2 border-b border-[var(--border-color)] flex items-center justify-between gap-3">
+        <div className="px-3 py-2 border-b border-edge flex items-center justify-between gap-3">
           <div className="text-xs font-medium truncate">Proposed change</div>
           <div className="flex items-center gap-2">
             <button onClick={() => setExpanded((prev) => ({ ...prev, [blk.id]: !prev[blk.id] }))} className="text-xs px-2 py-0.5 rounded border">
@@ -214,8 +214,8 @@ export const ProposalInlineDecorations: React.FC<ProposalInlineDecorationsProps>
         </div>
         {expanded[blk.id] ? (
           <div className="p-3 grid grid-cols-2 gap-3 max-h-56 overflow-auto text-[12px] leading-[1.2] nb-code-pane">
-            <pre className="bg-[var(--bg-secondary)]/60 rounded p-2 overflow-auto"><code dangerouslySetInnerHTML={{ __html: prismHighlight(current, detectFenceLang(proposed)) }} /></pre>
-            <pre className="bg-[var(--bg-secondary)]/60 rounded p-2 overflow-auto"><code dangerouslySetInnerHTML={{ __html: prismHighlight(proposed, detectFenceLang(proposed)) }} /></pre>
+            <pre className="bg-surface-secondary/60 rounded p-2 overflow-auto"><code dangerouslySetInnerHTML={{ __html: prismHighlight(current, detectFenceLang(proposed)) }} /></pre>
+            <pre className="bg-surface-secondary/60 rounded p-2 overflow-auto"><code dangerouslySetInnerHTML={{ __html: prismHighlight(proposed, detectFenceLang(proposed)) }} /></pre>
           </div>
         ) : (
           <DiffLinesList
@@ -249,7 +249,7 @@ const DiffLinesList: React.FC<DiffLinesListProps> = ({ annotatedOps, toFrom, sel
       <ul className="px-3 py-2 space-y-1">
         {annotatedOps.slice(0, 200).map((op, idx) => {
           if (op.moved && op.role === 'from') return null;
-          let rowClass = 'text-[var(--text-secondary)] nb-diff-row';
+          let rowClass = 'text-content-secondary nb-diff-row';
           let sym = ' ';
           if (op.moved && op.role === 'to') {
             rowClass = 'nb-diff-row moved nb-moved text-purple-700 dark:text-purple-300';
@@ -286,7 +286,7 @@ const DiffLinesList: React.FC<DiffLinesListProps> = ({ annotatedOps, toFrom, sel
                   {words ? (
                     <span className="whitespace-pre-wrap">
                       <span className="text-red-700 dark:text-red-300" dangerouslySetInnerHTML={{ __html: words.oldHtml }} />
-                      <span className="mx-1 text-[var(--text-secondary)]">→</span>
+                      <span className="mx-1 text-content-secondary">→</span>
                       <span className="text-green-700 dark:text-green-300" dangerouslySetInnerHTML={{ __html: words.newHtml }} />
                     </span>
                   ) : (

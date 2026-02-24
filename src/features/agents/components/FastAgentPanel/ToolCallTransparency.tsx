@@ -109,32 +109,32 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
 
   if (compact) {
     return (
-      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] text-xs">
+      <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-surface-secondary border border-edge text-xs">
         {statusIcon}
-        <span className="font-medium text-[var(--text-primary)]">{displayName}</span>
+        <span className="font-medium text-content">{displayName}</span>
         {call.durationMs !== undefined && (
-          <span className="text-[var(--text-muted)]">{formatDuration(call.durationMs)}</span>
+          <span className="text-content-muted">{formatDuration(call.durationMs)}</span>
         )}
       </div>
     );
   }
 
   return (
-    <div className="border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--bg-primary)] shadow-sm">
+    <div className="border border-edge rounded-lg overflow-hidden bg-surface shadow-sm">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--bg-hover)] transition-colors text-left"
+        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-surface-hover transition-colors text-left"
         aria-label={expanded ? `Collapse ${call.toolName.replace(/^convex_/, '').replace(/_/g, ' ')} details` : `Expand ${call.toolName.replace(/^convex_/, '').replace(/_/g, ' ')} details`}
       >
-        {expanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
-        <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+        {expanded ? <ChevronDown className="w-3.5 h-3.5 text-content-muted" /> : <ChevronRight className="w-3.5 h-3.5 text-content-muted" />}
+        <span className="flex items-center gap-1.5 text-content-secondary">
           {icon}
         </span>
-        <span className="text-xs font-medium text-[var(--text-primary)] flex-1">{displayName}</span>
-        <span className="text-xs text-[var(--text-muted)] px-1.5 py-0.5 rounded bg-[var(--bg-secondary)]">{category}</span>
+        <span className="text-xs font-medium text-content flex-1">{displayName}</span>
+        <span className="text-xs text-content-muted px-1.5 py-0.5 rounded bg-surface-secondary">{category}</span>
         {call.durationMs !== undefined && (
-          <span className="text-xs text-[var(--text-muted)] flex items-center gap-0.5">
+          <span className="text-xs text-content-muted flex items-center gap-0.5">
             <Clock className="w-3 h-3" />
             {formatDuration(call.durationMs)}
           </span>
@@ -143,17 +143,17 @@ function SingleToolCall({ call, compact }: { call: ToolCallData; compact?: boole
       </button>
 
       {expanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-[var(--border-color)] space-y-2">
+        <div className="px-3 pb-3 pt-1 border-t border-edge space-y-2">
           {call.inputSummary && (
             <div className="text-xs">
-              <span className="text-[var(--text-muted)] font-medium">Input: </span>
-              <span className="text-[var(--text-secondary)]">{call.inputSummary}</span>
+              <span className="text-content-muted font-medium">Input: </span>
+              <span className="text-content-secondary">{call.inputSummary}</span>
             </div>
           )}
           {call.outputSummary && (
             <div className="text-xs">
-              <span className="text-[var(--text-muted)] font-medium">Output: </span>
-              <span className="text-[var(--text-secondary)]">{call.outputSummary}</span>
+              <span className="text-content-muted font-medium">Output: </span>
+              <span className="text-content-secondary">{call.outputSummary}</span>
             </div>
           )}
 
@@ -219,7 +219,7 @@ export function ToolCallTransparency({ toolCalls, isStreaming, compact }: ToolCa
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+      <div className="flex items-center gap-2 text-xs text-content-muted">
         <Wrench className="w-3.5 h-3.5" />
         <span className="font-medium">
           {stats.total} tool call{stats.total !== 1 ? 's' : ''}

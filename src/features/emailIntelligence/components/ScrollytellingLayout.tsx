@@ -104,12 +104,12 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
       </span>
 
       {/* Section Title - Editorial Serif */}
-      <h2 className="mb-6 text-3xl font-bold tracking-tight text-[color:var(--text-primary)] leading-tight">
+      <h2 className="mb-6 text-3xl font-bold tracking-tight text-content leading-tight">
         {section.meta.title}
       </h2>
 
       {/* Narrative Body - Serif for Editorial Feel */}
-      <div className="prose prose-lg prose-slate text-[color:var(--text-primary)] leading-relaxed">
+      <div className="prose prose-lg prose-slate text-content leading-relaxed">
         {section.content.body.map((paragraph, idx) => (
           <p key={idx} className="mb-4 last:mb-0">
             {parseSmartLinks(paragraph, (section.smartLinks ?? {}) as Record<string, { summary: string; source?: string }>)}
@@ -178,12 +178,12 @@ export const ScrollytellingLayout: React.FC<Props> = ({ data }) => {
   if (!sourceData.length) return null;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
       {/* AI Analysis Header */}
-      <div className="flex items-center justify-between mb-8 pb-4 border-b border-[color:var(--border-color)]">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-edge">
         <div className="flex items-center gap-2">
           <Shield className="w-5 h-5 text-indigo-600" />
-          <span className="text-sm font-medium text-[color:var(--text-primary)]">Email Intelligence Dossier</span>
+          <span className="text-sm font-medium text-content">Email Intelligence Dossier</span>
         </div>
         <button
           onClick={handleAnalyzeIntelligence}
@@ -224,7 +224,7 @@ export const ScrollytellingLayout: React.FC<Props> = ({ data }) => {
           ))}
         </div>
         <div className="hidden lg:block lg:col-span-5 xl:col-span-4">
-          <div className="sticky top-12 min-h-[400px] rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm p-6 ring-1 ring-black/5">
+          <div className="sticky top-12 min-h-[400px] rounded-lg border border-edge bg-surface shadow-sm p-6 ring-1 ring-black/5">
             <DashboardPanel data={activeData} />
           </div>
         </div>

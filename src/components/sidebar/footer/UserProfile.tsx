@@ -27,7 +27,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
     };
 
     return (
-        <div className="p-4 border-t border-[var(--border-color)] bg-surface-secondary">
+        <div className="p-4 border-t border-edge bg-surface-secondary">
             <div className="flex items-center gap-3">
                 {(() => {
                     const displayName = (user?.name ?? user?.email ?? "Guest");
@@ -39,13 +39,13 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                             src={imgSrc}
                             alt={displayName + " avatar"}
                             title={displayName}
-                            className="h-9 w-9 rounded-full border border-[var(--border-color)] object-cover shadow-sm"
+                            className="h-9 w-9 rounded-full border border-edge object-cover shadow-sm"
                             width={36}
                             height={36}
                         />
                     ) : (
                         <div
-                            className="h-9 w-9 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] flex items-center justify-center text-sm font-semibold"
+                            className="h-9 w-9 rounded-full border border-edge bg-surface flex items-center justify-center text-sm font-semibold"
                             aria-label={displayName + " avatar"}
                         >
                             {initial}
@@ -53,10 +53,10 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                     );
                 })()}
                 <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                    <div className="text-sm font-semibold text-content truncate">
                         {isAnonymous ? "Guest User" : (user?.name ?? "User")}
                     </div>
-                    <div className="text-xs text-[var(--text-secondary)] truncate">
+                    <div className="text-xs text-content-secondary truncate">
                         {isAnonymous ? "Sign in to save your data" : (user?.email ?? "")}
                     </div>
                 </div>
@@ -95,7 +95,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                                 <button
                                     type="button"
                                     onClick={() => onOpenSettings("profile")}
-                                    className="px-2 py-1 text-xs rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                                    className="px-2 py-1 text-xs rounded-md border border-edge bg-surface hover:bg-surface-hover text-content-secondary hover:text-content transition-colors"
                                 >
                                     Settings
                                 </button>
@@ -111,7 +111,7 @@ export function UserProfile({ onOpenSettings }: UserProfileProps) {
                     href="https://railway.com?referralCode=VaLiq9"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors opacity-60 hover:opacity-100"
+                    className="text-xs text-[var(--text-tertiary)] hover:text-content-secondary transition-colors opacity-60 hover:opacity-100"
                 >
                     Infra powered by Railway 
                 </a>

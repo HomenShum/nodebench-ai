@@ -98,8 +98,8 @@ export const MessageBubble = React.memo(function MessageBubble({
       {/* Avatar */}
       <div className="flex-shrink-0">
         {isUser ? (
-          <div className="w-7 h-7 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] flex items-center justify-center">
-            <User className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+          <div className="w-7 h-7 rounded-full bg-surface-secondary border border-edge flex items-center justify-center">
+            <User className="h-3.5 w-3.5 text-content-secondary" />
           </div>
         ) : (
           <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800/40 flex items-center justify-center">
@@ -112,10 +112,10 @@ export const MessageBubble = React.memo(function MessageBubble({
       <div className="flex-1 min-w-0">
         {/* Header with role and timestamp */}
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-semibold text-[var(--text-primary)]">
+          <span className="text-sm font-semibold text-content">
             {isUser ? 'You' : 'Assistant'}
           </span>
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-content-muted">
             {new Date(message.timestamp).toLocaleTimeString([], { 
               hour: '2-digit', 
               minute: '2-digit' 
@@ -127,8 +127,8 @@ export const MessageBubble = React.memo(function MessageBubble({
         <div className={cn(
           "text-[15px] leading-relaxed",
           isUser
-            ? "px-3.5 py-2.5 rounded-lg rounded-tr-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]"
-            : "px-3.5 py-2.5 rounded-lg rounded-tl-sm bg-[var(--bg-secondary)]/40 border-l-2 border-l-[var(--accent-primary)]/20 text-[var(--text-primary)]"
+            ? "px-3.5 py-2.5 rounded-lg rounded-tr-sm bg-surface-secondary border border-edge text-content"
+            : "px-3.5 py-2.5 rounded-lg rounded-tl-sm bg-surface-secondary/40 border-l-2 border-l-[var(--accent-primary)]/20 text-content"
         )}>
           {/* Use StreamingMessage for messages with streamId */}
           {isAssistant && message.streamId ? (
@@ -181,7 +181,7 @@ export const MessageBubble = React.memo(function MessageBubble({
             <button
               type="button"
               onClick={handleCopy}
-              className="action-btn p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+              className="action-btn p-1 rounded-md hover:bg-surface-secondary text-content-muted hover:text-content-secondary transition-colors"
               title="Copy message"
               aria-label="Copy message"
             >
@@ -195,7 +195,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               <button
                 type="button"
                 onClick={() => onRetry(message)}
-                className="action-btn p-1 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                className="action-btn p-1 rounded-md hover:bg-surface-secondary text-content-muted hover:text-content-secondary transition-colors"
                 title="Retry"
                 aria-label="Retry this message"
               >
@@ -209,7 +209,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                 "action-btn p-1 rounded-md transition-colors",
                 feedback === 'up'
                   ? "bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400"
-                  : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  : "hover:bg-surface-secondary text-content-muted hover:text-content-secondary"
               )}
               title="Good response"
               aria-label="Good response"
@@ -223,7 +223,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                 "action-btn p-1 rounded-md transition-colors",
                 feedback === 'down'
                   ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                  : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  : "hover:bg-surface-secondary text-content-muted hover:text-content-secondary"
               )}
               title="Poor response"
               aria-label="Poor response"
@@ -238,7 +238,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                 "action-btn p-1 rounded-md transition-colors",
                 shared
                   ? "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  : "hover:bg-surface-secondary text-content-muted hover:text-content-secondary"
               )}
               title="Share"
               aria-label="Share this response"
@@ -279,7 +279,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               className="flex items-center gap-1.5 py-0.5 bg-transparent border-none cursor-pointer text-xs"
               aria-label={showMetadata ? "Hide message details" : "Show message details"}
             >
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs font-medium">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-secondary text-content-muted text-xs font-medium">
                 <Clock className="h-2.5 w-2.5" />
                 {(message.elapsedMs / 1000).toFixed(1)}s
               </span>
@@ -287,32 +287,32 @@ export const MessageBubble = React.memo(function MessageBubble({
 
             {/* Expanded metadata — model + tokens shown on click */}
             {showMetadata && (
-              <div className="mt-1.5 px-2.5 py-2 bg-[var(--bg-tertiary)] rounded-md text-xs space-y-0.5">
+              <div className="mt-1.5 px-2.5 py-2 bg-surface-secondary rounded-md text-xs space-y-0.5">
                 {message.model && (
                   <div className="flex justify-between">
-                    <span className="text-[var(--text-muted)]">Model:</span>
-                    <span className="text-[var(--text-primary)] font-medium">{message.model}</span>
+                    <span className="text-content-muted">Model:</span>
+                    <span className="text-content font-medium">{message.model}</span>
                   </div>
                 )}
                 {message.fastMode && (
                   <div className="flex justify-between">
-                    <span className="text-[var(--text-muted)]">Mode:</span>
+                    <span className="text-content-muted">Mode:</span>
                     <span className="text-amber-600 dark:text-amber-400 font-medium">Fast</span>
                   </div>
                 )}
                 {message.tokensUsed && (
                   <>
                     <div className="flex justify-between">
-                      <span className="text-[var(--text-muted)]">Input tokens:</span>
-                      <span className="text-[var(--text-primary)] font-medium tabular-nums">{message.tokensUsed.input.toLocaleString()}</span>
+                      <span className="text-content-muted">Input tokens:</span>
+                      <span className="text-content font-medium tabular-nums">{message.tokensUsed.input.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[var(--text-muted)]">Output tokens:</span>
-                      <span className="text-[var(--text-primary)] font-medium tabular-nums">{message.tokensUsed.output.toLocaleString()}</span>
+                      <span className="text-content-muted">Output tokens:</span>
+                      <span className="text-content font-medium tabular-nums">{message.tokensUsed.output.toLocaleString()}</span>
                     </div>
-                    <div className="flex justify-between border-t border-[var(--border-color)] pt-1 mt-1">
-                      <span className="text-[var(--text-muted)]">Total:</span>
-                      <span className="text-[var(--text-primary)] font-medium tabular-nums">
+                    <div className="flex justify-between border-t border-edge pt-1 mt-1">
+                      <span className="text-content-muted">Total:</span>
+                      <span className="text-content font-medium tabular-nums">
                         {(message.tokensUsed.input + message.tokensUsed.output).toLocaleString()}
                       </span>
                     </div>

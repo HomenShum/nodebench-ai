@@ -51,7 +51,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         transition={{ type: 'tween', duration: 0.15 }}
         className={cn(
           'bg-card rounded-lg',
-          bordered && 'border border-gray-200/60',
+          bordered && 'border border-edge/60',
           paddingStyles[padding],
           isClickable && 'cursor-pointer will-change-transform',
           'shadow-sm transition-all duration-150',

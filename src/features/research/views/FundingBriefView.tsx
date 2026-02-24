@@ -148,15 +148,15 @@ function FundingCard({
   const sectorColor = SECTOR_COLORS[sectorKey] || SECTOR_COLORS.other;
 
   return (
-    <div className="border border-[color:var(--border-color)] rounded-lg p-4 bg-[color:var(--bg-primary)] transition-shadow">
+    <div className="border border-edge rounded-lg p-4 bg-surface transition-shadow">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-[color:var(--text-primary)] truncate">
+            <h3 className="font-semibold text-content truncate">
               {/^unknown\s*company/i.test(event.companyName) ? 'Undisclosed' : event.companyName}
             </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] font-medium">
               {ROUND_TYPE_LABELS[event.roundType] || event.roundType}
             </span>
             {event.verificationStatus && (
@@ -178,7 +178,7 @@ function FundingCard({
         {/* Confidence Score */}
         {event.confidence !== undefined && (
           <div className="text-right">
-            <div className="text-xs text-[color:var(--text-secondary)]">Confidence</div>
+            <div className="text-xs text-content-secondary">Confidence</div>
             <div
               className={`text-sm font-semibold ${
                 event.confidence >= 0.8
@@ -195,7 +195,7 @@ function FundingCard({
       </div>
 
       {/* Metadata Row */}
-      <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-[color:var(--text-secondary)]">
+      <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-content-secondary">
         {event.sector && (
           <span className={`px-2 py-0.5 rounded-full text-xs ${sectorColor.bg} ${sectorColor.text}`}>
             {event.sector}
@@ -218,7 +218,7 @@ function FundingCard({
       {/* Lead Investors */}
       {event.leadInvestors && event.leadInvestors.length > 0 && (
         <div className="mt-3">
-          <div className="flex items-center gap-1.5 text-xs text-[color:var(--text-secondary)] mb-1">
+          <div className="flex items-center gap-1.5 text-xs text-content-secondary mb-1">
             <Users className="w-3.5 h-3.5" />
             Lead Investors
           </div>
@@ -226,7 +226,7 @@ function FundingCard({
             {event.leadInvestors.map((investor, idx) => (
               <span
                 key={idx}
-                className="text-xs px-2 py-0.5 rounded bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                className="text-xs px-2 py-0.5 rounded bg-surface-secondary text-content"
               >
                 {investor}
               </span>
@@ -240,7 +240,7 @@ function FundingCard({
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-3 text-xs text-blue-600 hover:text-blue-700"
+          className="flex items-center gap-1 mt-3 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]"
           aria-expanded={expanded}
         >
           <ChevronDown
@@ -251,16 +251,16 @@ function FundingCard({
       )}
 
       {expanded && (
-        <div className="mt-3 pt-3 border-t border-[color:var(--border-color)] space-y-3">
+        <div className="mt-3 pt-3 border-t border-edge space-y-3">
           {/* Description */}
           {event.description && (
-            <p className="text-sm text-[color:var(--text-secondary)]">{event.description}</p>
+            <p className="text-sm text-content-secondary">{event.description}</p>
           )}
 
           {/* Co-Investors */}
           {event.coInvestors && event.coInvestors.length > 0 && (
             <div>
-              <div className="text-xs text-[color:var(--text-secondary)] mb-1">Co-Investors</div>
+              <div className="text-xs text-content-secondary mb-1">Co-Investors</div>
               <div className="flex flex-wrap gap-1.5">
                 {event.coInvestors.map((investor, idx) => (
                   <span
@@ -277,7 +277,7 @@ function FundingCard({
           {/* Sources */}
           {event.sourceUrls && event.sourceUrls.length > 0 && (
             <div>
-              <div className="text-xs text-[color:var(--text-secondary)] mb-1">
+              <div className="text-xs text-content-secondary mb-1">
                 Sources ({event.sourceUrls.length})
               </div>
               <div className="flex flex-col gap-1">
@@ -287,14 +287,14 @@ function FundingCard({
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-blue-600 hover:underline truncate flex items-center gap-1"
+                    className="text-xs text-[var(--accent-primary)] hover:underline truncate flex items-center gap-1"
                   >
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     {event.sourceNames?.[idx] || url}
                   </a>
                 ))}
                 {event.sourceUrls.length > 3 && (
-                  <span className="text-xs text-[color:var(--text-secondary)]">
+                  <span className="text-xs text-content-secondary">
                     +{event.sourceUrls.length - 3} more sources
                   </span>
                 )}
@@ -333,49 +333,49 @@ function StatsSummary({
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-      <div className="bg-[color:var(--bg-secondary)] rounded-lg p-4">
-        <div className="flex items-center gap-2 text-[color:var(--text-secondary)] text-sm mb-1">
+      <div className="bg-surface-secondary rounded-lg p-4">
+        <div className="flex items-center gap-2 text-content-secondary text-sm mb-1">
           <Building2 className="w-4 h-4" />
           Total Deals
         </div>
-        <div className="text-2xl font-bold text-[color:var(--text-primary)]">{stats.total}</div>
-        <div className="text-xs text-[color:var(--text-secondary)]">Last {stats.lookbackDays} days</div>
+        <div className="text-2xl font-bold text-content">{stats.total}</div>
+        <div className="text-xs text-content-secondary">Last {stats.lookbackDays} days</div>
       </div>
 
-      <div className="bg-[color:var(--bg-secondary)] rounded-lg p-4">
-        <div className="flex items-center gap-2 text-[color:var(--text-secondary)] text-sm mb-1">
+      <div className="bg-surface-secondary rounded-lg p-4">
+        <div className="flex items-center gap-2 text-content-secondary text-sm mb-1">
           <DollarSign className="w-4 h-4" />
           Total Raised
         </div>
         <div className="text-2xl font-bold text-green-600">
           {formatCurrency(stats.totalAmountUsd)}
         </div>
-        <div className="text-xs text-[color:var(--text-secondary)]">Disclosed amounts</div>
+        <div className="text-xs text-content-secondary">Disclosed amounts</div>
       </div>
 
-      <div className="bg-[color:var(--bg-secondary)] rounded-lg p-4">
-        <div className="flex items-center gap-2 text-[color:var(--text-secondary)] text-sm mb-1">
+      <div className="bg-surface-secondary rounded-lg p-4">
+        <div className="flex items-center gap-2 text-content-secondary text-sm mb-1">
           <TrendingUp className="w-4 h-4" />
           Seed/Pre-Seed
         </div>
-        <div className="text-2xl font-bold text-[color:var(--text-primary)]">
+        <div className="text-2xl font-bold text-content">
           {(stats.byRoundType["seed"] || 0) + (stats.byRoundType["pre-seed"] || 0)}
         </div>
-        <div className="text-xs text-[color:var(--text-secondary)]">Early stage deals</div>
+        <div className="text-xs text-content-secondary">Early stage deals</div>
       </div>
 
-      <div className="bg-[color:var(--bg-secondary)] rounded-lg p-4">
-        <div className="flex items-center gap-2 text-[color:var(--text-secondary)] text-sm mb-1">
+      <div className="bg-surface-secondary rounded-lg p-4">
+        <div className="flex items-center gap-2 text-content-secondary text-sm mb-1">
           <Briefcase className="w-4 h-4" />
           Series A+
         </div>
-        <div className="text-2xl font-bold text-[color:var(--text-primary)]">
+        <div className="text-2xl font-bold text-content">
           {(stats.byRoundType["series-a"] || 0) +
             (stats.byRoundType["series-b"] || 0) +
             (stats.byRoundType["series-c"] || 0) +
             (stats.byRoundType["series-d-plus"] || 0)}
         </div>
-        <div className="text-xs text-[color:var(--text-secondary)]">Later stage deals</div>
+        <div className="text-xs text-content-secondary">Later stage deals</div>
       </div>
     </div>
   );
@@ -520,15 +520,16 @@ export function FundingBriefView() {
   }, [data?.stats?.byRoundType]);
 
   return (
-    <div className="h-full w-full overflow-auto bg-[color:var(--bg-secondary)] editorial-layout">
-      <div className="max-w-5xl mx-auto px-4 py-6">
+    <div className="nb-page-shell editorial-layout">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame-narrow">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[color:var(--text-primary)] mb-1">
+            <h1 className="type-page-title text-content mb-1">
               Startup Funding Brief
             </h1>
-            <p className="text-[color:var(--text-secondary)]">
+            <p className="text-content-secondary">
               Real-time funding insights from verified sources
             </p>
           </div>
@@ -540,7 +541,7 @@ export function FundingBriefView() {
               type="button"
               onClick={handleSaveToDocuments}
               disabled={isGenerating || isSaving || isGeneratingInsights || !data?.events?.length}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              className="btn-primary-sm flex items-center gap-2"
             >
               {isGeneratingInsights && !isGenerating && !isSaving ? (
                 <>
@@ -570,7 +571,7 @@ export function FundingBriefView() {
               type="button"
               onClick={handleExportPDF}
               disabled={isGenerating || isSaving || isGeneratingInsights || !data?.events?.length}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+              className="btn-outline-sm flex items-center gap-2"
             >
               {isGeneratingInsights ? (
                 <>
@@ -609,16 +610,16 @@ export function FundingBriefView() {
         )}
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-6 p-4 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)]">
+        <div className="nb-surface-card mb-6 p-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-[color:var(--text-secondary)]" />
-            <span className="text-sm font-medium text-[color:var(--text-primary)]">Filters:</span>
+            <Filter className="w-4 h-4 text-content-secondary" />
+            <span className="text-sm font-medium text-content">Filters:</span>
           </div>
 
           <select
             value={lookbackDays}
             onChange={(e) => setLookbackDays(Number(e.target.value))}
-            className="text-sm border border-[color:var(--border-color)] rounded-md px-3 py-1.5 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
             aria-label="Time range"
           >
             <option value={7}>Last 7 days</option>
@@ -634,7 +635,7 @@ export function FundingBriefView() {
           <select
             value={roundTypeFilter}
             onChange={(e) => setRoundTypeFilter(e.target.value)}
-            className="text-sm border border-[color:var(--border-color)] rounded-md px-3 py-1.5 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)]"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
             aria-label="Round type"
           >
             <option value="">All Rounds</option>
@@ -650,7 +651,7 @@ export function FundingBriefView() {
             placeholder="Filter by sector..."
             value={sectorFilter}
             onChange={(e) => setSectorFilter(e.target.value)}
-            className="text-sm border border-[color:var(--border-color)] rounded-md px-3 py-1.5 bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] placeholder:text-[color:var(--text-secondary)]"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
             aria-label="Filter by sector"
           />
         </div>
@@ -670,12 +671,12 @@ export function FundingBriefView() {
 
         {/* Empty State */}
         {data && sortedEvents.length === 0 && (
-          <div className="text-center py-12 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)]">
-            <Building2 className="w-12 h-12 mx-auto text-[color:var(--text-secondary)] mb-3" />
-            <h3 className="text-lg font-medium text-[color:var(--text-primary)] mb-1">
+          <div className="nb-surface-card text-center py-12">
+            <Building2 className="w-12 h-12 mx-auto text-content-secondary mb-3" />
+            <h3 className="text-lg font-medium text-content mb-1">
               No funding events found
             </h3>
-            <p className="text-sm text-[color:var(--text-secondary)]">
+            <p className="text-sm text-content-secondary">
               Try adjusting your filters or lookback period
             </p>
           </div>
@@ -691,13 +692,14 @@ export function FundingBriefView() {
         )}
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-[color:var(--text-secondary)]">
+        <div className="mt-8 text-center text-sm text-content-secondary">
           <p>
             Data sourced from verified news outlets and official announcements.
           </p>
           <p className="mt-1">
             Updated continuously. Follow us on LinkedIn for daily briefs.
           </p>
+        </div>
         </div>
       </div>
     </div>

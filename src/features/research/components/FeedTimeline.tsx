@@ -24,7 +24,7 @@ const GROUPS: GroupConfig[] = [
     title: "Morning Briefing",
     subtitle: "Market sentiment remains cautious; rotation into AI infra and developer tooling.",
     icon: Newspaper,
-    color: "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]",
+    color: "bg-surface-secondary text-content",
     match: () => true,
     layout: "grid",
   },
@@ -82,16 +82,16 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({ items, onItemClick, 
             </div>
             <div className="mb-8 pt-1">
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-xl font-bold text-[color:var(--text-primary)] tracking-tight">
+                <h2 className="text-xl font-bold text-content tracking-tight">
                   {entry.group.title}
                 </h2>
-                <span className="text-xs font-bold text-[color:var(--text-secondary)] bg-[color:var(--bg-secondary)] px-2 py-0.5 rounded-full border border-[color:var(--border-color)]">
+                <span className="text-xs font-bold text-content-secondary bg-surface-secondary px-2 py-0.5 rounded-full border border-edge">
                   {entry.items.length} UPDATES
                 </span>
               </div>
               {entry.group.subtitle && (
-                <div className="bg-gradient-to-r from-[color:var(--bg-secondary)] to-[color:var(--bg-primary)] border-l-2 border-[color:var(--border-color)] pl-4 py-2 pr-6 rounded-r-lg">
-                  <p className="text-sm text-[color:var(--text-primary)] leading-relaxed font-medium">
+                <div className="bg-gradient-to-r from-surface-secondary to-surface border-l-2 border-edge pl-4 py-2 pr-6 rounded-r-lg">
+                  <p className="text-sm text-content leading-relaxed font-medium">
                     <Sparkles className="w-3 h-3 inline mr-2 text-purple-500" />
                     {entry.group.subtitle}
                   </p>
@@ -111,11 +111,11 @@ export const FeedTimeline: React.FC<FeedTimelineProps> = ({ items, onItemClick, 
                 </div>
               ))}
               {entry.items.length === 0 && (
-                <div className="text-sm text-[color:var(--text-secondary)]">No items yet.</div>
+                <div className="text-sm text-content-secondary">No items yet.</div>
               )}
             </div>
             {!last && (
-              <div className="absolute left-[18px] bottom-0 flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+              <div className="absolute left-[18px] bottom-0 flex items-center gap-2 text-xs text-content-secondary">
                 <Circle className="w-2 h-2" />
                 Continue
               </div>

@@ -54,20 +54,20 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
   
   return (
     <div
-      className="absolute top-full right-0 mt-1.5 w-72 bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-color)] z-50 overflow-hidden"
+      className="absolute top-full right-0 mt-1.5 w-72 bg-surface rounded-lg shadow-xl border border-edge z-50 overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Search - compact */}
-      <div className="p-2.5 border-b border-[var(--border-color)]">
+      <div className="p-2.5 border-b border-edge">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[var(--text-muted)]" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-content-muted" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search skills..."
             autoFocus
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-[var(--bg-secondary)] border-0 rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-surface-secondary border-0 rounded-lg text-content placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
           />
         </div>
       </div>
@@ -77,7 +77,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         {/* User custom skills */}
         {userSkills && userSkills.length > 0 && (
           <div className="px-2.5 pt-2 pb-1">
-            <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="text-xs font-medium text-content-muted uppercase tracking-wider mb-1.5 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
               Your Skills
             </div>
@@ -89,7 +89,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
               >
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                  <span className="text-xs font-medium text-[var(--text-primary)] group-hover:text-violet-600 truncate">
+                  <span className="text-xs font-medium text-content group-hover:text-violet-600 truncate">
                     {skill.key || skill.category || 'Custom skill'}
                   </span>
                 </div>
@@ -101,7 +101,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         {/* Built-in skills */}
         <div className="px-2.5 py-2">
           {userSkills && userSkills.length > 0 && (
-            <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="text-xs font-medium text-content-muted uppercase tracking-wider mb-1.5 flex items-center gap-1">
               <Zap className="h-3 w-3" />
               Built-in
             </div>
@@ -109,11 +109,11 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
           
           {!skills ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-4 w-4 text-[var(--text-muted)] motion-safe:animate-spin" />
+              <Loader2 className="h-4 w-4 text-content-muted motion-safe:animate-spin" />
             </div>
           ) : filteredSkills?.length === 0 ? (
             <div className="text-center py-6">
-              <p className="text-xs text-[var(--text-muted)]">No skills found</p>
+              <p className="text-xs text-content-muted">No skills found</p>
             </div>
           ) : (
             <div className="space-y-0.5">
@@ -121,15 +121,15 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
                 <button
                   key={skill.name}
                   onClick={() => handleSkillClick(skill.name, skill.description)}
-                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors group"
+                  className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-surface-hover transition-colors group"
                 >
                   <div className="flex items-start gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${categoryDots[skill.category] || 'bg-[var(--text-muted)]'}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${categoryDots[skill.category] || 'bg-content-muted'}`} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-[var(--text-primary)] group-hover:text-violet-600 transition-colors truncate">
+                      <div className="text-xs font-medium text-content group-hover:text-violet-600 transition-colors truncate">
                         {skill.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </div>
-                      <div className="text-xs text-[var(--text-secondary)] line-clamp-1 mt-0.5">
+                      <div className="text-xs text-content-secondary line-clamp-1 mt-0.5">
                         {skill.description}
                       </div>
                     </div>
@@ -142,8 +142,8 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
       </div>
       
       {/* Hint footer - minimal */}
-      <div className="px-3 py-2 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
-        <p className="text-xs text-[var(--text-muted)] text-center">
+      <div className="px-3 py-2 bg-surface-secondary border-t border-edge">
+        <p className="text-xs text-content-muted text-center">
           Tip: Say "when I say X, do Y" to teach new skills
         </p>
       </div>

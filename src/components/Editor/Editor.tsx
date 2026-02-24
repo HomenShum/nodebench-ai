@@ -23,7 +23,7 @@ interface EditorProps {
 export function Editor({ documentId, isGridMode, isFullscreen, mode, editable }: EditorProps) {
   return (
     <ErrorBoundary title="Failed to load editor">
-      <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+      <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
         <UnifiedEditor
           documentId={documentId as any}
           mode={mode}

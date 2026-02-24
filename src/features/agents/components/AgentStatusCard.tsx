@@ -140,7 +140,7 @@ const StatusIndicator = memo(function StatusIndicator({ status }: { status: Agen
     <div className="flex items-center gap-1.5" role="status" aria-label={`Agent status: ${config.label}`}>
       <span className={cn("agent-dashboard", config.dot)} aria-hidden="true" />
       {Icon && <Icon className="w-3 h-3 motion-safe:animate-spin" aria-hidden="true" />}
-      <span className="text-xs font-medium text-[var(--text-secondary)]">
+      <span className="text-xs font-medium text-content-secondary">
         {config.label}
       </span>
     </div>
@@ -170,9 +170,9 @@ export const AgentStatusCard = memo(function AgentStatusCard({
   return (
     <div
       className={cn(
-        "group bg-[var(--bg-primary)] rounded-container border border-[var(--border-color)]",
-        "transition-all duration-200 hover:shadow-hover hover:bg-[var(--bg-secondary)]",
-        isActive && "ring-1 ring-offset-1 ring-offset-[var(--bg-primary)]",
+        "group bg-surface rounded-container border border-edge",
+        "transition-all duration-200 hover:shadow-hover hover:bg-surface-secondary",
+        isActive && "ring-1 ring-offset-1 ring-offset-surface",
         isActive && config.borderColorClass.replace("border-", "ring-")
       )}
     >
@@ -192,10 +192,10 @@ export const AgentStatusCard = memo(function AgentStatusCard({
               <Icon className={cn("w-5 h-5 transition-transform duration-200 group-hover:scale-[1.05]", config.colorClass)} aria-hidden="true" />
             </div>
             <div>
-              <h3 className="font-semibold text-[var(--text-primary)] text-sm">
+              <h3 className="font-semibold text-content text-sm">
                 {config.name}
               </h3>
-              <p className="text-xs text-[var(--text-muted)]">
+              <p className="text-xs text-content-muted">
                 {config.description}
               </p>
             </div>
@@ -207,21 +207,21 @@ export const AgentStatusCard = memo(function AgentStatusCard({
 
         {/* Current Task Preview (if running) */}
         {currentTask && isActive && (
-          <div className="mt-3 p-2 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-color)]">
+          <div className="mt-3 p-2 bg-surface-secondary rounded-lg border border-edge">
             <div className="flex items-center gap-1.5 mb-1">
-              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-[var(--accent-primary)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400" />
+              <span className="text-xs font-medium text-content-muted uppercase tracking-wider">
                 Current Task
               </span>
             </div>
-            <p className="text-xs text-[var(--text-secondary)] line-clamp-2">
+            <p className="text-xs text-content-secondary line-clamp-2">
               {currentTask}
             </p>
           </div>
         )}
 
         {/* Meta Info */}
-        <div className="flex items-center gap-4 mt-3 text-xs text-[var(--text-muted)]">
+        <div className="flex items-center gap-4 mt-3 text-xs text-content-muted">
           {lastActivity && (
             <div className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
@@ -244,8 +244,8 @@ export const AgentStatusCard = memo(function AgentStatusCard({
           onClick={onToggleStatus}
           className={cn(
             "flex-1 flex items-center justify-center gap-2 px-3 py-2",
-            "text-xs font-medium rounded-lg border border-[var(--border-color)]",
-            "hover:bg-[var(--bg-hover)] transition-colors"
+            "text-xs font-medium rounded-lg border border-edge",
+            "hover:bg-surface-hover transition-colors"
           )}
         >
           {isActive ? (
@@ -265,11 +265,11 @@ export const AgentStatusCard = memo(function AgentStatusCard({
           onClick={onConfigure}
           className={cn(
             "flex items-center justify-center p-2 rounded-lg",
-            "border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
+            "border border-edge hover:bg-surface-hover transition-colors"
           )}
           aria-label="Configure agent"
         >
-          <Settings className="w-4 h-4 text-[var(--text-muted)]" />
+          <Settings className="w-4 h-4 text-content-muted" />
         </button>
         {onToggleExpand && (
           <button
@@ -277,14 +277,14 @@ export const AgentStatusCard = memo(function AgentStatusCard({
             onClick={onToggleExpand}
             className={cn(
               "flex items-center justify-center p-2 rounded-lg",
-              "border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
+              "border border-edge hover:bg-surface-hover transition-colors"
             )}
             aria-label={isExpanded ? "Collapse details" : "Expand details"}
           >
             {isExpanded ? (
-              <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+              <ChevronUp className="w-4 h-4 text-content-muted" />
             ) : (
-              <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+              <ChevronDown className="w-4 h-4 text-content-muted" />
             )}
           </button>
         )}
@@ -292,8 +292,8 @@ export const AgentStatusCard = memo(function AgentStatusCard({
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-[var(--border-color)] pt-3">
-          <div className="text-xs text-[var(--text-muted)]">
+        <div className="px-4 pb-4 border-t border-edge pt-3">
+          <div className="text-xs text-content-muted">
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <span className="font-medium">Model:</span> {MODEL_UI_INFO[DEFAULT_MODEL].name}

@@ -17,8 +17,12 @@ export function PRSuggestions() {
 
   if (!suggestions) {
     return (
-      <div className="p-8 text-center text-[var(--text-secondary)]">
-        Loading PR suggestions...
+      <div className="nb-page-shell">
+        <div className="nb-page-inner">
+          <div className="nb-page-frame text-center text-content-secondary">
+            Loading PR suggestions...
+          </div>
+        </div>
       </div>
     );
   }
@@ -28,55 +32,61 @@ export function PRSuggestions() {
   const implementedSuggestions = suggestions.filter((s: any) => s.status === "implemented");
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeroHeader
-        icon={<GitPullRequest className="w-5 h-5" />}
-        title="Pull Request Suggestions"
-        subtitle="Automated pull request suggestions based on industry updates"
-      />
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-6">
+          {/* NOTE(coworker): Keep PR Suggestions in shared shell so side routes
+              don't visually diverge from Workbench/Industry/For You. */}
+          <PageHeroHeader
+            icon={<GitPullRequest className="w-5 h-5" />}
+            title="Pull Request Suggestions"
+            subtitle="Automated pull request suggestions based on industry updates"
+          />
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard
-          icon={<Clock className="w-5 h-5 text-yellow-500" />}
-          label="Pending"
-          value={pendingSuggestions.length}
-          color="yellow"
-        />
-        <StatCard
-          icon={<CheckCircle className="w-5 h-5 text-green-500" />}
-          label="Approved"
-          value={approvedSuggestions.length}
-          color="green"
-        />
-        <StatCard
-          icon={<CheckCircle className="w-5 h-5 text-blue-500" />}
-          label="Implemented"
-          value={implementedSuggestions.length}
-          color="blue"
-        />
-      </div>
-
-      {/* Suggestions List */}
-      {suggestions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/25 flex items-center justify-center mb-4">
-            <Lightbulb className="w-8 h-8 text-indigo-500 dark:text-indigo-300" />
+          {/* Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard
+              icon={<Clock className="w-5 h-5 text-yellow-500" />}
+              label="Pending"
+              value={pendingSuggestions.length}
+              color="yellow"
+            />
+            <StatCard
+              icon={<CheckCircle className="w-5 h-5 text-green-500" />}
+              label="Approved"
+              value={approvedSuggestions.length}
+              color="green"
+            />
+            <StatCard
+              icon={<CheckCircle className="w-5 h-5 text-blue-500" />}
+              label="Implemented"
+              value={implementedSuggestions.length}
+              color="blue"
+            />
           </div>
-          <p className="text-base font-semibold text-[var(--text-primary)] mb-2">No suggestions yet</p>
-          <p className="text-sm text-[var(--text-secondary)] max-w-sm mb-4">Suggestions are generated automatically when the enhanced industry scan detects relevant updates.</p>
-          <button type="button" className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm">
-            <Lightbulb className="w-4 h-4 flex-shrink-0" />
-            Run an enhanced industry scan
-          </button>
+
+          {/* Suggestions List */}
+          {suggestions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/25 flex items-center justify-center mb-4">
+                <Lightbulb className="w-8 h-8 text-indigo-500 dark:text-indigo-300" />
+              </div>
+              <p className="text-base font-semibold text-content mb-2">No suggestions yet</p>
+              <p className="text-sm text-content-secondary max-w-sm mb-4">Suggestions are generated automatically when the enhanced industry scan detects relevant updates.</p>
+              <button type="button" className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition-colors shadow-sm">
+                <Lightbulb className="w-4 h-4 flex-shrink-0" />
+                Run an enhanced industry scan
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {suggestions.map((suggestion: any) => (
+                <PRCard key={suggestion._id} suggestion={suggestion} />
+              ))}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          {suggestions.map((suggestion: any) => (
-            <PRCard key={suggestion._id} suggestion={suggestion} />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -96,12 +106,12 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
   }[color];
 
   return (
-    <div className={`${bgColor} rounded-lg p-4`}>
+    <div className={`${bgColor} rounded-lg border border-edge p-4`}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+        <span className="text-sm text-content-secondary">{label}</span>
       </div>
-      <div className="text-2xl font-bold text-[var(--text-primary)]">{value}</div>
+      <div className="text-2xl font-bold text-content">{value}</div>
     </div>
   );
 }
@@ -146,14 +156,14 @@ function PRCard({ suggestion }: PRCardProps) {
   };
 
   return (
-    <div className="bg-[var(--bg-secondary)] rounded-lg p-5 space-y-4">
+    <div className="nb-surface-card p-5 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">
+          <h3 className="text-lg font-semibold text-content mb-1">
             {suggestion.title}
           </h3>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="text-sm text-content-secondary">
             {suggestion.description}
           </p>
         </div>
@@ -162,11 +172,11 @@ function PRCard({ suggestion }: PRCardProps) {
 
       {/* Changes */}
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold text-[var(--text-primary)]">Key Changes:</h4>
+        <h4 className="text-sm font-semibold text-content">Key Changes:</h4>
         <ul className="space-y-1.5">
           {suggestion.changes.map((change: string, idx: number) => (
-            <li key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-              <span className="text-[var(--accent-primary)] mt-1">•</span>
+            <li key={idx} className="flex items-start gap-2 text-sm text-content-secondary">
+              <span className="text-indigo-600 dark:text-indigo-400 mt-1">•</span>
               <span>{change}</span>
             </li>
           ))}
@@ -175,11 +185,11 @@ function PRCard({ suggestion }: PRCardProps) {
 
       {/* Testing Checklist */}
       <div className="space-y-2">
-        <h4 className="text-sm font-semibold text-[var(--text-primary)]">Testing Checklist:</h4>
+        <h4 className="text-sm font-semibold text-content">Testing Checklist:</h4>
         <ul className="space-y-1.5">
           {suggestion.testing.map((test: string, idx: number) => (
-            <li key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-              <CheckCircle className="w-4 h-4 text-[var(--text-muted)] mt-0.5" />
+            <li key={idx} className="flex items-start gap-2 text-sm text-content-secondary">
+              <CheckCircle className="w-4 h-4 text-content-muted mt-0.5" />
               <span>{test}</span>
             </li>
           ))}
@@ -187,14 +197,14 @@ function PRCard({ suggestion }: PRCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="pt-4 border-t border-[var(--border-color)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+      <div className="pt-4 border-t border-edge flex items-center justify-between text-xs text-content-muted">
         <span>
           Created {new Date(suggestion.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
         {suggestion.updateId && (
           <a
             href={`#industry-updates/${suggestion.updateId}`}
-            className="flex items-center gap-1 text-[var(--accent-primary)] hover:underline"
+            className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             View source update
             <ExternalLink className="w-3 h-3" />

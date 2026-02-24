@@ -235,7 +235,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             <button
               onClick={handleRetry}
               disabled={isRetrying}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-content-muted text-white text-xs font-medium rounded transition-colors"
               title="Ask AI to fix the diagram"
             >
               <RefreshCw className={`h-3 w-3 ${isRetrying ? 'motion-safe:animate-spin' : ''}`} />
@@ -247,7 +247,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
           <summary className="text-xs text-red-700 cursor-pointer hover:underline">
             View code
           </summary>
-          <pre className="mt-2 text-xs bg-[var(--bg-primary)] p-2 rounded border border-red-200 overflow-x-auto">
+          <pre className="mt-2 text-xs bg-surface p-2 rounded border border-red-200 overflow-x-auto">
             {code}
           </pre>
         </details>
@@ -257,9 +257,9 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
 
   if (!svg && !error) {
     return (
-      <div className="my-4 p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg">
-        <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-          <div className="motion-safe:animate-spin h-4 w-4 border-2 border-[var(--text-muted)] border-t-transparent rounded-full" />
+      <div className="my-4 p-4 bg-surface-secondary border border-edge rounded-lg">
+        <div className="flex items-center gap-2 text-sm text-content-secondary">
+          <div className="motion-safe:animate-spin h-4 w-4 border-2 border-content-muted border-t-transparent rounded-full" />
           <span>Rendering diagram...</span>
         </div>
       </div>
@@ -267,7 +267,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
   }
 
   return (
-    <div className="my-4 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg overflow-hidden">
+    <div className="my-4 bg-surface border border-edge rounded-lg overflow-hidden">
       {/* Minimal header bar */}
       <div className="absolute top-2 right-2 z-10 flex gap-0.5 opacity-60 hover:opacity-100 transition-opacity">
         <button
@@ -275,10 +275,10 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             e.stopPropagation();
             setIsZoomed(true);
           }}
-          className="p-1.5 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded hover:bg-[var(--bg-primary)] transition-colors shadow-sm"
+          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm"
           title="Zoom"
         >
-          <Maximize2 className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+          <Maximize2 className="h-3.5 w-3.5 text-content-secondary" />
         </button>
         <button
           onClick={(e) => {
@@ -286,40 +286,40 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             handleDownload('png');
           }}
           disabled={isDownloading}
-          className="p-1.5 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded hover:bg-[var(--bg-primary)] transition-colors shadow-sm disabled:opacity-50"
+          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm disabled:opacity-50"
           title="Download PNG"
         >
-          <Download className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+          <Download className="h-3.5 w-3.5 text-content-secondary" />
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             setShowCode(!showCode);
           }}
-          className="p-1.5 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded hover:bg-[var(--bg-primary)] transition-colors shadow-sm"
+          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm"
           title="Code"
         >
-          <Code2 className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+          <Code2 className="h-3.5 w-3.5 text-content-secondary" />
         </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             handleCopyCode();
           }}
-          className="p-1.5 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded hover:bg-[var(--bg-primary)] transition-colors shadow-sm"
+          className="p-1.5 bg-surface/90 backdrop-blur-sm rounded hover:bg-surface transition-colors shadow-sm"
           title="Copy"
         >
           {copied ? (
             <Check className="h-3.5 w-3.5 text-green-600" />
           ) : (
-            <Copy className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+            <Copy className="h-3.5 w-3.5 text-content-secondary" />
           )}
         </button>
       </div>
 
       {/* Main diagram - clickable to zoom */}
       <div
-        className="relative p-4 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors"
+        className="relative p-4 cursor-pointer hover:bg-surface-hover transition-colors"
         onClick={() => setIsZoomed(true)}
         title="Click to zoom"
       >
@@ -330,7 +330,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
       </div>
 
       {showCode && (
-        <pre className="mt-2 text-xs bg-[var(--bg-secondary)] p-3 rounded border border-[var(--border-color)] overflow-x-auto">
+        <pre className="mt-2 text-xs bg-surface-secondary p-3 rounded border border-edge overflow-x-auto">
           {code}
         </pre>
       )}
@@ -344,22 +344,22 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
             setZoomLevel(100);
           }}
         >
-          <div className="relative w-full h-full max-w-7xl flex flex-col">
+          <div className="relative w-full h-full max-w-6xl flex flex-col">
             {/* Compact control bar */}
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
+              <div className="flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setZoomLevel(Math.min(200, zoomLevel + 25));
                   }}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors"
+                  className="p-1.5 hover:bg-surface-hover rounded transition-colors"
                   title="Zoom in"
                   disabled={zoomLevel >= 200}
                 >
-                  <ZoomIn className="h-4 w-4 text-[var(--text-primary)]" />
+                  <ZoomIn className="h-4 w-4 text-content" />
                 </button>
-                <span className="text-xs font-medium text-[var(--text-primary)] min-w-[3rem] text-center">
+                <span className="text-xs font-medium text-content min-w-[3rem] text-center">
                   {zoomLevel}%
                 </span>
                 <button
@@ -367,35 +367,35 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
                     e.stopPropagation();
                     setZoomLevel(Math.max(50, zoomLevel - 25));
                   }}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors"
+                  className="p-1.5 hover:bg-surface-hover rounded transition-colors"
                   title="Zoom out"
                   disabled={zoomLevel <= 50}
                 >
-                  <ZoomOut className="h-4 w-4 text-[var(--text-primary)]" />
+                  <ZoomOut className="h-4 w-4 text-content" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setZoomLevel(100);
                   }}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors ml-1"
+                  className="p-1.5 hover:bg-surface-hover rounded transition-colors ml-1"
                   title="Reset zoom"
                 >
-                  <span className="text-xs font-medium text-[var(--text-primary)]">Reset</span>
+                  <span className="text-xs font-medium text-content">Reset</span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-1 bg-[var(--bg-primary)]/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
+              <div className="flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-lg px-2 py-1.5 shadow-lg">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDownload('svg');
                   }}
                   disabled={isDownloading}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors disabled:opacity-50"
+                  className="p-1.5 hover:bg-surface-hover rounded transition-colors disabled:opacity-50"
                   title="Download SVG"
                 >
-                  <Download className="h-4 w-4 text-[var(--text-primary)]" />
+                  <Download className="h-4 w-4 text-content" />
                 </button>
                 <button
                   onClick={(e) => {
@@ -403,7 +403,7 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
                     handleDownload('png');
                   }}
                   disabled={isDownloading}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors disabled:opacity-50"
+                  className="p-1.5 hover:bg-surface-hover rounded transition-colors disabled:opacity-50"
                   title="Download PNG"
                 >
                   <Download className="h-4 w-4 text-blue-600" />
@@ -415,18 +415,18 @@ export function MermaidDiagram({ code, id, onRetryRequest, isStreaming = false }
                     setIsZoomed(false);
                     setZoomLevel(100);
                   }}
-                  className="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors"
+                  className="p-1.5 hover:bg-surface-hover rounded transition-colors"
                   title="Close"
                 >
-                  <X className="h-4 w-4 text-[var(--text-primary)]" />
+                  <X className="h-4 w-4 text-content" />
                 </button>
               </div>
             </div>
 
             {/* Zoomed diagram with scroll */}
-            <div className="flex-1 bg-[var(--bg-primary)] rounded-lg shadow-2xl overflow-auto">
+            <div className="flex-1 bg-surface rounded-lg shadow-2xl overflow-auto">
               <div
-                className="p-8 transition-transform duration-200"
+                className="p-6 transition-transform duration-200"
                 style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
                 onClick={(e) => e.stopPropagation()}
                 dangerouslySetInnerHTML={{ __html: svg }}

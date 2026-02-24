@@ -77,7 +77,7 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
           ? "bg-green-50 text-green-700"
           : (item.source || "").toLowerCase() === "reddit"
             ? "bg-red-50 text-red-600"
-            : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]";
+            : "bg-surface-secondary text-content";
 
   return (
     <motion.div

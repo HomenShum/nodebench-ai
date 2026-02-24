@@ -76,7 +76,7 @@ export function ActionCard({
     (action.status === "proposed" && action.content && action.content.length > 50);
 
   return (
-    <div className="group relative bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] rounded-lg overflow-hidden hover:border-edge transition-all duration-200">
+    <div className="group relative bg-surface border border-edge rounded-lg overflow-hidden hover:border-edge transition-all duration-200">
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-900 to-slate-400" />
 
       <button
@@ -90,7 +90,7 @@ export function ActionCard({
 
         <div className="flex-1 min-w-0">
           {/* Recommended Move (imperative title) */}
-          <h3 className="text-base font-semibold text-[color:var(--text-primary)] leading-snug group-hover:text-content">
+          <h3 className="text-base font-semibold text-content leading-snug group-hover:text-content">
             {action.label}
           </h3>
 
@@ -120,7 +120,7 @@ export function ActionCard({
           </div>
         </div>
 
-        <div className="flex-shrink-0 text-[color:var(--text-secondary)] group-hover:text-content-secondary transition-colors mt-0.5">
+        <div className="flex-shrink-0 text-content-secondary group-hover:text-content-secondary transition-colors mt-0.5">
           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
         </div>
       </button>
@@ -159,7 +159,7 @@ export function ActionCard({
 
           {/* Content / Deep Dive */}
           <div className="prose prose-sm prose-slate max-w-none">
-            <p className="text-[color:var(--text-primary)] leading-relaxed">
+            <p className="text-content leading-relaxed">
               {action.resultMarkdown?.trim() || action.content}
             </p>
           </div>

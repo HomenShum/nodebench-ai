@@ -137,11 +137,11 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
 
   if (error) {
     return (
-      <div className="flex items-center justify-center gap-2 p-4 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded">
+      <div className="flex items-center justify-center gap-2 p-4 bg-surface-secondary border border-edge rounded">
         <AlertCircle className="h-5 w-5 text-red-500" />
-        <div className="text-sm text-[var(--text-primary)]">
+        <div className="text-sm text-content">
           <div className="font-medium">Failed to load image</div>
-          <div className="text-xs text-[var(--text-muted)] mt-1">The file may be too large or unavailable</div>
+          <div className="text-xs text-content-muted mt-1">The file may be too large or unavailable</div>
           <a
             href={src}
             target="_blank"
@@ -159,16 +159,16 @@ const SafeImage = React.memo(function SafeImage({ src, alt, className }: { src: 
     <div ref={containerRef} className="relative min-h-[100px]">
       {/* Show placeholder until visible */}
       {!isVisible && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded motion-safe:animate-pulse">
-          <div className="w-8 h-8 rounded-lg bg-[var(--bg-hover)]" />
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-secondary rounded motion-safe:animate-pulse">
+          <div className="w-8 h-8 rounded-lg bg-surface-hover" />
         </div>
       )}
       {/* Only load image once visible */}
       {isVisible && (
         <>
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] rounded">
-              <Loader2 className="h-6 w-6 motion-safe:animate-spin text-[var(--text-muted)]" />
+            <div className="absolute inset-0 flex items-center justify-center bg-surface-secondary rounded">
+              <Loader2 className="h-6 w-6 motion-safe:animate-spin text-content-muted" />
             </div>
           )}
           <img
@@ -405,7 +405,7 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
   } = parsedData;
 
   return (
-    <div className="text-xs text-[var(--text-secondary)] mt-1 space-y-2">
+    <div className="text-xs text-content-secondary mt-1 space-y-2">
       {/* Render company selection prompt */}
       {companySelectionData && onCompanySelect && (
         <CompanySelectionCard
@@ -444,14 +444,14 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
 
       {/* Render YouTube gallery (lazy-loaded) */}
       {youtubeVideos.length > 0 && (
-        <Suspense fallback={<div className="motion-safe:animate-pulse h-32 bg-[var(--bg-secondary)] rounded-lg" />}>
+        <Suspense fallback={<div className="motion-safe:animate-pulse h-32 bg-surface-secondary rounded-lg" />}>
           <YouTubeGallery videos={youtubeVideos} />
         </Suspense>
       )}
 
       {/* Render FileViewer for SEC documents (lazy-loaded) */}
       {fileViewerFiles.length > 0 && (
-        <Suspense fallback={<div className="motion-safe:animate-pulse h-24 bg-[var(--bg-secondary)] rounded-lg" />}>
+        <Suspense fallback={<div className="motion-safe:animate-pulse h-24 bg-surface-secondary rounded-lg" />}>
           <FileViewer files={fileViewerFiles} />
         </Suspense>
       )}
@@ -466,19 +466,19 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
       {/* Render images gallery */}
       {hasMultipleImages && imageUrls.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-[var(--text-primary)] mt-3 mb-2">
+          <h2 className="text-sm font-semibold text-content mt-3 mb-2">
             Images
-            <span className="text-xs font-normal text-[var(--text-muted)] ml-2">
+            <span className="text-xs font-normal text-content-muted ml-2">
               (scroll to see all)
             </span>
           </h2>
-          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-[var(--border-color)] scrollbar-track-[var(--bg-secondary)]" style={{ scrollbarWidth: 'thin' }}>
+          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-thin scrollbar-thumb-edge scrollbar-track-surface-secondary" style={{ scrollbarWidth: 'thin' }}>
             {imageUrls.map((img, idx) => (
               <div key={idx} className="flex-shrink-0">
                 <SafeImage
                   src={img.url}
                   alt={img.alt}
-                  className="h-48 w-auto rounded-lg border border-[var(--border-color)] cursor-pointer transition-shadow"
+                  className="h-48 w-auto rounded-lg border border-edge cursor-pointer transition-shadow"
                 />
               </div>
             ))}
@@ -502,17 +502,17 @@ const ToolOutputRenderer = React.memo(function ToolOutputRenderer({
             ),
             // Style headings
             h2: ({ node, ...props }) => (
-              <h2 {...props} className="text-sm font-semibold text-[var(--text-primary)] mt-3 mb-2" />
+              <h2 {...props} className="text-sm font-semibold text-content mt-3 mb-2" />
             ),
             // Style paragraphs
             p: ({ node, ...props }) => (
-              <p {...props} className="text-xs text-[var(--text-secondary)] mb-2" />
+              <p {...props} className="text-xs text-content-secondary mb-2" />
             ),
             // Style videos
             video: ({ node, ...props }) => (
               <video
                 {...props}
-                className="max-w-full h-auto rounded-lg border border-[var(--border-color)] my-2"
+                className="max-w-full h-auto rounded-lg border border-edge my-2"
                 style={{ maxHeight: '300px' }}
               />
             ),
@@ -561,26 +561,26 @@ const FileTextPreview = React.memo(function FileTextPreview({ fileUrl, fileName 
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="px-4 py-3 bg-gradient-to-r from-blue-50 to-[var(--bg-primary)] dark:from-blue-900/20 dark:to-[var(--bg-primary)] flex items-center gap-3 border-b border-[var(--border-color)] hover:from-blue-100 dark:hover:from-blue-900/30 transition-colors"
+        className="px-4 py-3 bg-gradient-to-r from-blue-50 to-surface dark:from-blue-900/20 dark:to-surface flex items-center gap-3 border-b border-edge hover:from-blue-100 dark:hover:from-blue-900/30 transition-colors"
       >
         <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300">
           <ImageIcon className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0 text-left">
-          <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+          <div className="text-sm font-medium text-content truncate">
             {fileName}
           </div>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">Text File</p>
+          <p className="text-xs text-content-muted mt-0.5">Text File</p>
         </div>
-        <div className="text-xs text-[var(--text-muted)]">
+        <div className="text-xs text-content-muted">
           {isExpanded ? 'Collapse' : 'Expand'}
         </div>
       </button>
       {/* Text Preview */}
       {isExpanded && (
-        <div className="bg-[var(--bg-secondary)] p-4">
+        <div className="bg-surface-secondary p-4">
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+            <div className="flex items-center gap-2 text-sm text-content-secondary">
               <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
               <span>Loading file content...</span>
             </div>
@@ -589,7 +589,7 @@ const FileTextPreview = React.memo(function FileTextPreview({ fileUrl, fileName 
               {error}
             </div>
           ) : (
-            <pre className="text-xs bg-[var(--bg-primary)] p-3 rounded border border-[var(--border-color)] overflow-x-auto max-h-96 overflow-y-auto">
+            <pre className="text-xs bg-surface p-3 rounded border border-edge overflow-x-auto max-h-96 overflow-y-auto">
               {content}
             </pre>
           )}
@@ -648,19 +648,19 @@ const ToolStepsAccordion = React.memo(function ToolStepsAccordion({
     : `Used ${toolCount} tool${toolCount !== 1 ? 's' : ''}`;
 
   return (
-    <div className="mb-3 border border-[var(--border-color)] rounded-lg overflow-hidden">
+    <div className="mb-3 border border-edge rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors bg-[var(--bg-secondary)]"
+        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-content-secondary hover:bg-surface-secondary transition-colors bg-surface-secondary"
       >
-        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-content-muted" /> : <ChevronRight className="w-3.5 h-3.5 text-content-muted" />}
         <Wrench className={cn(
           "w-3.5 h-3.5",
-          isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
+          isStreaming ? "text-violet-500 motion-safe:animate-pulse" : "text-content-muted"
         )} />
         <span>{label}</span>
-        <span className="ml-auto flex items-center gap-2 text-xs text-[var(--text-muted)] font-normal">
+        <span className="ml-auto flex items-center gap-2 text-xs text-content-muted font-normal">
           {isStreaming ? (
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           ) : allDone ? (
@@ -670,7 +670,7 @@ const ToolStepsAccordion = React.memo(function ToolStepsAccordion({
       </button>
 
       {isExpanded && (
-        <div className="px-3 py-2.5 border-t border-[var(--border-color)] bg-[var(--bg-primary)] max-h-96 overflow-y-auto">
+        <div className="px-3 py-2.5 border-t border-edge bg-surface max-h-96 overflow-y-auto">
           {children}
         </div>
       )}
@@ -716,19 +716,19 @@ const ThinkingAccordion = React.memo(function ThinkingAccordion({
   const wordCount = reasoning.split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="mb-3 border border-[var(--border-color)] rounded-lg overflow-hidden">
+    <div className="mb-3 border border-edge rounded-lg overflow-hidden">
       <button
         type="button"
         onClick={handleToggle}
-        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors bg-[var(--bg-secondary)]"
+        className="w-full px-3 py-2 flex items-center gap-2 text-xs font-medium text-content-secondary hover:bg-surface-secondary transition-colors bg-surface-secondary"
       >
-        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
+        {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-content-muted" /> : <ChevronRight className="w-3.5 h-3.5 text-content-muted" />}
         <BrainCircuit className={cn(
           "w-3.5 h-3.5",
-          isStreaming ? "text-purple-500 motion-safe:animate-pulse" : "text-[var(--text-muted)]"
+          isStreaming ? "text-purple-500 motion-safe:animate-pulse" : "text-content-muted"
         )} />
         <span>{isStreaming ? 'Thinking...' : 'Thought process'}</span>
-        <span className="ml-auto flex items-center gap-2 text-xs text-[var(--text-muted)] font-normal">
+        <span className="ml-auto flex items-center gap-2 text-xs text-content-muted font-normal">
           {isStreaming ? (
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
           ) : (
@@ -738,8 +738,8 @@ const ThinkingAccordion = React.memo(function ThinkingAccordion({
       </button>
 
       {isExpanded && (
-        <div className="px-3 py-2.5 border-t border-[var(--border-color)] bg-[var(--bg-primary)] max-h-64 overflow-y-auto">
-          <div className="prose prose-xs max-w-none text-[var(--text-muted)] text-[13px] leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0">
+        <div className="px-3 py-2.5 border-t border-edge bg-surface max-h-64 overflow-y-auto">
+          <div className="prose prose-xs max-w-none text-content-muted text-[13px] leading-relaxed [&_p]:mb-1.5 [&_p:last-child]:mb-0">
             <ReactMarkdown>{reasoning}</ReactMarkdown>
           </div>
         </div>
@@ -786,7 +786,7 @@ const RunCodeButton = React.memo(function RunCodeButton({ code, language }: { co
         {isRunning ? '⏳' : '▶'} Run
       </button>
       {output !== null && (
-        <div className="absolute left-0 right-0 top-full z-50 mx-3 mt-1 rounded-lg border border-[var(--border-color)] bg-gray-900 text-green-400 text-xs font-mono p-2 max-h-[120px] overflow-auto shadow-xl whitespace-pre-wrap">
+        <div className="absolute left-0 right-0 top-full z-50 mx-3 mt-1 rounded-lg border border-edge bg-gray-900 text-green-400 text-xs font-mono p-2 max-h-[120px] overflow-auto shadow-xl whitespace-pre-wrap">
           {output}
         </div>
       )}
@@ -815,9 +815,9 @@ const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
   };
 
   return (
-    <div className="relative group/code rounded-lg overflow-hidden border border-[var(--border-color)] my-3">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
-        <span className="text-xs font-mono text-[var(--text-muted)] uppercase tracking-wider">{language}</span>
+    <div className="relative group/code rounded-lg overflow-hidden border border-edge my-3">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-surface-secondary border-b border-edge">
+        <span className="text-xs font-mono text-content-muted uppercase tracking-wider">{language}</span>
         <div className="flex items-center gap-2 opacity-0 group-hover/code:opacity-100 transition-opacity">
           {['html', 'svg', 'jsx', 'tsx', 'css'].includes(language) && (
             <button
@@ -837,7 +837,7 @@ const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
           <button
             type="button"
             onClick={() => { void handleCopy(); }}
-            className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="flex items-center gap-1 text-xs text-content-muted hover:text-content transition-colors"
           >
             {copied ? (
               <><Check className="w-3 h-3 text-green-500" /> Copied</>
@@ -1373,7 +1373,7 @@ function ToolStep({
           )}
           {/* Status circle on the line */}
           <div className={cn(
-            "absolute left-1 top-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-[var(--bg-primary)] z-10",
+            "absolute left-1 top-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-surface dark:bg-surface z-10",
             isActive && "border-violet-500 motion-safe:animate-pulse",
             isComplete && "border-green-500 bg-green-500",
             isError && "border-red-500 bg-red-500"
@@ -1386,11 +1386,11 @@ function ToolStep({
       )}
 
       {/* Card */}
-      <div className="mb-3 border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] shadow-sm overflow-hidden transition-shadow">
+      <div className="mb-3 border border-edge rounded-lg bg-surface shadow-sm overflow-hidden transition-shadow">
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-[var(--bg-hover)] transition-colors"
+          className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-surface-hover transition-colors"
         >
           {/* Step number badge */}
           <div className={cn(
@@ -1404,17 +1404,17 @@ function ToolStep({
 
           {/* Tool Name */}
           <div className="flex-1 text-left flex items-center gap-2">
-            <span className="text-xs font-semibold text-[var(--text-primary)] font-mono">{toolName}</span>
+            <span className="text-xs font-semibold text-content font-mono">{toolName}</span>
             {isComplete && <span className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded-full">Done</span>}
             {isActive && <Loader2 className="w-3 h-3 text-violet-500 motion-safe:animate-spin" />}
           </div>
 
           {/* Expand/Collapse */}
-          {isExpanded ? <ChevronDown className="h-3 w-3 text-[var(--text-muted)]" /> : <ChevronRight className="h-3 w-3 text-[var(--text-muted)]" />}
+          {isExpanded ? <ChevronDown className="h-3 w-3 text-content-muted" /> : <ChevronRight className="h-3 w-3 text-content-muted" />}
         </button>
 
         {isExpanded && (
-          <div className="px-3 py-2 border-t border-[var(--border-color-light)] bg-[var(--bg-secondary)]/50 text-xs">
+          <div className="px-3 py-2 border-t border-[var(--border-color-light)] bg-surface-secondary/50 text-xs">
 
             {/* Main Output Renderer (Visual) */}
             {hasOutput && (
@@ -1433,7 +1433,7 @@ function ToolStep({
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
+              className="flex items-center gap-1 text-xs text-content-muted hover:text-content transition-colors mt-2"
             >
               {showDetails ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               <span>{showDetails ? "Hide Debug Details" : "View Debug Details"}</span>
@@ -1444,8 +1444,8 @@ function ToolStep({
                 {/* Arguments */}
                 {(part as any).args && (
                   <div>
-                    <div className="font-medium text-[var(--text-muted)] mb-1 text-xs uppercase tracking-wider">Input Arguments</div>
-                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-xs text-[var(--text-secondary)]">
+                    <div className="font-medium text-content-muted mb-1 text-xs uppercase tracking-wider">Input Arguments</div>
+                    <pre className="bg-surface p-2 rounded border border-edge overflow-x-auto font-mono text-xs text-content-secondary">
                       {JSON.stringify((part as any).args, null, 2)}
                     </pre>
                   </div>
@@ -1454,8 +1454,8 @@ function ToolStep({
                 {/* Raw Output */}
                 {hasOutput && (
                   <div>
-                    <div className="font-medium text-[var(--text-muted)] mb-1 text-xs uppercase tracking-wider">Raw Output</div>
-                    <pre className="bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-color)] overflow-x-auto font-mono text-xs text-[var(--text-secondary)] max-h-60">
+                    <div className="font-medium text-content-muted mb-1 text-xs uppercase tracking-wider">Raw Output</div>
+                    <pre className="bg-surface p-2 rounded border border-edge overflow-x-auto font-mono text-xs text-content-secondary max-h-60">
                       {typeof part.output === 'string' ? part.output : JSON.stringify(part.output, null, 2)}
                     </pre>
                   </div>
@@ -2433,7 +2433,7 @@ export function FastAgentUIMessageBubble({
           const isAudio = mimeType.startsWith('audio/');
 
           return (
-            <div key={idx} className="rounded-lg overflow-hidden border border-[var(--border-color)] shadow-sm mb-2">
+            <div key={idx} className="rounded-lg overflow-hidden border border-edge shadow-sm mb-2">
               {isImage ? (
                 <SafeImage
                   src={fileUrl}
@@ -2443,7 +2443,7 @@ export function FastAgentUIMessageBubble({
               ) : isText ? (
                 <FileTextPreview fileUrl={fileUrl} fileName={fileName} />
               ) : (
-                <div className="px-4 py-3 bg-gradient-to-r from-[var(--bg-secondary)] to-[var(--bg-primary)] flex items-center gap-3 group hover:from-blue-50 dark:hover:from-blue-900/20 hover:to-[var(--bg-primary)] transition-colors">
+                <div className="px-4 py-3 bg-gradient-to-r from-surface-secondary to-surface flex items-center gap-3 group hover:from-blue-50 dark:hover:from-blue-900/20 hover:to-surface transition-colors">
                   <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300">
                     <ImageIcon className="h-5 w-5" />
                   </div>
@@ -2452,11 +2452,11 @@ export function FastAgentUIMessageBubble({
                       href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-[var(--text-primary)] hover:text-blue-600 transition-colors block truncate"
+                      className="text-sm font-medium text-content hover:text-blue-600 transition-colors block truncate"
                     >
                       {fileName}
                     </a>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">File Attachment</p>
+                    <p className="text-xs text-content-secondary mt-0.5">File Attachment</p>
                   </div>
                 </div>
               )}
@@ -2471,9 +2471,9 @@ export function FastAgentUIMessageBubble({
               "relative p-4 rounded-lg shadow-sm transition-all duration-200 text-sm leading-relaxed",
               isUser
                 ? isEditing
-                  ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-[var(--text-primary)] rounded-br-none"
+                  ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 text-content rounded-br-none"
                   : "bg-gradient-to-br from-violet-500 to-violet-600 text-white rounded-br-none shadow-md"
-                : "bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-bl-none shadow-sm dark:bg-[var(--bg-secondary)]",
+                : "bg-surface border border-edge text-content rounded-bl-none shadow-sm dark:bg-surface-secondary",
               message.status === 'streaming' && 'motion-safe:animate-pulse-subtle',
               message.status === 'failed' && "bg-red-50/80 border-red-200 dark:bg-red-900/20 dark:border-red-800"
             )}
@@ -2496,7 +2496,7 @@ export function FastAgentUIMessageBubble({
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="action-btn text-xs px-2.5 py-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                    className="action-btn text-xs px-2.5 py-1 rounded-md text-content-muted hover:text-content hover:bg-surface-secondary"
                   >
                     Cancel
                   </button>
@@ -2560,7 +2560,7 @@ export function FastAgentUIMessageBubble({
                         const mermaidCode = String(children).replace(/\n$/, '');
                         const isStreaming = message.status === 'streaming';
                         return (
-                          <Suspense fallback={<div className="motion-safe:animate-pulse h-40 bg-[var(--bg-secondary)] rounded-lg flex items-center justify-center text-sm text-[var(--text-muted)]">Loading diagram...</div>}>
+                          <Suspense fallback={<div className="motion-safe:animate-pulse h-40 bg-surface-secondary rounded-lg flex items-center justify-center text-sm text-content-muted">Loading diagram...</div>}>
                             <MermaidDiagram
                               code={mermaidCode}
                               onRetryRequest={onMermaidRetry}
@@ -2577,7 +2577,7 @@ export function FastAgentUIMessageBubble({
                       ) : (
                         <code className={cn(
                           "px-1 py-0.5 rounded text-xs font-mono",
-                          isUser ? "bg-blue-700/50 text-white" : "bg-[var(--bg-hover)] text-[var(--text-primary)]"
+                          isUser ? "bg-blue-700/50 text-white" : "bg-surface-hover text-content"
                         )} {...props}>
                           {children}
                         </code>
@@ -2587,19 +2587,19 @@ export function FastAgentUIMessageBubble({
                       return <a href={href} className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer">{children}</a>;
                     },
                     table({ children }) {
-                      return <div className="overflow-x-auto my-3 rounded-lg border border-[var(--border-color)]"><table className="w-full text-xs border-collapse">{children}</table></div>;
+                      return <div className="overflow-x-auto my-3 rounded-lg border border-edge"><table className="w-full text-xs border-collapse">{children}</table></div>;
                     },
                     thead({ children }) {
-                      return <thead className="bg-[var(--bg-secondary)]">{children}</thead>;
+                      return <thead className="bg-surface-secondary">{children}</thead>;
                     },
                     th({ children }) {
-                      return <th className="px-3 py-2 text-left font-semibold text-[var(--text-primary)] border-b border-[var(--border-color)] text-xs">{children}</th>;
+                      return <th className="px-3 py-2 text-left font-semibold text-content border-b border-edge text-xs">{children}</th>;
                     },
                     td({ children }) {
-                      return <td className="px-3 py-1.5 border-b border-[var(--border-color)] text-[var(--text-secondary)] text-xs">{children}</td>;
+                      return <td className="px-3 py-1.5 border-b border-edge text-content-secondary text-xs">{children}</td>;
                     },
                     tr({ children }) {
-                      return <tr className="hover:bg-[var(--bg-secondary)] transition-colors">{children}</tr>;
+                      return <tr className="hover:bg-surface-secondary transition-colors">{children}</tr>;
                     },
                     // Phase All: Enhanced paragraph rendering with citation/entity parsing + adaptive enrichment
                     p({ children }) {
@@ -2655,7 +2655,7 @@ export function FastAgentUIMessageBubble({
                   <button
                     type="button"
                     onClick={() => setIsCollapsed(prev => !prev)}
-                    className="text-xs font-medium text-[var(--accent-primary)] hover:underline mt-1"
+                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline mt-1"
                   >
                     {isCollapsed ? 'Show more ▼' : 'Show less ▲'}
                   </button>
@@ -2742,8 +2742,8 @@ export function FastAgentUIMessageBubble({
 
         {/* Edit Diff View */}
         {editDiff && (
-          <div className="mt-2 rounded-lg border border-[var(--border-color)] overflow-hidden text-xs font-mono">
-            <div className="px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs font-semibold uppercase tracking-wider">Edit Diff</div>
+          <div className="mt-2 rounded-lg border border-edge overflow-hidden text-xs font-mono">
+            <div className="px-3 py-1.5 bg-surface-secondary text-content-muted text-xs font-semibold uppercase tracking-wider">Edit Diff</div>
             <div className="px-3 py-1.5 bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 line-through whitespace-pre-wrap">
               {editDiff.oldText}
             </div>
@@ -2755,7 +2755,7 @@ export function FastAgentUIMessageBubble({
 
         {/* Multi-turn Context Indicator */}
         {isInContext === false && !isUser && (
-          <div className="mt-1 text-[8px] text-[var(--text-muted)] flex items-center gap-1 opacity-60" title="This message may be outside the model's context window">
+          <div className="mt-1 text-[8px] text-content-muted flex items-center gap-1 opacity-60" title="This message may be outside the model's context window">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
             Outside context window
           </div>
@@ -2768,7 +2768,7 @@ export function FastAgentUIMessageBubble({
           if (wordCount < 80) return null;
           const readMin = Math.ceil(wordCount / 230);
           return (
-            <span className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
+            <span className="text-xs text-content-muted mt-0.5 flex items-center gap-1">
               <Clock className="w-2.5 h-2.5" />
               {readMin} min read
             </span>
@@ -2795,7 +2795,7 @@ export function FastAgentUIMessageBubble({
                   />
                 ))}
               </div>
-              <span className="text-xs text-[var(--text-muted)]">{confLabels[confidence]}</span>
+              <span className="text-xs text-content-muted">{confLabels[confidence]}</span>
             </div>
           );
         })()}
@@ -2808,7 +2808,7 @@ export function FastAgentUIMessageBubble({
           const urls = text.match(/https?:\/\/[^\s)]+/g) || [];
           return (
             <div className="flex flex-wrap gap-1 mt-1.5">
-              <span className="text-xs text-[var(--text-muted)] mr-0.5">Sources:</span>
+              <span className="text-xs text-content-muted mr-0.5">Sources:</span>
               {citationNums.slice(0, 8).map((num, i) => {
                 const url = urls[i] || null;
                 let domain = '';
@@ -2819,12 +2819,12 @@ export function FastAgentUIMessageBubble({
                       {num}
                     </span>
                     {url && (
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/cite:flex flex-col w-[200px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl p-2 z-50 pointer-events-none">
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/cite:flex flex-col w-[200px] bg-surface border border-edge rounded-lg shadow-xl p-2 z-50 pointer-events-none">
                         <div className="flex items-center gap-1.5 mb-1">
                           <img src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} alt="" className="w-3 h-3 rounded" width={12} height={12} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                          <span className="text-xs font-medium text-[var(--text-primary)] truncate">{domain}</span>
+                          <span className="text-xs font-medium text-content truncate">{domain}</span>
                         </div>
-                        <span className="text-[8px] text-[var(--text-muted)] truncate">{url.slice(0, 60)}</span>
+                        <span className="text-[8px] text-content-muted truncate">{url.slice(0, 60)}</span>
                       </div>
                     )}
                   </span>
@@ -2847,7 +2847,7 @@ export function FastAgentUIMessageBubble({
                   href={match[2]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block rounded-lg overflow-hidden border border-[var(--border-color)] hover:border-blue-400 transition-colors shadow-sm"
+                  className="block rounded-lg overflow-hidden border border-edge hover:border-blue-400 transition-colors shadow-sm"
                 >
                   <img
                     src={match[2]}
@@ -2908,7 +2908,7 @@ export function FastAgentUIMessageBubble({
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors group/link"
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover transition-colors group/link"
                   >
                     <img
                       src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
@@ -2919,10 +2919,10 @@ export function FastAgentUIMessageBubble({
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-[var(--text-primary)] truncate group-hover/link:underline">{domain}</div>
-                      <div className="text-xs text-[var(--text-muted)] truncate">{url.slice(0, 80)}</div>
+                      <div className="text-xs font-medium text-content truncate group-hover/link:underline">{domain}</div>
+                      <div className="text-xs text-content-muted truncate">{url.slice(0, 80)}</div>
                     </div>
-                    <ExternalLink className="w-3 h-3 text-[var(--text-muted)] flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                    <ExternalLink className="w-3 h-3 text-content-muted flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
                   </a>
                 );
               })}
@@ -2937,7 +2937,7 @@ export function FastAgentUIMessageBubble({
           const latencyMs = message._creationTime - msgs;
           if (latencyMs <= 0 || latencyMs > 120000) return null;
           return (
-            <span className="text-[8px] text-[var(--text-muted)] tabular-nums mt-0.5" title={`Response latency: ${latencyMs}ms`}>
+            <span className="text-[8px] text-content-muted tabular-nums mt-0.5" title={`Response latency: ${latencyMs}ms`}>
               {latencyMs < 1000 ? `${latencyMs}ms` : `${(latencyMs / 1000).toFixed(1)}s`} latency
             </span>
           );
@@ -2945,7 +2945,7 @@ export function FastAgentUIMessageBubble({
 
         {/* Raw Markdown View */}
         {showRawMarkdown && !isUser && (cleanedText || visibleText) && (
-          <pre className="text-xs font-mono bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-3 mt-1 overflow-x-auto max-h-[300px] overflow-y-auto text-[var(--text-secondary)] whitespace-pre-wrap">
+          <pre className="text-xs font-mono bg-surface-secondary border border-edge rounded-lg p-3 mt-1 overflow-x-auto max-h-[300px] overflow-y-auto text-content-secondary whitespace-pre-wrap">
             {cleanedText || visibleText}
           </pre>
         )}
@@ -2956,7 +2956,7 @@ export function FastAgentUIMessageBubble({
             <button
               type="button"
               onClick={() => setEmojiReaction(null)}
-              className="text-sm px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              className="text-sm px-1.5 py-0.5 rounded-full bg-surface-secondary border border-edge hover:bg-surface-secondary transition-colors"
               title="Remove reaction"
             >
               {emojiReaction}
@@ -2972,16 +2972,16 @@ export function FastAgentUIMessageBubble({
         {/* Status indicator and actions */}
         <div className="flex items-center gap-2 mt-1">
           {message.status === 'streaming' && (
-            <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+            <div className="text-xs text-content-muted flex items-center gap-1.5">
               <span className="inline-block w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse"></span>
               <span>Streaming...</span>
               {streamTokPerSec > 0 && (
-                <span className="tabular-nums text-xs text-[var(--text-muted)]">
+                <span className="tabular-nums text-xs text-content-muted">
                   {streamTokPerSec} tok/s
                 </span>
               )}
               {streamStartRef.current && (
-                <span className="tabular-nums text-xs text-[var(--text-muted)]">
+                <span className="tabular-nums text-xs text-content-muted">
                   {((Date.now() - streamStartRef.current) / 1000).toFixed(1)}s
                 </span>
               )}
@@ -2993,12 +2993,12 @@ export function FastAgentUIMessageBubble({
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               {/* Timestamp + token estimate on hover */}
               {message._creationTime && (
-                <span className="text-xs text-[var(--text-muted)] tabular-nums mr-1">
+                <span className="text-xs text-content-muted tabular-nums mr-1">
                   {new Date(message._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
               {visibleText && (
-                <span className="text-xs text-[var(--text-muted)] tabular-nums mr-1" title={`${visibleText.split(/\s+/).length} words, ${visibleText.length} chars, ~${Math.ceil(visibleText.length / 4)} tokens`}>
+                <span className="text-xs text-content-muted tabular-nums mr-1" title={`${visibleText.split(/\s+/).length} words, ${visibleText.length} chars, ~${Math.ceil(visibleText.length / 4)} tokens`}>
                   ~{Math.ceil(visibleText.length / 4)} tok &middot; {visibleText.split(/\s+/).length}w
                 </span>
               )}
@@ -3007,7 +3007,7 @@ export function FastAgentUIMessageBubble({
                 <button
                   type="button"
                   onClick={handleStartEdit}
-                  className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1"
+                  className="action-btn text-xs text-content-muted hover:text-content-secondary flex items-center gap-1"
                   title="Edit message"
                 >
                   <Pencil className="h-3 w-3" />
@@ -3018,7 +3018,7 @@ export function FastAgentUIMessageBubble({
               <button
                 type="button"
                 onClick={() => { void handleCopy(); }}
-                className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1"
+                className="action-btn text-xs text-content-muted hover:text-content-secondary flex items-center gap-1"
                 title="Copy response"
               >
                 {copied ? (
@@ -3037,7 +3037,7 @@ export function FastAgentUIMessageBubble({
                     "action-btn text-xs flex items-center gap-1",
                     isSpeaking
                       ? "text-violet-500 dark:text-violet-400"
-                      : "text-[var(--text-muted)] hover:text-violet-500 dark:hover:text-violet-400"
+                      : "text-content-muted hover:text-violet-500 dark:hover:text-violet-400"
                   )}
                   title={isSpeaking ? "Stop reading" : "Read aloud"}
                 >
@@ -3054,7 +3054,7 @@ export function FastAgentUIMessageBubble({
                     "action-btn text-xs flex items-center gap-1",
                     isBookmarked
                       ? "text-amber-500 dark:text-amber-400"
-                      : "text-[var(--text-muted)] hover:text-amber-500 dark:hover:text-amber-400"
+                      : "text-content-muted hover:text-amber-500 dark:hover:text-amber-400"
                   )}
                   title={isBookmarked ? "Remove bookmark" : "Bookmark message"}
                 >
@@ -3071,7 +3071,7 @@ export function FastAgentUIMessageBubble({
                     "action-btn text-xs flex items-center gap-1",
                     isMessagePinned
                       ? "text-purple-500 dark:text-purple-400"
-                      : "text-[var(--text-muted)] hover:text-purple-500 dark:hover:text-purple-400"
+                      : "text-content-muted hover:text-purple-500 dark:hover:text-purple-400"
                   )}
                   title={isMessagePinned ? "Unpin message" : "Pin message"}
                 >
@@ -3084,7 +3084,7 @@ export function FastAgentUIMessageBubble({
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(prev => !prev)}
-                  className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1"
+                  className="action-btn text-xs text-content-muted hover:text-content-secondary flex items-center gap-1"
                   title="React with emoji"
                 >
                   <span className="text-sm">😀</span>
@@ -3092,7 +3092,7 @@ export function FastAgentUIMessageBubble({
                 {showEmojiPicker && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
-                    <div className="absolute bottom-6 left-0 z-50 flex gap-1 p-1.5 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-xl">
+                    <div className="absolute bottom-6 left-0 z-50 flex gap-1 p-1.5 bg-surface border border-edge rounded-lg shadow-xl">
                       {QUICK_EMOJIS.map(e => (
                         <button
                           key={e}
@@ -3114,7 +3114,7 @@ export function FastAgentUIMessageBubble({
                   type="button"
                   onClick={handleRegenerate}
                   disabled={isRegenerating}
-                  className="action-btn text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:text-[var(--text-muted)] flex items-center gap-1"
+                  className="action-btn text-xs text-content-muted hover:text-content-secondary disabled:text-content-muted flex items-center gap-1"
                   title="Regenerate response"
                 >
                   <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'motion-safe:animate-spin' : ''}`} />
@@ -3131,7 +3131,7 @@ export function FastAgentUIMessageBubble({
                       "action-btn p-0.5 rounded",
                       feedback === 'up'
                         ? "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
-                        : "text-[var(--text-muted)] hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                        : "text-content-muted hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
                     )}
                     title="Good response"
                   >
@@ -3144,7 +3144,7 @@ export function FastAgentUIMessageBubble({
                       "action-btn p-0.5 rounded",
                       feedback === 'down'
                         ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
-                        : "text-[var(--text-muted)] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        : "text-content-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                     )}
                     title="Poor response"
                   >
@@ -3167,7 +3167,7 @@ export function FastAgentUIMessageBubble({
                     <button
                       type="button"
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors px-2 py-0.5"
+                      className="text-xs text-content-secondary hover:text-content transition-colors px-2 py-0.5"
                     >
                       Cancel
                     </button>
@@ -3176,7 +3176,7 @@ export function FastAgentUIMessageBubble({
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="text-xs text-[var(--text-muted)] hover:text-red-600 flex items-center gap-1 transition-colors"
+                    className="text-xs text-content-muted hover:text-red-600 flex items-center gap-1 transition-colors"
                     title="Delete message"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -3191,8 +3191,8 @@ export function FastAgentUIMessageBubble({
       {/* User Avatar - Show on RIGHT side for user messages */}
       {isUser && (
         <div className="flex-shrink-0">
-          <div className="w-7 h-7 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] flex items-center justify-center">
-            <User className="h-3.5 w-3.5 text-[var(--text-secondary)]" />
+          <div className="w-7 h-7 rounded-full bg-surface-secondary border border-edge flex items-center justify-center">
+            <User className="h-3.5 w-3.5 text-content-secondary" />
           </div>
         </div>
       )}

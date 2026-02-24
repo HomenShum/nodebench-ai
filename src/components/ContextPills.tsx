@@ -5,7 +5,7 @@ import { FileText, Layers3, History, BookOpen, Wrench, Layout } from "lucide-rea
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-2">
-      <div className="text-xs uppercase tracking-wide text-[var(--text-secondary)] mb-1 flex items-center gap-1">
+      <div className="text-xs uppercase tracking-wide text-content-secondary mb-1 flex items-center gap-1">
         <span>{title}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -17,7 +17,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Pill({ icon, label, subtle }: { icon?: React.ReactNode; label: string; subtle?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${subtle ? "bg-[var(--bg-primary)]/60" : "bg-[var(--accent-primary)]/10"} border-[var(--border-color)] text-[var(--text-primary)] max-w-[160px] truncate`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${subtle ? "bg-surface/60" : "bg-[var(--accent-primary)]/10"} border-edge text-content max-w-[160px] truncate`}>
       {icon}
       <span className="truncate">{label}</span>
     </span>
@@ -91,7 +91,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
 
   if (inline) {
     return (
-      <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-3">
+      <div className="bg-surface border border-edge rounded-lg p-3">
         {content}
       </div>
     );
@@ -99,7 +99,7 @@ export function ContextPills({ inline = false }: { inline?: boolean }) {
 
   return (
     <div className="pointer-events-none fixed bottom-3 left-3 z-50 max-w-[80vw]">
-      <div className="pointer-events-auto bg-[var(--bg-primary)]/95 backdrop-blur-md border border-[var(--border-color)] shadow-lg rounded-lg p-3 w-[360px]">
+      <div className="pointer-events-auto bg-surface/95 backdrop-blur-md border border-edge shadow-lg rounded-lg p-3 w-[360px]">
         {content}
       </div>
     </div>

@@ -164,21 +164,21 @@ export function ActionConfirmation({
               {config.label}
             </span>
           </div>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">{action.description}</p>
+          <p className="text-xs text-content-secondary mt-0.5">{action.description}</p>
         </div>
       </div>
 
       {/* Details */}
-      <div className="px-4 py-2 border-t border-[var(--border-color)] space-y-1.5">
+      <div className="px-4 py-2 border-t border-edge space-y-1.5">
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[var(--text-muted)] font-medium w-24">Tool:</span>
-          <code className="text-[var(--text-primary)] font-mono text-xs bg-[var(--bg-hover)] px-1.5 py-0.5 rounded">
+          <span className="text-content-muted font-medium w-24">Tool:</span>
+          <code className="text-content font-mono text-xs bg-surface-hover px-1.5 py-0.5 rounded">
             {action.toolName}
           </code>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[var(--text-muted)] font-medium w-24">Reversible:</span>
+          <span className="text-content-muted font-medium w-24">Reversible:</span>
           <span className={action.reversible ? 'text-green-600' : 'text-red-600'}>
             {action.reversible ? 'Yes' : 'No — cannot be undone'}
           </span>
@@ -186,10 +186,10 @@ export function ActionConfirmation({
 
         {action.affectedResources.length > 0 && (
           <div className="flex items-start gap-2 text-xs">
-            <span className="text-[var(--text-muted)] font-medium w-24 shrink-0">Affects:</span>
+            <span className="text-content-muted font-medium w-24 shrink-0">Affects:</span>
             <div className="flex flex-wrap gap-1">
               {action.affectedResources.map((r) => (
-                <span key={r} className="px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-secondary)] text-xs">
+                <span key={r} className="px-1.5 py-0.5 rounded bg-surface-hover text-content-secondary text-xs">
                   {r}
                 </span>
               ))}
@@ -199,21 +199,21 @@ export function ActionConfirmation({
 
         {action.estimatedImpact && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[var(--text-muted)] font-medium w-24">Impact:</span>
-            <span className="text-[var(--text-secondary)]">{action.estimatedImpact}</span>
+            <span className="text-content-muted font-medium w-24">Impact:</span>
+            <span className="text-content-secondary">{action.estimatedImpact}</span>
           </div>
         )}
       </div>
 
       {/* Reject reason input */}
       {showRejectInput && (
-        <div className="px-4 py-2 border-t border-[var(--border-color)]">
+        <div className="px-4 py-2 border-t border-edge">
           <input
             type="text"
             value={rejectReason}
             onChange={(e) => setRejectReason(e.target.value)}
             placeholder="Reason for rejection (optional)..."
-            className="w-full text-xs px-2 py-1.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="w-full text-xs px-2 py-1.5 rounded border border-edge bg-surface text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleReject();
@@ -224,7 +224,7 @@ export function ActionConfirmation({
       )}
 
       {/* Action buttons */}
-      <div className="px-4 py-3 border-t border-[var(--border-color)] flex items-center gap-2 justify-end">
+      <div className="px-4 py-3 border-t border-edge flex items-center gap-2 justify-end">
         <button
           type="button"
           onClick={handleReject}

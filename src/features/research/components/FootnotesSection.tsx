@@ -52,7 +52,7 @@ const getTypeBadgeColors = (type: CitationType) => {
     case "analysis":
       return "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-800/40";
     case "internal":
-      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]";
+      return "bg-surface-secondary text-content border-edge";
     default:
       return "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border-blue-200 dark:border-blue-800/40";
   }
@@ -81,10 +81,10 @@ const FootnoteEntry: React.FC<{
   return (
     <div
       id={`footnote-${citation.id}`}
-      className="group flex gap-3 p-3 rounded-lg hover:bg-[color:var(--bg-hover)] transition-colors"
+      className="group flex gap-3 p-3 rounded-lg hover:bg-surface-hover transition-colors"
     >
       {/* Number badge */}
-      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] font-semibold text-sm">
+      <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-surface-secondary text-content font-semibold text-sm">
         {citation.number}
       </div>
 
@@ -92,20 +92,20 @@ const FootnoteEntry: React.FC<{
       <div className="flex-1 min-w-0">
         {/* Header row */}
         <div className="flex items-center gap-2 mb-1">
-          <Icon className="w-4 h-4 text-[color:var(--text-secondary)]" />
-          <span className="font-medium text-[color:var(--text-primary)] text-sm">{citation.label}</span>
+          <Icon className="w-4 h-4 text-content-secondary" />
+          <span className="font-medium text-content text-sm">{citation.label}</span>
           <span className={`text-xs px-1.5 py-0.5 rounded border ${badgeColors}`}>
             {citation.type}
           </span>
         </div>
 
         {/* Full text */}
-        <p className="text-sm text-[color:var(--text-primary)] leading-relaxed mb-2">
+        <p className="text-sm text-content leading-relaxed mb-2">
           {citation.fullText}
         </p>
 
         {/* Meta row */}
-        <div className="flex flex-wrap items-center gap-3 text-xs text-[color:var(--text-secondary)]">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-content-secondary">
           {citation.author && <span>{citation.author}</span>}
           {citation.publishedAt && (
             <span>{new Date(citation.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -138,7 +138,7 @@ const FootnoteEntry: React.FC<{
             </span>
           )}
           {citation.accessedAt && (
-            <span className="text-[color:var(--text-secondary)]">
+            <span className="text-content-secondary">
               Accessed {new Date(citation.accessedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           )}
@@ -146,8 +146,8 @@ const FootnoteEntry: React.FC<{
 
         {/* Back-links */}
         {showBackLinks && citation.occurrences.length > 0 && (
-          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-[color:var(--border-color)]">
-            <span className="text-xs text-[color:var(--text-secondary)] uppercase tracking-wider">Jump to:</span>
+          <div className="flex items-center gap-2 mt-2 pt-2 border-t border-edge">
+            <span className="text-xs text-content-secondary uppercase tracking-wider">Jump to:</span>
             {citation.occurrences.map((occ, idx) => (
               <button
                 key={occ.id}
@@ -189,11 +189,11 @@ export const FootnotesSection: React.FC<FootnotesSectionProps> = ({
   }
 
   return (
-    <section className={`mt-12 pt-8 border-t-2 border-[color:var(--border-color)] ${className}`}>
-      <h3 className="text-lg font-semibold text-[color:var(--text-primary)] mb-4 flex items-center gap-2">
-        <FileText className="w-5 h-5 text-[color:var(--text-secondary)]" />
+    <section className={`mt-12 pt-8 border-t-2 border-edge ${className}`}>
+      <h3 className="text-lg font-semibold text-content mb-4 flex items-center gap-2">
+        <FileText className="w-5 h-5 text-content-secondary" />
         {title}
-        <span className="text-sm font-normal text-[color:var(--text-secondary)]">({citations.length})</span>
+        <span className="text-sm font-normal text-content-secondary">({citations.length})</span>
       </h3>
 
       <div className="space-y-1 divide-y divide-[color:var(--border-color)]">

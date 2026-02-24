@@ -20,8 +20,8 @@ const DossierViewer = lazy(() =>
 );
 
 const viewFallback = (
-  <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
-    <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
+  <div className="flex items-center justify-center h-full bg-surface">
+    <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500/30"></div>
   </div>
 );
 
@@ -125,12 +125,12 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
 
   return (
     <ErrorBoundary title="Document Error">
-      <div className="flex flex-col h-full bg-[var(--bg-primary)]">
+      <div className="flex flex-col h-full bg-surface">
         {(!isValidId) ? (
-          <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
+          <div className="flex items-center justify-center h-full bg-surface">
             <div className="text-center max-w-md mx-4">
-              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Invalid document</h2>
-              <p className="text-[var(--text-secondary)] mb-2">The provided document id is invalid or missing.</p>
+              <h2 className="text-base font-semibold text-content mb-2">Invalid document</h2>
+              <p className="text-content-secondary mb-2">The provided document id is invalid or missing.</p>
               {isGridMode ? (
                 <p className="text-[var(--text-tertiary)] text-sm">Close this tab or select another document from the sidebar.</p>
               ) : (
@@ -139,14 +139,14 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
             </div>
           </div>
         ) : (document === undefined) ? (
-          <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
-            <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
+          <div className="flex items-center justify-center h-full bg-surface">
+            <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500/30"></div>
           </div>
         ) : (document === null) ? (
-          <div className="flex items-center justify-center h-full bg-[var(--bg-primary)]">
+          <div className="flex items-center justify-center h-full bg-surface">
             <div className="text-center">
-              <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">Document not found</h2>
-              <p className="text-[var(--text-secondary)]">This document may have been deleted or you don't have permission to view it.</p>
+              <h2 className="text-base font-semibold text-content mb-2">Document not found</h2>
+              <p className="text-content-secondary">This document may have been deleted or you don't have permission to view it.</p>
             </div>
           </div>
         ) : (
@@ -154,14 +154,14 @@ export function DocumentView({ documentId, isGridMode = false, isFullscreen = fa
             {shouldShowHeader && !isSpreadsheetDocument && <DocumentHeader document={document} />}
             <div className="flex-1 flex flex-col overflow-hidden">
               {document.coverImage && shouldShowCoverImage && (
-                <div className="h-48 bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
+                <div className="h-48 bg-surface-secondary border-b border-edge">
                   <CoverImage storageId={document.coverImage} />
                 </div>
               )}
-              <div className={`flex-1 ${isSpreadsheetDocument ? '' : 'overflow-y-auto'} bg-[var(--bg-primary)]`}>
+              <div className={`flex-1 ${isSpreadsheetDocument ? '' : 'overflow-y-auto'} bg-surface`}>
                 {(document.documentType === "timeline") || (timelineBundle !== undefined && timelineBundle !== null) ? (
                   <div className="h-full w-full flex items-center justify-center">
-                    <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
+                    <div className="text-content-secondary text-sm">Timeline view is not available.</div>
                   </div>
                 ) : document.documentType === "dossier" ? (
                   <Suspense fallback={viewFallback}>

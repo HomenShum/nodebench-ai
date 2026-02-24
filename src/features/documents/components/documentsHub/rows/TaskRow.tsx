@@ -241,8 +241,8 @@ export const TaskRowGlobal = ({
       <div
         className={
           "document-item group/doc relative px-3 py-2 rounded-sm overflow-hidden cursor-pointer text-sm " +
-          "bg-[var(--bg-secondary)] border border-[var(--border-color)] " +
-          "transition-all duration-200 hover:bg-[var(--bg-hover)] " +
+          "bg-surface-secondary border border-edge " +
+          "transition-all duration-200 hover:bg-surface-hover " +
           "flex items-center justify-between " +
           "focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent-primary)] hover:ring-2 ring-1 ring-[var(--accent-primary)]/10"
         }
@@ -258,7 +258,7 @@ export const TaskRowGlobal = ({
       >
         {/* Watermark: consistent with DocumentCards via shared class */}
         <span
-          className="document-card__bg document-row__bg text-[var(--accent-primary)]"
+          className="document-card__bg document-row__bg text-indigo-600 dark:text-indigo-400"
           aria-hidden
         >
           {kind === "event" ? (
@@ -305,7 +305,7 @@ export const TaskRowGlobal = ({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={t.status === "done" ? "Mark as not completed" : "Mark as completed"}
-              className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-white"
+              className="h-4 w-4 rounded border-edge text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-white"
             />
           ) : isAllDayEvent(t) ? (
             <input
@@ -318,24 +318,24 @@ export const TaskRowGlobal = ({
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={t.status !== "cancelled" ? "Mark event unchecked" : "Mark event checked"}
-              className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-white"
+              className="h-4 w-4 rounded border-edge text-indigo-600 focus:ring-2 focus:ring-indigo-500/50 bg-white"
             />
           ) : (
             <div className="w-4 h-4" />
           )}
 
           {/* Small neutral icon tile */}
-          <div className="w-7 h-7 rounded-md bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-secondary)] flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-md bg-surface border border-edge text-content-secondary flex items-center justify-center shrink-0">
             {kind === "event" ? (
-              <CalendarDays className="h-4 w-4 group-hover/doc:text-[var(--text-primary)]" />
+              <CalendarDays className="h-4 w-4 group-hover/doc:text-content" />
             ) : (
-              <ListTodo className="h-4 w-4 group-hover/doc:text-[var(--text-primary)]" />
+              <ListTodo className="h-4 w-4 group-hover/doc:text-content" />
             )}
           </div>
 
           <div className="min-w-0">
             <div
-              className={`text-sm font-medium truncate ${kind === "task" && t.status === "done" ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"}`}
+              className={`text-sm font-medium truncate ${kind === "task" && t.status === "done" ? "text-content-secondary line-through" : "text-content"}`}
             >
               {t.title}
             </div>
@@ -363,7 +363,7 @@ export const TaskRowGlobal = ({
 
                   {t.dueDate && (
                     <span
-                      className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                      className="text-xs px-1.5 py-0.5 rounded-md border bg-surface text-content-secondary border-edge"
                       title={`Due ${new Date(t.dueDate).toLocaleString()}`}
                     >
                       Due {new Date(t.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -391,7 +391,7 @@ export const TaskRowGlobal = ({
 
                   {isAllDayEvent(t) && (
                     <span
-                      className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                      className="text-xs px-1.5 py-0.5 rounded-md border bg-surface text-content-secondary border-edge"
                       title={`Date ${new Date(t.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
                     >
                       {new Date(t.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -435,7 +435,7 @@ export const TaskRowGlobal = ({
                 className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
                   t.isFavorite
                     ? "bg-yellow-500 text-yellow-100 shadow-sm"
-                    : "bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)]"
+                    : "bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge"
                 }`}
               >
                 <Star className={`h-3.5 w-3.5 ${t.isFavorite ? "fill-current" : ""}`} />
@@ -446,7 +446,7 @@ export const TaskRowGlobal = ({
                 onClick={handleDeleteTask}
                 aria-label="Delete task"
                 title="Delete"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -459,7 +459,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Open"
                 title="Open"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <Edit3 className="h-3.5 w-3.5" />
               </button>
@@ -472,7 +472,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Convert to event"
                 title="Convert to event"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
               </button>
@@ -489,7 +489,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Delete event"
                 title="Delete"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -502,7 +502,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Open"
                 title="Open"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <Edit3 className="h-3.5 w-3.5" />
               </button>
@@ -515,7 +515,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Convert to task"
                 title="Convert to task"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] border border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
               </button>

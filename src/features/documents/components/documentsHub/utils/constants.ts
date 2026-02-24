@@ -5,7 +5,7 @@
  */
 
 // Section header styling
-export const sectionHeader = "text-base font-semibold text-[var(--text-secondary)]";
+export const sectionHeader = "text-base font-semibold text-content-secondary";
 
 // Tip badge styling
 export const tipBadge =
@@ -13,13 +13,13 @@ export const tipBadge =
 
 // Card styling constants
 export const cardBaseClasses =
-  "group relative bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg hover:border-[var(--accent-primary)] transition-all duration-200";
+  "group relative bg-surface border border-edge rounded-lg hover:border-indigo-500/30 transition-all duration-200";
 
 export const cardHoverClasses = "hover:shadow-md";
 
 // Row styling constants
 export const rowBaseClasses =
-  "group relative flex items-center gap-3 px-3 py-2 bg-[var(--bg-primary)] border-b border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors";
+  "group relative flex items-center gap-3 px-3 py-2 bg-surface border-b border-edge hover:bg-surface-hover transition-colors";
 
 // Status stripe styling
 export const statusStripeClasses =
@@ -27,7 +27,7 @@ export const statusStripeClasses =
 
 // Kanban card styling
 export const kanbanCardClasses =
-  "bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-3 shadow-sm transition-shadow cursor-pointer";
+  "bg-surface border border-edge rounded-lg p-3 shadow-sm transition-shadow cursor-pointer";
 
 // Priority badge styling
 export const priorityBadgeClasses =
@@ -35,9 +35,9 @@ export const priorityBadgeClasses =
 
 // Date badge styling
 export const dateBadgeClasses =
-  "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs text-[var(--text-secondary)]";
+  "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs text-content-secondary";
 
 // Tag pill styling
 export const tagPillClasses =
-  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--accent-secondary)] text-[var(--accent-primary)] border border-[var(--accent-primary)]";
+  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--accent-secondary)] text-indigo-600 dark:text-indigo-400 border border-indigo-500/30";
 

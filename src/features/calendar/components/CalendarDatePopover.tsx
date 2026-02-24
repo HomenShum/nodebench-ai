@@ -113,27 +113,27 @@ export function CalendarDatePopover({
 
   return (
     <div
-      className={`w-80 bg-[var(--bg-primary)]/95 backdrop-blur-xl rounded-lg shadow-2xl border border-[var(--bg-primary)]/70 overflow-hidden ${className}`}
+      className={`w-80 bg-surface/95 backdrop-blur-xl rounded-lg shadow-2xl border border-surface/70 overflow-hidden ${className}`}
       role="dialog"
       aria-label={`Daily brief for ${shortDate}`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
-      <div className={`px-5 py-4 ${(hasEvents || hasTasks || hasNotes || hasHolidays || hasFiles) ? "bg-[var(--bg-primary)]" : "bg-gradient-to-br from-blue-50/60 to-purple-50/60"}`}>
+      <div className={`px-5 py-4 ${(hasEvents || hasTasks || hasNotes || hasHolidays || hasFiles) ? "bg-surface" : "bg-gradient-to-br from-blue-50/60 to-purple-50/60"}`}>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+          <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
             {isToday ? "Today" : weekday}
           </span>
-          <div className="px-2 py-0.5 bg-[var(--bg-primary)]/70 rounded-full border border-[var(--border-color)] text-xs font-medium text-[var(--text-secondary)]">
+          <div className="px-2 py-0.5 bg-surface/70 rounded-full border border-edge text-xs font-medium text-content-secondary">
             {focusLabel}
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl text-[var(--text-primary)]">{shortDate}</h2>
+          <h2 className="text-2xl text-content">{shortDate}</h2>
           {onClose && (
             <button
               aria-label="Close"
-              className="w-7 h-7 rounded-full border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+              className="w-7 h-7 rounded-full border border-edge text-content-secondary hover:bg-surface-hover"
               onClick={(e) => {
                 e.stopPropagation();
                 onClose();
@@ -143,7 +143,7 @@ export function CalendarDatePopover({
             </button>
           )}
         </div>
-        <div className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+        <div className="mt-2 inline-flex items-center gap-1 text-xs text-content-secondary">
           <Sun className="w-3.5 h-3.5" />
           {hasEvents
             ? `First: ${formatShortTime(firstEvent?.startTime, firstEvent?.allDay)}`
@@ -154,11 +154,11 @@ export function CalendarDatePopover({
       {/* Body */}
       <div className="p-3 space-y-3 max-h-[360px] overflow-y-auto">
         {isLoading ? (
-          <div className="h-16 flex items-center justify-center text-xs text-[var(--text-secondary)]">Loading…</div>
+          <div className="h-16 flex items-center justify-center text-xs text-content-secondary">Loading…</div>
         ) : (
           <>
             {!hasEvents && !hasTasks && !hasNotes && !hasHolidays && !hasFiles && (
-              <div className="py-5 text-center text-sm text-[var(--text-secondary)]">
+              <div className="py-5 text-center text-sm text-content-secondary">
                 Clear schedule. Great day for deep work.
               </div>
             )}
@@ -192,27 +192,27 @@ export function CalendarDatePopover({
                 {events.slice(0, 4).map((evt) => (
                   <div
                     key={evt._id || `${evt.title}-${evt.startTime}`}
-                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--bg-hover)] transition-colors border border-[var(--border-color)] cursor-pointer"
+                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-surface-hover transition-colors border border-edge cursor-pointer"
                     onClick={() => onSelectEvent?.(evt._id, evt.documentId)}
                   >
                     <div className="w-1 h-12 rounded-full bg-blue-500" />
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm font-medium text-[var(--text-primary)] truncate">{evt.title}</div>
+                        <div className="text-sm font-medium text-content truncate">{evt.title}</div>
                         {evt.proposed && (
                           <span className="px-2 py-0.5 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-100">
                             Proposed
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 text-xs text-content-secondary">
                         <span>{formatShortTime(evt.startTime, evt.allDay)}</span>
-                        {evt.location && <span className="truncate text-[var(--text-secondary)]">· {evt.location}</span>}
+                        {evt.location && <span className="truncate text-content-secondary">· {evt.location}</span>}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 text-xs text-content-secondary">
                         {evt.sourceType === "gmail" && <Mail className="w-3.5 h-3.5 text-blue-500" />}
                         {evt.sourceType === "gcal" && <CalIcon className="w-3.5 h-3.5 text-indigo-500" />}
-                        {evt.rawSummary && <span className="truncate text-[var(--text-muted)]">{evt.rawSummary}</span>}
+                        {evt.rawSummary && <span className="truncate text-content-muted">{evt.rawSummary}</span>}
                       </div>
                       {/* Action buttons for email events */}
                       {(evt.proposed || evt.sourceType === "gmail") && (
@@ -274,13 +274,13 @@ export function CalendarDatePopover({
                 {tasks.slice(0, 4).map((task) => (
                   <div
                     key={task._id || task.title}
-                    className="flex items-center gap-3 p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                    className="flex items-center gap-3 p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors cursor-pointer"
                     onClick={() => onSelectTask?.(task._id, task.documentId)}
                   >
                     <CheckSquare className="w-4 h-4 text-indigo-600" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-[var(--text-primary)] truncate">{task.title}</div>
-                      <div className="text-xs text-[var(--text-secondary)]">
+                      <div className="text-sm font-medium text-content truncate">{task.title}</div>
+                      <div className="text-xs text-content-secondary">
                         {formatShortTime(task.dueDate, false)}
                       </div>
                     </div>
@@ -299,7 +299,7 @@ export function CalendarDatePopover({
                 {notes.slice(0, 4).map((note) => (
                   <div
                     key={note._id || note.title}
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-amber-50/60 border border-amber-100 transition-colors cursor-pointer text-xs text-[var(--text-primary)]"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-amber-50/60 border border-amber-100 transition-colors cursor-pointer text-xs text-content"
                     onClick={() => onSelectNote?.(note._id, note.documentId)}
                   >
                     <StickyNote className="w-3.5 h-3.5 text-amber-500" />
@@ -311,13 +311,13 @@ export function CalendarDatePopover({
 
             {/* Files */}
             {hasFiles && (
-              <div className="pt-1 border-t border-[var(--border-color)] space-y-1">
-                <div className="px-1 text-xs font-semibold text-[var(--text-muted)] uppercase mb-1">Related work</div>
+              <div className="pt-1 border-t border-edge space-y-1">
+                <div className="px-1 text-xs font-semibold text-content-muted uppercase mb-1">Related work</div>
                 <div className="space-y-1">
                   {files.slice(0, 4).map((f) => (
                     <div
                       key={f._id || f.title}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-50 text-[var(--text-primary)] text-xs border border-[var(--border-color)]"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-blue-50 text-content text-xs border border-edge"
                     >
                       <FileText className="w-3.5 h-3.5 text-blue-400" />
                       <span className="truncate">{f.title}</span>
@@ -331,11 +331,11 @@ export function CalendarDatePopover({
       </div>
 
       {/* Footer actions */}
-      <div className="p-3 bg-[var(--bg-secondary)]/60 border-t border-[var(--border-color)] grid grid-cols-2 gap-2">
+      <div className="p-3 bg-surface-secondary/60 border-t border-edge grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => onAddEvent?.(dateMs)}
-          className="flex items-center justify-center gap-2 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-sm rounded-lg text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)] transition-all"
+          className="flex items-center justify-center gap-2 py-2 bg-surface border border-edge shadow-sm rounded-lg text-xs font-medium text-content hover:bg-surface-hover hover:border-edge transition-all"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Event
@@ -351,7 +351,7 @@ export function CalendarDatePopover({
         <button
           type="button"
           onClick={() => onTimeBlock?.(dateMs)}
-          className="col-span-2 flex items-center justify-center gap-2 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all"
+          className="col-span-2 flex items-center justify-center gap-2 py-2 bg-surface border border-edge rounded-lg text-xs font-medium text-content hover:bg-surface-hover transition-all"
         >
           <Clock className="w-3.5 h-3.5" />
           Time Block Suggestions

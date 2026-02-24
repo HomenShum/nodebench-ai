@@ -6,7 +6,7 @@ export const buttonBase =
   "inline-flex items-center justify-center gap-1.5 rounded-md border transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 export const buttonSecondary =
-  `${buttonBase} bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]`;
+  `${buttonBase} bg-surface-secondary hover:bg-surface-hover text-content border-edge`;
 
 export const buttonDanger =
   `${buttonBase} bg-white hover:bg-red-50 text-red-700 border-red-200`;

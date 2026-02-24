@@ -44,9 +44,9 @@ const VERIFICATION_CONFIG = {
     },
     pending: {
         icon: AlertCircle,
-        color: 'text-[color:var(--text-secondary)]',
-        bg: 'bg-[color:var(--bg-secondary)]',
-        border: 'border-[color:var(--border-color)]',
+        color: 'text-content-secondary',
+        bg: 'bg-surface-secondary',
+        border: 'border-edge',
         label: 'Pending',
     },
 };
@@ -82,7 +82,7 @@ export function StickyTopBar({
         <div
             className={`
                 ${isSticky ? 'fixed top-0 left-0 right-0 z-40 shadow-md animate-in slide-in-from-top duration-200' : ''}
-                bg-[color:var(--bg-primary)] border-b border-[color:var(--border-color)] ${className}
+                bg-surface border-b border-edge ${className}
             `}
         >
             <div className="max-w-5xl mx-auto px-6 py-3">
@@ -90,9 +90,9 @@ export function StickyTopBar({
                     {/* Left: Entity + Scope */}
                     <div className="flex items-center gap-3">
                         {/* Entity Pill */}
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[color:var(--bg-secondary)] rounded-full">
-                            <Building2 className="w-3.5 h-3.5 text-[color:var(--text-primary)]" />
-                            <span className="text-sm font-semibold text-[color:var(--text-primary)] truncate max-w-[200px]">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-secondary rounded-full">
+                            <Building2 className="w-3.5 h-3.5 text-content" />
+                            <span className="text-sm font-semibold text-content truncate max-w-[200px]">
                                 {entity}
                             </span>
                         </div>
@@ -101,7 +101,7 @@ export function StickyTopBar({
                         <div className="relative">
                             <button
                                 onClick={() => setShowScopeDropdown(!showScopeDropdown)}
-                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[color:var(--text-primary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-content hover:text-content hover:bg-surface-hover rounded-lg transition-colors"
                             >
                                 <Calendar className="w-3.5 h-3.5" />
                                 {SCOPE_LABELS[scope]}
@@ -109,7 +109,7 @@ export function StickyTopBar({
                             </button>
                             
                             {showScopeDropdown && (
-                                <div className="absolute top-full left-0 mt-1 py-1 bg-[color:var(--bg-primary)] rounded-lg shadow-lg border border-[color:var(--border-color)] z-50 min-w-[120px]">
+                                <div className="absolute top-full left-0 mt-1 py-1 bg-surface rounded-lg shadow-lg border border-edge z-50 min-w-[120px]">
                                     {Object.entries(SCOPE_LABELS).map(([key, label]) => (
                                         <button
                                             key={key}
@@ -117,8 +117,8 @@ export function StickyTopBar({
                                                 onScopeChange?.(key as 'week' | 'month' | 'all');
                                                 setShowScopeDropdown(false);
                                             }}
-                                            className={`w-full px-3 py-1.5 text-xs text-left hover:bg-[color:var(--bg-hover)] transition-colors ${
-                                                scope === key ? 'font-semibold text-[color:var(--text-primary)]' : 'text-[color:var(--text-primary)]'
+                                            className={`w-full px-3 py-1.5 text-xs text-left hover:bg-surface-hover transition-colors ${
+                                                scope === key ? 'font-semibold text-content' : 'text-content'
                                             }`}
                                         >
                                             {label}
@@ -141,7 +141,7 @@ export function StickyTopBar({
                     <div className="flex items-center gap-2">
                         {/* Last Refresh */}
                         {lastRefresh && (
-                            <span className="text-xs text-[color:var(--text-secondary)] mr-2">
+                            <span className="text-xs text-content-secondary mr-2">
                                 Updated {formatTimeAgo(lastRefresh)}
                             </span>
                         )}
@@ -151,7 +151,7 @@ export function StickyTopBar({
                             <button
                                 onClick={onRefresh}
                                 disabled={isRefreshing}
-                                className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors disabled:opacity-50"
+                                className="p-2 text-content-secondary hover:text-content hover:bg-surface-hover rounded-lg transition-colors disabled:opacity-50"
                                 title="Refresh"
                             >
                                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
@@ -162,7 +162,7 @@ export function StickyTopBar({
                         {onExport && (
                             <button
                                 onClick={onExport}
-                                className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors"
+                                className="p-2 text-content-secondary hover:text-content hover:bg-surface-hover rounded-lg transition-colors"
                                 title="Export"
                             >
                                 <Download className="w-4 h-4" />

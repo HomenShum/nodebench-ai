@@ -117,9 +117,9 @@ function DashboardSectionInner({
   if (!snapshot) {
     return (
       <div className={`${className} p-4`}>
-        <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] p-6 text-center">
-          <div className="text-sm font-medium text-[color:var(--text-primary)] mb-1">No dashboard data yet</div>
-          <div className="text-xs text-[color:var(--text-secondary)] mb-4">Metrics are generated automatically at 6:00 AM UTC.</div>
+        <div className="rounded-lg border border-edge bg-surface p-6 text-center">
+          <div className="text-sm font-medium text-content mb-1">No dashboard data yet</div>
+          <div className="text-xs text-content-secondary mb-4">Metrics are generated automatically at 6:00 AM UTC.</div>
           <button
             type="button"
             onClick={handleRefresh}
@@ -226,7 +226,7 @@ function DashboardSectionInner({
                 onClick={() => setSelectedDate(date === selectedDate ? null : date)}
                 className={`px-2 py-1 text-xs rounded transition-colors ${date === displayDate
                     ? "bg-indigo-600 text-white font-medium"
-                    : "bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)] text-slate-600 border border-slate-200"
+                    : "bg-surface hover:bg-surface-hover text-slate-600 border border-slate-200"
                   }`}
                 title={`View data from ${date}`}
               >

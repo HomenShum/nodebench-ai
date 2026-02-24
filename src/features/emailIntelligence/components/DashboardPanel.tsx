@@ -22,36 +22,36 @@ const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
           key={data.phaseLabel}
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 inline-block rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-[color:var(--bg-primary)] shadow-sm"
+          className="mb-6 inline-block rounded-full bg-gray-900 px-3 py-1 text-xs font-medium text-surface shadow-sm"
         >
           {data.phaseLabel}
         </motion.div>
 
         {data.fundingChart && (
           <div className="mb-6">
-            <h4 className="mb-2 text-xs font-bold uppercase text-[color:var(--text-secondary)]">Funding Rounds</h4>
+            <h4 className="mb-2 text-xs font-bold uppercase text-content-secondary">Funding Rounds</h4>
             <div className="flex items-end gap-2">
               {data.fundingChart.seriesA !== undefined && (
                 <>
-                  <span className="text-3xl font-bold text-[color:var(--text-primary)]">${data.fundingChart.seriesA}M</span>
-                  <span className="mb-1 text-sm text-[color:var(--text-secondary)]">Series A</span>
+                  <span className="text-3xl font-bold text-content">${data.fundingChart.seriesA}M</span>
+                  <span className="mb-1 text-sm text-content-secondary">Series A</span>
                 </>
               )}
             </div>
             {data.fundingChart.valuation !== undefined && (
-              <div className="mt-2 text-xs text-[color:var(--text-primary)]">Post-money valuation: ${data.fundingChart.valuation}M</div>
+              <div className="mt-2 text-xs text-content">Post-money valuation: ${data.fundingChart.valuation}M</div>
             )}
           </div>
         )}
 
         {data.roiChart && (
-          <div className="mb-8 rounded-md border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3">
-            <h4 className="text-xs font-bold uppercase text-[color:var(--text-secondary)] mb-2">ROI Snapshot</h4>
-            <div className="text-sm text-[color:var(--text-primary)] flex items-center justify-between">
+          <div className="mb-8 rounded-md border border-edge bg-surface-secondary p-3">
+            <h4 className="text-xs font-bold uppercase text-content-secondary mb-2">ROI Snapshot</h4>
+            <div className="text-sm text-content flex items-center justify-between">
               <span>Current cost</span>
               <span className="font-mono">${(data.roiChart.currentCost / 1_000_000).toFixed(1)}M</span>
             </div>
-            <div className="text-sm text-[color:var(--text-primary)] flex items-center justify-between">
+            <div className="text-sm text-content flex items-center justify-between">
               <span>With NodeBench</span>
               <span className="font-mono">${(data.roiChart.withNodeBench / 1_000_000).toFixed(1)}M</span>
             </div>
@@ -66,14 +66,14 @@ const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
         {data.kpis.map((kpi) => (
           <div key={kpi.label}>
             <div className="mb-1 flex justify-between text-sm">
-              <span className="text-[color:var(--text-primary)]">{kpi.label}</span>
-              <span className="font-mono font-medium text-[color:var(--text-primary)]">
+              <span className="text-content">{kpi.label}</span>
+              <span className="font-mono font-medium text-content">
                 {kpi.prefix}
                 {kpi.value}
                 {kpi.unit}
               </span>
             </div>
-            <div className="h-3 w-full overflow-hidden rounded-sm bg-[color:var(--bg-secondary)]">
+            <div className="h-3 w-full overflow-hidden rounded-sm bg-surface-secondary">
               <motion.div
                 className={`h-full ${kpi.color}`}
                 initial={{ width: 0 }}

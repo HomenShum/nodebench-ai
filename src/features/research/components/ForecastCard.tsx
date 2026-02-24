@@ -465,7 +465,7 @@ export function ForecastCard({
 
         {/* Trace breadcrumb */}
         {traceSteps && traceSteps.length > 0 && (
-          <div className="mt-3 pt-2 border-t border-edge dark:border-gray-800">
+          <div className="mt-3 pt-2 border-t border-edge dark:border-edge">
             <TraceBreadcrumb steps={traceSteps} onExpand={onExpandTrace} />
           </div>
         )}

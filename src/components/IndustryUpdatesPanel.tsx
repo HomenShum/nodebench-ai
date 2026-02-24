@@ -50,106 +50,108 @@ export function IndustryUpdatesPanel() {
   }
 
   return (
-    <div className="nb-page-inner">
-      <div className="nb-page-frame space-y-6">
-      <PageHeroHeader
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-6">
+          <PageHeroHeader
         icon={<TrendingUp className="w-5 h-5" />}
         title="Industry News"
         subtitle="What's new from AI leaders — refreshed daily"
         date={suggestions.totalNew > 0 ? (
-          <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-secondary)] rounded-lg">
+          <div className="flex items-center gap-2 px-4 py-2 bg-surface-secondary rounded-lg">
             <div className="w-2 h-2 bg-green-500 rounded-full motion-safe:animate-pulse" />
-            <span className="text-sm font-medium text-[var(--text-primary)]">
+            <span className="text-sm font-medium text-content">
               {suggestions.totalNew} new {suggestions.totalNew === 1 ? 'update' : 'updates'}
             </span>
           </div>
         ) : undefined}
       />
 
-      {/* Provider Filter */}
-      <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-[var(--text-secondary)]" />
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setSelectedProvider(null)}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
-              selectedProvider === null
-                ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] font-semibold shadow-sm ring-2 ring-[var(--accent-primary)]/30"
-                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50"
-            }`}
-          >
-            All
-          </button>
-          {providers.map((provider) => (
-            <button
-              key={provider}
-              onClick={() => setSelectedProvider(provider)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
-                selectedProvider === provider
-                  ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
-                  : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50"
-              }`}
-            >
-              {providerLabels[provider]}
-              {suggestions.byProvider[providerLabels[provider]] && (
-                <span className="ml-1.5 px-1.5 py-0.5 bg-[var(--accent-primary)] text-white rounded text-xs">
-                  {suggestions.byProvider[providerLabels[provider]].length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Updates List */}
-      {filteredSuggestions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-500/25 flex items-center justify-center mb-4">
-            <AlertCircle className="w-8 h-8 text-indigo-500 dark:text-indigo-300" />
+          {/* Provider Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-content-secondary" />
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setSelectedProvider(null)}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                  selectedProvider === null
+                    ? "bg-[var(--accent-primary)] text-white border-transparent font-semibold shadow-sm ring-2 ring-[var(--accent-primary)]/30"
+                    : "bg-surface-secondary text-content-secondary border-edge hover:text-content hover:bg-surface"
+                }`}
+              >
+                All
+              </button>
+              {providers.map((provider) => (
+                <button
+                  key={provider}
+                  onClick={() => setSelectedProvider(provider)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
+                    selectedProvider === provider
+                      ? "bg-[var(--accent-primary)] text-white border-transparent"
+                      : "bg-surface-secondary text-content-secondary border-edge hover:text-content hover:bg-surface"
+                  }`}
+                >
+                  {providerLabels[provider]}
+                  {suggestions.byProvider[providerLabels[provider]] && (
+                    <span className="ml-1.5 px-1.5 py-0.5 bg-[var(--accent-primary)] text-white rounded text-xs">
+                      {suggestions.byProvider[providerLabels[provider]].length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-          {selectedProvider ? (
-            <>
-              <p className="text-base font-semibold text-[var(--text-primary)] mb-2">No updates for this provider</p>
-              <p className="text-sm text-[var(--text-secondary)] max-w-sm">Select a different provider or clear the filter to see all industry news.</p>
-            </>
+
+          {/* Updates List */}
+          {filteredSuggestions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-16 h-16 rounded-full bg-[var(--accent-primary-bg)] flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-[var(--accent-primary)]" />
+              </div>
+              {selectedProvider ? (
+                <>
+                  <p className="text-base font-semibold text-content mb-2">No updates for this provider</p>
+                  <p className="text-sm text-content-secondary max-w-sm">Select a different provider or clear the filter to see all industry news.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-semibold text-content mb-2">Industry news arrives daily</p>
+                  <p className="text-sm text-content-secondary max-w-sm">Updates from Anthropic, OpenAI, Google DeepMind, LangChain, and Vercel AI SDK are collected automatically. Check back tomorrow or select a provider above to filter by source.</p>
+                </>
+              )}
+            </div>
           ) : (
-            <>
-              <p className="text-base font-semibold text-[var(--text-primary)] mb-2">Industry news arrives daily</p>
-              <p className="text-sm text-[var(--text-secondary)] max-w-sm">Updates from Anthropic, OpenAI, Google DeepMind, LangChain, and Vercel AI SDK are collected automatically. Check back tomorrow or select a provider above to filter by source.</p>
-            </>
+            <div className="space-y-4">
+              {filteredSuggestions.map((update: any) => (
+                <UpdateCard key={update.id} update={update} />
+              ))}
+            </div>
+          )}
+
+          {/* Summary Stats */}
+          {suggestions.totalNew > 0 && (
+            <div className="nb-surface-card mt-8 p-4">
+              <h3 className="type-section-title text-content mb-3">
+                Summary by Provider
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {providers.map((provider) => {
+                  const count = suggestions.byProvider[providerLabels[provider]]?.length || 0;
+                  return (
+                    <div key={provider} className="text-center">
+                      <div className="text-2xl font-bold text-content">
+                        {count}
+                      </div>
+                      <div className="text-xs text-content-secondary mt-1">
+                        {providerLabels[provider]}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredSuggestions.map((update: any) => (
-            <UpdateCard key={update.id} update={update} />
-          ))}
-        </div>
-      )}
-
-      {/* Summary Stats */}
-      {suggestions.totalNew > 0 && (
-        <div className="mt-8 p-4 bg-[var(--bg-secondary)] rounded-lg">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
-            Summary by Provider
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {providers.map((provider) => {
-              const count = suggestions.byProvider[providerLabels[provider]]?.length || 0;
-              return (
-                <div key={provider} className="text-center">
-                  <div className="text-2xl font-bold text-[var(--text-primary)]">
-                    {count}
-                  </div>
-                  <div className="text-xs text-[var(--text-secondary)] mt-1">
-                    {providerLabels[provider]}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
       </div>
     </div>
   );
@@ -215,7 +217,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
     "Low";
 
   return (
-    <div className="bg-[var(--bg-secondary)] rounded-lg p-5 space-y-4">
+    <div className="nb-surface-card p-5 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
@@ -230,20 +232,20 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
             {update.status && update.status !== "new" && (
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                 update.status === "implemented"
-                  ? "bg-blue-100 text-blue-700"
+                  ? "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
                   : "bg-green-100 text-green-700"
               }`}>
                 {update.status === "implemented" ? "✓ Implemented" : "✓ Reviewed"}
               </span>
             )}
-            <span className="text-xs text-[var(--text-muted)]">
+            <span className="text-xs text-content-muted">
               {new Date(update.scannedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
-          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+          <h3 className="text-lg font-semibold text-content mb-2">
             {update.title}
           </h3>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+          <p className="text-sm text-content-secondary leading-relaxed">
             {update.summary}
           </p>
         </div>
@@ -251,7 +253,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
           href={update.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[var(--accent-primary)] hover:bg-[var(--bg-tertiary)] rounded-md transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:bg-[var(--accent-primary-bg)] rounded-md transition-colors"
         >
           View Source
           <ExternalLink className="w-3.5 h-3.5" />
@@ -264,7 +266,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-content hover:text-[var(--accent-primary)] transition-colors"
           >
             <Lightbulb className="w-4 h-4" />
             Key Insights ({update.actionableInsights.length})
@@ -273,7 +275,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
           {expanded && (
             <ul className="mt-2 space-y-1.5 ml-6">
               {update.actionableInsights.map((insight: string, idx: number) => (
-                <li key={idx} className="text-sm text-[var(--text-secondary)] list-disc">
+                <li key={idx} className="text-sm text-content-secondary list-disc">
                   {insight}
                 </li>
               ))}
@@ -285,13 +287,13 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
       {/* Implementation Suggestions */}
       {expanded && update.implementationSuggestions.length > 0 && (
         <div>
-          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)] mb-2">
+          <div className="flex items-center gap-2 text-sm font-semibold text-content mb-2">
             <Code className="w-4 h-4" />
             Implementation Suggestions
           </div>
           <ul className="space-y-1.5 ml-6">
             {update.implementationSuggestions.map((suggestion: string, idx: number) => (
-              <li key={idx} className="text-sm text-[var(--text-secondary)] list-disc">
+              <li key={idx} className="text-sm text-content-secondary list-disc">
                 {suggestion}
               </li>
             ))}
@@ -301,7 +303,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
 
       {/* Actions */}
       {expanded && (
-        <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-color)]">
+        <div className="flex items-center gap-2 pt-2 border-t border-edge">
           <button
             type="button"
             onClick={handleMarkReviewed}
@@ -315,7 +317,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
             type="button"
             onClick={handleMarkImplemented}
             disabled={isUpdating}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Code className="w-4 h-4" />
             {isUpdating ? "Updating..." : "Mark as Implemented"}

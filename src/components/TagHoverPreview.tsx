@@ -86,7 +86,7 @@ export function TagHoverPreview({ editorContainer }: TagHoverPreviewProps) {
 
   return (
     <div
-      className="fixed z-50 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3 max-w-sm pointer-events-auto"
+      className="fixed z-50 bg-surface-secondary border border-edge rounded-lg shadow-lg p-3 max-w-sm pointer-events-auto"
       style={{
         left: hover.position.x,
         top: hover.position.y - 10,
@@ -101,26 +101,26 @@ export function TagHoverPreview({ editorContainer }: TagHoverPreviewProps) {
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2">
           <span className="text-base">{iconForKind(kind)}</span>
-          <div className="text-xs font-medium text-[var(--text-primary)] truncate">
+          <div className="text-xs font-medium text-content truncate">
             {`#${preview?.name || hover.name}`}
           </div>
           {kind && (
-            <span className={`px-1.5 py-0.5 text-xs rounded-full border border-[var(--border-color)] text-[var(--text-secondary)]`}>
+            <span className={`px-1.5 py-0.5 text-xs rounded-full border border-edge text-content-secondary`}>
               {kind}
             </span>
           )}
         </div>
-        <div className="text-xs text-[var(--text-muted)]">
+        <div className="text-xs text-content-muted">
           {count} linked document{count === 1 ? '' : 's'}
         </div>
         {topDocs.length > 0 && (
           <ul className="mt-1 space-y-0.5">
             {topDocs.map((d) => (
               <li key={d._id} className="flex items-center justify-between gap-2">
-                <span className="text-xs text-[var(--text-secondary)] truncate" title={d.title}>{d.title}</span>
+                <span className="text-xs text-content-secondary truncate" title={d.title}>{d.title}</span>
                 <button
                   type="button"
-                  className="text-xs px-1.5 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+                  className="text-xs px-1.5 py-0.5 rounded border border-edge bg-surface hover:bg-surface-hover text-content-secondary"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setQuickEditDocId(d._id as unknown as Id<"documents">); }}
                   title="Quick Edit"
                 >

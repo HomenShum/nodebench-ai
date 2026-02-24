@@ -53,7 +53,7 @@ export function PlannerModeToggle({ mode, onChange }: PlannerModeToggleProps) {
 
   const baseClasses = "flex items-center gap-2 px-3 py-2 text-sm ";
   const activeClasses = "bg-[var(--accent-primary)] text-white";
-  const inactiveClasses = "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]";
+  const inactiveClasses = "text-content-secondary hover:text-content hover:bg-surface-hover";
 
   const listClasses = baseClasses + (mode === "list" ? activeClasses : inactiveClasses);
   const kanbanClasses = baseClasses + (mode === "kanban" ? activeClasses : inactiveClasses);
@@ -61,7 +61,7 @@ export function PlannerModeToggle({ mode, onChange }: PlannerModeToggleProps) {
 
   return (
     <div
-      className="inline-flex rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] overflow-hidden"
+      className="inline-flex rounded-lg border border-edge bg-surface overflow-hidden"
       role="tablist"
       aria-label="Planner view selector"
       onKeyDown={handleKeyDown}

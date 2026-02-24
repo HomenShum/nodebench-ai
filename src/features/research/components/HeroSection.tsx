@@ -24,13 +24,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     transition={{ duration: 0.6, ease: "easeOut" }}
                     className="mb-8 flex justify-center"
                 >
-                    <div className="inline-flex items-center gap-3 rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4 py-1.5 text-sm font-medium">
+                    <div className="inline-flex items-center gap-3 rounded-full border border-edge bg-surface px-4 py-1.5 text-sm font-medium">
                         <span className="relative flex h-2 w-2">
                             <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
                         </span>
-                        <span className="text-[color:var(--text-primary)]">{todayFormatted}</span>
+                        <span className="text-content">{todayFormatted}</span>
                         <span className="text-[color:var(--bg-tertiary)]">|</span>
-                        <span className="text-[color:var(--text-primary)] font-bold tracking-wide uppercase text-xs">
+                        <span className="text-content font-bold tracking-wide uppercase text-xs">
                             Daily Brief
                         </span>
                     </div>
@@ -41,11 +41,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
-                    className="mb-6 text-5xl font-bold tracking-tighter text-[color:var(--text-primary)] sm:text-7xl lg:text-8xl"
+                    className="mb-6 text-5xl font-bold tracking-tighter text-content sm:text-7xl lg:text-8xl"
                 >
                     The Morning
                     <br />
-                    <span className="text-[color:var(--text-secondary)]">
+                    <span className="text-content-secondary">
                         Report
                     </span>
                 </motion.h1>
@@ -55,15 +55,15 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                    className="mx-auto mb-10 max-w-2xl text-lg text-[color:var(--text-secondary)] sm:text-xl leading-relaxed font-medium"
+                    className="mx-auto mb-10 max-w-2xl text-lg text-content-secondary sm:text-xl leading-relaxed font-medium"
                 >
                     AI-synthesized briefing on infrastructure, trends, and deep dives.
                     <br className="hidden sm:block" />
-                    <span className="text-[color:var(--text-primary)]">
+                    <span className="text-content">
                         {readTimeMin} min read
                     </span>{" "}
                     covering{" "}
-                    <span className="text-[color:var(--text-primary)]">
+                    <span className="text-content">
                         {sectionCount} stories
                     </span>
                     .

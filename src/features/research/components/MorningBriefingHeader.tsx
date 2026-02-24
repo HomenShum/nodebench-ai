@@ -50,18 +50,18 @@ export function MorningBriefingHeader({
   return (
     <div className={`text-center space-y-2 ${className}`}>
       {/* Badge */}
-      <div className="inline-flex items-center gap-2 px-3 py-1 bg-[color:var(--text-primary)]/5 text-[color:var(--text-primary)] rounded-full text-xs font-medium border border-[color:var(--border-color)]">
+      <div className="inline-flex items-center gap-2 px-3 py-1 bg-content/5 text-content rounded-full text-xs font-medium border border-edge">
         <Sparkles className="w-3 h-3" />
         <span>Intelligence Dashboard</span>
       </div>
 
       {/* Main Greeting - Serif Font for Newspaper Feel */}
-      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-[color:var(--text-primary)]">
+      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-content">
         {greeting}.
       </h1>
 
       {/* Update Status */}
-      <p className="text-base text-[color:var(--text-primary)] font-medium">
+      <p className="text-base text-content font-medium">
         {updateMessage}
       </p>
     </div>

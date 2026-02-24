@@ -109,7 +109,7 @@ export function DecisionTreeKanban({
   return (
     <div className={`space-y-4 font-sans ${className}`}>
       {/* Header Stats */}
-      <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] uppercase tracking-wider border-b border-[var(--border-color)] pb-2">
+      <div className="flex items-center justify-between text-xs text-content-secondary uppercase tracking-wider border-b border-edge pb-2">
         <div className="flex items-center gap-2">
           <PhaseIndicator status={graph.status} />
           <span>{graph.phase}</span>
@@ -130,7 +130,7 @@ export function DecisionTreeKanban({
       </div>
 
       {/* Progress Bar */}
-      <div className="relative h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+      <div className="relative h-1.5 bg-surface-secondary rounded-full overflow-hidden">
         <motion.div
           className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 to-indigo-500"
           initial={{ width: 0 }}
@@ -142,7 +142,7 @@ export function DecisionTreeKanban({
       {/* Sourcing Phase (if any) */}
       {sourcingNodes.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+          <div className="text-xs font-bold text-content-secondary uppercase tracking-wider">
             Sources
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -156,7 +156,7 @@ export function DecisionTreeKanban({
       {/* Candidate Pipeline */}
       {candidateNodes.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
+          <div className="text-xs font-bold text-content-secondary uppercase tracking-wider">
             Deal Flow Pipeline
           </div>
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -218,13 +218,13 @@ function SourceCard({ node }: { node: ReasoningNode }) {
           ? "bg-green-500/5 border-green-500/20"
           : isRunning
           ? "bg-violet-500/5 border-violet-500/20"
-          : "bg-[var(--bg-tertiary)] border-[var(--border-color)]"
+          : "bg-surface-secondary border-edge"
       }`}
     >
       <div className="flex items-center gap-2">
         {isRunning && <Loader2 className="w-3 h-3 motion-safe:animate-spin text-violet-500" />}
         {isComplete && <CheckCircle className="w-3 h-3 text-green-500" />}
-        <span className="font-medium text-[var(--text-primary)] truncate">
+        <span className="font-medium text-content truncate">
           {node.label}
         </span>
       </div>
@@ -251,12 +251,12 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
       exit={{ opacity: 0, x: -10 }}
       className={`relative rounded-lg border transition-colors cursor-pointer ${
         isPruned
-          ? "bg-[var(--bg-tertiary)] border-[var(--border-color)] grayscale"
+          ? "bg-surface-secondary border-edge grayscale"
           : isVerified
           ? "bg-green-500/5 border-green-500/20"
           : isRunning
           ? "bg-violet-500/5 border-violet-500/20"
-          : "bg-[var(--bg-secondary)] border-[var(--border-color)]"
+          : "bg-surface-secondary border-edge"
       }`}
       onClick={onClick}
     >
@@ -270,20 +270,20 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
                   e.stopPropagation();
                   setExpanded(!expanded);
                 }}
-                className="p-0.5 hover:bg-[var(--bg-tertiary)] rounded"
+                className="p-0.5 hover:bg-surface-secondary rounded"
               >
                 {expanded ? (
-                  <ChevronDown className="w-3 h-3 text-[var(--text-secondary)]" />
+                  <ChevronDown className="w-3 h-3 text-content-secondary" />
                 ) : (
-                  <ChevronRight className="w-3 h-3 text-[var(--text-secondary)]" />
+                  <ChevronRight className="w-3 h-3 text-content-secondary" />
                 )}
               </button>
-              <h4 className={`font-bold text-sm ${isPruned ? "text-[var(--text-tertiary)] line-through" : "text-[var(--text-primary)]"}`}>
+              <h4 className={`font-bold text-sm ${isPruned ? "text-[var(--text-tertiary)] line-through" : "text-content"}`}>
                 {data?.companyName || node.label}
               </h4>
             </div>
             {data && (
-              <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
+              <div className="flex items-center gap-2 mt-1 text-xs text-content-secondary">
                 {data.sector && <span>{data.sector}</span>}
                 {data.fundingAmount && (
                   <>
@@ -342,7 +342,7 @@ function CandidateCard({ node, onClick }: { node: ReasoningNode; onClick?: () =>
 function StatusBadge({ status, pruneReason }: { status: NodeStatus; pruneReason?: string }) {
   if (status === "pruned") {
     return (
-      <span className="flex items-center text-xs font-bold text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] px-2 py-1 rounded">
+      <span className="flex items-center text-xs font-bold text-[var(--text-tertiary)] bg-surface-secondary px-2 py-1 rounded">
         <Ban className="w-3 h-3 mr-1" />
         {pruneReason ? pruneReason.slice(0, 20) : "Pruned"}
       </span>
@@ -457,14 +457,14 @@ function SynthesisCard({ node }: { node: ReasoningNode }) {
       className={`rounded-lg border p-4 ${
         isComplete
           ? "bg-gradient-to-br from-green-500/5 to-indigo-500/5 border-green-500/20"
-          : "bg-[var(--bg-secondary)] border-[var(--border-color)]"
+          : "bg-surface-secondary border-edge"
       }`}
     >
       <div className="flex items-center gap-2 mb-3">
-        <div className={`p-1.5 rounded ${isComplete ? "bg-green-500/10" : "bg-[var(--bg-tertiary)]"}`}>
-          <GitMerge className={`w-4 h-4 ${isComplete ? "text-green-600" : "text-[var(--text-secondary)]"}`} />
+        <div className={`p-1.5 rounded ${isComplete ? "bg-green-500/10" : "bg-surface-secondary"}`}>
+          <GitMerge className={`w-4 h-4 ${isComplete ? "text-green-600" : "text-content-secondary"}`} />
         </div>
-        <span className="text-sm font-bold text-[var(--text-primary)]">
+        <span className="text-sm font-bold text-content">
           {isComplete ? "Final Shortlist" : "Synthesizing Results..."}
         </span>
         {node.confidenceScore && (
@@ -479,13 +479,13 @@ function SynthesisCard({ node }: { node: ReasoningNode }) {
       </div>
 
       {node.content && (
-        <div className="text-sm text-[var(--text-primary)] whitespace-pre-wrap">
+        <div className="text-sm text-content whitespace-pre-wrap">
           {node.content}
         </div>
       )}
 
       {!isComplete && (
-        <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+        <div className="flex items-center gap-2 text-sm text-content-secondary">
           <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
           Merging findings from qualified candidates...
         </div>

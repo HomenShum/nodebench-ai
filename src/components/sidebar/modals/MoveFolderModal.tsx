@@ -28,17 +28,17 @@ export function MoveFolderModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-4 shadow-xl">
+            <div className="w-full max-w-sm rounded-lg border border-edge bg-surface p-4 shadow-xl">
                 <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-semibold text-[var(--text-primary)]">Move to folder</div>
-                    <button onClick={onClose} className="p-1 rounded hover:bg-[var(--bg-hover)]">
-                        <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                    <div className="text-sm font-semibold text-content">Move to folder</div>
+                    <button onClick={onClose} className="p-1 rounded hover:bg-surface-hover">
+                        <X className="h-4 w-4 text-content-secondary" />
                     </button>
                 </div>
                 <select
                     value={targetFolderId ?? ""}
                     onChange={(e) => onTargetFolderChange(e.target.value as Id<"folders">)}
-                    className="w-full px-3 py-2 text-sm rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                    className="w-full px-3 py-2 text-sm rounded-md border border-edge bg-surface-secondary text-content"
                 >
                     <option value="">Select a folder</option>
                     {userFolders?.map((f: any) => (
@@ -48,7 +48,7 @@ export function MoveFolderModal({
                 <div className="mt-3 flex justify-end gap-2 text-xs">
                     <button
                         onClick={onClose}
-                        className="px-3 py-1 rounded-md border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                        className="px-3 py-1 rounded-md border border-edge text-content-secondary hover:bg-surface-hover"
                     >
                         Cancel
                     </button>

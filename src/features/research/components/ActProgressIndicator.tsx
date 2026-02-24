@@ -28,19 +28,19 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
 
   return (
     <div
-      className={`rounded-lg border border-[color:var(--border-color)] bg-[#fbfaf2]/90 px-3 py-2 shadow-sm ${className}`}
+      className={`rounded-lg border border-edge bg-[#fbfaf2]/90 px-3 py-2 shadow-sm ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-xs font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
+        <span className="text-xs font-semibold tracking-wide text-content uppercase">
           Research Depth
         </span>
-        <span className="text-xs text-[color:var(--text-secondary)]">
+        <span className="text-xs text-content-secondary">
           {ACTS[safeIndex]?.label ?? "Quick Pulse"}
         </span>
       </div>
       <div className="mt-1">
         {/* Progress bar */}
-        <div className="relative h-1.5 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden">
+        <div className="relative h-1.5 w-full rounded-full bg-surface-secondary overflow-hidden">
           <div
             className="h-full rounded-full bg-gray-900 transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
@@ -61,12 +61,12 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
                   className={`h-1.5 w-1.5 rounded-full ${
                     isActive
                       ? "bg-gray-900"
-                      : "bg-[color:var(--text-secondary)] group-hover:bg-[color:var(--text-primary)]"
+                      : "bg-content-secondary group-hover:bg-content"
                   }`}
                 />
                 <span
                   className={`text-xs font-medium ${
-                    isActive ? "text-[color:var(--text-primary)]" : "text-[color:var(--text-secondary)]"
+                    isActive ? "text-content" : "text-content-secondary"
                   }`}
                 >
                   {act.label}

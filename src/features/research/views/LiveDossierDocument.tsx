@@ -46,13 +46,13 @@ function QuickActionButton({ icon, label, query, onClick }: QuickActionButtonPro
         <button
             type="button"
             onClick={() => onClick(query)}
-            className="group flex items-center gap-3 px-4 py-3 bg-[color:var(--bg-primary)] dark:bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] hover:border-primary/50 hover:bg-primary/5 text-foreground rounded-lg font-medium text-base shadow-sm transition-all duration-200 text-left w-full"
+            className="group flex items-center gap-3 px-4 py-3 bg-surface dark:bg-surface-secondary border border-edge dark:border-edge hover:border-primary/50 hover:bg-primary/5 text-foreground rounded-lg font-medium text-base shadow-sm transition-all duration-200 text-left w-full"
         >
-            <span className="flex-shrink-0 p-2 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-tertiary)] group-hover:bg-primary/10 rounded-lg text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] group-hover:text-primary transition-colors">
+            <span className="flex-shrink-0 p-2 bg-surface-secondary dark:bg-surface-secondary group-hover:bg-primary/10 rounded-lg text-content dark:text-content group-hover:text-primary transition-colors">
                 {icon}
             </span>
             <span className="flex-1">{label}</span>
-            <ChevronRight className="w-4 h-4 text-[color:var(--text-secondary)] group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all" />
+            <ChevronRight className="w-4 h-4 text-content-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all" />
         </button>
     );
 }
@@ -97,7 +97,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     }, [isCompany, isPerson, entityName]);
 
     return (
-        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-[color:var(--bg-secondary)] to-purple-50/30 dark:from-[color:var(--bg-secondary)]/50 dark:to-purple-900/10 rounded-lg border border-[color:var(--border-color)] dark:border-[color:var(--border-color)]">
+        <div className="mt-14 mb-10 p-6 bg-gradient-to-br from-surface-secondary to-purple-50/30 dark:from-surface-secondary/50 dark:to-purple-900/10 rounded-lg border border-edge dark:border-edge">
             <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
                     <Sparkles className="w-5 h-5 text-primary" />
@@ -106,7 +106,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
                     Suggested Next Steps
                 </h3>
             </div>
-            <p className="text-sm text-[color:var(--text-primary)] dark:text-[color:var(--text-secondary)] mb-6 flex items-center gap-2 flex-wrap">
+            <p className="text-sm text-content dark:text-content-secondary mb-6 flex items-center gap-2 flex-wrap">
                 <span>Run a focused follow-up and append results to this live report.</span>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 dark:bg-surface-secondary text-white dark:text-content rounded-full text-xs font-medium">
                     <span className="h-1.5 w-1.5 rounded-full bg-surface"></span>
@@ -495,67 +495,67 @@ function LiveDossierDocumentInner({
                     {/* Masthead skeleton - matches newspaper style */}
                     <div className="mb-10">
                         {/* Top rules */}
-                        <div className="h-1 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] mb-3 rounded" />
-                        <div className="h-0.5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] mb-4 rounded" />
+                        <div className="h-1 bg-surface-secondary dark:bg-surface-secondary mb-3 rounded" />
+                        <div className="h-0.5 bg-surface-secondary dark:bg-surface-secondary mb-4 rounded" />
 
                         {/* Edition & Date row */}
                         <div className="flex justify-between items-center mb-5">
-                            <div className="h-3 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-32" />
-                            <div className="h-3 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded w-40" />
+                            <div className="h-3 bg-surface-secondary dark:bg-surface-secondary rounded w-32" />
+                            <div className="h-3 bg-surface-secondary dark:bg-surface-secondary rounded w-40" />
                         </div>
 
                         {/* Title skeleton - centered, large */}
                         <div className="flex justify-center mb-4">
-                            <div className="h-12 sm:h-14 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded-lg w-3/4 sm:w-2/3" />
+                            <div className="h-12 sm:h-14 bg-surface-secondary dark:bg-surface-secondary rounded-lg w-3/4 sm:w-2/3" />
                         </div>
 
                         {/* Decorative divider */}
                         <div className="flex items-center gap-4 my-5">
-                            <div className="flex-1 h-px bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)]" />
-                            <div className="w-3 h-3 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded-full" />
-                            <div className="flex-1 h-px bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)]" />
+                            <div className="flex-1 h-px bg-surface-secondary dark:bg-surface-secondary" />
+                            <div className="w-3 h-3 bg-surface-secondary dark:bg-surface-secondary rounded-full" />
+                            <div className="flex-1 h-px bg-surface-secondary dark:bg-surface-secondary" />
                         </div>
 
                         {/* Entity name skeleton */}
                         <div className="flex flex-col items-center gap-2 mb-6">
-                            <div className="h-6 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-48" />
-                            <div className="h-4 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded w-24" />
+                            <div className="h-6 bg-surface-secondary dark:bg-surface-secondary rounded w-48" />
+                            <div className="h-4 bg-surface-secondary dark:bg-surface-secondary rounded w-24" />
                         </div>
 
                         {/* Bottom rules */}
-                        <div className="h-0.5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] mb-1 rounded" />
-                        <div className="h-1 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded" />
+                        <div className="h-0.5 bg-surface-secondary dark:bg-surface-secondary mb-1 rounded" />
+                        <div className="h-1 bg-surface-secondary dark:bg-surface-secondary rounded" />
                     </div>
 
                     {/* Content paragraphs skeleton */}
                     <div className="space-y-6">
                         {/* Paragraph 1 */}
                         <div className="space-y-3">
-                            <div className="h-5 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-full" />
-                            <div className="h-5 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-11/12" />
-                            <div className="h-5 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-10/12" />
-                            <div className="h-5 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-full" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-full" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-11/12" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-10/12" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-full" />
                         </div>
 
                         {/* Paragraph 2 */}
                         <div className="space-y-3">
-                            <div className="h-5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded w-full" />
-                            <div className="h-5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded w-9/12" />
-                            <div className="h-5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded w-11/12" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-full" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-9/12" />
+                            <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-11/12" />
                         </div>
                     </div>
 
                     {/* Source cards skeleton */}
-                    <div className="mt-10 pt-8 border-t border-[color:var(--border-color)] dark:border-[color:var(--border-color)]">
-                        <div className="h-5 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-40 mb-4" />
+                    <div className="mt-10 pt-8 border-t border-edge dark:border-edge">
+                        <div className="h-5 bg-surface-secondary dark:bg-surface-secondary rounded w-40 mb-4" />
                         <div className="space-y-3">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center gap-3 p-4 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-lg">
-                                    <div className="w-8 h-8 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded-lg shrink-0" />
-                                    <div className="w-5 h-5 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded shrink-0" />
+                                <div key={i} className="flex items-center gap-3 p-4 border border-edge dark:border-edge rounded-lg">
+                                    <div className="w-8 h-8 bg-surface-secondary dark:bg-surface-secondary rounded-lg shrink-0" />
+                                    <div className="w-5 h-5 bg-surface-secondary dark:bg-surface-secondary rounded shrink-0" />
                                     <div className="flex-1 space-y-2">
-                                        <div className="h-4 bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] rounded w-3/4" />
-                                        <div className="h-3 bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded w-1/2" />
+                                        <div className="h-4 bg-surface-secondary dark:bg-surface-secondary rounded w-3/4" />
+                                        <div className="h-3 bg-surface-secondary dark:bg-surface-secondary rounded w-1/2" />
                                     </div>
                                 </div>
                             ))}
@@ -610,8 +610,8 @@ function LiveDossierDocumentInner({
                 ═══════════════════════════════════════════════════════════════ */}
                 <header className="mb-10">
                     {/* Top decorative rule */}
-                    <div className="h-1 bg-[color:var(--text-primary)] dark:bg-[color:var(--bg-secondary)] mb-3" />
-                    <div className="h-0.5 bg-[color:var(--text-secondary)] dark:bg-[color:var(--bg-tertiary)] mb-4" />
+                    <div className="h-1 bg-content dark:bg-surface-secondary mb-3" />
+                    <div className="h-0.5 bg-content-secondary dark:bg-surface-secondary mb-4" />
 
                     {/* Edition & Date Row */}
                     <div className="flex justify-between items-center text-xs sm:text-sm mb-5">
@@ -638,9 +638,9 @@ function LiveDossierDocumentInner({
 
                     {/* Decorative divider */}
                     <div className="flex items-center gap-4 my-5">
-                        <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-[color:var(--bg-tertiary)]" />
-                        <span className="text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]">✦</span>
-                        <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-[color:var(--bg-tertiary)]" />
+                        <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-surface-secondary" />
+                        <span className="text-content-secondary dark:text-content-secondary">✦</span>
+                        <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-surface-secondary" />
                     </div>
 
                     {/* Entity Name as Subhead */}
@@ -652,7 +652,7 @@ function LiveDossierDocumentInner({
                             <button
                                 type="button"
                                 onClick={() => setIsDrawerOpen(true)}
-                                className="mt-2 inline-flex items-center gap-1.5 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)] hover:text-primary transition-colors text-sm font-medium"
+                                className="mt-2 inline-flex items-center gap-1.5 text-content-secondary dark:text-content-secondary hover:text-primary transition-colors text-sm font-medium"
                             >
                                 <Link2 className="w-3.5 h-3.5" />
                                 {allArtifacts.length} sources cited
@@ -661,8 +661,8 @@ function LiveDossierDocumentInner({
                     </div>
 
                     {/* Bottom double border */}
-                    <div className="h-0.5 bg-[color:var(--text-secondary)] dark:bg-[color:var(--bg-tertiary)] mb-1" />
-                    <div className="h-1 bg-[color:var(--text-primary)] dark:bg-[color:var(--bg-secondary)]" />
+                    <div className="h-0.5 bg-content-secondary dark:bg-surface-secondary mb-1" />
+                    <div className="h-1 bg-content dark:bg-surface-secondary" />
                 </header>
 
                 {(isAppending || isStreaming) && (
@@ -700,12 +700,12 @@ function LiveDossierDocumentInner({
                         prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
                         prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2
                         prose-ul:my-4 prose-ul:space-y-1.5 prose-ol:my-4 prose-ol:space-y-1.5 prose-li:my-0 prose-li:leading-relaxed
-                        prose-blockquote:border-l-4 prose-blockquote:border-purple-400 dark:prose-blockquote:border-purple-600 prose-blockquote:bg-purple-50/50 dark:prose-blockquote:bg-purple-900/10 prose-blockquote:pl-5 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:rounded-r-lg prose-blockquote:text-[color:var(--text-primary)] dark:prose-blockquote:text-[color:var(--text-primary)] prose-blockquote:not-italic
+                        prose-blockquote:border-l-4 prose-blockquote:border-purple-400 dark:prose-blockquote:border-purple-600 prose-blockquote:bg-purple-50/50 dark:prose-blockquote:bg-purple-900/10 prose-blockquote:pl-5 prose-blockquote:pr-4 prose-blockquote:py-3 prose-blockquote:rounded-r-lg prose-blockquote:text-content dark:prose-blockquote:text-content prose-blockquote:not-italic
                         prose-hr:my-10 prose-hr:border-border/50
-                        prose-code:bg-[color:var(--bg-secondary)] dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
+                        prose-code:bg-surface-secondary dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-medium prose-code:before:content-none prose-code:after:content-none
                         prose-table:text-base
                         prose-strong:text-foreground prose-strong:font-semibold
-                        prose-em:text-[color:var(--text-primary)] dark:prose-em:text-[color:var(--text-secondary)]
+                        prose-em:text-content dark:prose-em:text-content-secondary
                         [&_.nb-cite]:align-super [&_.nb-cite]:text-[0.65em] [&_.nb-cite]:font-semibold
                         [&_.nb-cite-link]:text-primary [&_.nb-cite-link]:no-underline [&_.nb-cite-link:hover]:underline"
                     onClick={handleCitationClick}
@@ -726,9 +726,9 @@ function LiveDossierDocumentInner({
 
                 {/* Sources Section - Improved visual design */}
                 {hasContent && sourcesList.length > 0 && (
-                    <section id="sources" className="mt-12 pt-8 border-t border-[color:var(--border-color)] dark:border-[color:var(--border-color)] scroll-mt-24">
+                    <section id="sources" className="mt-12 pt-8 border-t border-edge dark:border-edge scroll-mt-24">
                         <h3 className="text-base font-bold text-foreground mb-5 flex items-center gap-2">
-                            <Link2 className="w-4 h-4 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]" />
+                            <Link2 className="w-4 h-4 text-content-secondary dark:text-content-secondary" />
                             Sources & References
                         </h3>
                         <div className="grid gap-2.5">
@@ -747,22 +747,22 @@ function LiveDossierDocumentInner({
                                         type="button"
                                         key={source.artifactId}
                                         id={`source-${source.num}`}
-                                        className="flex items-center gap-3 p-4 text-left rounded-lg border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] hover:border-primary/40 hover:bg-primary/5 transition-all group"
+                                        className="flex items-center gap-3 p-4 text-left rounded-lg border border-edge dark:border-edge hover:border-primary/40 hover:bg-primary/5 transition-all group"
                                         onClick={() => source.url && window.open(source.url, '_blank')}
                                     >
-                                        <span className="w-7 h-7 flex items-center justify-center bg-[color:var(--bg-secondary)] dark:bg-[color:var(--bg-secondary)] rounded-lg text-xs font-bold text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] shrink-0">
+                                        <span className="w-7 h-7 flex items-center justify-center bg-surface-secondary dark:bg-surface-secondary rounded-lg text-xs font-bold text-content dark:text-content shrink-0">
                                             {source.num}
                                         </span>
-                                        <SourceIcon className="w-4 h-4 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)] shrink-0 group-hover:text-primary transition-colors" />
+                                        <SourceIcon className="w-4 h-4 text-content-secondary dark:text-content-secondary shrink-0 group-hover:text-primary transition-colors" />
                                         <div className="flex-1 min-w-0">
                                             <div className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                                                 {source.title}
                                             </div>
-                                            <div className="text-xs text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)] truncate">
+                                            <div className="text-xs text-content-secondary dark:text-content-secondary truncate">
                                                 {source.domain}
                                             </div>
                                         </div>
-                                        <ExternalLink className="w-3.5 h-3.5 text-[color:var(--text-secondary)] dark:text-[color:var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                        <ExternalLink className="w-3.5 h-3.5 text-content-secondary dark:text-content-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                     </button>
                                 );
                             })}
@@ -789,7 +789,7 @@ function LiveDossierDocumentInner({
 
                 {/* Deep Agent Progress - Task Plan Panel with Metrics */}
                 {streamingThread?.workflowProgress && (
-                    <div className="mb-12 border-t-2 border-[color:var(--border-color)] pt-8 animate-in fade-in duration-500">
+                    <div className="mb-12 border-t-2 border-edge pt-8 animate-in fade-in duration-500">
                         <TaskPlanPanel
                             steps={workflowProgressToTaskSteps(streamingThread.workflowProgress)}
                             metrics={streamingThread.workflowProgress.metrics as WorkflowMetrics}
@@ -831,8 +831,8 @@ function LiveDossierDocumentInner({
                 <div ref={bottomRef} />
 
                 {/* Footer */}
-                <footer className="mt-12 pt-4 border-t border-[color:var(--border-color)] dark:border-[color:var(--border-color)] text-center">
-                    <p className="text-sm text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]">
+                <footer className="mt-12 pt-4 border-t border-edge dark:border-edge text-center">
+                    <p className="text-sm text-content-secondary dark:text-content-secondary">
                         AI Assistant • {new Date().toLocaleTimeString()}
                     </p>
                 </footer>
@@ -927,12 +927,12 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
     if (totalCount === 0) return null;
 
     return (
-        <section className="mt-8 mb-6 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-lg overflow-hidden bg-[color:var(--bg-secondary)]/50 dark:bg-[color:var(--bg-secondary)]/30">
+        <section className="mt-8 mb-6 border border-edge dark:border-edge rounded-lg overflow-hidden bg-surface-secondary/50 dark:bg-surface-secondary/30">
             {/* Header - Always visible */}
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[color:var(--bg-hover)]/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-hover/50 dark:hover:bg-gray-800/50 transition-colors text-left"
                 aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
@@ -941,7 +941,7 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
                     </div>
                     <div>
                         <h3 className="text-sm font-semibold text-foreground">Media & Evidence</h3>
-                        <p className="text-xs text-[color:var(--text-primary)] dark:text-[color:var(--text-secondary)]">
+                        <p className="text-xs text-content dark:text-content-secondary">
                             {counts.videos > 0 && `${counts.videos} videos`}
                             {counts.videos > 0 && counts.images > 0 && ' · '}
                             {counts.images > 0 && `${counts.images} images`}
@@ -953,20 +953,20 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-content dark:text-content bg-surface-secondary dark:bg-surface-secondary px-2.5 py-1 rounded-full">
                         {totalCount}
                     </span>
                     {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]" />
+                        <ChevronDown className="w-4 h-4 text-content-secondary dark:text-content-secondary" />
                     ) : (
-                        <ChevronRight className="w-4 h-4 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]" />
+                        <ChevronRight className="w-4 h-4 text-content-secondary dark:text-content-secondary" />
                     )}
                 </div>
             </button>
 
             {/* Content - Collapsible */}
             {isExpanded && (
-                <div className="px-4 pb-4 pt-2 border-t border-[color:var(--border-color)] dark:border-[color:var(--border-color)] animate-in slide-in-from-top-2 duration-200">
+                <div className="px-4 pb-4 pt-2 border-t border-edge dark:border-edge animate-in slide-in-from-top-2 duration-200">
                     <RichMediaSection media={media} showCitations />
                 </div>
             )}
@@ -989,12 +989,12 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
     const updatedCount = documents.filter(d => d.action === 'updated').length;
 
     return (
-        <section className="mt-6 mb-6 border border-[color:var(--border-color)] dark:border-[color:var(--border-color)] rounded-lg overflow-hidden bg-[color:var(--bg-secondary)]/50 dark:bg-[color:var(--bg-secondary)]/30">
+        <section className="mt-6 mb-6 border border-edge dark:border-edge rounded-lg overflow-hidden bg-surface-secondary/50 dark:bg-surface-secondary/30">
             {/* Header - Always visible */}
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-[color:var(--bg-hover)]/50 dark:hover:bg-gray-800/50 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-hover/50 dark:hover:bg-gray-800/50 transition-colors text-left"
                 aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-3">
@@ -1003,7 +1003,7 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
                     </div>
                     <div>
                         <h3 className="text-sm font-semibold text-foreground">Generated Documents</h3>
-                        <p className="text-xs text-[color:var(--text-primary)] dark:text-[color:var(--text-secondary)]">
+                        <p className="text-xs text-content dark:text-content-secondary">
                             {createdCount > 0 && `${createdCount} created`}
                             {createdCount > 0 && updatedCount > 0 && ' · '}
                             {updatedCount > 0 && `${updatedCount} updated`}
@@ -1011,20 +1011,20 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-[color:var(--text-primary)] dark:text-[color:var(--text-primary)] bg-[color:var(--bg-tertiary)] dark:bg-[color:var(--bg-tertiary)] px-2.5 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-content dark:text-content bg-surface-secondary dark:bg-surface-secondary px-2.5 py-1 rounded-full">
                         {documents.length}
                     </span>
                     {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]" />
+                        <ChevronDown className="w-4 h-4 text-content-secondary dark:text-content-secondary" />
                     ) : (
-                        <ChevronRight className="w-4 h-4 text-[color:var(--text-secondary)] dark:text-[color:var(--text-secondary)]" />
+                        <ChevronRight className="w-4 h-4 text-content-secondary dark:text-content-secondary" />
                     )}
                 </div>
             </button>
 
             {/* Content - Collapsible */}
             {isExpanded && (
-                <div className="px-4 pb-4 pt-2 border-t border-[color:var(--border-color)] dark:border-[color:var(--border-color)] animate-in slide-in-from-top-2 duration-200">
+                <div className="px-4 pb-4 pt-2 border-t border-edge dark:border-edge animate-in slide-in-from-top-2 duration-200">
                     <DocumentActionGrid
                         documents={documents}
                         onDocumentSelect={onDocumentSelect}
@@ -1102,7 +1102,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
     };
 
     const statusColors = {
-        pending: "bg-[color:var(--text-secondary)]/20 text-[color:var(--text-secondary)] border-[color:var(--text-secondary)]/30",
+        pending: "bg-content-secondary/20 text-content-secondary border-content-secondary/30",
         running: "bg-blue-500/20 text-blue-400 border-blue-500/30",
         complete: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
         error: "bg-red-500/20 text-red-400 border-red-500/30",
@@ -1121,14 +1121,14 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 // Tool Chip Component
 function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
     const statusIcons = {
-        pending: <Loader2 className="w-3 h-3 text-[color:var(--text-secondary)]" />,
+        pending: <Loader2 className="w-3 h-3 text-content-secondary" />,
         running: <Loader2 className="w-3 h-3 text-blue-400 motion-safe:animate-spin" />,
         complete: <CheckCircle2 className="w-3 h-3 text-indigo-400" />,
         error: <AlertCircle className="w-3 h-3 text-red-400" />,
     };
 
     const statusBg = {
-        pending: "bg-[color:var(--text-secondary)]/10 border-[color:var(--text-secondary)]/20",
+        pending: "bg-content-secondary/10 border-content-secondary/20",
         running: "bg-blue-500/10 border-blue-500/20",
         complete: "bg-indigo-500/10 border-indigo-500/20",
         error: "bg-red-500/10 border-red-500/20",

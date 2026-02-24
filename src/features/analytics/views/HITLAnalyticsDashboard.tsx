@@ -31,10 +31,10 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
   const colorClasses = {
     green: 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
     red: 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
-    blue: 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    blue: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/25',
     yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     gray: 'bg-surface-secondary dark:bg-gray-800/30 text-content-secondary border-edge',
-    purple: 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800',
+    purple: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/25',
   };
 
   // Create accessible description
@@ -90,7 +90,7 @@ function RequestTypeBar({ requestType, avgReviewTimeSeconds, approvalRate, count
       </div>
       <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-500"
+          className="h-full bg-[var(--accent-primary)] rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -117,7 +117,7 @@ function ModifiedFieldBar({ field, count, maxCount }: ModifiedFieldBarProps) {
       </div>
       <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-500"
+          className="h-full bg-[var(--accent-primary)] rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -196,12 +196,13 @@ export default function HITLAnalyticsDashboard() {
   const isLoading = approvalData === undefined || reviewTimeByType === undefined;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-content flex items-center gap-2">
+            <h1 className="type-page-title text-content flex items-center gap-2">
               <Activity size={32} />
               Review Queue
             </h1>
@@ -234,7 +235,7 @@ export default function HITLAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-surface text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -308,7 +309,7 @@ export default function HITLAnalyticsDashboard() {
 
             {/* Pending notice when total > 0 but no decisions made yet */}
             {metrics.approvalRate === 0 && metrics.rejectionRate === 0 && metrics.modificationRate === 0 && metrics.total > 0 && (
-              <p className="text-xs text-center text-[color:var(--text-muted)] py-1">
+              <p className="text-xs text-center text-content-muted py-1">
                 Rates populate once reviews are completed — {metrics.total} {metrics.total === 1 ? 'review' : 'reviews'} pending.
               </p>
             )}
@@ -441,14 +442,14 @@ export default function HITLAnalyticsDashboard() {
 
             {/* Insights */}
             {metrics.total > 10 && (
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/25 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <Lightbulb className="text-blue-600 dark:text-blue-400 mt-0.5" size={20} />
+                  <Lightbulb className="text-[var(--accent-primary)] mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                    <h3 className="font-semibold text-[var(--accent-primary)] mb-2">
                       Automation Opportunities
                     </h3>
-                    <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                    <ul className="text-sm text-content-secondary space-y-2">
                       {metrics.approvalRate > 0.8 && (
                         <li className="flex items-start gap-2">
                           <span className="text-green-600 font-bold">✓</span>
@@ -510,6 +511,7 @@ export default function HITLAnalyticsDashboard() {
 
           </>
         )}
+        </div>
       </div>
     </div>
   );

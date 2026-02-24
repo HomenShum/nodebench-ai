@@ -167,28 +167,28 @@ export function SpreadsheetSheetView({
   };
 
   return (
-    <div className="h-full flex flex-col bg-[var(--bg-primary)]">
-      <div className="h-14 border-b border-[var(--border-color)] bg-[var(--bg-primary)] px-4 flex items-center gap-3">
+    <div className="h-full flex flex-col bg-surface">
+      <div className="h-14 border-b border-edge bg-surface px-4 flex items-center gap-3">
         <button
           type="button"
-          className="p-2 rounded-md hover:bg-[var(--bg-hover)]"
+          className="p-2 rounded-md hover:bg-surface-hover"
           onClick={onBack}
           title="Back"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
+          <div className="text-sm font-semibold text-content truncate">
             {sheet?.name || "Spreadsheet"}
           </div>
-          <div className="text-xs text-[var(--text-secondary)] truncate">
+          <div className="text-xs text-content-secondary truncate">
             {((sheet as any)?.dcfSessionId ? "Linked to DCF session" : "Unlinked spreadsheet")}
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-            className="px-3 py-1.5 text-xs rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+            className="px-3 py-1.5 text-xs rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover"
             onClick={() => {
               openWithContext({
                 contextTitle: sheet?.name || "Spreadsheet",
@@ -201,7 +201,7 @@ export function SpreadsheetSheetView({
           </button>
           <button
             type="button"
-            className="p-2 rounded-md hover:bg-[var(--bg-hover)]"
+            className="p-2 rounded-md hover:bg-surface-hover"
             onClick={() => {
               toast.message("Refreshed");
             }}
@@ -214,14 +214,14 @@ export function SpreadsheetSheetView({
 
       <div className="flex-1 overflow-auto p-4">
         <div className="max-w-5xl mx-auto">
-          <div className="overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
+          <div className="overflow-auto border border-edge rounded-md bg-surface">
             <Spreadsheet
               data={data as any}
               DataEditor={MultiLineDataEditor}
               onChange={handleChange}
             />
           </div>
-          <div className="text-xs text-[var(--text-secondary)] mt-3">
+          <div className="text-xs text-content-secondary mt-3">
             {((sheet as any)?.dcfSessionId
               ? "Editable inputs are in column B (Value). Outputs auto-refresh after recalculation."
               : "This sheet is not linked to a DCF session.")}

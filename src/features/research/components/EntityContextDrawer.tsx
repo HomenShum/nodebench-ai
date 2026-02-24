@@ -636,7 +636,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                         </div>
                       </div>
                       {/* Deep Dive Repo Panel */}
-                      <div className="mt-3 pt-2 border-t border-gray-200/50">
+                      <div className="mt-3 pt-2 border-t border-edge/50">
                         <RepoStatsPanel
                           repoUrl={insight.technicalSpecs.repoStats.url || "https://github.com/example/repo"}
                           initialData={insight.technicalSpecs}

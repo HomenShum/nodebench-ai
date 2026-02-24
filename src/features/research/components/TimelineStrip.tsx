@@ -193,19 +193,19 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
     <div
       className={`
         ${sticky ? "sticky top-0 z-40" : ""}
-        bg-[color:var(--bg-primary)]/95 backdrop-blur-sm border-b border-[color:var(--border-color)] shadow-sm
+        bg-surface/95 backdrop-blur-sm border-b border-edge shadow-sm
         ${className}
       `}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="max-w-6xl mx-auto px-4 py-3">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4 text-[color:var(--text-secondary)]" />
-            <span className="text-xs font-semibold text-[color:var(--text-secondary)] tracking-wider">
+            <Clock className="w-4 h-4 text-content-secondary" />
+            <span className="text-xs font-semibold text-content-secondary tracking-wider">
               Timeline
             </span>
-            <span className="text-xs text-[color:var(--text-secondary)] tracking-wider hidden sm:inline">
+            <span className="text-xs text-content-secondary tracking-wider hidden sm:inline">
               {activePhaseFilter === "all" ? "Showing all phases" : `Filtered: ${activePhaseFilter}`}
             </span>
           </div>
@@ -223,7 +223,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
                   aria-pressed={isActiveFilter}
                   title={`Filter to ${phase} events`}
                   className={`flex items-center gap-1 px-2 py-1 rounded-full border transition-colors ${
-                    isActiveFilter ? "border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]" : "border-transparent hover:border-[color:var(--border-color)]"
+                    isActiveFilter ? "border-edge bg-surface-secondary" : "border-transparent hover:border-edge"
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${colors.dot}`} />
@@ -236,7 +236,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               <button
                 type="button"
                 onClick={() => setPhaseFilter("all")}
-                className="text-xs text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] uppercase tracking-wider"
+                className="text-xs text-content-secondary hover:text-content uppercase tracking-wider"
                 title="Show all phases"
               >
                 Reset
@@ -246,7 +246,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
         </div>
 
         {/* Progress Bar */}
-        <div className="relative h-1.5 bg-[color:var(--bg-secondary)] rounded-full mb-3 overflow-hidden">
+        <div className="relative h-1.5 bg-surface-secondary rounded-full mb-3 overflow-hidden">
           {/* Phase segments */}
           <div className="absolute inset-0 flex">
             <div
@@ -284,7 +284,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           <button
             type="button"
             onClick={() => scroll("left")}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-[color:var(--bg-hover)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-surface-hover text-content-secondary hover:text-content transition-colors"
             aria-label="Scroll left"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -307,7 +307,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
                       onClick={onEventClick}
                     />
                   ))}
-                  <div className="w-px h-6 bg-[color:var(--bg-tertiary)] mx-2" />
+                  <div className="w-px h-6 bg-surface-secondary mx-2" />
                 </div>
               )}
 
@@ -322,7 +322,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
                       onClick={onEventClick}
                     />
                   ))}
-                  <div className="w-px h-6 bg-[color:var(--bg-tertiary)] mx-2" />
+                  <div className="w-px h-6 bg-surface-secondary mx-2" />
                 </div>
               )}
 
@@ -346,7 +346,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           <button
             type="button"
             onClick={() => scroll("right")}
-            className="flex-shrink-0 p-1 rounded-full hover:bg-[color:var(--bg-hover)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
+            className="flex-shrink-0 p-1 rounded-full hover:bg-surface-hover text-content-secondary hover:text-content transition-colors"
             aria-label="Scroll right"
           >
             <ChevronRight className="w-4 h-4" />

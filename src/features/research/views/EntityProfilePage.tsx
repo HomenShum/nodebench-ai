@@ -145,10 +145,10 @@ const getEntityColors = (type: EntityType) => {
       };
     default:
       return {
-        bg: "bg-[color:var(--bg-secondary)]",
-        text: "text-[color:var(--text-primary)]",
-        border: "border-[color:var(--border-color)]",
-        icon: "text-[color:var(--text-secondary)]",
+        bg: "bg-surface-secondary",
+        text: "text-content",
+        border: "border-edge",
+        icon: "text-content-secondary",
         accent: "gray",
       };
   }
@@ -208,7 +208,7 @@ const StatCard: React.FC<{
         {label}
       </span>
     </div>
-    <div className="text-xl font-semibold text-[color:var(--text-primary)]">{value}</div>
+    <div className="text-xl font-semibold text-content">{value}</div>
     {subValue && <div className="text-xs text-content-secondary mt-1">{subValue}</div>}
   </div>
 );
@@ -322,7 +322,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">
                 Topic Profile
               </p>
-              <h1 className="text-xl font-bold text-[color:var(--text-primary)]">
+              <h1 className="text-xl font-bold text-content">
                 {decodeURIComponent(entityName)}
               </h1>
             </div>
@@ -361,7 +361,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3 flex-wrap">
-                    <h2 className="text-3xl font-bold text-[color:var(--text-primary)]">
+                    <h2 className="text-3xl font-bold text-content">
                       {decodeURIComponent(entityName)}
                     </h2>
                     <span
@@ -375,7 +375,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                             ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400"
                             : crm.dataQuality === "partial"
                               ? "bg-yellow-100 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400"
-                              : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                              : "bg-surface-secondary text-content"
                           }`}
                       >
                         {crm.dataQuality}
@@ -384,7 +384,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   </div>
 
                   {entityContext.summary ? (
-                    <p className="text-[color:var(--text-primary)] leading-relaxed text-lg">
+                    <p className="text-content leading-relaxed text-lg">
                       {entityContext.summary}
                     </p>
                   ) : (
@@ -467,7 +467,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {entityContext.keyFacts.map((fact: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-3">
                       <CheckCircle className={`mt-0.5 w-4 h-4 flex-shrink-0 ${colors.icon}`} />
-                      <span className="text-[color:var(--text-primary)]">{fact}</span>
+                      <span className="text-content">{fact}</span>
                     </li>
                   ))}
                 </ul>
@@ -487,13 +487,13 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
                         Known For
                       </p>
-                      <p className="text-[color:var(--text-primary)]">{adaptiveProfile.executiveSummary.whatTheyreKnownFor}</p>
+                      <p className="text-content">{adaptiveProfile.executiveSummary.whatTheyreKnownFor}</p>
                     </div>
                     <div className="p-4 bg-surface-secondary rounded-lg">
                       <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
                         Current Focus
                       </p>
-                      <p className="text-[color:var(--text-primary)]">{adaptiveProfile.executiveSummary.currentFocus}</p>
+                      <p className="text-content">{adaptiveProfile.executiveSummary.currentFocus}</p>
                     </div>
                   </div>
                   {adaptiveProfile.executiveSummary.keyInsight && (
@@ -528,12 +528,12 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                               ? "bg-indigo-100 text-content-secondary"
                               : event.significance === "medium"
                                 ? "bg-yellow-100 text-yellow-700"
-                                : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                                : "bg-surface-secondary text-content"
                             }`}>
                             {event.category}
                           </span>
                         </div>
-                        <p className="font-medium text-[color:var(--text-primary)]">{event.title}</p>
+                        <p className="font-medium text-content">{event.title}</p>
                         {event.description && (
                           <p className="text-sm text-content-secondary mt-1">{event.description}</p>
                         )}
@@ -624,7 +624,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                             }`} />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-[color:var(--text-primary)]">{rel.entityName}</p>
+                          <p className="font-medium text-content">{rel.entityName}</p>
                           <p className="text-xs text-content-secondary">
                             {rel.relationshipType} ({rel.entityType})
                           </p>
@@ -649,7 +649,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                     icon={<Sparkles className="w-4 h-4" />}
                     defaultOpen={section.priority <= 2}
                   >
-                    <div className="text-[color:var(--text-primary)]">
+                    <div className="text-content">
                       {section.content?.type === "narrative" && section.content.data?.text && (
                         <p className="leading-relaxed">{section.content.data.text}</p>
                       )}
@@ -786,7 +786,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                               <User className="w-5 h-5 text-indigo-500" />
                             </div>
                             <div>
-                              <p className="font-medium text-[color:var(--text-primary)]">{person.name}</p>
+                              <p className="font-medium text-content">{person.name}</p>
                               <p className="text-xs text-content-secondary">{person.title}</p>
                             </div>
                           </div>
@@ -847,7 +847,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                           <Circle className="w-2 h-2 text-gray-300 fill-current" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-[color:var(--text-primary)]">{item.headline || item.title}</p>
+                          <p className="text-content">{item.headline || item.title}</p>
                           <div className="flex items-center gap-2 mt-1 text-xs text-content-secondary">
                             {item.date && <span>{item.date}</span>}
                             {item.source && (
@@ -878,7 +878,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                           ? "bg-green-100 text-green-700"
                           : crm.fdaApprovalStatus.toLowerCase().includes("pending")
                             ? "bg-yellow-100 text-yellow-700"
-                            : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                            : "bg-surface-secondary text-content"
                         }`}
                     >
                       {crm.fdaApprovalStatus}
@@ -907,7 +907,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-1">
                         {persona.replace(/_/g, " ")}
                       </p>
-                      <p className="text-sm text-[color:var(--text-primary)]">{hook}</p>
+                      <p className="text-sm text-content">{hook}</p>
                     </div>
                   ))}
                 </div>
@@ -933,7 +933,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                     >
                       <ExternalLink className="w-4 h-4 text-content-muted mt-0.5 flex-shrink-0 group-hover:text-indigo-500" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[color:var(--text-primary)] group-hover:text-content-secondary transition-colors">
+                        <p className="text-content group-hover:text-content-secondary transition-colors">
                           {source.name}
                         </p>
                         {source.snippet && (
@@ -948,7 +948,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                               ? "bg-green-100 text-green-700"
                               : source.credibility === "medium"
                                 ? "bg-yellow-100 text-yellow-700"
-                                : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]"
+                                : "bg-surface-secondary text-content"
                             }`}
                         >
                           {source.credibility}
@@ -1007,7 +1007,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
           /* No Data State */
           <div className="bg-surface rounded-lg border border-edge p-12 text-center">
             <Sparkles className="w-16 h-16 text-content-muted mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-[color:var(--text-primary)] mb-3">
+            <h3 className="text-2xl font-bold text-content mb-3">
               Not Yet Researched
             </h3>
             <p className="text-content-secondary mb-8 max-w-md mx-auto">

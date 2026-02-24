@@ -94,7 +94,7 @@ export const priorityClasses = (p?: string) => {
     case "urgent":
       return "bg-red-500/10 text-red-700 border-red-400/30";
     default:
-      return "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]";
+      return "bg-surface text-content-secondary border-edge";
   }
 };
 

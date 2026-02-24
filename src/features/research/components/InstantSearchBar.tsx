@@ -143,14 +143,14 @@ export function InstantSearchBar({
 
       {/* Main Input Container - refined floating command bar */}
       <div className={cn(
-        "relative flex items-center bg-[color:var(--bg-primary)] transition-all duration-200",
+        "relative flex items-center bg-surface transition-all duration-200",
         floating
-          ? "shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[color:var(--border-color)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-[color:var(--border-color)]"
-          : "shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-[color:var(--border-color)]",
+          ? "shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-edge hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:border-edge"
+          : "shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-edge",
         showDropdown ? "rounded-t-2xl rounded-b-none border-b-transparent shadow-lg ring-1 ring-[color:var(--border-color)]" : "rounded-lg",
         isFocused && !showDropdown && "ring-1 ring-[color:var(--border-color)] shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
       )}>
-        <div className="absolute left-4 text-[color:var(--text-secondary)] pointer-events-none">
+        <div className="absolute left-4 text-content-secondary pointer-events-none">
           <Search className="w-5 h-5" />
         </div>
 
@@ -165,7 +165,7 @@ export function InstantSearchBar({
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          className="w-full h-14 bg-transparent text-base text-[color:var(--text-primary)] placeholder:text-[color:var(--text-secondary)] pl-12 pr-14 outline-none border-none"
+          className="w-full h-14 bg-transparent text-base text-content placeholder:text-content-secondary pl-12 pr-14 outline-none border-none"
           placeholder="Search companies, people, or research topics..."
           autoFocus={autoFocus}
         />
@@ -182,8 +182,8 @@ export function InstantSearchBar({
 
       {/* Instant Results Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full left-0 right-0 bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] border-t-0 rounded-b-2xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="px-4 py-2 text-xs font-semibold text-[color:var(--text-secondary)] uppercase tracking-wider bg-[color:var(--bg-secondary)]/80 flex items-center gap-1.5">
+        <div className="absolute top-full left-0 right-0 bg-surface border border-edge border-t-0 rounded-b-2xl shadow-[0_20px_40px_rgb(0,0,0,0.08)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="px-4 py-2 text-xs font-semibold text-content-secondary uppercase tracking-wider bg-surface-secondary/80 flex items-center gap-1.5">
             <Zap className="w-3 h-3" />
             Instant Knowledge (Cached)
           </div>
@@ -203,7 +203,7 @@ export function InstantSearchBar({
             <button
               type="button"
               onClick={handleStartFresh}
-              className="w-full p-3 bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] cursor-pointer flex items-center justify-center gap-2 text-sm font-medium text-[color:var(--text-primary)] border-t border-[color:var(--border-color)] transition-colors"
+              className="w-full p-3 bg-surface-secondary hover:bg-surface-hover cursor-pointer flex items-center justify-center gap-2 text-sm font-medium text-content border-t border-edge transition-colors"
             >
               <Sparkles className="w-4 h-4 text-purple-500" />
               <span>Start fresh research on "{inputValue}"</span>
@@ -220,7 +220,7 @@ export function InstantSearchBar({
               key={idx}
               type="button"
               onClick={() => handleSuggestionClick(suggestion.query)}
-              className="px-3 py-1.5 text-xs font-medium text-[color:var(--text-primary)] bg-[color:var(--bg-primary)]/80 border border-[color:var(--border-color)] rounded-full hover:bg-[color:var(--bg-hover)] hover:border-[color:var(--border-color)] hover:text-[color:var(--text-primary)] transition-all duration-200 shadow-sm"
+              className="px-3 py-1.5 text-xs font-medium text-content bg-surface/80 border border-edge rounded-full hover:bg-surface-hover hover:border-edge hover:text-content transition-all duration-200 shadow-sm"
             >
               {suggestion.label}
             </button>
@@ -258,21 +258,21 @@ function ResultItem({ doc, onClick }: { doc: SearchResult; onClick: () => void }
         "p-2 rounded-lg transition-colors shrink-0",
         isDossier
           ? "bg-blue-100 text-blue-600 group-hover:bg-blue-200 group-hover:text-blue-700"
-          : "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] group-hover:bg-[color:var(--bg-tertiary)] group-hover:text-[color:var(--text-primary)]"
+          : "bg-surface-secondary text-content group-hover:bg-surface-secondary group-hover:text-content"
       )}>
         <FileText className="w-5 h-5" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="font-semibold text-[color:var(--text-primary)] group-hover:text-blue-700 truncate">
+          <h4 className="font-semibold text-content group-hover:text-blue-700 truncate">
             {doc.title}
           </h4>
-          <span className="text-xs text-[color:var(--text-secondary)] flex items-center gap-1 shrink-0">
+          <span className="text-xs text-content-secondary flex items-center gap-1 shrink-0">
             <Clock className="w-3 h-3" />
             {timeAgo}
           </span>
         </div>
-        <p className="text-sm text-[color:var(--text-secondary)] line-clamp-2 mt-1">
+        <p className="text-sm text-content-secondary line-clamp-2 mt-1">
           {doc.snippet}
         </p>
         {isDossier && (

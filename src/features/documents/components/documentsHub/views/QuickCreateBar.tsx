@@ -130,7 +130,7 @@ export function QuickCreateBar({
     return (
         <div className={`space-y-2 ${className}`}>
             {/* Quick task input */}
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)]">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface">
                 <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
                 <input
                     value={newTaskTitle}
@@ -142,7 +142,7 @@ export function QuickCreateBar({
                         }
                     }}
                     placeholder="Quick add a task…"
-                    className="w-full bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                    className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
                     disabled={isCreatingTask}
                 />
                 <button
@@ -159,7 +159,7 @@ export function QuickCreateBar({
             {/* Quick event input */}
             {showEventCreate && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] flex-1 min-w-0">
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 min-w-0">
                         <Calendar className="h-4 w-4 text-[var(--accent-primary)]" />
                         <input
                             value={newEventTitle}
@@ -171,7 +171,7 @@ export function QuickCreateBar({
                                 }
                             }}
                             placeholder="Quick add an event…"
-                            className="w-full bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                            className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
                             disabled={isCreatingEvent}
                         />
                     </div>
@@ -190,7 +190,7 @@ export function QuickCreateBar({
                                 }
                             }
                         }}
-                        className="px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)]"
+                        className="px-2 py-1.5 rounded-md border border-edge bg-surface text-sm text-content"
                         aria-label="Event start"
                         disabled={isCreatingEvent}
                     />
@@ -199,7 +199,7 @@ export function QuickCreateBar({
                         type="datetime-local"
                         value={newEventEnd}
                         onChange={(e) => setNewEventEnd(e.target.value)}
-                        className="px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-sm text-[var(--text-primary)]"
+                        className="px-2 py-1.5 rounded-md border border-edge bg-surface text-sm text-content"
                         aria-label="Event end"
                         disabled={isCreatingEvent}
                     />

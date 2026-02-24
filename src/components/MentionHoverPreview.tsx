@@ -131,7 +131,7 @@ export function MentionHoverPreview({ editorContainer, sourceDocumentId }: Menti
 
   return (
     <div
-      className="fixed z-50 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3 max-w-sm pointer-events-auto"
+      className="fixed z-50 bg-surface-secondary border border-edge rounded-lg shadow-lg p-3 max-w-sm pointer-events-auto"
       style={{
         left: hover.position.x,
         top: hover.position.y - 10,
@@ -145,20 +145,20 @@ export function MentionHoverPreview({ editorContainer, sourceDocumentId }: Menti
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="text-xs font-medium text-[var(--text-primary)] truncate" title={hover.label || preview?.title || 'Document'}>
+          <div className="text-xs font-medium text-content truncate" title={hover.label || preview?.title || 'Document'}>
             {preview?.title || hover.label || 'Document'}{preview?.isArchived ? ' (Archived)' : ''}
           </div>
         </div>
         <button
           type="button"
-          className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+          className="text-xs px-2 py-0.5 rounded border border-edge bg-surface hover:bg-surface-hover text-content-secondary"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowQuickEdit((v) => !v); }}
           title={showQuickEdit ? "Hide Quick Edit" : "Quick Edit"}
         >
           {showQuickEdit ? "Hide" : "Quick Edit"}
         </button>
       </div>
-      <div className="mt-1 text-xs text-[var(--text-muted)] whitespace-pre-wrap">
+      <div className="mt-1 text-xs text-content-muted whitespace-pre-wrap">
         {preview?.contentPreview || 'No preview available.'}
       </div>
       {showQuickEdit && (

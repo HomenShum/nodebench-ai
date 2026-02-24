@@ -12,10 +12,10 @@ export function WelcomeStep() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 mb-4">
           <Sparkles className="w-8 h-8 text-blue-500" />
         </div>
-        <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+        <h3 className="text-2xl font-bold text-content mb-2">
           Welcome to Smart Alerts
         </h3>
-        <p className="text-[var(--text-secondary)] text-lg">
+        <p className="text-content-secondary text-lg">
           Let your AI assistant work for you — automatically find opportunities and take action
         </p>
       </div>
@@ -41,11 +41,11 @@ export function WelcomeStep() {
         </div>
 
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
-          <h4 className="font-semibold text-[var(--text-primary)] mb-2 flex items-center gap-2">
+          <h4 className="font-semibold text-content mb-2 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-blue-500" />
             How it works
           </h4>
-          <ol className="space-y-2 text-sm text-[var(--text-secondary)]">
+          <ol className="space-y-2 text-sm text-content-secondary">
             <li className="flex items-start gap-2">
               <span className="font-medium text-blue-500">1.</span>
               <span>Your assistant monitors your connected accounts (Gmail, Calendar, Slack)</span>
@@ -65,7 +65,7 @@ export function WelcomeStep() {
           </ol>
         </div>
 
-        <div className="text-center text-sm text-[var(--text-muted)]">
+        <div className="text-center text-sm text-content-muted">
           <p>This will take about 2 minutes to set up</p>
         </div>
       </div>
@@ -83,12 +83,12 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+    <div className="p-4 rounded-lg border border-edge bg-surface-secondary">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="w-5 h-5 text-blue-500" />
-        <h4 className="font-semibold text-[var(--text-primary)]">{title}</h4>
+        <h4 className="font-semibold text-content">{title}</h4>
       </div>
-      <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+      <p className="text-sm text-content-secondary">{description}</p>
     </div>
   );
 }

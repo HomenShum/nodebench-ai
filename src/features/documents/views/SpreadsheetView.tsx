@@ -693,7 +693,7 @@ useEffect(() => {
   if (!fileDocument) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="flex items-center gap-2 text-[var(--text-muted)]">
+        <div className="flex items-center gap-2 text-content-muted">
           <Loader2 className="h-5 w-5 motion-safe:animate-spin" />
           Loading spreadsheet...
         </div>
@@ -710,12 +710,12 @@ useEffect(() => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="h-8 w-8 text-[var(--accent-primary)] motion-safe:animate-spin" />
+          <RefreshCw className="h-8 w-8 text-indigo-600 dark:text-indigo-400 motion-safe:animate-spin" />
 
 
           <div className="text-center">
-            <p className="text-lg font-medium text-[var(--text-primary)]">Loading Spreadsheet</p>
-            <p className="text-sm text-[var(--text-muted)]">Parsing CSV data...</p>
+            <p className="text-lg font-medium text-content">Loading Spreadsheet</p>
+            <p className="text-sm text-content-muted">Parsing CSV data...</p>
           </div>
         </div>
       </div>
@@ -729,7 +729,7 @@ useEffect(() => {
           <AlertCircle className="h-8 w-8" />
           <div className="text-center">
             <p className="text-lg font-medium">Error Loading Spreadsheet</p>
-            <p className="text-sm text-[var(--text-muted)]">{csvError}</p>
+            <p className="text-sm text-content-muted">{csvError}</p>
           </div>
         </div>
       </div>
@@ -740,8 +740,8 @@ useEffect(() => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <FileSpreadsheet className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-2" />
-          <p className="text-[var(--text-secondary)]">No spreadsheet data available</p>
+          <FileSpreadsheet className="h-8 w-8 text-content-muted mx-auto mb-2" />
+          <p className="text-content-secondary">No spreadsheet data available</p>
         </div>
       </div>
     );
@@ -759,27 +759,27 @@ useEffect(() => {
     <div className="h-full flex flex-col">
       {/* Document header - only show in fullscreen mode or when not in grid mode */}
       {(!isGridMode || isFullscreen) && (
-        <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+        <div className="border-b border-edge bg-surface">
           <div className="max-w-4xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                {docData.isPublic ? (<Globe className="h-4 w-4 text-[var(--accent-green)]" />) : (<Lock className="h-4 w-4 text-[var(--text-muted)]" />)}
-                <span className="text-sm text-[var(--text-secondary)]">{docData.isPublic ? "Public" : "Private"}</span>
+                {docData.isPublic ? (<Globe className="h-4 w-4 text-[var(--accent-green)]" />) : (<Lock className="h-4 w-4 text-content-muted" />)}
+                <span className="text-sm text-content-secondary">{docData.isPublic ? "Public" : "Private"}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => { void handleToggleFavorite(); }} className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="Favorite" aria-label="Favorite">
-                  <Star className="h-4 w-4 text-[var(--text-muted)]" />
+                <button type="button" onClick={() => { void handleToggleFavorite(); }} className="p-2 hover:bg-surface-hover rounded-md transition-colors" title="Favorite" aria-label="Favorite">
+                  <Star className="h-4 w-4 text-content-muted" />
                 </button>
-                <button type="button" className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="Share" aria-label="Share">
-                  <Share className="h-4 w-4 text-[var(--text-secondary)]" />
+                <button type="button" className="p-2 hover:bg-surface-hover rounded-md transition-colors" title="Share" aria-label="Share">
+                  <Share className="h-4 w-4 text-content-secondary" />
                 </button>
                 <div className="relative">
-                  <button type="button" onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-[var(--bg-hover)] rounded-md transition-colors" title="More options" aria-label="More options" aria-expanded={isMenuOpen}>
-                    <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
+                  <button type="button" onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 hover:bg-surface-hover rounded-md transition-colors" title="More options" aria-label="More options" aria-expanded={isMenuOpen}>
+                    <MoreHorizontal className="h-4 w-4 text-content-secondary" />
                   </button>
                   {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-48 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg z-10" role="dialog" aria-label="Document options">
-                      <button onClick={() => { void handleTogglePublic(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--bg-hover)] transition-colors">
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-edge rounded-lg shadow-lg z-10" role="dialog" aria-label="Document options">
+                      <button onClick={() => { void handleTogglePublic(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover transition-colors">
                         {docData.isPublic ? "Make Private" : "Make Public"}
                       </button>
                     </div>
@@ -793,12 +793,12 @@ useEffect(() => {
                 <input
                   type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                   onBlur={() => { void handleTitleSubmit(); }} onKeyDown={handleKeyDown}
-                  className="text-3xl font-bold text-[var(--text-primary)] bg-transparent border-b-2 border-[var(--accent-primary)] focus:outline-none flex-1"
+                  className="text-3xl font-bold text-content bg-transparent border-b-2 border-indigo-500/30 focus:outline-none flex-1"
                   autoFocus
                 />
 
               ) : (
-                <h1 className="text-3xl font-bold text-[var(--text-primary)] cursor-pointer hover:bg-[var(--bg-hover)] px-2 py-1 rounded flex-1" onClick={() => setIsEditing(true)}>
+                <h1 className="text-3xl font-bold text-content cursor-pointer hover:bg-surface-hover px-2 py-1 rounded flex-1" onClick={() => setIsEditing(true)}>
                   {docData.title}
                 </h1>
               )}
@@ -808,7 +808,7 @@ useEffect(() => {
                 {userId ? (
                   <PresenceIndicator documentId={documentId} userId={userId} />
                 ) : null}
-                <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
+                <div className="flex items-center gap-4 text-sm text-content-muted">
                   <span>{formatFileSize(file.fileSize)}</span>
                   <span>{csvData.rows.length.toLocaleString()} rows × {csvData.headers.length} columns</span>
                   <span className="text-xs opacity-80">{saveHint === 'saving' ? 'Saving…' : saveHint === 'saved' ? 'Saved' : saveHint === 'unsaved' ? 'Unsaved changes' : ''}</span>
@@ -820,7 +820,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={() => setWrapCells((w) => !w)}
-                className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors"
+                className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors"
                 title={wrapCells ? 'Disable wrap' : 'Enable wrap'}
                 aria-label={wrapCells ? 'Disable text wrap' : 'Enable text wrap'}
               >
@@ -832,27 +832,27 @@ useEffect(() => {
                   type="button"
                   onClick={handleOpenAnalysisPopover}
                   disabled={isAnalyzing}
-                  className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-60"
+                  className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors disabled:opacity-60"
                   title="Analyze with AI and add to Quick notes"
                   aria-label="Analyze file with AI"
                 >
                   {isAnalyzing ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 </button>
                 {showPromptPopover && (
-                  <div className="absolute z-20 right-0 mt-2 w-[360px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3" role="dialog" aria-label="Analysis prompt">
-                    <div className="text-sm font-medium mb-2 text-[var(--text-primary)]">Analysis prompt</div>
+                  <div className="absolute z-20 right-0 mt-2 w-[360px] bg-surface border border-edge rounded-lg shadow-lg p-3" role="dialog" aria-label="Analysis prompt">
+                    <div className="text-sm font-medium mb-2 text-content">Analysis prompt</div>
                     <textarea
-                      className="w-full h-28 text-xs p-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                      className="w-full h-28 text-xs p-2 rounded border border-edge bg-surface-secondary text-content"
                       value={analysisPrompt}
                       onChange={(e) => setAnalysisPrompt(e.target.value)}
                     />
                     <div className="mt-2 flex items-center justify-between">
-                      <label className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                      <label className="flex items-center gap-2 text-xs text-content-muted">
                         <input type="checkbox" checked={savePromptDefault} onChange={(e) => setSavePromptDefault(e.target.checked)} />
                         Remember as default
                       </label>
                       <div className="flex items-center gap-2">
-                        <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]">Cancel</button>
+                        <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover">Cancel</button>
                         <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
                       </div>
                     </div>
@@ -862,20 +862,20 @@ useEffect(() => {
 
               {storageUrl && (
                 <>
-                  <button type="button" onClick={() => window.open(storageUrl, '_blank')} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors" title="Open in new tab" aria-label="Open in new tab">
+                  <button type="button" onClick={() => window.open(storageUrl, '_blank')} className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors" title="Open in new tab" aria-label="Open in new tab">
                     <Eye className="h-4 w-4" />
                   </button>
-                  <a href={storageUrl} download={file.fileName} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors" title="Download file">
+                  <a href={storageUrl} download={file.fileName} className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors" title="Download file">
                     <Download className="h-4 w-4" />
                   </a>
                 </>
               )}
 
-              <button type="button" onClick={() => void handleSaveChanges()} disabled={isSaving || isMini} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title={isMini ? "Editing disabled in mini view" : "Save changes"} aria-label="Save changes">
+              <button type="button" onClick={() => void handleSaveChanges()} disabled={isSaving || isMini} className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors disabled:opacity-50" title={isMini ? "Editing disabled in mini view" : "Save changes"} aria-label="Save changes">
                 {isSaving ? (<Loader2 className="h-4 w-4 motion-safe:animate-spin" />) : (<Save className="h-4 w-4" />)}
               </button>
 
-              <button type="button" onClick={() => void handleExportCsv()} disabled={isExporting} className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors disabled:opacity-50" title="Export CSV" aria-label="Export CSV">
+              <button type="button" onClick={() => void handleExportCsv()} disabled={isExporting} className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors disabled:opacity-50" title="Export CSV" aria-label="Export CSV">
                 {isExporting ? (<Loader2 className="h-4 w-4 motion-safe:animate-spin" />) : (<FileDown className="h-4 w-4" />)}
               </button>
             </div>
@@ -887,13 +887,13 @@ useEffect(() => {
 
       {/* Workbook sheet tabs */}
       {workbookSheets && workbookSheets.length > 1 && (
-        <div className="flex-shrink-0 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+        <div className="flex-shrink-0 border-b border-edge bg-surface">
           <div className="px-3 py-2 flex items-center gap-2 overflow-x-auto">
             {workbookSheets.map((s, i) => (
               <button
                 key={`${s.name}-${i}`}
                 onClick={() => { setActiveSheetIndex(i); setCsvData(workbookSheets[i].csv); }}
-                className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${i === activeSheetIndex ? 'bg-[var(--bg-secondary)] border border-[var(--border-color)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}
+                className={`px-2 py-1 text-xs rounded-md whitespace-nowrap ${i === activeSheetIndex ? 'bg-surface-secondary border border-edge text-content' : 'hover:bg-surface-hover text-content-secondary'}`}
                 title={s.name}
               >
                 {s.name}
@@ -905,7 +905,7 @@ useEffect(() => {
 
       {/* Mini editor notice */}
       {isMini && (
-        <div className="flex-shrink-0 border-b border-[var(--border-color)] bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+        <div className="flex-shrink-0 border-b border-edge bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
           <div className="px-4 py-2 text-xs">Quick edits for spreadsheets are not available in the mini editor. Open the document to edit.</div>
         </div>
       )}
@@ -914,7 +914,7 @@ useEffect(() => {
       <div className="flex-1 min-h-0">
         <PanelGroup direction="horizontal" autoSaveId="spreadsheet-view:h" onLayout={onHorizontalLayout} ref={hGroupRef}>
           <Panel defaultSize={65} minSize={20}>
-              <div className="h-full flex flex-col bg-[var(--bg-primary)] relative">
+              <div className="h-full flex flex-col bg-surface relative">
       {/* Scoped styles to improve table formatting and enable natural sizing */}
       <style>
         {`
@@ -999,7 +999,7 @@ useEffect(() => {
           transformOrigin: 'top left',
         }}
       >
-        <div className="overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
+        <div className="overflow-auto border border-edge rounded-md bg-surface">
           <div className="text-xs">
             <Spreadsheet
               data={csvData.rows.map((r) => r.map((c) => ({ value: c })))}
@@ -1039,13 +1039,13 @@ useEffect(() => {
         title="Double-click to reset layout"
       />
       <Panel ref={notesPanelRef} defaultSize={35} minSize={0} collapsible>
-        <div className="h-full border-l border-[var(--border-color)] p-4 overflow-auto">
+        <div className="h-full border-l border-edge p-4 overflow-auto">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-[var(--text-primary)]">Quick notes</h4>
+            <h4 className="text-sm font-medium text-content">Quick notes</h4>
             <button
               type="button"
               onClick={toggleNotes}
-              className="p-1 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+              className="p-1 rounded border border-edge bg-surface-secondary hover:bg-surface-hover"
               title={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
               aria-label={notesCollapsed ? 'Expand Quick notes' : 'Collapse Quick notes'}
               aria-expanded={!notesCollapsed}
@@ -1055,7 +1055,7 @@ useEffect(() => {
           </div>
           <div className="min-h-[240px]">
             <ErrorBoundary title="Failed to load notes">
-              <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+              <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
                 <UnifiedEditor documentId={documentId} mode="quickNote" autoCreateIfEmpty />
               </Suspense>
             </ErrorBoundary>

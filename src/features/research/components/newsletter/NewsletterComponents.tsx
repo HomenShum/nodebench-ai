@@ -52,7 +52,7 @@ function BulletItem({ bullet, onEvidenceClick }: { bullet: NewsletterBullet; onE
         <div className="flex items-start gap-2">
             <span className="mt-1.5 h-1 w-1 rounded-full bg-blue-500 shrink-0" />
             <div className="flex-1">
-                <span className="text-sm leading-6 text-[color:var(--text-primary)]">{bullet.text}</span>
+                <span className="text-sm leading-6 text-content">{bullet.text}</span>
                 {bullet.evidenceChips.length > 0 && (
                     <div className="flex gap-0.5 mt-0.5">
                         {bullet.evidenceChips.map((chip) => (
@@ -75,17 +75,17 @@ function BulletItem({ bullet, onEvidenceClick }: { bullet: NewsletterBullet; onE
 // Helper component for rendering a single media item
 function MediaItem({ item }: { item: NewsletterMediaItem }) {
     return (
-        <div className="p-3 bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] rounded-lg border border-[color:var(--border-color)] cursor-pointer transition-colors">
+        <div className="p-3 bg-surface-secondary hover:bg-surface-hover rounded-lg border border-edge cursor-pointer transition-colors">
             <div className="flex items-start gap-2">
-                <span className="p-1 bg-[color:var(--bg-primary)] rounded border border-[color:var(--border-color)]">
+                <span className="p-1 bg-surface rounded border border-edge">
                     {item.type === 'youtube' && <Youtube className="w-3 h-3 text-red-500" />}
                     {item.type === 'web' && <ExternalLink className="w-3 h-3 text-blue-500" />}
                     {item.type === 'sec' && <FileText className="w-3 h-3 text-green-500" />}
                     {item.type === 'pdf' && <FileText className="w-3 h-3 text-purple-500" />}
                 </span>
                 <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-[color:var(--text-primary)] truncate">{item.title}</div>
-                    <div className="text-xs text-[color:var(--text-secondary)] truncate">{item.domain}</div>
+                    <div className="text-xs font-medium text-content truncate">{item.title}</div>
+                    <div className="text-xs text-content-secondary truncate">{item.domain}</div>
                 </div>
                 {item.verified && <CheckCircle2 className="w-3 h-3 text-indigo-500 shrink-0" />}
             </div>
@@ -117,14 +117,14 @@ export function NewsletterSectionBlock({
                 className="flex items-center gap-2 mb-3 cursor-pointer select-none"
                 onClick={onToggleExpand}
             >
-                <div className="p-1 rounded text-[color:var(--text-secondary)] group-hover:text-[color:var(--text-primary)] transition-colors">
+                <div className="p-1 rounded text-content-secondary group-hover:text-content transition-colors">
                     {section.icon}
                 </div>
-                <h2 className="text-xl font-semibold text-[color:var(--text-primary)] flex-1">{section.title}</h2>
+                <h2 className="text-xl font-semibold text-content flex-1">{section.title}</h2>
 
                 {/* Confidence Badge - Subtle */}
                 {section.confidence && (
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-surface-secondary text-content">
                         {section.confidence}
                     </span>
                 )}
@@ -132,9 +132,9 @@ export function NewsletterSectionBlock({
 
             {/* Content */}
             {isExpanded && (
-                <div className="pl-2 border-l-2 border-transparent hover:border-[color:var(--border-color)] transition-colors">
+                <div className="pl-2 border-l-2 border-transparent hover:border-edge transition-colors">
                     {/* Bullets */}
-                    <div className="space-y-3 text-[color:var(--text-primary)] leading-relaxed">
+                    <div className="space-y-3 text-content leading-relaxed">
                         {section.bullets.map((bullet, idx) => (
                             <BulletItem
                                 key={idx}
@@ -173,14 +173,14 @@ export function DigestHero({
     confidence?: string;
 }) {
     return (
-        <div className="mb-10 pb-6 border-b border-[color:var(--border-color)]">
-            <h1 className="text-4xl font-bold text-[color:var(--text-primary)] mb-4 tracking-tight">{title}</h1>
-            <p className="text-lg text-[color:var(--text-primary)] leading-relaxed">{summary}</p>
+        <div className="mb-10 pb-6 border-b border-edge">
+            <h1 className="text-4xl font-bold text-content mb-4 tracking-tight">{title}</h1>
+            <p className="text-lg text-content leading-relaxed">{summary}</p>
 
             {confidence && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-[color:var(--text-secondary)]">
+                <div className="mt-4 flex items-center gap-2 text-sm text-content-secondary">
                     <span className="font-medium">Confidence Score:</span>
-                    <span className="bg-[color:var(--bg-secondary)] px-2 py-0.5 rounded text-[color:var(--text-primary)]">{confidence}</span>
+                    <span className="bg-surface-secondary px-2 py-0.5 rounded text-content">{confidence}</span>
                 </div>
             )}
         </div>

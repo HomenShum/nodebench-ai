@@ -121,20 +121,20 @@ const QuickActionCard = memo(function QuickActionCard({
             <Icon className={cn("w-5 h-5", preset.color)} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-[13px] font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <h3 className="text-[13px] font-bold text-content flex items-center gap-2">
               {preset.name}
-              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)]">
+              <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-surface-secondary text-content-muted border border-edge">
                 {preset.agents.length} agents
               </span>
             </h3>
-            <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2 leading-relaxed">
+            <p className="text-xs text-content-secondary mt-1 line-clamp-2 leading-relaxed">
               {preset.description}
             </p>
           </div>
           {!isExpanded && (
             <ArrowRight
               className={cn(
-                "w-4 h-4 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0",
+                "w-4 h-4 text-content-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0",
                 preset.color
               )}
             />
@@ -151,7 +151,7 @@ const QuickActionCard = memo(function QuickActionCard({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={preset.placeholder}
-              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:border-violet-300 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-200"
+              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:border-violet-300 text-content placeholder:text-content-muted transition-all duration-200"
               autoFocus
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -175,7 +175,7 @@ const QuickActionCard = memo(function QuickActionCard({
                 "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all duration-200",
                 query.trim()
                   ? "bg-gradient-to-r from-violet-500 to-indigo-500 text-white hover:from-violet-600 hover:to-indigo-600 shadow-sm"
-                  : "bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
+                  : "bg-surface-secondary text-content-muted cursor-not-allowed"
               )}
             >
               <Zap className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ const QuickActionCard = memo(function QuickActionCard({
               e.stopPropagation();
               setIsExpanded(false);
             }}
-            className="mt-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-medium transition-colors"
+            className="mt-2 text-xs text-content-muted hover:text-content-secondary font-medium transition-colors"
           >
             Cancel
           </button>
@@ -218,10 +218,10 @@ export function SwarmQuickActions({
           <Sparkles className="w-4.5 h-4.5 text-white" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-[var(--text-primary)]">
+          <h2 className="text-sm font-bold text-content">
             Parallel Research
           </h2>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="text-xs text-content-muted">
             Run multiple AI agents simultaneously
           </p>
         </div>
@@ -235,10 +235,10 @@ export function SwarmQuickActions({
       </div>
 
       {/* Tip */}
-      <p className="mt-4 text-xs text-[var(--text-muted)] text-center">
-        <span className="font-semibold text-[var(--text-secondary)]">Pro tip:</span>{" "}
+      <p className="mt-4 text-xs text-content-muted text-center">
+        <span className="font-semibold text-content-secondary">Pro tip:</span>{" "}
         Type{" "}
-        <code className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded-md text-xs font-mono border border-[var(--border-color)]">
+        <code className="px-1.5 py-0.5 bg-surface-secondary rounded-md text-xs font-mono border border-edge">
           /spawn
         </code>{" "}
         in the chat to choose which agents to use

@@ -55,9 +55,9 @@ const TYPE_ICONS: Record<ArtifactType, React.ReactNode> = {
 
 const TYPE_COLORS: Record<ArtifactType, { bg: string; text: string; border: string }> = {
   code: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-300', border: 'border-purple-200 dark:border-purple-800' },
-  table: { bg: 'bg-indigo-50 dark:bg-gray-900/20', text: 'text-content-secondary dark:text-indigo-300', border: 'border-indigo-200 dark:border-gray-800' },
+  table: { bg: 'bg-indigo-50 dark:bg-gray-900/20', text: 'text-content-secondary dark:text-indigo-300', border: 'border-indigo-200 dark:border-edge' },
   document: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' },
-  markdown: { bg: 'bg-[var(--bg-secondary)] dark:bg-gray-900/20', text: 'text-[var(--text-primary)] dark:text-gray-300', border: 'border-[var(--border-color)] dark:border-gray-800' },
+  markdown: { bg: 'bg-surface-secondary dark:bg-gray-900/20', text: 'text-content dark:text-gray-300', border: 'border-edge dark:border-edge' },
   json: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800' },
   csv: { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-700 dark:text-green-300', border: 'border-green-200 dark:border-green-800' },
 };
@@ -146,7 +146,7 @@ export function ArtifactCard({
   return (
     <div className={cn(
       "rounded-lg border overflow-hidden transition-all duration-200",
-      "hover:shadow-md hover:border-[var(--border-color)] dark:hover:border-[var(--border-color)]",
+      "hover:shadow-md hover:border-edge dark:hover:border-edge",
       colors.border,
       className
     )}>
@@ -158,7 +158,7 @@ export function ArtifactCard({
             {artifact.title}
           </span>
           {artifact.language && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-white/50 dark:bg-black/20 text-[var(--text-secondary)] dark:text-[var(--text-muted)]">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-white/50 dark:bg-black/20 text-content-secondary dark:text-content-muted">
               {artifact.language}
             </span>
           )}
@@ -176,7 +176,7 @@ export function ArtifactCard({
             {copied ? (
               <Check className="w-3.5 h-3.5 text-green-600" />
             ) : (
-              <Copy className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              <Copy className="w-3.5 h-3.5 text-content-secondary" />
             )}
           </button>
 
@@ -187,7 +187,7 @@ export function ArtifactCard({
             className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
             title="Download"
           >
-            <Download className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+            <Download className="w-3.5 h-3.5 text-content-secondary" />
           </button>
 
           {/* Expand */}
@@ -198,22 +198,22 @@ export function ArtifactCard({
               className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
               title="Expand"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              <Maximize2 className="w-3.5 h-3.5 text-content-secondary" />
             </button>
           )}
         </div>
       </div>
 
       {/* Content Preview */}
-      <div className="px-3 py-2 bg-[var(--bg-primary)] dark:bg-[var(--bg-primary)]">
-        <pre className="text-xs text-[var(--text-primary)] dark:text-[var(--text-muted)] font-mono overflow-x-auto whitespace-pre-wrap">
+      <div className="px-3 py-2 bg-surface dark:bg-surface">
+        <pre className="text-xs text-content dark:text-content-muted font-mono overflow-x-auto whitespace-pre-wrap">
           {previewLines.join('\n')}
-          {hasMore && <span className="text-[var(--text-muted)]">...</span>}
+          {hasMore && <span className="text-content-muted">...</span>}
         </pre>
       </div>
 
       {/* Save to Workspace Footer */}
-      <div className="px-3 py-2 bg-[var(--bg-secondary)] dark:bg-[var(--bg-secondary)]/50 border-t border-[var(--border-color)] dark:border-[var(--border-color)]">
+      <div className="px-3 py-2 bg-surface-secondary dark:bg-surface-secondary/50 border-t border-edge dark:border-edge">
         {saved ? (
           <button
             type="button"
@@ -232,7 +232,7 @@ export function ArtifactCard({
             className={cn(
               "w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
               saving
-                ? "bg-[var(--bg-hover)] dark:bg-[var(--bg-secondary)] text-[var(--text-muted)] cursor-not-allowed"
+                ? "bg-surface-hover dark:bg-surface-secondary text-content-muted cursor-not-allowed"
                 : "bg-violet-500 text-white hover:bg-violet-600 shadow-sm hover:shadow"
             )}
           >

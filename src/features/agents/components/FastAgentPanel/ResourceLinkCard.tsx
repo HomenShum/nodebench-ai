@@ -99,7 +99,7 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
   return (
     <div
       className={cn(
-        'rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]',
+        'rounded-lg border border-edge bg-surface',
         variant === 'compact' ? 'p-3' : 'p-4',
         className,
       )}
@@ -108,13 +108,13 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-blue-600" />
-            <div className="text-sm font-semibold text-[var(--text-primary)] truncate">{title}</div>
+            <div className="text-sm font-semibold text-content truncate">{title}</div>
           </div>
-          <div className="mt-1 text-xs text-[var(--text-secondary)] flex flex-wrap gap-x-3 gap-y-1">
+          <div className="mt-1 text-xs text-content-secondary flex flex-wrap gap-x-3 gap-y-1">
             <span>Size: {formatBytes(resourceLink.sizeBytes)}</span>
             <span>Type: {resourceLink.mimeType}</span>
-            <span>Artifact: <code className="px-1 rounded bg-[var(--bg-secondary)]">{truncateMiddle(resourceLink.artifactId, 22)}</code></span>
-            <span>Link: <code className="px-1 rounded bg-[var(--bg-secondary)]">{truncateMiddle(resourceLink.resourceId, 22)}</code></span>
+            <span>Artifact: <code className="px-1 rounded bg-surface-secondary">{truncateMiddle(resourceLink.artifactId, 22)}</code></span>
+            <span>Link: <code className="px-1 rounded bg-surface-secondary">{truncateMiddle(resourceLink.resourceId, 22)}</code></span>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -124,9 +124,9 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
       </div>
 
       {isNonEmptyString(resourceLink.preview) && (
-        <div className={cn('mt-3 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)]', variant === 'compact' ? 'p-2' : 'p-3')}>
-          <div className="text-xs font-medium text-[var(--text-secondary)] mb-1">Preview</div>
-          <pre className="text-xs text-[var(--text-primary)] whitespace-pre-wrap break-words max-h-40 overflow-auto">
+        <div className={cn('mt-3 rounded-md border border-edge bg-surface-secondary', variant === 'compact' ? 'p-2' : 'p-3')}>
+          <div className="text-xs font-medium text-content-secondary mb-1">Preview</div>
+          <pre className="text-xs text-content whitespace-pre-wrap break-words max-h-40 overflow-auto">
             {resourceLink.preview}
           </pre>
         </div>
@@ -134,17 +134,17 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
 
       <div className={cn('mt-3 flex items-center gap-2 flex-wrap', variant === 'compact' ? 'text-xs' : 'text-sm')}>
         <div className="flex items-center gap-2">
-          <Search className="h-4 w-4 text-[var(--text-secondary)]" />
+          <Search className="h-4 w-4 text-content-secondary" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-9 px-3 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] w-[260px] max-w-full"
+            className="h-9 px-3 rounded-md border border-edge bg-surface text-content w-[260px] max-w-full"
             placeholder="Query (e.g., pricing, dates, founders)"
           />
           <input
             value={String(budget)}
             onChange={(e) => setBudget(Math.max(100, Math.min(8000, Number(e.target.value || 0))))}
-            className="h-9 px-3 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] w-[110px]"
+            className="h-9 px-3 rounded-md border border-edge bg-surface text-content w-[110px]"
             placeholder="Budget"
             inputMode="numeric"
           />
@@ -154,8 +154,8 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
           disabled={loading || !query.trim()}
           className={cn(
             'h-9 px-3 rounded-md border transition-colors flex items-center gap-2',
-            loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[var(--bg-hover)]',
-            'border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)]',
+            loading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-surface-hover',
+            'border-edge bg-surface-secondary text-content',
           )}
         >
           {loading ? <Loader2 className="h-4 w-4 motion-safe:animate-spin" /> : <ExternalLink className="h-4 w-4" />}
@@ -166,13 +166,13 @@ export function ResourceLinkCard({ resourceLink, className, variant = 'default' 
 
       {excerpts.length > 0 && (
         <div className="mt-3 space-y-2">
-          <div className="text-xs font-medium text-[var(--text-secondary)]">Top excerpts</div>
+          <div className="text-xs font-medium text-content-secondary">Top excerpts</div>
           {excerpts.map((e, idx) => (
-            <div key={idx} className="rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] p-3">
+            <div key={idx} className="rounded-md border border-edge bg-surface p-3">
               <div className="text-xs text-[var(--text-tertiary)] mb-1">
-                <code className="bg-[var(--bg-secondary)] px-1 rounded">{e.anchor || '{{cite:...}}'}</code>
+                <code className="bg-surface-secondary px-1 rounded">{e.anchor || '{{cite:...}}'}</code>
               </div>
-              <div className="text-xs text-[var(--text-primary)] whitespace-pre-wrap break-words">
+              <div className="text-xs text-content whitespace-pre-wrap break-words">
                 {e.text}
               </div>
             </div>
@@ -188,7 +188,7 @@ function CopyIdButton({ label, value }: { label: string; value: string }) {
   return (
     <button
       type="button"
-      className="h-8 px-2 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-1"
+      className="h-8 px-2 rounded-md border border-edge bg-surface-secondary text-content-secondary hover:text-content hover:bg-surface-hover transition-colors flex items-center gap-1"
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(value);

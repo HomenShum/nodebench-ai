@@ -164,17 +164,17 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
   }
 
   return (
-    <div className={cn("flex flex-col h-full bg-[var(--bg-primary)]", className)}>
+    <div className={cn("flex flex-col h-full bg-surface", className)}>
       {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-[var(--border-color)]">
+      <div className="flex-shrink-0 p-4 border-b border-edge">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {isPublic ? (
-              <Globe className="w-5 h-5 text-[var(--accent-primary)]" />
+              <Globe className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             ) : (
-              <Lock className="w-5 h-5 text-[var(--accent-primary)]" />
+              <Lock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             )}
-            <h1 className="text-lg font-semibold text-[var(--text-primary)]">
+            <h1 className="text-lg font-semibold text-content">
               {isPublic ? 'Activity' : 'Task Manager'}
             </h1>
           </div>
@@ -186,7 +186,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
               showFilters || hasActiveFilters
                 ? "bg-[var(--accent-primary)] text-white"
-                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-color)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40"
+                : "bg-surface-secondary text-content-secondary border border-edge hover:text-content hover:border-indigo-500/30/40"
             )}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -199,7 +199,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
 
         {/* Stats row */}
         <div className="flex items-center gap-4 text-xs">
-          <span className="text-[var(--text-muted)]">
+          <span className="text-content-muted">
             {stats.total} {stats.total === 1 ? 'session' : 'sessions'}
           </span>
           {stats.running > 0 && (
@@ -225,14 +225,14 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
 
       {/* Filters panel */}
       {showFilters && (
-        <div className="flex-shrink-0 p-3 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="flex-shrink-0 p-3 border-b border-edge bg-surface-secondary">
           <div className="flex items-center gap-3 flex-wrap">
             {/* Status filter */}
             <select
               aria-label="Filter by status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as TaskSessionStatus | 'all')}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
+              className="px-2 py-1 text-xs rounded border border-edge bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
               {statusOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -244,7 +244,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               aria-label="Filter by type"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as TaskSessionType | 'all')}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
+              className="px-2 py-1 text-xs rounded border border-edge bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
               {typeOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -256,7 +256,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               aria-label="Filter by date range"
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-2 py-1 text-xs rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
+              className="px-2 py-1 text-xs rounded border border-edge bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
             >
               {dateRangeOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -267,7 +267,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               <button
                 type="button"
                 onClick={clearFilters}
-                className="flex items-center gap-1 px-2 py-1 text-xs rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
+                className="flex items-center gap-1 px-2 py-1 text-xs rounded-md text-content-muted hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
               >
                 <X className="w-3 h-3" />
                 Clear
@@ -290,10 +290,10 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
             <div className="w-20 h-20 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-5">
               <Bot className="w-10 h-10 text-indigo-400" />
             </div>
-            <p className="text-base font-semibold text-[var(--text-primary)] mb-2">
+            <p className="text-base font-semibold text-content mb-2">
               {hasActiveFilters ? 'No sessions match your filters' : isPublic ? 'No public activity yet' : 'No task sessions yet'}
             </p>
-            <p className="text-sm text-[var(--text-secondary)] max-w-sm">
+            <p className="text-sm text-content-secondary max-w-sm">
               {hasActiveFilters
                 ? 'Try clearing the filters — active sessions appear here as agents run research pipelines and workflows.'
                 : isPublic
@@ -305,7 +305,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               <button
                 type="button"
                 onClick={clearFilters}
-                className="flex items-center gap-1 mt-3 px-3 py-1.5 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
+                className="flex items-center gap-1 mt-3 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-surface-secondary rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 focus-visible:ring-offset-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Clear filters
@@ -325,7 +325,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
 
             {sessionsData?.hasMore && (
               <div className="text-center py-4">
-                <span className="text-xs text-[var(--text-muted)]">
+                <span className="text-xs text-content-muted">
                   Showing {sessions.length} sessions. More available.
                 </span>
               </div>

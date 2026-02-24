@@ -25,10 +25,10 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-500" />
         </div>
-        <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+        <h3 className="text-2xl font-bold text-content mb-2">
           You're All Set!
         </h3>
-        <p className="text-[var(--text-secondary)]">
+        <p className="text-content-secondary">
           Smart alerts are ready to start working for you
         </p>
       </div>
@@ -36,10 +36,10 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
       {/* Summary */}
       <div className="space-y-4 mb-8">
         {/* Enabled features */}
-        <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="p-4 rounded-lg border border-edge bg-surface-secondary">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-5 h-5 text-blue-500" />
-            <h4 className="font-semibold text-[var(--text-primary)]">
+            <h4 className="font-semibold text-content">
               Enabled Features ({state.enabledDetectors.length})
             </h4>
           </div>
@@ -47,7 +47,7 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
             {state.enabledDetectors.map((detectorId) => (
               <li
                 key={detectorId}
-                className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"
+                className="flex items-center gap-2 text-sm text-content-secondary"
               >
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <span>{DETECTOR_NAMES[detectorId] || detectorId}</span>
@@ -57,14 +57,14 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
         </div>
 
         {/* Notification settings */}
-        <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="p-4 rounded-lg border border-edge bg-surface-secondary">
           <div className="flex items-center gap-2 mb-3">
             <Bell className="w-5 h-5 text-blue-500" />
-            <h4 className="font-semibold text-[var(--text-primary)]">
+            <h4 className="font-semibold text-content">
               Notification Settings
             </h4>
           </div>
-          <ul className="space-y-2 text-sm text-[var(--text-secondary)]">
+          <ul className="space-y-2 text-sm text-content-secondary">
             <li>
               <span className="font-medium">Channels:</span>{" "}
               {enabledChannels.length > 0
@@ -88,7 +88,7 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
 
       {/* What happens next */}
       <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6">
-        <h4 className="font-semibold text-[var(--text-primary)] mb-4">
+        <h4 className="font-semibold text-content mb-4">
           What happens next?
         </h4>
         <div className="space-y-4">
@@ -112,13 +112,13 @@ export function SuccessStep({ state }: { state: OnboardingState }) {
 
       {/* Tips */}
       <div className="mt-6 text-center space-y-2">
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-sm text-content-secondary">
           💡 You can adjust these settings anytime in{" "}
-          <span className="font-medium text-[var(--text-primary)]">Settings → Proactive Features</span>
+          <span className="font-medium text-content">Settings → Proactive Features</span>
         </p>
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-sm text-content-secondary">
           📊 View your proactive feed at{" "}
-          <span className="font-medium text-[var(--text-primary)]">/proactive</span>
+          <span className="font-medium text-content">/proactive</span>
         </p>
       </div>
     </div>
@@ -140,8 +140,8 @@ function NextStep({
         <Icon className="w-4 h-4 text-blue-500" />
       </div>
       <div>
-        <h5 className="font-medium text-[var(--text-primary)] mb-1">{title}</h5>
-        <p className="text-sm text-[var(--text-secondary)]">{description}</p>
+        <h5 className="font-medium text-content mb-1">{title}</h5>
+        <p className="text-sm text-content-secondary">{description}</p>
       </div>
     </div>
   );

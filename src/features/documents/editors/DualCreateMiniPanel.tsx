@@ -70,28 +70,28 @@ export default function DualCreateMiniPanel({
 
   return (
     <div
-      className="mt-2 rounded-lg p-2 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 pointer-events-auto"
+      className="mt-2 rounded-lg p-2 bg-surface border border-edge/60 pointer-events-auto"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-label="Create task or event"
     >
-      <div className="text-xs text-[var(--text-muted)] mb-2">
+      <div className="text-xs text-content-muted mb-2">
         Create on {new Date(dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {/* Task create card */}
-        <div className="relative overflow-visible p-2 rounded-sm border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="relative overflow-visible p-2 rounded-sm border border-edge bg-surface-secondary">
           <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500/60" aria-hidden />
           <div className="min-w-0 flex flex-col gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500" />
-              <span className="truncate text-[var(--text-primary)] text-xs">Add Task</span>
+              <span className="truncate text-content text-xs">Add Task</span>
             </div>
             <input
               type="text"
-              className="w-full text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-white"
+              className="w-full text-xs px-2 py-1 rounded border border-edge bg-white"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Task title"
@@ -100,7 +100,7 @@ export default function DualCreateMiniPanel({
             <div className="flex justify-end">
               <button
                 type="button"
-                className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                className="text-xs px-2 py-1 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover"
                 onClick={() => void handleCreateTask()}
               >
                 Create Task
@@ -109,22 +109,22 @@ export default function DualCreateMiniPanel({
           </div>
         </div>
         {/* Event create card */}
-        <div className="relative overflow-visible p-2 rounded-sm border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="relative overflow-visible p-2 rounded-sm border border-edge bg-surface-secondary">
           <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500/70" aria-hidden />
           <div className="min-w-0 flex flex-col gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <span className="truncate text-[var(--text-primary)] text-xs">Create Event</span>
+              <span className="truncate text-content text-xs">Create Event</span>
             </div>
             <input
               type="text"
-              className="w-full text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-white"
+              className="w-full text-xs px-2 py-1 rounded border border-edge bg-white"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder="Event title"
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleCreateEvent(); } }}
             />
-            <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+            <label className="inline-flex items-center gap-2 text-xs text-content-secondary">
               <input
                 type="checkbox"
                 checked={allDay}
@@ -135,7 +135,7 @@ export default function DualCreateMiniPanel({
             <div className="flex justify-end">
               <button
                 type="button"
-                className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                className="text-xs px-2 py-1 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover"
                 onClick={() => void handleCreateEvent()}
               >
                 Create Event
@@ -147,7 +147,7 @@ export default function DualCreateMiniPanel({
       <div className="flex items-center justify-end mt-2">
         <button
           type="button"
-          className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+          className="text-xs px-2 py-1 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover"
           onClick={onClose}
         >
           Close

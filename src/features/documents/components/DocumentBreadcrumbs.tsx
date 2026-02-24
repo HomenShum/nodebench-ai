@@ -73,7 +73,7 @@ export function DocumentBreadcrumbs({ documentId, onNavigate }: DocumentBreadcru
     }
 
     return (
-        <nav className="flex items-center gap-1 text-xs text-[var(--text-muted)] mb-2 px-2 overflow-x-auto no-scrollbar">
+        <nav className="flex items-center gap-1 text-xs text-content-muted mb-2 px-2 overflow-x-auto no-scrollbar">
             {segments.map((segment, index) => {
                 const isLast = index === segments.length - 1;
                 const isClickable = !isLast;
@@ -81,15 +81,15 @@ export function DocumentBreadcrumbs({ documentId, onNavigate }: DocumentBreadcru
                 return (
                     <div key={segment.id ?? 'home'} className="flex items-center gap-1 shrink-0">
                         {index > 0 && (
-                            <ChevronRight className="w-3 h-3 text-[var(--text-muted)] opacity-50" />
+                            <ChevronRight className="w-3 h-3 text-content-muted opacity-50" />
                         )}
                         <button
                             type="button"
                             onClick={() => isClickable && handleClick(segment.id)}
                             disabled={!isClickable}
                             className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${isClickable
-                                ? 'hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] cursor-pointer'
-                                : 'text-[var(--text-secondary)] font-medium cursor-default'
+                                ? 'hover:bg-surface-hover hover:text-content cursor-pointer'
+                                : 'text-content-secondary font-medium cursor-default'
                                 }`}
                         >
                             {segment.id === null ? (

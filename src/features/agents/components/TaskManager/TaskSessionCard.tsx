@@ -23,7 +23,7 @@ import type { TaskSession, TaskSessionStatus, TaskSessionType } from './types';
 
 const statusConfig: Record<TaskSessionStatus, { dotColor: string; label: string }> = {
   pending: {
-    dotColor: 'bg-[var(--text-muted)]',
+    dotColor: 'bg-content-muted',
     label: 'Pending'
   },
   running: { 
@@ -113,26 +113,26 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
     <div 
       className={cn(
         "p-3 rounded-lg border cursor-pointer transition-all",
-        "hover:bg-[var(--bg-secondary)] hover:border-[var(--accent-primary)]",
+        "hover:bg-surface-secondary hover:border-indigo-500/30",
         isSelected 
-          ? "bg-[var(--bg-secondary)] border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]" 
-          : "bg-[var(--bg-primary)] border-[var(--border-color)]"
+          ? "bg-surface-secondary border-indigo-500/30 ring-1 ring-[var(--accent-primary)]" 
+          : "bg-surface border-edge"
       )}
       onClick={onClick}
     >
       {/* Header: Title + Status */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-[var(--text-primary)] truncate">
+          <h3 className="text-sm font-medium text-content truncate">
             {session.title.replace(/^Cron:\s*/i, 'Scheduled: ')}
           </h3>
           {session.description && (
-            <p className="text-[13px] leading-snug text-[var(--text-secondary)] line-clamp-2 mt-1">
+            <p className="text-[13px] leading-snug text-content-secondary line-clamp-2 mt-1">
               {session.description}
             </p>
           )}
         </div>
-        <div className="inline-flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]" title={statusCfg.label}>
+        <div className="inline-flex items-center gap-1.5 text-[10px] text-content-muted" title={statusCfg.label}>
           <span
             className={cn(
               "w-2 h-2 rounded-full shrink-0",
@@ -147,13 +147,13 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
       {/* Type badge + Meta */}
       <div className="flex items-center gap-2 flex-wrap">
         {/* Type badge */}
-        <span className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+        <span className="flex items-center gap-1.5 text-[10px] text-content-muted">
           <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", typeCfg.dotColor)} />
           <span>{typeCfg.label}</span>
         </span>
 
         {/* Date */}
-        <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+        <span className="flex items-center gap-1 text-[11px] text-content-muted">
           <Clock className="w-3 h-3" />
           {formatDate(session.startedAt)}
         </span>
@@ -161,8 +161,8 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
         {/* Duration */}
         {session.totalDurationMs && (
           <>
-            <span className="text-[var(--text-muted)] opacity-35">·</span>
-            <span className="text-[11px] text-[var(--text-muted)]">
+            <span className="text-content-muted opacity-35">·</span>
+            <span className="text-[11px] text-content-muted">
               {formatDuration(session.totalDurationMs)}
             </span>
           </>
@@ -170,7 +170,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 
         {/* Tokens */}
         {session.totalTokens && (
-          <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]" title={`${formatTokens(session.totalTokens)} tokens`}>
+          <span className="flex items-center gap-1 text-[11px] text-content-muted" title={`${formatTokens(session.totalTokens)} tokens`}>
             <Zap className="w-3 h-3" />
             {formatTokens(session.totalTokens)}
           </span>
@@ -178,7 +178,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 
         {/* Tools count */}
         {session.toolsUsed && session.toolsUsed.length > 0 && (
-          <span className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]" title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}>
+          <span className="flex items-center gap-1 text-[11px] text-content-muted" title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}>
             <Wrench className="w-3 h-3" />
             {session.toolsUsed.length}
           </span>

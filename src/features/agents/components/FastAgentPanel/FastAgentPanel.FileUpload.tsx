@@ -94,7 +94,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
   const isImage = uploadedFile?.mimeType.startsWith('image/');
 
   return (
-    <div className="p-4 bg-[var(--bg-secondary)] border-t border-[var(--border-color)]">
+    <div className="p-4 bg-surface-secondary border-t border-edge">
       <div className="max-w-2xl mx-auto">
         {!uploadedFile ? (
           <div className="flex items-center justify-center">
@@ -127,41 +127,41 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
         ) : (
           <form onSubmit={handleSubmitQuestion} className="space-y-3">
             {/* File Preview */}
-            <div className="bg-[var(--bg-primary)] rounded-lg p-3 border border-[var(--border-color)]">
+            <div className="bg-surface rounded-lg p-3 border border-edge">
               <div className="flex items-start gap-3">
                 {isImage ? (
                   <div className="flex-shrink-0">
                     <img
                       src={uploadedFile.url}
                       alt={uploadedFile.filename}
-                      className="w-20 h-20 object-cover rounded border border-[var(--border-color)]"
+                      className="w-20 h-20 object-cover rounded border border-edge"
                       width={80}
                       height={80}
                     />
                   </div>
                 ) : (
-                  <div className="flex-shrink-0 w-20 h-20 bg-[var(--bg-hover)] rounded flex items-center justify-center border border-[var(--border-color)]">
-                    <FileText className="h-8 w-8 text-[var(--text-muted)]" />
+                  <div className="flex-shrink-0 w-20 h-20 bg-surface-hover rounded flex items-center justify-center border border-edge">
+                    <FileText className="h-8 w-8 text-content-muted" />
                   </div>
                 )}
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                      <p className="text-sm font-medium text-content truncate">
                         {uploadedFile.filename}
                       </p>
-                      <p className="text-xs text-[var(--text-secondary)]">
+                      <p className="text-xs text-content-secondary">
                         {uploadedFile.mimeType}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={handleClearFile}
-                      className="flex-shrink-0 p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+                      className="flex-shrink-0 p-1 rounded hover:bg-surface-hover transition-colors"
                       title="Remove file"
                     >
-                      <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                      <X className="h-4 w-4 text-content-secondary" />
                     </button>
                   </div>
                 </div>
@@ -175,7 +175,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Ask a question about this file..."
-                className="flex-1 px-3 py-2 border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] text-sm"
+                className="flex-1 px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] text-sm"
                 disabled={isSubmitting}
               />
               <button

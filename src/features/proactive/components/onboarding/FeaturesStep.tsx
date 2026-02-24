@@ -70,10 +70,10 @@ export function FeaturesStep({
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-500/10 mb-4">
           <Zap className="w-8 h-8 text-purple-500" />
         </div>
-        <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+        <h3 className="text-2xl font-bold text-content mb-2">
           Choose Your Features
         </h3>
-        <p className="text-[var(--text-secondary)]">
+        <p className="text-content-secondary">
           Select which features you'd like to enable. You can change these anytime.
         </p>
       </div>
@@ -90,7 +90,7 @@ export function FeaturesStep({
                 "w-full p-4 rounded-lg border-2 transition-all text-left",
                 isEnabled
                   ? "border-blue-500 bg-blue-500/10"
-                  : "border-[var(--border-color)] bg-[var(--bg-secondary)] hover:border-blue-300"
+                  : "border-edge bg-surface-secondary hover:border-blue-300"
               )}
             >
               <div className="flex items-start gap-3">
@@ -98,9 +98,9 @@ export function FeaturesStep({
                   <div className="flex items-center gap-2 mb-1">
                     <feature.icon className={cn(
                       "w-5 h-5",
-                      isEnabled ? "text-blue-500" : "text-[var(--text-secondary)]"
+                      isEnabled ? "text-blue-500" : "text-content-secondary"
                     )} />
-                    <h4 className="font-semibold text-[var(--text-primary)]">
+                    <h4 className="font-semibold text-content">
                       {feature.name}
                     </h4>
                     {feature.defaultEnabled && (
@@ -114,7 +114,7 @@ export function FeaturesStep({
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-[var(--text-secondary)]">
+                  <p className="text-sm text-content-secondary">
                     {feature.description}
                   </p>
                 </div>
@@ -122,7 +122,7 @@ export function FeaturesStep({
                   "flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
                   isEnabled
                     ? "border-blue-500 bg-blue-500"
-                    : "border-[var(--border-color)]"
+                    : "border-edge"
                 )}>
                   {isEnabled && <CheckCircle2 className="w-4 h-4 text-white" />}
                 </div>
@@ -134,8 +134,8 @@ export function FeaturesStep({
 
       {/* Info box */}
       <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-        <p className="text-sm text-[var(--text-secondary)]">
-          <span className="font-medium text-[var(--text-primary)]">💡 Tip:</span>{" "}
+        <p className="text-sm text-content-secondary">
+          <span className="font-medium text-content">💡 Tip:</span>{" "}
           Start with the recommended features and enable more as you get comfortable. You can always add custom alert rules later.
         </p>
       </div>

@@ -77,7 +77,7 @@ export const RefsPills = ({ refs, onOpenRef }: RefsPillsProps) => {
             e.stopPropagation();
             onOpenRef?.(r.kind, r.id);
           }}
-          className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+          className="text-xs px-1.5 py-0.5 rounded-md border bg-surface text-content-secondary border-edge hover:bg-surface-hover"
           title={`${r.kind.toUpperCase()}: ${titleById[r.id] ?? r.id}`}
         >
           <span className="uppercase mr-1">{r.kind[0]}</span>
@@ -90,7 +90,7 @@ export const RefsPills = ({ refs, onOpenRef }: RefsPillsProps) => {
 
       {list.length > 3 && (
         <span
-          className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-muted)] border-[var(--border-color)]"
+          className="text-xs px-1.5 py-0.5 rounded-md border bg-surface text-content-muted border-edge"
           title={`${list.length - 3} more references`}
         >
           +{list.length - 3}

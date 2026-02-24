@@ -81,22 +81,22 @@ const RequestCard = memo(function RequestCard({
   return (
     <div
       className={cn(
-        "bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]",
+        "bg-surface rounded-lg border border-edge",
         "transition-all duration-200 hover:shadow"
       )}
     >
       {/* Header */}
-      <div className="p-3 border-b border-[var(--border-color)]">
+      <div className="p-3 border-b border-edge">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2">
             <div className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
               <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-primary)] line-clamp-2">
+              <p className="text-sm font-medium text-content line-clamp-2">
                 {request.question}
               </p>
-              <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-muted)]">
+              <div className="flex items-center gap-2 mt-1 text-xs text-content-muted">
                 <Clock className="w-3 h-3" />
                 <span>{timeAgo}</span>
               </div>
@@ -107,13 +107,13 @@ const RequestCard = memo(function RequestCard({
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+              className="p-1 rounded hover:bg-surface-hover transition-colors"
               aria-label={isExpanded ? "Hide context" : "Show context"}
             >
               {isExpanded ? (
-                <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+                <ChevronUp className="w-4 h-4 text-content-muted" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+                <ChevronDown className="w-4 h-4 text-content-muted" />
               )}
             </button>
           )}
@@ -121,8 +121,8 @@ const RequestCard = memo(function RequestCard({
 
         {/* Expanded Context */}
         {isExpanded && request.context && (
-          <div className="mt-3 p-2 bg-[var(--bg-secondary)] rounded-lg text-xs text-[var(--text-secondary)]">
-            <div className="flex items-center gap-1.5 mb-1 text-xs text-[var(--text-muted)] uppercase tracking-wider font-medium">
+          <div className="mt-3 p-2 bg-surface-secondary rounded-lg text-xs text-content-secondary">
+            <div className="flex items-center gap-1.5 mb-1 text-xs text-content-muted uppercase tracking-wider font-medium">
               <Bot className="w-3 h-3" />
               Context
             </div>
@@ -134,7 +134,7 @@ const RequestCard = memo(function RequestCard({
       {/* Actions */}
       <div className="p-3">
         {isProcessing ? (
-          <div className="flex items-center justify-center gap-2 py-2 text-xs text-[var(--text-muted)]">
+          <div className="flex items-center justify-center gap-2 py-2 text-xs text-content-muted">
             <Loader2 className="w-4 h-4 motion-safe:animate-spin" />
             <span>Processing...</span>
           </div>
@@ -149,8 +149,8 @@ const RequestCard = memo(function RequestCard({
                   onClick={() => handleOptionClick(option)}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium",
-                    "border border-[var(--border-color)]",
-                    "hover:bg-[var(--accent-primary-bg)] hover:border-[var(--accent-primary)]/30",
+                    "border border-edge",
+                    "hover:bg-[var(--accent-primary-bg)] hover:border-indigo-500/30/30",
                     "transition-colors"
                   )}
                 >
@@ -169,8 +169,8 @@ const RequestCard = memo(function RequestCard({
                 aria-label="Custom response"
                 className={cn(
                   "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
-                  "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                  "text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
+                  "bg-surface-secondary border border-edge",
+                  "text-content placeholder:text-content-muted",
                   "focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]/30"
                 )}
                 onKeyDown={(e) => {
@@ -199,7 +199,7 @@ const RequestCard = memo(function RequestCard({
                 aria-label="Cancel request"
                 className={cn(
                   "p-1.5 rounded-lg",
-                  "border border-[var(--border-color)]",
+                  "border border-edge",
                   "hover:bg-red-500/10 hover:border-red-500/30",
                   "transition-colors"
                 )}
@@ -219,8 +219,8 @@ const RequestCard = memo(function RequestCard({
               aria-label="Your response"
               className={cn(
                 "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
-                "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
-                "text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
+                "bg-surface-secondary border border-edge",
+                "text-content placeholder:text-content-muted",
                 "focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]/30"
               )}
               onKeyDown={(e) => {
@@ -249,7 +249,7 @@ const RequestCard = memo(function RequestCard({
               aria-label="Cancel request"
               className={cn(
                 "p-1.5 rounded-lg",
-                "border border-[var(--border-color)]",
+                "border border-edge",
                 "hover:bg-red-500/10 hover:border-red-500/30",
                 "transition-colors"
               )}
@@ -331,7 +331,7 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
   // Loading state
   if (pendingRequests === undefined) {
     return (
-      <div className={cn("p-4 text-center text-xs text-[var(--text-muted)]", className)}>
+      <div className={cn("p-4 text-center text-xs text-content-muted", className)}>
         <Loader2 className="w-4 h-4 motion-safe:animate-spin mx-auto mb-2" />
         Loading requests...
       </div>
@@ -345,8 +345,8 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
         <div className="w-10 h-10 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-3">
           <CheckCircle className="w-5 h-5 text-green-600" />
         </div>
-        <p className="text-sm font-medium text-[var(--text-primary)]">All caught up!</p>
-        <p className="text-xs text-[var(--text-muted)] mt-1">
+        <p className="text-sm font-medium text-content">All caught up!</p>
+        <p className="text-xs text-content-muted mt-1">
           No pending approval requests
         </p>
       </div>
@@ -361,8 +361,8 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
       {!compact && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-[var(--accent-primary)]" />
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+            <MessageSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <h3 className="text-sm font-semibold text-content">
               Pending Approvals
             </h3>
             <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
@@ -387,7 +387,7 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
 
       {/* Show more indicator */}
       {pendingRequests.length > maxItems && (
-        <div className="text-center text-xs text-[var(--text-muted)]">
+        <div className="text-center text-xs text-content-muted">
           +{pendingRequests.length - maxItems} more pending
         </div>
       )}

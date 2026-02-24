@@ -117,18 +117,18 @@ const ModeSelector = memo(function ModeSelector({
         onClick={onToggle}
         className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
-          "text-xs font-medium border border-[var(--border-color)]",
-          "hover:bg-[var(--bg-hover)] transition-colors",
-          isOpen && "bg-[var(--bg-hover)]"
+          "text-xs font-medium border border-edge",
+          "hover:bg-surface-hover transition-colors",
+          isOpen && "bg-surface-hover"
         )}
       >
-        <Icon className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+        <Icon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
         <span>{config.label}</span>
         <ChevronDown className={cn("w-3 h-3 transition-transform", isOpen && "rotate-180")} />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] bg-surface border border-edge rounded-lg shadow-lg overflow-hidden">
           {(Object.entries(MODE_CONFIG) as [AgentMode, typeof MODE_CONFIG["quick"]][]).map(([key, cfg]) => {
             const ModeIcon = cfg.icon;
             return (
@@ -141,14 +141,14 @@ const ModeSelector = memo(function ModeSelector({
                 }}
                 className={cn(
                   "w-full flex items-start gap-2 px-3 py-2 text-left",
-                  "hover:bg-[var(--bg-hover)] transition-colors",
+                  "hover:bg-surface-hover transition-colors",
                   mode === key && "bg-[var(--accent-primary-bg)]"
                 )}
               >
-                <ModeIcon className="w-4 h-4 mt-0.5 text-[var(--accent-primary)]" />
+                <ModeIcon className="w-4 h-4 mt-0.5 text-indigo-600 dark:text-indigo-400" />
                 <div>
-                  <div className="text-xs font-medium text-[var(--text-primary)]">{cfg.label}</div>
-                  <div className="text-xs text-[var(--text-muted)]">{cfg.description}</div>
+                  <div className="text-xs font-medium text-content">{cfg.label}</div>
+                  <div className="text-xs text-content-muted">{cfg.description}</div>
                 </div>
               </button>
             );
@@ -179,9 +179,9 @@ const ModelSelector = memo(function ModelSelector({
         onClick={onToggle}
         className={cn(
           "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg",
-          "text-xs font-medium border border-[var(--border-color)]",
-          "hover:bg-[var(--bg-hover)] transition-colors",
-          isOpen && "bg-[var(--bg-hover)]"
+          "text-xs font-medium border border-edge",
+          "hover:bg-surface-hover transition-colors",
+          isOpen && "bg-surface-hover"
         )}
       >
         <span className="max-w-[120px] truncate">{selected.label}</span>
@@ -190,7 +190,7 @@ const ModelSelector = memo(function ModelSelector({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 z-50 min-w-[220px] bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg overflow-hidden max-h-[320px] overflow-y-auto">
+        <div className="absolute top-full right-0 mt-1 z-50 min-w-[220px] bg-surface border border-edge rounded-lg shadow-lg overflow-hidden max-h-[320px] overflow-y-auto">
           {MODEL_OPTIONS.map((m) => (
             <button
               key={m.value}
@@ -201,15 +201,15 @@ const ModelSelector = memo(function ModelSelector({
               }}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-left",
-                "hover:bg-[var(--bg-hover)] transition-colors",
+                "hover:bg-surface-hover transition-colors",
                 model === m.value && "bg-[var(--accent-primary-bg)]"
               )}
             >
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-[var(--text-primary)]">{m.label}</span>
+                <span className="text-xs font-medium text-content">{m.label}</span>
                 {m.isFree && <Gift className="w-3 h-3 text-violet-500" />}
               </div>
-              <div className="text-xs text-[var(--text-muted)]">{m.provider}</div>
+              <div className="text-xs text-content-muted">{m.provider}</div>
             </button>
           ))}
         </div>
@@ -301,12 +301,12 @@ export const AgentCommandBar = memo(function AgentCommandBar({
               onClick={() => handleQuickAction(action)}
               className={cn(
                 "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full",
-                "text-xs font-medium border border-[var(--border-color)]",
-                "bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)]",
+                "text-xs font-medium border border-edge",
+                "bg-surface hover:bg-surface-hover",
                 "transition-colors"
               )}
             >
-              <Icon className="w-3 h-3 text-[var(--accent-primary)]" />
+              <Icon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               {action.label}
             </button>
           );
@@ -317,9 +317,9 @@ export const AgentCommandBar = memo(function AgentCommandBar({
       <div className="relative">
         <div
           className={cn(
-            "flex flex-col bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]",
+            "flex flex-col bg-surface rounded-lg border border-edge",
             "focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/20",
-            "focus-within:border-[var(--accent-primary)]/50 transition-all"
+            "focus-within:border-indigo-500/30/50 transition-all"
           )}
         >
           {/* Input Row */}
@@ -334,7 +334,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
               rows={1}
               className={cn(
                 "flex-1 resize-none bg-transparent text-sm",
-                "text-[var(--text-primary)] placeholder:text-[var(--text-muted)]",
+                "text-content placeholder:text-content-muted",
                 "outline-none min-h-[24px] max-h-[120px]"
               )}
             />
@@ -379,7 +379,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
 
             {/* Spawn indicator */}
             {isSpawn && parsedSpawn && (
-              <div className="flex items-center gap-1.5 text-xs text-[var(--accent-primary)]">
+              <div className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400">
                 <Zap className="w-3 h-3" />
                 <span>Swarm: {parsedSpawn.agents.length} agents</span>
               </div>
@@ -389,15 +389,15 @@ export const AgentCommandBar = memo(function AgentCommandBar({
 
         {/* Command Hint */}
         {showHint && (
-          <div className="absolute top-full left-0 mt-1 z-50 w-full max-w-md bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-3">
+          <div className="absolute top-full left-0 mt-1 z-50 w-full max-w-md bg-surface border border-edge rounded-lg shadow-lg p-3">
             <div className="flex items-center gap-2 mb-2">
-              <Command className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-              <span className="text-xs font-medium text-[var(--text-primary)]">
+              <Command className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-xs font-medium text-content">
                 Spawn Command
               </span>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mb-2">
-              Use <code className="px-1 bg-[var(--bg-secondary)] rounded">/spawn "query" --agents=doc,media,sec</code>
+            <p className="text-xs text-content-muted mb-2">
+              Use <code className="px-1 bg-surface-secondary rounded">/spawn "query" --agents=doc,media,sec</code>
             </p>
             <div className="flex flex-wrap gap-1">
               {AGENT_SHORTCUTS.map((agent) => {
@@ -405,7 +405,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
                 return (
                   <span
                     key={agent.key}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-[var(--bg-secondary)] rounded"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs bg-surface-secondary rounded"
                   >
                     <Icon className="w-2.5 h-2.5" />
                     {agent.key}

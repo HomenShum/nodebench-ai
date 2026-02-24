@@ -34,8 +34,8 @@ export function UnifiedRow({
     <div
       className={`sidebar-item group relative flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg cursor-pointer transition-all duration-200 mx-1.5
         ${isSelected
-          ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] font-medium'
-          : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}
+          ? 'bg-surface-hover text-content font-medium'
+          : 'hover:bg-surface-hover text-content-secondary hover:text-content'}
       `}
       onClick={(e) => onOpen(item, e)}
       role="option"
@@ -59,7 +59,7 @@ export function UnifiedRow({
           title={item.status === 'done' ? 'Mark as todo' : 'Mark as done'}
         />
       ) : (
-        <FileText className="h-4 w-4 flex-shrink-0 text-[var(--text-secondary)]" />
+        <FileText className="h-4 w-4 flex-shrink-0 text-content-secondary" />
       )}
 
       {/* Overdue indicator */}
@@ -71,18 +71,18 @@ export function UnifiedRow({
       {/* Right-side metadata */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {isTask && item.dueDate && (
-          <span className="text-xs text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-xs text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity">
             {formatDue(item.dueDate)}
           </span>
         )}
-        <span className="text-xs text-[var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity">
           {formatTimeAgo(item.updatedAt)}
         </span>
 
         {/* Favorite button */}
         <button
           onClick={(e) => { e.stopPropagation(); onToggleFavorite(item); }}
-          className={`p-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded hover:bg-[var(--bg-secondary)] ${item.isFavorite ? 'opacity-100 text-yellow-500' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+          className={`p-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded hover:bg-surface-secondary ${item.isFavorite ? 'opacity-100 text-yellow-500' : 'text-content-secondary hover:text-content'}`}
           title={item.isFavorite ? 'Unpin' : 'Pin'}
           aria-label={item.isFavorite ? 'Unpin' : 'Pin'}
         >
@@ -119,7 +119,7 @@ function MenuButton({
     <div className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); setIsOpen((v) => !v); }}
-        className="p-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        className="p-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 rounded hover:bg-surface-secondary text-content-secondary hover:text-content"
         title="More"
         aria-label="More"
       >
@@ -127,13 +127,13 @@ function MenuButton({
       </button>
       {isOpen && (
         <div
-          className="absolute right-0 mt-1 bg-[var(--bg-primary)] rounded-lg shadow-lg border border-[var(--border-color)] z-20 p-1.5 min-w-[120px]"
+          className="absolute right-0 mt-1 bg-surface rounded-lg shadow-lg border border-edge z-20 p-1.5 min-w-[120px]"
           onClick={(e) => e.stopPropagation()}
           onMouseLeave={close}
         >
           <div className="flex flex-col gap-0.5">
             <button
-              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors text-left w-full"
+              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-content-secondary hover:bg-surface-hover hover:text-content transition-colors text-left w-full"
               title="Rename"
               aria-label="Rename"
               onClick={() => { onRename?.(item); close(); }}
@@ -142,7 +142,7 @@ function MenuButton({
               <span>Rename</span>
             </button>
             <button
-              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors text-left w-full"
+              className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-content-secondary hover:bg-surface-hover hover:text-content transition-colors text-left w-full"
               title="Share"
               aria-label="Share"
               onClick={() => { onShare?.(item); close(); }}
@@ -150,7 +150,7 @@ function MenuButton({
               <Share2 className="h-3.5 w-3.5" />
               <span>Share</span>
             </button>
-            <div className="border-t border-[var(--border-color)] my-0.5"></div>
+            <div className="border-t border-edge my-0.5"></div>
             <button
               className="flex items-center gap-2 px-2 py-1.5 rounded text-sm text-red-600 hover:bg-red-50 transition-colors text-left w-full"
               title="Delete"

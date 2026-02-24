@@ -17,7 +17,7 @@ export function Badge({
 }) {
   const tones: Record<BadgeTone, string> = {
     default:
-      "border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]",
+      "border-edge bg-surface text-content-secondary",
     success: "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400",
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     info: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",

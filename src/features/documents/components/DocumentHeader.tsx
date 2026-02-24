@@ -29,14 +29,14 @@ function LastEditorDisplay({ userId }: { userId: string }) {
 
   if (!user) {
     return (
-      <span className="text-xs text-[var(--text-muted)] opacity-60 italic inline-flex items-center gap-1">
-        by <span className="inline-block w-16 h-2.5 bg-[var(--bg-hover)] rounded motion-safe:animate-pulse" />
+      <span className="text-xs text-content-muted opacity-60 italic inline-flex items-center gap-1">
+        by <span className="inline-block w-16 h-2.5 bg-surface-hover rounded motion-safe:animate-pulse" />
       </span>
     );
   }
 
   return (
-    <span className="text-xs text-[var(--text-muted)] opacity-60 italic" title={`User ID: ${userId}`}>
+    <span className="text-xs text-content-muted opacity-60 italic" title={`User ID: ${userId}`}>
       by {user.name || 'Unknown'} ({userId.slice(-8)})
     </span>
   );
@@ -75,7 +75,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
       case "topic": return "bg-sky-50 text-sky-800 border-sky-200";
       case "community": return "bg-indigo-50 text-content border-indigo-200";
       case "relationship": return "bg-rose-50 text-rose-800 border-rose-200";
-      default: return "bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]";
+      default: return "bg-surface-hover text-content-secondary border-edge";
     }
   };
   const kindStripClass = (k?: string) => {
@@ -228,7 +228,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
   };
 
   return (
-    <div className="border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
+    <div className="border-b border-edge bg-surface">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
         {/* Breadcrumb Navigation */}
         <DocumentBreadcrumbs documentId={document._id} />
@@ -241,20 +241,20 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('nodebench:goBack'));
               }}
-              className="p-2 rounded-lg border border-[var(--border-color)] hover:bg-[var(--bg-hover)] transition-colors mr-1"
+              className="p-2 rounded-lg border border-edge hover:bg-surface-hover transition-colors mr-1"
               title="Go back"
               aria-label="Go back to documents"
             >
-              <ArrowLeft className="h-4 w-4 text-[var(--text-secondary)]" />
+              <ArrowLeft className="h-4 w-4 text-content-secondary" />
             </button>
             {document.isPublic ? (
               <>
                 <Globe className="h-4 w-4 text-[var(--accent-green)]" />
-                <span className="text-sm font-medium text-[var(--text-secondary)]">Public</span>
+                <span className="text-sm font-medium text-content-secondary">Public</span>
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full border font-medium ${(document as any).allowPublicEdit
                     ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[var(--accent-green)]/5'
-                    : 'border-[var(--border-color)] text-[var(--text-muted)] bg-[var(--bg-secondary)]'
+                    : 'border-edge text-content-muted bg-surface-secondary'
                     }`}
                   title={(document as any).allowPublicEdit ? 'Anyone with the link can edit' : 'Public view-only'}
                 >
@@ -263,8 +263,8 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               </>
             ) : (
               <>
-                <Lock className="h-4 w-4 text-[var(--text-muted)]" />
-                <span className="text-sm font-medium text-[var(--text-secondary)]">Private</span>
+                <Lock className="h-4 w-4 text-content-muted" />
+                <span className="text-sm font-medium text-content-secondary">Private</span>
               </>
             )}
           </div>
@@ -281,7 +281,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                   // Event dispatch failed
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-all duration-200"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-edge text-content-secondary hover:text-content hover:bg-surface-hover transition-all duration-200"
               title="Toggle Inspect view"
               aria-label="Toggle Inspect view"
             >
@@ -292,11 +292,11 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               <button
                 type="button"
                 onClick={() => void handleToggleFavorite()}
-                className="flex items-center gap-1.5 p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
+                className="flex items-center gap-1.5 p-2 hover:bg-surface-hover rounded-lg transition-all duration-200"
                 title={document.isFavorite ? "Unfavorite" : "Favorite"}
                 aria-label={document.isFavorite ? "Unfavorite document" : "Favorite document"}
               >
-                <Star className={`h-4 w-4 ${document.isFavorite ? 'text-yellow-500 fill-yellow-500' : 'text-[var(--text-secondary)]'}`} />
+                <Star className={`h-4 w-4 ${document.isFavorite ? 'text-yellow-500 fill-yellow-500' : 'text-content-secondary'}`} />
                 <span className="hidden sm:inline text-sm">{document.isFavorite ? "Favorited" : "Favorite"}</span>
               </button>
             )}
@@ -304,11 +304,11 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
             <button
               type="button"
               onClick={handleShare}
-              className="flex items-center gap-1.5 p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-all duration-200"
+              className="flex items-center gap-1.5 p-2 hover:bg-surface-hover rounded-lg transition-all duration-200"
               title="Share"
               aria-label="Share document"
             >
-              <Share className="h-4 w-4 text-[var(--text-secondary)]" />
+              <Share className="h-4 w-4 text-content-secondary" />
               <span className="hidden sm:inline text-sm">Share</span>
             </button>
 
@@ -318,49 +318,49 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                 <button
                   type="button"
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="p-2 hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+                  className="p-2 hover:bg-surface-hover rounded-lg transition-colors"
                   title="More options"
                   aria-label="More options"
                   aria-expanded={isMenuOpen}
                 >
-                  <MoreHorizontal className="h-4 w-4 text-[var(--text-secondary)]" />
+                  <MoreHorizontal className="h-4 w-4 text-content-secondary" />
                 </button>
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[var(--bg-primary)] rounded-lg shadow-xl border border-[var(--border-color)] z-50 overflow-hidden ring-1 ring-black/5" role="dialog" aria-label="Document options">
+                  <div className="absolute right-0 mt-2 w-56 bg-surface rounded-lg shadow-xl border border-edge z-50 overflow-hidden ring-1 ring-black/5" role="dialog" aria-label="Document options">
                     <div className="py-1">
                       {!document.isPublic ? (
                         <>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             Make Public (view-only)
                           </button>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: true }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: true, allowPublicEdit: true }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             Make Public (editable)
                           </button>
                         </>
                       ) : (
                         <>
-                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: false, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, isPublic: false, allowPublicEdit: false }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                             <Lock className="h-4 w-4" />
                             Make Private
                           </button>
-                          <button onClick={async () => { await updateDocument({ id: document._id, allowPublicEdit: !(document as any).allowPublicEdit }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                          <button onClick={async () => { await updateDocument({ id: document._id, allowPublicEdit: !(document as any).allowPublicEdit }); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                             <Globe className="h-4 w-4" />
                             {(document as any).allowPublicEdit ? "Disable public editing" : "Enable public editing"}
                           </button>
                         </>
                       )}
-                      <button onClick={() => { void handleAddIcon(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                      <button onClick={() => { void handleAddIcon(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                         <Smile className="h-4 w-4" />
                         Change Icon
                       </button>
-                      <button onClick={() => { void handleAddCover(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                      <button onClick={() => { void handleAddCover(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                         <ImageIcon className="h-4 w-4" />
                         Change Cover
                       </button>
-                      <div className="border-t border-[var(--border-color)] my-1"></div>
-                      <button onClick={() => { void handleArchive(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center gap-3 transition-colors">
+                      <div className="border-t border-edge my-1"></div>
+                      <button onClick={() => { void handleArchive(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-content-secondary hover:bg-surface-hover hover:text-content flex items-center gap-3 transition-colors">
                         <Archive className="h-4 w-4" />
                         Archive
                       </button>
@@ -389,13 +389,13 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onChange={(e) => setTitle(e.target.value)}
               onBlur={() => void handleTitleSubmit()}
               onKeyDown={handleKeyDown}
-              className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] bg-transparent border-none outline-none flex-1"
+              className="text-2xl sm:text-3xl font-bold text-content bg-transparent border-none outline-none flex-1"
               autoFocus
             />
           ) : (
             <h1
               onClick={isOwner ? () => setIsEditing(true) : undefined}
-              className={`text-2xl sm:text-3xl font-bold text-[var(--text-primary)] ${isOwner ? 'cursor-pointer hover:bg-[var(--bg-hover)] rounded-lg' : ''} px-2 py-1.5 flex-1 transition-colors`}
+              className={`text-2xl sm:text-3xl font-bold text-content ${isOwner ? 'cursor-pointer hover:bg-surface-hover rounded-lg' : ''} px-2 py-1.5 flex-1 transition-colors`}
             >
               {document.title}
             </h1>
@@ -406,7 +406,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
         <div className="mt-2 px-1 sm:px-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
           <div className="flex flex-wrap gap-1 items-center min-h-[24px] w-full sm:w-auto">
             {tags === undefined ? (
-              <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+              <span className="text-xs text-content-muted flex items-center gap-1">
                 <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" /> Loading tags...
               </span>
             ) : (
@@ -450,7 +450,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                               .then(() => removeTagFromDocument({ documentId: document._id, tagId: t._id as any }))
                               .catch((err) => console.warn('[DocumentHeader] rename failed', err));
                           }}
-                          className="bg-transparent outline-none min-w-[60px] max-w-[160px] text-[var(--text-primary)]"
+                          className="bg-transparent outline-none min-w-[60px] max-w-[160px] text-content"
                           autoFocus
                         />
                       ) : (
@@ -475,12 +475,12 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-[var(--text-muted)]">No tags yet</span>
+                  <span className="text-xs text-content-muted">No tags yet</span>
                 )}
 
                 {/* Ghost add pill */}
                 {adding ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-[var(--text-secondary)]">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-content-secondary">
                     <input
                       value={editingValue}
                       onChange={(e) => setEditingValue(e.target.value)}
@@ -512,7 +512,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                   <button
                     type="button"
                     onClick={() => { setAdding(true); setEditingValue(""); }}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-xs text-content-muted hover:text-content-secondary hover:bg-surface-hover"
                     title="Add tag"
                   >
                     + Add tag
@@ -527,8 +527,8 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               onClick={() => void handleGenerateTags()}
               disabled={isGenerating || !canGenerateTags}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${isGenerating || !canGenerateTags
-                ? 'bg-[var(--bg-hover)] text-[var(--text-muted)] border-[var(--border-color)] cursor-not-allowed'
-                : 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20'
+                ? 'bg-surface-hover text-content-muted border-edge cursor-not-allowed'
+                : 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30 hover:bg-[var(--accent-primary)]/20'
                 }`}
               title={canGenerateTags ? 'Generate tags with AI' : 'Only the document owner can generate tags'}
             >
@@ -550,13 +550,13 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               <div className="flex items-center gap-3">
                 <PresenceIndicator documentId={document._id} userId={userId} />
                 {!document.isPublic && isOwner && (
-                  <div className="flex items-center gap-1 text-xs text-[var(--text-muted)] opacity-75">
+                  <div className="flex items-center gap-1 text-xs text-content-muted opacity-75">
                     <span>•</span>
                     <span className="italic">
                       You're editing alone. Make this document{" "}
                       <button
                         onClick={() => void handleTogglePublic()}
-                        className="text-[var(--accent-primary)] hover:underline font-medium"
+                        className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
                       >
                         public
                       </button>
@@ -578,20 +578,20 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
 
               return showBothDates ? (
                 <>
-                  <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                  <div className="flex items-center gap-1 text-xs text-content-muted">
                     <span>updated</span>
                     <span>{new Date(lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     <span>{new Date(lastModified).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {lastEditedBy && <LastEditorDisplay userId={lastEditedBy} />}
                     {isRecent && <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full"></span>}
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-[var(--text-muted)] opacity-75">
+                  <div className="flex items-center gap-1 text-xs text-content-muted opacity-75">
                     <span>created</span>
                     <span>{new Date(document._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                <div className="flex items-center gap-1 text-xs text-content-muted">
                   <span>created</span>
                   <span>{new Date(document._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   <span>{new Date(document._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>

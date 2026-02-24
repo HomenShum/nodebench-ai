@@ -122,7 +122,7 @@ export default function AgendaEditorPopover({ isOpen, anchorEl, onClose, kind, e
       role="dialog"
       aria-modal="false"
       aria-label="Agenda editor"
-      className="fixed z-[9999] w-[min(560px,calc(100vw-24px))] shadow-2xl rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]"
+      className="fixed z-[9999] w-[min(560px,calc(100vw-24px))] shadow-2xl rounded-lg border border-edge bg-surface-secondary"
       style={{ top: pos.top, left: pos.left }}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}

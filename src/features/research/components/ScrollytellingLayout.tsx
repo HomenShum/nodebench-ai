@@ -128,24 +128,24 @@ const SectionRenderer = ({ section, onVisible, isLast = false, onAskAI }: Sectio
 	    <div ref={ref} id={section.id} className="relative mb-10 scroll-mt-16 pl-8 xl:pl-4">
       {/* Timeline Connector Line - Simplified for Clean Look */}
       {!isLast && (
-        <div className="absolute left-0 top-10 bottom-[-48px] w-px bg-[color:var(--bg-tertiary)] hidden xl:block" />
+        <div className="absolute left-0 top-10 bottom-[-48px] w-px bg-surface-secondary hidden xl:block" />
       )}
       {/* Timeline Dot - Static Minimalist */}
       <div className="absolute left-[-4px] top-[14px] hidden xl:block">
-        <div className="h-2.5 w-2.5 rounded-full bg-[color:var(--text-primary)] ring-4 ring-[#fbfaf2]"></div>
+        <div className="h-2.5 w-2.5 rounded-full bg-content ring-4 ring-[#fbfaf2]"></div>
       </div>
 
       {/* Date Badge - Inline with dot */}
       <div className="mb-3 flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--text-secondary)]"></span>
-        <span className="text-xs font-medium text-[color:var(--text-secondary)] uppercase tracking-wide">
+        <span className="h-1.5 w-1.5 rounded-full bg-content-secondary"></span>
+        <span className="text-xs font-medium text-content-secondary uppercase tracking-wide">
           {section.meta.date}
         </span>
       </div>
 
       {/* Section Title - Clean Sans */}
       <div className="flex items-center justify-between gap-4 mb-4">
-        <h2 className="text-2xl font-semibold tracking-tight text-[color:var(--text-primary)] leading-tight">
+        <h2 className="text-2xl font-semibold tracking-tight text-content leading-tight">
           {section.meta.title}
         </h2>
         {onAskAI && (
@@ -558,23 +558,23 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       )}
 
       {/* Mobile/Tablet Compact Dashboard (Sticky Top) */}
-      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-[color:var(--border-color)] rounded-lg px-4 py-3">
+      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-edge rounded-lg px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[color:var(--text-primary)]">{activeLegacy.phaseLabel || "Briefing"}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-content">{activeLegacy.phaseLabel || "Briefing"}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-xs text-[color:var(--text-secondary)] uppercase font-medium">Sentiment</div>
-              <div className="text-sm font-bold text-[color:var(--text-primary)]">{activeLegacy.marketSentiment}/100</div>
+              <div className="text-xs text-content-secondary uppercase font-medium">Sentiment</div>
+              <div className="text-sm font-bold text-content">{activeLegacy.marketSentiment}/100</div>
             </div>
           </div>
         </div>
         {/* Progress Bar */}
-        <div className="mt-3 h-1 w-full rounded-full bg-[color:var(--bg-secondary)] overflow-hidden">
+        <div className="mt-3 h-1 w-full rounded-full bg-surface-secondary overflow-hidden">
           <div
-            className="h-full bg-[color:var(--text-primary)] transition-all duration-1000 ease-out"
+            className="h-full bg-content transition-all duration-1000 ease-out"
             style={{ width: `${activeLegacy.marketSentiment}%` }}
           />
         </div>
@@ -583,7 +583,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto">
         <div className="lg:col-span-7 xl:col-span-8 pb-8 relative">
           {sourceData.length === 0 && (
-            <div className="p-8 text-center text-[color:var(--text-secondary)] bg-[color:var(--bg-primary)]/50 rounded-lg border border-[color:var(--border-color)]">
+            <div className="p-8 text-center text-content-secondary bg-surface/50 rounded-lg border border-edge">
               <p>No briefing data available for this view.</p>
             </div>
           )}
@@ -630,11 +630,11 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
 
       {/* Footer / CTA for Guests */}
       {showGuestBadge && (
-        <div className="mt-24 border-t border-[color:var(--border-color)] pt-16 text-center">
-          <h3 className="mb-4 text-2xl font-medium text-[color:var(--text-primary)]">
+        <div className="mt-24 border-t border-edge pt-16 text-center">
+          <h3 className="mb-4 text-2xl font-medium text-content">
             Dive deeper with your own data
           </h3>
-          <p className="mx-auto mb-8 max-w-xl text-[color:var(--text-secondary)]">
+          <p className="mx-auto mb-8 max-w-xl text-content-secondary">
             Connect your workspace to generate personalized intelligence briefings,
             track your specific deals, and get real-time market alerts.
           </p>
@@ -647,7 +647,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </button>
-          <p className="mt-6 text-xs text-[color:var(--text-secondary)]">
+          <p className="mt-6 text-xs text-content-secondary">
             No credit card required · SOC2 Compliant
           </p>
         </div>

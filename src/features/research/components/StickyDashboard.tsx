@@ -332,7 +332,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
   <div className="flex flex-col gap-0.5 mb-3 group overflow-hidden">
     <div className="flex items-baseline gap-1.5 min-w-0">
       <span className="text-[10px] text-content-secondary font-medium group-hover:text-content dark:group-hover:text-gray-100 transition-colors leading-none truncate min-w-0 flex-1">{label}</span>
-      <span className="text-[10px] font-mono font-bold text-[color:var(--text-primary)] shrink-0 tabular-nums whitespace-nowrap">{normalizeCapabilityScore(score)}%</span>
+      <span className="text-[10px] font-mono font-bold text-content shrink-0 tabular-nums whitespace-nowrap">{normalizeCapabilityScore(score)}%</span>
       {delta !== undefined && delta !== null && delta !== 0 && (
         <DeltaIndicator value={delta} unit="pts" />
       )}

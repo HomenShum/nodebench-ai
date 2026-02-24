@@ -62,46 +62,46 @@ const QueuePanel = memo(function QueuePanel() {
   const activeCount = activeSwarms.length;
 
   return (
-    <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-3">
-      <h4 className="text-xs font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-        <Activity className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+    <div className="bg-surface rounded-lg border border-edge p-3">
+      <h4 className="text-xs font-semibold text-content mb-3 flex items-center gap-2">
+        <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
         Queue Status
       </h4>
 
       <div className="grid grid-cols-2 gap-3">
         {/* Active Agents */}
-        <div className="p-2 bg-[var(--bg-secondary)] rounded-lg text-center">
+        <div className="p-2 bg-surface-secondary rounded-lg text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             {activeCount > 0 ? (
               <Loader2 className="w-3 h-3 motion-safe:animate-spin text-green-500" />
             ) : (
-              <Zap className="w-3 h-3 text-[var(--text-muted)]" />
+              <Zap className="w-3 h-3 text-content-muted" />
             )}
           </div>
           <div className={cn(
             "text-lg font-bold",
-            activeCount > 0 ? "text-green-600" : "text-[var(--text-muted)]"
+            activeCount > 0 ? "text-green-600" : "text-content-muted"
           )}>
             {activeCount}
           </div>
-          <div className="text-xs text-[var(--text-muted)]">Active</div>
+          <div className="text-xs text-content-muted">Active</div>
         </div>
 
         {/* Pending Approvals */}
-        <div className="p-2 bg-[var(--bg-secondary)] rounded-lg text-center">
+        <div className="p-2 bg-surface-secondary rounded-lg text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <AlertCircle className={cn(
               "w-3 h-3",
-              pendingCount > 0 ? "text-amber-500" : "text-[var(--text-muted)]"
+              pendingCount > 0 ? "text-amber-500" : "text-content-muted"
             )} />
           </div>
           <div className={cn(
             "text-lg font-bold",
-            pendingCount > 0 ? "text-amber-600" : "text-[var(--text-muted)]"
+            pendingCount > 0 ? "text-amber-600" : "text-content-muted"
           )}>
             {pendingCount}
           </div>
-          <div className="text-xs text-[var(--text-muted)]">Pending</div>
+          <div className="text-xs text-content-muted">Pending</div>
         </div>
       </div>
 
@@ -111,13 +111,13 @@ const QueuePanel = memo(function QueuePanel() {
           {activeSwarms.slice(0, 3).map((swarm) => (
             <div
               key={swarm._id}
-              className="flex items-center gap-2 p-2 bg-[var(--bg-secondary)] rounded-lg"
+              className="flex items-center gap-2 p-2 bg-surface-secondary rounded-lg"
             >
-              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-[var(--accent-primary)] flex-shrink-0" />
-              <span className="text-xs text-[var(--text-secondary)] truncate flex-1">
+              <Loader2 className="w-3 h-3 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              <span className="text-xs text-content-secondary truncate flex-1">
                 {swarm.query?.slice(0, 40) || "Running..."}
               </span>
-              <span className="text-xs text-[var(--text-muted)] capitalize">
+              <span className="text-xs text-content-muted capitalize">
                 {swarm.status}
               </span>
             </div>
@@ -169,25 +169,25 @@ const RecentRuns = memo(function RecentRuns() {
 
   if (recentSwarms.length === 0) {
     return (
-      <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-3">
-        <h4 className="text-xs font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+      <div className="bg-surface rounded-lg border border-edge p-3">
+        <h4 className="text-xs font-semibold text-content mb-3 flex items-center gap-2">
+          <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           Recent Runs
         </h4>
         <div className="flex flex-col items-center py-5 px-2 gap-2 text-center">
-          <div className="w-9 h-9 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)] flex items-center justify-center">
-            <PlayCircle className="w-4 h-4 text-[var(--text-muted)]" />
+          <div className="w-9 h-9 rounded-lg bg-surface-secondary border border-edge flex items-center justify-center">
+            <PlayCircle className="w-4 h-4 text-content-muted" />
           </div>
-          <p className="text-xs font-semibold text-[var(--text-primary)]">
+          <p className="text-xs font-semibold text-content">
             No recent runs
           </p>
-          <p className="text-[11px] leading-relaxed text-[var(--text-muted)] max-w-[220px]">
+          <p className="text-[11px] leading-relaxed text-content-muted max-w-[220px]">
             Start your first agent task to populate this timeline with duration and outcome history.
           </p>
           <button
             type="button"
             onClick={focusCommandBar}
-            className="mt-1 px-2.5 py-1.5 rounded-md text-[11px] font-medium border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+            className="mt-1 px-2.5 py-1.5 rounded-md text-[11px] font-medium border border-edge text-content-secondary hover:text-content hover:bg-surface-secondary transition-colors"
           >
             Start a task
           </button>
@@ -197,9 +197,9 @@ const RecentRuns = memo(function RecentRuns() {
   }
 
   return (
-    <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-3">
-      <h4 className="text-xs font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-        <Clock className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+    <div className="bg-surface rounded-lg border border-edge p-3">
+      <h4 className="text-xs font-semibold text-content mb-3 flex items-center gap-2">
+        <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
         Recent Runs
       </h4>
 
@@ -207,7 +207,7 @@ const RecentRuns = memo(function RecentRuns() {
         {recentSwarms.map((swarm) => (
           <div
             key={swarm._id}
-            className="flex items-start gap-2 p-2 bg-[var(--bg-secondary)] rounded-lg hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+            className="flex items-start gap-2 p-2 bg-surface-secondary rounded-lg hover:bg-surface-hover transition-colors cursor-pointer"
           >
             {/* Status Icon */}
             {swarm.status === "completed" ? (
@@ -219,15 +219,15 @@ const RecentRuns = memo(function RecentRuns() {
             )}
 
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-[var(--text-primary)] truncate">
+              <p className="text-xs text-content truncate">
                 {swarm.query?.slice(0, 50) || "Agent run"}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-[var(--text-muted)]">
+                <span className="text-xs text-content-muted">
                   {formatTimeAgo(swarm.createdAt)}
                 </span>
                 {swarm.elapsedMs && (
-                  <span className="text-xs text-[var(--text-muted)]">
+                  <span className="text-xs text-content-muted">
                     • {formatTime(swarm.elapsedMs)}
                   </span>
                 )}
@@ -254,43 +254,43 @@ const MemoryStats = memo(function MemoryStats() {
   };
 
   return (
-    <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] p-3">
-      <h4 className="text-xs font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-        <Brain className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+    <div className="bg-surface rounded-lg border border-edge p-3">
+      <h4 className="text-xs font-semibold text-content mb-3 flex items-center gap-2">
+        <Brain className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
         Memory Stats
       </h4>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-muted)]">Episodic Memories</span>
-          <span className="text-xs font-medium text-[var(--text-primary)]">
+          <span className="text-xs text-content-muted">Episodic Memories</span>
+          <span className="text-xs font-medium text-content">
             {stats.episodicCount}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-muted)]">Key-Value Entries</span>
-          <span className="text-xs font-medium text-[var(--text-primary)]">
+          <span className="text-xs text-content-muted">Key-Value Entries</span>
+          <span className="text-xs font-medium text-content">
             {stats.keyValueCount}
           </span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[var(--text-muted)]">Deduplication</span>
+          <span className="text-xs text-content-muted">Deduplication</span>
           <span className="text-xs font-medium text-green-600">
             {stats.deduplicationRate}%
           </span>
         </div>
 
         {/* Token Usage Bar */}
-        <div className="pt-2 border-t border-[var(--border-color)]">
+        <div className="pt-2 border-t border-edge">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-[var(--text-muted)]">Token Usage</span>
-            <span className="text-xs text-[var(--text-muted)]">
+            <span className="text-xs text-content-muted">Token Usage</span>
+            <span className="text-xs text-content-muted">
               {(stats.tokenUsage / 1000).toFixed(1)}k / 50k
             </span>
           </div>
-          <div className="h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+          <div className="h-1.5 bg-surface-secondary rounded-full overflow-hidden">
             <div
               className="h-full bg-[var(--accent-primary)] rounded-full"
               style={{ width: `${(stats.tokenUsage / 50000) * 100}%` }}
@@ -321,30 +321,30 @@ const QuickStats = memo(function QuickStats() {
   }, [swarms]);
 
   return (
-    <div className="bg-gradient-to-br from-[var(--accent-primary-bg)] to-[var(--bg-secondary)] rounded-lg border border-[var(--accent-primary)]/20 p-3">
-      <h4 className="text-xs font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-        <BarChart3 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+    <div className="bg-gradient-to-br from-indigo-500/10 to-surface-secondary rounded-lg border border-indigo-500/30/20 p-3">
+      <h4 className="text-xs font-semibold text-content mb-3 flex items-center gap-2">
+        <BarChart3 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
         Performance
       </h4>
 
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <div className="text-lg font-bold text-[var(--accent-primary)]">
+          <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
             {stats.total}
           </div>
-          <div className="text-xs text-[var(--text-muted)]">Total</div>
+          <div className="text-xs text-content-muted">Total</div>
         </div>
         <div>
           <div className="text-lg font-bold text-green-600">
             {stats.completed}
           </div>
-          <div className="text-xs text-[var(--text-muted)]">Success</div>
+          <div className="text-xs text-content-muted">Success</div>
         </div>
         <div>
-          <div className="text-lg font-bold text-[var(--text-primary)]">
+          <div className="text-lg font-bold text-content">
             {stats.successRate}%
           </div>
-          <div className="text-xs text-[var(--text-muted)]">Rate</div>
+          <div className="text-xs text-content-muted">Rate</div>
         </div>
       </div>
     </div>
@@ -425,7 +425,7 @@ export const AgentSidebar = memo(function AgentSidebar({ className }: AgentSideb
     <aside
       ref={sidebarRef}
       className={cn(
-        "shrink-0 border-l border-[var(--border-color)] bg-[var(--bg-primary)] relative z-20",
+        "shrink-0 border-l border-edge bg-surface relative z-20",
         isOpen ? "w-[280px] md:w-[320px] p-3" : "w-[18px] p-0",
         className
       )}
@@ -438,8 +438,8 @@ export const AgentSidebar = memo(function AgentSidebar({ className }: AgentSideb
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         className={cn(
           "absolute -left-2 top-3 w-4 h-6 rounded-sm",
-          "border border-[var(--border-color)] bg-[var(--bg-primary)]",
-          "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]",
+          "border border-edge bg-surface",
+          "text-content-secondary hover:bg-surface-hover",
           "flex items-center justify-center shadow-sm"
         )}
       >

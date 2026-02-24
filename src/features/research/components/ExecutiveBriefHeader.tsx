@@ -78,14 +78,14 @@ function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
 
   return (
     <div className={`flex items-center gap-5 px-6 py-5 rounded-lg border backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px] group ${colorClasses[color]}`}>
-      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-[color:var(--bg-primary)] shadow-xl shadow-[color:var(--bg-tertiary)]/20 transition-transform flex items-center justify-center">
+      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-surface shadow-xl shadow-surface-secondary/20 transition-transform flex items-center justify-center">
         <div className="[&>svg]:w-6 [&>svg]:h-6">
           {icon}
         </div>
       </div>
       <div className="min-w-0">
         <div className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-1 font-outfit">{label}</div>
-        <div className="text-2xl font-bold leading-none tracking-tight text-[color:var(--text-primary)]">{value}</div>
+        <div className="text-2xl font-bold leading-none tracking-tight text-content">{value}</div>
         {sublabel && <div className="text-xs font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
       </div>
     </div>
@@ -109,7 +109,7 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
       onClick={onClick}
       className={`px-4 py-2 text-xs font-bold rounded-lg transition-all tracking-[0.1em] uppercase ${isSelected
         ? "bg-gray-900 text-white shadow-xl shadow-gray-400/20 translate-y-[-1px]"
-        : "bg-[color:var(--bg-primary)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] border border-[color:var(--border-color)]"
+        : "bg-surface text-content-secondary hover:text-content hover:bg-surface-hover border border-edge"
         }`}
     >
       {label}
@@ -185,19 +185,19 @@ export function ExecutiveBriefHeader({
       : undefined;
 
   return (
-    <header className={`bg-[color:var(--bg-primary)]/80 backdrop-blur-xl border border-[color:var(--border-color)] rounded-lg overflow-hidden ${className ?? ""}`}>
+    <header className={`bg-surface/80 backdrop-blur-xl border border-edge rounded-lg overflow-hidden ${className ?? ""}`}>
       {/* Top row: Headline + Date */}
-      <div className="px-8 py-6 border-b border-[color:var(--bg-secondary)]/50 bg-gradient-to-r from-[color:var(--bg-secondary)]/30 to-transparent">
+      <div className="px-8 py-6 border-b border-[color:var(--bg-secondary)]/50 bg-gradient-to-r from-surface-secondary/30 to-transparent">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-3xl font-bold text-[color:var(--text-primary)] tracking-tight italic">
+            <h1 className="text-3xl font-bold text-content tracking-tight italic">
               {effectiveHeadline}
             </h1>
-            <p className="mt-2 text-base text-[color:var(--text-secondary)] font-medium leading-relaxed max-w-2xl">
+            <p className="mt-2 text-base text-content-secondary font-medium leading-relaxed max-w-2xl">
               {effectiveThesis}
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[color:var(--bg-secondary)]/50 rounded-full text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-wider flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-secondary/50 rounded-full text-xs font-bold text-content-secondary uppercase tracking-wider flex-shrink-0">
             <Calendar className="w-3 h-3" />
             <span>{effectiveDate}</span>
           </div>
@@ -232,10 +232,10 @@ export function ExecutiveBriefHeader({
       </div>
 
       {/* Filters Row */}
-      <div className="px-8 py-3 flex items-center gap-8 overflow-x-auto bg-[color:var(--bg-secondary)]/20">
+      <div className="px-8 py-3 flex items-center gap-8 overflow-x-auto bg-surface-secondary/20">
         {/* Time Window */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Horizon</span>
+          <span className="text-xs font-bold text-content-secondary uppercase tracking-wider">Horizon</span>
           <div className="flex gap-1.5">
             {timeWindows.map((tw) => (
               <FilterChip
@@ -251,7 +251,7 @@ export function ExecutiveBriefHeader({
         {/* Topic Tags */}
         {effectiveTopics.length > 0 && (
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs font-bold text-[color:var(--text-secondary)] uppercase tracking-wider">Focus</span>
+            <span className="text-xs font-bold text-content-secondary uppercase tracking-wider">Focus</span>
             <div className="flex gap-1.5 flex-wrap">
               {effectiveTopics.slice(0, 6).map((tag) => (
                 <FilterChip

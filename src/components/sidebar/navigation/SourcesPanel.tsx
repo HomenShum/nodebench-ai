@@ -16,10 +16,10 @@ export function SourcesPanel({ activeSources, onToggleSource }: SourcesPanelProp
     const [isSourcesOpen, setIsSourcesOpen] = useState(true);
 
     return (
-        <div className="p-3 border-b border-[var(--border-color)]">
+        <div className="p-3 border-b border-edge">
             <button
                 onClick={() => setIsSourcesOpen(!isSourcesOpen)}
-                className="flex items-center justify-between w-full text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2 hover:text-[var(--text-primary)]"
+                className="flex items-center justify-between w-full text-xs font-semibold text-content-secondary uppercase tracking-wider mb-2 hover:text-content"
             >
                 <span>Live Sources</span>
                 <div className="flex items-center gap-2">
@@ -44,8 +44,8 @@ export function SourcesPanel({ activeSources, onToggleSource }: SourcesPanelProp
                                 key={source.id}
                                 onClick={() => onToggleSource(source.id)}
                                 className={`group w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-sm transition-colors select-none ${isActive
-                                    ? 'bg-surface-secondary text-[var(--text-primary)]'
-                                    : 'text-[var(--text-secondary)] hover:bg-surface-hover'
+                                    ? 'bg-surface-secondary text-content'
+                                    : 'text-content-secondary hover:bg-surface-hover'
                                     }`}
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">

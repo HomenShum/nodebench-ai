@@ -874,9 +874,9 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
   if (sync.isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <div className="flex flex-col items-center gap-2 text-sm text-[var(--text-secondary)]">
+        <div className="flex flex-col items-center gap-2 text-sm text-content-secondary">
 
-          <div className="motion-safe:animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--accent-primary)]" />
+          <div className="motion-safe:animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500/30" />
           Loading editor…
         </div>
       </div>
@@ -889,7 +889,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <div className="text-center">
-          <p className="text-[var(--text-secondary)] mb-4">Unable to load document</p>
+          <p className="text-content-secondary mb-4">Unable to load document</p>
           <p className="text-xs text-[var(--text-tertiary)] mb-4">{String(sync.error)}</p>
           <button
             className="px-3 py-1.5 text-sm rounded bg-[var(--accent-primary)] text-white"
@@ -906,8 +906,8 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     if (autoCreateIfEmpty) {
       return (
         <div className="flex items-center justify-center min-h-[200px]">
-          <div className="flex items-center gap-2 text-[var(--text-secondary)] text-sm">
-            <div className="motion-safe:animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--accent-primary)]" />
+          <div className="flex items-center gap-2 text-content-secondary text-sm">
+            <div className="motion-safe:animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500/30" />
             Preparing notes…
           </div>
         </div>
@@ -939,8 +939,8 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
         {/* {aiChatActive && <ShadowTiptap />} */}
 
         {pendingProposal && (
-          <div className="absolute top-2 right-2 z-10 bg-[var(--bg-secondary)]/95 backdrop-blur border border-[var(--border-color)] rounded-md shadow p-2 flex items-center gap-2">
-            <span className="text-xs text-[var(--text-secondary)] truncate max-w-[260px]" title={pendingProposal.message}>
+          <div className="absolute top-2 right-2 z-10 bg-surface-secondary/95 backdrop-blur border border-edge rounded-md shadow p-2 flex items-center gap-2">
+            <span className="text-xs text-content-secondary truncate max-w-[260px]" title={pendingProposal.message}>
               {pendingProposal.message}
             </span>
             <button
@@ -954,7 +954,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               Apply
             </button>
             <button
-              className="px-2 py-0.5 text-xs rounded border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+              className="px-2 py-0.5 text-xs rounded border border-edge hover:bg-surface-hover"
               onClick={() => setPendingProposal(null)}
             >
               Dismiss

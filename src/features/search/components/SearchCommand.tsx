@@ -45,9 +45,9 @@ export function SearchCommand({ isOpen, onClose, onDocumentSelect }: SearchComma
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-start justify-center pt-20">
-      <div className="bg-[color:var(--bg-primary)] rounded-lg shadow-xl w-full max-w-lg mx-4">
-        <div className="flex items-center gap-3 p-4 border-b border-[color:var(--border-color)]">
-          <Search className="h-5 w-5 text-[color:var(--text-secondary)]" />
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4">
+        <div className="flex items-center gap-3 p-4 border-b border-edge">
+          <Search className="h-5 w-5 text-content-secondary" />
           <input
             type="text"
             placeholder="Search documents..."
@@ -60,7 +60,7 @@ export function SearchCommand({ isOpen, onClose, onDocumentSelect }: SearchComma
         
         <div className="max-h-96 overflow-y-auto">
           {query.length === 0 ? (
-            <div className="p-4 text-center text-[color:var(--text-secondary)]">
+            <div className="p-4 text-center text-content-secondary">
               Start typing to search documents...
             </div>
           ) : searchResults && searchResults.length > 0 ? (
@@ -69,21 +69,21 @@ export function SearchCommand({ isOpen, onClose, onDocumentSelect }: SearchComma
                 <button
                   key={doc._id}
                   onClick={() => handleDocumentClick(doc._id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[color:var(--bg-hover)] text-left"
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-hover text-left"
                 >
                   {doc.icon ? (
                     <span className="text-lg">{doc.icon}</span>
                   ) : (
-                    <FileText className="h-5 w-5 text-[color:var(--text-secondary)]" />
+                    <FileText className="h-5 w-5 text-content-secondary" />
                   )}
                   <div>
-                    <div className="font-medium text-[color:var(--text-primary)]">{doc.title}</div>
+                    <div className="font-medium text-content">{doc.title}</div>
                   </div>
                 </button>
               ))}
             </div>
           ) : query.length > 0 ? (
-            <div className="p-4 text-center text-[color:var(--text-secondary)]">
+            <div className="p-4 text-center text-content-secondary">
               No documents found for "{query}"
             </div>
           ) : null}

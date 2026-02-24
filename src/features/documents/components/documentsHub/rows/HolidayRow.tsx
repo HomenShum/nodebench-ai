@@ -45,8 +45,8 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
       <div
         className={
           "document-item group/doc relative px-3 py-2 rounded-sm overflow-hidden cursor-pointer text-sm " +
-          "bg-[var(--bg-secondary)] border border-[var(--border-color)] " +
-          "transition-all duration-200 hover:bg-[var(--bg-hover)] " +
+          "bg-surface-secondary border border-edge " +
+          "transition-all duration-200 hover:bg-surface-hover " +
           "flex items-center justify-between " +
           "focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent-primary)] hover:ring-2 ring-1 ring-[var(--accent-primary)]/10"
         }
@@ -55,7 +55,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
       >
         {/* Watermark */}
         <span
-          className="document-card__bg document-row__bg text-[var(--accent-primary)]"
+          className="document-card__bg document-row__bg text-indigo-600 dark:text-indigo-400"
           aria-hidden
         >
           <CalendarDays className="h-10 w-10 rotate-12" />
@@ -74,15 +74,15 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
             checked
             readOnly
             aria-label="All-day"
-            className="h-4 w-4 rounded border-[var(--border-color)] text-indigo-600 bg-white dark:bg-[var(--bg-primary)]"
+            className="h-4 w-4 rounded border-edge text-indigo-600 bg-white dark:bg-surface"
           />
 
-          <div className="w-7 h-7 rounded-md bg-[var(--bg-primary)] border border-[var(--border-color)] text-[var(--text-secondary)] flex items-center justify-center shrink-0">
-            <CalendarDays className="h-4 w-4 group-hover/doc:text-[var(--text-primary)]" />
+          <div className="w-7 h-7 rounded-md bg-surface border border-edge text-content-secondary flex items-center justify-center shrink-0">
+            <CalendarDays className="h-4 w-4 group-hover/doc:text-content" />
           </div>
 
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate text-[var(--text-primary)]">
+            <div className="text-sm font-medium truncate text-content">
               {title}
             </div>
 
@@ -93,7 +93,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
 
               {dateStr && (
                 <span
-                  className="text-xs px-1.5 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]"
+                  className="text-xs px-1.5 py-0.5 rounded-md border bg-surface text-content-secondary border-edge"
                   title={`Date ${dateStr}`}
                 >
                   {dateStr}

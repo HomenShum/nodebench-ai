@@ -170,7 +170,7 @@ export function AgendaListSection({
 
     return (
         <div className="mt-4">
-            <div className="text-xs uppercase tracking-wide text-[var(--text-muted)] mb-1">
+            <div className="text-xs uppercase tracking-wide text-content-muted mb-1">
                 {title}
             </div>
 
@@ -185,7 +185,7 @@ export function AgendaListSection({
 
             {/* Empty state */}
             {isEmpty && (
-                <div className="text-sm text-[var(--text-secondary)]">
+                <div className="text-sm text-content-secondary">
                     {emptyMessage}
                 </div>
             )}

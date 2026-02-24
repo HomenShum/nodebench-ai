@@ -288,7 +288,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
 
     if (parseResult.sections.length === 0 && !isStreaming) {
         return (
-            <div className="text-center py-12 text-[color:var(--text-secondary)]">
+            <div className="text-center py-12 text-content-secondary">
                 <p className="text-sm">No structured sections found in this dossier.</p>
                 <p className="text-xs mt-2">Switch to Markdown view to see raw content.</p>
             </div>
@@ -296,7 +296,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
     }
 
     return (
-        <div className="min-h-screen bg-[color:var(--bg-primary)] editorial-layout">
+        <div className="min-h-screen bg-surface editorial-layout">
             {/* Main Document Container - Centered, max-w-3xl like a standard doc */}
             <div className="max-w-3xl mx-auto px-8 py-12">
 
@@ -334,7 +334,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
 
                 {/* Content before first section (if any) */}
                 {parseResult.contentBeforeFirstSection && (
-                    <div className="prose prose-lg max-w-none text-[color:var(--text-primary)] mb-10">
+                    <div className="prose prose-lg max-w-none text-content mb-10">
                         {parseResult.contentBeforeFirstSection}
                     </div>
                 )}
@@ -355,7 +355,7 @@ export function NewsletterView({ markdown, runId, artifacts, isStreaming, topic,
 
                 {/* Streaming indicator */}
                 {isStreaming && (
-                    <div className="flex items-center gap-3 mt-8 text-[color:var(--text-secondary)] motion-safe:animate-pulse">
+                    <div className="flex items-center gap-3 mt-8 text-content-secondary motion-safe:animate-pulse">
                         <div className="w-2 h-2 bg-blue-500 rounded-full" />
                         <span className="text-sm font-medium">Writing...</span>
                     </div>

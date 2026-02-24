@@ -169,7 +169,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
               className={cn(
                 "text-sm flex-1 min-w-0 truncate",
                 step.success
-                  ? "text-[color:var(--text-primary)]"
+                  ? "text-content"
                   : "text-red-600 dark:text-red-400"
               )}
               title={step.toolName}
@@ -206,7 +206,7 @@ function ExpandedView({ steps, totalDurationMs }: Omit<TraceBreadcrumbProps, "co
 
       {/* Total duration footer */}
       {totalDurationMs !== undefined && (
-        <div className="flex justify-end pt-1 border-t border-edge dark:border-gray-800">
+        <div className="flex justify-end pt-1 border-t border-edge dark:border-edge">
           <span className="text-xs font-mono text-content-muted">
             Total: {formatDuration(totalDurationMs)}
           </span>

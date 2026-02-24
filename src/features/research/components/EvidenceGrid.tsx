@@ -77,13 +77,13 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
       rel="noopener noreferrer"
       data-evidence-id={evidence.id}
       className={`
-        group flex-shrink-0 w-[260px] bg-[color:var(--bg-primary)] border rounded-lg p-3
+        group flex-shrink-0 w-[260px] bg-surface border rounded-lg p-3
         transition-all duration-300
         hover:border-indigo-300
         hover:bg-gradient-to-br hover:from-indigo-50/50 hover:to-white
         ${isHighlighted
           ? "border-indigo-500 shadow-lg shadow-indigo-200/50 ring-2 ring-indigo-300 motion-safe:animate-pulse"
-          : "border-[color:var(--border-color)]"
+          : "border-edge"
         }
       `}
     >
@@ -100,7 +100,7 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           )}
-          <span className="text-xs font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
+          <span className="text-xs font-semibold uppercase tracking-wide text-content-secondary">
             {evidence.source}
           </span>
         </div>
@@ -113,22 +113,22 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
       </div>
 
       {/* Title */}
-      <h4 className="text-sm font-medium text-[color:var(--text-primary)] line-clamp-2 mb-2 group-hover:text-indigo-700 transition-colors">
+      <h4 className="text-sm font-medium text-content line-clamp-2 mb-2 group-hover:text-indigo-700 transition-colors">
         {evidence.title}
       </h4>
 
       {/* Relevance */}
-      <p className="text-xs text-[color:var(--text-primary)] line-clamp-2 mb-2">
+      <p className="text-xs text-content line-clamp-2 mb-2">
         {evidence.relevance}
       </p>
 
       {/* Footer: Time + Link Icon */}
-      <div className="flex items-center justify-between pt-2 border-t border-[color:var(--border-color)]">
-        <div className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
+      <div className="flex items-center justify-between pt-2 border-t border-edge">
+        <div className="flex items-center gap-1 text-xs text-content-secondary">
           <Clock className="w-3 h-3" />
           <span>{timeAgo}</span>
         </div>
-        <ExternalLink className="w-3 h-3 text-[color:var(--text-secondary)] group-hover:text-indigo-500 transition-colors" />
+        <ExternalLink className="w-3 h-3 text-content-secondary group-hover:text-indigo-500 transition-colors" />
       </div>
     </a>
   );
@@ -152,14 +152,14 @@ export function EvidenceGrid({ evidence, className = "" }: EvidenceGridProps) {
     <div className={`relative ${className}`}>
       {/* Section Label */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
+        <span className="text-xs font-semibold uppercase tracking-wide text-content-secondary">
           Evidence ({evidence.length})
         </span>
         <div className="flex-1 h-px bg-[color:var(--border-color)]" />
       </div>
 
       {/* Horizontal Scroll Container */}
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[color:var(--bg-tertiary)] scrollbar-track-[color:var(--bg-secondary)]">
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-surface-secondary scrollbar-track-surface-secondary">
         {evidence.map((ev, idx) => (
           <EvidenceCard key={ev.id || idx} evidence={ev} index={idx} />
         ))}
@@ -167,7 +167,7 @@ export function EvidenceGrid({ evidence, className = "" }: EvidenceGridProps) {
 
       {/* Fade edge (right) */}
       {evidence.length > 2 && (
-        <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[color:var(--bg-primary)] pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-surface pointer-events-none" />
       )}
     </div>
   );

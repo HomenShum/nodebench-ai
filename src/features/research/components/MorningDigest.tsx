@@ -721,7 +721,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     switch (relevance) {
       case 'high': return 'bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-800';
       case 'medium': return 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800';
-      default: return 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]';
+      default: return 'bg-surface-secondary text-content border border-edge';
     }
   };
 
@@ -740,7 +740,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-gray-800 via-amber-700 to-gray-600 opacity-90" />
 
       {/* Premium glass header */}
-      <div className="relative flex items-center justify-between px-6 py-6 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-gray-100/30 dark:via-gray-800/30 to-transparent">
+      <div className="relative flex items-center justify-between px-6 py-6 border-b border-edge/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-gray-100/30 dark:via-gray-800/30 to-transparent">
         <div className="flex items-center gap-5">
           {/* Animated icon container - black/beige */}
           <div className="relative group">
@@ -800,7 +800,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               ))}
             </div>
           )}
-          <div className="flex items-center gap-1 ml-3 pl-4 border-l border-gray-200/50 dark:border-gray-700/50">
+          <div className="flex items-center gap-1 ml-3 pl-4 border-l border-edge/50 dark:border-gray-700/50">
             <button
               type="button"
               onClick={handleRefresh}
@@ -1083,7 +1083,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 style={{ animationDelay: `${sectionIdx * 100}ms` }}
               >
                 {/* Section Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200/50 bg-gradient-to-r from-transparent via-gray-100/30 to-transparent">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-edge/50 bg-gradient-to-r from-transparent via-gray-100/30 to-transparent">
                   <div className="flex items-center gap-4">
                     <div className={`h-11 w-11 rounded-lg flex items-center justify-center transition-all duration-300 ${section.sentiment === 'bullish' ? 'bg-amber-100/50 text-amber-700 border border-amber-200/50'
                       : section.sentiment === 'bearish' ? 'bg-rose-100/50 text-rose-700 border border-rose-200/50'

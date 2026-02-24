@@ -122,7 +122,7 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
       <div 
         className={cn(
           "flex items-center gap-2 py-1.5 px-2 rounded-md",
-          "hover:bg-[var(--bg-secondary)] transition-colors",
+          "hover:bg-surface-secondary transition-colors",
           hasChildren && "cursor-pointer"
         )}
         onClick={() => hasChildren && setIsExpanded(!isExpanded)}
@@ -131,8 +131,8 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
         {/* Expand/collapse toggle */}
         {hasChildren ? (
           isExpanded 
-            ? <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-            : <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+            ? <ChevronDown className="w-3.5 h-3.5 text-content-muted" />
+            : <ChevronRight className="w-3.5 h-3.5 text-content-muted" />
         ) : (
           <div className="w-3.5 h-3.5" /> // Spacer
         )}
@@ -143,13 +143,13 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
         </span>
 
         {/* Name */}
-        <span className="flex-1 text-xs font-medium text-[var(--text-primary)] truncate">
+        <span className="flex-1 text-xs font-medium text-content truncate">
           {span.name}
         </span>
 
         {/* Duration */}
         {span.durationMs !== undefined && (
-          <span className="text-xs text-[var(--text-muted)] tabular-nums">
+          <span className="text-xs text-content-muted tabular-nums">
             {formatDuration(span.durationMs)}
           </span>
         )}
@@ -172,7 +172,7 @@ function SpanNode({ span, childrenByParent, defaultExpanded = true }: SpanNodePr
 
       {/* Children */}
       {isExpanded && hasChildren && (
-        <div className="border-l border-[var(--border-color)]" style={{ marginLeft: `${span.depth * 16 + 12}px` }}>
+        <div className="border-l border-edge" style={{ marginLeft: `${span.depth * 16 + 12}px` }}>
           {children.map((child) => (
             <SpanNode
               key={child._id}
@@ -202,9 +202,9 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
   if (spans.length === 0) {
     return (
       <div className={cn("flex flex-col items-center justify-center py-8 text-center", className)}>
-        <Cpu className="w-8 h-8 text-[var(--text-muted)] mb-2" />
-        <p className="text-sm text-[var(--text-secondary)]">No spans recorded</p>
-        <p className="text-xs text-[var(--text-muted)] mt-1">
+        <Cpu className="w-8 h-8 text-content-muted mb-2" />
+        <p className="text-sm text-content-secondary">No spans recorded</p>
+        <p className="text-xs text-content-muted mt-1">
           Telemetry spans will appear here as the agent executes
         </p>
       </div>
@@ -219,8 +219,8 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
   return (
     <div className={className}>
       {/* Summary header */}
-      <div className="flex items-center gap-3 mb-3 px-2 py-1.5 bg-[var(--bg-secondary)] rounded-md">
-        <span className="text-xs text-[var(--text-primary)] font-medium">
+      <div className="flex items-center gap-3 mb-3 px-2 py-1.5 bg-surface-secondary rounded-md">
+        <span className="text-xs text-content font-medium">
           {spans.length} spans
         </span>
         <span className="text-xs text-indigo-600">
@@ -231,7 +231,7 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
             {errorSpans} errors
           </span>
         )}
-        <span className="text-xs text-[var(--text-muted)] ml-auto">
+        <span className="text-xs text-content-muted ml-auto">
           Total: {formatDuration(totalDuration)}
         </span>
       </div>

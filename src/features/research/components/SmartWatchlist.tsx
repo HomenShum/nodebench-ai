@@ -241,12 +241,12 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
   }, [mentions, selectedItem]);
 
   return (
-    <div className="relative p-5 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-shadow">
+    <div className="relative p-5 rounded-lg border border-edge bg-surface shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] transition-shadow">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">Watchlist</h3>
-          <span className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
+          <h3 className="text-sm font-semibold text-content">Watchlist</h3>
+          <span className="flex items-center gap-1 text-xs text-content-secondary">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500 motion-safe:animate-pulse" />
             Live
           </span>
@@ -254,29 +254,29 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={handleRefresh}
-            className="p-1.5 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors"
+            className="p-1.5 rounded-lg text-content-secondary hover:text-content hover:bg-surface-hover transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
           </button>
-          <button className="p-1.5 rounded-lg text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors">
+          <button className="p-1.5 rounded-lg text-content-secondary hover:text-content hover:bg-surface-hover transition-colors">
             <MoreHorizontal className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* Search */}
-      <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]">
-        <Search className="w-4 h-4 text-[color:var(--text-secondary)]" />
+      <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg border border-edge bg-surface-secondary">
+        <Search className="w-4 h-4 text-content-secondary" />
         <input
           ref={searchInputRef}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search or jump to a symbol"
-          className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-secondary)] focus:outline-none"
+          className="flex-1 bg-transparent text-sm text-content placeholder:text-content-secondary focus:outline-none"
         />
         <button
           type="submit"
-          className="text-xs font-semibold text-[color:var(--text-primary)] px-2 py-1 rounded-md border border-[color:var(--border-color)] hover:bg-[color:var(--bg-primary)] transition-colors"
+          className="text-xs font-semibold text-content px-2 py-1 rounded-md border border-edge hover:bg-surface transition-colors"
         >
           Open
         </button>
@@ -302,12 +302,12 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
             onClick={() => selectItem(item)}
             onMouseEnter={() => setHoveredSymbol(item.symbol)}
             onMouseLeave={() => setHoveredSymbol(null)}
-            className="relative flex items-center justify-between py-3 px-3 -mx-1 rounded-lg hover:bg-[color:var(--bg-hover)] cursor-pointer transition-all group"
+            className="relative flex items-center justify-between py-3 px-3 -mx-1 rounded-lg hover:bg-surface-hover cursor-pointer transition-all group"
           >
             {/* Left: Symbol & Name */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-[color:var(--text-primary)]">{item.symbol}</span>
+                <span className="text-sm font-semibold text-content">{item.symbol}</span>
                 {item.hasAlert && (
                   <Bell className="w-3 h-3 text-amber-500" />
                 )}
@@ -326,12 +326,12 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                   <span className="text-[8px] px-1 py-0.5 rounded bg-indigo-50 text-indigo-600 border border-indigo-200">✓</span>
                 )}
                 {item.verificationStatus === 'stale' && (
-                  <span className="text-[8px] px-1 py-0.5 rounded bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] border border-[color:var(--border-color)]" title="Data may be stale">
+                  <span className="text-[8px] px-1 py-0.5 rounded bg-surface-secondary text-content-secondary border border-edge" title="Data may be stale">
                     <Clock className="w-2.5 h-2.5 inline" />
                   </span>
                 )}
               </div>
-              <span className="text-xs text-[color:var(--text-secondary)] truncate block">{item.name}</span>
+              <span className="text-xs text-content-secondary truncate block">{item.name}</span>
             </div>
 
             {/* Center: Sparkline */}
@@ -346,7 +346,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
 
             {/* Right: Price & Change */}
             <div className="text-right min-w-[70px]">
-              <div className="text-sm font-mono font-semibold text-[color:var(--text-primary)]">
+              <div className="text-sm font-mono font-semibold text-content">
                 ${item.price.toFixed(2)}
               </div>
               <div className={`text-xs font-medium flex items-center justify-end gap-0.5 ${
@@ -363,7 +363,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
 
             {/* Hover Overlay: Quick Actions */}
             {hoveredSymbol === item.symbol && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-[color:var(--bg-primary)] shadow-lg rounded-lg px-1 py-0.5 border border-[color:var(--border-color)]">
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-surface shadow-lg rounded-lg px-1 py-0.5 border border-edge">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -379,7 +379,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                     e.stopPropagation();
                     toggleAlert(item.symbol);
                   }}
-                  className="p-1.5 rounded-md text-[color:var(--text-secondary)] hover:bg-[color:var(--bg-hover)] transition-colors"
+                  className="p-1.5 rounded-md text-content-secondary hover:bg-surface-hover transition-colors"
                   title={item.hasAlert ? 'Remove alert' : 'Set alert'}
                 >
                   {item.hasAlert ? (
@@ -397,7 +397,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
       {/* Add to Watchlist */}
       <button
         type="button"
-        className="mt-4 w-full py-2.5 text-xs font-medium text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] border border-dashed border-[color:var(--border-color)] rounded-lg hover:bg-[color:var(--bg-hover)] hover:border-[color:var(--border-color)] transition-all flex items-center justify-center gap-1.5"
+        className="mt-4 w-full py-2.5 text-xs font-medium text-content-secondary hover:text-content border border-dashed border-edge rounded-lg hover:bg-surface-hover hover:border-edge transition-all flex items-center justify-center gap-1.5"
         onClick={() => searchInputRef.current?.focus()}
       >
         <Plus className="w-3.5 h-3.5" />
@@ -411,21 +411,21 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
             className="absolute inset-0 bg-black/10 pointer-events-auto"
             onClick={closeDetail}
           />
-          <div className="relative pointer-events-auto mt-14 mr-6 w-[380px] max-w-[92vw] bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-2xl rounded-lg overflow-hidden">
-            <div className="flex items-start justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
+          <div className="relative pointer-events-auto mt-14 mr-6 w-[380px] max-w-[92vw] bg-surface border border-edge shadow-2xl rounded-lg overflow-hidden">
+            <div className="flex items-start justify-between px-4 py-3 border-b border-edge">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-[color:var(--text-primary)]">{selectedItem.symbol}</span>
-                  <span className="text-xs font-medium text-[color:var(--text-secondary)] px-2 py-0.5 rounded-full bg-[color:var(--bg-secondary)]">
+                  <span className="text-lg font-semibold text-content">{selectedItem.symbol}</span>
+                  <span className="text-xs font-medium text-content-secondary px-2 py-0.5 rounded-full bg-surface-secondary">
                     {selectedItem.sector || 'Equity'}
                   </span>
                 </div>
-                <p className="text-sm text-[color:var(--text-secondary)]">{selectedItem.name}</p>
+                <p className="text-sm text-content-secondary">{selectedItem.name}</p>
               </div>
               <button
                 type="button"
                 onClick={closeDetail}
-                className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] rounded-md transition-colors"
+                className="p-2 text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-colors"
                 aria-label="Close stock details"
               >
                 <X className="w-4 h-4" />
@@ -435,11 +435,11 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
             <div className="px-4 py-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-2xl font-mono font-semibold text-[color:var(--text-primary)]">${selectedItem.price.toFixed(2)}</div>
+                  <div className="text-2xl font-mono font-semibold text-content">${selectedItem.price.toFixed(2)}</div>
                   <div className={`text-xs font-semibold flex items-center gap-1 ${selectedItem.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {selectedItem.changePercent >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                     {selectedItem.changePercent >= 0 ? '+' : ''}{selectedItem.changePercent.toFixed(2)}%
-                    <span className="text-[color:var(--text-secondary)]">({selectedItem.change >= 0 ? '+' : ''}{selectedItem.change.toFixed(2)})</span>
+                    <span className="text-content-secondary">({selectedItem.change >= 0 ? '+' : ''}{selectedItem.change.toFixed(2)})</span>
                   </div>
                 </div>
                 <div className="w-32">
@@ -452,37 +452,37 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-xs text-[color:var(--text-primary)]">
-                <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-xs text-[color:var(--text-secondary)]">Day range</p>
+              <div className="grid grid-cols-2 gap-2 text-xs text-content">
+                <div className="rounded-lg border border-edge p-2 bg-surface-secondary">
+                  <p className="text-xs text-content-secondary">Day range</p>
                   <p className="font-semibold">${detailStats?.dayRange}</p>
                 </div>
-                <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-xs text-[color:var(--text-secondary)]">52w range</p>
+                <div className="rounded-lg border border-edge p-2 bg-surface-secondary">
+                  <p className="text-xs text-content-secondary">52w range</p>
                   <p className="font-semibold">${detailStats?.range52w}</p>
                 </div>
-                <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-xs text-[color:var(--text-secondary)]">Volume est.</p>
+                <div className="rounded-lg border border-edge p-2 bg-surface-secondary">
+                  <p className="text-xs text-content-secondary">Volume est.</p>
                   <p className="font-semibold">{detailStats?.volume}</p>
                 </div>
-                <div className="rounded-lg border border-[color:var(--border-color)] p-2 bg-[color:var(--bg-secondary)]">
-                  <p className="text-xs text-[color:var(--text-secondary)]">Sentiment</p>
+                <div className="rounded-lg border border-edge p-2 bg-surface-secondary">
+                  <p className="text-xs text-content-secondary">Sentiment</p>
                   <p className="font-semibold">{detailStats?.sentiment}</p>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3">
-                <p className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1">Recent mentions</p>
+              <div className="rounded-lg border border-edge bg-surface-secondary p-3">
+                <p className="text-xs font-semibold text-content-secondary mb-1">Recent mentions</p>
                 {recentMentions.length === 0 ? (
-                  <p className="text-sm text-[color:var(--text-secondary)]">No fresh mentions yet. Try a quick brief.</p>
+                  <p className="text-sm text-content-secondary">No fresh mentions yet. Try a quick brief.</p>
                 ) : (
-                  <ul className="space-y-1 text-sm text-[color:var(--text-primary)]">
+                  <ul className="space-y-1 text-sm text-content">
                     {recentMentions.map((mention, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[color:var(--bg-tertiary)]" />
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-surface-secondary" />
                         <div className="flex-1">
-                          <p className="text-sm text-[color:var(--text-primary)] leading-snug">{mention.headline}</p>
-                          <p className="text-xs text-[color:var(--text-secondary)]">
+                          <p className="text-sm text-content leading-snug">{mention.headline}</p>
+                          <p className="text-xs text-content-secondary">
                             {mention.source || 'Signal'}
                             {mention.time ? ` • ${mention.time}` : ''}
                           </p>
@@ -501,7 +501,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                   }}
                   className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${isTracked
                     ? 'border-green-200 bg-green-50 text-green-800 cursor-default'
-                    : 'border-[color:var(--border-color)] bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]'}`}
+                    : 'border-edge bg-surface text-content hover:bg-surface-hover'}`}
                   disabled={!!isTracked}
                 >
                   <Plus className="w-4 h-4" />
@@ -524,7 +524,7 @@ export const SmartWatchlist: React.FC<SmartWatchlistProps> = ({
                     onItemClick?.(selectedItem.symbol);
                     closeDetail();
                   }}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] text-sm font-semibold px-3 py-2 hover:bg-[color:var(--bg-hover)] transition-colors"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-edge bg-surface text-sm font-semibold px-3 py-2 hover:bg-surface-hover transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
                   Quick brief

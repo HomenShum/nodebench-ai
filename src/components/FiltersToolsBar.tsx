@@ -113,7 +113,7 @@ export default function FiltersToolsBar(props: Props) {
       {/* Right: View toggle + Actions */}
       <div className="flex items-center gap-3">
         {/* View mode toggle */}
-        <div className="flex gap-0.5 bg-gray-100/80 dark:bg-white/[0.06] backdrop-blur-sm p-1 rounded-lg border border-gray-200/50 dark:border-white/[0.06] shadow-sm">
+        <div className="flex gap-0.5 bg-gray-100/80 dark:bg-white/[0.06] backdrop-blur-sm p-1 rounded-lg border border-edge/50 dark:border-white/[0.06] shadow-sm">
           <button
             onClick={() => setViewMode("cards")}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-content bg-white dark:bg-white/[0.1] shadow-sm" : "text-content-secondary hover:text-content-secondary hover:bg-white/60"}`}

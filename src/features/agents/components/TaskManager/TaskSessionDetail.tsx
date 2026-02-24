@@ -81,33 +81,33 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
     : <AlertCircle className="w-3.5 h-3.5 text-red-500" />;
 
   return (
-    <div className="border border-[var(--border-color)] rounded-lg overflow-hidden">
+    <div className="border border-edge rounded-lg overflow-hidden">
       {/* Trace header */}
       <button
         type="button"
-        className="w-full flex items-center gap-2 p-3 hover:bg-[var(--bg-secondary)] transition-colors"
+        className="w-full flex items-center gap-2 p-3 hover:bg-surface-secondary transition-colors"
         onClick={onToggle}
       >
         {isExpanded 
-          ? <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
-          : <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
+          ? <ChevronDown className="w-4 h-4 text-content-muted" />
+          : <ChevronRight className="w-4 h-4 text-content-muted" />
         }
         
         <GitBranch className="w-4 h-4 text-purple-500" />
         
-        <span className="flex-1 text-sm font-medium text-[var(--text-primary)] text-left truncate">
+        <span className="flex-1 text-sm font-medium text-content text-left truncate">
           {trace.workflowName}
         </span>
 
         {trace.tokenUsage && (
-          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+          <span className="flex items-center gap-1 text-xs text-content-muted">
             <Zap className="w-3 h-3" />
             {formatTokens(trace.tokenUsage.total)}
           </span>
         )}
 
         {trace.totalDurationMs && (
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs text-content-muted">
             {formatDuration(trace.totalDurationMs)}
           </span>
         )}
@@ -117,10 +117,10 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
 
       {/* Expanded content - Span tree */}
       {isExpanded && (
-        <div className="border-t border-[var(--border-color)] p-3 bg-[var(--bg-primary)]">
+        <div className="border-t border-edge p-3 bg-surface">
           {!spansData ? (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="w-5 h-5 text-[var(--text-muted)] motion-safe:animate-spin" />
+              <Loader2 className="w-5 h-5 text-content-muted motion-safe:animate-spin" />
             </div>
           ) : (
             <TelemetrySpanTree 
@@ -169,7 +169,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
   if (!sessionData) {
     return (
       <div className={cn("flex items-center justify-center h-full", className)}>
-        <Loader2 className="w-6 h-6 text-[var(--text-muted)] motion-safe:animate-spin" />
+        <Loader2 className="w-6 h-6 text-content-muted motion-safe:animate-spin" />
       </div>
     );
   }
@@ -179,11 +179,11 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-[var(--border-color)]">
+      <div className="flex-shrink-0 p-4 border-b border-edge">
         {onBack && (
           <button
             type="button"
-            className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-2"
+            className="flex items-center gap-1 text-xs text-content-secondary hover:text-content mb-2"
             onClick={onBack}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -191,45 +191,45 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
           </button>
         )}
 
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+        <h2 className="text-lg font-semibold text-content">
           {session.title}
         </h2>
 
         {session.description && (
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
+          <p className="text-sm text-content-secondary mt-1">
             {session.description}
           </p>
         )}
 
         {/* Metrics row */}
         <div className="flex items-center gap-4 mt-3 flex-wrap">
-          <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+          <span className="flex items-center gap-1 text-xs text-content-muted">
             <Clock className="w-3.5 h-3.5" />
             {formatDateTime(session.startedAt)}
           </span>
 
           {session.totalDurationMs && (
-            <span className="text-xs text-[var(--text-muted)]">
+            <span className="text-xs text-content-muted">
               Duration: {formatDuration(session.totalDurationMs)}
             </span>
           )}
 
           {session.totalTokens && (
-            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+            <span className="flex items-center gap-1 text-xs text-content-muted">
               <Zap className="w-3.5 h-3.5" />
               {formatTokens(session.totalTokens)} tokens
             </span>
           )}
 
           {session.toolsUsed && session.toolsUsed.length > 0 && (
-            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+            <span className="flex items-center gap-1 text-xs text-content-muted">
               <Wrench className="w-3.5 h-3.5" />
               {session.toolsUsed.length} tools
             </span>
           )}
 
           {session.agentsInvolved && session.agentsInvolved.length > 0 && (
-            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+            <span className="flex items-center gap-1 text-xs text-content-muted">
               <Users className="w-3.5 h-3.5" />
               {session.agentsInvolved.length} agents
             </span>
@@ -240,16 +240,16 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
       {/* Traces section */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex items-center gap-2 mb-3">
-          <FileText className="w-4 h-4 text-[var(--accent-primary)]" />
-          <h3 className="text-sm font-medium text-[var(--text-primary)]">
+          <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="text-sm font-medium text-content">
             Traces ({traces.length})
           </h3>
         </div>
 
         {traces.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <GitBranch className="w-8 h-8 text-[var(--text-muted)] mb-2" />
-            <p className="text-sm text-[var(--text-secondary)]">No traces recorded</p>
+            <GitBranch className="w-8 h-8 text-content-muted mb-2" />
+            <p className="text-sm text-content-secondary">No traces recorded</p>
           </div>
         ) : (
           <div className="space-y-2">

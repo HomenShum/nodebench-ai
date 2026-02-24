@@ -122,7 +122,7 @@ function App() {
   return (
     <ThemeProvider>
       <SkipLinks />
-      <main id="main-content" className="h-screen">
+      <main id="main-content" className="h-screen bg-surface text-content">
         <Unauthenticated>
           <FastAgentProvider>
             <SelectionProvider>

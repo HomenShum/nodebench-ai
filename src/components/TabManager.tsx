@@ -294,7 +294,7 @@ export function TabManager({
       <div className="h-full w-full">
         {currentView === 'timeline' ? (
           <div className="h-full w-full flex items-center justify-center">
-            <div className="text-[var(--text-secondary)] text-sm">Timeline view is not available.</div>
+            <div className="text-content-secondary text-sm">Timeline view is not available.</div>
           </div>
         ) : (
           <Suspense fallback={viewFallback}>
@@ -309,18 +309,18 @@ export function TabManager({
   };
 
   const colorClasses = [
-    "bg-[var(--accent-primary)]/10 text-[var(--text-primary)] border-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/15",
-    "bg-[var(--accent-secondary)]/10 text-[var(--text-primary)] border-[var(--accent-secondary)]/20 hover:bg-[var(--accent-secondary)]/15",
-    "bg-[var(--accent-primary)]/8 text-[var(--text-primary)] border-[var(--accent-primary)]/15 hover:bg-[var(--accent-primary)]/12",
-    "bg-[var(--accent-secondary)]/8 text-[var(--text-primary)] border-[var(--accent-secondary)]/15 hover:bg-[var(--accent-secondary)]/12",
-    "bg-[var(--accent-primary)]/12 text-[var(--text-primary)] border-[var(--accent-primary)]/25 hover:bg-[var(--accent-primary)]/18",
-    "bg-[var(--accent-secondary)]/12 text-[var(--text-primary)] border-[var(--accent-secondary)]/25 hover:bg-[var(--accent-secondary)]/18",
-    "bg-[var(--accent-primary)]/6 text-[var(--text-primary)] border-[var(--accent-primary)]/12 hover:bg-[var(--accent-primary)]/10",
-    "bg-[var(--accent-secondary)]/6 text-[var(--text-primary)] border-[var(--accent-secondary)]/12 hover:bg-[var(--accent-secondary)]/10",
-    "bg-[var(--accent-primary)]/14 text-[var(--text-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20",
-    "bg-[var(--accent-secondary)]/14 text-[var(--text-primary)] border-[var(--accent-secondary)]/30 hover:bg-[var(--accent-secondary)]/20",
-    "bg-[var(--accent-primary)]/9 text-[var(--text-primary)] border-[var(--accent-primary)]/18 hover:bg-[var(--accent-primary)]/13",
-    "bg-[var(--accent-secondary)]/9 text-[var(--text-primary)] border-[var(--accent-secondary)]/18 hover:bg-[var(--accent-secondary)]/13",
+    "bg-[var(--accent-primary)]/10 text-content border-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/15",
+    "bg-[var(--accent-secondary)]/10 text-content border-[var(--accent-secondary)]/20 hover:bg-[var(--accent-secondary)]/15",
+    "bg-[var(--accent-primary)]/8 text-content border-[var(--accent-primary)]/15 hover:bg-[var(--accent-primary)]/12",
+    "bg-[var(--accent-secondary)]/8 text-content border-[var(--accent-secondary)]/15 hover:bg-[var(--accent-secondary)]/12",
+    "bg-[var(--accent-primary)]/12 text-content border-[var(--accent-primary)]/25 hover:bg-[var(--accent-primary)]/18",
+    "bg-[var(--accent-secondary)]/12 text-content border-[var(--accent-secondary)]/25 hover:bg-[var(--accent-secondary)]/18",
+    "bg-[var(--accent-primary)]/6 text-content border-[var(--accent-primary)]/12 hover:bg-[var(--accent-primary)]/10",
+    "bg-[var(--accent-secondary)]/6 text-content border-[var(--accent-secondary)]/12 hover:bg-[var(--accent-secondary)]/10",
+    "bg-[var(--accent-primary)]/14 text-content border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20",
+    "bg-[var(--accent-secondary)]/14 text-content border-[var(--accent-secondary)]/30 hover:bg-[var(--accent-secondary)]/20",
+    "bg-[var(--accent-primary)]/9 text-content border-[var(--accent-primary)]/18 hover:bg-[var(--accent-primary)]/13",
+    "bg-[var(--accent-secondary)]/9 text-content border-[var(--accent-secondary)]/18 hover:bg-[var(--accent-secondary)]/13",
   ];
   const dotColors = [
     "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-orange-500",
@@ -331,7 +331,7 @@ export function TabManager({
   return (
     <div className="h-full w-full flex flex-col">
       {isGridMode && (
-        <div ref={containerRef} className="bg-[var(--bg-primary)] border-b border-[var(--border-color)] px-2 sm:px-4 py-2 flex-shrink-0">
+        <div ref={containerRef} className="bg-surface border-b border-edge px-2 sm:px-4 py-2 flex-shrink-0">
           <div className="flex items-start gap-2">
             {/* Tabs – single row scroller */}
             <div className="flex-1 min-w-0 relative">

@@ -270,30 +270,30 @@ export function ParallelTaskTimeline({
   }
 
   return (
-    <div className={`bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg overflow-hidden ${className}`}>
+    <div className={`bg-surface-secondary border border-edge rounded-lg overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-[var(--border-color)] bg-[var(--bg-tertiary)]">
+      <div className="px-4 py-3 border-b border-edge bg-surface-secondary">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <GitBranch className="w-4 h-4 text-[var(--text-secondary)]" />
-            <span className="text-sm font-medium text-[var(--text-primary)]">
+            <GitBranch className="w-4 h-4 text-content-secondary" />
+            <span className="text-sm font-medium text-content">
               Parallel Exploration
             </span>
             <StatusBadge status={tree.status} />
           </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+          <div className="flex items-center gap-3 text-xs text-content-secondary">
             {/* View Toggle */}
-            <div className="flex items-center bg-[var(--bg-primary)] rounded-md p-0.5 border border-[var(--border-color)]">
+            <div className="flex items-center bg-surface rounded-md p-0.5 border border-edge">
               <button
                 onClick={() => setViewMode("tree")}
-                className={`p-1 rounded ${viewMode === "tree" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
+                className={`p-1 rounded ${viewMode === "tree" ? "bg-surface-secondary text-content" : "text-[var(--text-tertiary)] hover:text-content-secondary"}`}
                 title="Tree View"
               >
                 <Network className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setViewMode("kanban")}
-                className={`p-1 rounded ${viewMode === "kanban" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"}`}
+                className={`p-1 rounded ${viewMode === "kanban" ? "bg-surface-secondary text-content" : "text-[var(--text-tertiary)] hover:text-content-secondary"}`}
                 title="Pipeline View"
               >
                 <LayoutList className="w-3.5 h-3.5" />
@@ -323,13 +323,13 @@ export function ParallelTaskTimeline({
         {/* Phase indicator */}
         {tree.phase && tree.status !== "completed" && tree.status !== "failed" && (
           <div className="mt-2">
-            <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] mb-1">
+            <div className="flex items-center justify-between text-xs text-content-secondary mb-1">
               <span>{tree.phase}</span>
               {tree.phaseProgress !== undefined && (
                 <span>{tree.phaseProgress}%</span>
               )}
             </div>
-            <div className="h-1 bg-[var(--bg-primary)] rounded-full overflow-hidden">
+            <div className="h-1 bg-surface rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-300"
                 style={{ width: `${tree.phaseProgress ?? 0}%` }}
@@ -354,17 +354,17 @@ export function ParallelTaskTimeline({
 
           {/* Final result */}
           {tree.status === "completed" && tree.mergedResult && (
-            <div className="mt-4 pt-4 border-t border-[var(--border-color)]">
+            <div className="mt-4 pt-4 border-t border-edge">
               <div className="flex items-center gap-2 mb-2">
                 <Merge className="w-4 h-4 text-green-500" />
-                <span className="text-sm font-medium text-[var(--text-primary)]">
+                <span className="text-sm font-medium text-content">
                   Merged Result
                 </span>
                 {tree.confidence !== undefined && (
                   <ConfidenceBadge confidence={tree.confidence} />
                 )}
               </div>
-              <div className="text-sm text-[var(--text-secondary)] bg-[var(--bg-tertiary)] rounded-lg p-3 max-h-48 overflow-y-auto">
+              <div className="text-sm text-content-secondary bg-surface-secondary rounded-lg p-3 max-h-48 overflow-y-auto">
                 {tree.mergedResult.slice(0, 500)}
                 {tree.mergedResult.length > 500 && "..."}
               </div>
@@ -412,7 +412,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
             ? "bg-red-500/5 opacity-60"
             : node.status === "completed"
             ? "bg-green-500/5"
-            : "bg-[var(--bg-tertiary)]"
+            : "bg-surface-secondary"
         }`}
         style={{ marginLeft: depth * 16 }}
       >
@@ -420,12 +420,12 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
         {hasChildren && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-0.5 p-0.5 hover:bg-[var(--bg-primary)] rounded transition-colors"
+            className="mt-0.5 p-0.5 hover:bg-surface rounded transition-colors"
           >
             {expanded ? (
-              <ChevronDown className="w-3 h-3 text-[var(--text-secondary)]" />
+              <ChevronDown className="w-3 h-3 text-content-secondary" />
             ) : (
-              <ChevronRight className="w-3 h-3 text-[var(--text-secondary)]" />
+              <ChevronRight className="w-3 h-3 text-content-secondary" />
             )}
           </button>
         )}
@@ -451,7 +451,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
             </span>
 
             {/* Title */}
-            <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+            <span className="text-sm font-medium text-content truncate">
               {node.title}
             </span>
 
@@ -486,7 +486,7 @@ function TaskNodeRow({ node, nodesByParent, depth, compact }: TaskNodeRowProps) 
 
           {/* Description/Result summary */}
           {!compact && (node.resultSummary || node.description) && (
-            <p className="text-xs text-[var(--text-secondary)] mt-1 truncate">
+            <p className="text-xs text-content-secondary mt-1 truncate">
               {node.resultSummary || node.description}
             </p>
           )}

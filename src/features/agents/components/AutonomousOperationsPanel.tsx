@@ -63,7 +63,7 @@ const StatusIcon = memo(function StatusIcon({
     case "down":
       return <XCircle className="w-3.5 h-3.5 text-red-500" />;
     default:
-      return <CircleDot className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
+      return <CircleDot className="w-3.5 h-3.5 text-content-muted" />;
   }
 });
 
@@ -93,7 +93,7 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
         ? "border-amber-500/30 bg-amber-500/5"
         : job.status === "down"
           ? "border-red-500/30 bg-red-500/5"
-          : "border-[var(--border-color)]";
+          : "border-edge";
 
   return (
     <div
@@ -106,11 +106,11 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <StatusIcon status={job.status} isDelayed={job.isDelayed} />
-            <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+            <span className="text-sm font-medium text-content truncate">
               {job.displayName}
             </span>
           </div>
-          <div className="flex items-center gap-3 mt-1.5 text-xs text-[var(--text-muted)]">
+          <div className="flex items-center gap-3 mt-1.5 text-xs text-content-muted">
             <span className="flex items-center gap-1">
               <RefreshCw className="w-3 h-3" />
               {job.interval}
@@ -123,8 +123,8 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
         </div>
         {job.latencyP50 !== null && (
           <div className="text-right text-xs">
-            <div className="text-[var(--text-muted)]">P50</div>
-            <div className="font-mono text-[var(--text-secondary)]">
+            <div className="text-content-muted">P50</div>
+            <div className="font-mono text-content-secondary">
               {job.latencyP50 < 1000
                 ? `${job.latencyP50}ms`
                 : `${(job.latencyP50 / 1000).toFixed(1)}s`}
@@ -133,8 +133,8 @@ const CronJobCard = memo(function CronJobCard({ job }: { job: CronStatus }) {
         )}
       </div>
       {job.queueDepth !== null && job.queueDepth > 0 && (
-        <div className="mt-2 pt-2 border-t border-[var(--border-color)]">
-          <span className="text-xs text-[var(--text-muted)]">
+        <div className="mt-2 pt-2 border-t border-edge">
+          <span className="text-xs text-content-muted">
             Queue depth: <span className="font-mono">{job.queueDepth}</span>
           </span>
         </div>
@@ -158,16 +158,16 @@ export const AutonomousOperationsPanel = memo(function AutonomousOperationsPanel
   const totalCount = cronStatuses?.length ?? 0;
 
   return (
-    <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+    <div className="bg-surface rounded-lg border border-edge">
       {/* Header */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-[var(--bg-hover)] transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-[var(--accent-primary)]" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+          <h3 className="text-sm font-semibold text-content">
             Autonomous Operations
           </h3>
           <span
@@ -186,21 +186,21 @@ export const AutonomousOperationsPanel = memo(function AutonomousOperationsPanel
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+          <ChevronUp className="w-4 h-4 text-content-muted" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+          <ChevronDown className="w-4 h-4 text-content-muted" />
         )}
       </button>
 
       {/* Content */}
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-[var(--border-color)] pt-4">
+        <div className="px-4 pb-4 border-t border-edge pt-4">
           {cronStatuses === undefined ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 motion-safe:animate-spin text-[var(--text-muted)]" />
+              <Loader2 className="w-5 h-5 motion-safe:animate-spin text-content-muted" />
             </div>
           ) : cronStatuses.length === 0 ? (
-            <div className="text-center py-6 text-sm text-[var(--text-muted)]">
+            <div className="text-center py-6 text-sm text-content-muted">
               No autonomous operations configured
             </div>
           ) : (

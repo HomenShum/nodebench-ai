@@ -32,11 +32,11 @@ export function CleanHeader({
   const user = useQuery(api.domains.auth.auth.loggedInUser);
 
   return (
-    <div className="bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border-color)] px-4 py-2 flex items-center gap-4 transition-colors duration-200">
+    <div className="bg-surface/80 backdrop-blur-md border-b border-edge px-4 py-2 flex items-center gap-4 transition-colors duration-200">
       {/* Centered Search Bar */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-2xl flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[var(--accent-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
-          <Search className="h-4 w-4 text-[var(--text-secondary)]" />
+        <div className="w-full max-w-2xl flex items-center gap-2 rounded-lg border border-edge bg-surface-secondary px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[var(--accent-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
+          <Search className="h-4 w-4 text-content-secondary" />
           <input
             value={quickChatInput}
             onChange={(e) => setQuickChatInput(e.target.value)}
@@ -48,7 +48,7 @@ export function CleanHeader({
             }}
             placeholder="Search documents..."
             aria-label="Search documents"
-            className="flex-1 text-sm bg-transparent text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+            className="flex-1 text-sm bg-transparent text-content placeholder-content-muted focus:outline-none"
           />
           <button
             onClick={onQuickChat}
@@ -65,7 +65,7 @@ export function CleanHeader({
         {/* Help */}
         <button
           onClick={onHelp}
-          className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+          className="p-2 text-content-secondary hover:text-content hover:bg-surface-hover rounded-lg transition-colors"
           title="Help"
           aria-label="Help"
         >
@@ -75,7 +75,7 @@ export function CleanHeader({
         {/* Settings */}
         <button
           onClick={() => onOpenSettings('usage')}
-          className="p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
+          className="p-2 text-content-secondary hover:text-content hover:bg-surface-hover rounded-lg transition-colors"
           title="Settings"
           aria-label="Settings"
         >

@@ -102,7 +102,7 @@ function getTagStyle(kind?: string, fallbackStyle?: string): string {
       return "bg-orange-500/10 text-orange-600 border border-orange-500/20";
     case "keyword":
     default:
-      return fallbackStyle || "bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]";
+      return fallbackStyle || "bg-surface-hover text-content-secondary border border-edge";
   }
 }
 
@@ -234,8 +234,8 @@ export function DocumentRow({
       tabIndex={0}
       className={`
         group flex items-center gap-4 px-4 py-3 
-        border-b border-[var(--border-color)] 
-        hover:bg-[var(--bg-hover)] cursor-pointer 
+        border-b border-edge 
+        hover:bg-surface-hover cursor-pointer 
         transition-colors duration-150
         ${isSelected ? "bg-[var(--accent-primary)]/10" : ""}
       `}
@@ -251,7 +251,7 @@ export function DocumentRow({
             w-4 h-4 rounded border transition-all duration-150 flex items-center justify-center
             ${isSelected
               ? "bg-[var(--accent-primary)] border-[var(--accent-primary)]"
-              : "border-[var(--border-color)] bg-[var(--bg-primary)] opacity-0 group-hover:opacity-100"
+              : "border-edge bg-surface opacity-0 group-hover:opacity-100"
             }
           `}
         >
@@ -269,10 +269,10 @@ export function DocumentRow({
           <FileTypeIcon type={typeGuess} className="w-4 h-4 text-white" />
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+          <span className="text-sm font-medium text-content truncate">
             {doc.title}
           </span>
-          <span className="text-xs text-[var(--text-muted)] truncate">
+          <span className="text-xs text-content-muted truncate">
             {typeGuess.toUpperCase()} {fileSize ? `• ${formatFileSize(fileSize)}` : ""}
           </span>
         </div>
@@ -294,7 +294,7 @@ export function DocumentRow({
           );
         })}
         {tags.length > 3 && (
-          <span className="text-xs text-[var(--text-muted)]">+{tags.length - 3}</span>
+          <span className="text-xs text-content-muted">+{tags.length - 3}</span>
         )}
         {hasAITags && (
           <Sparkles className="w-3 h-3 text-purple-400 ml-0.5" title="AI-generated tags" />
@@ -314,13 +314,13 @@ export function DocumentRow({
             {status.label}
           </div>
         ) : (
-          <span className="text-xs text-[var(--text-muted)]">{status.label}</span>
+          <span className="text-xs text-content-muted">{status.label}</span>
         )}
       </div>
 
       {/* 5. Date Modified */}
-      <div className="w-24 hidden sm:flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-        <Calendar className="w-3 h-3 text-[var(--text-muted)]" />
+      <div className="w-24 hidden sm:flex items-center gap-2 text-xs text-content-secondary">
+        <Calendar className="w-3 h-3 text-content-muted" />
         <span>{formatRelativeTime(modifiedAt)}</span>
       </div>
 
@@ -335,7 +335,7 @@ export function DocumentRow({
               onChat(doc._id);
             }}
             title="Chat with AI"
-            className="p-1.5 hover:bg-[var(--accent-primary)]/10 rounded text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+            className="p-1.5 hover:bg-[var(--accent-primary)]/10 rounded text-content-muted hover:text-[var(--accent-primary)] transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
           </button>
@@ -348,7 +348,7 @@ export function DocumentRow({
               onEdit(doc._id);
             }}
             title="Quick Edit"
-            className="p-1.5 hover:bg-blue-500/10 rounded text-[var(--text-muted)] hover:text-blue-500 transition-colors"
+            className="p-1.5 hover:bg-blue-500/10 rounded text-content-muted hover:text-blue-500 transition-colors"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -361,7 +361,7 @@ export function DocumentRow({
               onShare(doc._id);
             }}
             title="Share"
-            className="p-1.5 hover:bg-indigo-500/10 rounded text-[var(--text-muted)] hover:text-indigo-500 transition-colors"
+            className="p-1.5 hover:bg-indigo-500/10 rounded text-content-muted hover:text-indigo-500 transition-colors"
           >
             <Share2 className="w-3.5 h-3.5" />
           </button>
@@ -376,7 +376,7 @@ export function DocumentRow({
           title={isFavorite ? "Unpin" : "Pin"}
           className={`p-1.5 rounded transition-colors ${isFavorite
             ? "text-yellow-500 hover:bg-yellow-500/10"
-            : "text-[var(--text-muted)] hover:text-yellow-500 hover:bg-[var(--bg-primary)]"
+            : "text-content-muted hover:text-yellow-500 hover:bg-surface"
             }`}
         >
           <Star className={`w-3.5 h-3.5 ${isFavorite ? "fill-current" : ""}`} />
@@ -388,7 +388,7 @@ export function DocumentRow({
             onDelete?.(doc._id);
           }}
           title="Delete"
-          className="p-1.5 hover:bg-red-500/10 rounded text-[var(--text-muted)] hover:text-red-500 transition-colors"
+          className="p-1.5 hover:bg-red-500/10 rounded text-content-muted hover:text-red-500 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

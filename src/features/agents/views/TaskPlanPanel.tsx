@@ -77,7 +77,7 @@ export function TaskPlanPanel({
 
   return (
     <div className={cn(
-      "border border-[var(--border-color)] rounded-lg bg-[var(--bg-primary)] overflow-hidden",
+      "border border-edge rounded-lg bg-surface overflow-hidden",
       className
     )}>
       {/* Header */}
@@ -85,8 +85,8 @@ export function TaskPlanPanel({
         onClick={() => collapsible && setIsExpanded(!isExpanded)}
         className={cn(
           "w-full px-4 py-3 flex items-center justify-between text-left transition-colors",
-          collapsible && "hover:bg-[var(--bg-hover)] cursor-pointer",
-          isComplete ? "bg-green-50" : hasError ? "bg-red-50" : "bg-[var(--bg-secondary)]"
+          collapsible && "hover:bg-surface-hover cursor-pointer",
+          isComplete ? "bg-green-50" : hasError ? "bg-red-50" : "bg-surface-secondary"
         )}
         disabled={!collapsible}
       >
@@ -96,7 +96,7 @@ export function TaskPlanPanel({
             "w-8 h-8 rounded-full flex items-center justify-center",
             isComplete ? "bg-green-100" :
             hasError ? "bg-red-100" :
-            isRunning ? "bg-blue-100" : "bg-[var(--bg-hover)]"
+            isRunning ? "bg-blue-100" : "bg-surface-hover"
           )}>
             {isComplete ? (
               <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -105,15 +105,15 @@ export function TaskPlanPanel({
             ) : isRunning ? (
               <Loader2 className="w-4 h-4 text-blue-600 motion-safe:animate-spin" />
             ) : (
-              <Sparkles className="w-4 h-4 text-[var(--text-secondary)]" />
+              <Sparkles className="w-4 h-4 text-content-secondary" />
             )}
           </div>
 
           {/* Title and progress */}
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">{title}</span>
-              <span className="text-xs text-[var(--text-secondary)]">
+              <span className="text-sm font-semibold text-content">{title}</span>
+              <span className="text-xs text-content-secondary">
                 {completedCount} of {totalCount} steps
               </span>
             </div>
@@ -134,16 +134,16 @@ export function TaskPlanPanel({
           {/* Expand/collapse */}
           {collapsible && (
             isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+              <ChevronDown className="w-4 h-4 text-content-muted" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
+              <ChevronRight className="w-4 h-4 text-content-muted" />
             )
           )}
         </div>
       </button>
 
       {/* Progress bar */}
-      <div className="h-1 bg-[var(--bg-hover)]">
+      <div className="h-1 bg-surface-hover">
         <div
           className={cn(
             "h-full transition-all duration-500 ease-out",
@@ -158,7 +158,7 @@ export function TaskPlanPanel({
         <div className="p-4">
           <div className="relative">
             {/* Vertical line */}
-            <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-[var(--bg-hover)]" />
+            <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-surface-hover" />
 
             {/* Steps */}
             <div className="space-y-0">
@@ -199,7 +199,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           isComplete ? "bg-green-500 border-green-500" :
           isActive ? "bg-white border-blue-500 ring-4 ring-blue-50" :
           isError ? "bg-red-500 border-red-500" :
-          "bg-white border-[var(--border-color)]"
+          "bg-white border-edge"
         )}>
           {isComplete ? (
             <CheckCircle2 className="w-4 h-4 text-white" />
@@ -208,7 +208,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           ) : isError ? (
             <AlertCircle className="w-4 h-4 text-white" />
           ) : (
-            <Circle className="w-3 h-3 text-[var(--text-muted)] fill-[var(--bg-secondary)]" />
+            <Circle className="w-3 h-3 text-content-muted fill-surface-secondary" />
           )}
         </div>
       </div>
@@ -222,16 +222,16 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
           <h4 className={cn(
             "text-sm font-medium leading-none",
             isActive ? "text-blue-700" :
-            isComplete ? "text-[var(--text-primary)]" :
+            isComplete ? "text-content" :
             isError ? "text-red-700" :
-            "text-[var(--text-secondary)]"
+            "text-content-secondary"
           )}>
             {step.label}
           </h4>
 
           {/* Duration */}
           {step.durationMs && (
-            <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+            <span className="flex items-center gap-1 text-xs text-content-muted">
               <Clock className="w-3 h-3" />
               {formatDuration(step.durationMs)}
             </span>
@@ -242,7 +242,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
         {step.details && (
           <p className={cn(
             "text-xs mt-1 leading-relaxed",
-            isError ? "text-red-600" : "text-[var(--text-secondary)]"
+            isError ? "text-red-600" : "text-content-secondary"
           )}>
             {step.details}
           </p>
@@ -266,7 +266,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
 
         {/* Substeps */}
         {step.substeps && step.substeps.length > 0 && (
-          <div className="mt-2 pl-4 border-l-2 border-[var(--bg-hover)] space-y-2">
+          <div className="mt-2 pl-4 border-l-2 border-surface-hover space-y-2">
             {step.substeps.map((substep, idx) => (
               <div key={substep.id || idx} className="flex items-center gap-2">
                 <div className={cn(
@@ -274,9 +274,9 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
                   substep.status === 'completed' ? "bg-green-500" :
                   substep.status === 'in_progress' ? "bg-blue-500 motion-safe:animate-pulse" :
                   substep.status === 'error' ? "bg-red-500" :
-                  "bg-[var(--text-muted)]"
+                  "bg-content-muted"
                 )} />
-                <span className="text-xs text-[var(--text-secondary)]">{substep.label}</span>
+                <span className="text-xs text-content-secondary">{substep.label}</span>
               </div>
             ))}
           </div>

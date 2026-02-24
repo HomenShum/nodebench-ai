@@ -49,7 +49,7 @@ export function ContextBar({
             case 'preference':
                 return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
             default:
-                return 'bg-[var(--bg-hover)] text-[var(--text-secondary)] dark:bg-[var(--bg-secondary)] dark:text-[var(--text-muted)]';
+                return 'bg-surface-hover text-content-secondary dark:bg-surface-secondary dark:text-content-muted';
         }
     };
 
@@ -57,8 +57,8 @@ export function ContextBar({
         <div
             className={cn(
                 "flex items-center gap-2 px-3 py-1.5 min-h-[28px]",
-                "bg-[var(--bg-secondary)] border-b border-[var(--border-color)]",
-                "text-xs text-[var(--text-muted)]",
+                "bg-surface-secondary border-b border-edge",
+                "text-xs text-content-muted",
                 "transition-colors duration-150",
                 className
             )}
@@ -76,7 +76,7 @@ export function ContextBar({
                 {constraints.length === 0 ? (
                     <button
                         onClick={onAddConstraint}
-                        className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-[var(--bg-tertiary)]"
+                        className="text-xs text-content-muted hover:text-content transition-colors flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-surface-secondary"
                     >
                         <span>None active</span>
                         <Plus className="w-2.5 h-2.5" />
@@ -112,7 +112,7 @@ export function ContextBar({
                 )}
 
                 {constraints.length > 5 && (
-                    <span className="text-xs text-[var(--text-muted)]">
+                    <span className="text-xs text-content-muted">
                         +{constraints.length - 5} more
                     </span>
                 )}
@@ -126,7 +126,7 @@ export function ContextBar({
                 {onAddConstraint && (
                     <button
                         onClick={onAddConstraint}
-                        className="p-1 rounded hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                        className="p-1 rounded hover:bg-surface-secondary text-content-muted hover:text-content transition-colors"
                         title="Add constraint"
                     >
                         <Plus className="w-3 h-3" />
@@ -135,7 +135,7 @@ export function ContextBar({
                 {onEditConstraints && (
                     <button
                         onClick={onEditConstraints}
-                        className="p-1 rounded hover:bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                        className="p-1 rounded hover:bg-surface-secondary text-content-muted hover:text-content transition-colors"
                         title="Edit context"
                     >
                         <Edit3 className="w-3 h-3" />

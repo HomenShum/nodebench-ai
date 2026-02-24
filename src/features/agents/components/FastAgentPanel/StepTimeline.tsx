@@ -63,7 +63,7 @@ const statusIcons = {
 
 // Status colors
 const statusColors = {
-  pending: 'text-[var(--text-muted)]',
+  pending: 'text-content-muted',
   running: 'text-violet-500',
   complete: 'text-green-500',
   error: 'text-red-500',
@@ -104,10 +104,10 @@ export function StepTimeline({
   if (steps.length === 0) return null;
 
   return (
-    <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-4">
+    <div className="bg-surface-secondary border border-edge rounded-lg p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Wrench className="h-4 w-4 text-[var(--text-secondary)]" />
-        <h3 className="text-sm font-medium text-[var(--text-primary)]">Agent Progress</h3>
+        <Wrench className="h-4 w-4 text-content-secondary" />
+        <h3 className="text-sm font-medium text-content">Agent Progress</h3>
         {isStreaming && (
           <span className="ml-auto text-xs text-blue-600 flex items-center gap-1">
             <Loader2 className="h-3 w-3 motion-safe:animate-spin" />
@@ -132,11 +132,11 @@ export function StepTimeline({
               <div key={step.id} className="relative pl-10">
                 {/* Timeline Node */}
                 <div className={cn(
-                  "absolute left-2 top-1 w-4 h-4 rounded-full border-2 bg-[var(--bg-primary)] flex items-center justify-center",
+                  "absolute left-2 top-1 w-4 h-4 rounded-full border-2 bg-surface flex items-center justify-center",
                   step.status === 'complete' && "border-green-500",
                   step.status === 'running' && "border-violet-500",
                   step.status === 'error' && "border-red-500",
-                  step.status === 'pending' && "border-[var(--border-color)]"
+                  step.status === 'pending' && "border-edge"
                 )}>
                   <StatusIcon className={cn(
                     "h-2.5 w-2.5",
@@ -147,7 +147,7 @@ export function StepTimeline({
 
                 {/* Step Content */}
                 <div className={cn(
-                  "bg-[var(--bg-primary)] border rounded-lg p-3 shadow-sm transition-all",
+                  "bg-surface border rounded-lg p-3 shadow-sm transition-all",
                   step.status === 'error' && "border-red-200 bg-red-50",
                   step.status === 'running' && "border-blue-200 bg-blue-50",
                   step.status === 'complete' && "border-green-200"
@@ -180,9 +180,9 @@ export function StepTimeline({
                     {/* Step Title and Metadata */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-[var(--text-primary)]">{step.title}</span>
+                        <span className="text-sm font-medium text-content">{step.title}</span>
                         {step.elapsedMs && (
-                          <span className="text-xs text-[var(--text-secondary)]">
+                          <span className="text-xs text-content-secondary">
                             ({step.elapsedMs}ms)
                           </span>
                         )}
@@ -199,10 +199,10 @@ export function StepTimeline({
                               error: step.error,
                             });
                           }}
-                          className="text-xs text-[var(--text-secondary)] mt-0.5 hover:text-blue-600 transition-colors"
+                          className="text-xs text-content-secondary mt-0.5 hover:text-blue-600 transition-colors"
                           aria-label={`View ${step.toolName} result`}
                         >
-                          Tool: <code className="bg-[var(--bg-hover)] px-1 rounded hover:bg-blue-100 cursor-pointer">{step.toolName}</code>
+                          Tool: <code className="bg-surface-hover px-1 rounded hover:bg-blue-100 cursor-pointer">{step.toolName}</code>
                         </button>
                       )}
                     </div>
@@ -211,9 +211,9 @@ export function StepTimeline({
                     {hasDetails && (
                       <div className="flex-shrink-0">
                         {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 text-[var(--text-muted)]" />
+                          <ChevronDown className="h-4 w-4 text-content-muted" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-[var(--text-muted)]" />
+                          <ChevronRight className="h-4 w-4 text-content-muted" />
                         )}
                       </div>
                     )}
@@ -221,15 +221,15 @@ export function StepTimeline({
 
                   {/* Expanded Details */}
                   {isExpanded && hasDetails && (
-                    <div className="mt-3 pt-3 border-t border-[var(--border-color)] space-y-2">
+                    <div className="mt-3 pt-3 border-t border-edge space-y-2">
                       {step.description && (
-                        <div className="text-xs text-[var(--text-secondary)]">
+                        <div className="text-xs text-content-secondary">
                           {step.description}
                         </div>
                       )}
                       {step.result && (
                         <div className="text-xs">
-                          <div className="font-medium text-[var(--text-primary)] mb-2">Results:</div>
+                          <div className="font-medium text-content mb-2">Results:</div>
                           {(() => {
                             if (isResourceLinkResult(step.result)) {
                               return <ResourceLinkCard resourceLink={step.result} variant="compact" />;
@@ -249,7 +249,7 @@ export function StepTimeline({
                                   {/* YouTube Videos */}
                                   {media.youtubeVideos.length > 0 && (
                                     <div>
-                                      <div className="text-xs text-[var(--text-secondary)] mb-2">
+                                      <div className="text-xs text-content-secondary mb-2">
                                         Found {media.youtubeVideos.length} videos:
                                       </div>
                                       <YouTubeGallery videos={media.youtubeVideos} />
@@ -259,7 +259,7 @@ export function StepTimeline({
                                   {/* News/Web Sources */}
                                   {media.webSources.length > 0 && (
                                     <div>
-                                      <div className="text-xs text-[var(--text-secondary)] mb-2">
+                                      <div className="text-xs text-content-secondary mb-2">
                                         Found {media.webSources.length} articles:
                                       </div>
                                       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -275,7 +275,7 @@ export function StepTimeline({
                                   {/* People Profiles */}
                                   {media.profiles.length > 0 && (
                                     <div>
-                                      <div className="text-xs text-[var(--text-secondary)] mb-2">
+                                      <div className="text-xs text-content-secondary mb-2">
                                         Found {media.profiles.length} people:
                                       </div>
                                       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -291,7 +291,7 @@ export function StepTimeline({
                                   {/* Images */}
                                   {media.images.length > 0 && (
                                     <div>
-                                      <div className="text-xs text-[var(--text-secondary)] mb-2">
+                                      <div className="text-xs text-content-secondary mb-2">
                                         Found {media.images.length} images:
                                       </div>
                                       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -300,7 +300,7 @@ export function StepTimeline({
                                             key={idx}
                                             src={img.url}
                                             alt={img.alt || `Image ${idx + 1}`}
-                                            className="h-32 w-auto rounded border border-[var(--border-color)]"
+                                            className="h-32 w-auto rounded border border-edge"
                                           />
                                         ))}
                                       </div>
@@ -309,10 +309,10 @@ export function StepTimeline({
                                   
                                   {/* Text summary (with media markers removed) */}
                                   <details className="text-xs">
-                                    <summary className="cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                                    <summary className="cursor-pointer text-content-secondary hover:text-content">
                                       View raw text
                                     </summary>
-                                    <pre className="bg-[var(--bg-hover)] p-2 rounded text-xs overflow-x-auto mt-2">
+                                    <pre className="bg-surface-hover p-2 rounded text-xs overflow-x-auto mt-2">
                                       {removeMediaMarkersFromText(resultText)}
                                     </pre>
                                   </details>
@@ -322,7 +322,7 @@ export function StepTimeline({
                             
                             // No rich media, show text as before
                             return (
-                              <pre className="bg-[var(--bg-hover)] p-2 rounded text-xs overflow-x-auto">
+                              <pre className="bg-surface-hover p-2 rounded text-xs overflow-x-auto">
                                 {resultText}
                               </pre>
                             );

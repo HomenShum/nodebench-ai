@@ -301,10 +301,10 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
           <div className="h-full flex items-center justify-center text-center">
             <div>
               <div className="inline-flex items-center justify-center w-12 h-12 bg-[var(--accent-primary)]/10 rounded-full mb-3">
-                <Bot className="h-6 w-6 text-[var(--accent-primary)]" />
+                <Bot className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <div className="text-lg font-medium text-[var(--text-primary)] mb-1">Start a conversation</div>
-              <div className="text-sm text-[var(--text-secondary)] max-w-xs">
+              <div className="text-lg font-medium text-content mb-1">Start a conversation</div>
+              <div className="text-sm text-content-secondary max-w-xs">
                 Ask anything. I can help research, summarize, and draft dossiers.
               </div>
             </div>
@@ -348,8 +348,8 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         {/* Agent thinking indicator - show while sending OR waiting for agent response */}
         {(sending || waitingForAgent) && (
           <div className="flex justify-start">
-            <div className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-lg px-4 py-3 flex items-center gap-2">
-              <Loader2 className="h-4 w-4 motion-safe:animate-spin text-[var(--accent-primary)]" />
+            <div className="bg-surface-secondary text-content rounded-lg px-4 py-3 flex items-center gap-2">
+              <Loader2 className="h-4 w-4 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm">Thinking…</span>
             </div>
           </div>
@@ -370,15 +370,15 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
               {anonymousSession.canSendMessage ? (
                 <>
                   <MessageSquare className="w-4 h-4 text-blue-400" />
-                  <span className="text-[var(--text-secondary)]">
-                    <span className="font-medium text-[var(--text-primary)]">{anonymousSession.remaining}</span>
+                  <span className="text-content-secondary">
+                    <span className="font-medium text-content">{anonymousSession.remaining}</span>
                     {' '}of {anonymousSession.limit} free messages remaining
                   </span>
                 </>
               ) : (
                 <>
                   <LogIn className="w-4 h-4 text-amber-400" />
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Daily limit reached. Sign in for unlimited access!
                   </span>
                 </>
@@ -396,7 +396,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
       )}
 
       {/* Composer */}
-      <div className="border-t border-[var(--border-color)] p-3 bg-[var(--bg-primary)]">
+      <div className="border-t border-edge p-3 bg-surface">
         <div className="flex items-start gap-2">
           <textarea
             ref={inputRef}
@@ -410,7 +410,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
             }}
             placeholder="Send a message… (Ctrl/Cmd + Enter to send)"
             rows={2}
-            className="flex-1 px-3 py-2 border border-[var(--border-color)] rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent resize-y"
+            className="flex-1 px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent resize-y"
           />
           <button
             type="button"
@@ -426,13 +426,13 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
               type="button"
               onClick={handleStop}
               disabled={!threadId || cancelling}
-              className="h-10 px-3 py-2 mt-[2px] rounded-md text-[var(--text-secondary)] bg-[var(--bg-secondary)] border border-[var(--border-color)] hover:bg-[var(--bg-secondary)]/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-10 px-3 py-2 mt-[2px] rounded-md text-content-secondary bg-surface-secondary border border-edge hover:bg-surface-secondary/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancelling ? 'Stopping…' : 'Stop'}
             </button>
           )}
         </div>
-        <div className="text-xs text-[var(--text-secondary)] mt-1">Shift+Enter for new line.</div>
+        <div className="text-xs text-content-secondary mt-1">Shift+Enter for new line.</div>
       </div>
     </div>
   );
@@ -475,16 +475,16 @@ function MessageBubble({
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[85%] ${isUser ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)]'} rounded-lg overflow-hidden shadow-sm`}>
+      <div className={`max-w-[85%] ${isUser ? 'bg-[var(--accent-primary)] text-white' : 'bg-surface-secondary text-content'} rounded-lg overflow-hidden shadow-sm`}>
         {/* Main message content */}
         <div className="px-4 py-3">
           {/* Avatar + role for assistant */}
           {!isUser && (
             <div className="flex items-center gap-2 mb-2">
               <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 flex items-center justify-center">
-                <Bot className="h-3 w-3 text-[var(--accent-primary)]" />
+                <Bot className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <span className="text-xs font-medium text-[var(--text-secondary)]">Mini Note Agent</span>
+              <span className="text-xs font-medium text-content-secondary">Mini Note Agent</span>
             </div>
           )}
 
@@ -518,18 +518,18 @@ function MessageBubble({
 
         {/* Rich media section */}
         {!isUser && (extractedMedia.youtubeVideos.length > 0 || extractedMedia.webSources.length > 0 || extractedMedia.profiles.length > 0 || extractedMedia.images.length > 0) && (
-          <div className="border-t border-[var(--border-color)]/20 px-4 py-3">
+          <div className="border-t border-edge/20 px-4 py-3">
             <RichMediaSection media={extractedMedia} />
           </div>
         )}
 
         {/* Collapsible agent progress */}
         {!isUser && hasToolsOrReasoning && (
-          <div className="border-t border-[var(--border-color)]/20">
+          <div className="border-t border-edge/20">
             <button
               type="button"
               onClick={onToggleExpand}
-              className="w-full px-4 py-2 flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]/5 transition-colors"
+              className="w-full px-4 py-2 flex items-center gap-2 text-xs font-medium text-content-secondary hover:bg-surface/5 transition-colors"
             >
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               <Wrench className="h-3 w-3" />
@@ -537,11 +537,11 @@ function MessageBubble({
             </button>
 
             {isExpanded && (
-              <div className="px-4 py-3 border-t border-[var(--border-color)]/20 space-y-3">
+              <div className="px-4 py-3 border-t border-edge/20 space-y-3">
                 {reasoningText && (
                   <div className="text-xs">
-                    <div className="font-medium text-[var(--text-secondary)] mb-1">Reasoning:</div>
-                    <div className="text-[var(--text-secondary)]/80 whitespace-pre-wrap">{reasoningText}</div>
+                    <div className="font-medium text-content-secondary mb-1">Reasoning:</div>
+                    <div className="text-content-secondary/80 whitespace-pre-wrap">{reasoningText}</div>
                   </div>
                 )}
                 {toolParts.length > 0 && (

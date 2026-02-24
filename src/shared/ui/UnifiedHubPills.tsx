@@ -17,7 +17,7 @@ export function UnifiedHubPills({
   const navigate = useNavigate();
 
   const container = [
-    "inline-flex items-center gap-0.5 p-1 rounded-lg bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-color)]/50 shadow-sm",
+    "inline-flex items-center gap-0.5 p-1 rounded-lg bg-surface-secondary/80 backdrop-blur-sm border border-edge/50 shadow-sm",
     className ?? "",
   ]
     .join(" ")
@@ -28,8 +28,8 @@ export function UnifiedHubPills({
     return [
       "px-4 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
       isActive
-        ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm"
-        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]/60",
+        ? "bg-surface text-content shadow-sm"
+        : "text-content-secondary hover:text-content hover:bg-surface/60",
       disabled ? "opacity-40 cursor-not-allowed" : "",
     ].join(" ");
   };

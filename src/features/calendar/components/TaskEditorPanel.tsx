@@ -222,26 +222,26 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
   if (task === undefined) {
     return embedded ? (
-      <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] p-4">
-        <div className="motion-safe:animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
+      <div className="h-full w-full bg-surface-secondary border-l border-edge p-4">
+        <div className="motion-safe:animate-pulse h-6 w-40 bg-surface rounded mb-4" />
         <div className="space-y-2">
-          <div className="h-4 bg-[var(--bg-primary)] rounded" />
-          <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />
-          <div className="h-4 bg-[var(--bg-primary)] rounded w-2/3" />
+          <div className="h-4 bg-surface rounded" />
+          <div className="h-4 bg-surface rounded w-5/6" />
+          <div className="h-4 bg-surface rounded w-2/3" />
         </div>
       </div>
     ) : (
       <div className="fixed inset-0 z-50">
         <div className="absolute inset-0 bg-black/30 z-0" onClick={handleClose} />
         <div
-          className="absolute right-0 top-0 h-full w-[min(480px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl p-4 z-10"
+          className="absolute right-0 top-0 h-full w-[min(480px,100%)] bg-surface-secondary border-l border-edge shadow-2xl p-4 z-10"
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <div className="motion-safe:animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
+          <div className="motion-safe:animate-pulse h-6 w-40 bg-surface rounded mb-4" />
           <div className="space-y-2">
-            <div className="h-4 bg-[var(--bg-primary)] rounded" />
-            <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />
-            <div className="h-4 bg-[var(--bg-primary)] rounded w-2/3" />
+            <div className="h-4 bg-surface rounded" />
+            <div className="h-4 bg-surface rounded w-5/6" />
+            <div className="h-4 bg-surface rounded w-2/3" />
           </div>
         </div>
       </div>
@@ -250,29 +250,29 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
   if (!task) {
     return embedded ? (
-      <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] p-4 flex flex-col">
+      <div className="h-full w-full bg-surface-secondary border-l border-edge p-4 flex flex-col">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Task not found</h3>
-          <button className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]" onClick={onClose}>
+          <h3 className="text-sm font-semibold text-content">Task not found</h3>
+          <button className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[var(--text-secondary)] text-sm">This task may have been deleted.</p>
+        <p className="text-content-secondary text-sm">This task may have been deleted.</p>
       </div>
     ) : (
       <div className="fixed inset-0 z-50">
         <div className="absolute inset-0 bg-black/30 z-0" onClick={onClose} />
         <div
-          className="absolute right-0 top-0 h-full w-[min(480px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl p-4 flex flex-col z-10"
+          className="absolute right-0 top-0 h-full w-[min(480px,100%)] bg-surface-secondary border-l border-edge shadow-2xl p-4 flex flex-col z-10"
           onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Task not found</h3>
-            <button className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]" onClick={onClose}>
+            <h3 className="text-sm font-semibold text-content">Task not found</h3>
+            <button className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge" onClick={onClose}>
               <X className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[var(--text-secondary)] text-sm">This task may have been deleted.</p>
+          <p className="text-content-secondary text-sm">This task may have been deleted.</p>
         </div>
       </div>
     );
@@ -280,7 +280,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
   return embedded ? (
     <div
-      className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] flex flex-col"
+      className="h-full w-full bg-surface-secondary border-l border-edge flex flex-col"
       onInputCapture={() => {
         didUserEditRef.current = true;
       }}
@@ -289,19 +289,19 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
       }}
     >
         {/* Header */}
-        <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">Edit Task</h3>
+        <div className="p-4 border-b border-edge flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-content truncate">Edit Task</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => void handleDelete()}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500"
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500"
               title="Delete task"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={handleClose}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary border border-edge"
               title="Close"
             >
               <X className="w-4 h-4" />
@@ -312,11 +312,11 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
         {/* Body */}
         <div className="p-4 flex-1 overflow-auto space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Title</label>
+            <label className="block text-xs font-medium text-content-secondary mb-1">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               placeholder="Task title"
             />
             {/* Pills under title */}
@@ -352,21 +352,21 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Description</label>
+            <label className="block text-xs font-medium text-content-secondary mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
-              className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               placeholder="Details, notes, links…"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Status</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Status</label>
               <select
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
               >
@@ -377,9 +377,9 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Priority</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Priority</label>
               <select
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 value={priority ?? ""}
                 onChange={(e) => setPriority((e.target.value || undefined) as any)}
               >
@@ -396,9 +396,9 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           {showAssigneeEditor && (
             <div className="grid grid-cols-1 gap-2">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Assignee</label>
+                <label className="block text-xs font-medium text-content-secondary mb-1">Assignee</label>
                 <select
-                  className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   value={(assigneeId as any) ?? ''}
                   onChange={(e) => setAssigneeId((e.target.value || '') as any)}
                 >
@@ -412,24 +412,24 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     value={assigneeQuery}
                     onChange={(e) => setAssigneeQuery(e.target.value)}
                     placeholder="Search people…"
-                    className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                   <button
                     type="button"
                     onClick={() => setAssigneeId("")}
-                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
+                    className="text-xs px-2 py-1 rounded border border-edge bg-surface text-content-secondary"
                   >
                     Clear
                   </button>
                 </div>
                 {(userSuggestions ?? []).length > 0 && (
-                  <div className="mt-1 max-h-40 overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
+                  <div className="mt-1 max-h-40 overflow-auto border border-edge rounded-md bg-surface">
                     {(userSuggestions ?? []).map((u) => (
                       <button
                         key={String(u._id)}
                         type="button"
                         onClick={() => { setAssigneeId(u._id); setAssigneeQuery(''); }}
-                        className="w-full text-left px-2 py-1 text-sm hover:bg-[var(--bg-hover)]"
+                        className="w-full text-left px-2 py-1 text-sm hover:bg-surface-hover"
                         title={u.name ?? ''}
                       >
                         {u.name ?? String(u._id)}
@@ -443,10 +443,10 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           {showRefsEditor && (
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">References</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">References</label>
               <div className="flex items-center gap-2">
                 <select
-                  className="text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none"
                   value={newRefKind}
                   onChange={(e) => setNewRefKind(e.target.value as any)}
                 >
@@ -458,7 +458,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   value={newRefId}
                   onChange={(e) => setNewRefId(e.target.value)}
                   placeholder="Target ID"
-                  className="flex-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
                 <button
                   type="button"
@@ -470,7 +470,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     setNewRefId('');
                   }}
                   disabled={!newRefId.trim()}
-                  className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -480,13 +480,13 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   {refs.map((r, idx) => {
                     const title = r.kind === 'document' ? docTitleById[r.id] : r.kind === 'task' ? taskTitleById[r.id] : eventTitleById[r.id];
                     return (
-                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-surface text-content-secondary border-edge">
                         <span className="uppercase">{r.kind}</span>
-                        <span className="text-[var(--text-muted)]">{title ?? r.id}</span>
+                        <span className="text-content-muted">{title ?? r.id}</span>
                         <button
                           type="button"
                           onClick={() => setRefs(refs.filter((_, i) => i !== idx))}
-                          className="ml-1 w-4 h-4 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
+                          className="ml-1 w-4 h-4 rounded hover:bg-surface-hover flex items-center justify-center"
                           title="Remove"
                         >
                           <X className="w-3 h-3" />
@@ -501,15 +501,15 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           {showTagsEditor && (
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Tags</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Tags</label>
               <div className="flex flex-wrap items-center gap-1">
                 {tags.map((t, idx) => (
-                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface text-content-secondary">
                     {t}
                     <button
                       type="button"
                       onClick={() => setTags(tags.filter((_, i) => i !== idx))}
-                      className="ml-1 w-4 h-4 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
+                      className="ml-1 w-4 h-4 rounded hover:bg-surface-hover flex items-center justify-center"
                       title="Remove tag"
                     >
                       <X className="w-3 h-3" />
@@ -518,7 +518,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 ))}
                 <input
                   placeholder="Add tag…"
-                  className="text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   onKeyDown={(e) => {
                     const el = e.currentTarget as HTMLInputElement;
                     if (e.key === 'Enter' || e.key === ',') {
@@ -537,9 +537,9 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           {showAssigneeEditor && (
             <div className="grid grid-cols-1 gap-2">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Assignee</label>
+                <label className="block text-xs font-medium text-content-secondary mb-1">Assignee</label>
                 <select
-                  className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   value={(assigneeId as any) ?? ''}
                   onChange={(e) => setAssigneeId((e.target.value || '') as any)}
                 >
@@ -553,24 +553,24 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     value={assigneeQuery}
                     onChange={(e) => setAssigneeQuery(e.target.value)}
                     placeholder="Search people…"
-                    className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                   <button
                     type="button"
                     onClick={() => setAssigneeId("")}
-                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
+                    className="text-xs px-2 py-1 rounded border border-edge bg-surface text-content-secondary"
                   >
                     Clear
                   </button>
                 </div>
                 {(userSuggestions ?? []).length > 0 && (
-                  <div className="mt-1 max-h-40 overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
+                  <div className="mt-1 max-h-40 overflow-auto border border-edge rounded-md bg-surface">
                     {(userSuggestions ?? []).map((u) => (
                       <button
                         key={String(u._id)}
                         type="button"
                         onClick={() => { setAssigneeId(u._id); setAssigneeQuery(''); }}
-                        className="w-full text-left px-2 py-1 text-sm hover:bg-[var(--bg-hover)]"
+                        className="w-full text-left px-2 py-1 text-sm hover:bg-surface-hover"
                         title={u.name ?? ''}
                       >
                         {u.name ?? String(u._id)}
@@ -584,10 +584,10 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           {showRefsEditor && (
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">References</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">References</label>
               <div className="flex items-center gap-2">
                 <select
-                  className="text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none"
                   value={newRefKind}
                   onChange={(e) => setNewRefKind(e.target.value as any)}
                 >
@@ -599,7 +599,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   value={newRefId}
                   onChange={(e) => setNewRefId(e.target.value)}
                   placeholder="Target ID"
-                  className="flex-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
                 <button
                   type="button"
@@ -611,7 +611,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     setNewRefId('');
                   }}
                   disabled={!newRefId.trim()}
-                  className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -621,13 +621,13 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   {refs.map((r, idx) => {
                     const title = r.kind === 'document' ? docTitleById[r.id] : r.kind === 'task' ? taskTitleById[r.id] : eventTitleById[r.id];
                     return (
-                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-surface text-content-secondary border-edge">
                         <span className="uppercase">{r.kind}</span>
-                        <span className="text-[var(--text-muted)]">{title ?? r.id}</span>
+                        <span className="text-content-muted">{title ?? r.id}</span>
                         <button
                           type="button"
                           onClick={() => setRefs(refs.filter((_, i) => i !== idx))}
-                          className="ml-1 w-4 h-4 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
+                          className="ml-1 w-4 h-4 rounded hover:bg-surface-hover flex items-center justify-center"
                           title="Remove"
                         >
                           <X className="w-3 h-3" />
@@ -642,15 +642,15 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           {showTagsEditor && (
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Tags</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Tags</label>
               <div className="flex flex-wrap items-center gap-1">
                 {tags.map((t, idx) => (
-                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface text-content-secondary">
                     {t}
                     <button
                       type="button"
                       onClick={() => setTags(tags.filter((_, i) => i !== idx))}
-                      className="ml-1 w-4 h-4 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
+                      className="ml-1 w-4 h-4 rounded hover:bg-surface-hover flex items-center justify-center"
                       title="Remove tag"
                     >
                       <X className="w-3 h-3" />
@@ -659,7 +659,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 ))}
                 <input
                   placeholder="Add tag…"
-                  className="text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   onKeyDown={(e) => {
                     const el = e.currentTarget as HTMLInputElement;
                     if (e.key === 'Enter' || e.key === ',') {
@@ -676,21 +676,21 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start date</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Start date</label>
               <input
                 type="date"
                 value={startDateStr}
                 onChange={(e) => setStartDateStr(e.target.value)}
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Due date</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Due date</label>
               <input
                 type="date"
                 value={dueDateStr}
                 onChange={(e) => setDueDateStr(e.target.value)}
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               />
             </div>
           </div>
@@ -699,9 +699,9 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           {showAssigneeEditor && (
             <div className="grid grid-cols-1 gap-2">
               <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Assignee</label>
+                <label className="block text-xs font-medium text-content-secondary mb-1">Assignee</label>
                 <select
-                  className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   value={(assigneeId as any) ?? ''}
                   onChange={(e) => setAssigneeId((e.target.value || '') as any)}
                 >
@@ -715,24 +715,24 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     value={assigneeQuery}
                     onChange={(e) => setAssigneeQuery(e.target.value)}
                     placeholder="Search people…"
-                    className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   />
                   <button
                     type="button"
                     onClick={() => setAssigneeId("")}
-                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]"
+                    className="text-xs px-2 py-1 rounded border border-edge bg-surface text-content-secondary"
                   >
                     Clear
                   </button>
                 </div>
                 {(userSuggestions ?? []).length > 0 && (
-                  <div className="mt-1 max-h-40 overflow-auto border border-[var(--border-color)] rounded-md bg-[var(--bg-primary)]">
+                  <div className="mt-1 max-h-40 overflow-auto border border-edge rounded-md bg-surface">
                     {(userSuggestions ?? []).map((u) => (
                       <button
                         key={String(u._id)}
                         type="button"
                         onClick={() => { setAssigneeId(u._id); setAssigneeQuery(''); }}
-                        className="w-full text-left px-2 py-1 text-sm hover:bg-[var(--bg-hover)]"
+                        className="w-full text-left px-2 py-1 text-sm hover:bg-surface-hover"
                         title={u.name ?? ''}
                       >
                         {u.name ?? String(u._id)}
@@ -746,10 +746,10 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           {showRefsEditor && (
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">References</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">References</label>
               <div className="flex items-center gap-2">
                 <select
-                  className="text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none"
                   value={newRefKind}
                   onChange={(e) => setNewRefKind(e.target.value as any)}
                 >
@@ -761,7 +761,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   value={newRefId}
                   onChange={(e) => setNewRefId(e.target.value)}
                   placeholder="Target ID"
-                  className="flex-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 />
                 <button
                   type="button"
@@ -773,7 +773,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     setNewRefId('');
                   }}
                   disabled={!newRefId.trim()}
-                  className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary disabled:opacity-50"
                 >
                   Add
                 </button>
@@ -783,13 +783,13 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   {refs.map((r, idx) => {
                     const title = r.kind === 'document' ? docTitleById[r.id] : r.kind === 'task' ? taskTitleById[r.id] : eventTitleById[r.id];
                     return (
-                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                      <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border bg-surface text-content-secondary border-edge">
                         <span className="uppercase">{r.kind}</span>
-                        <span className="text-[var(--text-muted)]">{title ?? r.id}</span>
+                        <span className="text-content-muted">{title ?? r.id}</span>
                         <button
                           type="button"
                           onClick={() => setRefs(refs.filter((_, i) => i !== idx))}
-                          className="ml-1 w-4 h-4 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
+                          className="ml-1 w-4 h-4 rounded hover:bg-surface-hover flex items-center justify-center"
                           title="Remove"
                         >
                           <X className="w-3 h-3" />
@@ -804,15 +804,15 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           {showTagsEditor && (
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Tags</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Tags</label>
               <div className="flex flex-wrap items-center gap-1">
                 {tags.map((t, idx) => (
-                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+                  <span key={`${t}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface text-content-secondary">
                     {t}
                     <button
                       type="button"
                       onClick={() => setTags(tags.filter((_, i) => i !== idx))}
-                      className="ml-1 w-4 h-4 rounded hover:bg-[var(--bg-hover)] flex items-center justify-center"
+                      className="ml-1 w-4 h-4 rounded hover:bg-surface-hover flex items-center justify-center"
                       title="Remove tag"
                     >
                       <X className="w-3 h-3" />
@@ -821,7 +821,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 ))}
                 <input
                   placeholder="Add tag…"
-                  className="text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                   onKeyDown={(e) => {
                     const el = e.currentTarget as HTMLInputElement;
                     if (e.key === 'Enter' || e.key === ',') {
@@ -838,24 +838,24 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           
 
-          <div className="text-xs text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
+          <div className="text-xs text-content-muted">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
-          <span className="mr-auto text-xs text-[var(--text-muted)]">
+        <div className="p-4 border-t border-edge flex items-center justify-end gap-2">
+          <span className="mr-auto text-xs text-content-muted">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </span>
           <button
             onClick={handleClose}
-            className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary"
           >
             Close
           </button>
           <button
             onClick={() => void handleSave()}
             disabled={isSaving || saveHint !== "unsaved"}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>
@@ -865,7 +865,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30 z-0" onClick={handleClose} />
       <div
-        className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl flex flex-col z-10"
+        className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-surface-secondary border-l border-edge shadow-2xl flex flex-col z-10"
         onMouseDown={(e) => e.stopPropagation()}
         onInputCapture={() => {
           didUserEditRef.current = true;
@@ -875,19 +875,19 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
         }}
       >
         {/* Header */}
-        <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">Edit Task</h3>
+        <div className="p-4 border-b border-edge flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-content truncate">Edit Task</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => void handleDelete()}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500"
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500"
               title="Delete task"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={handleClose}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary border border-edge"
               title="Close"
             >
               <X className="w-4 h-4" />
@@ -898,11 +898,11 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
         {/* Body */}
         <div className="p-4 flex-1 overflow-auto space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Title</label>
+            <label className="block text-xs font-medium text-content-secondary mb-1">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               placeholder="Task title"
             />
             {/* Pills under title (overlay) */}
@@ -938,21 +938,21 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Description</label>
+            <label className="block text-xs font-medium text-content-secondary mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
-              className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               placeholder="Details, notes, links…"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Status</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Status</label>
               <select
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
               >
@@ -963,9 +963,9 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Priority</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Priority</label>
               <select
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
                 value={priority ?? ""}
                 onChange={(e) => setPriority((e.target.value || undefined) as any)}
               >
@@ -980,43 +980,43 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Start date</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Start date</label>
               <input
                 type="date"
                 value={startDateStr}
                 onChange={(e) => setStartDateStr(e.target.value)}
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Due date</label>
+              <label className="block text-xs font-medium text-content-secondary mb-1">Due date</label>
               <input
                 type="date"
                 value={dueDateStr}
                 onChange={(e) => setDueDateStr(e.target.value)}
-                className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               />
             </div>
           </div>
 
-          <div className="text-xs text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
+          <div className="text-xs text-content-muted">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
-          <span className="mr-auto text-xs text-[var(--text-muted)]">
+        <div className="p-4 border-t border-edge flex items-center justify-end gap-2">
+          <span className="mr-auto text-xs text-content-muted">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </span>
           <button
             onClick={handleClose}
-            className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary"
           >
             Close
           </button>
           <button
             onClick={() => void handleSave()}
             disabled={isSaving || saveHint !== "unsaved"}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>

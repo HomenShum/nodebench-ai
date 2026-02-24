@@ -64,7 +64,7 @@ const CapabilityBadge = memo(function CapabilityBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--accent-primary-bg)] text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20"
       title={label}
     >
       <Icon className="w-2.5 h-2.5" />
@@ -88,14 +88,14 @@ const ScoreBar = memo(function ScoreBar({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-[var(--text-muted)] w-12">{label}</span>
-      <div className="flex-1 h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+      <span className="text-xs text-content-muted w-12">{label}</span>
+      <div className="flex-1 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
         <div
           className={cn("h-full rounded-full transition-all", color)}
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="text-xs font-mono text-[var(--text-secondary)] w-8">
+      <span className="text-xs font-mono text-content-secondary w-8">
         {score}%
       </span>
     </div>
@@ -135,8 +135,8 @@ const ModelRow = memo(function ModelRow({
       className={cn(
         "p-3 rounded-lg border transition-colors",
         isTop3
-          ? "bg-[var(--accent-primary-bg)]/50 border-[var(--accent-primary)]/20"
-          : "border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+          ? "bg-[var(--accent-primary-bg)]/50 border-indigo-500/30/20"
+          : "border-edge hover:bg-surface-hover"
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -146,24 +146,24 @@ const ModelRow = memo(function ModelRow({
             className={cn(
               "flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm",
               isTop3
-                ? "bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/20"
-                : "bg-[var(--bg-secondary)]"
+                ? "bg-[var(--accent-primary-bg)] border border-indigo-500/30/20"
+                : "bg-surface-secondary"
             )}
           >
-            <span className={rankColors[model.rank] || "text-[var(--text-muted)]"}>
+            <span className={rankColors[model.rank] || "text-content-muted"}>
               {model.rank}
             </span>
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+              <span className="text-sm font-medium text-content truncate">
                 {model.name}
               </span>
               {isTop3 && (
                 <Trophy className={cn("w-3.5 h-3.5 flex-shrink-0", rankColors[model.rank])} />
               )}
             </div>
-            <div className="text-xs text-[var(--text-muted)] truncate">
+            <div className="text-xs text-content-muted truncate">
               {model.openRouterId}
             </div>
           </div>
@@ -172,14 +172,14 @@ const ModelRow = memo(function ModelRow({
         {/* Context & Latency */}
         <div className="flex items-center gap-4 text-right">
           <div>
-            <div className="text-xs text-[var(--text-muted)]">Context</div>
-            <div className="text-sm font-mono text-[var(--text-secondary)]">
+            <div className="text-xs text-content-muted">Context</div>
+            <div className="text-sm font-mono text-content-secondary">
               {formatContext(model.contextLength)}
             </div>
           </div>
           <div>
-            <div className="text-xs text-[var(--text-muted)]">Latency</div>
-            <div className="text-sm font-mono text-[var(--text-secondary)]">
+            <div className="text-xs text-content-muted">Latency</div>
+            <div className="text-sm font-mono text-content-secondary">
               {formatLatency(model.latencyAvgMs)}
             </div>
           </div>
@@ -230,7 +230,7 @@ const ModelRow = memo(function ModelRow({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center gap-4 mt-2 pt-2 border-t border-[var(--border-color)] text-xs text-[var(--text-muted)]">
+      <div className="flex items-center gap-4 mt-2 pt-2 border-t border-edge text-xs text-content-muted">
         <span>{model.evaluationCount} evals</span>
         <span>
           Last: {new Date(model.lastEvaluated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -256,16 +256,16 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
   const activeCount = models?.length ?? 0;
 
   return (
-    <div className="bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+    <div className="bg-surface rounded-lg border border-edge">
       {/* Header */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-[var(--bg-hover)] transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-purple-500" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+          <h3 className="text-sm font-semibold text-content">
             Free Model Rankings
           </h3>
           <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-600 border border-purple-500/20">
@@ -273,26 +273,26 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+          <ChevronUp className="w-4 h-4 text-content-muted" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+          <ChevronDown className="w-4 h-4 text-content-muted" />
         )}
       </button>
 
       {/* Content */}
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-[var(--border-color)] pt-4">
+        <div className="px-4 pb-4 border-t border-edge pt-4">
           {models === undefined ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 motion-safe:animate-spin text-[var(--text-muted)]" />
+              <Loader2 className="w-5 h-5 motion-safe:animate-spin text-content-muted" />
             </div>
           ) : models.length === 0 ? (
             <div className="text-center py-6">
-              <Sparkles className="w-8 h-8 mx-auto text-[var(--text-muted)] mb-2" />
-              <p className="text-sm text-[var(--text-muted)]">
+              <Sparkles className="w-8 h-8 mx-auto text-content-muted mb-2" />
+              <p className="text-sm text-content-muted">
                 No free models discovered yet
               </p>
-              <p className="text-xs text-[var(--text-muted)] mt-1">
+              <p className="text-xs text-content-muted mt-1">
                 Run the discovery cron to find available models
               </p>
             </div>
@@ -313,7 +313,7 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
                 <button
                   type="button"
                   onClick={() => setShowAll(true)}
-                  className="w-full mt-4 py-2 text-xs font-medium text-[var(--accent-primary)] hover:bg-[var(--accent-primary-bg)] rounded-lg transition-colors"
+                  className="w-full mt-4 py-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-[var(--accent-primary-bg)] rounded-lg transition-colors"
                 >
                   Show all models
                 </button>

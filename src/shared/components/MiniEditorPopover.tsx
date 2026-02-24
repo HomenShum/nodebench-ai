@@ -160,8 +160,8 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   if (document === undefined || fileDoc === undefined) {
     return (
       <div className="space-y-2">
-        <div className="motion-safe:animate-pulse h-4 w-24 bg-[var(--bg-primary)] rounded" />
-        <div className="motion-safe:animate-pulse h-8 w-full bg-[var(--bg-primary)] rounded" />
+        <div className="motion-safe:animate-pulse h-4 w-24 bg-surface rounded" />
+        <div className="motion-safe:animate-pulse h-8 w-full bg-surface rounded" />
       </div>
     );
   }
@@ -170,7 +170,7 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   if (document?.dossierType === "primary") {
     return (
       <div className="min-h-[240px]">
-        <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+        <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
           <DossierMiniEditor documentId={documentId} onClose={onClose} />
         </Suspense>
       </div>
@@ -182,7 +182,7 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
     return (
       <div className="min-h-[240px]">
         <EditorErrorBoundary>
-          <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+          <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
             <UnifiedEditor documentId={documentId} mode="quickNote" />
           </Suspense>
         </EditorErrorBoundary>
@@ -197,7 +197,7 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
     if (isSpreadsheet) {
       return (
         <div className="min-h-[240px]">
-          <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading spreadsheet…</div>}>
+          <Suspense fallback={<div className="text-xs text-content-secondary">Loading spreadsheet…</div>}>
             <SpreadsheetMiniEditor documentId={documentId} onClose={onClose} />
           </Suspense>
         </div>
@@ -207,7 +207,7 @@ function MiniContent({ documentId, onClose }: { documentId: Id<"documents">; onC
   return (
     <div className="min-h-[240px]">
       <EditorErrorBoundary>
-        <Suspense fallback={<div className="text-xs text-[var(--text-secondary)]">Loading editor…</div>}>
+        <Suspense fallback={<div className="text-xs text-content-secondary">Loading editor…</div>}>
           <UnifiedEditor documentId={documentId} mode="quickNote" />
         </Suspense>
       </EditorErrorBoundary>

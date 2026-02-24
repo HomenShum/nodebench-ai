@@ -38,7 +38,7 @@ export function EvidencePanel({
     const shouldScroll = expanded && evidence.length > maxVisible;
 
     return (
-        <div className="border-t border-gray-200/60 pt-5 mt-6">
+        <div className="border-t border-edge/60 pt-5 mt-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -128,14 +128,14 @@ export function EvidencePanel({
 
             {/* Collapsed indicator */}
             {!expanded && hasMore && (
-                <div className="mt-3 pt-2 border-t border-dashed border-gray-200/50 text-center">
+                <div className="mt-3 pt-2 border-t border-dashed border-edge/50 text-center">
                     <span className="text-xs text-content-muted italic">
                         {evidence.length - maxVisible} more sources available
                     </span>
                 </div>
             )}
             {expanded && shouldScroll && (
-                <div className="mt-3 pt-2 border-t border-dashed border-gray-200/50 text-center">
+                <div className="mt-3 pt-2 border-t border-dashed border-edge/50 text-center">
                     <span className="text-xs text-content-muted italic">
                         Scroll to view all sources
                     </span>

@@ -138,7 +138,7 @@ function SourcePerformanceBar({
           )}
           {ctr > 0 && (
             <>
-              <span className="text-gray-300 dark:text-content-secondary">|</span>
+              <span className="text-content-muted/60">|</span>
               <span className="font-semibold text-blue-600 dark:text-blue-300">
                 {parseFloat((ctr * 100).toFixed(1))}% CTR
               </span>
@@ -187,7 +187,7 @@ function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: Cat
       <div className="flex-1">
         <div className="text-sm font-medium text-content-secondary" title={category}>{label}</div>
         <div className="flex items-center gap-2 mt-1">
-          <div className="h-1.5 bg-surface-secondary dark:bg-white/[0.08] rounded-full flex-1 max-w-[100px]">
+          <div className="h-1.5 bg-surface-secondary rounded-full flex-1 max-w-[100px]">
             <div
               className="h-full bg-purple-500 rounded-full"
               style={{ width: `${percentage}%` }}
@@ -200,7 +200,7 @@ function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: Cat
         <span className="font-mono">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
         {avgReadTime && avgReadTime > 0 && (
           <>
-            <span className="text-gray-300 dark:text-content-secondary">|</span>
+            <span className="text-content-muted/60">|</span>
             <span className="flex items-center gap-1">
               <Clock size={12} />
               {Math.round(avgReadTime)} sec
@@ -355,8 +355,9 @@ export default function ComponentMetricsDashboard() {
   const isLoading = todayMetrics === undefined || topSources === undefined;
 
   return (
-    <div className="min-h-full bg-surface p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <PageHeroHeader
@@ -371,7 +372,7 @@ export default function ComponentMetricsDashboard() {
               <Calendar size={18} className="text-content-muted" />
               <div className="relative">
                 {/* Formatted date label — always shows readable format */}
-                <span className="px-3 py-2 text-sm text-content-secondary border border-edge rounded-lg bg-white dark:bg-white/[0.06] inline-block min-w-[160px]">
+                <span className="px-3 py-2 text-sm text-content-secondary border border-edge rounded-lg bg-surface inline-block min-w-[160px]">
                   {selectedDate
                     ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -391,7 +392,7 @@ export default function ComponentMetricsDashboard() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(Number(e.target.value))}
-              className="px-3 py-2 border border-edge dark:bg-white/[0.06] dark:text-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 border border-edge bg-surface text-content-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
             >
               <option value={1}>Last 24 hours</option>
               <option value={7}>Last 7 days</option>
@@ -400,7 +401,7 @@ export default function ComponentMetricsDashboard() {
 
             <button
               onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
-              className="p-2 border border-edge dark:hover:bg-white/[0.06] rounded-lg hover:bg-surface-hover transition-colors"
+              className="p-2 border border-edge rounded-lg hover:bg-surface-hover transition-colors"
               title="Go to today"
             >
               <RefreshCw size={18} className="text-content-secondary" />
@@ -432,7 +433,7 @@ export default function ComponentMetricsDashboard() {
               <MetricCard
                 title="Total Items"
                 value={aggregates.totalItems}
-                subtitle={aggregates.uniqueSources === 0 ? 'No sources yet' : `From ${aggregates.uniqueSources} ${aggregates.uniqueSources === 1 ? 'source' : 'sources'}`}
+                subtitle={aggregates.uniqueSources === 0 ? 'No sources yet' : `from ${aggregates.uniqueSources} ${aggregates.uniqueSources === 1 ? 'source' : 'sources'}`}
                 icon={<BarChart3 size={20} />}
                 accent={aggregates.totalItems > 0}
               />
@@ -461,7 +462,7 @@ export default function ComponentMetricsDashboard() {
             </div>
 
             {/* Source Performance */}
-            <div className="bg-surface border border-edge rounded-lg p-6">
+            <div className="nb-surface-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-content">
                   Source Performance
@@ -496,7 +497,7 @@ export default function ComponentMetricsDashboard() {
             {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Category Breakdown */}
-              <div className="bg-surface border border-edge rounded-lg p-6">
+              <div className="nb-surface-card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-content">
                     Category Breakdown
@@ -526,7 +527,7 @@ export default function ComponentMetricsDashboard() {
               </div>
 
               {/* Top Performers (Last 7 Days) */}
-              <div className="bg-surface border border-edge rounded-lg p-6">
+              <div className="nb-surface-card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-content">
                     Top Performers
@@ -614,6 +615,7 @@ export default function ComponentMetricsDashboard() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

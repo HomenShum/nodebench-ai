@@ -177,7 +177,7 @@ function getEventIcon(kind: DisclosureEvent["kind"]) {
     case "trace.self_correction":
       return <RefreshCw className="w-3.5 h-3.5 text-amber-400" />;
     default:
-      return <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
+      return <Clock className="w-3.5 h-3.5 text-content-muted" />;
   }
 }
 
@@ -412,29 +412,29 @@ export function DisclosureTrace({
   return (
     <div
       className={cn(
-        "border border-[var(--border-secondary)] rounded-lg bg-[var(--bg-secondary)]",
+        "border border-[var(--border-secondary)] rounded-lg bg-surface-secondary",
         className
       )}
     >
       {/* Header */}
       <button
         onClick={toggleExpanded}
-        className="w-full flex items-center justify-between p-3 hover:bg-[var(--bg-tertiary)] transition-colors rounded-t-lg"
+        className="w-full flex items-center justify-between p-3 hover:bg-surface-secondary transition-colors rounded-t-lg"
       >
         <div className="flex items-center gap-2">
           {expanded ? (
-            <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" />
+            <ChevronDown className="w-4 h-4 text-content-secondary" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-[var(--text-secondary)]" />
+            <ChevronRight className="w-4 h-4 text-content-secondary" />
           )}
           <Search className="w-4 h-4 text-blue-400" />
-          <span className="text-sm font-medium text-[var(--text-primary)]">
+          <span className="text-sm font-medium text-content">
             Disclosure Trace
           </span>
         </div>
 
         {/* Quick Stats Badge */}
-        <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">
+        <div className="flex items-center gap-3 text-xs text-content-secondary">
           <span className="flex items-center gap-1">
             <BookOpen className="w-3 h-3" />
             {stats.skillsActivated.length}
@@ -468,19 +468,19 @@ export function DisclosureTrace({
                 key={idx}
                 className={cn(
                   "flex items-start gap-2 px-3 py-1.5 text-xs",
-                  idx % 2 === 0 ? "bg-[var(--bg-secondary)]" : "bg-[var(--bg-tertiary)]"
+                  idx % 2 === 0 ? "bg-surface-secondary" : "bg-surface-secondary"
                 )}
               >
-                <span className="text-[var(--text-muted)] font-mono w-16 flex-shrink-0">
+                <span className="text-content-muted font-mono w-16 flex-shrink-0">
                   {formatTime(event.t)}
                 </span>
                 <span className="flex-shrink-0">{getEventIcon(event.kind)}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[var(--text-primary)] truncate">
+                  <div className="text-content truncate">
                     {getEventLabel(event)}
                   </div>
                   {getEventDetail(event) && (
-                    <div className="text-[var(--text-secondary)] truncate">
+                    <div className="text-content-secondary truncate">
                       {getEventDetail(event)}
                     </div>
                   )}
@@ -494,14 +494,14 @@ export function DisclosureTrace({
             {/* Row 1: Basic stats */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-4">
-                <span className="text-[var(--text-secondary)]">
-                  Skills: <span className="text-[var(--text-primary)] font-medium">{stats.skillsActivated.length}</span>
+                <span className="text-content-secondary">
+                  Skills: <span className="text-content font-medium">{stats.skillsActivated.length}</span>
                 </span>
-                <span className="text-[var(--text-secondary)]">
-                  Tools: <span className="text-[var(--text-primary)] font-medium">{stats.toolsExpanded.length}</span>
+                <span className="text-content-secondary">
+                  Tools: <span className="text-content font-medium">{stats.toolsExpanded.length}</span>
                 </span>
                 {stats.confirmationsRequested > 0 && (
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Confirmations:{" "}
                     <span className="text-indigo-400 font-medium">
                       {stats.confirmationsGranted}/{stats.confirmationsRequested}
@@ -549,7 +549,7 @@ export function DisclosureTrace({
 
                 {/* Memory queries */}
                 {stats.memoryQueries.length > 0 && (
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Memory:{" "}
                     <span className="text-purple-400 font-medium">
                       {stats.memoryQueries.filter(q => q.found).length}/{stats.memoryQueries.length} found
@@ -562,7 +562,7 @@ export function DisclosureTrace({
 
                 {/* Compaction */}
                 {stats.compactionEvents > 0 && (
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Compaction:{" "}
                     <span className="text-indigo-400 font-medium">
                       -{stats.tokensSavedByCompaction.toLocaleString()} tokens
@@ -574,25 +574,25 @@ export function DisclosureTrace({
               {/* Invariants */}
               <div className="flex items-center gap-2">
                 {(stats.invariantStatus.A !== "skip" || stats.invariantStatus.C !== "skip" || stats.invariantStatus.D !== "skip") && (
-                  <span className="flex items-center gap-1 text-[var(--text-secondary)]">
+                  <span className="flex items-center gap-1 text-content-secondary">
                     Invariants:
                     <span className={cn(
                       "px-1 rounded text-xs font-mono",
                       stats.invariantStatus.A === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.A === "fail" ? "bg-red-500/20 text-red-400" :
-                      "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
+                      "bg-surface-secondary text-content-muted"
                     )}>A</span>
                     <span className={cn(
                       "px-1 rounded text-xs font-mono",
                       stats.invariantStatus.C === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.C === "fail" ? "bg-red-500/20 text-red-400" :
-                      "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
+                      "bg-surface-secondary text-content-muted"
                     )}>C</span>
                     <span className={cn(
                       "px-1 rounded text-xs font-mono",
                       stats.invariantStatus.D === "pass" ? "bg-indigo-500/20 text-indigo-400" :
                       stats.invariantStatus.D === "fail" ? "bg-red-500/20 text-red-400" :
-                      "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
+                      "bg-surface-secondary text-content-muted"
                     )}>D</span>
                   </span>
                 )}
@@ -603,7 +603,7 @@ export function DisclosureTrace({
             {stats.memoryUpdates.length > 0 && (
               <div className="flex items-center gap-2 text-xs">
                 <RefreshCw className="w-3 h-3 text-indigo-400" />
-                <span className="text-[var(--text-secondary)]">Updates:</span>
+                <span className="text-content-secondary">Updates:</span>
                 <div className="flex flex-wrap gap-1">
                   {stats.memoryUpdates.slice(0, 5).map((u, i) => (
                     <span
@@ -612,14 +612,14 @@ export function DisclosureTrace({
                         "px-1.5 py-0.5 rounded text-xs",
                         u.action === "create" ? "bg-indigo-500/20 text-indigo-400" :
                         u.action === "update" ? "bg-violet-500/20 text-violet-400" :
-                        "bg-[var(--bg-secondary)] text-[var(--text-muted)]"
+                        "bg-surface-secondary text-content-muted"
                       )}
                     >
                       {u.entityId} (+{u.factsAdded})
                     </span>
                   ))}
                   {stats.memoryUpdates.length > 5 && (
-                    <span className="text-[var(--text-muted)]">+{stats.memoryUpdates.length - 5} more</span>
+                    <span className="text-content-muted">+{stats.memoryUpdates.length - 5} more</span>
                   )}
                 </div>
               </div>
@@ -633,21 +633,21 @@ export function DisclosureTrace({
                     <Brain className="w-3 h-3" />
                     Reasoning
                   </span>
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Calls: <span className="text-cyan-400 font-medium">{stats.reasoningInvocations}</span>
                   </span>
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Steps: <span className="text-cyan-400 font-medium">{stats.reasoningThinkingSteps}</span>
                   </span>
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Tokens: <span className="text-cyan-400 font-medium">{stats.reasoningTokens.toLocaleString()}</span>
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Cost: <span className="text-cyan-400 font-medium">${stats.reasoningCost.toFixed(6)}</span>
                   </span>
-                  <span className="text-[var(--text-secondary)]">
+                  <span className="text-content-secondary">
                     Avg: <span className="text-cyan-400 font-medium">{Math.round(stats.avgReasoningDuration)}ms</span>
                   </span>
                 </div>
@@ -671,7 +671,7 @@ export function DisclosureTrace({
 
             {/* Budget Bar */}
             <div className="mt-2">
-              <div className="h-1.5 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+              <div className="h-1.5 bg-surface-secondary rounded-full overflow-hidden">
                 <div
                   className={cn(
                     "h-full transition-all duration-300",
@@ -750,17 +750,17 @@ export function PendingConfirmation({
         />
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-[var(--text-primary)]">
+            <h4 className="text-sm font-medium text-content">
               Confirmation Required
             </h4>
             {!isExpired && (
-              <span className="text-xs text-[var(--text-secondary)]">
+              <span className="text-xs text-content-secondary">
                 Expires in {minutes}:{seconds.toString().padStart(2, "0")}
               </span>
             )}
           </div>
 
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
+          <p className="text-sm text-content-secondary mt-1">
             {actionSummary}
           </p>
 
@@ -775,7 +775,7 @@ export function PendingConfirmation({
             >
               {riskTier}
             </span>
-            <span className="text-xs text-[var(--text-muted)]">{toolName}</span>
+            <span className="text-xs text-content-muted">{toolName}</span>
           </div>
 
           {isExpired ? (
@@ -790,7 +790,7 @@ export function PendingConfirmation({
               </button>
               <button
                 onClick={onDeny}
-                className="px-3 py-1.5 text-sm font-medium bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded border border-[var(--border-secondary)] transition-colors"
+                className="px-3 py-1.5 text-sm font-medium bg-surface-secondary hover:bg-surface-secondary text-content rounded border border-[var(--border-secondary)] transition-colors"
               >
                 Cancel
               </button>

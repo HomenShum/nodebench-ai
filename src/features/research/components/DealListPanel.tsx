@@ -65,18 +65,18 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
   const sectors = Array.from(new Set(deals.map((d) => d.sector.toLowerCase())));
 
   return (
-    <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
+    <div className="rounded-lg border border-edge bg-surface shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
             <Building className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-[color:var(--text-secondary)]">Deal List</p>
-            <p className="text-sm font-semibold text-[color:var(--text-primary)]">Filter by stage & sector</p>
+            <p className="text-xs font-semibold uppercase text-content-secondary">Deal List</p>
+            <p className="text-sm font-semibold text-content">Filter by stage & sector</p>
           </div>
         </div>
-        <Filter className="w-4 h-4 text-[color:var(--text-secondary)]" />
+        <Filter className="w-4 h-4 text-content-secondary" />
       </div>
 
       <div className="flex gap-2 px-4 pt-3 pb-2">
@@ -86,8 +86,8 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
           onFocus={() => setFocusedSelect("stage")}
           onBlur={() => setFocusedSelect(null)}
           aria-label="Filter by stage"
-          className={`flex-1 text-sm border rounded-lg px-3 py-2 bg-[color:var(--bg-secondary)] focus:outline-none focus:ring-2 ${
-            focusedSelect === "stage" ? "border-[color:var(--border-color)] ring-[color:var(--border-color)]" : "border-[color:var(--border-color)] ring-[color:var(--border-color)]"
+          className={`flex-1 text-sm border rounded-lg px-3 py-2 bg-surface-secondary focus:outline-none focus:ring-2 ${
+            focusedSelect === "stage" ? "border-edge ring-[color:var(--border-color)]" : "border-edge ring-[color:var(--border-color)]"
           }`}
         >
           <option value="all">Stage: All</option>
@@ -103,8 +103,8 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
           onFocus={() => setFocusedSelect("sector")}
           onBlur={() => setFocusedSelect(null)}
           aria-label="Filter by sector"
-          className={`flex-1 text-sm border rounded-lg px-3 py-2 bg-[color:var(--bg-secondary)] focus:outline-none focus:ring-2 ${
-            focusedSelect === "sector" ? "border-[color:var(--border-color)] ring-[color:var(--border-color)]" : "border-[color:var(--border-color)] ring-[color:var(--border-color)]"
+          className={`flex-1 text-sm border rounded-lg px-3 py-2 bg-surface-secondary focus:outline-none focus:ring-2 ${
+            focusedSelect === "sector" ? "border-edge ring-[color:var(--border-color)]" : "border-edge ring-[color:var(--border-color)]"
           }`}
         >
           <option value="all">Sector: All</option>
@@ -122,26 +122,26 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
             key={deal.id}
             type="button"
             onClick={() => onOpenDeal(deal)}
-            className="w-full text-left px-4 py-3 hover:bg-[color:var(--bg-hover)] transition-colors"
+            className="w-full text-left px-4 py-3 hover:bg-surface-hover transition-colors"
           >
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">{deal.company}</p>
-                  <span className="text-xs font-semibold text-[color:var(--text-secondary)]">{deal.amount}</span>
-                  <span className="text-xs text-[color:var(--text-secondary)]">• {deal.stage}</span>
-                  <span className="text-xs text-[color:var(--text-secondary)]">• {deal.date}</span>
+                  <p className="text-sm font-semibold text-content truncate">{deal.company}</p>
+                  <span className="text-xs font-semibold text-content-secondary">{deal.amount}</span>
+                  <span className="text-xs text-content-secondary">• {deal.stage}</span>
+                  <span className="text-xs text-content-secondary">• {deal.date}</span>
                   {deal.sentiment && (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${sentimentStyles[deal.sentiment]}`}>
                       {deal.sentiment === "hot" ? "Hot" : "Watch"}
                     </span>
                   )}
                 </div>
-                <p className="text-[12px] text-[color:var(--text-primary)] line-clamp-2">{deal.summary}</p>
-                <div className="flex flex-wrap gap-2 mt-2 text-xs text-[color:var(--text-secondary)]">
-                  <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.location}</span>
-                  <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{deal.sector}</span>
-                  {deal.leads?.[0] && <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">Lead: {deal.leads[0]}</span>}
+                <p className="text-[12px] text-content line-clamp-2">{deal.summary}</p>
+                <div className="flex flex-wrap gap-2 mt-2 text-xs text-content-secondary">
+                  <span className="rounded-full bg-surface-secondary px-2 py-0.5">{deal.location}</span>
+                  <span className="rounded-full bg-surface-secondary px-2 py-0.5">{deal.sector}</span>
+                  {deal.leads?.[0] && <span className="rounded-full bg-surface-secondary px-2 py-0.5">Lead: {deal.leads[0]}</span>}
                   {deal.traction && <span className="text-content-secondary bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">{deal.traction}</span>}
                 </div>
               </div>
@@ -150,7 +150,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
                   <Sparkline data={deal.spark} width={90} height={32} color="#22c55e" />
                 </div>
               )}
-              <ArrowRight className="w-4 h-4 text-[color:var(--text-secondary)]" />
+              <ArrowRight className="w-4 h-4 text-content-secondary" />
             </div>
           </button>
         ))}
@@ -182,20 +182,20 @@ export function DealFlyout({
   return (
     <div className="fixed inset-0 z-[130] flex items-start justify-end pointer-events-none">
       <div className="absolute inset-0 bg-black/10 pointer-events-auto" onClick={onClose} />
-      <div className="relative pointer-events-auto mt-10 mr-6 w-[420px] max-w-[94vw] bg-[color:var(--bg-primary)] border border-[color:var(--border-color)] shadow-2xl rounded-lg overflow-hidden">
-        <div className="flex items-start justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
+      <div className="relative pointer-events-auto mt-10 mr-6 w-[420px] max-w-[94vw] bg-surface border border-edge shadow-2xl rounded-lg overflow-hidden">
+        <div className="flex items-start justify-between px-4 py-3 border-b border-edge">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-lg font-semibold text-[color:var(--text-primary)]">{deal.company}</p>
-              <span className="text-xs font-semibold text-[color:var(--text-primary)]">{deal.amount}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border border-[color:var(--border-color)]">{deal.stage}</span>
+              <p className="text-lg font-semibold text-content">{deal.company}</p>
+              <span className="text-xs font-semibold text-content">{deal.amount}</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-surface-secondary text-content border border-edge">{deal.stage}</span>
             </div>
-            <p className="text-sm text-[color:var(--text-primary)]">{deal.sector} • {deal.location}</p>
+            <p className="text-sm text-content">{deal.sector} • {deal.location}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
+            className="text-sm text-content-secondary hover:text-content"
             aria-label="Close deal details"
           >
             ✕
@@ -203,12 +203,12 @@ export function DealFlyout({
         </div>
 
         <div className="px-4 py-3 space-y-3">
-          <div className="text-sm text-[color:var(--text-primary)] leading-relaxed">{deal.summary}</div>
+          <div className="text-sm text-content leading-relaxed">{deal.summary}</div>
 
           {(deal.foundingYear || deal.location || deal.foundersBackground) && (
-            <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3 space-y-1">
-              <div className="text-xs font-semibold text-[color:var(--text-secondary)]">Company profile</div>
-              <div className="grid grid-cols-2 gap-2 text-[12px] text-[color:var(--text-primary)]">
+            <div className="rounded-lg border border-edge bg-surface-secondary p-3 space-y-1">
+              <div className="text-xs font-semibold text-content-secondary">Company profile</div>
+              <div className="grid grid-cols-2 gap-2 text-[12px] text-content">
                 <div>
                   <span className="font-semibold">Founded:</span> {deal.foundingYear || "n/a"}
                 </div>
@@ -217,45 +217,45 @@ export function DealFlyout({
                 </div>
               </div>
               {deal.foundersBackground && (
-                <div className="text-[12px] text-[color:var(--text-primary)]">
-                  <span className="font-semibold text-[color:var(--text-secondary)]">Founder background:</span> {deal.foundersBackground}
+                <div className="text-[12px] text-content">
+                  <span className="font-semibold text-content-secondary">Founder background:</span> {deal.foundersBackground}
                 </div>
               )}
             </div>
           )}
 
-          <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] p-3 space-y-1">
-            <div className="text-xs font-semibold text-[color:var(--text-secondary)]">Leads & Co-investors</div>
-            <p className="text-sm text-[color:var(--text-primary)]">
+          <div className="rounded-lg border border-edge bg-surface-secondary p-3 space-y-1">
+            <div className="text-xs font-semibold text-content-secondary">Leads & Co-investors</div>
+            <p className="text-sm text-content">
               Lead: {deal.leads.join(", ")}
               {deal.coInvestors?.length ? ` • Co-investors: ${deal.coInvestors.join(", ")}` : ""}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)]">
-              <div className="flex items-center gap-1 text-xs font-semibold text-[color:var(--text-secondary)]">
+            <div className="rounded-lg border border-edge p-3 bg-surface">
+              <div className="flex items-center gap-1 text-xs font-semibold text-content-secondary">
                 <Users className="w-3.5 h-3.5" />
                 People
               </div>
               <ul className="mt-2 space-y-1">
                 {deal.people.map((p, idx) => (
-                  <li key={idx} className="text-sm text-[color:var(--text-primary)]">
+                  <li key={idx} className="text-sm text-content">
                     <span className="font-semibold">{p.name}</span> — {p.role}
-                    <div className="text-[12px] text-[color:var(--text-secondary)]">{p.past}</div>
+                    <div className="text-[12px] text-content-secondary">{p.past}</div>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)]">
-              <div className="flex items-center gap-1 text-xs font-semibold text-[color:var(--text-secondary)]">
+            <div className="rounded-lg border border-edge p-3 bg-surface">
+              <div className="flex items-center gap-1 text-xs font-semibold text-content-secondary">
                 <FileText className="w-3.5 h-3.5" />
                 Timeline
               </div>
               <ul className="mt-2 space-y-1">
                 {deal.timeline.map((item, idx) => (
-                  <li key={idx} className="text-sm text-[color:var(--text-primary)] flex gap-2">
-                    <span className="text-[color:var(--text-secondary)] text-[12px]">{item.label}</span>
+                  <li key={idx} className="text-sm text-content flex gap-2">
+                    <span className="text-content-secondary text-[12px]">{item.label}</span>
                     <span>{item.detail}</span>
                   </li>
                 ))}
@@ -263,8 +263,8 @@ export function DealFlyout({
             </div>
           </div>
 
-          <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)] space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--text-secondary)]">
+          <div className="rounded-lg border border-edge p-3 bg-surface space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-content-secondary">
               <FlaskConical className="w-3.5 h-3.5" />
               Regulatory & Papers
             </div>
@@ -275,14 +275,14 @@ export function DealFlyout({
               </div>
             )}
             {deal.regulatory?.patents?.length ? (
-              <div className="text-sm text-[color:var(--text-primary)]">
+              <div className="text-sm text-content">
                 <span className="font-semibold">Patents:</span> {deal.regulatory.patents.join(", ")}
               </div>
             ) : null}
             {deal.regulatory?.papers?.length ? (
-              <div className="text-sm text-[color:var(--text-primary)] space-y-1">
+              <div className="text-sm text-content space-y-1">
                 <div className="font-semibold">Academic papers</div>
-                <ul className="list-disc list-inside text-[color:var(--text-primary)] text-[13px]">
+                <ul className="list-disc list-inside text-content text-[13px]">
                   {deal.regulatory.papers.map((p, idx) => (
                     <li key={idx}>{p}</li>
                   ))}
@@ -292,8 +292,8 @@ export function DealFlyout({
           </div>
 
           {deal.sources?.length ? (
-            <div className="rounded-lg border border-[color:var(--border-color)] p-3 bg-[color:var(--bg-primary)] space-y-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--text-secondary)]">
+            <div className="rounded-lg border border-edge p-3 bg-surface space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-content-secondary">
                 <FileText className="w-3.5 h-3.5" />
                 Data Room Links
               </div>
@@ -304,7 +304,7 @@ export function DealFlyout({
                     href={source.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] px-2 py-1 text-[color:var(--text-primary)] hover:text-[color:var(--text-primary)]"
+                    className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface-secondary px-2 py-1 text-content hover:text-content"
                   >
                     {source.name}
                   </a>
@@ -325,7 +325,7 @@ export function DealFlyout({
             <button
               type="button"
               onClick={() => onPrep("call", deal)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--bg-hover)] transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-edge bg-surface text-xs font-semibold px-3 py-2 hover:bg-surface-hover transition-colors"
             >
               <BookOpen className="w-3.5 h-3.5" />
               Call brief
@@ -333,7 +333,7 @@ export function DealFlyout({
             <button
               type="button"
               onClick={() => onPrep("invite", deal)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] text-xs font-semibold px-3 py-2 hover:bg-[color:var(--bg-hover)] transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-edge bg-surface text-xs font-semibold px-3 py-2 hover:bg-surface-hover transition-colors"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               Invite

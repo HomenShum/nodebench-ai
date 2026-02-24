@@ -50,24 +50,24 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
     return (
         <div
             onClick={() => onSourceClick?.(source)}
-            className="p-3 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] hover:border-[color:var(--border-color)] cursor-pointer transition-all group"
+            className="p-3 bg-surface rounded-lg border border-edge hover:border-edge cursor-pointer transition-all group"
         >
             <div className="flex items-start gap-2">
-                <span className="p-1.5 bg-[color:var(--bg-secondary)] rounded border border-[color:var(--border-color)] shrink-0">
+                <span className="p-1.5 bg-surface-secondary rounded border border-edge shrink-0">
                     {typeIcons[source.type]}
                 </span>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-medium text-[color:var(--text-primary)] truncate group-hover:text-blue-600 transition-colors">
+                        <h4 className="text-sm font-medium text-content truncate group-hover:text-blue-600 transition-colors">
                             {source.title}
                         </h4>
                         {source.verified && (
                             <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                         )}
                     </div>
-                    <p className="text-xs text-[color:var(--text-secondary)] truncate">{source.domain}</p>
+                    <p className="text-xs text-content-secondary truncate">{source.domain}</p>
                     {source.snippet && (
-                        <p className="text-xs text-[color:var(--text-primary)] mt-1 line-clamp-2">{source.snippet}</p>
+                        <p className="text-xs text-content mt-1 line-clamp-2">{source.snippet}</p>
                     )}
                     {source.citedInSections && source.citedInSections.length > 0 && (
                         <div className="flex gap-1 mt-2 flex-wrap">
@@ -79,7 +79,7 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
                         </div>
                     )}
                 </div>
-                <ExternalLink className="w-3.5 h-3.5 text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                <ExternalLink className="w-3.5 h-3.5 text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
             </div>
         </div>
     );
@@ -88,10 +88,10 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
 function EmptyState({ message }: { message: string }) {
     return (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-12 h-12 rounded-full bg-[color:var(--bg-secondary)] flex items-center justify-center mb-3">
-                <Link2 className="w-5 h-5 text-[color:var(--text-secondary)]" />
+            <div className="w-12 h-12 rounded-full bg-surface-secondary flex items-center justify-center mb-3">
+                <Link2 className="w-5 h-5 text-content-secondary" />
             </div>
-            <p className="text-sm text-[color:var(--text-secondary)]">{message}</p>
+            <p className="text-sm text-content-secondary">{message}</p>
         </div>
     );
 }
@@ -139,31 +139,31 @@ export function EvidenceDrawer({
     if (!isOpen) return null;
 
     return (
-        <div className={`fixed inset-y-0 right-0 w-[400px] bg-[color:var(--bg-primary)] border-l border-[color:var(--border-color)] shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300 ${className}`}>
+        <div className={`fixed inset-y-0 right-0 w-[400px] bg-surface border-l border-edge shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300 ${className}`}>
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)] bg-[color:var(--bg-primary)]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface">
                 <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[color:var(--text-primary)]" />
-                    <h2 className="font-semibold text-[color:var(--text-primary)]">Evidence</h2>
-                    <span className="px-1.5 py-0.5 bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] text-xs rounded-full font-medium">
+                    <ShieldCheck className="w-4 h-4 text-content" />
+                    <h2 className="font-semibold text-content">Evidence</h2>
+                    <span className="px-1.5 py-0.5 bg-surface-secondary text-content text-xs rounded-full font-medium">
                         {sources.length}
                     </span>
                 </div>
                 <button
                     onClick={onClose}
-                    className="p-1.5 hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors"
+                    className="p-1.5 hover:bg-surface-hover rounded-lg transition-colors"
                 >
-                    <X className="w-4 h-4 text-[color:var(--text-secondary)]" />
+                    <X className="w-4 h-4 text-content-secondary" />
                 </button>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-[color:var(--border-color)] bg-[color:var(--bg-primary)] px-4">
+            <div className="flex border-b border-edge bg-surface px-4">
                 <button
                     onClick={() => setActiveTab('sources')}
                     className={`px-3 py-2.5 text-xs font-medium border-b-2 transition-colors ${activeTab === 'sources'
-                        ? 'border-[color:var(--text-primary)] text-[color:var(--text-primary)]'
-                        : 'border-transparent text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
+                        ? 'border-[color:var(--text-primary)] text-content'
+                        : 'border-transparent text-content-secondary hover:text-content'
                         }`}
                 >
                     Sources ({sources.length})
@@ -171,8 +171,8 @@ export function EvidenceDrawer({
                 <button
                     onClick={() => setActiveTab('verify')}
                     className={`px-3 py-2.5 text-xs font-medium border-b-2 transition-colors ${activeTab === 'verify'
-                        ? 'border-[color:var(--text-primary)] text-[color:var(--text-primary)]'
-                        : 'border-transparent text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
+                        ? 'border-[color:var(--text-primary)] text-content'
+                        : 'border-transparent text-content-secondary hover:text-content'
                         }`}
                 >
                     Verify
@@ -180,15 +180,15 @@ export function EvidenceDrawer({
             </div>
 
             {/* Search & Filter */}
-            <div className="px-4 py-3 bg-[color:var(--bg-primary)] border-b border-[color:var(--border-color)]">
+            <div className="px-4 py-3 bg-surface border-b border-edge">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[color:var(--text-secondary)]" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-content-secondary" />
                     <input
                         type="text"
                         placeholder="Search sources..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-surface-secondary border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                 </div>
                 <div className="flex gap-1.5 mt-2">
@@ -198,7 +198,7 @@ export function EvidenceDrawer({
                             onClick={() => setFilterType(type === 'all' ? null : type)}
                             className={`px-2 py-1 text-xs font-medium rounded transition-colors ${(type === 'all' && !filterType) || filterType === type
                                 ? 'bg-gray-900 text-white'
-                                : 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)]'
+                                : 'bg-surface-secondary text-content hover:bg-surface-hover'
                                 }`}
                         >
                             {type.toUpperCase()}
@@ -228,46 +228,46 @@ export function EvidenceDrawer({
                 {activeTab === 'verify' && (
                     <div className="space-y-4">
                         {/* Verification Summary */}
-                        <div className="p-4 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)]">
-                            <h3 className="text-sm font-semibold text-[color:var(--text-primary)] mb-3">Verification Status</h3>
+                        <div className="p-4 bg-surface rounded-lg border border-edge">
+                            <h3 className="text-sm font-semibold text-content mb-3">Verification Status</h3>
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="w-4 h-4 text-indigo-500" />
-                                        <span className="text-sm text-[color:var(--text-primary)]">Verified</span>
+                                        <span className="text-sm text-content">Verified</span>
                                     </div>
                                     <span className="text-sm font-medium text-indigo-600">{verifiedCount}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Clock className="w-4 h-4 text-amber-500" />
-                                        <span className="text-sm text-[color:var(--text-primary)]">Pending</span>
+                                        <span className="text-sm text-content">Pending</span>
                                     </div>
                                     <span className="text-sm font-medium text-amber-600">{unverifiedCount}</span>
                                 </div>
                             </div>
-                            <div className="mt-3 pt-3 border-t border-[color:var(--border-color)]">
-                                <div className="h-2 bg-[color:var(--bg-secondary)] rounded-full overflow-hidden">
+                            <div className="mt-3 pt-3 border-t border-edge">
+                                <div className="h-2 bg-surface-secondary rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-indigo-500 rounded-full transition-all"
                                         style={{ width: sources.length > 0 ? `${(verifiedCount / sources.length) * 100}%` : '0%' }}
                                     />
                                 </div>
-                                <p className="text-xs text-[color:var(--text-secondary)] mt-1.5">
+                                <p className="text-xs text-content-secondary mt-1.5">
                                     {sources.length > 0 ? Math.round((verifiedCount / sources.length) * 100) : 0}% of sources verified
                                 </p>
                             </div>
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="p-4 bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)]">
-                            <h3 className="text-sm font-semibold text-[color:var(--text-primary)] mb-3">Quick Actions</h3>
+                        <div className="p-4 bg-surface rounded-lg border border-edge">
+                            <h3 className="text-sm font-semibold text-content mb-3">Quick Actions</h3>
                             <div className="space-y-2">
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[color:var(--text-primary)] bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors">
+                                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-content bg-surface-secondary hover:bg-surface-hover rounded-lg transition-colors">
                                     <Eye className="w-4 h-4" />
                                     View all citations
                                 </button>
-                                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[color:var(--text-primary)] bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] rounded-lg transition-colors">
+                                <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-content bg-surface-secondary hover:bg-surface-hover rounded-lg transition-colors">
                                     <AlertCircle className="w-4 h-4" />
                                     Flag inconsistency
                                 </button>
@@ -278,8 +278,8 @@ export function EvidenceDrawer({
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-[color:var(--border-color)] bg-[color:var(--bg-primary)]">
-                <p className="text-xs text-[color:var(--text-secondary)] text-center">
+            <div className="px-4 py-3 border-t border-edge bg-surface">
+                <p className="text-xs text-content-secondary text-center">
                     Click any source to open in new tab
                 </p>
             </div>

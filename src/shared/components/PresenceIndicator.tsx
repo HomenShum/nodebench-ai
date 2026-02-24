@@ -110,7 +110,7 @@ function PresenceCore({ documentId, userId, intervalMs }: PresenceIndicatorProps
       </div>
 
       {/* Label */}
-      <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">
+      <span className="text-xs text-content-muted whitespace-nowrap">
         {validPresenceState.length === 1 ? "just you" : `${validPresenceState.length} editing`}
       </span>
     </div>

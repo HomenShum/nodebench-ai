@@ -37,7 +37,7 @@ const getDocumentColors = (index: number) => {
     const colorIndex = index % 12;
     const backgroundColors = [ 'bg-[var(--accent-primary)]/10', 'bg-[var(--accent-secondary)]/10', 'bg-[var(--accent-primary)]/8', 'bg-[var(--accent-secondary)]/8', 'bg-[var(--accent-primary)]/12', 'bg-[var(--accent-secondary)]/12', 'bg-[var(--accent-primary)]/6', 'bg-[var(--accent-secondary)]/6', 'bg-[var(--accent-primary)]/14', 'bg-[var(--accent-secondary)]/14', 'bg-[var(--accent-primary)]/9', 'bg-[var(--accent-secondary)]/9', ];
     const dotColors = [ 'bg-blue-500', 'bg-indigo-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500', 'bg-red-500', 'bg-yellow-500', 'bg-indigo-500', 'bg-rose-500', 'bg-indigo-500', 'bg-lime-500', ];
-    const borderColors = [ 'border-[var(--accent-primary)]/20', 'border-[var(--accent-secondary)]/20', 'border-[var(--accent-primary)]/20', 'border-[var(--accent-secondary)]/20', 'border-[var(--accent-primary)]/20', 'border-[var(--accent-secondary)]/20', 'border-[var(--accent-primary)]/20', 'border-[var(--accent-secondary)]/20', 'border-[var(--accent-primary)]/20', 'border-[var(--accent-secondary)]/20', 'border-[var(--accent-primary)]/20', 'border-[var(--accent-secondary)]/20', ];
+    const borderColors = [ 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', ];
     const outlineColors = [ 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', ];
     return { background: backgroundColors[colorIndex], dot: dotColors[colorIndex], border: borderColors[colorIndex], outlineColor: outlineColors[colorIndex] };
 };
@@ -391,13 +391,13 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
     return ( 
       <div className="flex items-center justify-center h-full"> 
         <div className="text-center max-w-md"> 
-          <div className="w-16 h-16 bg-[var(--bg-secondary)] rounded-full flex items-center justify-center mx-auto mb-4"> 
-            <svg className="h-8 w-8 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"> 
+          <div className="w-16 h-16 bg-surface-secondary rounded-full flex items-center justify-center mx-auto mb-4"> 
+            <svg className="h-8 w-8 text-content-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"> 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> 
             </svg> 
           </div> 
-          <h2 className="text-base font-semibold text-[var(--text-primary)] mb-2">No tabs open</h2> 
-          <p className="text-[var(--text-secondary)]">Select documents or tasks from the sidebar to view them in the grid.</p> 
+          <h2 className="text-base font-semibold text-content mb-2">No tabs open</h2> 
+          <p className="text-content-secondary">Select documents or tasks from the sidebar to view them in the grid.</p> 
         </div> 
       </div> 
     ); 
@@ -410,41 +410,41 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
       const isCalendarDoc = fullscreenTab.kind === "document" && (lowerTitle.includes("calendar") || lowerTitle.includes("schedule"));
       return ( 
         <div className="h-full w-full p-2"> 
-          <div className="h-full w-full bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-sm overflow-hidden"> 
-            <div className="bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border-color)]">
+          <div className="h-full w-full bg-surface rounded-lg border border-edge shadow-sm overflow-hidden"> 
+            <div className="bg-surface/95 backdrop-blur-md border-b border-edge">
               <div className="flex items-center justify-between px-4 py-3"> 
                 <div className="flex items-center gap-3">
                   <div className={clsx("w-3 h-3 rounded-full shadow-sm", isCalendarDoc ? "bg-amber-500" : "bg-[var(--accent-primary)]")} />
-                  <span className="text-lg font-semibold text-[var(--text-primary)]">{fullscreenTab.title}</span>
-                  <span className="text-sm text-[var(--text-secondary)] bg-[var(--bg-secondary)] px-2 py-1 rounded-md">Fullscreen</span>
+                  <span className="text-lg font-semibold text-content">{fullscreenTab.title}</span>
+                  <span className="text-sm text-content-secondary bg-surface-secondary px-2 py-1 rounded-md">Fullscreen</span>
                 </div> 
                 <div className="flex items-center gap-2"> 
                   <button 
                     onClick={(e) => handleFullscreenClick(fullscreenTab.id, e)}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                    className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--bg-secondary)] hover:bg-blue-500 flex items-center justify-center transition-all group/minimize" 
+                    className="flex-shrink-0 w-6 h-6 rounded-full bg-surface-secondary hover:bg-blue-500 flex items-center justify-center transition-all group/minimize" 
                     aria-label="Exit fullscreen" 
                     title="Exit fullscreen"
                     type="button"
                   >
-                    <svg className="h-4 w-4 text-[var(--text-muted)] group-hover/minimize:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 text-content-muted group-hover/minimize:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" transform="rotate(45 12 12)" />
                     </svg>
                   </button> 
                   <button 
                     onClick={(e) => handleCloseClick(fullscreenTab.id, e)}
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                    className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--bg-secondary)] hover:bg-red-500 flex items-center justify-center transition-all group/close" 
+                    className="flex-shrink-0 w-6 h-6 rounded-full bg-surface-secondary hover:bg-red-500 flex items-center justify-center transition-all group/close" 
                     aria-label="Close document"
                     type="button"
                   >
-                    <X className="h-4 w-4 text-[var(--text-muted)] group-hover/close:text-white transition-colors" />
+                    <X className="h-4 w-4 text-content-muted group-hover/close:text-white transition-colors" />
                   </button> 
                 </div> 
               </div> 
             </div> 
             <div className="h-[calc(100%-60px)]">
-              <div className="h-full overflow-hidden bg-[var(--bg-primary)]">
+              <div className="h-full overflow-hidden bg-surface">
                 {fullscreenTab.kind === "document" ? (
                   <DocumentView documentId={fullscreenTab.id} />
                 ) : (
@@ -463,7 +463,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
     return (
       <div ref={containerRef} className="h-full w-full relative min-h-0">
         <div className="flex items-center justify-center h-full">
-          <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-primary)]"></div>
+          <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500/30"></div>
         </div>
       </div>
     );
@@ -518,9 +518,9 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     // Apply subtle hybrid theming for non-calendar docs
                     !isCalendarDoc && `${theme.ring} ${theme.gradient}`,
                     isCalendarDoc && 'ring-1 ring-amber-400/30 bg-gradient-to-br from-amber-50/10 to-transparent',
-                    'hover:bg-[var(--bg-hover)] hover:border-[var(--border-color)]',
+                    'hover:bg-surface-hover hover:border-edge',
                     {
-                      'bg-[var(--bg-hover)] border-[var(--border-color)]': isSelected,
+                      'bg-surface-hover border-edge': isSelected,
                     }
                   )
                 )
@@ -528,11 +528,11 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
               style={isFullscreen ? { '--outline-color': colors.outlineColor } as React.CSSProperties : {}}
             >
               {/* Title bar for grid mode */}
-              <div className="absolute top-0 left-0 right-0 z-20 bg-[var(--bg-primary)]/90 backdrop-blur-sm border-b border-[var(--border-color)]/30">
+              <div className="absolute top-0 left-0 right-0 z-20 bg-surface/90 backdrop-blur-sm border-b border-edge/30">
                 <div className="flex items-center justify-between px-2 py-1">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <div className={`w-1.5 h-1.5 rounded-full ${dotClass} flex-shrink-0`} />
-                    <span className="text-xs font-medium text-[var(--text-primary)] truncate">{tab.title}</span>
+                    <span className="text-xs font-medium text-content truncate">{tab.title}</span>
                   </div>
                   
                   {/* Control buttons - always visible on hover */}
@@ -541,54 +541,54 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                     <button 
                       onClick={(e) => handleZoomOut(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomout shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-surface-secondary/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomout shadow-sm" 
                       aria-label="Zoom out" 
                       title="Zoom Out"
                       type="button"
                     >
-                      <ZoomOut className="h-2 w-2 text-[var(--text-muted)] group-hover/zoomout:text-white transition-colors" />
+                      <ZoomOut className="h-2 w-2 text-content-muted group-hover/zoomout:text-white transition-colors" />
                     </button>
                     <button 
                       onClick={(e) => handleZoomToFit(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-purple-500 flex items-center justify-center transition-all group/zoomfit shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-surface-secondary/90 hover:bg-purple-500 flex items-center justify-center transition-all group/zoomfit shadow-sm" 
                       aria-label="Zoom to fit" 
                       title="Zoom to Fit"
                       type="button"
                     >
-                      <Maximize2 className="h-2 w-2 text-[var(--text-muted)] group-hover/zoomfit:text-white transition-colors" />
+                      <Maximize2 className="h-2 w-2 text-content-muted group-hover/zoomfit:text-white transition-colors" />
                     </button>
                     <button 
                       onClick={(e) => handleZoomIn(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomin shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-surface-secondary/90 hover:bg-green-500 flex items-center justify-center transition-all group/zoomin shadow-sm" 
                       aria-label="Zoom in" 
                       title="Zoom In"
                       type="button"
                     >
-                      <ZoomIn className="h-2 w-2 text-[var(--text-muted)] group-hover/zoomin:text-white transition-colors" />
+                      <ZoomIn className="h-2 w-2 text-content-muted group-hover/zoomin:text-white transition-colors" />
                     </button>
                     <button 
                       onClick={(e) => handleFullscreenClick(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-blue-500 flex items-center justify-center transition-all group/expand shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-surface-secondary/90 hover:bg-blue-500 flex items-center justify-center transition-all group/expand shadow-sm" 
                       aria-label="Expand fullscreen" 
                       title="Expand fullscreen"
                       type="button"
                     >
-                      <svg className="h-2.5 w-2.5 text-[var(--text-muted)] group-hover/expand:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-2.5 w-2.5 text-content-muted group-hover/expand:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                       </svg>
                     </button>
                     <button 
                       onClick={(e) => handleCloseClick(tab.id, e)}
                       onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                      className="flex-shrink-0 w-4 h-4 rounded bg-[var(--bg-secondary)]/90 hover:bg-red-500 flex items-center justify-center transition-all group/close shadow-sm" 
+                      className="flex-shrink-0 w-4 h-4 rounded bg-surface-secondary/90 hover:bg-red-500 flex items-center justify-center transition-all group/close shadow-sm" 
                       aria-label="Close document" 
                       title="Close document"
                       type="button"
                     >
-                      <X className="h-2.5 w-2.5 text-[var(--text-muted)] group-hover/close:text-white transition-colors" />
+                      <X className="h-2.5 w-2.5 text-content-muted group-hover/close:text-white transition-colors" />
                     </button>
                   </div>
                 </div>
@@ -603,7 +603,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
               
               {/* Content area with proper event handling */}
               <div className={clsx(
-                'h-full overflow-hidden bg-[var(--bg-primary)]',
+                'h-full overflow-hidden bg-surface',
                 isFullscreen ? 'pt-10' : 'pt-6'
               )}>
                 <div 
@@ -650,14 +650,14 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
       {/* Warning modal */}
       {showMaxDocsWarning && ( 
         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity" onClick={() => setMaxDocsWarningDismissed(true)}> 
-          <div className="bg-[var(--bg-primary)] rounded-lg p-8 shadow-2xl border border-[var(--border-color)] max-w-sm text-center" onClick={e => e.stopPropagation()}> 
+          <div className="bg-surface rounded-lg p-6 shadow-2xl border border-edge max-w-sm text-center" onClick={e => e.stopPropagation()}> 
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4"> 
               <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg> 
             </div> 
-            <h3 className="text-lg font-semibold text-[var(--text-primary)]">Maximum Tabs Reached</h3> 
-            <p className="mt-2 text-sm text-[var(--text-secondary)]"> You have {openTabs.length} tabs open, but a single grid can only display 16. Please create a new grid panel to open more. </p> 
+            <h3 className="text-lg font-semibold text-content">Maximum Tabs Reached</h3> 
+            <p className="mt-2 text-sm text-content-secondary"> You have {openTabs.length} tabs open, but a single grid can only display 16. Please create a new grid panel to open more. </p> 
             <button onClick={() => setMaxDocsWarningDismissed(true)} className="mt-6 w-full bg-[var(--accent-primary)] text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity" > OK </button> 
           </div> 
         </div> 

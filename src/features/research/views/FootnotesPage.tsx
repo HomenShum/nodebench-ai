@@ -64,17 +64,17 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   const filteredCount = filteredLibrary.order.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[color:var(--bg-secondary)] to-[color:var(--bg-primary)] editorial-layout">
+    <div className="nb-page-shell editorial-layout">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[color:var(--bg-primary)]/95 backdrop-blur-sm border-b border-[color:var(--border-color)] shadow-sm">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+      <header className="sticky top-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-edge shadow-sm">
+        <div className="nb-page-frame-narrow px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {onBack && (
                 <button
                   type="button"
                   onClick={onBack}
-                  className="flex items-center gap-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
+                  className="flex items-center gap-2 text-content-secondary hover:text-content transition-colors"
                   aria-label="Back to brief"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -83,11 +83,11 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
               )}
               <div className="h-6 w-px bg-[color:var(--border-color)]" />
               <div>
-                <h1 className="text-lg font-semibold text-[color:var(--text-primary)] flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-[color:var(--text-secondary)]" />
+                <h1 className="text-lg font-semibold text-content flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-content-secondary" />
                   Sources & References
                 </h1>
-                <p className="text-xs text-[color:var(--text-secondary)]">
+                <p className="text-xs text-content-secondary">
                   {briefTitle} {briefDate && `• ${briefDate}`}
                 </p>
               </div>
@@ -95,7 +95,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
 
             {/* Citation count — hidden when empty (main area shows full empty state) */}
             {citationCount > 0 && (
-              <div className="text-sm text-[color:var(--text-secondary)]">
+              <div className="text-sm text-content-secondary">
                 {searchQuery ? (
                   <span>{filteredCount} of {citationCount} {citationCount === 1 ? 'source' : 'sources'}</span>
                 ) : (
@@ -107,13 +107,13 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
           
           {/* Search bar */}
           <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--text-secondary)]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-secondary" />
             <input
               type="text"
               placeholder="Search sources by title, author, or content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-[color:var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 focus:border-transparent"
               aria-label="Search sources"
             />
           </div>
@@ -121,16 +121,17 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="nb-page-inner">
+        <div className="nb-page-frame-narrow">
         {filteredLibrary.order.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 rounded-full bg-indigo-50 dark:bg-indigo-500/20 flex items-center justify-center mb-5">
-              <FileText className="w-10 h-10 text-indigo-500 dark:text-indigo-400" />
+            <div className="w-20 h-20 rounded-full bg-[var(--accent-primary-bg)] flex items-center justify-center mb-5">
+              <FileText className="w-10 h-10 text-[var(--accent-primary)]" />
             </div>
-            <p className="text-lg font-semibold text-[color:var(--text-primary)] mb-2">
+            <p className="text-lg font-semibold text-content mb-2">
               {searchQuery ? "No sources match your search" : "No sources yet"}
             </p>
-            <p className="text-sm text-[color:var(--text-secondary)] max-w-sm mb-5">
+            <p className="text-sm text-content-secondary max-w-sm mb-5">
               {searchQuery
                 ? "Try a different search term or clear the filter to see all sources."
                 : "Sources are cited automatically as your daily briefings, signals, and analyses are generated. Start by visiting the Research Hub."}
@@ -139,7 +140,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); window.location.hash = 'research'; }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 Go to Research Hub
@@ -154,6 +155,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
             className="border-t-0 mt-0 pt-0"
           />
         )}
+        </div>
       </main>
     </div>
   );

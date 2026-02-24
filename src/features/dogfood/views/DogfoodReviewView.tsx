@@ -552,8 +552,9 @@ export function DogfoodReviewView() {
   }, [manifest]);
 
   return (
-    <div className="h-full overflow-auto bg-background">
-      <div className="mx-auto w-full max-w-6xl p-6 space-y-6">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame space-y-6">
         <div className="flex items-start justify-between gap-4">
           <PageHeroHeader
             title="Quality Review"
@@ -572,7 +573,7 @@ export function DogfoodReviewView() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+              className="btn-outline-sm inline-flex items-center gap-2"
               onClick={async () => {
                 const ok = await copyToClipboard(
                   `${commands.fullLocal}\n${commands.fullLocalPlay}\n${commands.runE2e}\n${commands.publish}\n${commands.scribeCmd}\n${commands.recordStatic}\n${commands.record}`,
@@ -587,7 +588,7 @@ export function DogfoodReviewView() {
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+              className="btn-primary-sm inline-flex items-center gap-2"
               onClick={() => window.location.reload()}
             >
               Refresh
@@ -595,7 +596,7 @@ export function DogfoodReviewView() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+        <div className="nb-surface-card p-5 space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="text-sm font-medium text-foreground">Walkthrough video</div>
@@ -611,7 +612,7 @@ export function DogfoodReviewView() {
             </div>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+              className="btn-outline-sm inline-flex items-center gap-2"
               onClick={async () => {
                 const ok = await copyToClipboard(
                   `${commands.fullLocal}\n${commands.fullLocalPlay}\n${commands.record}\n${commands.recordStatic}\n${commands.scribeCmd}\n${commands.full}`,
@@ -690,7 +691,7 @@ export function DogfoodReviewView() {
           )}
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+        <div className="nb-surface-card p-5 space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="text-sm font-medium text-foreground">Key frames</div>
@@ -705,7 +706,7 @@ export function DogfoodReviewView() {
             </div>
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+              className="btn-outline-sm inline-flex items-center gap-2"
               onClick={async () => {
                 const ok = await copyToClipboard(commands.frames);
                 setCopied(ok);
@@ -733,7 +734,8 @@ export function DogfoodReviewView() {
                   }}
                 >
                   <div className="aspect-[16/9] bg-muted/10 border-b border-border/50 overflow-hidden">
-                    <img src={f.image} alt={f.name} className="w-full h-full object-cover" loading="lazy" />
+                    {/* NOTE(coworker): keep key frame images eager for deterministic QA/playwright media assertions. */}
+                    <img src={f.image} alt={f.name} className="w-full h-full object-cover" loading="eager" decoding="sync" />
                   </div>
                   <div className="p-3 space-y-1">
                     <div className="text-sm font-medium text-foreground truncate">{f.name}</div>
@@ -759,7 +761,7 @@ export function DogfoodReviewView() {
           )}
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+        <div className="nb-surface-card p-5 space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="text-sm font-medium text-foreground">How-to (Scribe-style)</div>
@@ -776,7 +778,7 @@ export function DogfoodReviewView() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+                className="btn-outline-sm inline-flex items-center gap-2"
                 onClick={async () => {
                   const lines: string[] = [
                     "# NodeBench Dogfood Walkthrough",
@@ -800,7 +802,7 @@ export function DogfoodReviewView() {
               </button>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors"
+                className="btn-outline-sm inline-flex items-center gap-2"
                 onClick={async () => {
                   const ok = await copyToClipboard(`${commands.scribeCmd}\n${commands.scribeLocal}`);
                   setCopied(ok);
@@ -822,14 +824,15 @@ export function DogfoodReviewView() {
                   </div>
                   <div className="mt-2 grid gap-3 lg:grid-cols-[1.1fr_1fr]">
                     <div className="rounded-md overflow-hidden border border-border/60 bg-muted/10">
-                      <img src={s.image} alt={s.title} className="w-full h-auto block" loading="lazy" />
+                      {/* NOTE(coworker): keep scribe previews eager to avoid flaky first-image load checks in dogfood regression tests. */}
+                      <img src={s.image} alt={s.title} className="w-full h-auto block" loading="eager" decoding="sync" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         Step text (editable)
                       </label>
                       <textarea
-                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-500/40"
+                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
                         value={s.description}
                         onChange={(e) => {
                           const next = e.target.value;
@@ -862,7 +865,7 @@ export function DogfoodReviewView() {
           )}
         </div>
 
-        <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+        <div className="nb-surface-card p-5 space-y-3">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="text-sm font-medium text-foreground">Gemini QA (video understanding)</div>
@@ -881,7 +884,7 @@ export function DogfoodReviewView() {
               {!isAuthenticated && (
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground hover:bg-muted/40 transition-colors disabled:opacity-50"
+                  className="btn-outline-sm inline-flex items-center gap-2 disabled:opacity-50"
                   disabled={isAnonSigningIn}
                   onClick={() => void signInAnonymously()}
                   aria-label="Sign in to run QA"
@@ -893,7 +896,7 @@ export function DogfoodReviewView() {
               )}
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="btn-primary-sm inline-flex items-center gap-2 disabled:opacity-50"
                 disabled={!resolvedVideoUrl || qaRunning || !isAuthenticated}
                 onClick={async () => {
                   if (!resolvedVideoUrl) return;
@@ -1034,7 +1037,7 @@ export function DogfoodReviewView() {
               Prompt override (optional)
             </label>
             <textarea
-              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-indigo-500/40"
+              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               value={qaPrompt}
               onChange={(e) => setQaPrompt(e.target.value)}
               placeholder="Leave blank to use the default design + performance QA rubric."
@@ -1169,7 +1172,7 @@ export function DogfoodReviewView() {
         </div>
 
         {!manifest && (
-          <div className="rounded-lg border border-border/60 bg-card p-5 space-y-3">
+          <div className="nb-surface-card p-5 space-y-3">
             <div className="text-sm font-medium text-foreground">No published dogfood artifacts</div>
             <div className="text-sm text-muted-foreground">
               Publish the latest Playwright screenshots so this page can render them.
@@ -1221,7 +1224,7 @@ export function DogfoodReviewView() {
                           </a>
                         </div>
                         <div className="bg-muted/10">
-                          <img src={src} alt={item.label} className="w-full h-auto block" loading="lazy" />
+                          <img src={src} alt={item.label} className="w-full h-auto block" loading="eager" decoding="async" />
                         </div>
                       </div>
                     );
@@ -1234,7 +1237,7 @@ export function DogfoodReviewView() {
 
         {/* ── Local Script QA Score History ── */}
         {(localQaResults !== null || localQaError) && (
-          <div className="rounded-lg border border-border/60 bg-card overflow-hidden">
+          <div className="nb-surface-card overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="text-sm font-medium text-foreground">Local QA Score History</div>
@@ -1300,7 +1303,7 @@ export function DogfoodReviewView() {
                           stroke="currentColor"
                           strokeWidth="2"
                           vectorEffect="non-scaling-stroke"
-                          className="text-indigo-400/80"
+                          className="text-[var(--accent-primary)]/80"
                         />
                         {entries
                           .slice()
@@ -1364,7 +1367,7 @@ export function DogfoodReviewView() {
         {/* ── Overstory QA Orchestration Panel ── */}
         <OverstoryStatusPanel />
 
-        <div className="rounded-lg border border-border/60 bg-card p-5 space-y-2">
+        <div className="nb-surface-card p-5 space-y-2">
           <div className="text-sm font-medium text-foreground">Definition of done</div>
           <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
             <li>Every changed screen is dogfooded end-to-end (and adjacent screens sharing layout).</li>
@@ -1372,6 +1375,7 @@ export function DogfoodReviewView() {
             <li>Evidence published here (screens + walkthrough + how-to) so quality is verifiable without reading code.</li>
             <li>Overstory QA gate passes (all routes grade &gt;= B, zero p0/p1 issues).</li>
           </ul>
+        </div>
         </div>
       </div>
     </div>

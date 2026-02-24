@@ -49,19 +49,19 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           onScrubToSection(targetIndex);
         }}
       />
-      <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)]/90 px-3 py-2 shadow-sm">
+      <div className="rounded-lg border border-edge bg-surface/90 px-3 py-2 shadow-sm">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold tracking-wide text-[color:var(--text-primary)] uppercase">
+          <span className="text-xs font-semibold tracking-wide text-content uppercase">
             Timeline
           </span>
-          <span className="text-xs text-[color:var(--text-secondary)]">
+          <span className="text-xs text-content-secondary">
             {clampedActive + 1} / {totalSections}
           </span>
         </div>
         <div className="relative mt-1 h-8">
-          <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--bg-secondary)]" />
+          <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-surface-secondary" />
           <div
-            className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-[color:var(--text-primary)] transition-all duration-500 ease-out"
+            className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-content transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
           {Array.from({ length: totalSections }).map((_, index) => {
@@ -82,8 +82,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
                 <span
                   className={`h-2.5 w-2.5 rounded-full border ${
                     isActive
-                      ? "bg-[color:var(--text-primary)] border-[color:var(--text-primary)]"
-                      : "bg-[color:var(--bg-primary)] border-[color:var(--border-color)] hover:bg-[color:var(--bg-hover)]"
+                      ? "bg-content border-[color:var(--text-primary)]"
+                      : "bg-surface border-edge hover:bg-surface-hover"
                   }`}
                 />
               </button>

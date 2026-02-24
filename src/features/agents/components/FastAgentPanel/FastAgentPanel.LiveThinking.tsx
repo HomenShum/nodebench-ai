@@ -80,17 +80,17 @@ export function LiveThinking({
     <div className="mt-4 flex justify-center">
       <div className={cn(
         "inline-flex items-center gap-2.5 px-4 py-2 rounded-full",
-        "bg-[var(--bg-secondary)]/80 backdrop-blur-sm border border-[var(--border-color)] shadow-sm",
-        "text-xs font-medium text-[var(--text-secondary)]",
+        "bg-surface-secondary/80 backdrop-blur-sm border border-edge shadow-sm",
+        "text-xs font-medium text-content-secondary",
         "animate-in fade-in slide-in-from-bottom-2 duration-300"
       )}>
         {activeIcon}
         <span className="max-w-[200px] truncate">{activeText}</span>
         {isStreaming && (
           <div className="flex gap-0.5 ml-1">
-            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full typing-dot [animation-delay:-0.3s]"></span>
-            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full typing-dot [animation-delay:-0.15s]"></span>
-            <span className="w-1 h-1 bg-[var(--text-muted)] rounded-full typing-dot"></span>
+            <span className="w-1 h-1 bg-content-muted rounded-full typing-dot [animation-delay:-0.3s]"></span>
+            <span className="w-1 h-1 bg-content-muted rounded-full typing-dot [animation-delay:-0.15s]"></span>
+            <span className="w-1 h-1 bg-content-muted rounded-full typing-dot"></span>
           </div>
         )}
       </div>

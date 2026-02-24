@@ -95,7 +95,7 @@ export function CrossLinkedText({ text, entities = {}, onAskAI, onEntityClick, c
                 ${type === 'company' ? 'text-content border-gray-900/30 hover:bg-indigo-50' :
                                     type === 'person' ? 'text-indigo-900 border-indigo-900/30 hover:bg-indigo-50' :
                                         type === 'topic' ? 'text-content border-gray-900/30 hover:bg-surface-hover' :
-                                            'text-[color:var(--text-primary)] border-[color:var(--text-primary)]/30 hover:bg-[color:var(--bg-hover)]'}
+                                            'text-content border-[color:var(--text-primary)]/30 hover:bg-surface-hover'}
               `}
                         >
                             {part}

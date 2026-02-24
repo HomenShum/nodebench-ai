@@ -136,17 +136,17 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
       />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 right-0 w-full max-w-[520px] bg-[color:var(--bg-primary)] shadow-2xl z-50 flex flex-col border-l border-[color:var(--border-color)] animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 w-full max-w-[520px] bg-surface shadow-2xl z-50 flex flex-col border-l border-edge animate-in slide-in-from-right duration-300">
         
         {/* Header */}
-        <header className="px-6 py-4 border-b border-[color:var(--border-color)] flex items-center justify-between bg-[color:var(--bg-secondary)]/80 shrink-0">
+        <header className="px-6 py-4 border-b border-edge flex items-center justify-between bg-surface-secondary/80 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {/* Back button when viewing related item */}
             {selectedRelatedItem && (
               <button
                 type="button"
                 onClick={handleBackToOriginal}
-                className="p-1.5 -ml-1 mr-1 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors"
+                className="p-1.5 -ml-1 mr-1 text-content-secondary hover:text-content hover:bg-surface-secondary rounded-lg transition-colors"
                 title="Back to original"
                 aria-label="Back to original item"
               >
@@ -167,7 +167,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                   {badge.label}
                 </span>
                 {sourceDomain && (
-                  <span className="text-xs text-[color:var(--text-secondary)]">{sourceDomain}</span>
+                  <span className="text-xs text-content-secondary">{sourceDomain}</span>
                 )}
               </div>
             </div>
@@ -178,7 +178,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             <button
               type="button"
               onClick={() => setIsBookmarked(!isBookmarked)}
-              className={`p-2 rounded-lg transition-colors ${isBookmarked ? 'text-yellow-500 bg-yellow-50' : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)]'}`}
+              className={`p-2 rounded-lg transition-colors ${isBookmarked ? 'text-yellow-500 bg-yellow-50' : 'text-content-secondary hover:text-content hover:bg-surface-secondary'}`}
               aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this item'}
             >
               <Bookmark className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} />
@@ -188,7 +188,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             <button
               type="button"
               onClick={() => navigator.clipboard.writeText(displayItem.url || displayItem.title)}
-              className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors"
+              className="p-2 text-content-secondary hover:text-content hover:bg-surface-secondary rounded-lg transition-colors"
               aria-label="Copy link"
             >
               <Share2 className="w-4 h-4" />
@@ -199,7 +199,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
               <button
                 type="button"
                 onClick={() => window.open(displayItem.url, '_blank', 'noopener,noreferrer')}
-                className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors"
+                className="p-2 text-content-secondary hover:text-content hover:bg-surface-secondary rounded-lg transition-colors"
                 aria-label="Open in new tab"
               >
                 <ExternalLink className="w-4 h-4" />
@@ -210,7 +210,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-secondary)] rounded-lg transition-colors ml-1"
+              className="p-2 text-content-secondary hover:text-content hover:bg-surface-secondary rounded-lg transition-colors ml-1"
               aria-label="Close panel"
             >
               <X className="w-4 h-4" />
@@ -222,12 +222,12 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
         <div className="flex-1 overflow-y-auto" data-reader-content>
           <article className="p-6 space-y-6">
             {/* Title */}
-            <h1 className="text-2xl font-medium text-[color:var(--text-primary)] leading-tight">
+            <h1 className="text-2xl font-medium text-content leading-tight">
               {displayItem.title}
             </h1>
 
             {/* Metadata */}
-            <div className="flex items-center gap-4 text-xs text-[color:var(--text-secondary)] border-b border-[color:var(--border-color)] pb-6">
+            <div className="flex items-center gap-4 text-xs text-content-secondary border-b border-edge pb-6">
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{displayItem.timestamp}</span>
@@ -239,7 +239,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                     {displayItem.tags.slice(0, 3).map((tag, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 bg-[color:var(--bg-secondary)] text-[color:var(--text-secondary)] rounded-full text-xs"
+                        className="px-2 py-0.5 bg-surface-secondary text-content-secondary rounded-full text-xs"
                       >
                         #{tag}
                       </span>
@@ -251,11 +251,11 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
 
             {/* Metrics (if available) */}
             {displayItem.metrics && displayItem.metrics.length > 0 && (
-              <div className="grid grid-cols-3 gap-4 p-4 bg-[color:var(--bg-secondary)] rounded-lg border border-[color:var(--border-color)]">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-surface-secondary rounded-lg border border-edge">
                 {displayItem.metrics.map((metric, i) => (
                   <div key={i} className="text-center">
-                    <div className="text-xs uppercase text-[color:var(--text-secondary)] font-medium">{metric.label}</div>
-                    <div className="text-lg font-mono font-bold text-[color:var(--text-primary)]">{metric.value}</div>
+                    <div className="text-xs uppercase text-content-secondary font-medium">{metric.label}</div>
+                    <div className="text-lg font-mono font-bold text-content">{metric.value}</div>
                   </div>
                 ))}
               </div>
@@ -263,13 +263,13 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
 
             {/* Content / Summary */}
             <div className="prose prose-sm prose-gray max-w-none">
-              <p className="text-[color:var(--text-primary)] leading-relaxed text-base">
+              <p className="text-content leading-relaxed text-base">
                 {readerExcerpt}
               </p>
 
               {showLoading && (
-                <div className="mt-6 p-4 bg-[color:var(--bg-secondary)] rounded-lg border border-dashed border-[color:var(--border-color)] text-center">
-                  <p className="text-sm text-[color:var(--text-secondary)]">Loading full article content...</p>
+                <div className="mt-6 p-4 bg-surface-secondary rounded-lg border border-dashed border-edge text-center">
+                  <p className="text-sm text-content-secondary">Loading full article content...</p>
                 </div>
               )}
 
@@ -280,12 +280,12 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
               )}
 
               {readerState.status === "ready" && (
-                <div className="mt-6 space-y-4 text-[color:var(--text-primary)]">
+                <div className="mt-6 space-y-4 text-content">
                   <p className="text-base leading-relaxed">
                     {readerContent}
                   </p>
                   {readerData?.isTruncated && displayItem.url && (
-                    <div className="text-xs text-[color:var(--text-secondary)]">
+                    <div className="text-xs text-content-secondary">
                       Full text trimmed for size.{" "}
                       <button
                         type="button"
@@ -302,12 +302,12 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
 
             {/* Source Matrix */}
             {readerState.status === "ready" && (
-              <div className="mt-8 pt-6 border-t border-[color:var(--border-color)]">
+              <div className="mt-8 pt-6 border-t border-edge">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[color:var(--text-secondary)]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-content-secondary">
                     Source Matrix
                   </span>
-                  <span className="text-xs text-[color:var(--text-secondary)]">
+                  <span className="text-xs text-content-secondary">
                     {sourceMatrix.length} sources
                   </span>
                 </div>
@@ -319,14 +319,14 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-secondary)] px-4 py-3 hover:border-blue-200 hover:bg-[color:var(--bg-primary)] transition-colors"
+                        className="block rounded-lg border border-edge bg-surface-secondary px-4 py-3 hover:border-blue-200 hover:bg-surface transition-colors"
                       >
-                        <div className="text-sm font-semibold text-[color:var(--text-primary)]">{source.title}</div>
-                        <div className="text-xs text-[color:var(--text-secondary)] mt-1">
+                        <div className="text-sm font-semibold text-content">{source.title}</div>
+                        <div className="text-xs text-content-secondary mt-1">
                           {source.domain || 'Source'}
                         </div>
                         {source.snippet && (
-                          <div className="text-xs text-[color:var(--text-secondary)] mt-2 line-clamp-2">
+                          <div className="text-xs text-content-secondary mt-2 line-clamp-2">
                             {source.snippet}
                           </div>
                         )}
@@ -334,13 +334,13 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
                     ))}
                   </div>
                 ) : (
-                  <div className="text-xs text-[color:var(--text-secondary)]">No additional sources available.</div>
+                  <div className="text-xs text-content-secondary">No additional sources available.</div>
                 )}
               </div>
             )}
 
             {/* Related Feeds Grid - Google Image Search style */}
-            <div className="mt-8 pt-6 border-t border-[color:var(--border-color)]">
+            <div className="mt-8 pt-6 border-t border-edge">
               <RelatedFeedsGrid
                 sourceItem={displayItem}
                 onItemClick={handleRelatedItemClick}
@@ -351,15 +351,15 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
           </article>
 
           {/* AI Analyst Block */}
-          <div className="p-6 border-t border-[color:var(--border-color)] bg-gradient-to-b from-[color:var(--bg-primary)] to-purple-50/30">
-            <div className="p-5 bg-[color:var(--bg-primary)] rounded-lg border border-purple-100 shadow-sm">
+          <div className="p-6 border-t border-edge bg-gradient-to-b from-surface to-purple-50/30">
+            <div className="p-5 bg-surface rounded-lg border border-purple-100 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg shadow-md">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-semibold text-[color:var(--text-primary)]">AI Analyst</h4>
-                  <p className="text-xs text-[color:var(--text-secondary)] mt-1 leading-relaxed">
+                  <h4 className="text-sm font-semibold text-content">AI Analyst</h4>
+                  <p className="text-xs text-content-secondary mt-1 leading-relaxed">
                     I've read this update. How would you like me to help?
                   </p>
                   

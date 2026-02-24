@@ -64,7 +64,7 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
             case 'failure':
                 return 'text-red-600 dark:text-red-400';
             default:
-                return 'text-[var(--text-muted)]';
+                return 'text-content-muted';
         }
     };
 
@@ -82,9 +82,9 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
                     "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
-                    "bg-[var(--bg-secondary)] border border-[var(--border-color)]",
+                    "bg-surface-secondary border border-edge",
                     "text-xs font-medium transition-all duration-150",
-                    "hover:bg-[var(--bg-tertiary)]",
+                    "hover:bg-surface-secondary",
                     "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)]",
                     getStatusColor()
                 )}
@@ -103,12 +103,12 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
                 <div className={cn(
                     "absolute mt-8 left-1/2 -translate-x-1/2 z-20",
                     "max-w-xs p-2.5 rounded-lg shadow-lg",
-                    "bg-[var(--bg-primary)] border border-[var(--border-color)]",
-                    "text-xs text-[var(--text-secondary)]"
+                    "bg-surface border border-edge",
+                    "text-xs text-content-secondary"
                 )}>
                     <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-medium text-[var(--text-primary)]">{event.title}</span>
-                        <span className="text-xs text-[var(--text-muted)]">
+                        <span className="font-medium text-content">{event.title}</span>
+                        <span className="text-xs text-content-muted">
                             {formatTime(event.timestamp)}
                         </span>
                     </div>

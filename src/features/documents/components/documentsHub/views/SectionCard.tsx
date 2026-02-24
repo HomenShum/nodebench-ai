@@ -27,13 +27,13 @@ export function SectionCard({
     className = "",
 }: SectionCardProps) {
     return (
-        <div className={`bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-5 ${className}`}>
+        <div className={`bg-surface border border-edge rounded-lg p-5 ${className}`}>
             <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                <h3 className="text-base font-semibold text-content">
                     {title}
                 </h3>
                 {subtitle && (
-                    <span className="text-xs text-[var(--text-muted)]">{subtitle}</span>
+                    <span className="text-xs text-content-muted">{subtitle}</span>
                 )}
             </div>
             {children}

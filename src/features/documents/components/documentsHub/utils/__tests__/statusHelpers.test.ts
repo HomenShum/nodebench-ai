@@ -182,19 +182,19 @@ describe("statusHelpers", () => {
 
     it("should return default classes for undefined", () => {
       expect(priorityClasses(undefined)).toBe(
-        "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]",
+        "bg-surface text-content-secondary border-edge",
       );
     });
 
     it("should return default classes for empty string", () => {
       expect(priorityClasses("")).toBe(
-        "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]",
+        "bg-surface text-content-secondary border-edge",
       );
     });
 
     it("should return default classes for unknown priority", () => {
       expect(priorityClasses("unknown")).toBe(
-        "bg-[var(--bg-primary)] text-[var(--text-secondary)] border-[var(--border-color)]",
+        "bg-surface text-content-secondary border-edge",
       );
     });
   });

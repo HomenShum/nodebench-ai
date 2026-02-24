@@ -107,8 +107,8 @@ export function getThemeForFileType(type: FileType): DocumentCardTheme {
         ring: "",
         gradient: "",
         iconBg: "bg-[var(--accent-primary)]",
-        label: "bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--text-secondary)]",
-        watermarkText: "text-[var(--text-secondary)]",
+        label: "bg-surface border-edge text-content-secondary",
+        watermarkText: "text-content-secondary",
       } as const;
   }
 }

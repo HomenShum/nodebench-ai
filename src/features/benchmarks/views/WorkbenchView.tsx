@@ -46,17 +46,17 @@ const ModelEvalDashboard = lazy(() =>
 function WorkbenchHeader() {
   return (
     <div className="sticky top-0 z-10 bg-surface border-b border-edge">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-start justify-between gap-4">
+      <div className="nb-page-frame px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         {/* Left: icon + title + subtitle */}
         <div className="flex items-start gap-3">
           <div className="flex-none w-9 h-9 rounded-lg bg-surface-secondary border border-edge flex items-center justify-center mt-0.5">
             <FlaskConical className="w-4 h-4 text-content-secondary" />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-content leading-tight">
+            <h1 className="type-page-title text-content leading-tight">
               Workbench
             </h1>
-            <p className="text-xs text-content-muted mt-0.5 max-w-md">
+            <p className="type-caption mt-0.5 max-w-md">
               Benchmark models on frozen baseline apps and realistic task ladders.
               Compare UI craft, tool use, reliability, and engineering rigor across providers.
             </p>
@@ -64,30 +64,24 @@ function WorkbenchHeader() {
         </div>
 
         {/* Right: CTA buttons (both disabled — Phase 2) */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
           <button
             disabled
             title="Configure a workbench app — coming in Phase 2"
-            className="
-              flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium
-              border border-edge bg-surface text-content-muted
-              opacity-50 cursor-not-allowed
-            "
+            className="btn-outline-sm inline-flex items-center gap-1.5 opacity-50 cursor-not-allowed whitespace-nowrap"
           >
             <Settings className="w-3.5 h-3.5" />
-            Configure App
+            <span className="sm:hidden">Configure</span>
+            <span className="hidden sm:inline">Configure App</span>
           </button>
           <button
             disabled
             title="Run a benchmark — coming in Phase 2"
-            className="
-              flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium
-              bg-content text-surface
-              opacity-30 cursor-not-allowed
-            "
+            className="btn-primary-sm inline-flex items-center gap-1.5 opacity-30 cursor-not-allowed whitespace-nowrap"
           >
             <Play className="w-3.5 h-3.5" />
-            Run Benchmark
+            <span className="sm:hidden">Run</span>
+            <span className="hidden sm:inline">Run Benchmark</span>
           </button>
         </div>
       </div>
@@ -105,14 +99,13 @@ function CapabilityDeepDive() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="
-          w-full flex items-center justify-between px-4 py-3 rounded-lg
-          border border-edge bg-surface-secondary hover:bg-surface
-          transition-colors text-left
+          nb-surface-card w-full flex items-center justify-between px-4 py-3
+          hover:bg-surface transition-colors text-left
         "
         aria-expanded={open}
       >
         <div>
-          <span className="text-xs font-semibold text-content-secondary uppercase tracking-wide">
+          <span className="type-label">
             Capability Deep Dive
           </span>
           <p className="text-xs text-content-muted mt-0.5">
@@ -127,7 +120,7 @@ function CapabilityDeepDive() {
       </button>
 
       {open && (
-        <div className="mt-4 rounded-lg border border-edge bg-surface overflow-hidden">
+        <div className="nb-surface-card mt-4 overflow-hidden">
           <Suspense
             fallback={
               <div className="flex items-center justify-center py-16 text-xs text-content-muted">
@@ -152,15 +145,15 @@ export function WorkbenchView() {
 
       <div className="nb-page-inner">
         <div className="nb-page-frame space-y-8">
-        {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
-            If `useQuery` throws (missing function/schema), fall back to static empty states
-            instead of a hard error page. */}
-        <WorkbenchDataBoundary>
-          <WorkbenchData />
-        </WorkbenchDataBoundary>
+          {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
+              If `useQuery` throws (missing function/schema), fall back to static empty states
+              instead of a hard error page. */}
+          <WorkbenchDataBoundary>
+            <WorkbenchData />
+          </WorkbenchDataBoundary>
 
-        {/* 4. Existing eval charts — collapsible deep dive */}
-        <CapabilityDeepDive />
+          {/* 4. Existing eval charts — collapsible deep dive */}
+          <CapabilityDeepDive />
         </div>
       </div>
     </div>

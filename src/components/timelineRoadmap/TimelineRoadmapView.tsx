@@ -1071,9 +1071,9 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
   );
 
   return (
-    <div ref={scrollRef} className="h-full w-full bg-surface overflow-y-auto relative">
-      <div className="flex-1 p-6 relative z-10">
-        <div className="dashboard-container max-w-6xl mx-auto flex gap-6">
+    <div ref={scrollRef} className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame flex gap-6">
           <div className="flex-1 min-w-0 space-y-6">
             {/* Top Divider Bar and Header */}
             <div id="floating-main-dock" className="">
@@ -1106,7 +1106,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
             </div>
 
             <section className="sticky top-4 z-20">
-              <div className="rounded-lg border border-edge bg-surface/95 backdrop-blur p-3 shadow-sm">
+              <div className="nb-surface-card bg-surface/95 backdrop-blur p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-content-secondary">Roadmap Navigator</div>
@@ -1117,7 +1117,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   <button
                     type="button"
                     onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-secondary px-2 py-1 text-xs text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                    className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-secondary px-2 py-1 text-xs text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
                   >
                     <ChevronUp className="h-3 w-3" />
                     Back to top
@@ -1133,7 +1133,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   ))}
                 </div>
                 <div className="mt-2 h-1 w-full rounded-full bg-surface-secondary overflow-hidden">
-                  <div className="h-full bg-indigo-500 transition-all" style={{ width: `${scrollProgress}%` }} />
+                  <div className="h-full bg-[var(--accent-primary)] transition-all" style={{ width: `${scrollProgress}%` }} />
                 </div>
               </div>
             </section>
@@ -1199,8 +1199,8 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 </section>
 
                 {/* Activity Heatmap */}
-                <section className="rounded-lg border border-edge bg-surface-secondary p-4">
-                  <h3 className="text-sm font-semibold text-content mb-3">Activity Heatmap (Last 90 Days)</h3>
+                <section className="nb-surface-card p-4">
+                  <h3 className="type-section-title text-content mb-3">Activity Heatmap (Last 90 Days)</h3>
                   <div className="flex flex-wrap gap-1">
                     {analytics.heatmap.map((day) => {
                       const intensity = Math.min(day.totalActivity / 10, 1); // normalize to 0-1
@@ -1210,7 +1210,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                           key={day.date}
                           className="w-3 h-3 rounded-sm border border-edge"
                           style={{
-                            backgroundColor: `rgba(99, 102, 241, ${bgOpacity})`,
+                            backgroundColor: `color-mix(in srgb, var(--accent-primary) ${Math.round(bgOpacity * 100)}%, transparent)`,
                           }}
                           title={`${day.date}: ${day.totalActivity} activities`}
                         />
@@ -1224,7 +1224,9 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                         <div
                           key={opacity}
                           className="w-3 h-3 rounded-sm border border-edge"
-                          style={{ backgroundColor: `rgba(99, 102, 241, ${opacity})` }}
+                          style={{
+                            backgroundColor: `color-mix(in srgb, var(--accent-primary) ${Math.round(opacity * 100)}%, transparent)`,
+                          }}
                         />
                       ))}
                     </div>
@@ -1238,7 +1240,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                     title="Tasks by Status"
                     data={[
                       { label: "To Do", value: analytics.byStatus.tasks.todo, color: "bg-gray-500" },
-                      { label: "In Progress", value: analytics.byStatus.tasks.in_progress, color: "bg-blue-500" },
+                      { label: "In Progress", value: analytics.byStatus.tasks.in_progress, color: "bg-[var(--accent-primary)]" },
                       { label: "Done", value: analytics.byStatus.tasks.done, color: "bg-green-500" },
                       { label: "Blocked", value: analytics.byStatus.tasks.blocked, color: "bg-red-500" },
                     ]}
@@ -1255,7 +1257,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                     title="Agent Tasks by Status"
                     data={[
                       { label: "Pending", value: analytics.byStatus.agentTasks.pending, color: "bg-gray-500" },
-                      { label: "Running", value: analytics.byStatus.agentTasks.running, color: "bg-blue-500" },
+                      { label: "Running", value: analytics.byStatus.agentTasks.running, color: "bg-[var(--accent-primary)]" },
                       { label: "Complete", value: analytics.byStatus.agentTasks.complete, color: "bg-green-500" },
                       { label: "Paused", value: analytics.byStatus.agentTasks.paused, color: "bg-yellow-500" },
                       { label: "Error", value: analytics.byStatus.agentTasks.error, color: "bg-red-500" },
@@ -1283,8 +1285,8 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
             )}
 
             <section id="roadmap-overview" className="relative rounded-lg border border-edge bg-surface-secondary p-5 overflow-hidden">
-              <div className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
-              <div className="pointer-events-none absolute -left-24 bottom-0 h-40 w-40 rounded-full bg-sky-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute -right-20 -top-24 h-48 w-48 rounded-full bg-[var(--accent-primary-bg)] blur-3xl" />
+              <div className="pointer-events-none absolute -left-24 bottom-0 h-40 w-40 rounded-full bg-[var(--accent-primary-bg)] blur-3xl" />
               <div className="relative space-y-4">
                 <div>
                   <h2 className="text-lg font-semibold text-content">
@@ -1560,7 +1562,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-edge bg-surface text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 flex items-center justify-center shadow-sm"
+              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-edge bg-surface text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 flex items-center justify-center shadow-sm"
             >
               {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>
@@ -1584,9 +1586,9 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
 
 function SliceStat({ label, value, total, color }: { label: string; value: number; total: number; color: "emerald" | "indigo" | "rose" }) {
   const percent = pct(value, total);
-  const bar = color === "emerald" ? "bg-indigo-500" : color === "indigo" ? "bg-indigo-500" : "bg-rose-500";
-  const tint = color === "emerald" ? "bg-indigo-500/10" : color === "indigo" ? "bg-indigo-500/10" : "bg-rose-500/10";
-  const text = color === "emerald" ? "text-indigo-600" : color === "indigo" ? "text-indigo-600" : "text-rose-600";
+  const bar = color === "emerald" ? "bg-green-500" : color === "indigo" ? "bg-[var(--accent-primary)]" : "bg-rose-500";
+  const tint = color === "emerald" ? "bg-green-500/10" : color === "indigo" ? "bg-[var(--accent-primary-bg)]" : "bg-rose-500/10";
+  const text = color === "emerald" ? "text-green-600" : color === "indigo" ? "text-[var(--accent-primary)]" : "text-rose-600";
 
   return (
     <div className="rounded-md border border-edge bg-surface p-3">
@@ -1601,17 +1603,17 @@ function SliceStat({ label, value, total, color }: { label: string; value: numbe
 
 function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
   const colorClasses = {
-    blue: "text-blue-600 bg-blue-500/10",
+    blue: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
     purple: "text-purple-600 bg-purple-500/10",
     green: "text-green-600 bg-green-500/10",
     orange: "text-orange-600 bg-orange-500/10",
-    indigo: "text-indigo-600 bg-indigo-500/10",
-    teal: "text-indigo-600 bg-indigo-500/10",
+    indigo: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
+    teal: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
     rose: "text-rose-600 bg-rose-500/10",
     amber: "text-amber-600 bg-amber-500/10",
   };
 
-  const colorClass = colorClasses[color as keyof typeof colorClasses] || colorClasses.blue;
+  const colorClass = colorClasses[color as keyof typeof colorClasses] || colorClasses.indigo;
 
   return (
     <div className="rounded-lg border border-edge bg-surface-secondary p-3">
@@ -1654,11 +1656,11 @@ function StatusBreakdown({ title, data }: { title: string; data: Array<{ label: 
 
 const sectionToneClasses: Record<SectionTone, string> = {
   slate: "border-edge bg-surface text-content-secondary",
-  sky: "border-sky-500/20 bg-sky-500/10 text-sky-600",
-  indigo: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600",
-  emerald: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600",
-  teal: "border-indigo-500/20 bg-indigo-500/10 text-indigo-600",
-  violet: "border-violet-500/20 bg-violet-500/10 text-violet-600",
+  sky: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+  indigo: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+  emerald: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+  teal: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+  violet: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
   amber: "border-amber-500/20 bg-amber-500/10 text-amber-600",
   rose: "border-rose-500/20 bg-rose-500/10 text-rose-600",
 };
@@ -1693,14 +1695,14 @@ function SectionHeader({
 }
 
 const summaryAccents = [
-  "bg-indigo-500",
-  "bg-sky-500",
-  "bg-indigo-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-indigo-500",
-  "bg-violet-500",
-  "bg-cyan-500",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
+  "bg-[var(--accent-primary)]",
 ];
 
 function SummaryStat({ stat, index }: { stat: RoadmapStat; index: number }) {
@@ -1766,8 +1768,8 @@ function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
 function TagPill({ label, tone = "default" }: { label: string; tone?: "default" | "success" | "warning" | "info" }) {
   const toneClasses = {
     default: "border-edge bg-surface-secondary text-content-secondary",
-    success: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600",
-    info: "border-sky-500/30 bg-sky-500/10 text-sky-600",
+    success: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+    info: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   };
   return (
@@ -1779,13 +1781,13 @@ function TagPill({ label, tone = "default" }: { label: string; tone?: "default" 
 
 function RoadmapNavButton({ item, isActive }: { item: { label: string; target: string }; isActive?: boolean }) {
   const activeClasses = isActive
-    ? "border-indigo-500/40 bg-indigo-500/10 text-content-secondary ring-1 ring-indigo-500/20"
+    ? "border-[var(--accent-primary)]/40 bg-[var(--accent-primary-bg)] text-content ring-1 ring-[var(--accent-primary)]/20"
     : "border-edge bg-surface-secondary text-content-secondary";
   return (
     <button
       type="button"
       aria-current={isActive ? "page" : undefined}
-      className={`px-2.5 py-1 text-xs rounded-md border transition-all duration-200 hover:bg-surface-hover hover:border-indigo-300 dark:hover:border-indigo-500/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${activeClasses}`}
+      className={`px-2.5 py-1 text-xs rounded-md border transition-all duration-200 hover:bg-surface-hover hover:border-[var(--accent-primary)]/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 ${activeClasses}`}
       onClick={() => {
         const element = document.getElementById(item.target);
         if (element) {
@@ -1917,7 +1919,10 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
   const priorityStyles: Record<"rose" | "amber" | "emerald", { bar: string; pill: string }> = {
     rose: { bar: "bg-rose-500", pill: "border-rose-500/30 bg-rose-500/10 text-rose-600" },
     amber: { bar: "bg-amber-500", pill: "border-amber-500/30 bg-amber-500/10 text-amber-600" },
-    emerald: { bar: "bg-indigo-500", pill: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600" },
+    emerald: {
+      bar: "bg-[var(--accent-primary)]",
+      pill: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+    },
   };
   const tone = priorityStyles[priorityTone];
   return (
@@ -2212,7 +2217,12 @@ function RiskCard({ risk }: { risk: RiskDependency }) {
 
 function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
   const phaseTone = phase.phase === "Now" ? "emerald" : phase.phase === "Next" ? "amber" : "violet";
-  const phaseBar = phaseTone === "emerald" ? "bg-indigo-500" : phaseTone === "amber" ? "bg-amber-500" : "bg-violet-500";
+  const phaseBar =
+    phaseTone === "emerald"
+      ? "bg-[var(--accent-primary)]"
+      : phaseTone === "amber"
+        ? "bg-amber-500"
+        : "bg-[var(--accent-primary)]";
   return (
     <div className="relative rounded-lg border border-edge bg-surface p-4 space-y-3 overflow-hidden transition-shadow">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${phaseBar}`} />

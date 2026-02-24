@@ -58,7 +58,7 @@ export function MemoryStatusHeader({
             case 'failed':
                 return <Circle className="w-3.5 h-3.5 text-red-500" />;
             default:
-                return <Circle className="w-3.5 h-3.5 text-[var(--text-muted)]" />;
+                return <Circle className="w-3.5 h-3.5 text-content-muted" />;
         }
     };
 
@@ -67,7 +67,7 @@ export function MemoryStatusHeader({
             done: { label: 'Done', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
             active: { label: 'Active', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
             failed: { label: 'Failed', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-            queued: { label: 'Queued', className: 'bg-[var(--bg-hover)] text-[var(--text-secondary)] dark:bg-[var(--bg-secondary)] dark:text-[var(--text-muted)]' },
+            queued: { label: 'Queued', className: 'bg-surface-hover text-content-secondary dark:bg-surface-secondary dark:text-content-muted' },
         };
         const { label, className } = config[status];
         return (
@@ -79,7 +79,7 @@ export function MemoryStatusHeader({
 
     return (
         <div className={cn(
-            "sticky top-0 z-10 bg-[var(--bg-secondary)] border-b border-[var(--border-color)]",
+            "sticky top-0 z-10 bg-surface-secondary border-b border-edge",
             "transition-all duration-200 ease-out",
             className
         )}>
@@ -88,7 +88,7 @@ export function MemoryStatusHeader({
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
                     "w-full flex items-center justify-between px-3 py-1.5",
-                    "hover:bg-[var(--bg-tertiary)] transition-colors",
+                    "hover:bg-surface-secondary transition-colors",
                     "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)]"
                 )}
             >
@@ -97,11 +97,11 @@ export function MemoryStatusHeader({
                     <div className={cn(
                         "w-2 h-2 rounded-full flex-shrink-0",
                         doneItems === totalItems && totalItems > 0 ? "bg-green-500" :
-                            activeItem ? "bg-violet-500 motion-safe:animate-pulse" : "bg-[var(--text-muted)]"
+                            activeItem ? "bg-violet-500 motion-safe:animate-pulse" : "bg-content-muted"
                     )} />
 
                     {/* Progress text */}
-                    <span className="text-xs font-medium text-[var(--text-primary)] truncate">
+                    <span className="text-xs font-medium text-content truncate">
                         {isLoading ? (
                             <span className="flex items-center gap-1">
                                 <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
@@ -110,8 +110,8 @@ export function MemoryStatusHeader({
                         ) : (
                             <>
                                 {doneItems}/{totalItems} Complete
-                                <span className="mx-1.5 text-[var(--text-muted)]">•</span>
-                                <span className="text-[var(--text-secondary)]">{displayFocus}</span>
+                                <span className="mx-1.5 text-content-muted">•</span>
+                                <span className="text-content-secondary">{displayFocus}</span>
                             </>
                         )}
                     </span>
@@ -120,7 +120,7 @@ export function MemoryStatusHeader({
                 {/* Expand/collapse icon */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                     {/* Progress bar mini */}
-                    <div className="hidden sm:block w-16 h-1 bg-[var(--bg-tertiary)] rounded-full overflow-hidden">
+                    <div className="hidden sm:block w-16 h-1 bg-surface-secondary rounded-full overflow-hidden">
                         <div
                             className="h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-300"
                             style={{ width: `${progressPercent}%` }}
@@ -128,16 +128,16 @@ export function MemoryStatusHeader({
                     </div>
 
                     {isExpanded ? (
-                        <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" />
+                        <ChevronUp className="w-4 h-4 text-content-muted" />
                     ) : (
-                        <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
+                        <ChevronDown className="w-4 h-4 text-content-muted" />
                     )}
                 </div>
             </button>
 
             {/* Progress bar full width at bottom of collapsed header */}
             {!isExpanded && (
-                <div className="h-0.5 bg-[var(--bg-tertiary)]">
+                <div className="h-0.5 bg-surface-secondary">
                     <div
                         className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] transition-all duration-300"
                         style={{ width: `${progressPercent}%` }}
@@ -147,13 +147,13 @@ export function MemoryStatusHeader({
 
             {/* Expanded Checklist */}
             {isExpanded && (
-                <div className="px-3 py-2 space-y-1 bg-[var(--bg-primary)] border-t border-[var(--border-color)]">
+                <div className="px-3 py-2 space-y-1 bg-surface border-t border-edge">
                     {planItems.map((item) => (
                         <div
                             key={item.id}
                             className={cn(
                                 "flex items-center justify-between py-1.5 px-2 rounded-md",
-                                "hover:bg-[var(--bg-secondary)] transition-colors cursor-pointer",
+                                "hover:bg-surface-secondary transition-colors cursor-pointer",
                                 item.status === 'active' && "bg-blue-50/50 dark:bg-blue-900/10"
                             )}
                             onClick={() => onToggleItem?.(item.id)}
@@ -162,8 +162,8 @@ export function MemoryStatusHeader({
                                 {getStatusIcon(item.status)}
                                 <span className={cn(
                                     "text-sm truncate",
-                                    item.status === 'done' && "text-[var(--text-muted)] line-through",
-                                    item.status === 'active' && "text-[var(--text-primary)] font-medium"
+                                    item.status === 'done' && "text-content-muted line-through",
+                                    item.status === 'active' && "text-content font-medium"
                                 )}>
                                     {item.name}
                                 </span>
@@ -173,7 +173,7 @@ export function MemoryStatusHeader({
                     ))}
 
                     {planItems.length === 0 && (
-                        <div className="flex items-center justify-center py-4 text-sm text-[var(--text-muted)]">
+                        <div className="flex items-center justify-center py-4 text-sm text-content-muted">
                             <Target className="w-4 h-4 mr-2" />
                             No plan items yet
                         </div>

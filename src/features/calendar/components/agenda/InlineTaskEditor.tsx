@@ -251,12 +251,12 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
 
   if (task === undefined) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-4 bg-[var(--bg-secondary)]">
-        <div className="motion-safe:animate-pulse h-5 w-36 bg-[var(--bg-primary)] rounded mb-3" />
+      <div className="mt-2 border border-edge rounded-lg p-4 bg-surface-secondary">
+        <div className="motion-safe:animate-pulse h-5 w-36 bg-surface rounded mb-3" />
         <div className="space-y-2">
-          <div className="h-4 bg-[var(--bg-primary)] rounded" />
-          <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />
-          <div className="h-4 bg-[var(--bg-primary)] rounded w-2/3" />
+          <div className="h-4 bg-surface rounded" />
+          <div className="h-4 bg-surface rounded w-5/6" />
+          <div className="h-4 bg-surface rounded w-2/3" />
         </div>
       </div>
     );
@@ -264,10 +264,10 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
 
   if (!task) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-4 bg-[var(--bg-secondary)] flex items-center justify-between">
-        <div className="text-sm text-[var(--text-secondary)]">Task not found</div>
+      <div className="mt-2 border border-edge rounded-lg p-4 bg-surface-secondary flex items-center justify-between">
+        <div className="text-sm text-content-secondary">Task not found</div>
         <button
-          className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
+          className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge"
           onClick={onClose}
           title="Close"
         >
@@ -284,7 +284,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
 
   return (
     <div
-      className="mt-2 rounded-lg p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 transition-all relative z-10 pointer-events-auto"
+      className="mt-2 rounded-lg p-3 bg-surface border border-edge/60 transition-all relative z-10 pointer-events-auto"
       data-inline-editor="true"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
@@ -298,9 +298,9 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
     >
       {/* Top bar: actions and save hint */}
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-xs text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
+        <div className="text-xs text-content-muted">Press Esc to close · Ctrl/Cmd+S to save</div>
         <div className="flex items-center gap-2">
-          <div className="text-xs text-[var(--text-muted)]">
+          <div className="text-xs text-content-muted">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </div>
           <button
@@ -308,8 +308,8 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
             disabled={saveHint !== "unsaved" || _isSaving}
             className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${
               saveHint === "unsaved" && !_isSaving
-                ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90"
-                : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"
+                ? "bg-[var(--accent-primary)] text-white border-indigo-500/30 hover:opacity-90"
+                : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"
             }`}
             title="Save changes"
           >
@@ -317,7 +317,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           </button>
           <button
             onClick={() => { void handleDelete(); }}
-            className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500"
+            className="w-7 h-7 rounded-md flex items-center justify-center bg-surface-secondary hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500"
             title="Delete task"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -330,7 +330,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
               }
               onClose();
             }}
-            className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+            className="w-7 h-7 rounded-md flex items-center justify-center bg-surface-secondary hover:bg-surface-hover text-content-secondary border border-edge"
             title="Close"
           >
             <X className="w-3.5 h-3.5" />
@@ -345,7 +345,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           ref={titleRef}
-          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
           placeholder="Untitled"
         />
 
@@ -361,12 +361,12 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
             }}
             className={`pill pill--type inline-flex items-center gap-1 text-xs ${
               status === "done"
-                ? "bg-green-100 text-green-700 border-green-200 dark:bg-[var(--bg-primary)] dark:text-green-400 dark:border-[var(--border-color)]"
+                ? "bg-green-100 text-green-700 border-green-200 dark:bg-surface dark:text-green-400 dark:border-edge"
                 : status === "in_progress"
-                ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-[var(--bg-primary)] dark:text-blue-400 dark:border-[var(--border-color)]"
+                ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-surface dark:text-blue-400 dark:border-edge"
                 : status === "blocked"
-                ? "bg-red-100 text-red-700 border-red-200 dark:bg-[var(--bg-primary)] dark:text-red-400 dark:border-[var(--border-color)]"
-                : "bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
+                ? "bg-red-100 text-red-700 border-red-200 dark:bg-surface dark:text-red-400 dark:border-edge"
+                : "bg-surface-hover text-content border-edge"
             }`}
             title="Click to cycle status"
           >
@@ -384,14 +384,14 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
             }}
             className={`pill pill--type inline-flex items-center gap-1 text-xs ${
               priority === "urgent"
-                ? "bg-red-100 text-red-700 border-red-200 dark:bg-[var(--bg-primary)] dark:text-red-400 dark:border-[var(--border-color)]"
+                ? "bg-red-100 text-red-700 border-red-200 dark:bg-surface dark:text-red-400 dark:border-edge"
                 : priority === "high"
-                ? "bg-orange-100 text-orange-700 border-orange-200 dark:bg-[var(--bg-primary)] dark:text-orange-400 dark:border-[var(--border-color)]"
+                ? "bg-orange-100 text-orange-700 border-orange-200 dark:bg-surface dark:text-orange-400 dark:border-edge"
                 : priority === "medium"
-                ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-[var(--bg-primary)] dark:text-amber-300 dark:border-[var(--border-color)]"
+                ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-surface dark:text-amber-300 dark:border-edge"
                 : priority === "low"
-                ? "bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
-                : "bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]"
+                ? "bg-surface-hover text-content border-edge"
+                : "bg-surface-hover text-content border-edge"
             }`}
             title="Click to cycle priority"
           >
@@ -468,7 +468,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           <div className="flex flex-col gap-2">
             {showStartPicker && (
               <div className="flex items-center gap-3 flex-wrap">
-                <label className="text-xs text-[var(--text-secondary)] inline-flex items-center gap-1">
+                <label className="text-xs text-content-secondary inline-flex items-center gap-1">
                   <input type="checkbox" checked={useStartTime} onChange={(e) => setUseStartTime(e.target.checked)} /> Include time
                 </label>
                 {useStartTime ? (
@@ -477,7 +477,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={startDateTimeStr}
                     onChange={(e) => setStartDateTimeStr(e.target.value)}
                     id={`start-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                   />
                 ) : (
                   <input
@@ -485,14 +485,14 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={startDateStr}
                     onChange={(e) => setStartDateStr(e.target.value)}
                     id={`start-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                   />
                 )}
               </div>
             )}
             {showDuePicker && (
               <div className="flex items-center gap-3 flex-wrap">
-                <label className="text-xs text-[var(--text-secondary)] inline-flex items-center gap-1">
+                <label className="text-xs text-content-secondary inline-flex items-center gap-1">
                   <input type="checkbox" checked={useDueTime} onChange={(e) => setUseDueTime(e.target.checked)} /> Include time
                 </label>
                 {useDueTime ? (
@@ -501,7 +501,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={dueDateTimeStr}
                     onChange={(e) => setDueDateTimeStr(e.target.value)}
                     id={`due-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                   />
                 ) : (
                   <input
@@ -509,7 +509,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={dueDateStr}
                     onChange={(e) => setDueDateStr(e.target.value)}
                     id={`due-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                   />
                 )}
               </div>
@@ -521,7 +521,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
         {showTagsEditor && (
           <div className="flex flex-wrap items-center gap-1 mt-1.5">
             {tags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface-secondary">
                 {t}
                 <button type="button" onClick={() => setTags((prev) => prev.filter((x) => x !== t))} className="text-xs opacity-70 hover:opacity-100" title="Remove tag">×</button>
               </span>
@@ -529,7 +529,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               onKeyDown={(e) => {
                 const el = e.currentTarget as HTMLInputElement;
                 if (e.key === "Enter" || e.key === ",") {
@@ -552,30 +552,30 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                 value={assigneeQuery}
                 onChange={(e) => setAssigneeQuery(e.target.value)}
                 placeholder="Search users…"
-                className="text-xs bg-transparent border border-[var(--border-color)] rounded-md px-2 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               />
               <button
                 type="button"
-                className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+                className="text-xs px-2 py-0.5 rounded border border-edge text-content-secondary bg-surface-secondary"
                 onClick={() => setAssigneeId(undefined)}
                 title="Clear assignee"
               >
                 Clear
               </button>
             </div>
-            <div className="max-h-40 overflow-auto border border-[var(--border-color)] rounded-md">
+            <div className="max-h-40 overflow-auto border border-edge rounded-md">
               {(userCandidates ?? []).map((u: any) => (
                 <button
                   key={String(u._id)}
                   type="button"
                   onClick={() => setAssigneeId(u._id)}
-                  className={`w-full text-left px-2 py-1 text-[12px] hover:bg-[var(--bg-hover)] ${String(u._id) === String(assigneeId) ? "bg-[var(--bg-secondary)]" : ""}`}
+                  className={`w-full text-left px-2 py-1 text-[12px] hover:bg-surface-hover ${String(u._id) === String(assigneeId) ? "bg-surface-secondary" : ""}`}
                 >
                   {u.name || String(u._id)}
                 </button>
               ))}
               {(userCandidates ?? []).length === 0 && (
-                <div className="px-2 py-1 text-[12px] text-[var(--text-muted)]">No results</div>
+                <div className="px-2 py-1 text-[12px] text-content-muted">No results</div>
               )}
             </div>
           </div>
@@ -586,7 +586,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           <div className="flex flex-col gap-2 mt-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               {refs.map((r, idx) => (
-                <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                <span key={`${r.kind}:${r.id}:${idx}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface-secondary">
                   {r.kind}:{String(r.id).slice(0, 8)}
                   <button type="button" className="text-xs opacity-70 hover:opacity-100" onClick={() => setRefs((prev) => prev.filter((_, i) => i !== idx))} title="Remove">×</button>
                 </span>
@@ -596,7 +596,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
               <select
                 value={newRefKind}
                 onChange={(e) => setNewRefKind(e.target.value as RefItem["kind"]) }
-                className="text-xs bg-transparent border border-[var(--border-color)] rounded-md px-2 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               >
                 <option value="document">Document</option>
                 <option value="task">Task</option>
@@ -607,11 +607,11 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                 value={newRefId}
                 onChange={(e) => setNewRefId(e.target.value)}
                 placeholder="Paste ID…"
-                className="text-xs bg-transparent border border-[var(--border-color)] rounded-md px-2 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               />
               <button
                 type="button"
-                className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+                className="text-xs px-2 py-0.5 rounded border border-edge text-content-secondary bg-surface-secondary"
                 onClick={() => {
                   const id = newRefId.trim();
                   if (!id) return;
@@ -630,10 +630,10 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Write details…"
-          className="w-full min-h-[80px] px-3 py-2 text-sm border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+          className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
         />
 
-        <div className="text-xs text-[var(--text-muted)]">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
+        <div className="text-xs text-content-muted">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>
       </div>
     </div>
   );

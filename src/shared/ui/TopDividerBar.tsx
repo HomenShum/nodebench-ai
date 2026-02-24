@@ -15,7 +15,7 @@ export function TopDividerBar({ left, right, className, noBorder }: TopDividerBa
   return (
     <div className={[
       "flex items-center justify-between pb-2 mb-3",
-      noBorder ? "" : "border-b border-[var(--border-color)]",
+      noBorder ? "" : "border-b border-edge",
       className ?? "",
     ].join(" ").trim()}>
       <div className="min-w-0 flex items-center gap-2">{left}</div>

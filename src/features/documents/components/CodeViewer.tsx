@@ -106,7 +106,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   if (isLoadingState) {
     return (
       <div className={`flex items-center justify-center h-32 ${className}`}>
-        <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+        <div className="flex items-center gap-2 text-content-secondary">
           <Loader2 strokeWidth={1.25} className="h-4 w-4 motion-safe:animate-spin" />
           Loading code...
         </div>
@@ -116,7 +116,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
 
   if (!content) {
     return (
-      <div className={`flex items-center justify-center h-32 text-[var(--text-secondary)] ${className}`}>
+      <div className={`flex items-center justify-center h-32 text-content-secondary ${className}`}>
         No code content available
       </div>
     );
@@ -125,20 +125,20 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   const language = getLanguage();
 
   return (
-    <div className={`flex flex-col h-full bg-[var(--bg-primary)] rounded-lg shadow-sm border border-[var(--border-color)] overflow-hidden ${className}`}>
+    <div className={`flex flex-col h-full bg-surface rounded-lg shadow-sm border border-edge overflow-hidden ${className}`}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-edge bg-surface-secondary">
         <div className="flex items-center gap-2">
           {/* Mode Toggle - only show for HTML files */}
           {isHtmlFile ? (
-            <div className="flex bg-[var(--bg-hover)] p-0.5 rounded-lg">
+            <div className="flex bg-surface-hover p-0.5 rounded-lg">
               <button
                 type="button"
                 onClick={() => setMode('source')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                   mode === 'source'
-                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'bg-surface text-content shadow-sm'
+                    : 'text-content-secondary hover:text-content'
                 }`}
               >
                 <Code2 className="h-3.5 w-3.5" />
@@ -149,8 +149,8 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
                 onClick={() => setMode('preview')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                   mode === 'preview'
-                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'bg-surface text-content shadow-sm'
+                    : 'text-content-secondary hover:text-content'
                 }`}
               >
                 <Play className="h-3.5 w-3.5" />
@@ -158,7 +158,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
               </button>
             </div>
           ) : (
-            <span className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+            <span className="text-xs font-medium text-content-secondary uppercase tracking-wide">
               {language}
             </span>
           )}
@@ -170,7 +170,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             <button
               type="button"
               onClick={openInNewTab}
-              className="p-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+              className="p-2 text-content-muted hover:text-content-secondary hover:bg-surface-hover rounded-md transition-colors"
               title="Open in new tab"
             >
               <ExternalLink className="h-4 w-4" />
@@ -179,7 +179,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
           <button
             type="button"
             onClick={handleCopy}
-            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors"
+            className="p-2 text-content-muted hover:text-content-secondary hover:bg-surface-hover rounded-md transition-colors"
             title={copied ? 'Copied!' : 'Copy code'}
           >
             {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -191,14 +191,14 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
       <div className="flex-1 min-h-0 overflow-hidden">
         {mode === 'source' || !isHtmlFile ? (
           <div className="w-full h-full overflow-auto bg-[#1e1e1e]">
-            <pre className="p-4 text-sm font-mono text-[var(--text-muted)] leading-relaxed whitespace-pre-wrap break-words">
+            <pre className="p-4 text-sm font-mono text-content-muted leading-relaxed whitespace-pre-wrap break-words">
               <code>{content}</code>
             </pre>
           </div>
         ) : (
           <iframe
             srcDoc={content}
-            className="w-full h-full border-none bg-[var(--bg-primary)]"
+            className="w-full h-full border-none bg-surface"
             title={fileName}
             sandbox="allow-scripts allow-same-origin"
           />

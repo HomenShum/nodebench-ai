@@ -115,7 +115,7 @@ export function EnhancedTimelineStrip({
     <div
       className={`${sticky ? 'sticky top-0 z-40' : ''} bg-white/95 dark:bg-[#09090B]/95 backdrop-blur-sm border-b border-edge shadow-sm ${className}`}
     >
-      <div className="max-w-7xl mx-auto px-4 py-3">
+      <div className="max-w-6xl mx-auto px-4 py-3">
         {/* Header with filter toggle */}
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">

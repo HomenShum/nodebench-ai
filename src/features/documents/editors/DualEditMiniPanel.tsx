@@ -84,26 +84,26 @@ export default function DualEditMiniPanel({
 
   return (
     <div
-      className="mt-2 rounded-lg p-2 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 pointer-events-auto"
+      className="mt-2 rounded-lg p-2 bg-surface border border-edge/60 pointer-events-auto"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
       role="dialog"
       aria-label={mode === "confirm" ? "Confirm create task and event" : "Edit created task and event"}
     >
-      <div className="text-xs text-[var(--text-muted)] mb-2">Create on {new Date(dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+      <div className="text-xs text-content-muted mb-2">Create on {new Date(dateMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
 
       {mode === "confirm" ? (
         <div className="space-y-2">
           {/* Task row */}
           <div className="flex items-center gap-2">
-            <div className="shrink-0 inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] min-w-[58px]">
+            <div className="shrink-0 inline-flex items-center gap-1 text-xs text-content-secondary min-w-[58px]">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500" />
               <span>Task</span>
             </div>
             <input
               type="text"
-              className="flex-1 text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-white"
+              className="flex-1 text-xs px-2 py-1 rounded border border-edge bg-white"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Task title"
@@ -112,13 +112,13 @@ export default function DualEditMiniPanel({
           </div>
           {/* Event row */}
           <div className="flex items-center gap-2">
-            <div className="shrink-0 inline-flex items-center gap-1 text-xs text-[var(--text-secondary)] min-w-[58px]">
+            <div className="shrink-0 inline-flex items-center gap-1 text-xs text-content-secondary min-w-[58px]">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500" />
               <span>Event</span>
             </div>
             <input
               type="text"
-              className="flex-1 text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-white"
+              className="flex-1 text-xs px-2 py-1 rounded border border-edge bg-white"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder="Event title"
@@ -126,14 +126,14 @@ export default function DualEditMiniPanel({
             />
           </div>
           <div className="flex items-center justify-between">
-            <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+            <label className="inline-flex items-center gap-2 text-xs text-content-secondary">
               <input type="checkbox" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
               All-day event
             </label>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className={`text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] ${creating ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`text-xs px-2 py-1 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover ${creating ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={creating}
                 onClick={() => void createTaskOnly()}
                 title="Create only a task"
@@ -142,7 +142,7 @@ export default function DualEditMiniPanel({
               </button>
               <button
                 type="button"
-                className={`text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] ${creating ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`text-xs px-2 py-1 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover ${creating ? 'opacity-60 cursor-not-allowed' : ''}`}
                 disabled={creating}
                 onClick={() => void createEventOnly()}
                 title="Create only an event"
@@ -151,14 +151,14 @@ export default function DualEditMiniPanel({
               </button>
               <button
                 type="button"
-                className="text-xs px-2 py-1 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]"
+                className="text-xs px-2 py-1 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover"
                 onClick={onClose}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className={`text-xs px-2.5 py-1 rounded-md ${creating ? 'opacity-60 cursor-not-allowed' : ''} border ${creating ? 'border-[var(--border-color)] bg-[var(--bg-secondary)]' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] border-transparent'}`}
+                className={`text-xs px-2.5 py-1 rounded-md ${creating ? 'opacity-60 cursor-not-allowed' : ''} border ${creating ? 'border-edge bg-surface-secondary' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] border-transparent'}`}
                 disabled={creating}
                 onClick={() => void createBoth()}
               >
@@ -170,12 +170,12 @@ export default function DualEditMiniPanel({
       ) : (
         <div className={`grid ${taskId && eventId ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'} gap-2`}>
           {taskId && (
-            <div className="rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1">
+            <div className="rounded border border-edge bg-surface-secondary p-1">
               <PopoverMiniEditor kind="task" taskId={taskId} onClose={onClose} />
             </div>
           )}
           {eventId && (
-            <div className="rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1">
+            <div className="rounded border border-edge bg-surface-secondary p-1">
               <PopoverMiniEditor kind="event" eventId={eventId} onClose={onClose} documentIdForAssociation={documentIdForAssociation} />
             </div>
           )}

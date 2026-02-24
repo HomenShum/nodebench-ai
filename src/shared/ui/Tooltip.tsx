@@ -44,7 +44,7 @@ export function Tooltip({ content, side = "top", delay = 200, children, classNam
       {visible && (
         <span
           role="tooltip"
-          className={`absolute z-toast pointer-events-none whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-lg ${sideStyles[side]} ${className ?? ""}`}
+          className={`absolute z-toast pointer-events-none whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium bg-content text-surface shadow-lg ${sideStyles[side]} ${className ?? ""}`}
         >
           {content}
         </span>

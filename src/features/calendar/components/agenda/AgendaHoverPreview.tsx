@@ -85,7 +85,7 @@ export default function AgendaHoverPreview({
 
   return (
     <div
-      className="fixed z-[75] w-[280px] max-w-[80vw] rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] shadow-lg p-2 text-[var(--text-primary)]"
+      className="fixed z-[75] w-[280px] max-w-[80vw] rounded-md border border-edge bg-surface shadow-lg p-2 text-content"
       style={{ top: pos.top, left: pos.left }}
       onMouseEnter={onMouseEnterPopover}
       onMouseLeave={onMouseLeavePopover}
@@ -122,16 +122,16 @@ export default function AgendaHoverPreview({
         {kind === 'event' ? (
           <>
             {eventTime(item) && (
-              <div className="text-xs text-[var(--text-secondary)]">{eventTime(item)}</div>
+              <div className="text-xs text-content-secondary">{eventTime(item)}</div>
             )}
             {item?.location && (
-              <div className="text-xs text-[var(--text-secondary)]">📍 {String(item.location)}</div>
+              <div className="text-xs text-content-secondary">📍 {String(item.location)}</div>
             )}
             {Array.isArray(item?.attendees) && item.attendees.length > 0 && (
-              <div className="text-xs text-[var(--text-secondary)]">👥 {item.attendees.length} attendee{item.attendees.length > 1 ? 's' : ''}</div>
+              <div className="text-xs text-content-secondary">👥 {item.attendees.length} attendee{item.attendees.length > 1 ? 's' : ''}</div>
             )}
             {item?.description && (
-              <div className="text-xs text-[var(--text-secondary)]">
+              <div className="text-xs text-content-secondary">
                 {String(item.description).slice(0, 140)}{String(item.description).length > 140 ? '…' : ''}
               </div>
             )}
@@ -139,22 +139,22 @@ export default function AgendaHoverPreview({
         ) : kind === 'task' ? (
           <>
             {typeof item?.dueDate === 'number' && (
-              <div className="text-xs text-[var(--text-secondary)]">Due: {new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+              <div className="text-xs text-content-secondary">Due: {new Date(item.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
             )}
             {item?.priority && (
-              <div className="text-xs text-[var(--text-secondary)]">Priority: {String(item.priority)}</div>
+              <div className="text-xs text-content-secondary">Priority: {String(item.priority)}</div>
             )}
             {item?.description && (
-              <div className="text-xs text-[var(--text-secondary)]">
+              <div className="text-xs text-content-secondary">
                 {String(item.description).slice(0, 140)}{String(item.description).length > 140 ? '…' : ''}
               </div>
             )}
           </>
         ) : (
           <>
-            <div className="text-xs text-[var(--text-secondary)]">Date: {holidayDate(item) ?? ''}</div>
+            <div className="text-xs text-content-secondary">Date: {holidayDate(item) ?? ''}</div>
             {item?.country && (
-              <div className="text-xs text-[var(--text-secondary)]">Country: {String(item.country)}</div>
+              <div className="text-xs text-content-secondary">Country: {String(item.country)}</div>
             )}
           </>
         )}

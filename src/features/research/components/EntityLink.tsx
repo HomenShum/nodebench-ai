@@ -154,11 +154,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     case "document":
       return {
-        text: "text-[color:var(--text-primary)]",
-        bg: "bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)]",
-        border: "border-[color:var(--border-color)]",
-        icon: "text-[color:var(--text-secondary)]",
-        badge: "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]",
+        text: "text-content",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-content-secondary",
+        badge: "bg-surface-secondary text-content",
       };
     // Extended types
     case "fda_approval":
@@ -187,11 +187,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     default:
       return {
-        text: "text-[color:var(--text-primary)]",
-        bg: "bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)]",
-        border: "border-[color:var(--border-color)]",
-        icon: "text-[color:var(--text-secondary)]",
-        badge: "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)]",
+        text: "text-content",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-content-secondary",
+        badge: "bg-surface-secondary text-content",
       };
   }
 };
@@ -351,7 +351,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
           className={`
             absolute left-1/2 -translate-x-1/2 top-full z-50
             w-72 mt-2 p-3
-            rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-xl ring-1 ring-black/5
+            rounded-lg border border-edge bg-surface shadow-xl ring-1 ring-black/5
             transition-all duration-200 origin-top
             ${isOpen ? "opacity-100 scale-100 visible pointer-events-auto" : "opacity-0 scale-95 invisible pointer-events-none"}
           `}
@@ -371,7 +371,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                 </span>
               )}
               <div className="flex-1 min-w-0">
-                <span className="font-semibold text-[color:var(--text-primary)] text-sm block truncate">
+                <span className="font-semibold text-content text-sm block truncate">
                   {entity.name}
                 </span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${colors.badge}`}>
@@ -382,13 +382,13 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
 
             {/* Description */}
             {entity.description && (
-              <p className="text-sm text-[color:var(--text-primary)] line-clamp-2">
+              <p className="text-sm text-content line-clamp-2">
                 {entity.description}
               </p>
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 pt-2 border-t border-[color:var(--border-color)]">
+            <div className="flex items-center gap-2 pt-2 border-t border-edge">
               {entity.dossierId ? (
                 <button
                   type="button"
@@ -424,7 +424,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-[color:var(--text-primary)] bg-[color:var(--bg-secondary)] hover:bg-[color:var(--bg-hover)] rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-content bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
                 >
                   <ExternalLink className="w-3 h-3" />
                   <span className="truncate max-w-[80px]">

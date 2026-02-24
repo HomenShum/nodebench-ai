@@ -28,18 +28,18 @@ const tagStyles: Record<NonNullable<MoveItem["tag"]>, string> = {
 
 export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCardProps) {
   return (
-    <div className="rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)]">
+    <div className="rounded-lg border border-edge bg-surface shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
             <Clock className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-[color:var(--text-secondary)]">Overnight Moves</p>
-            <p className="text-sm font-semibold text-[color:var(--text-primary)]">What changed while you were away</p>
+            <p className="text-xs font-semibold uppercase text-content-secondary">Overnight Moves</p>
+            <p className="text-sm font-semibold text-content">What changed while you were away</p>
           </div>
         </div>
-        <span className="text-xs text-[color:var(--text-secondary)] font-semibold">{items.length} updates</span>
+        <span className="text-xs text-content-secondary font-semibold">{items.length} updates</span>
       </div>
 
       <div className="divide-y divide-[color:var(--border-color)]">
@@ -48,23 +48,23 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
             key={item.id}
             type="button"
             onClick={() => onOpen?.(item)}
-            className="w-full text-left px-4 py-3 hover:bg-[color:var(--bg-hover)] transition-colors"
+            className="w-full text-left px-4 py-3 hover:bg-surface-hover transition-colors"
           >
             <div className="flex items-start gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-[color:var(--text-primary)] truncate">{item.title}</p>
+                  <p className="text-sm font-semibold text-content truncate">{item.title}</p>
                   {item.tag && (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${tagStyles[item.tag]}`}>
                       {item.tag === "up" ? "Up" : item.tag === "alert" ? "Alert" : "Watch"}
                     </span>
                   )}
                 </div>
-                <p className="text-[12px] text-[color:var(--text-primary)] line-clamp-2">{item.summary}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[color:var(--text-secondary)]">
-                  {item.date && <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{item.date}</span>}
+                <p className="text-[12px] text-content line-clamp-2">{item.summary}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-content-secondary">
+                  {item.date && <span className="rounded-full bg-surface-secondary px-2 py-0.5">{item.date}</span>}
                   {item.sourceName && (
-                    <span className="rounded-full bg-[color:var(--bg-secondary)] px-2 py-0.5">{item.sourceName}</span>
+                    <span className="rounded-full bg-surface-secondary px-2 py-0.5">{item.sourceName}</span>
                   )}
                   {item.amount && <span>{item.amount}</span>}
                   {item.stage && <span>• {item.stage}</span>}
@@ -72,7 +72,7 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
                 </div>
               </div>
               {item.url && (
-                <span className="text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]">
+                <span className="text-content-secondary hover:text-content">
                   <LinkIcon className="w-4 h-4" />
                 </span>
               )}
@@ -81,7 +81,7 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
         ))}
       </div>
 
-      <div className="flex gap-2 p-3 border-t border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]">
+      <div className="flex gap-2 p-3 border-t border-edge bg-surface-secondary">
         <button
           type="button"
           onClick={onBrief}
@@ -93,7 +93,7 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
         <button
           type="button"
           onClick={() => onOpen?.({ id: "all", title: "All Overnight Moves", summary: "Full report" })}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] text-sm font-semibold px-3 py-2 hover:bg-[color:var(--bg-hover)] transition-colors"
+          className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-edge bg-surface text-sm font-semibold px-3 py-2 hover:bg-surface-hover transition-colors"
         >
           <AlertTriangle className="w-4 h-4 text-amber-600" />
           Full report

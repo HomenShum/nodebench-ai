@@ -39,7 +39,7 @@ const AGENT_COLORS: Record<string, string> = {
   SECAgent: "text-amber-500 bg-amber-500/10 border-amber-500/20",
   OpenBBAgent: "text-green-500 bg-green-500/10 border-green-500/20",
   EntityResearchAgent: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
-  default: "text-[var(--text-secondary)] bg-[var(--bg-secondary)] border-[var(--border-color)]",
+  default: "text-content-secondary bg-surface-secondary border-edge",
 };
 
 const AGENT_SHORT_NAMES: Record<string, string> = {
@@ -77,7 +77,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
       className={cn(
         "flex flex-col gap-1 p-2 rounded-lg border transition-all",
         colorClass,
-        isRunning && "ring-1 ring-offset-1 ring-offset-[var(--bg-primary)]",
+        isRunning && "ring-1 ring-offset-1 ring-offset-surface",
         isPending && "opacity-60"
       )}
     >
@@ -91,7 +91,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
         {/* Status indicator */}
         <div className="flex items-center gap-1">
           {isPending && (
-            <span className="text-xs text-[var(--text-muted)]">Pending</span>
+            <span className="text-xs text-content-muted">Pending</span>
           )}
           {isRunning && (
             <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
@@ -107,7 +107,7 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
 
       {/* Preview text */}
       {(isRunning || isCompleted) && previewText && (
-        <div className="text-xs text-[var(--text-secondary)] line-clamp-2 min-h-[2em]">
+        <div className="text-xs text-content-secondary line-clamp-2 min-h-[2em]">
           {isRunning && isStreaming && (
             <span className="inline-block w-1.5 h-3 bg-current motion-safe:animate-pulse mr-0.5" />
           )}
@@ -121,13 +121,13 @@ const SwarmLane = memo(function SwarmLane({ task }: { task: SwarmTask }) {
           {toolsUsed.slice(0, 3).map((tool) => (
             <span
               key={tool}
-              className="text-[8px] px-1 py-0.5 rounded bg-[var(--bg-secondary)] text-[var(--text-muted)]"
+              className="text-[8px] px-1 py-0.5 rounded bg-surface-secondary text-content-muted"
             >
               {tool.replace(/Tool$/, "")}
             </span>
           ))}
           {toolsUsed.length > 3 && (
-            <span className="text-[8px] text-[var(--text-muted)]">
+            <span className="text-[8px] text-content-muted">
               +{toolsUsed.length - 3}
             </span>
           )}
@@ -193,7 +193,7 @@ const SynthesisLane = memo(function SynthesisLane({
       </div>
 
       {isCompleted && mergedResult && (
-        <div className="text-xs text-[var(--text-secondary)] line-clamp-3">
+        <div className="text-xs text-content-secondary line-clamp-3">
           {mergedResult.slice(0, 200)}...
         </div>
       )}
@@ -217,7 +217,7 @@ const SwarmProgressBar = memo(function SwarmProgressBar({
   return (
     <div className="flex items-center gap-2">
       {/* Progress bar */}
-      <div className="flex-1 h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
         <div
           className={cn(
             "h-full rounded-full transition-all duration-300",
@@ -230,7 +230,7 @@ const SwarmProgressBar = memo(function SwarmProgressBar({
       </div>
 
       {/* Status text */}
-      <span className="text-xs text-[var(--text-muted)] flex-shrink-0">
+      <span className="text-xs text-content-muted flex-shrink-0">
         {isActive ? (
           <>
             {progress.completed} of {progress.total}
@@ -273,7 +273,7 @@ export function SwarmLanesView({
   if (compact && !isActive) {
     return (
       <div className={cn("px-3 py-2", className)}>
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+        <div className="flex items-center gap-2 text-xs text-content-muted">
           <Zap className="w-3.5 h-3.5 text-green-500" />
           <span>Team completed: {tasks.length} agents</span>
           {swarm.confidence && (
@@ -289,7 +289,7 @@ export function SwarmLanesView({
   return (
     <div
       className={cn(
-        "px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/50",
+        "px-3 py-2 border-b border-edge bg-surface/50",
         className
       )}
     >
@@ -300,7 +300,7 @@ export function SwarmLanesView({
             "w-4 h-4",
             isActive ? "text-violet-500" : "text-green-500"
           )} />
-          <span className="text-xs font-medium text-[var(--text-primary)]">
+          <span className="text-xs font-medium text-content">
             Parallel Agents
           </span>
         </div>

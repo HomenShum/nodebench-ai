@@ -87,7 +87,7 @@ export function Sidebar({
     };
 
     return (
-        <div className="h-full flex flex-col bg-[var(--bg-primary)] border-r border-[var(--border-color)]">
+        <div className="h-full flex flex-col bg-surface border-r border-edge">
             {/* Home Button - Returns to Welcome Landing */}
             {onGoHome && (
                 <div className="px-3 pt-4">

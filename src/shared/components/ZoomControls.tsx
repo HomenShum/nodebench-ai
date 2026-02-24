@@ -25,19 +25,19 @@ export const ZoomControls: React.FC<ZoomControlsProps> = ({
   const zoomPercentage = Math.round(zoomState.scale * 100);
 
   return (
-    <div className={`absolute ${positionClasses[position]} z-10 flex flex-col gap-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg p-2 ${className}`}>
+    <div className={`absolute ${positionClasses[position]} z-10 flex flex-col gap-1 bg-surface border border-edge rounded-lg shadow-lg p-2 ${className}`}>
       <div className="flex items-center gap-1">
         <button
           onClick={zoomControls.zoomOut}
           disabled={!zoomControls.canZoomOut}
-          className="p-2 hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+          className="p-2 hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
           title="Zoom Out (Ctrl + -)"
         >
-          <ZoomOut className="h-4 w-4 text-[var(--text-secondary)]" />
+          <ZoomOut className="h-4 w-4 text-content-secondary" />
         </button>
         
         <div className="min-w-[60px] text-center">
-          <span className="text-xs text-[var(--text-muted)] font-mono">
+          <span className="text-xs text-content-muted font-mono">
             {zoomPercentage}%
           </span>
         </div>
@@ -45,28 +45,28 @@ export const ZoomControls: React.FC<ZoomControlsProps> = ({
         <button
           onClick={zoomControls.zoomIn}
           disabled={!zoomControls.canZoomIn}
-          className="p-2 hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
+          className="p-2 hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
           title="Zoom In (Ctrl + +)"
         >
-          <ZoomIn className="h-4 w-4 text-[var(--text-secondary)]" />
+          <ZoomIn className="h-4 w-4 text-content-secondary" />
         </button>
       </div>
       
-      <div className="flex items-center gap-1 border-t border-[var(--border-color)] pt-1">
+      <div className="flex items-center gap-1 border-t border-edge pt-1">
         <button
           onClick={zoomControls.zoomToFit}
-          className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
+          className="p-2 hover:bg-surface-hover rounded transition-colors"
           title="Zoom to Fit"
         >
-          <Maximize2 className="h-4 w-4 text-[var(--text-secondary)]" />
+          <Maximize2 className="h-4 w-4 text-content-secondary" />
         </button>
         
         <button
           onClick={zoomControls.resetZoom}
-          className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors"
+          className="p-2 hover:bg-surface-hover rounded transition-colors"
           title="Reset Zoom (Ctrl + 0)"
         >
-          <RotateCcw className="h-4 w-4 text-[var(--text-secondary)]" />
+          <RotateCcw className="h-4 w-4 text-content-secondary" />
         </button>
       </div>
     </div>

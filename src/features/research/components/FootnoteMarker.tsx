@@ -49,7 +49,7 @@ const getCitationColors = (type: CitationType) => {
     case "analysis":
       return "bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200";
     case "internal":
-      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] hover:bg-[color:var(--bg-tertiary)] border-[color:var(--border-color)]";
+      return "bg-surface-secondary text-content hover:bg-surface-secondary border-edge";
     default:
       return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
   }
@@ -143,7 +143,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
           className={`
             pointer-events-none absolute left-1/2 -translate-x-1/2 top-full z-50
             w-80 mt-2 p-3
-            rounded-lg border border-[color:var(--border-color)] bg-[color:var(--bg-primary)] shadow-xl ring-1 ring-black/5
+            rounded-lg border border-edge bg-surface shadow-xl ring-1 ring-black/5
             transition-all duration-200 origin-top
             ${isOpen ? "opacity-100 scale-100 visible" : "opacity-0 scale-95 invisible"}
           `}
@@ -151,8 +151,8 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
           <span className="flex flex-col gap-2">
             {/* Header */}
             <span className="flex items-center gap-2">
-              <Icon className="w-4 h-4 text-[color:var(--text-secondary)]" />
-              <span className="text-xs font-semibold text-[color:var(--text-primary)] line-clamp-1">
+              <Icon className="w-4 h-4 text-content-secondary" />
+              <span className="text-xs font-semibold text-content line-clamp-1">
                 {citation.label}
               </span>
               <span className={`ml-auto text-xs px-1.5 py-0.5 rounded ${colorClasses}`}>
@@ -161,13 +161,13 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
             </span>
 
             {/* Full text preview */}
-            <span className="text-sm text-[color:var(--text-primary)] line-clamp-3">
+            <span className="text-sm text-content line-clamp-3">
               {citation.fullText}
             </span>
 
             {/* Source info */}
             {(citation.author || citation.publishedAt || citation.pageIndex != null) && (
-              <span className="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] border-t border-[color:var(--border-color)] pt-2">
+              <span className="flex items-center gap-2 text-xs text-content-secondary border-t border-edge pt-2">
                 {citation.author && <span>{citation.author}</span>}
                 {citation.author && citation.publishedAt && <span>•</span>}
                 {citation.publishedAt && (

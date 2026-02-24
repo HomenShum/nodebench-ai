@@ -22,7 +22,7 @@ export function PageHeroHeader({ icon, title, date, subtitle, presets, className
         <h1 className="type-page-title text-content flex items-center gap-3">
           {icon && <span className="text-xl opacity-90">{icon}</span>}
           {accent ? (
-            <span className="underline decoration-[var(--text-primary)]/40 decoration-[3px] underline-offset-[8px]">{title}</span>
+            <span className="underline decoration-content/40 decoration-[3px] underline-offset-[8px]">{title}</span>
           ) : (
             <span>{title}</span>
           )}

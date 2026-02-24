@@ -33,9 +33,9 @@ import { cn } from "@/lib/utils";
 const SectionLoading = () => (
   <div className="py-6 space-y-4 opacity-40">
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-gray-200/60 dark:bg-white/[0.06] rounded-lg" />
+      <div className="w-10 h-10 bg-surface-secondary rounded-lg" />
       <div className="space-y-2 flex-1">
-        <div className="h-4 bg-gray-200/60 dark:bg-white/[0.06] rounded w-1/3" />
+        <div className="h-4 bg-surface-secondary rounded w-1/3" />
         <div className="h-3 bg-surface-secondary rounded w-1/2" />
       </div>
     </div>
@@ -471,11 +471,11 @@ function ResearchHubContent(props: ResearchHubProps) {
   }, [openWithContext, dossierContextBase]);
 
   return (
-    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-background overflow-hidden`}>
+    <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-surface overflow-hidden`}>
       {!embedded && (
         <header className="h-16 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gray-900 dark:bg-white/[0.12] rounded-none flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
+            <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-none flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
@@ -497,7 +497,7 @@ function ResearchHubContent(props: ResearchHubProps) {
 
           <div className="flex items-center gap-6">
             {/* Historical Date Selector */}
-            <div className="flex items-center gap-2 p-1 bg-gray-100/50 dark:bg-white/[0.04] border border-edge">
+            <div className="flex items-center gap-2 p-1 bg-surface-secondary border border-edge rounded-md">
               {availableDates && availableDates.length > 0 ? (
                 <>
                   {availableDates.slice(0, 3).map((date: string) => (
@@ -506,18 +506,18 @@ function ResearchHubContent(props: ResearchHubProps) {
                       key={date}
                       onClick={() => setSelectedDate(date)}
                       className={`px-3 py-1 text-xs font-medium transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
-                        ? "bg-gray-900 dark:bg-white/[0.12] text-white"
+                        ? "bg-[var(--accent-primary)] text-white"
                         : "text-content-muted hover:text-content"
                         }`}
                     >
                       {new Date(date + "T00:00:00").toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </button>
                   ))}
-                  <div className="w-[1px] h-3 bg-gray-300 dark:bg-white/[0.08] mx-1" />
+                  <div className="w-[1px] h-3 bg-edge mx-1" />
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-gray-900 dark:bg-white/[0.12] text-white" : "text-content-muted"}`}
+                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-[var(--accent-primary)] text-white" : "text-content-muted"}`}
                   >
                     Latest
                   </button>
@@ -540,7 +540,7 @@ function ResearchHubContent(props: ResearchHubProps) {
       )}
 
       {/* UNIFIED SCROLL CONTAINER */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-background">
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-surface">
         {embedded && onGoHome && (
           <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-edge pb-3">
@@ -592,7 +592,7 @@ function ResearchHubContent(props: ResearchHubProps) {
           <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-16">
 
             {/* TAB NAVIGATION */}
-            <nav className="flex items-center gap-1 mb-4 p-1 bg-gray-100/50 dark:bg-white/[0.04] rounded-lg border border-edge w-fit">
+            <nav className="flex items-center gap-1 mb-4 p-1 bg-surface-secondary rounded-lg border border-edge w-fit">
               {CONTENT_TABS.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -603,7 +603,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all',
                       activeTab === tab.id
-                        ? 'bg-white dark:bg-white/[0.08] text-content shadow-sm border border-edge'
+                        ? 'bg-[var(--accent-primary-bg)] text-content shadow-sm border border-[var(--accent-primary)]/30'
                         : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                     )}
                   >
@@ -630,7 +630,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                           <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-medium border border-amber-900/10 dark:border-amber-500/20 rounded">Past</span>
                         )}
                       </div>
-                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-indigo-600')} />
+                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-[var(--accent-primary)]')} />
                     </div>
                     <DigestSection
                       onItemClick={handleDigestItemClick}
@@ -658,9 +658,9 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <TrendingUp className="w-4 h-4 text-content-secondary" />
                       <h3 className="text-sm font-semibold text-content tracking-tight">Latest Updates</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-500/10 text-content dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 text-xs font-medium rounded">Live</div>
+                    <div className="px-1.5 py-0.5 bg-[var(--accent-primary-bg)] text-content border border-[var(--accent-primary)]/30 text-xs font-medium rounded">Live</div>
                   </div>
-                  <div className="bg-gray-50/50 dark:bg-white/[0.02] p-4 border border-edge rounded-lg">
+                  <div className="bg-surface-secondary p-4 border border-edge rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>
                       <FeedSection
                         onItemClick={handleFeedItemClick}
@@ -710,7 +710,7 @@ function ResearchHubContent(props: ResearchHubProps) {
           {/* RIGHT: COMPACT HUD SIDEBAR */}
           <aside className="w-[340px] shrink-0 sticky top-0 h-fit py-4 pr-6 hidden xl:block overflow-hidden">
             {/* Gradient separator */}
-            <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-gray-200/0 via-gray-200 to-gray-200/0 dark:from-white/0 dark:via-white/[0.06] dark:to-white/0" />
+            <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-edge to-transparent" />
 
             <div className="space-y-4 pl-4">
               {phasedDashboardMetrics ? (

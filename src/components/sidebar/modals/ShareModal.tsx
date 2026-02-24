@@ -59,12 +59,12 @@ export function ShareModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)] p-5 shadow-xl">
+            <div className="w-full max-w-md rounded-lg border border-edge bg-surface p-5 shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                    <div className="text-base font-semibold text-[var(--text-primary)]">Share</div>
-                    <button onClick={onClose} className="p-1 rounded-lg hover:bg-[var(--bg-hover)] transition-colors">
-                        <X className="h-4 w-4 text-[var(--text-secondary)]" />
+                    <div className="text-base font-semibold text-content">Share</div>
+                    <button onClick={onClose} className="p-1 rounded-lg hover:bg-surface-hover transition-colors">
+                        <X className="h-4 w-4 text-content-secondary" />
                     </button>
                 </div>
 
@@ -75,7 +75,7 @@ export function ShareModal({
                     className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${
                         sharePublic
                             ? 'border-indigo-200 dark:border-indigo-800/40 bg-indigo-50 dark:bg-indigo-900/20'
-                            : 'border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)]'
+                            : 'border-edge bg-surface-secondary hover:bg-surface-secondary'
                     }`}
                 >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -86,10 +86,10 @@ export function ShareModal({
                         {sharePublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                     </div>
                     <div className="flex-1 text-left">
-                        <div className="text-sm font-medium text-[var(--text-primary)]">
+                        <div className="text-sm font-medium text-content">
                             {sharePublic ? 'Public — anyone with the link' : 'Private — only you'}
                         </div>
-                        <div className="text-xs text-[var(--text-muted)] mt-0.5">
+                        <div className="text-xs text-content-muted mt-0.5">
                             {sharePublic
                                 ? 'Anyone can view this document'
                                 : 'Click to make shareable'
@@ -107,10 +107,10 @@ export function ShareModal({
 
                 {/* Public link section — shown when public and single document */}
                 {sharePublic && publicUrl && (
-                    <div className="mt-3 p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-color)]">
-                        <div className="text-xs font-medium text-[var(--text-muted)] mb-2">Share link</div>
+                    <div className="mt-3 p-3 rounded-lg bg-surface-secondary border border-edge">
+                        <div className="text-xs font-medium text-content-muted mb-2">Share link</div>
                         <div className="flex items-center gap-2">
-                            <div className="flex-1 text-xs text-[var(--text-secondary)] bg-[var(--bg-tertiary)] px-3 py-2 rounded-lg truncate font-mono">
+                            <div className="flex-1 text-xs text-content-secondary bg-surface-secondary px-3 py-2 rounded-lg truncate font-mono">
                                 {publicUrl}
                             </div>
                             <button
@@ -135,7 +135,7 @@ export function ShareModal({
                 <div className="mt-4 flex justify-end gap-2">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg border border-[var(--border-color)] text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] transition-colors"
+                        className="px-4 py-2 rounded-lg border border-edge text-sm text-content-secondary hover:bg-surface-hover transition-colors"
                     >
                         Cancel
                     </button>

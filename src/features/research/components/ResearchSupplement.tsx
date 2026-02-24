@@ -113,7 +113,7 @@ const getSupplementColors = (type: SupplementType) => {
     case "methodology":
       return "bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/20";
     case "sources":
-      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]";
+      return "bg-surface-secondary text-content border-edge";
     case "timeline":
       return "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/20";
     case "comparison":
@@ -121,7 +121,7 @@ const getSupplementColors = (type: SupplementType) => {
     case "risk_analysis":
       return "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/20";
     default:
-      return "bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]";
+      return "bg-surface-secondary text-content border-edge";
   }
 };
 
@@ -133,7 +133,7 @@ const getStatusBadge = (status: ResearchSupplement["status"]) => {
       return { icon: Clock, text: "Updating", color: "text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10" };
     case "draft":
     default:
-      return { icon: FileText, text: "Draft", color: "text-[color:var(--text-primary)] bg-[color:var(--bg-secondary)]" };
+      return { icon: FileText, text: "Draft", color: "text-content bg-surface-secondary" };
   }
 };
 
@@ -158,26 +158,26 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
   const colors = getSupplementColors(section.type);
 
   return (
-    <div className="border border-[color:var(--border-color)] rounded-lg overflow-hidden">
+    <div className="border border-edge rounded-lg overflow-hidden">
       {/* Header */}
       <button
         type="button"
         onClick={onToggle}
-        className={`w-full flex items-center gap-3 p-4 text-left hover:bg-[color:var(--bg-hover)] transition-colors ${
-          isExpanded ? "bg-[color:var(--bg-secondary)]" : ""
+        className={`w-full flex items-center gap-3 p-4 text-left hover:bg-surface-hover transition-colors ${
+          isExpanded ? "bg-surface-secondary" : ""
         }`}
       >
         <span className={`p-2 rounded-lg ${colors}`}>
           <Icon className="w-4 h-4" />
         </span>
         <span className="flex-1 min-w-0">
-          <span className="font-medium text-[color:var(--text-primary)] block">{section.title}</span>
-          <span className="text-xs text-[color:var(--text-secondary)] capitalize">{section.type.replace("_", " ")}</span>
+          <span className="font-medium text-content block">{section.title}</span>
+          <span className="text-xs text-content-secondary capitalize">{section.type.replace("_", " ")}</span>
         </span>
         {isExpanded ? (
-          <ChevronDown className="w-5 h-5 text-[color:var(--text-secondary)]" />
+          <ChevronDown className="w-5 h-5 text-content-secondary" />
         ) : (
-          <ChevronRight className="w-5 h-5 text-[color:var(--text-secondary)]" />
+          <ChevronRight className="w-5 h-5 text-content-secondary" />
         )}
       </button>
 
@@ -191,16 +191,16 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="p-4 pt-0 border-t border-[color:var(--border-color)]">
+            <div className="p-4 pt-0 border-t border-edge">
               {/* Markdown content */}
-              <div className="prose prose-sm max-w-none text-[color:var(--text-primary)]">
+              <div className="prose prose-sm max-w-none text-content">
                 {section.content}
               </div>
 
               {/* Citation links */}
               {section.citationIds && section.citationIds.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-[color:var(--border-color)]">
-                  <span className="text-xs text-[color:var(--text-secondary)] uppercase tracking-wider">
+                <div className="mt-4 pt-3 border-t border-edge">
+                  <span className="text-xs text-content-secondary uppercase tracking-wider">
                     Related Sources:
                   </span>
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -220,7 +220,7 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
 
               {/* Updated timestamp */}
               {section.updatedAt && (
-                <div className="mt-2 text-xs text-[color:var(--text-secondary)]">
+                <div className="mt-2 text-xs text-content-secondary">
                   Updated: {new Date(section.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
               )}
@@ -273,23 +273,23 @@ export const ResearchSupplementView: React.FC<ResearchSupplementProps> = ({
   const StatusIcon = statusBadge.icon;
 
   return (
-    <div className={`bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] shadow-sm ${className}`}>
+    <div className={`bg-surface rounded-lg border border-edge shadow-sm ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-[color:var(--border-color)]">
+      <div className="p-6 border-b border-edge">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <BookOpen className="w-5 h-5 text-[color:var(--text-secondary)]" />
-              <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">{supplement.title}</h2>
+              <BookOpen className="w-5 h-5 text-content-secondary" />
+              <h2 className="text-lg font-semibold text-content">{supplement.title}</h2>
             </div>
-            <p className="text-sm text-[color:var(--text-primary)]">{supplement.description}</p>
+            <p className="text-sm text-content">{supplement.description}</p>
           </div>
           <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${statusBadge.color}`}>
             <StatusIcon className="w-3 h-3" />
             {statusBadge.text}
           </span>
         </div>
-        <div className="flex items-center gap-4 mt-3 text-xs text-[color:var(--text-secondary)]">
+        <div className="flex items-center gap-4 mt-3 text-xs text-content-secondary">
           <span>{supplement.sections.length} sections</span>
           <span>•</span>
           <span>Updated {new Date(supplement.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>

@@ -143,10 +143,10 @@ const ThreadTab = memo(function ThreadTab({
       onClick={onSelect}
       className={cn(
         "group flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
-        "hover:bg-[var(--bg-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
+        "hover:bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
         isActive
-          ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] shadow-sm border border-[var(--border-color)]"
-          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent",
+          ? "bg-surface-secondary text-content shadow-sm border border-edge"
+          : "text-content-secondary hover:text-content border border-transparent",
         isSwarmActive && "ring-1 ring-violet-500/40 bg-violet-50/50"
       )}
     >
@@ -180,7 +180,7 @@ const ThreadTab = memo(function ThreadTab({
 
       {/* Keyboard shortcut hint */}
       {index < 9 && (
-        <span className="hidden group-hover:inline text-xs text-[var(--text-muted)] ml-0.5 opacity-60">
+        <span className="hidden group-hover:inline text-xs text-content-muted ml-0.5 opacity-60">
           ⌘{index + 1}
         </span>
       )}
@@ -272,7 +272,7 @@ export function ThreadTabBar({
   return (
     <div
       className={cn(
-        "flex items-center gap-1 px-2 py-1.5 border-b border-[var(--border-color)] bg-[var(--bg-primary)]",
+        "flex items-center gap-1 px-2 py-1.5 border-b border-edge bg-surface",
         className
       )}
     >
@@ -313,10 +313,10 @@ export function ThreadTabBar({
 
           {/* Swarm Menu Dropdown */}
           {showSwarmMenu && (
-            <div className="absolute top-full left-0 mt-1 w-72 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)] shadow-xl z-50 overflow-hidden">
+            <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg border border-edge shadow-xl z-50 overflow-hidden">
               {/* Query Input */}
-              <div className="p-3 border-b border-[var(--border-color)]">
-                <label className="block text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1.5">
+              <div className="p-3 border-b border-edge">
+                <label className="block text-xs font-medium text-content-muted uppercase tracking-wider mb-1.5">
                   Research Query
                 </label>
                 <input
@@ -324,7 +324,7 @@ export function ThreadTabBar({
                   value={swarmQuery}
                   onChange={(e) => setSwarmQuery(e.target.value)}
                   placeholder="e.g., Tesla competitors analysis"
-                  className="w-full px-3 py-2 text-sm bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                  className="w-full px-3 py-2 text-sm bg-surface-secondary border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 text-content placeholder:text-content-muted"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && swarmQuery.trim()) {
@@ -339,7 +339,7 @@ export function ThreadTabBar({
 
               {/* Preset Options */}
               <div className="p-2">
-                <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider px-2 mb-1.5">
+                <div className="text-xs font-medium text-content-muted uppercase tracking-wider px-2 mb-1.5">
                   Agent Presets
                 </div>
                 {AGENT_PRESETS.map((preset) => {
@@ -353,7 +353,7 @@ export function ThreadTabBar({
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors",
                         swarmQuery.trim()
-                          ? "hover:bg-[var(--bg-secondary)] cursor-pointer"
+                          ? "hover:bg-surface-secondary cursor-pointer"
                           : "opacity-50 cursor-not-allowed"
                       )}
                     >
@@ -361,14 +361,14 @@ export function ThreadTabBar({
                         <Icon className="w-4 h-4 text-violet-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-[var(--text-primary)]">
+                        <div className="text-sm font-medium text-content">
                           {preset.name}
                         </div>
-                        <div className="text-xs text-[var(--text-muted)]">
+                        <div className="text-xs text-content-muted">
                           {preset.description}
                         </div>
                       </div>
-                      <div className="text-xs text-[var(--text-muted)] flex-shrink-0">
+                      <div className="text-xs text-content-muted flex-shrink-0">
                         {preset.agents.length} agents
                       </div>
                     </button>
@@ -377,9 +377,9 @@ export function ThreadTabBar({
               </div>
 
               {/* Quick tip */}
-              <div className="px-3 py-2 border-t border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                <div className="text-xs text-[var(--text-muted)]">
-                  💡 Or type <code className="px-1 py-0.5 bg-[var(--bg-primary)] rounded">/spawn "query"</code> in chat
+              <div className="px-3 py-2 border-t border-edge bg-surface-secondary">
+                <div className="text-xs text-content-muted">
+                  💡 Or type <code className="px-1 py-0.5 bg-surface rounded">/spawn "query"</code> in chat
                 </div>
               </div>
             </div>
@@ -401,13 +401,13 @@ export function ThreadTabBar({
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="h-6 rounded-md bg-[var(--bg-hover)] motion-safe:animate-pulse"
+                className="h-6 rounded-md bg-surface-hover motion-safe:animate-pulse"
                 style={{ width: `${60 + i * 16}px` }}
               />
             ))}
           </div>
         ) : threads.length === 0 ? (
-          <div className="px-2 py-1 text-xs text-[var(--text-muted)]">
+          <div className="px-2 py-1 text-xs text-content-muted">
             No recent threads
           </div>
         ) : (
@@ -425,8 +425,8 @@ export function ThreadTabBar({
       </div>
 
       {/* Keyboard hint */}
-      <div className="hidden lg:flex items-center gap-1 px-2 text-xs text-[var(--text-muted)] flex-shrink-0">
-        <kbd className="px-1 py-0.5 bg-[var(--bg-secondary)] rounded text-[8px]">⌘1-9</kbd>
+      <div className="hidden lg:flex items-center gap-1 px-2 text-xs text-content-muted flex-shrink-0">
+        <kbd className="px-1 py-0.5 bg-surface-secondary rounded text-[8px]">⌘1-9</kbd>
         <span>switch</span>
       </div>
     </div>

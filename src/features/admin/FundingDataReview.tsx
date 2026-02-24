@@ -165,8 +165,8 @@ export function FundingDataReview() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-secondary dark:bg-gray-950 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-surface-secondary dark:bg-gray-950 p-6">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-content mb-2">

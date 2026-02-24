@@ -85,11 +85,11 @@ export default function DossierMiniEditor({
 
   if (dossier === undefined || linkedAssets === undefined) {
     return (
-      <div className="mt-1 rounded-md p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60">
+      <div className="mt-1 rounded-md p-3 bg-surface border border-edge/60">
         <div className="motion-safe:animate-pulse space-y-3">
-          <div className="h-4 w-32 bg-[var(--bg-secondary)] rounded" />
-          <div className="h-3 w-48 bg-[var(--bg-secondary)] rounded" />
-          <div className="h-20 bg-[var(--bg-secondary)] rounded" />
+          <div className="h-4 w-32 bg-surface-secondary rounded" />
+          <div className="h-3 w-48 bg-surface-secondary rounded" />
+          <div className="h-20 bg-surface-secondary rounded" />
         </div>
       </div>
     );
@@ -97,8 +97,8 @@ export default function DossierMiniEditor({
 
   if (!dossier) {
     return (
-      <div className="mt-1 rounded-md p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60">
-        <div className="text-sm text-[var(--text-secondary)]">Report not found</div>
+      <div className="mt-1 rounded-md p-3 bg-surface border border-edge/60">
+        <div className="text-sm text-content-secondary">Report not found</div>
       </div>
     );
   }
@@ -122,7 +122,7 @@ export default function DossierMiniEditor({
 
   return (
     <div
-      className="mt-1 rounded-md p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 transition-all relative z-10 pointer-events-auto"
+      className="mt-1 rounded-md p-3 bg-surface border border-edge/60 transition-all relative z-10 pointer-events-auto"
       data-inline-editor="true"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
@@ -135,10 +135,10 @@ export default function DossierMiniEditor({
             <FileStack className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-[var(--text-primary)] truncate">
+            <div className="text-sm font-medium text-content truncate">
               {dossier.title}
             </div>
-            <div className="text-xs text-[var(--text-secondary)] mt-0.5">
+            <div className="text-xs text-content-secondary mt-0.5">
               {messageCount} messages • {assetCount} assets
             </div>
           </div>
@@ -146,21 +146,21 @@ export default function DossierMiniEditor({
         <button
           type="button"
           onClick={onClose}
-          className="flex-shrink-0 p-1 hover:bg-[var(--bg-secondary)] rounded transition-colors"
+          className="flex-shrink-0 p-1 hover:bg-surface-secondary rounded transition-colors"
           title="Close"
           aria-label="Close report preview"
         >
-          <X className="w-4 h-4 text-[var(--text-secondary)]" />
+          <X className="w-4 h-4 text-content-secondary" />
         </button>
       </div>
 
       {/* Linked Assets Carousel */}
       {linkedAssets && linkedAssets.length > 0 && (
         <div className="mb-3">
-          <div className="text-xs font-medium text-[var(--text-secondary)] mb-2">
+          <div className="text-xs font-medium text-content-secondary mb-2">
             Attachments
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[var(--border-color)] scrollbar-track-transparent">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-edge scrollbar-track-transparent">
             {linkedAssets.map((asset) => (
               <AssetThumbnail key={asset._id} asset={asset} />
             ))}
@@ -170,14 +170,14 @@ export default function DossierMiniEditor({
 
       {/* Transcript Preview */}
       <div className="mb-3">
-        <div className="text-xs font-medium text-[var(--text-secondary)] mb-2 flex items-center justify-between">
+        <div className="text-xs font-medium text-content-secondary mb-2 flex items-center justify-between">
           <span>Chat Transcript</span>
           <span className="text-xs text-[var(--text-tertiary)] font-normal">
             Use "Copy Transcript" button below
           </span>
         </div>
         <div
-          className="max-h-[240px] overflow-y-auto text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)] rounded-md p-2 border border-[var(--border-color)]/40 select-none"
+          className="max-h-[240px] overflow-y-auto text-xs text-content-secondary bg-surface-secondary rounded-md p-2 border border-edge/40 select-none"
           title="Use the Copy Transcript button to copy this content"
         >
           {(() => {
@@ -196,7 +196,7 @@ export default function DossierMiniEditor({
               return blocks.slice(0, 10).map((block: any, idx: number) => {
                 if (block.type === "header") {
                   return (
-                    <div key={idx} className="font-medium text-[var(--text-primary)] mt-2 first:mt-0">
+                    <div key={idx} className="font-medium text-content mt-2 first:mt-0">
                       {stripHtml(block.data.text || '')}
                     </div>
                   );
@@ -209,7 +209,7 @@ export default function DossierMiniEditor({
                   );
                 } else if (block.type === "delimiter") {
                   return (
-                    <div key={idx} className="my-2 border-t border-[var(--border-color)]/40" />
+                    <div key={idx} className="my-2 border-t border-edge/40" />
                   );
                 }
                 return null;
@@ -226,7 +226,7 @@ export default function DossierMiniEditor({
         <button
           type="button"
           onClick={handleCopyTranscript}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-md transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-surface-secondary hover:bg-surface-secondary text-content rounded-md transition-colors"
         >
           <Copy className="w-3.5 h-3.5" />
           {copiedTranscript ? "Copied!" : "Copy Transcript"}
@@ -260,7 +260,7 @@ function AssetThumbnail({ asset }: { asset: any }) {
       className="flex-shrink-0 w-24 group"
       title={title}
     >
-      <div className="relative w-24 h-16 rounded-md overflow-hidden bg-[var(--bg-secondary)] border border-[var(--border-color)]/40 group-hover:border-[var(--accent-primary)]/40 transition-colors">
+      <div className="relative w-24 h-16 rounded-md overflow-hidden bg-surface-secondary border border-edge/40 group-hover:border-indigo-500/30/40 transition-colors">
         {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
@@ -277,7 +277,7 @@ function AssetThumbnail({ asset }: { asset: any }) {
           {assetType}
         </div>
       </div>
-      <div className="mt-1 text-xs text-[var(--text-secondary)] truncate">
+      <div className="mt-1 text-xs text-content-secondary truncate">
         {title}
       </div>
     </a>

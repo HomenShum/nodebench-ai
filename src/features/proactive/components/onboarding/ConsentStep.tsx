@@ -19,10 +19,10 @@ export function ConsentStep({
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
           <Shield className="w-8 h-8 text-green-500" />
         </div>
-        <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+        <h3 className="text-2xl font-bold text-content mb-2">
           Privacy & Data Access
         </h3>
-        <p className="text-[var(--text-secondary)]">
+        <p className="text-content-secondary">
           We take your privacy seriously. Here's what we'll access and why.
         </p>
       </div>
@@ -64,33 +64,33 @@ export function ConsentStep({
       </div>
 
       {/* Consent checkbox */}
-      <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg p-6">
+      <div className="bg-surface-secondary border border-edge rounded-lg p-6">
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
             checked={consentGranted}
             onChange={(e) => onConsentChange(e.target.checked)}
-            className="mt-1 w-5 h-5 rounded border-[var(--border-color)] text-blue-500 focus:ring-2 focus:ring-blue-500"
+            className="mt-1 w-5 h-5 rounded border-edge text-blue-500 focus:ring-2 focus:ring-blue-500"
           />
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-[var(--text-primary)]">
+              <span className="font-semibold text-content">
                 I consent to smart alerts
               </span>
               {consentGranted && (
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
               )}
             </div>
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-sm text-content-secondary">
               By checking this box, I grant permission to:
             </p>
-            <ul className="mt-2 space-y-1 text-sm text-[var(--text-secondary)]">
+            <ul className="mt-2 space-y-1 text-sm text-content-secondary">
               <li>• Access and analyze my connected accounts</li>
               <li>• Detect opportunities and generate suggestions</li>
               <li>• Send notifications and alerts</li>
               <li>• Store activity data for 90 days (then anonymize)</li>
             </ul>
-            <p className="mt-3 text-xs text-[var(--text-muted)]">
+            <p className="mt-3 text-xs text-content-muted">
               You can revoke this consent anytime in Settings. Read our{" "}
               <a href="/privacy" className="text-blue-500 hover:underline">
                 Privacy Policy
@@ -124,14 +124,14 @@ function DataAccessCard({
   items: string[];
 }) {
   return (
-    <div className="p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+    <div className="p-4 rounded-lg border border-edge bg-surface-secondary">
       <div className="flex items-center gap-2 mb-3">
         <Icon className="w-5 h-5 text-blue-500" />
-        <h4 className="font-semibold text-[var(--text-primary)]">{title}</h4>
+        <h4 className="font-semibold text-content">{title}</h4>
       </div>
       <ul className="space-y-2">
         {items.map((item, idx) => (
-          <li key={idx} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
+          <li key={idx} className="flex items-start gap-2 text-sm text-content-secondary">
             <span className="text-blue-500">•</span>
             <span>{item}</span>
           </li>

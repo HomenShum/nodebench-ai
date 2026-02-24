@@ -41,7 +41,7 @@ interface TasksTabProps {
 const statusConfig: Record<TaskStatus, { icon: React.ReactNode; color: string; label: string }> = {
   todo: {
     icon: <Circle className="w-3.5 h-3.5" />,
-    color: 'text-[var(--text-muted)]',
+    color: 'text-content-muted',
     label: 'To Do'
   },
   in_progress: { 
@@ -62,7 +62,7 @@ const statusConfig: Record<TaskStatus, { icon: React.ReactNode; color: string; l
 };
 
 const priorityColors: Record<string, string> = {
-  low: 'bg-[var(--bg-hover)] text-[var(--text-secondary)]',
+  low: 'bg-surface-hover text-content-secondary',
   medium: 'bg-blue-100 text-blue-700',
   high: 'bg-amber-100 text-amber-700',
   urgent: 'bg-red-100 text-red-700',
@@ -150,19 +150,19 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[var(--bg-primary)]">
+    <div className="flex-1 flex flex-col min-h-0 bg-surface">
       {/* Header with quick add */}
-      <div className="flex-shrink-0 p-3 border-b border-[var(--border-color)]">
+      <div className="flex-shrink-0 p-3 border-b border-edge">
         {/* Scope toggle - Thread vs Global */}
         {agentThreadId && (
-          <div className="flex gap-1 mb-2 p-0.5 bg-[var(--bg-secondary)] rounded-lg">
+          <div className="flex gap-1 mb-2 p-0.5 bg-surface-secondary rounded-lg">
             <button
               onClick={() => setScope('thread')}
               className={cn(
                 "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors",
                 scope === 'thread'
-                  ? "bg-[var(--bg-primary)] shadow-sm text-blue-600"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "bg-surface shadow-sm text-blue-600"
+                  : "text-content-secondary hover:text-content"
               )}
             >
               <MessageSquare className="w-3 h-3" />
@@ -173,8 +173,8 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
               className={cn(
                 "flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors",
                 scope === 'global'
-                  ? "bg-[var(--bg-primary)] shadow-sm text-blue-600"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "bg-surface shadow-sm text-blue-600"
+                  : "text-content-secondary hover:text-content"
               )}
             >
               <Globe className="w-3 h-3" />
@@ -189,12 +189,12 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder={scope === 'thread' ? "Add task to this thread..." : "Add a task..."}
-            className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="flex-1 px-3 py-1.5 text-xs bg-surface-secondary border border-edge rounded-lg text-content placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
           />
           <button
             type="submit"
             disabled={isCreating || !newTaskTitle.trim()}
-            className="px-3 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:bg-[var(--text-muted)] text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
+            className="px-3 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:bg-content-muted text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1"
           >
             {isCreating ? <Loader2 className="w-3 h-3 motion-safe:animate-spin" /> : <Plus className="w-3 h-3" />}
             Add
@@ -212,7 +212,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                 "px-2 py-1 text-xs font-medium rounded transition-colors",
                 filter === f.key
                   ? "bg-blue-100 text-blue-700"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                  : "text-content-secondary hover:bg-surface-hover"
               )}
             >
               {f.label}
@@ -226,13 +226,13 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
       <div className="flex-1 overflow-y-auto p-3">
         {!tasks ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-[var(--text-muted)] motion-safe:animate-spin" />
+            <Loader2 className="w-5 h-5 text-content-muted motion-safe:animate-spin" />
           </div>
         ) : filteredTasks?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <ListTodo className="w-8 h-8 text-[var(--text-muted)] mb-2" />
-            <p className="text-sm text-[var(--text-secondary)]">No tasks found</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">Create a task above to get started</p>
+            <ListTodo className="w-8 h-8 text-content-muted mb-2" />
+            <p className="text-sm text-content-secondary">No tasks found</p>
+            <p className="text-xs text-content-muted mt-1">Create a task above to get started</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -241,7 +241,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
               return (
                 <div
                   key={task._id}
-                  className="group flex items-start gap-2 p-2 rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
+                  className="group flex items-start gap-2 p-2 rounded-lg hover:bg-surface-secondary transition-colors"
                 >
                   <button
                     onClick={() => handleToggleStatus(task)}
@@ -253,8 +253,8 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                   
                   <div className="flex-1 min-w-0">
                     <div className={cn(
-                      "text-xs font-medium text-[var(--text-primary)]",
-                      task.status === 'done' && "line-through text-[var(--text-muted)]"
+                      "text-xs font-medium text-content",
+                      task.status === 'done' && "line-through text-content-muted"
                     )}>
                       {task.title}
                     </div>
@@ -269,7 +269,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
                         </span>
                       )}
                       {task.dueDate && (
-                        <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+                        <span className="flex items-center gap-1 text-xs text-content-muted">
                           <Calendar className="w-3 h-3" />
                           {new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>

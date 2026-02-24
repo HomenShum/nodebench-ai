@@ -130,23 +130,23 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
   if (event === undefined) {
     return embedded ? (
-      <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] p-4">
-        <div className="motion-safe:animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
+      <div className="h-full w-full bg-surface-secondary border-l border-edge p-4">
+        <div className="motion-safe:animate-pulse h-6 w-40 bg-surface rounded mb-4" />
         <div className="space-y-2">
-          <div className="h-4 bg-[var(--bg-primary)] rounded" />
-          <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />
-          <div className="h-4 bg-[var(--bg-primary)] rounded w-2/3" />
+          <div className="h-4 bg-surface rounded" />
+          <div className="h-4 bg-surface rounded w-5/6" />
+          <div className="h-4 bg-surface rounded w-2/3" />
         </div>
       </div>
     ) : (
       <div className="fixed inset-0 z-50">
         <div className="absolute inset-0 bg-black/30" onClick={handleClose} />
-        <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl p-4">
-          <div className="motion-safe:animate-pulse h-6 w-40 bg-[var(--bg-primary)] rounded mb-4" />
+        <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-surface-secondary border-l border-edge shadow-2xl p-4">
+          <div className="motion-safe:animate-pulse h-6 w-40 bg-surface rounded mb-4" />
           <div className="space-y-2">
-            <div className="h-4 bg-[var(--bg-primary)] rounded" />
-            <div className="h-4 bg-[var(--bg-primary)] rounded w-5/6" />
-            <div className="h-4 bg-[var(--bg-primary)] rounded w-2/3" />
+            <div className="h-4 bg-surface rounded" />
+            <div className="h-4 bg-surface rounded w-5/6" />
+            <div className="h-4 bg-surface rounded w-2/3" />
           </div>
         </div>
       </div>
@@ -155,49 +155,49 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
   if (!event) {
     return embedded ? (
-      <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] p-4 flex flex-col">
+      <div className="h-full w-full bg-surface-secondary border-l border-edge p-4 flex flex-col">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Event not found</h3>
-          <button className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]" onClick={onClose}>
+          <h3 className="text-sm font-semibold text-content">Event not found</h3>
+          <button className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge" onClick={onClose}>
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-[var(--text-secondary)] text-sm">This event may have been deleted.</p>
+        <p className="text-content-secondary text-sm">This event may have been deleted.</p>
       </div>
     ) : (
       <div className="fixed inset-0 z-50">
         <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-        <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl p-4 flex flex-col">
+        <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-surface-secondary border-l border-edge shadow-2xl p-4 flex flex-col">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Event not found</h3>
-            <button className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]" onClick={onClose}>
+            <h3 className="text-sm font-semibold text-content">Event not found</h3>
+            <button className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge" onClick={onClose}>
               <X className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[var(--text-secondary)] text-sm">This event may have been deleted.</p>
+          <p className="text-content-secondary text-sm">This event may have been deleted.</p>
         </div>
       </div>
     );
   }
 
   return embedded ? (
-    <div className="h-full w-full bg-[var(--bg-secondary)] border-l border-[var(--border-color)] flex flex-col">
+    <div className="h-full w-full bg-surface-secondary border-l border-edge flex flex-col">
       {/* Header */}
-      <div className="p-3 border-b border-[var(--border-color)] flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate inline-flex items-center gap-2">
+      <div className="p-3 border-b border-edge flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-content truncate inline-flex items-center gap-2">
           <CalendarDays className="w-4 h-4 text-amber-500" /> Edit Event
         </h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => void handleDelete()}
-            className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500"
+            className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500"
             title="Delete event"
           >
             <Trash2 className="w-4 h-4" />
           </button>
           <button
             onClick={handleClose}
-            className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+            className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary border border-edge"
             title="Close"
           >
             <X className="w-4 h-4" />
@@ -208,22 +208,22 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
       {/* Body */}
       <div className="p-3 flex-1 overflow-auto space-y-3">
         <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Title</label>
+          <label className="block text-xs font-medium text-content-secondary mb-1">Title</label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
             placeholder="Event title"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Description</label>
+          <label className="block text-xs font-medium text-content-secondary mb-1">Description</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Write details…"
-            className="w-full min-h-[80px] px-3 py-2 text-sm border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
           />
         </div>
 
@@ -244,7 +244,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
+                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-indigo-500/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
                 title={`Set status: ${s}`}
               >
                 {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -312,7 +312,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={startStr}
                 onChange={(e) => setStartStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               />
             )}
             {showEndPicker && (
@@ -321,7 +321,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={endStr}
                 onChange={(e) => setEndStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               />
             )}
           </div>
@@ -334,7 +334,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Where is this event?"
-              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
             />
           </div>
         )}
@@ -346,7 +346,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-5 w-5 rounded-full border border-[var(--border-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
+                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
                   c === "blue" ? "bg-blue-500" : c === "green" ? "bg-indigo-500" : c === "amber" ? "bg-amber-500" : c === "red" ? "bg-red-500" : c === "purple" ? "bg-purple-500" : "bg-gray-400"
                 } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
                 title={c}
@@ -355,7 +355,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={() => setColor("")}
-              className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+              className="text-xs px-2 py-0.5 rounded border border-edge text-content-secondary bg-surface-secondary"
               title="Clear color"
             >
               Clear
@@ -366,7 +366,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
         {showTagsEditor && (
           <div className="flex flex-wrap items-center gap-1 mt-1.5">
             {tags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+              <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface-secondary">
                 {t}
                 <button
                   type="button"
@@ -381,7 +381,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               onKeyDown={(e) => {
                 const el = e.currentTarget;
                 if (e.key === "Enter" || e.key === ",") {
@@ -397,21 +397,21 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
         {/* Location moved to chip with inline input */}
 
-        <div className="text-xs text-[var(--text-muted)]">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
+        <div className="text-xs text-content-muted">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
       </div>
 
       {/* Footer */}
-      <div className="p-3 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
+      <div className="p-3 border-t border-edge flex items-center justify-end gap-2">
         <button
           onClick={handleClose}
-          className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+          className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary"
         >
           Close
         </button>
         <button
           onClick={() => void handleSave()}
           disabled={isSaving}
-          className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+          className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
         >
           <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
         </button>
@@ -420,17 +420,17 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
   ) : (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={handleClose} />
-      <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-[var(--bg-secondary)] border-l border-[var(--border-color)] shadow-2xl flex flex-col" role="dialog" aria-label="Edit event">
+      <div className="absolute right-0 top-0 h-full w-[min(520px,100%)] bg-surface-secondary border-l border-edge shadow-2xl flex flex-col" role="dialog" aria-label="Edit event">
         {/* Header */}
-        <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate inline-flex items-center gap-2">
+        <div className="p-4 border-b border-edge flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-content truncate inline-flex items-center gap-2">
             <CalendarDays className="w-4 h-4 text-amber-500" /> Edit Event
           </h3>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => void handleDelete()}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white border border-[var(--border-color)] hover:border-red-500"
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500"
               title="Delete event"
               aria-label="Delete event"
             >
@@ -439,7 +439,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <button
               type="button"
               onClick={handleClose}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary border border-edge"
               title="Close"
               aria-label="Close event editor"
             >
@@ -451,22 +451,22 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
         {/* Body */}
         <div className="p-4 flex-1 overflow-auto space-y-4">
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Title</label>
+            <label className="block text-xs font-medium text-content-secondary mb-1">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md p-2 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
               placeholder="Event title"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">Description</label>
+            <label className="block text-xs font-medium text-content-secondary mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Write details…"
-              className="w-full min-h-[80px] px-3 py-2 text-sm border border-[var(--border-color)]/60 rounded-md bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+              className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
             />
           </div>
 
@@ -487,7 +487,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   key={s}
                   type="button"
                   onClick={() => setStatus(s)}
-                  className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)]"}`}
+                  className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-indigo-500/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
                   title={`Set status: ${s}`}
                 >
                   {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -556,7 +556,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   onChange={(e) => setStartStr(e.target.value)}
                   disabled={allDay}
                   aria-label="Event start time"
-                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                 />
               )}
               {showEndPicker && (
@@ -566,7 +566,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   onChange={(e) => setEndStr(e.target.value)}
                   disabled={allDay}
                   aria-label="Event end time"
-                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                 />
               )}
             </div>
@@ -579,7 +579,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Where is this event?"
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
               />
             </div>
           )}
@@ -591,7 +591,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`h-5 w-5 rounded-full border border-[var(--border-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
+                  className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
                     c === "blue" ? "bg-blue-500" : c === "green" ? "bg-indigo-500" : c === "amber" ? "bg-amber-500" : c === "red" ? "bg-red-500" : c === "purple" ? "bg-purple-500" : "bg-gray-400"
                   } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
                   title={c}
@@ -601,7 +601,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               <button
                 type="button"
                 onClick={() => setColor("")}
-                className="text-xs px-2 py-0.5 rounded border border-[var(--border-color)] text-[var(--text-secondary)] bg-[var(--bg-secondary)]"
+                className="text-xs px-2 py-0.5 rounded border border-edge text-content-secondary bg-surface-secondary"
                 title="Clear color"
               >
                 Clear
@@ -612,7 +612,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           {showTagsEditor && (
             <div className="flex flex-wrap items-center gap-1 mt-1.5">
               {tags.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                <span key={t} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border border-edge bg-surface-secondary">
                   {t}
                   <button
                     type="button"
@@ -628,7 +628,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               <input
                 type="text"
                 placeholder="Add tag…"
-                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
                 onKeyDown={(e) => {
                   const el = e.currentTarget;
                   if (e.key === "Enter" || e.key === ",") {
@@ -644,15 +644,15 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
           {/* Location moved to chip with inline input */}
 
-          <div className="text-xs text-[var(--text-muted)]">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
+          <div className="text-xs text-content-muted">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[var(--border-color)] flex items-center justify-end gap-2">
+        <div className="p-4 border-t border-edge flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={handleClose}
-            className="text-xs px-2.5 py-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-md hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]"
+            className="text-xs px-2.5 py-1 bg-surface border border-edge rounded-md hover:bg-surface-hover text-content-secondary"
           >
             Close
           </button>
@@ -660,7 +660,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             type="button"
             onClick={() => void handleSave()}
             disabled={isSaving}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-[var(--bg-secondary)] text-[var(--text-muted)] border border-[var(--border-color)] cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>

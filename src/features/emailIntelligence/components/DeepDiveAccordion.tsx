@@ -15,11 +15,11 @@ const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) => {
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-[color:var(--text-primary)] hover:bg-[color:var(--bg-hover)] transition-colors"
+        className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-content hover:bg-surface-hover transition-colors"
       >
         <span>Deep Dive: {title}</span>
         <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="h-4 w-4 text-[color:var(--text-secondary)]" />
+          <ChevronDown className="h-4 w-4 text-content-secondary" />
         </motion.div>
       </button>
       <AnimatePresence initial={false}>
@@ -30,7 +30,7 @@ const DeepDiveAccordion: React.FC<DeepDiveProps> = ({ title, content }) => {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="px-4 pb-4 pt-0 text-sm leading-relaxed text-[color:var(--text-primary)]">{content}</div>
+            <div className="px-4 pb-4 pt-0 text-sm leading-relaxed text-content">{content}</div>
           </motion.div>
         )}
       </AnimatePresence>

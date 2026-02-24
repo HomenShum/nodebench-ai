@@ -166,7 +166,7 @@ export function ModelLeaderboard({
         <span className="text-xs text-content-muted">All time</span>
       </div>
 
-      <div className="scrollbar-none flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
+      <div className="scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto px-1 pr-3 sm:pr-4 pb-1 snap-x snap-mandatory">
         {entries.map((entry) => (
           <ModelCard key={entry.modelId} entry={entry} />
         ))}
@@ -185,9 +185,13 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
       : null;
     return { scenarioName, when: timeAgo(entry.lastRunAt) };
   })();
+  const seedStatus =
+    entry.score === null
+      ? { dotClass: "bg-content-muted/40", label: "Not run" }
+      : { dotClass: "bg-emerald-500/70", label: "Seeded" };
 
   return (
-    <div className="flex-none w-48 snap-start rounded-lg border border-edge bg-surface-secondary p-6 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
+    <div className="flex-none w-[11.25rem] sm:w-48 snap-start rounded-lg border border-edge bg-surface-secondary p-5 sm:p-6 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
       <div className="flex items-start justify-between gap-1">
         <span className="text-sm font-semibold leading-tight text-content">{entry.displayName}</span>
         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${providerBadgeClass}`}>
@@ -237,7 +241,10 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
       ) : (
         <div className="text-[10px] leading-none text-content-muted flex items-center justify-between gap-2">
           <span>{entry.sourceLabel}</span>
-          <span className="text-content-muted/70">Ready</span>
+          <span className="inline-flex items-center gap-1.5 text-content-muted/70">
+            <span className={`h-1.5 w-1.5 rounded-full ${seedStatus.dotClass}`} />
+            <span>{seedStatus.label}</span>
+          </span>
         </div>
       )}
     </div>

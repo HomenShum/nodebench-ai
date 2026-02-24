@@ -184,6 +184,10 @@ const prefetchRoutes = () => {
     import("@/features/research/views/ResearchHub").catch(() => {});
     import("@/features/documents/components/DocumentsHomeHub").catch(() => {});
     import("@/features/agents/views/AgentsHub").catch(() => {});
+    // NOTE(coworker): Proactively warm these chunks to prevent lazy-route error flashes
+    // during rapid dogfood navigation and QA capture loops.
+    import("@/features/benchmarks/views/WorkbenchView").catch(() => {});
+    import("@/features/dogfood/views/DogfoodReviewView").catch(() => {});
   };
   if ("requestIdleCallback" in window) {
     (window as any).requestIdleCallback(prefetch, { timeout: 3000 });
@@ -544,7 +548,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setShowResearchDossier(false)}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-hover dark:hover:bg-white/10 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-hover dark:hover:bg-white/10 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Home
@@ -553,7 +557,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-gray-900 dark:bg-white/[0.12] text-white hover:bg-gray-800 dark:hover:bg-white/[0.16] shadow-sm transition-all duration-200 relative active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm transition-all duration-200 relative active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Research
@@ -570,16 +574,16 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               type="button"
               onClick={() => setShowFastAgent((open) => !open)}
               aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${
                 showFastAgent
-                  ? "bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300"
+                  ? "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
                   : "bg-surface text-content hover:bg-surface-hover"
               }`}
             >
               <Zap className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Assistant</span>
               {!showFastAgent && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-500/80 rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[var(--accent-primary)]/80 rounded-full" />
               )}
             </button>
 

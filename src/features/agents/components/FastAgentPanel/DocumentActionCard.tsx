@@ -72,16 +72,16 @@ export function DocumentActionCard({ document, className, onDocumentSelect }: Do
       {/* Content */}
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center gap-2 mb-1">
-          <FileText className="h-4 w-4 text-[var(--text-secondary)] flex-shrink-0" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">
+          <FileText className="h-4 w-4 text-content-secondary flex-shrink-0" />
+          <h3 className="text-sm font-semibold text-content truncate">
             {document.title}
           </h3>
         </div>
 
-        <p className="text-xs text-[var(--text-secondary)] mb-2">
+        <p className="text-xs text-content-secondary mb-2">
           {isCreated ? 'Document created' : 'Document updated'}
           {document.updatedFields && document.updatedFields.length > 0 && (
-            <span className="text-[var(--text-secondary)]">
+            <span className="text-content-secondary">
               {' '}• {document.updatedFields.join(', ')}
             </span>
           )}
@@ -107,7 +107,7 @@ export function DocumentActionCard({ document, className, onDocumentSelect }: Do
 
       {/* Arrow icon */}
       <div className="flex-shrink-0">
-        <ExternalLink className="h-4 w-4 text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]" />
+        <ExternalLink className="h-4 w-4 text-content-muted group-hover:text-content-secondary" />
       </div>
     </button>
   );
@@ -130,11 +130,11 @@ export function DocumentActionGrid({ documents, title = "Documents", className, 
     <div className={cn("space-y-3", className)}>
       {/* Header */}
       <div className="flex items-center gap-2">
-        <FileText className="h-4 w-4 text-[var(--text-secondary)]" />
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+        <FileText className="h-4 w-4 text-content-secondary" />
+        <h3 className="text-sm font-semibold text-content">
           {title}
         </h3>
-        <span className="text-xs text-[var(--text-secondary)]">
+        <span className="text-xs text-content-secondary">
           ({documents.length})
         </span>
       </div>

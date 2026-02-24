@@ -78,11 +78,11 @@ function FilterBar({
     <div className="flex items-center gap-3 flex-wrap">
       {/* Severity Filter */}
       <div className="flex items-center gap-1.5">
-        <Filter className="w-3.5 h-3.5 text-[color:var(--text-muted)]" />
+        <Filter className="w-3.5 h-3.5 text-content-muted" />
         <select
           value={severity}
           onChange={(e) => onSeverityChange(e.target.value as Severity | "all")}
-          className="text-xs bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded px-2 py-1 text-[color:var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="text-xs bg-surface-secondary border border-edge rounded px-2 py-1 text-content-secondary focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="all">All Severities</option>
           <option value="critical">Critical</option>
@@ -94,11 +94,11 @@ function FilterBar({
 
       {/* Time Range Filter */}
       <div className="flex items-center gap-1.5">
-        <Clock className="w-3.5 h-3.5 text-[color:var(--text-muted)]" />
+        <Clock className="w-3.5 h-3.5 text-content-muted" />
         <select
           value={daysBack}
           onChange={(e) => onDaysBackChange(parseInt(e.target.value))}
-          className="text-xs bg-[color:var(--bg-secondary)] border border-[color:var(--border-color)] rounded px-2 py-1 text-[color:var(--text-secondary)] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="text-xs bg-surface-secondary border border-edge rounded px-2 py-1 text-content-secondary focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value={1}>Last 24 hours</option>
           <option value={7}>Last 7 days</option>
@@ -128,7 +128,7 @@ function StatsBar({
 }) {
   return (
     <div className="flex items-center gap-3 text-xs">
-      <div className="flex items-center gap-1.5 text-[color:var(--text-muted)]">
+      <div className="flex items-center gap-1.5 text-content-muted">
         <Zap className="w-3.5 h-3.5" />
         <span>{total} changes</span>
       </div>
@@ -327,8 +327,8 @@ export function WhatChangedPanel({
   if (diffsData === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
-        <RefreshCw className="w-5 h-5 text-[color:var(--text-muted)] motion-safe:animate-spin" />
-        <span className="ml-2 text-sm text-[color:var(--text-muted)]">Loading changes...</span>
+        <RefreshCw className="w-5 h-5 text-content-muted motion-safe:animate-spin" />
+        <span className="ml-2 text-sm text-content-muted">Loading changes...</span>
       </div>
     );
   }
@@ -337,14 +337,14 @@ export function WhatChangedPanel({
     <div className={`flex flex-col ${compact ? "gap-3" : "gap-4"}`}>
       {/* Header */}
       {showHeader && (
-        <div className={`flex flex-col gap-3 ${compact ? "" : "pb-2 border-b border-[color:var(--border-color)]"}`}>
+        <div className={`flex flex-col gap-3 ${compact ? "" : "pb-2 border-b border-edge"}`}>
           {/* Title Row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-indigo-100">
                 <Bell className="w-4 h-4 text-indigo-600" />
               </div>
-              <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
+              <h3 className="text-sm font-semibold text-content">
                 What Changed
               </h3>
             </div>
@@ -371,7 +371,7 @@ export function WhatChangedPanel({
                 onClick={handleRefreshNow}
                 disabled={refreshState.status === "running"}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border
-                           border-[color:var(--border-color)] bg-[color:var(--bg-primary)] hover:bg-[color:var(--bg-hover)]
+                           border-edge bg-surface hover:bg-surface-hover
                            disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshState.status === "running" ? "motion-safe:animate-spin" : ""}`} />
@@ -393,7 +393,7 @@ export function WhatChangedPanel({
           </div>
 
           {/* Refresh Meta */}
-          <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-[color:var(--text-muted)]">
+          <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-content-muted">
             <span>
               {refreshSummary?.lastFetchedAt
                 ? `Last refresh: ${new Date(refreshSummary.lastFetchedAt).toLocaleString()}`
@@ -425,7 +425,7 @@ export function WhatChangedPanel({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_1fr] gap-4">
           <div className="min-w-0">
-            <div className="text-xs font-medium text-[color:var(--text-muted)] uppercase tracking-wide mb-2">
+            <div className="text-xs font-medium text-content-muted uppercase tracking-wide mb-2">
               Recent changes
             </div>
             <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">
@@ -529,12 +529,12 @@ export function WhatChangedWidget({
 
   if (!diffsData || diffsData.length === 0) {
     return (
-      <div className="border border-[color:var(--border-color)] rounded-lg p-4 bg-[color:var(--bg-primary)]">
+      <div className="border border-edge rounded-lg p-4 bg-surface">
         <div className="flex items-center gap-2 mb-3">
-          <BookOpen className="w-4 h-4 text-[color:var(--text-muted)]" />
-          <h4 className="text-sm font-medium text-[color:var(--text-primary)]">Source Updates</h4>
+          <BookOpen className="w-4 h-4 text-content-muted" />
+          <h4 className="text-sm font-medium text-content">Source Updates</h4>
         </div>
-        <p className="text-xs text-[color:var(--text-muted)]">
+        <p className="text-xs text-content-muted">
           No recent changes in tracked sources.
         </p>
       </div>
@@ -545,14 +545,14 @@ export function WhatChangedWidget({
   const highCount = sortedDiffs.filter((d) => d.severity === "high").length;
 
   return (
-    <div className="border border-[color:var(--border-color)] rounded-lg overflow-hidden bg-[color:var(--bg-primary)]">
+    <div className="border border-edge rounded-lg overflow-hidden bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-edge bg-surface-secondary/50">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded bg-indigo-100">
             <Bell className="w-3.5 h-3.5 text-indigo-600" />
           </div>
-          <h4 className="text-sm font-medium text-[color:var(--text-primary)]">What Changed</h4>
+          <h4 className="text-sm font-medium text-content">What Changed</h4>
         </div>
         <div className="flex items-center gap-2">
           {criticalCount > 0 && (
@@ -575,15 +575,15 @@ export function WhatChangedWidget({
           return (
             <div
               key={diff._id}
-              className="px-4 py-3 hover:bg-[color:var(--bg-hover)] transition-colors cursor-pointer"
+              className="px-4 py-3 hover:bg-surface-hover transition-colors cursor-pointer"
               onClick={() => source && handleViewSource(source.canonicalUrl)}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[color:var(--text-primary)] truncate">
+                  <p className="text-xs font-medium text-content truncate">
                     {diff.changeTitle}
                   </p>
-                  <p className="text-xs text-[color:var(--text-muted)] mt-0.5">
+                  <p className="text-xs text-content-muted mt-0.5">
                     {source?.name ?? diff.registryId}
                   </p>
                 </div>
@@ -608,7 +608,7 @@ export function WhatChangedWidget({
 
       {/* Footer */}
       {onViewAll && (
-        <div className="px-4 py-2 border-t border-[color:var(--border-color)] bg-[color:var(--bg-secondary)]/30">
+        <div className="px-4 py-2 border-t border-edge bg-surface-secondary/30">
           <button
             type="button"
             onClick={onViewAll}

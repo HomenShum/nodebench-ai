@@ -53,9 +53,9 @@ export function CollapsibleAgentProgress({
         onClick={() => setIsExpanded(!isExpanded)}
         className={cn(
           "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg",
-          "border border-[var(--border-color)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)]",
+          "border border-edge bg-surface-secondary hover:bg-surface-hover",
           "transition-colors text-left group",
-          isExpanded && "bg-[var(--bg-hover)]"
+          isExpanded && "bg-surface-hover"
         )}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -74,17 +74,17 @@ export function CollapsibleAgentProgress({
           {/* Label */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-[var(--text-primary)]">
+              <span className="text-sm font-medium text-content">
                 {isStreaming ? 'Agent Working...' : 'Agent Progress'}
               </span>
               {stepCount > 0 && (
-                <span className="text-xs text-[var(--text-secondary)]">
+                <span className="text-xs text-content-secondary">
                   {stepCount} {stepCount === 1 ? 'step' : 'steps'}
                 </span>
               )}
             </div>
             {!isExpanded && (
-              <p className="text-xs text-[var(--text-secondary)] truncate">
+              <p className="text-xs text-content-secondary truncate">
                 Click to view detailed agent actions and tool executions
               </p>
             )}
@@ -93,9 +93,9 @@ export function CollapsibleAgentProgress({
           {/* Expand/collapse icon */}
           <div className="flex-shrink-0">
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+              <ChevronDown className="h-4 w-4 text-content-secondary group-hover:text-content transition-colors" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+              <ChevronRight className="h-4 w-4 text-content-secondary group-hover:text-content transition-colors" />
             )}
           </div>
         </div>
@@ -119,7 +119,7 @@ export function CollapsibleAgentProgress({
 
           {/* Tool execution timeline */}
           {toolParts.length > 0 && (
-            <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg p-3">
+            <div className="bg-surface border border-edge rounded-lg p-3">
               <StepTimeline
                 steps={toolPartsToTimelineSteps(toolParts)}
                 isStreaming={isStreaming}

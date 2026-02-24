@@ -98,11 +98,11 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
 
   if (doc === undefined) {
     return (
-      <div className="mt-2 border border-[var(--border-color)] rounded-lg p-3 bg-[var(--bg-secondary)]">
-        <div className="motion-safe:animate-pulse h-4 w-28 bg-[var(--bg-primary)] rounded mb-2" />
+      <div className="mt-2 border border-edge rounded-lg p-3 bg-surface-secondary">
+        <div className="motion-safe:animate-pulse h-4 w-28 bg-surface rounded mb-2" />
         <div className="space-y-2">
-          <div className="h-3 bg-[var(--bg-primary)] rounded" />
-          <div className="h-3 bg-[var(--bg-primary)] rounded w-5/6" />
+          <div className="h-3 bg-surface rounded" />
+          <div className="h-3 bg-surface rounded w-5/6" />
         </div>
       </div>
     );
@@ -111,23 +111,23 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
 
   return (
     <div
-      className="mt-2 rounded-lg p-3 bg-[var(--bg-primary)] border border-[var(--border-color)]/60 transition-all relative z-10 pointer-events-auto"
+      className="mt-2 rounded-lg p-3 bg-surface border border-edge/60 transition-all relative z-10 pointer-events-auto"
       data-inline-editor="true"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-xs text-[var(--text-muted)]">Press Esc to close · Ctrl/Cmd+S to save</div>
+        <div className="text-xs text-content-muted">Press Esc to close · Ctrl/Cmd+S to save</div>
         <div className="flex items-center gap-2">
-          <div className="text-xs text-[var(--text-muted)]">
+          <div className="text-xs text-content-muted">
             {saveHint === "saving" ? "Saving…" : saveHint === "saved" ? "Saved" : saveHint === "unsaved" ? "Unsaved changes" : ""}
           </div>
           <button
             type="button"
             onClick={() => { void handleSave(); }}
             disabled={saveHint !== "unsaved" || isSaving}
-            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] hover:opacity-90" : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-color)] opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-indigo-500/30 hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title="Save changes"
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
@@ -135,7 +135,7 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
           <button
             type="button"
             onClick={() => onClose()}
-            className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)]"
+            className="w-7 h-7 rounded-md flex items-center justify-center bg-surface-secondary hover:bg-surface-hover text-content-secondary border border-edge"
             title="Close"
             aria-label="Close editor"
           >
@@ -149,7 +149,7 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]"
+          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
           placeholder="Untitled document"
         />
 

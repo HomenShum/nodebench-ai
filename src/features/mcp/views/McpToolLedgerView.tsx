@@ -101,8 +101,9 @@ export const McpToolLedgerView: React.FC = () => {
   };
 
   return (
-    <div className="h-full overflow-auto bg-background">
-      <div className="max-w-6xl mx-auto p-6">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame">
         <div className="flex items-start justify-between gap-4 mb-6">
           <PageHeroHeader
             icon={<Activity className="w-5 h-5" />}
@@ -110,7 +111,7 @@ export const McpToolLedgerView: React.FC = () => {
             subtitle="See every tool request — who ran it, when, and what happened."
           />
           {policyAndUsage && (
-            <div className="rounded-lg border border-edge bg-surface px-4 py-3">
+            <div className="nb-surface-card px-4 py-3">
               <div className="text-xs font-medium text-content-secondary">Safety Rules</div>
               <div className="mt-1 text-sm text-content">
                 {policyAndUsage.config.name}{" "}
@@ -118,7 +119,7 @@ export const McpToolLedgerView: React.FC = () => {
                   className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                     policyAndUsage.config.enforce
                       ? "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400"
-                      : "bg-indigo-100 dark:bg-indigo-950/30 text-content dark:text-indigo-400"
+                      : "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
                   }`}
                 >
                   {policyAndUsage.config.enforce ? "Active" : "Monitoring"}
@@ -131,13 +132,13 @@ export const McpToolLedgerView: React.FC = () => {
           )}
         </div>
 
-        <div className="mb-6 rounded-lg border border-edge bg-surface p-4">
+        <div className="mb-6 nb-surface-card p-4">
           <div className="text-xs uppercase tracking-wider text-content-secondary">Filters</div>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-3">
             <label className="block">
               <div className="text-xs font-semibold text-content-secondary">Usage Date (UTC)</div>
               <div className="relative mt-1">
-                <span className="block w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200">
+                <span className="block w-full rounded-lg border border-edge bg-surface px-3 py-2 text-sm text-content">
                   {dateKey ? new Date(dateKey + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) : 'All dates'}
                 </span>
                 <input
@@ -156,7 +157,7 @@ export const McpToolLedgerView: React.FC = () => {
                 value={toolNameFilter}
                 onChange={(e) => setToolNameFilter(e.target.value)}
                 placeholder='e.g. "createPlan"'
-                className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200 placeholder:text-content-muted"
+                className="mt-1 w-full rounded-lg border border-edge bg-surface px-3 py-2 text-sm text-content placeholder:text-content-muted"
               />
             </label>
 
@@ -165,7 +166,7 @@ export const McpToolLedgerView: React.FC = () => {
               <select
                 value={riskTierFilter}
                 onChange={(e) => setRiskTierFilter(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200"
+                className="mt-1 w-full rounded-lg border border-edge bg-surface px-3 py-2 text-sm text-content"
               >
                 <option value="">All</option>
                 <option value="read_only">read_only</option>
@@ -184,7 +185,7 @@ export const McpToolLedgerView: React.FC = () => {
                 <select
                   value={allowedFilter}
                   onChange={(e) => setAllowedFilter(e.target.value as any)}
-                  className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200"
+                  className="mt-1 w-full rounded-lg border border-edge bg-surface px-3 py-2 text-sm text-content"
                 >
                   <option value="all">All</option>
                   <option value="allowed">Allowed</option>
@@ -197,7 +198,7 @@ export const McpToolLedgerView: React.FC = () => {
                 <select
                   value={successFilter}
                   onChange={(e) => setSuccessFilter(e.target.value as any)}
-                  className="mt-1 w-full rounded-lg border border-edge bg-white dark:bg-white/[0.06] px-3 py-2 text-sm text-content dark:text-gray-200"
+                  className="mt-1 w-full rounded-lg border border-edge bg-surface px-3 py-2 text-sm text-content"
                 >
                   <option value="all">All</option>
                   <option value="success">Success</option>
@@ -213,7 +214,7 @@ export const McpToolLedgerView: React.FC = () => {
         </div>
 
         {policyAndUsage && (
-          <div className="mb-6 rounded-lg border border-edge bg-surface p-4">
+          <div className="mb-6 nb-surface-card p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-wider text-content-secondary">
@@ -229,8 +230,8 @@ export const McpToolLedgerView: React.FC = () => {
                 disabled={policyActionBusy}
                 className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   policyAndUsage.config.enforce
-                    ? "bg-gray-900 text-white hover:bg-gray-800"
-                    : "bg-indigo-600 text-white hover:bg-indigo-500"
+                    ? "bg-red-600 text-white hover:bg-red-500"
+                    : "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]"
                 } ${policyActionBusy ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 {policyActionBusy
@@ -250,7 +251,7 @@ export const McpToolLedgerView: React.FC = () => {
 
         {policyAndUsage && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg border border-edge bg-surface p-4">
+            <div className="nb-surface-card p-4">
               <div className="text-xs uppercase tracking-wider text-content-secondary">
                 Usage By Risk Tier (Today)
               </div>
@@ -269,9 +270,9 @@ export const McpToolLedgerView: React.FC = () => {
                           {row.tier}
                         </div>
                         <div className="flex-1">
-                          <div className="h-2 rounded-full bg-surface-secondary dark:bg-white/[0.08] overflow-hidden">
+                          <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
                             <div
-                              className="h-2 bg-indigo-500 dark:bg-indigo-400"
+                              className="h-2 bg-[var(--accent-primary)]"
                               style={{ width: `${pct ?? 0}%` }}
                             />
                           </div>
@@ -289,7 +290,7 @@ export const McpToolLedgerView: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-edge bg-surface p-4">
+            <div className="nb-surface-card p-4">
               <div className="text-xs uppercase tracking-wider text-content-secondary">
                 What This Enables
               </div>
@@ -304,7 +305,7 @@ export const McpToolLedgerView: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-lg border border-edge bg-surface overflow-hidden">
+          <div className="lg:col-span-2 nb-surface-card overflow-hidden">
             <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
               <div className="text-xs uppercase tracking-wider text-content-secondary">
                 Recent Tool Calls
@@ -314,7 +315,7 @@ export const McpToolLedgerView: React.FC = () => {
               </div>
             </div>
 
-            <div className="divide-y divide-gray-100 dark:divide-white/[0.04]">
+            <div className="divide-y divide-edge">
               {calls.length === 0 ? (
                 <div className="p-6 text-sm text-content-secondary">
                   No MCP tool calls recorded yet. Generate a few by calling the MCP unified server
@@ -327,10 +328,10 @@ export const McpToolLedgerView: React.FC = () => {
                     c.allowed === false
                       ? { label: "BLOCKED", cls: "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400" }
                       : c.success === true
-                        ? { label: "OK", cls: "bg-indigo-100 dark:bg-indigo-950/30 text-content dark:text-indigo-400" }
+                        ? { label: "OK", cls: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]" }
                         : c.success === false
                           ? { label: "ERROR", cls: "bg-amber-100 dark:bg-amber-950/30 text-amber-900 dark:text-amber-400" }
-                          : { label: "RUNNING", cls: "bg-surface-secondary dark:bg-white/[0.08] text-content-secondary" };
+                          : { label: "RUNNING", cls: "bg-surface-secondary text-content-secondary" };
 
                   return (
                     <button
@@ -346,7 +347,7 @@ export const McpToolLedgerView: React.FC = () => {
                           {c.allowed === false ? (
                             <XCircle className="h-4 w-4 text-red-600" />
                           ) : c.success === true ? (
-                            <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                            <CheckCircle2 className="h-4 w-4 text-[var(--accent-primary)]" />
                           ) : (
                             <Clock className="h-4 w-4 text-content-secondary" />
                           )}
@@ -361,10 +362,10 @@ export const McpToolLedgerView: React.FC = () => {
                             >
                               {status.label}
                             </span>
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-surface-secondary dark:bg-white/[0.08] text-content-secondary">
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-surface-secondary text-content-secondary">
                               {c.riskTier}
                             </span>
-                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-surface-secondary dark:bg-white/[0.08] text-content-secondary">
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-surface-secondary text-content-secondary">
                               {c.toolType}
                             </span>
                           </div>
@@ -384,7 +385,7 @@ export const McpToolLedgerView: React.FC = () => {
             </div>
           </div>
 
-          <div className="rounded-lg border border-edge bg-surface overflow-hidden">
+          <div className="nb-surface-card overflow-hidden">
             <div className="px-4 py-3 border-b border-edge">
               <div className="text-xs uppercase tracking-wider text-content-secondary">
                 Call Detail
@@ -407,11 +408,11 @@ export const McpToolLedgerView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="text-xs font-semibold text-content-secondary">Risk Tier</div>
-                    <div className="text-sm text-content dark:text-gray-200">{selected.riskTier}</div>
+                    <div className="text-sm text-content">{selected.riskTier}</div>
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-content-secondary">Duration</div>
-                    <div className="text-sm text-content dark:text-gray-200 tabular-nums">
+                    <div className="text-sm text-content tabular-nums">
                       {formatMs(selected.durationMs)}
                     </div>
                   </div>
@@ -457,6 +458,7 @@ export const McpToolLedgerView: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

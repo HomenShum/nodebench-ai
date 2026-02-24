@@ -79,18 +79,18 @@ export function TypingIndicator({ agentRole, message }: TypingIndicatorProps) {
         )}
 
         {/* Typing Bubble */}
-        <div className="rounded-lg px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-sm">
+        <div className="rounded-lg px-4 py-3 bg-surface border border-edge shadow-sm">
           <div className="flex items-center gap-3">
             {/* Animated Dots */}
             <div className="flex gap-1">
-              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full typing-dot" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full typing-dot" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 bg-[var(--text-muted)] rounded-full typing-dot" style={{ animationDelay: '300ms' }}></span>
+              <span className="w-2 h-2 bg-content-muted rounded-full typing-dot" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-2 h-2 bg-content-muted rounded-full typing-dot" style={{ animationDelay: '150ms' }}></span>
+              <span className="w-2 h-2 bg-content-muted rounded-full typing-dot" style={{ animationDelay: '300ms' }}></span>
             </div>
 
             {/* Optional Status Message */}
             {message && (
-              <span className="text-sm text-[var(--text-secondary)]">{message}</span>
+              <span className="text-sm text-content-secondary">{message}</span>
             )}
           </div>
         </div>
@@ -113,9 +113,9 @@ export function MessageSkeleton({ agentRole }: { agentRole?: TypingIndicatorProp
           "w-8 h-8 rounded-full flex items-center justify-center",
           roleConfig
             ? `bg-${roleConfig.color}-200`
-            : "bg-[var(--bg-secondary)]"
+            : "bg-surface-secondary"
         )}>
-          <Loader2 className="h-4 w-4 text-[var(--text-muted)] motion-safe:animate-spin" />
+          <Loader2 className="h-4 w-4 text-content-muted motion-safe:animate-spin" />
         </div>
       </div>
 
@@ -123,14 +123,14 @@ export function MessageSkeleton({ agentRole }: { agentRole?: TypingIndicatorProp
       <div className="flex flex-col gap-2 max-w-[80%] flex-1">
         {/* Badge Skeleton */}
         {roleConfig && (
-          <div className="h-6 w-32 bg-[var(--bg-secondary)] rounded-full"></div>
+          <div className="h-6 w-32 bg-surface-secondary rounded-full"></div>
         )}
 
         {/* Text Skeleton */}
-        <div className="rounded-lg px-4 py-3 bg-[var(--bg-primary)] border border-[var(--border-color)] shadow-sm space-y-2">
-          <div className="h-4 bg-[var(--bg-secondary)] rounded w-3/4"></div>
-          <div className="h-4 bg-[var(--bg-secondary)] rounded w-full"></div>
-          <div className="h-4 bg-[var(--bg-secondary)] rounded w-5/6"></div>
+        <div className="rounded-lg px-4 py-3 bg-surface border border-edge shadow-sm space-y-2">
+          <div className="h-4 bg-surface-secondary rounded w-3/4"></div>
+          <div className="h-4 bg-surface-secondary rounded w-full"></div>
+          <div className="h-4 bg-surface-secondary rounded w-5/6"></div>
         </div>
       </div>
     </div>

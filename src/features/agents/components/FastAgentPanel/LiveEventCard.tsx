@@ -120,11 +120,11 @@ function getStatusStyles(status: LiveEventStatus) {
     case 'pending':
     default:
       return {
-        bg: 'bg-[var(--bg-secondary)] dark:bg-gray-800/50',
-        border: 'border-[var(--border-color)] dark:border-[var(--border-color)]',
-        text: 'text-[var(--text-secondary)] dark:text-[var(--text-secondary)]',
-        icon: 'text-[var(--text-muted)]',
-        dot: 'bg-[var(--text-muted)]',
+        bg: 'bg-surface-secondary dark:bg-gray-800/50',
+        border: 'border-edge dark:border-edge',
+        text: 'text-content-secondary dark:text-content-secondary',
+        icon: 'text-content-muted',
+        dot: 'bg-content-muted',
       };
   }
 }
@@ -168,11 +168,11 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
           )}
           {/* Status dot */}
           <div className={cn(
-            "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-[var(--bg-primary)] dark:bg-gray-900 z-10",
+            "absolute left-1 top-2 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-surface dark:bg-gray-900 z-10",
             event.status === 'running' && "border-violet-500 motion-safe:animate-pulse",
             event.status === 'success' && "border-green-500",
             event.status === 'error' && "border-red-500",
-            event.status === 'pending' && "border-[var(--text-muted)]"
+            event.status === 'pending' && "border-content-muted"
           )}>
             <div className={cn("w-1.5 h-1.5 rounded-full", styles.dot)} />
           </div>
@@ -215,7 +215,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
               {event.title}
             </div>
             {event.toolName && (
-              <div className="text-xs font-mono text-[var(--text-secondary)] dark:text-[var(--text-secondary)] truncate">
+              <div className="text-xs font-mono text-content-secondary dark:text-content-secondary truncate">
                 {event.toolName}
               </div>
             )}
@@ -224,7 +224,7 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
           {/* Status badge / Duration */}
           <div className="flex-shrink-0 flex items-center gap-1.5">
             {event.duration !== undefined && event.status === 'success' && (
-              <span className="text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)]">
+              <span className="text-xs text-content-secondary dark:text-content-secondary">
                 {formatDuration(event.duration)}
               </span>
             )}
@@ -238,13 +238,13 @@ export function LiveEventCard({ event, showTimeline = true, isLast = false }: Li
 
         {/* Details (if any) */}
         {event.details && (
-          <div className="mt-1.5 text-xs text-[var(--text-secondary)] dark:text-[var(--text-secondary)] line-clamp-2">
+          <div className="mt-1.5 text-xs text-content-secondary dark:text-content-secondary line-clamp-2">
             {event.details}
           </div>
         )}
 
         {/* Timestamp */}
-        <div className="mt-1 text-xs text-[var(--text-muted)] dark:text-[var(--text-muted)]">
+        <div className="mt-1 text-xs text-content-muted dark:text-content-muted">
           {formatTimestamp(event.timestamp)}
         </div>
       </div>

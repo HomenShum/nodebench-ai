@@ -126,7 +126,7 @@ function getPostTypeConfig(type: PostType) {
     thesis_revision: { icon: <Lightbulb className="w-3.5 h-3.5" />, label: 'Thesis Revision', color: 'bg-purple-50 text-purple-700 border-purple-200' },
     evidence_addition: { icon: <FileText className="w-3.5 h-3.5" />, label: 'Evidence', color: 'bg-indigo-50 text-content-secondary border-indigo-200' },
     counterpoint: { icon: <AlertTriangle className="w-3.5 h-3.5" />, label: 'Counterpoint', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-    question: { icon: <HelpCircle className="w-3.5 h-3.5" />, label: 'Question', color: 'bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] border-[color:var(--border-color)]' },
+    question: { icon: <HelpCircle className="w-3.5 h-3.5" />, label: 'Question', color: 'bg-surface-secondary text-content border-edge' },
     correction: { icon: <CheckCircle2 className="w-3.5 h-3.5" />, label: 'Correction', color: 'bg-red-50 text-red-700 border-red-200' },
   };
   return configs[type];
@@ -158,23 +158,23 @@ function ThesisEvolutionTimeline({
   }
 
   return (
-    <div className="bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] overflow-hidden">
+    <div className="bg-surface rounded-lg border border-edge overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-[color:var(--bg-hover)] transition-colors"
+        className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
           <Lightbulb className="w-4 h-4 text-purple-600" />
-          <span className="text-sm font-semibold text-[color:var(--text-primary)]">Thesis Evolution</span>
+          <span className="text-sm font-semibold text-content">Thesis Evolution</span>
           <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded font-medium">
             {revisions.length} revision{revisions.length !== 1 ? 's' : ''}
           </span>
         </div>
-        {expanded ? <ChevronDown className="w-4 h-4 text-[color:var(--text-secondary)]" /> : <ChevronRight className="w-4 h-4 text-[color:var(--text-secondary)]" />}
+        {expanded ? <ChevronDown className="w-4 h-4 text-content-secondary" /> : <ChevronRight className="w-4 h-4 text-content-secondary" />}
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 border-t border-[color:var(--border-color)]">
+        <div className="px-4 pb-4 border-t border-edge">
           {/* Current thesis */}
           <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
             <div className="flex items-center gap-2 mb-1">
@@ -189,13 +189,13 @@ function ThesisEvolutionTimeline({
             {revisions.slice().reverse().map((rev, i) => (
               <div key={rev.id} className="pl-8 relative">
                 <div className="absolute left-2 top-2 w-2 h-2 rounded-full bg-[color:var(--border-color)]" />
-                <div className="p-2 bg-[color:var(--bg-secondary)] rounded-lg border border-[color:var(--border-color)]">
-                  <div className="flex items-center gap-2 text-xs text-[color:var(--text-secondary)] mb-1">
+                <div className="p-2 bg-surface-secondary rounded-lg border border-edge">
+                  <div className="flex items-center gap-2 text-xs text-content-secondary mb-1">
                     <Clock className="w-3 h-3" />
                     <span>{formatDate(rev.createdAt)}</span>
-                    <span className="text-[color:var(--text-secondary)]">by {rev.authorId}</span>
+                    <span className="text-content-secondary">by {rev.authorId}</span>
                   </div>
-                  <p className="text-xs text-[color:var(--text-primary)] line-clamp-2">{rev.content}</p>
+                  <p className="text-xs text-content line-clamp-2">{rev.content}</p>
                 </div>
               </div>
             ))}
@@ -220,12 +220,12 @@ function PostCard({
 
   return (
     <div
-      className={`bg-[color:var(--bg-primary)] rounded-lg border transition-all ${
+      className={`bg-surface rounded-lg border transition-all ${
         post.hasContradictions
           ? 'border-red-300'
           : post.requiresAdjudication
           ? 'border-amber-300'
-          : 'border-[color:var(--border-color)]'
+          : 'border-edge'
       }`}
     >
       <div className="p-4">
@@ -255,13 +255,13 @@ function PostCard({
               </span>
             )}
           </div>
-          <span className="text-xs text-[color:var(--text-secondary)]">{formatDate(post.createdAt)}</span>
+          <span className="text-xs text-content-secondary">{formatDate(post.createdAt)}</span>
         </div>
 
         {/* Title */}
         {post.title && (
           <h4
-            className="text-base font-semibold text-[color:var(--text-primary)] mb-2 cursor-pointer hover:text-blue-600"
+            className="text-base font-semibold text-content mb-2 cursor-pointer hover:text-blue-600"
             onClick={onClick}
           >
             {post.title}
@@ -284,14 +284,14 @@ function PostCard({
         )}
 
         {/* Content */}
-        <p className="text-sm text-[color:var(--text-primary)] line-clamp-4">{post.content}</p>
+        <p className="text-sm text-content line-clamp-4">{post.content}</p>
 
         {/* Citations Toggle */}
         {post.citations.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-dashed border-[color:var(--border-color)]">
+          <div className="mt-3 pt-3 border-t border-dashed border-edge">
             <button
               onClick={() => setShowCitations(!showCitations)}
-              className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
+              className="flex items-center gap-1 text-xs text-content-secondary hover:text-content"
             >
               <Shield className="w-3 h-3" />
               {post.citations.length} source{post.citations.length !== 1 ? 's' : ''}
@@ -304,17 +304,17 @@ function PostCard({
                   <div
                     key={i}
                     onClick={() => onCitationClick?.(c)}
-                    className="p-2 bg-[color:var(--bg-secondary)] rounded-lg border border-[color:var(--border-color)] cursor-pointer hover:border-blue-300 transition-colors group"
+                    className="p-2 bg-surface-secondary rounded-lg border border-edge cursor-pointer hover:border-blue-300 transition-colors group"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono text-blue-600">{c.citationKey}</span>
-                      <ExternalLink className="w-3 h-3 text-[color:var(--text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <ExternalLink className="w-3 h-3 text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                     {c.sourceTitle && (
-                      <p className="text-xs text-[color:var(--text-primary)] truncate mt-0.5">{c.sourceTitle}</p>
+                      <p className="text-xs text-content truncate mt-0.5">{c.sourceTitle}</p>
                     )}
                     {c.quote && (
-                      <p className="text-xs text-[color:var(--text-secondary)] line-clamp-2 mt-1 italic">"{c.quote}"</p>
+                      <p className="text-xs text-content-secondary line-clamp-2 mt-1 italic">"{c.quote}"</p>
                     )}
                   </div>
                 ))}
@@ -325,17 +325,17 @@ function PostCard({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-[color:var(--border-color)] flex items-center justify-between bg-[color:var(--bg-secondary)]">
-        <div className="flex items-center gap-2 text-xs text-[color:var(--text-secondary)]">
+      <div className="px-4 py-2 border-t border-edge flex items-center justify-between bg-surface-secondary">
+        <div className="flex items-center gap-2 text-xs text-content-secondary">
           <span>{post.authorType === 'agent' ? 'Agent' : 'Human'}: {post.authorId}</span>
           {post.authorConfidence !== undefined && (
-            <span className="px-1 py-0.5 bg-[color:var(--bg-primary)] rounded text-[color:var(--text-secondary)]">
+            <span className="px-1 py-0.5 bg-surface rounded text-content-secondary">
               {Math.round(post.authorConfidence * 100)}% conf
             </span>
           )}
         </div>
         {post.replies && post.replies.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-[color:var(--text-secondary)]">
+          <span className="flex items-center gap-1 text-xs text-content-secondary">
             <MessageSquare className="w-3 h-3" />
             {post.replies.length}
           </span>
@@ -377,20 +377,20 @@ function DisputePanel({
           <div
             key={d.id}
             onClick={() => onDisputeClick?.(d)}
-            className="p-3 bg-[color:var(--bg-primary)] rounded-lg border border-red-200 cursor-pointer hover:border-red-300 transition-colors"
+            className="p-3 bg-surface rounded-lg border border-red-200 cursor-pointer hover:border-red-300 transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
               <span className={`px-1.5 py-0.5 rounded text-xs font-medium border ${statusColors[d.status]}`}>
                 {d.status.replace(/_/g, ' ')}
               </span>
-              <span className="text-xs text-[color:var(--text-secondary)]">{formatDate(d.raisedAt)}</span>
+              <span className="text-xs text-content-secondary">{formatDate(d.raisedAt)}</span>
             </div>
-            <div className="text-xs text-[color:var(--text-primary)]">
+            <div className="text-xs text-content">
               <div className="mb-1">
-                <span className="text-[color:var(--text-secondary)]">Original:</span> {d.originalClaim.slice(0, 100)}...
+                <span className="text-content-secondary">Original:</span> {d.originalClaim.slice(0, 100)}...
               </div>
               <div>
-                <span className="text-[color:var(--text-secondary)]">Challenge:</span> {d.challengeClaim.slice(0, 100)}...
+                <span className="text-content-secondary">Challenge:</span> {d.challengeClaim.slice(0, 100)}...
               </div>
             </div>
           </div>
@@ -439,14 +439,14 @@ export function NarrativeThreadView({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Thread Header */}
-      <div className="bg-[color:var(--bg-primary)] rounded-lg border border-[color:var(--border-color)] p-6">
+      <div className="bg-surface rounded-lg border border-edge p-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="px-2 py-1 bg-[color:var(--bg-secondary)] text-[color:var(--text-primary)] text-xs font-medium rounded">
+          <span className="px-2 py-1 bg-surface-secondary text-content text-xs font-medium rounded">
             {thread.phase}
           </span>
-          <span className="text-xs text-[color:var(--text-secondary)]">{formatDate(thread.updatedAt)}</span>
+          <span className="text-xs text-content-secondary">{formatDate(thread.updatedAt)}</span>
         </div>
-        <h1 className="text-2xl font-bold text-[color:var(--text-primary)] mb-3">{thread.title}</h1>
+        <h1 className="text-2xl font-bold text-content mb-3">{thread.title}</h1>
         <div className="flex flex-wrap gap-1.5">
           {thread.entityKeys.map((key) => (
             <span key={key} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
@@ -479,8 +479,8 @@ export function NarrativeThreadView({
           onClick={() => setFilterType(null)}
           className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
             !filterType
-              ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-primary)] border-[color:var(--text-primary)]'
-              : 'bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] border-[color:var(--border-color)] hover:border-[color:var(--text-secondary)]'
+              ? 'bg-content text-surface border-[color:var(--text-primary)]'
+              : 'bg-surface text-content border-edge hover:border-content-secondary'
           }`}
         >
           All ({posts.length})
@@ -494,8 +494,8 @@ export function NarrativeThreadView({
               onClick={() => setFilterType(type)}
               className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                 filterType === type
-                  ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-primary)] border-[color:var(--text-primary)]'
-                  : 'bg-[color:var(--bg-primary)] text-[color:var(--text-primary)] border-[color:var(--border-color)] hover:border-[color:var(--text-secondary)]'
+                  ? 'bg-content text-surface border-[color:var(--text-primary)]'
+                  : 'bg-surface text-content border-edge hover:border-content-secondary'
               }`}
             >
               {config.label} ({postTypeCounts[type]})
@@ -508,7 +508,7 @@ export function NarrativeThreadView({
       <div className="space-y-4">
         {filteredPosts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-[color:var(--text-secondary)]">No posts match this filter</p>
+            <p className="text-content-secondary">No posts match this filter</p>
           </div>
         ) : (
           filteredPosts.map((post) => (

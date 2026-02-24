@@ -26,10 +26,10 @@ export const Button = forwardRef<HTMLButtonElement, Props>(
       variant === "primary"
         ? "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm"
         : variant === "outline"
-        ? "border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+        ? "border border-edge text-content hover:bg-surface-hover"
         : variant === "destructive"
         ? "bg-red-600 text-white hover:bg-red-700"
-        : "border border-[var(--border-color)] bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]";
+        : "border border-edge bg-surface hover:bg-surface-hover text-content";
 
     return (
       <button ref={ref} className={joinClasses(base, sizes, variants, className)} disabled={disabled || loading} {...props}>

@@ -38,14 +38,14 @@ export function PlannerAiBar({
   return (
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border-color)] bg-[var(--bg-primary)] flex-1">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1">
           <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
           <input
             value={prompt}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Ask the agent… (e.g., ‘Plan my week’)"
-            className="w-full bg-transparent outline-none text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+            className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
           />
         </div>
 
@@ -63,7 +63,7 @@ export function PlannerAiBar({
         <button
           type="button"
           onClick={openChatPanel}
-          className="px-3 py-2 text-sm rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)]"
+          className="px-3 py-2 text-sm rounded-md text-content-secondary hover:text-content hover:bg-surface-hover border border-edge"
           title="Open AI Chat"
         >
           Open Chat
@@ -76,7 +76,7 @@ export function PlannerAiBar({
             type="button"
             key={qa.label}
             onClick={() => onQuickPrompt(qa.text)}
-            className="px-2.5 py-1.5 rounded-full text-xs border border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+            className="px-2.5 py-1.5 rounded-full text-xs border border-edge text-content-secondary hover:text-content hover:bg-surface-hover"
             title={qa.text}
           >
             {qa.label}
