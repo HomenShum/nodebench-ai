@@ -2707,6 +2707,32 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "verify",
     complexity: "medium",
   },
+  {
+    name: "sync_figma_tokens",
+    category: "design_governance",
+    tags: ["figma", "tokens", "sync", "drift", "design", "variables", "css", "compare", "validation"],
+    quickRef: {
+      nextAction: "Review drift report. Update src/index.css or Figma variables to reconcile mismatches. Run check_design_compliance to verify.",
+      nextTools: ["check_design_compliance", "get_design_spec", "get_design_violations"],
+      methodology: "ai_flywheel",
+      tip: "Compares Figma design token variables against CSS custom properties. Requires FIGMA_ACCESS_TOKEN env var.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "get_figma_design_context",
+    category: "design_governance",
+    tags: ["figma", "design", "context", "component", "patterns", "typography", "spacing", "tokens", "rules"],
+    quickRef: {
+      nextAction: "Use the returned design context to implement or review the component. Run check_design_compliance after changes.",
+      nextTools: ["check_design_compliance", "get_design_spec", "sync_figma_tokens"],
+      methodology: "ai_flywheel",
+      tip: "Returns design system rules for a specific component (button, card, page-shell, sidebar, empty-state, stat-badge).",
+    },
+    phase: "research",
+    complexity: "low",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────

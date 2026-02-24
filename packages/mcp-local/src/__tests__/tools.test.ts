@@ -113,7 +113,7 @@ const allTools = [...allToolsWithoutDiscovery, ...discoveryTools];
 describe("Static: tool structure", () => {
   it("should have 184 tools total", () => {
     // domain tools + 3 meta tools (findTools, getMethodology, check_mcp_setup) + 3 progressive discovery tools
-    expect(allTools.length).toBe(225);
+    expect(allTools.length).toBe(227);
   });
 
   it("every tool has name, description, inputSchema, handler", () => {

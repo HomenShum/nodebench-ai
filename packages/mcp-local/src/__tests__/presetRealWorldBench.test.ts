@@ -69,6 +69,7 @@ import { skillUpdateTools } from "../tools/skillUpdateTools.js";
 import { overstoryTools } from "../tools/overstoryTools.js";
 import { visualQaTools } from "../tools/visualQaTools.js";
 import { localDashboardTools } from "../tools/localDashboardTools.js";
+import { designGovernanceTools } from "../tools/designGovernanceTools.js";
 import { createMetaTools } from "../tools/metaTools.js";
 import { createProgressiveDiscoveryTools } from "../tools/progressiveDiscoveryTools.js";
 import type { McpTool } from "../types.js";
@@ -119,6 +120,7 @@ const TOOLSET_MAP: Record<string, McpTool[]> = {
   qa_orchestration: overstoryTools,
   visual_qa: visualQaTools,
   local_dashboard: localDashboardTools,
+  design_governance: designGovernanceTools,
 };
 
 const PRESETS: Record<string, string[]> = {

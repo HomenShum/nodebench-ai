@@ -43,6 +43,12 @@
       "headers": {
         "x-mcp-token": "${MCP_HTTP_TOKEN}"
       }
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${FIGMA_ACCESS_TOKEN}"
+      }
     }
   }
 }

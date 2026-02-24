@@ -772,4 +772,239 @@ export const designGovernanceTools: McpTool[] = [
       };
     },
   },
+
+  // ── sync_figma_tokens ─────────────────────────────────────────────────
+  {
+    name: "sync_figma_tokens",
+    description:
+      "Pull Figma design token variables from a Figma file and compare against the codebase's CSS custom properties (src/index.css). Reports drift: tokens in code but not Figma, tokens in Figma but not code, and value mismatches. Requires FIGMA_ACCESS_TOKEN env var.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        fileKey: {
+          type: "string",
+          description: "Figma file key (from URL: figma.com/design/<fileKey>/...). If omitted, uses FIGMA_DESIGN_SYSTEM_FILE env var.",
+        },
+      },
+    },
+    handler: async (args) => {
+      const fileKey = args.fileKey || process.env.FIGMA_DESIGN_SYSTEM_FILE;
+      const token = process.env.FIGMA_ACCESS_TOKEN;
+
+      if (!token) {
+        return {
+          error: true,
+          message: "FIGMA_ACCESS_TOKEN not set. Add to .env.local or set as environment variable.",
+          setup: "Get a personal access token from Figma > Settings > Personal access tokens.",
+        };
+      }
+      if (!fileKey) {
+        return {
+          error: true,
+          message: "No Figma file key. Provide fileKey parameter or set FIGMA_DESIGN_SYSTEM_FILE env var.",
+        };
+      }
+
+      // Extract CSS tokens from src/index.css
+      const srcDir = path.resolve(process.cwd(), "src");
+      const cssPath = path.join(srcDir, "index.css");
+      let cssContent: string;
+      try {
+        cssContent = await readFile(cssPath, "utf8");
+      } catch {
+        return { error: true, message: `Cannot read ${cssPath}` };
+      }
+
+      const codeTokens: Record<string, Record<string, string>> = { light: {}, dark: {} };
+      const varRegex = /--([a-zA-Z0-9_-]+)\s*:\s*([^;]+)/g;
+
+      const rootMatch = cssContent.match(/:root\s*\{([^}]+)\}/s);
+      if (rootMatch) {
+        let m: RegExpExecArray | null;
+        while ((m = varRegex.exec(rootMatch[1])) !== null) {
+          codeTokens.light[m[1]] = m[2].trim();
+        }
+      }
+      const darkMatch = cssContent.match(/\.dark\s*\{([^}]+)\}/s);
+      if (darkMatch) {
+        varRegex.lastIndex = 0;
+        let m: RegExpExecArray | null;
+        while ((m = varRegex.exec(darkMatch[1])) !== null) {
+          codeTokens.dark[m[1]] = m[2].trim();
+        }
+      }
+
+      // Call Figma Variables API
+      try {
+        const url = `https://api.figma.com/v1/files/${fileKey}/variables/local`;
+        const res = await fetch(url, {
+          headers: { "X-Figma-Token": token },
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          return { error: true, message: `Figma API ${res.status}: ${text.slice(0, 200)}` };
+        }
+        const json = await res.json() as {
+          meta?: {
+            variables?: Record<string, { name: string; variableCollectionId: string; valuesByMode?: Record<string, unknown> }>;
+            variableCollections?: Record<string, { modes: Array<{ name: string; modeId: string }> }>;
+          };
+        };
+        const variables = json.meta?.variables ?? {};
+        const collections = json.meta?.variableCollections ?? {};
+
+        const figmaTokens: Record<string, Record<string, string>> = { light: {}, dark: {} };
+        for (const v of Object.values(variables)) {
+          const name = v.name?.replace(/\//g, "-").toLowerCase() ?? "";
+          if (!name) continue;
+          const collection = collections[v.variableCollectionId];
+          const modes = collection?.modes ?? [];
+          for (const mode of modes) {
+            const modeName = mode.name?.toLowerCase() ?? "";
+            const value = v.valuesByMode?.[mode.modeId];
+            if (value == null) continue;
+            const resolved = typeof value === "object" && value !== null && "r" in value
+              ? (() => {
+                  const c = value as unknown as { r: number; g: number; b: number; a?: number };
+                  return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${(c.a ?? 1).toFixed(2)})`;
+                })()
+              : String(value);
+            if (modeName.includes("dark")) {
+              figmaTokens.dark[name] = resolved;
+            } else {
+              figmaTokens.light[name] = resolved;
+            }
+          }
+        }
+
+        // Compare
+        const allCodeKeys = new Set([...Object.keys(codeTokens.light), ...Object.keys(codeTokens.dark)]);
+        const allFigmaKeys = new Set([...Object.keys(figmaTokens.light), ...Object.keys(figmaTokens.dark)]);
+        const codeOnly = [...allCodeKeys].filter(k => !allFigmaKeys.has(k));
+        const figmaOnly = [...allFigmaKeys].filter(k => !allCodeKeys.has(k));
+        const drift: Array<{ token: string; mode: string; code: string; figma: string }> = [];
+        let matched = 0;
+        for (const key of allCodeKeys) {
+          if (!allFigmaKeys.has(key)) continue;
+          matched++;
+          for (const mode of ["light", "dark"] as const) {
+            if (codeTokens[mode][key] && figmaTokens[mode][key] && codeTokens[mode][key] !== figmaTokens[mode][key]) {
+              drift.push({ token: key, mode, code: codeTokens[mode][key], figma: figmaTokens[mode][key] });
+            }
+          }
+        }
+
+        return {
+          status: drift.length === 0 && codeOnly.length === 0 && figmaOnly.length === 0 ? "in_sync" : "drift_detected",
+          codeTokenCount: allCodeKeys.size,
+          figmaTokenCount: allFigmaKeys.size,
+          matched,
+          codeOnly: codeOnly.slice(0, 30),
+          figmaOnly: figmaOnly.slice(0, 30),
+          drift: drift.slice(0, 30),
+          _hint: drift.length > 0
+            ? `${drift.length} tokens have drifted between Figma and code. Update src/index.css or Figma to reconcile.`
+            : "Design tokens are in sync.",
+        };
+      } catch (err) {
+        return { error: true, message: `Figma API error: ${(err as Error).message}` };
+      }
+    },
+  },
+
+  // ── get_figma_design_context ──────────────────────────────────────────
+  {
+    name: "get_figma_design_context",
+    description:
+      "Get design context for a specific component or screen from the codebase governance spec. Returns the relevant design tokens, typography rules, spacing rules, and component patterns that apply. Use this to understand what a component SHOULD look like according to the design system.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        component: {
+          type: "string",
+          description: "Component or context name (e.g. 'button', 'card', 'page-shell', 'sidebar', 'stat-badge', 'empty-state')",
+        },
+      },
+      required: ["component"],
+    },
+    handler: async (args) => {
+      const component = (args.component ?? "").toLowerCase();
+
+      // Component-specific design context from the governance spec
+      const COMPONENT_CONTEXT: Record<string, {
+        tokens: string[];
+        typography: string[];
+        spacing: string[];
+        patterns: string[];
+        notes: string;
+      }> = {
+        button: {
+          tokens: ["--primary", "--primary-foreground", "--destructive", "--ring"],
+          typography: [".type-body (14px/500)", "no uppercase unless metadata label"],
+          spacing: ["px-4 py-2 (md)", "px-3 py-1.5 (sm)", "px-2 py-1 (xs)"],
+          patterns: ["Use .btn-primary, .btn-secondary, .btn-ghost, .btn-outline", "focus-visible:ring-ring (semantic)", "No inline bg-indigo-600 text-white"],
+          notes: "Always use btn-* utility classes. Inline button styles are a governance violation.",
+        },
+        card: {
+          tokens: ["--card", "--card-foreground", "--border", "--radius"],
+          typography: [".type-section-title for card headers", ".type-body for card content"],
+          spacing: ["p-4 sm:p-6 standard card padding", "gap-3 between card sections"],
+          patterns: ["Use .nb-surface-card", "border border-border/50 rounded-lg", "Consistent border-radius across all cards on same screen"],
+          notes: "All cards must use nb-surface-card for consistent appearance.",
+        },
+        "page-shell": {
+          tokens: ["--background", "--foreground"],
+          typography: [".type-page-title for page headers", ".type-section-title for section headers"],
+          spacing: ["nb-page-shell > nb-page-inner > nb-page-frame", "space-y-6 between sections", "gap-8 section-gap"],
+          patterns: ["Every view MUST use nb-page-shell", "max-w-7xl mx-auto for content width"],
+          notes: "Views missing nb-page-shell are a high-severity governance violation.",
+        },
+        sidebar: {
+          tokens: ["--card", "--border", "--muted-foreground"],
+          typography: [".type-label for section headings (uppercase OK here)", ".type-body for nav items"],
+          spacing: ["p-3 standard sidebar padding", "gap-1 between nav items"],
+          patterns: ["Sidebar labels are the ONE place uppercase is allowed", "z-sidebar (20) for stacking"],
+          notes: "Sidebar section labels (MENU, MORE, FILES) may use uppercase. This is the exception.",
+        },
+        "empty-state": {
+          tokens: ["--muted-foreground", "--muted"],
+          typography: [".type-body for empty state message", ".type-caption for hint text"],
+          spacing: ["py-8 px-4 centered content", "gap-3 between icon and text"],
+          patterns: ["Import EmptyState component", "Icon (24px muted) + title + description + optional CTA", "Every data view MUST have an empty state"],
+          notes: "Views without empty state handling are a high-severity governance violation.",
+        },
+        "stat-badge": {
+          tokens: ["--foreground", "--muted-foreground", "--accent"],
+          typography: [".type-heading for the number", ".type-caption for the label"],
+          spacing: ["p-3 for stat cards", "gap-2 between stat items"],
+          patterns: ["Single accent color for primary metric", "text-content-muted for secondary", "Keep status dots colored (semantic), remove decorative color from numbers"],
+          notes: "Multi-colored stat numbers are a governance violation. Use monochrome.",
+        },
+      };
+
+      const ctx = COMPONENT_CONTEXT[component];
+      if (ctx) {
+        return {
+          component,
+          found: true,
+          ...ctx,
+          spec: DESIGN_SPEC,
+        };
+      }
+
+      // Fuzzy match
+      const candidates = Object.keys(COMPONENT_CONTEXT).filter(
+        k => k.includes(component) || component.includes(k)
+      );
+
+      return {
+        component,
+        found: false,
+        message: `No specific design context for '${component}'.`,
+        didYouMean: candidates.length > 0 ? candidates : Object.keys(COMPONENT_CONTEXT),
+        spec: DESIGN_SPEC,
+        _hint: "The full design spec is included. Check spec.colorBudget, spec.typography, and spec.components for general rules.",
+      };
+    },
+  },
 ];
