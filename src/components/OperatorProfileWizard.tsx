@@ -237,7 +237,7 @@ export function OperatorProfileWizard() {
           value={state.displayName}
           onChange={(e) => update({ displayName: e.target.value })}
           placeholder="How should the agent address you?"
-          className="w-full px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+          className="w-full px-3 py-2 rounded-lg border border-edge bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
         />
       </div>
       <div>
@@ -247,7 +247,7 @@ export function OperatorProfileWizard() {
           value={state.role}
           onChange={(e) => update({ role: e.target.value })}
           placeholder="e.g., Product Manager, Founder, Researcher"
-          className="w-full px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+          className="w-full px-3 py-2 rounded-lg border border-edge bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
         />
       </div>
       <div>
@@ -259,7 +259,7 @@ export function OperatorProfileWizard() {
             onChange={(e) => setDomainInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addDomain())}
             placeholder="Add a domain..."
-            className="flex-1 px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="flex-1 px-3 py-2 rounded-lg border border-edge bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <button type="button" onClick={addDomain} aria-label="Add domain" className="px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">
             <Plus className="w-4 h-4" />
@@ -319,7 +319,7 @@ export function OperatorProfileWizard() {
             onChange={(e) => setGoalInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addGoal())}
             placeholder="Add a goal..."
-            className="flex-1 px-3 py-2 rounded-lg border border-edge bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="flex-1 px-3 py-2 rounded-lg border border-edge bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
           />
           <button type="button" onClick={addGoal} aria-label="Add goal" className="px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors">
             <Plus className="w-4 h-4" />

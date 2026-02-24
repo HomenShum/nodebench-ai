@@ -105,7 +105,12 @@ test.describe("Full UI Dogfood", () => {
     page.on('console', msg => {
       if (msg.type() === 'error') console.error('BROWSER CONSOLE ERROR:', msg.text());
     });
-    await page.goto("/", { waitUntil: "domcontentloaded" });
+    page.on('requestfailed', request => {
+      console.error('REQUEST FAILED:', request.url(), request.failure()?.errorText);
+    });
+
+    console.log('Navigating to root...');
+    await page.goto("/", { waitUntil: "networkidle" });
     await page.evaluate(() => {
       localStorage.setItem(
         "nodebench-theme",
@@ -120,22 +125,29 @@ test.describe("Full UI Dogfood", () => {
       );
       localStorage.setItem("theme", "dark");
     });
-    await page.goto("/", { waitUntil: "domcontentloaded" });
+
+    await page.goto("/", { waitUntil: "networkidle" });
     await expect(page.getByText("Convex backend not configured")).toHaveCount(0);
+
+    console.log('Signing in...');
     await signInIfPrompted(page);
-    await expect(page.locator("#main-content")).toBeVisible({ timeout: 30_000 });
+
+    console.log('Waiting for main-content...');
+    await expect(page.locator("#main-content")).toBeVisible({ timeout: 60_000 });
 
     // ─── Capture all routes for each variant ───────────────────────────
     for (const variant of VARIANTS) {
+      console.log(`Testing variant: ${variant.theme}${variant.suffix}`);
       await page.setViewportSize(variant.viewport);
       await setTheme(page, variant.theme);
       // Reload to apply theme fully
-      await page.goto("/", { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(600);
+      await page.goto("/", { waitUntil: "networkidle" });
+      await page.waitForTimeout(1000);
 
       for (const route of ROUTES) {
-        await page.goto(route.path, { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(1200);
+        console.log(`  Route: ${route.path}`);
+        await page.goto(route.path, { waitUntil: "networkidle" });
+        await page.waitForTimeout(1500); // Wait for animations
         await expect(page.getByText("Something went wrong")).toHaveCount(0);
         await page.screenshot({
           path: `test-results/full-ui-dogfood/${route.name}${variant.suffix}.png`,

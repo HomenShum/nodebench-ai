@@ -76,8 +76,8 @@ export function BatchAutopilotTab() {
       } else {
         const intervalMs = profile.scheduleInterval === "3h" ? 10800000
           : profile.scheduleInterval === "6h" ? 21600000
-          : profile.scheduleInterval === "daily" ? 86400000
-          : 43200000;
+            : profile.scheduleInterval === "daily" ? 86400000
+              : 43200000;
         await upsertSchedule({ intervalMs });
         toast.success("Autopilot enabled");
       }
@@ -120,9 +120,8 @@ export function BatchAutopilotTab() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
             <div
-              className={`w-2.5 h-2.5 rounded-full ${
-                schedule?.isEnabled ? "bg-green-500 motion-safe:animate-pulse" : "bg-gray-300 dark:bg-gray-600"
-              }`}
+              className={`w-2.5 h-2.5 rounded-full ${schedule?.isEnabled ? "bg-green-500 motion-safe:animate-pulse" : "bg-gray-300 dark:bg-gray-600"
+                }`}
             />
             <span className="text-sm font-medium text-content">
               {schedule?.isEnabled ? "Active" : "Paused"}
@@ -152,11 +151,10 @@ export function BatchAutopilotTab() {
             <button
               type="button"
               onClick={handleToggle}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                schedule?.isEnabled
-                  ? "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/30"
-                  : "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/30"
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${schedule?.isEnabled
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200"
+                  : "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+                }`}
             >
               {schedule?.isEnabled ? (
                 <>
@@ -178,11 +176,10 @@ export function BatchAutopilotTab() {
               key={opt.value}
               type="button"
               onClick={() => handleIntervalChange(opt.value)}
-              className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                schedule?.intervalMs === opt.value
+              className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${schedule?.intervalMs === opt.value
                   ? "bg-indigo-500 text-white"
                   : "bg-surface-secondary text-content-secondary hover:bg-surface-secondary dark:hover:bg-white/[0.1]"
-              }`}
+                }`}
             >
               {opt.label}
             </button>
@@ -268,7 +265,7 @@ export function BatchAutopilotTab() {
                           toast.success("Opening in Research...");
                           setExpandedRun(null);
                         }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-surface-secondary text-content-secondary hover:bg-surface-hover transition-colors border border-edge"
                       >
                         Research deeper <ArrowRight className="w-3 h-3" />
                       </button>

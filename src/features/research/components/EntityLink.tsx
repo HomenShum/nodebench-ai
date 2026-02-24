@@ -91,34 +91,34 @@ const getEntityColors = (type: ExtendedEntityType) => {
     case "company":
       return {
         text: "text-content-secondary",
-        bg: "bg-indigo-50 hover:bg-indigo-100",
-        border: "border-indigo-200",
-        icon: "text-indigo-500",
-        badge: "bg-indigo-100 text-content-secondary",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-[var(--accent-primary)]",
+        badge: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
       };
     case "person":
       return {
-        text: "text-indigo-700",
-        bg: "bg-indigo-50 hover:bg-indigo-100",
-        border: "border-indigo-200",
-        icon: "text-indigo-500",
-        badge: "bg-indigo-100 text-indigo-700",
+        text: "text-content",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-[var(--accent-primary)]",
+        badge: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
       };
     case "product":
       return {
-        text: "text-blue-700",
-        bg: "bg-blue-50 hover:bg-blue-100",
-        border: "border-blue-200",
-        icon: "text-blue-500",
-        badge: "bg-blue-100 text-blue-700",
+        text: "text-content",
+        bg: "bg-[var(--accent-primary-bg)] hover:bg-[var(--accent-primary-bg)]",
+        border: "border-[var(--accent-primary)]/20",
+        icon: "text-[var(--accent-primary)]",
+        badge: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
       };
     case "technology":
       return {
-        text: "text-purple-700",
-        bg: "bg-purple-50 hover:bg-purple-100",
-        border: "border-purple-200",
-        icon: "text-purple-500",
-        badge: "bg-purple-100 text-purple-700",
+        text: "text-content",
+        bg: "bg-[var(--accent-primary-bg)] hover:bg-[var(--accent-primary-bg)]",
+        border: "border-[var(--accent-primary)]/20",
+        icon: "text-[var(--accent-primary)]",
+        badge: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
       };
     case "topic":
       return {
@@ -130,11 +130,11 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     case "region":
       return {
-        text: "text-amber-700",
-        bg: "bg-amber-50 hover:bg-amber-100",
-        border: "border-amber-200",
-        icon: "text-amber-500",
-        badge: "bg-amber-100 text-amber-700",
+        text: "text-content-secondary",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-content-secondary",
+        badge: "bg-surface-secondary text-content-secondary",
       };
     case "event":
       return {
@@ -171,19 +171,19 @@ const getEntityColors = (type: ExtendedEntityType) => {
       };
     case "funding_event":
       return {
-        text: "text-amber-700",
-        bg: "bg-amber-50 hover:bg-amber-100",
-        border: "border-amber-200",
-        icon: "text-amber-500",
-        badge: "bg-amber-100 text-amber-700",
+        text: "text-content-secondary",
+        bg: "bg-surface-secondary hover:bg-surface-hover",
+        border: "border-edge",
+        icon: "text-content-secondary",
+        badge: "bg-surface-secondary text-content-secondary",
       };
     case "research_paper":
       return {
-        text: "text-indigo-700",
-        bg: "bg-indigo-50 hover:bg-indigo-100",
-        border: "border-indigo-200",
-        icon: "text-indigo-500",
-        badge: "bg-indigo-100 text-indigo-700",
+        text: "text-content",
+        bg: "bg-[var(--accent-primary-bg)] hover:bg-[var(--accent-primary-bg)]",
+        border: "border-[var(--accent-primary)]/20",
+        icon: "text-[var(--accent-primary)]",
+        badge: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
       };
     default:
       return {
@@ -302,7 +302,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
           font-medium text-sm
           border-b-2 border-dashed
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500
+          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-primary)]
           ${colors.text} ${colors.border}
           hover:${colors.bg}
           ${className}
@@ -396,7 +396,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                     e.stopPropagation();
                     window.location.href = `/documents/${entity.dossierId}`;
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-[var(--accent-primary)] bg-[var(--accent-primary-bg)] hover:bg-[var(--accent-primary-bg)] rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                 >
                   <FileText className="w-3 h-3" />
                   <span>View Dossier</span>
@@ -412,7 +412,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                       detail: { entity }
                     }));
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-content-secondary bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                 >
                   <FileText className="w-3 h-3" />
                   <span>Create Dossier</span>
@@ -424,7 +424,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-content bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-content bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1"
                 >
                   <ExternalLink className="w-3 h-3" />
                   <span className="truncate max-w-[80px]">

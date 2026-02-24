@@ -20,7 +20,7 @@ function getNodeIcon(node: GraphNode) {
 export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) => {
   if (!graph || graph.nodes.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-900/10 bg-white/70 p-6 text-xs text-content-muted">
+      <div className="rounded-lg border border-gray-900/10 bg-surface p-6 text-xs text-content-muted">
         No entity relationships detected yet.
       </div>
     );
@@ -56,7 +56,7 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
   const edges = graph.edges ?? [];
 
   return (
-    <div className="relative rounded-lg border border-gray-900/10 bg-white/80 p-4 shadow-sm">
+    <div className="relative rounded-lg border border-gray-900/10 bg-surface p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs font-black uppercase tracking-[0.3em] text-gray-900/60">
           Entity Influence Map

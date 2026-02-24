@@ -49,7 +49,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                     </p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="px-3 py-1.5 bg-surface-secondary dark:bg-white/[0.04] border border-edge rounded">
+                    <div className="px-3 py-1.5 bg-surface-secondary border border-edge rounded">
                         <div className="text-xs font-medium text-content-secondary dark:text-content-muted">Avg Score</div>
                         <div className="text-base font-semibold text-content">{stats.avgBankerScore}</div>
                     </div>
@@ -84,7 +84,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-4 p-4 bg-surface-secondary dark:bg-white/[0.02] border border-edge">
+            <div className="flex items-center gap-4 p-4 bg-surface-secondary border border-edge">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-content-muted" />
                     <span className="text-xs font-medium text-content-secondary">Filters</span>
@@ -94,7 +94,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                     value={sectorFilter}
                     onChange={(e) => setSectorFilter(e.target.value as typeof sectorFilter)}
                     aria-label="Filter by sector"
-                    className="px-3 py-1.5 text-xs font-medium border border-edge bg-white dark:bg-white/[0.06] dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-1.5 text-xs font-medium border border-edge bg-surface dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                     {SECTOR_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>

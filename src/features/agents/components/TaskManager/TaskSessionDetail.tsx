@@ -75,9 +75,9 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
   );
 
   const statusIcon = trace.status === 'running' 
-    ? <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin text-blue-500" />
+    ? <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin text-[var(--accent-primary)]" />
     : trace.status === 'completed'
-    ? <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />
+    ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
     : <AlertCircle className="w-3.5 h-3.5 text-red-500" />;
 
   return (
@@ -93,7 +93,7 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
           : <ChevronRight className="w-4 h-4 text-content-muted" />
         }
         
-        <GitBranch className="w-4 h-4 text-purple-500" />
+        <GitBranch className="w-4 h-4 text-[var(--accent-primary)]" />
         
         <span className="flex-1 text-sm font-medium text-content text-left truncate">
           {trace.workflowName}
@@ -240,7 +240,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
       {/* Traces section */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex items-center gap-2 mb-3">
-          <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <FileText className="w-4 h-4 text-[var(--accent-primary)]" />
           <h3 className="text-sm font-medium text-content">
             Traces ({traces.length})
           </h3>

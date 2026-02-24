@@ -167,8 +167,8 @@ function FundingCard({
           {/* Amount */}
           {event.amountRaw && (
             <div className="flex items-center gap-1.5 mt-1.5">
-              <DollarSign className="w-4 h-4 text-green-600" />
-              <span className="font-bold text-green-700 dark:text-green-400 text-lg">
+              <DollarSign className="w-4 h-4 text-content-secondary" />
+              <span className="font-bold text-content text-lg">
                 {event.amountRaw}
               </span>
             </div>
@@ -182,10 +182,10 @@ function FundingCard({
             <div
               className={`text-sm font-semibold ${
                 event.confidence >= 0.8
-                  ? "text-green-600"
+                  ? "text-green-600 dark:text-green-400"
                   : event.confidence >= 0.6
-                    ? "text-yellow-600"
-                    : "text-red-500"
+                    ? "text-yellow-600 dark:text-yellow-400"
+                    : "text-red-500 dark:text-red-400"
               }`}
             >
               {Math.round(event.confidence * 100)}%
@@ -347,7 +347,7 @@ function StatsSummary({
           <DollarSign className="w-4 h-4" />
           Total Raised
         </div>
-        <div className="text-2xl font-bold text-green-600">
+        <div className="text-2xl font-bold text-content">
           {formatCurrency(stats.totalAmountUsd)}
         </div>
         <div className="text-xs text-content-secondary">Disclosed amounts</div>

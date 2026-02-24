@@ -92,7 +92,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                 hasWorkspaceContent ? 'lg:col-span-8' : 'lg:col-span-full'
             )}>
                 {/* Header */}
-                <div className="px-4 py-3 bg-surface-secondary dark:bg-white/[0.02] border-b border-edge flex items-center justify-between gap-3">
+                <div className="px-4 py-3 bg-surface-secondary border-b border-edge flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         <Zap className="w-4 h-4 text-content-secondary" />
                         <div>

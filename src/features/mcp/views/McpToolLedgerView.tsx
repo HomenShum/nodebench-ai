@@ -329,8 +329,8 @@ export const McpToolLedgerView: React.FC = () => {
                       ? { label: "BLOCKED", cls: "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400" }
                       : c.success === true
                         ? { label: "OK", cls: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]" }
-                        : c.success === false
-                          ? { label: "ERROR", cls: "bg-amber-100 dark:bg-amber-950/30 text-amber-900 dark:text-amber-400" }
+                      : c.success === false
+                          ? { label: "ERROR", cls: "bg-rose-500/10 text-rose-600 dark:text-rose-400" }
                           : { label: "RUNNING", cls: "bg-surface-secondary text-content-secondary" };
 
                   return (

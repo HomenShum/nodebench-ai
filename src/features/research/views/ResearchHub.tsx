@@ -473,9 +473,9 @@ function ResearchHubContent(props: ResearchHubProps) {
   return (
     <div className={`${embedded ? "h-full" : "h-screen"} flex flex-col bg-surface overflow-hidden`}>
       {!embedded && (
-        <header className="h-16 bg-background/95 backdrop-blur-md sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
+        <header className="h-16 bg-background/95  sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-none flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
+            <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-md flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
@@ -523,7 +523,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   </button>
                 </>
               ) : (
-                <span className="px-3 py-1 text-xs font-medium text-content-muted tracking-wide">Live</span>
+                <span className="px-3 py-1 text-xs font-medium text-content-muted">Live</span>
               )}
             </div>
 
@@ -553,7 +553,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 <span>Return to Pulse Overview</span>
               </button>
               {briefDateLabel && (
-                <div className="text-xs font-mono text-content-secondary uppercase tracking-wide">
+                <div className="text-xs font-mono text-content-secondary">
                   {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
                 </div>
               )}
@@ -603,7 +603,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all',
                       activeTab === tab.id
-                        ? 'bg-[var(--accent-primary-bg)] text-content shadow-sm border border-[var(--accent-primary)]/30'
+                        ? 'bg-surface text-[var(--accent-primary)] shadow-sm border border-[var(--accent-primary)]/40 ring-1 ring-[var(--accent-primary)]/10'
                         : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                     )}
                   >
@@ -627,10 +627,10 @@ function ResearchHubContent(props: ResearchHubProps) {
                         <Newspaper className="w-4 h-4 text-content" />
                         <h3 className="text-sm font-semibold text-content tracking-tight">Daily Summary</h3>
                         {selectedDate && (
-                          <span className="px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-medium border border-amber-900/10 dark:border-amber-500/20 rounded">Past</span>
+                          <span className="px-1.5 py-0.5 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] text-xs font-medium border border-[var(--accent-primary)]/20 rounded">Past</span>
                         )}
                       </div>
-                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-amber-500' : 'bg-[var(--accent-primary)]')} />
+                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-[var(--accent-primary)]')} />
                     </div>
                     <DigestSection
                       onItemClick={handleDigestItemClick}

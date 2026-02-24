@@ -115,7 +115,7 @@ const parseEntitiesAndSmartLinks = (
       nodes.push(
         <EntityLink
           key={`${keyPrefix}-entity-${entityId}-${match.index}`}
-          entity={displayEntity}
+          entity={displayEntity as any}
           displayName={displayName}
           onClick={onEntityClick}
           preloadedEnrichment={enrichment}
@@ -276,6 +276,7 @@ export const InteractiveSpanParser: React.FC<InteractiveSpanParserProps> = ({
   onCitationClick,
   onEntityClick,
 }) => {
+  if (!text) return null;
   const nodes: React.ReactNode[] = [];
   // Match any [[...]] token. The inner payload is parsed for label and metadata.
   const tokenRegex = /\[\[([^\]]+)\]\]/g;

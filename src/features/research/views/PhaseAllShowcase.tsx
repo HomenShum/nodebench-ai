@@ -165,7 +165,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
   return (
     <div className="nb-page-shell">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-edge">
+      <header className="sticky top-0 z-50 bg-surface/80  border-b border-edge">
         <div className="nb-page-frame px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {onBack && (

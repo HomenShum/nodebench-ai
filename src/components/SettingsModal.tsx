@@ -1578,7 +1578,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          className="flex-1 px-3 py-2 text-sm border border-edge bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 px-3 py-2 text-sm border border-edge bg-surface rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="my-topic"
                           value={smsPhoneInput}
                           onChange={(e) => setSmsPhoneInput(e.target.value)}
@@ -1706,7 +1706,7 @@ export function SettingsModal({ isOpen, onClose, initialTab }: Props) {
                     <div className="space-y-2 pt-2 border-t border-edge">
                       <label className="text-xs font-medium text-content-secondary">Reminder Time (minutes before meeting)</label>
                       <select
-                        className="w-full px-3 py-2 text-sm border border-edge bg-white dark:bg-white/[0.04] rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 text-sm border border-edge bg-surface rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={smsPreferences?.smsReminderMinutes ?? 15}
                         disabled={!smsPreferences?.smsNotificationsEnabled}
                         onChange={async (e) => {

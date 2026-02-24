@@ -27,11 +27,11 @@ export function EveningReviewWidget({ onNavigate }: EveningReviewWidgetProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 bg-surface-secondary dark:bg-white/[0.02] rounded-lg border border-edge"
+      className="p-6 bg-surface-secondary rounded-lg border border-edge"
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-surface-secondary dark:bg-white/[0.06] rounded-lg">
+        <div className="p-2 bg-surface-secondary rounded-lg">
           <Sunset className="h-6 w-6 text-content-secondary" />
         </div>
         <div>

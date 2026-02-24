@@ -31,10 +31,10 @@ export const TrendRail: React.FC<TrendRailProps> = ({
   className = '' 
 }) => {
   const getDeltaStyle = (trend: TrendItem) => {
-    if (trend.type === 'up' || trend.hot) return 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary';
-    if (trend.type === 'down') return 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary';
-    if (trend.type === 'new') return 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary';
-    return 'bg-surface-secondary dark:bg-white/[0.06] text-content-muted';
+    if (trend.type === 'up' || trend.hot) return 'bg-surface-secondary text-content-secondary';
+    if (trend.type === 'down') return 'bg-surface-secondary text-content-secondary';
+    if (trend.type === 'new') return 'bg-surface-secondary text-content-secondary';
+    return 'bg-surface-secondary text-content-muted';
   };
 
   const getDeltaIcon = (trend: TrendItem) => {
@@ -49,7 +49,7 @@ export const TrendRail: React.FC<TrendRailProps> = ({
     <div className={`w-full overflow-x-auto no-scrollbar py-3 ${className}`}>
       <div className="flex items-center gap-3 px-1">
         {/* Live Signals Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border border-edge text-xs font-medium whitespace-nowrap shrink-0">
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-surface-secondary text-content-secondary border border-edge text-xs font-medium whitespace-nowrap shrink-0">
           <Flame className="w-3.5 h-3.5 text-content-muted" />
           <span>Live Signals</span>
           <span className="relative flex h-2 w-2 ml-1">

@@ -110,13 +110,13 @@ const getPointEvidenceIds = (pt: ChartPoint): string[] => {
 /** Delta badge showing change from baseline */
 function DeltaCallout({ delta }: { delta: TrendLineConfig["delta"] }) {
   if (!delta) return null;
-  
+
   const Icon = delta.direction === "up" ? TrendingUp : delta.direction === "down" ? TrendingDown : Minus;
   const colorClass = delta.direction === "up" ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10"
     : delta.direction === "down" ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10"
-    : "text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/[0.06]";
+      : "text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/[0.06]";
   const sign = delta.direction === "up" ? "+" : delta.direction === "down" ? "" : "";
-  
+
   return (
     <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${colorClass}`}>
       <Icon className="w-3 h-3" />
@@ -127,9 +127,9 @@ function DeltaCallout({ delta }: { delta: TrendLineConfig["delta"] }) {
 }
 
 /** Chart header with title, time window, delta, and last updated */
-function ChartHeader({ config, isLoading, onRefresh }: { 
-  config: TrendLineConfig; 
-  isLoading?: boolean; 
+function ChartHeader({ config, isLoading, onRefresh }: {
+  config: TrendLineConfig;
+  isLoading?: boolean;
   onRefresh?: () => void;
 }) {
   return (
@@ -143,7 +143,7 @@ function ChartHeader({ config, isLoading, onRefresh }: {
           </h3>
           {config.delta && <DeltaCallout delta={config.delta} />}
         </div>
-        
+
         {/* Time window and last updated */}
         <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
           {config.timeWindow && <span>{config.timeWindow}</span>}
@@ -158,7 +158,7 @@ function ChartHeader({ config, isLoading, onRefresh }: {
           )}
         </div>
       </div>
-      
+
       {/* Refresh button */}
       {onRefresh && (
         <button
@@ -356,18 +356,18 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
 
       // Find the point at this index
       const pt = allPointsWithCoords.find((p) => p.seriesId === primarySeries.id && p.index === newIndex);
-        if (pt) {
-          setHoveredPoint({
-            index: pt.index,
-            seriesId: pt.seriesId,
-            x: pt.x,
-            y: pt.y,
-            value: pt.point.value,
-            label: pt.seriesLabel,
-            linkedEvidenceIds: getPointEvidenceIds(pt.point),
-            pointTooltip: pt.point.tooltip,
-          });
-        }
+      if (pt) {
+        setHoveredPoint({
+          index: pt.index,
+          seriesId: pt.seriesId,
+          x: pt.x,
+          y: pt.y,
+          value: pt.point.value,
+          label: pt.seriesLabel,
+          linkedEvidenceIds: getPointEvidenceIds(pt.point),
+          pointTooltip: pt.point.tooltip,
+        });
+      }
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       if (hoveredPoint) {
@@ -531,7 +531,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
       return { annotation, coord, label };
     })
     .filter(Boolean) as Array<{
-      annotation: (typeof config.annotations)[number];
+      annotation: NonNullable<typeof config.annotations>[number];
       coord: { x: number; y: number };
       label: string;
     }>;
@@ -545,7 +545,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
       <div className="relative flex-1 min-h-0">
         {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10 rounded">
+          <div className="absolute inset-0 bg-surface flex items-center justify-center z-10 rounded">
             <RefreshCw className="w-5 h-5 text-slate-400 motion-safe:animate-spin" />
           </div>
         )}
@@ -616,7 +616,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                   y1: getCoord(0, config.baseline.value).y,
                   y2: getCoord(0, config.baseline.value).y,
                 }}
-                className="stroke-amber-400"
+                className="stroke-slate-300 dark:stroke-slate-600"
                 strokeWidth={1.5}
                 strokeDasharray="4 2"
                 transition={{ duration: 0.4, ease: "easeOut" }}
@@ -625,7 +625,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 x={CHART.width - CHART.paddingX + 3}
                 initial={false}
                 animate={{ y: getCoord(0, config.baseline.value).y + 3 }}
-                className="text-xs fill-amber-600 font-medium"
+                className="text-[10px] fill-slate-500 dark:fill-slate-400 font-medium font-mono"
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {config.baseline.label}
@@ -633,208 +633,221 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
             </g>
           )}
 
-           {/* X-axis labels */}
-           {config.xAxisLabels.map((label, i) => {
-             const { x } = getCoord(i, 0);
-             const muted = i > config.visibleEndIndex;
-             return (
-               <text
-                 key={i}
-                 x={x}
-                 y={CHART.height - 3}
-                 textAnchor="middle"
-                 className={`text-xs font-mono ${muted ? "fill-slate-200" : "fill-slate-400"}`}
-               >
-                 {label}
-               </text>
-             );
-           })}
+          {/* X-axis labels */}
+          {config.xAxisLabels.map((label, i) => {
+            const { x } = getCoord(i, 0);
+            const muted = i > config.visibleEndIndex;
+            return (
+              <text
+                key={i}
+                x={x}
+                y={CHART.height - 3}
+                textAnchor="middle"
+                className={`text-xs font-mono ${muted ? "fill-slate-200" : "fill-slate-400"}`}
+              >
+                {label}
+              </text>
+            );
+          })}
 
-           {/* Series lines */}
-           {config.series.map((series) => {
-             const color = getSeriesColor(series);
-             const isGhost = series.type === "ghost";
-             const visibleEnd = Number.isFinite(config.visibleEndIndex)
-               ? Math.min(config.visibleEndIndex, series.data.length - 1)
-               : series.data.length - 1;
+          {/* Series lines */}
+          {config.series.map((series) => {
+            const color = getSeriesColor(series);
+            const isGhost = series.type === "ghost";
+            const visibleEnd = Number.isFinite(config.visibleEndIndex)
+              ? Math.min(config.visibleEndIndex, series.data.length - 1)
+              : series.data.length - 1;
 
-             const points = series.data.map((pt, i) => ({ i, ...getCoord(i, pt.value), point: pt }));
-             const visiblePoints = points.filter((p) => p.i <= visibleEnd);
+            const points = series.data.map((pt, i) => ({ i, ...getCoord(i, pt.value), point: pt }));
+            const visiblePoints = points.filter((p) => p.i <= visibleEnd);
 
-             const presentIndexRaw = typeof config.presentIndex === "number" ? config.presentIndex : null;
-             const presentIndex =
-               presentIndexRaw === null ? null : Math.max(0, Math.min(presentIndexRaw, visibleEnd));
+            const presentIndexRaw = typeof config.presentIndex === "number" ? config.presentIndex : null;
+            const presentIndex =
+              presentIndexRaw === null ? null : Math.max(0, Math.min(presentIndexRaw, visibleEnd));
 
-             const historyPoints =
-               presentIndex !== null && !isGhost
-                 ? visiblePoints.filter((p) => p.i <= presentIndex)
-                 : visiblePoints;
+            const historyPoints =
+              presentIndex !== null && !isGhost
+                ? visiblePoints.filter((p) => p.i <= presentIndex)
+                : visiblePoints;
 
-             const projectionPoints =
-               presentIndex !== null && !isGhost && presentIndex < visibleEnd
-                 ? visiblePoints.filter((p) => p.i >= presentIndex && p.i <= visibleEnd)
-                 : [];
+            const projectionPoints =
+              presentIndex !== null && !isGhost && presentIndex < visibleEnd
+                ? visiblePoints.filter((p) => p.i >= presentIndex && p.i <= visibleEnd)
+                : [];
 
-             const historyPath = buildPath(historyPoints.map((p) => ({ x: p.x, y: p.y })));
-             const projectionPath =
-               projectionPoints.length >= 2
-                 ? buildPath(projectionPoints.map((p) => ({ x: p.x, y: p.y })))
-                 : "";
-             const hasHistoryPath = historyPath.trim().startsWith("M");
-             const hasProjectionPath = projectionPath.trim().startsWith("M");
+            const historyPath = buildPath(historyPoints.map((p) => ({ x: p.x, y: p.y })));
+            const projectionPath =
+              projectionPoints.length >= 2
+                ? buildPath(projectionPoints.map((p) => ({ x: p.x, y: p.y })))
+                : "";
+            const hasHistoryPath = historyPath.trim().startsWith("M");
+            const hasProjectionPath = projectionPath.trim().startsWith("M");
 
-             return (
-               <g key={series.id}>
-                 {hasHistoryPath && (
-                   <motion.path
-                     d={historyPath}
-                     fill="none"
-                     stroke={color}
-                     strokeWidth={isGhost ? 1.5 : 2.5}
-                     strokeLinecap="round"
-                     strokeLinejoin="round"
-                     strokeDasharray={isGhost ? "6 4" : "0"}
-                     opacity={isGhost ? 0.4 : 1}
-                     initial={{ pathLength: 0, d: historyPath }}
-                     animate={{ pathLength: 1, d: historyPath }}
-                     transition={{ duration: 1.0, ease: "easeOut" }}
-                   />
-                 )}
+            return (
+              <g key={series.id}>
+                {hasHistoryPath && (
+                  <motion.path
+                    d={historyPath}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={isGhost ? 1.5 : 2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray={isGhost ? "6 4" : "0"}
+                    opacity={isGhost ? 0.4 : 1}
+                    initial={{ pathLength: 0, d: historyPath }}
+                    animate={{ pathLength: 1, d: historyPath }}
+                    transition={{ duration: 1.0, ease: "easeOut" }}
+                  />
+                )}
 
-                 {!isGhost && hasProjectionPath && (
-                     <motion.path
-                       d={projectionPath}
-                       fill="none"
-                       stroke={color}
-                       strokeWidth={2.2}
-                       strokeLinecap="round"
-                       strokeLinejoin="round"
-                       strokeDasharray="6 4"
-                       opacity={0.55}
-                       initial={{ pathLength: 0, d: projectionPath }}
-                       animate={{ pathLength: 1, d: projectionPath }}
-                       transition={{ duration: 1.0, ease: "easeOut" }}
-                     />
-                 )}
+                {!isGhost && hasProjectionPath && (
+                  <motion.path
+                    d={projectionPath}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="6 4"
+                    opacity={0.55}
+                    initial={{ pathLength: 0, d: projectionPath }}
+                    animate={{ pathLength: 1, d: projectionPath }}
+                    transition={{ duration: 1.0, ease: "easeOut" }}
+                  />
+                )}
 
-                 {/* Data points */}
-                 {series.data.map((pt, i) => {
-                   if (i > visibleEnd) return null;
-                   const coord = getCoord(i, pt.value);
-                   const isActive = activePoint?.seriesId === series.id && activePoint?.index === i;
-                   const isFocus = series.id === primarySeriesId && config.focusIndex === i;
-                   const isProjected = !isGhost && presentIndex !== null && i > presentIndex;
-                   const evidenceIds = getPointEvidenceIds(pt);
-                   const hasEvidence = evidenceIds.length > 0;
+                {/* Data points */}
+                {series.data.map((pt, i) => {
+                  if (i > visibleEnd) return null;
+                  const coord = getCoord(i, pt.value);
+                  const isActive = activePoint?.seriesId === series.id && activePoint?.index === i;
+                  const isFocus = series.id === primarySeriesId && config.focusIndex === i;
+                  const isProjected = !isGhost && presentIndex !== null && i > presentIndex;
+                  const evidenceIds = getPointEvidenceIds(pt);
+                  const hasEvidence = evidenceIds.length > 0;
 
-                   return (
-                     <g key={i}>
-                       {/* Point circle */}
-                       <motion.circle
-                         cx={coord.x}
-                         cy={coord.y}
-                         r={isActive || isFocus ? 6 : 4}
-                         fill="white"
-                         stroke={color}
-                         strokeWidth={2}
-                         strokeDasharray={isProjected ? "3 3" : "0"}
-                         opacity={isProjected ? 0.65 : isGhost ? 0.45 : 1}
-                         initial={{ scale: 0 }}
-                         animate={{ scale: 1 }}
-                         transition={{ delay: i * 0.05 }}
-                       />
+                  return (
+                    <g key={i}>
+                      {/* Point circle */}
+                      <motion.circle
+                        cx={coord.x}
+                        cy={coord.y}
+                        r={isActive || isFocus ? 6 : 4}
+                        fill="white"
+                        stroke={color}
+                        strokeWidth={2}
+                        strokeDasharray={isProjected ? "3 3" : "0"}
+                        opacity={isProjected ? 0.65 : isGhost ? 0.45 : 1}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                      />
 
-                       {/* Evidence indicator */}
-                       {hasEvidence && (
-                         <circle
-                           cx={coord.x}
-                           cy={coord.y}
-                           r={2}
-                           fill={color}
-                           opacity={isProjected ? 0.65 : 1}
-                         />
-                       )}
+                      {/* Evidence indicator */}
+                      {hasEvidence && (
+                        <circle
+                          cx={coord.x}
+                          cy={coord.y}
+                          r={2}
+                          fill={color}
+                          opacity={isProjected ? 0.65 : 1}
+                        />
+                      )}
 
-                       {/* Active pulse */}
-                       {isActive && (
-                         <motion.circle
-                           cx={coord.x}
-                           cy={coord.y}
-                           r={6}
-                           fill={color}
-                           initial={{ opacity: 0.5, scale: 1 }}
-                           animate={{ opacity: 0, scale: 2 }}
-                           transition={{ repeat: Infinity, duration: 1.5 }}
-                         />
-                       )}
+                      {/* Active pulse */}
+                      {isActive && (
+                        <motion.circle
+                          cx={coord.x}
+                          cy={coord.y}
+                          r={6}
+                          fill={color}
+                          initial={{ opacity: 0.5, scale: 1 }}
+                          animate={{ opacity: 0, scale: 2 }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                        />
+                      )}
 
-                       {/* Focus pulse (when not actively hovered/pinned) */}
-                       {isFocus && !isActive && (
-                         <motion.circle
-                           cx={coord.x}
-                           cy={coord.y}
-                           r={6}
-                           fill={color}
-                           initial={{ opacity: 0.4, scale: 1 }}
-                           animate={{ opacity: 0, scale: 2 }}
-                           transition={{ repeat: Infinity, duration: 1.5 }}
-                         />
-                       )}
-                     </g>
-                   );
-                 })}
-               </g>
-             );
-           })}
+                      {/* Focus pulse (when not actively hovered/pinned) */}
+                      {isFocus && !isActive && (
+                        <motion.circle
+                          cx={coord.x}
+                          cy={coord.y}
+                          r={6}
+                          fill={color}
+                          initial={{ opacity: 0.4, scale: 1 }}
+                          animate={{ opacity: 0, scale: 2 }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                        />
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
 
           {annotationPoints.length > 0 && (() => {
             // Simple collision avoidance: offset labels that would overlap
             const usedSlots: Array<{ x: number; y: number; w: number }> = [];
             return (
-            <g>
-              {annotationPoints.map(({ annotation, coord, label }, idx) => {
-                const color = annotation.sentiment === "negative"
-                  ? "#ef4444"
-                  : annotation.sentiment === "positive"
-                    ? "#10b981"
-                    : "#64748b";
-                const truncLabel = label.length > 20 ? label.slice(0, 18) + "…" : label;
-                const labelW = truncLabel.length * 6.5 + 12;
-                let y = Math.max(CHART.paddingTop + 6, coord.y - 14);
-                // Offset if overlapping a previous label
-                for (const slot of usedSlots) {
-                  if (Math.abs(coord.x - slot.x) < slot.w && Math.abs(y - slot.y) < 20) {
-                    y = slot.y + 22;
+              <g>
+                {annotationPoints.map(({ annotation, coord, label }, idx) => {
+                  const color = annotation.sentiment === "negative"
+                    ? "#ef4444"
+                    : annotation.sentiment === "positive"
+                      ? "#10b981"
+                      : "#64748b";
+                  const truncLabel = label.length > 20 ? label.slice(0, 18) + "…" : label;
+                  const labelW = truncLabel.length * 6.5 + 12;
+                  let y = Math.max(CHART.paddingTop + 6, coord.y - 14);
+
+                  // Robust collision avoidance: recursively check and offset
+                  let hasOverlap = true;
+                  let attempts = 0;
+                  while (hasOverlap && attempts < 5) {
+                    hasOverlap = false;
+                    for (const slot of usedSlots) {
+                      const xOverlap = Math.abs(coord.x - slot.x) < (labelW + slot.w) / 2 + 10;
+                      const yOverlap = Math.abs(y - slot.y) < 20;
+                      if (xOverlap && yOverlap) {
+                        y = Math.min(CHART.height - CHART.paddingY - 10, slot.y + 22);
+                        hasOverlap = true;
+                        break;
+                      }
+                    }
+                    attempts++;
                   }
-                }
-                usedSlots.push({ x: coord.x, y, w: labelW });
-                return (
-                  <g key={annotation.id ?? `${coord.x}-${coord.y}-${idx}`}>
-                    <circle cx={coord.x} cy={coord.y} r={3} fill={color} />
-                    <rect
-                      x={coord.x + 6}
-                      y={y - 10}
-                      width={labelW}
-                      height={18}
-                      rx={9}
-                      fill="#ffffff"
-                      stroke="#e2e8f0"
-                      strokeWidth={1}
-                    />
-                    <text
-                      x={coord.x + 12}
-                      y={y + 3}
-                      className="text-xs fill-slate-600 font-medium"
-                    >
-                      {truncLabel}
-                    </text>
-                    {annotation.description && (
-                      <title>{annotation.description}</title>
-                    )}
-                  </g>
-                );
-              })}
-            </g>
+
+                  usedSlots.push({ x: coord.x, y, w: labelW });
+                  return (
+                    <g key={annotation.id ?? `${coord.x}-${coord.y}-${idx}`}>
+                      <circle cx={coord.x} cy={coord.y} r={3} fill={color} className="shadow-sm" />
+                      <rect
+                        x={coord.x + 6}
+                        y={y - 10}
+                        width={labelW}
+                        height={18}
+                        rx={6}
+                        fill="var(--bg-surface)"
+                        stroke="var(--border-edge)"
+                        strokeWidth={1}
+                        className="shadow-[0_1px_2px_rgba(0,0,0,0.05)]"
+                      />
+                      <text
+                        x={coord.x + 12}
+                        y={y + 3}
+                        className="text-[10px] fill-content font-medium font-mono"
+                      >
+                        {truncLabel}
+                      </text>
+                      {annotation.description && (
+                        <title>{annotation.description}</title>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
             );
           })()}
 
@@ -879,9 +892,8 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 marginTop: "-12px",
               }}
             >
-              <div className={`bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs min-w-[120px] ${
-                activePoint.isPinned ? "ring-2 ring-indigo-400" : ""
-              }`}>
+              <div className={`bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs min-w-[120px] ${activePoint.isPinned ? "ring-2 ring-indigo-400" : ""
+                }`}>
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs uppercase tracking-wider text-indigo-200">
                     {activePoint.pointTooltip?.kicker ?? "Intel"}

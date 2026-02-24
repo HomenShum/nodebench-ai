@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Minus,
   Plus,
+  Sparkles,
 } from "lucide-react";
+import { PageHeroHeader } from "@/shared/ui/PageHeroHeader";
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
@@ -105,25 +107,25 @@ export function ForYouFeed() {
           {/* Header skeleton */}
           <div className="flex items-center justify-between mb-6">
             <div className="space-y-2">
-              <div className="h-6 bg-muted/60 rounded w-40" />
-              <div className="h-3 bg-muted/40 rounded w-56" />
+              <div className="h-6 bg-surface-secondary rounded w-40" />
+              <div className="h-3 bg-surface-secondary/80 rounded w-56" />
             </div>
-            <div className="h-9 bg-muted/60 rounded-lg w-24" />
+            <div className="h-9 bg-surface-secondary rounded-lg w-24" />
           </div>
           {/* Card grid skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="nb-surface-card p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-muted/60 rounded-lg" />
+                  <div className="w-10 h-10 bg-surface-secondary rounded-lg" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-muted/60 rounded w-3/4" />
-                    <div className="h-3 bg-muted/40 rounded w-1/2" />
+                    <div className="h-4 bg-surface-secondary rounded w-3/4" />
+                    <div className="h-3 bg-surface-secondary/80 rounded w-1/2" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="h-3 bg-muted/40 rounded w-full" />
-                  <div className="h-3 bg-muted/40 rounded w-5/6" />
+                  <div className="h-3 bg-surface-secondary/80 rounded w-full" />
+                  <div className="h-3 bg-surface-secondary/80 rounded w-5/6" />
                 </div>
               </div>
             ))}
@@ -140,8 +142,8 @@ export function ForYouFeed() {
         <div className="nb-page-inner">
           <div className="nb-page-frame-narrow">
             <div className="nb-surface-card text-center max-w-md mx-auto px-6 py-12">
-              <h2 className="text-xl font-light text-foreground mb-2">Nothing to show yet</h2>
-              <p className="text-muted-foreground text-sm font-light">Check back soon for the latest updates.</p>
+              <h2 className="text-xl font-light text-content mb-2">Nothing to show yet</h2>
+              <p className="text-content-muted text-sm font-light">Check back soon for the latest updates.</p>
             </div>
           </div>
         </div>
@@ -150,33 +152,21 @@ export function ForYouFeed() {
   }
 
   return (
-    <div ref={containerRef} className="nb-page-shell text-foreground">
+    <div ref={containerRef} className="nb-page-shell text-content">
       <div className="nb-page-inner">
-        <div className="nb-page-frame-narrow">
-      {/* Masthead */}
-      <header className="nb-surface-card border-edge/80">
-        <div className="px-6 py-6">
-          <div className="flex items-baseline justify-between">
-            <div>
-              <h1 className="type-page-title">
-                {isPublicMode ? "The Daily Brief" : "For You"}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1 font-light">
-                {formatMastheadDate()} · {displayFeed.items.length} {displayFeed.items.length === 1 ? "story" : "stories"}
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                {isPublicMode ? "Preview" : "Personalized"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
+        <div className="nb-page-frame space-y-4">
+          <PageHeroHeader
+            icon={<Sparkles className="w-5 h-5" />}
+            title={isPublicMode ? "The Daily Brief" : "For You"}
+            subtitle={`${formatMastheadDate()} · ${displayFeed.items.length} ${displayFeed.items.length === 1 ? "story" : "stories"}`}
+            date={isPublicMode ? "Preview" : "Personalized"}
+          />
 
-      {/* Content */}
-      <main className="px-6 py-8">
-        {dateGroups.map((group: DateGroup, groupIndex: number) => {
+          {/* Content */}
+          {/* NOTE(coworker): Keep this feed in the shared surface language used across Workbench, Activity, and Analytics. */}
+          <div className="nb-surface-card overflow-hidden">
+            <main className="px-6 py-6 sm:px-8 sm:py-7">
+              {dateGroups.map((group: DateGroup, groupIndex: number) => {
           const isCollapsed = collapsedDates.has(group.dateString);
           const heroItem = group.items[0];
           const restItems = group.items.slice(1);
@@ -191,18 +181,18 @@ export function ForYouFeed() {
                 className="w-full group"
               >
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground/80 transition-colors">
+                  <div className="flex items-center gap-2 text-content-muted hover:text-content-secondary transition-colors">
                     {isCollapsed ? (
                       <Plus className="w-4 h-4" />
                     ) : (
                       <Minus className="w-4 h-4" />
                     )}
                   </div>
-                  <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                  <h2 className="text-xs font-semibold text-content-muted">
                     {group.displayLabel}
                   </h2>
-                  <div className="flex-1 h-px bg-border/70" />
-                  <span className="text-xs text-muted-foreground font-light">
+                  <div className="flex-1 h-px bg-edge" />
+                  <span className="text-xs text-content-muted font-light">
                     {group.items.length} {group.items.length === 1 ? 'story' : 'stories'}
                   </span>
                 </div>
@@ -228,7 +218,7 @@ export function ForYouFeed() {
                   {/* Secondary Stories */}
                   {restItems.length > 0 && (
                     prefersReducedMotion() ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border/60">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-edge">
                         {restItems.map((item: any, idx: number) => (
                           <StoryCard
                             key={item.itemId ?? item.metadata?.url ?? `${group.dateString}-${idx}`}
@@ -239,7 +229,7 @@ export function ForYouFeed() {
                       </div>
                     ) : (
                       <motion.div
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-border/60"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-edge"
                         variants={staggerContainer}
                         initial="hidden"
                         animate="visible"
@@ -261,13 +251,14 @@ export function ForYouFeed() {
           );
         })}
 
-        {/* Footer */}
-        <footer className="mt-16 pt-8 border-t border-border/70 text-center">
-          <p className="text-sm text-muted-foreground font-light">
-            End of feed · {displayFeed.totalCandidates} {displayFeed.totalCandidates === 1 ? "source" : "sources"} analyzed
-          </p>
-        </footer>
-      </main>
+              {/* Footer */}
+              <footer className="mt-16 pt-8 border-t border-edge text-center">
+                <p className="text-sm text-content-muted font-light">
+                  End of feed · {displayFeed.totalCandidates} {displayFeed.totalCandidates === 1 ? "source" : "sources"} analyzed
+                </p>
+              </footer>
+            </main>
+          </div>
         </div>
       </div>
     </div>
@@ -332,32 +323,32 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
   return (
     <article
       onClick={handleOpen}
-      className="group cursor-pointer"
+      className="group cursor-pointer nb-surface-card p-6 hover:border-content-muted/30 transition-colors"
     >
       <div className="flex flex-col md:flex-row gap-6">
         {/* Text Content */}
         <div className="flex-1 space-y-3">
           {/* Category Tag */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="text-[11px] font-medium text-content-muted">
               {sourceLabel}
             </span>
             {item.metadata?.sector && (
               <>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="text-xs text-muted-foreground">{item.metadata.sector}</span>
+                <span className="text-content-muted/60">·</span>
+                <span className="text-xs text-content-muted">{item.metadata.sector}</span>
               </>
             )}
           </div>
 
           {/* Headline */}
-          <h3 className="text-2xl md:text-3xl font-bold text-foreground leading-tight group-hover:text-foreground/90 transition-colors">
+          <h3 className="text-2xl md:text-[1.75rem] font-semibold text-content leading-tight group-hover:text-content-secondary transition-colors">
             {decodeHtmlEntities(item.title)}
           </h3>
 
           {/* Excerpt */}
           {item.snippet && (
-            <p className="text-muted-foreground leading-relaxed text-lg font-light line-clamp-3">
+            <p className="text-content-muted leading-relaxed text-base font-light line-clamp-3">
               {cleanSnippet(item.snippet)}
             </p>
           )}
@@ -365,18 +356,18 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
           {/* Meta */}
           <div className="flex items-center gap-4 pt-2">
             {domain && (
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
+              <span className="text-sm text-content-muted flex items-center gap-1">
                 <ExternalLink className="w-3 h-3" />
                 {domain}
               </span>
             )}
-            <span className="text-sm text-muted-foreground/80">
+            <span className="text-sm text-content-muted/80">
               {formatTimeAgo(item.timestamp)}
             </span>
             <button
               type="button"
               onClick={handleSave}
-              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]' : 'text-muted-foreground hover:text-foreground/80 hover:bg-muted/40'
+              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]' : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary'
                 }`}
               title={saved ? "Saved" : "Save for later"}
               aria-label={saved ? "Saved" : "Save for later"}
@@ -387,7 +378,7 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
         </div>
 
         {/* Visual Element */}
-        <div className="w-full md:w-64 h-40 md:h-auto bg-gradient-to-br from-[var(--accent-primary-bg)] via-[var(--bg-secondary)] to-[var(--accent-primary-bg)] rounded-lg flex items-center justify-center flex-shrink-0 border border-edge/70">
+        <div className="w-full md:w-64 h-40 md:h-auto bg-surface-secondary rounded-lg flex items-center justify-center flex-shrink-0 border border-edge/70">
           <span className="text-5xl opacity-60">{getSourceIcon(item)}</span>
         </div>
       </div>
@@ -410,28 +401,28 @@ const StoryCard = React.memo(function StoryCard({ item, onEngagement }: CardProp
   return (
     <article
       onClick={handleOpen}
-      className="group cursor-pointer"
+      className="group cursor-pointer nb-surface-card p-4 hover:border-content-muted/30 transition-colors"
     >
       <div className="space-y-2">
         {/* Category */}
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[11px] font-medium text-content-muted">
           {sourceLabel}
         </span>
 
         {/* Headline */}
-        <h4 className="text-lg font-semibold text-foreground leading-snug group-hover:text-foreground/90 transition-colors line-clamp-2">
+        <h4 className="text-lg font-semibold text-content leading-snug group-hover:text-content-secondary transition-colors line-clamp-2">
           {decodeHtmlEntities(item.title)}
         </h4>
 
         {/* Excerpt */}
         {item.snippet && (
-          <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 font-light">
+          <p className="text-sm text-content-muted leading-relaxed line-clamp-2 font-light">
             {cleanSnippet(item.snippet)}
           </p>
         )}
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-muted-foreground/80 pt-1">
+        <div className="flex items-center gap-3 text-xs text-content-muted/80 pt-1">
           {domain && <span>{domain}</span>}
           <span>{formatTimeAgo(item.timestamp)}</span>
           <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />

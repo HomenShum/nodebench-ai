@@ -770,7 +770,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                           </div>
                         </div>
                         {video.title && (
-                          <div className="p-3 bg-gradient-to-r from-surface/80 to-surface-secondary/60 backdrop-blur-sm">
+                          <div className="p-3 bg-gradient-to-r from-surface/80 to-surface-secondary/60 ">
                             <p className="text-xs font-medium text-content-secondary line-clamp-2">{video.title}</p>
                           </div>
                         )}

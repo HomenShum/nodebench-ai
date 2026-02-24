@@ -68,17 +68,10 @@ interface KPITileProps {
   color: "blue" | "green" | "amber" | "red";
 }
 
-function KPITile({ icon, label, value, sublabel, color }: KPITileProps) {
-  const colorClasses = {
-    blue: "text-blue-600 bg-blue-50/50 border-blue-100",
-    green: "text-indigo-600 bg-indigo-50/50 border-indigo-100",
-    amber: "text-amber-600 bg-amber-50/50 border-amber-100",
-    red: "text-red-600 bg-red-50/50 border-red-100",
-  };
-
+function KPITile({ icon, label, value, sublabel }: KPITileProps) {
   return (
-    <div className={`flex items-center gap-5 px-6 py-5 rounded-lg border backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px] group ${colorClasses[color]}`}>
-      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-surface shadow-xl shadow-surface-secondary/20 transition-transform flex items-center justify-center">
+    <div className="flex items-center gap-4 px-5 py-4 rounded-lg border border-edge bg-surface transition-colors hover:bg-surface-hover group">
+      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-surface-secondary border border-edge transition-transform flex items-center justify-center text-content-secondary">
         <div className="[&>svg]:w-6 [&>svg]:h-6">
           {icon}
         </div>
@@ -107,8 +100,8 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 text-xs font-bold rounded-lg transition-all tracking-[0.1em] uppercase ${isSelected
-        ? "bg-gray-900 text-white shadow-xl shadow-gray-400/20 translate-y-[-1px]"
+      className={`px-4 py-2 text-xs font-medium rounded-lg transition-all tracking-wider uppercase ${isSelected
+        ? "bg-[var(--accent-primary)] text-white shadow-sm"
         : "bg-surface text-content-secondary hover:text-content hover:bg-surface-hover border border-edge"
         }`}
     >
@@ -185,9 +178,9 @@ export function ExecutiveBriefHeader({
       : undefined;
 
   return (
-    <header className={`bg-surface/80 backdrop-blur-xl border border-edge rounded-lg overflow-hidden ${className ?? ""}`}>
+    <header className={`bg-surface border border-edge rounded-lg overflow-hidden ${className ?? ""}`}>
       {/* Top row: Headline + Date */}
-      <div className="px-8 py-6 border-b border-[color:var(--bg-secondary)]/50 bg-gradient-to-r from-surface-secondary/30 to-transparent">
+      <div className="px-8 py-6 border-b border-edge">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl font-bold text-content tracking-tight italic">

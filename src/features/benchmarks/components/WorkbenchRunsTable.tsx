@@ -200,7 +200,7 @@ export function WorkbenchRunsTable({ runs }: { runs?: WorkbenchRunRow[] }) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-content-muted">Runs</h2>
+        <h2 className="text-xs font-semibold text-content-muted">Runs</h2>
         {(runs?.length ?? 0) > 0 && <span className="text-xs text-content-muted">Last 30 days</span>}
       </div>
 
@@ -216,7 +216,7 @@ export function WorkbenchRunsTable({ runs }: { runs?: WorkbenchRunRow[] }) {
                 {["Model", "Scenario", "Score", "Grade", "Duration", "Status", "When"].map((column) => (
                   <th
                     key={column}
-                    className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-content-muted"
+                    className="px-4 py-2.5 text-[10px] font-semibold text-content-muted"
                   >
                     {column}
                   </th>

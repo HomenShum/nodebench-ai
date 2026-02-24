@@ -74,14 +74,14 @@ export default function ProductChangelogPanel() {
 
       <div className="mt-4 grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-4">
         <aside className="xl:sticky xl:top-4 xl:self-start">
-          <div className="bg-white/60 dark:bg-white/[0.03] border border-edge rounded-lg p-3">
+          <div className="bg-surface dark:bg-white/[0.03] border border-edge rounded-lg p-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-content-muted" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search releases..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-edge rounded-md bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-edge rounded-md bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
@@ -122,7 +122,7 @@ export default function ProductChangelogPanel() {
               ref={(node) => {
                 entryRefs.current[e.id] = node;
               }}
-              className="bg-white/60 dark:bg-white/[0.02] border border-edge rounded-lg p-5"
+              className="bg-surface border border-edge rounded-lg p-5"
             >
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className="text-xs font-black uppercase tracking-[0.25em] text-content">{e.version}</div>

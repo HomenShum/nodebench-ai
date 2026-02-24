@@ -41,17 +41,17 @@ const getCitationIcon = (type: CitationType) => {
 const getCitationColors = (type: CitationType) => {
   switch (type) {
     case "source":
-      return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
+      return "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/20";
     case "data":
-      return "bg-indigo-100 text-content-secondary hover:bg-indigo-200 border-indigo-200";
+      return "bg-surface-secondary text-content-secondary hover:bg-surface-hover border-edge";
     case "quote":
-      return "bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200";
+      return "bg-surface-secondary text-content hover:bg-surface-hover border-edge";
     case "analysis":
-      return "bg-purple-100 text-purple-700 hover:bg-purple-200 border-purple-200";
+      return "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/20";
     case "internal":
-      return "bg-surface-secondary text-content hover:bg-surface-secondary border-edge";
+      return "bg-surface-secondary text-content hover:bg-surface-hover border-edge";
     default:
-      return "bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200";
+      return "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] hover:bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/20";
   }
 };
 
@@ -99,8 +99,8 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
       const footnoteEl = document.getElementById(`footnote-${citation.id}`);
       if (footnoteEl) {
         footnoteEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        footnoteEl.classList.add("ring-2", "ring-blue-500");
-        setTimeout(() => footnoteEl.classList.remove("ring-2", "ring-blue-500"), 2000);
+        footnoteEl.classList.add("ring-2", "ring-[var(--accent-primary)]");
+        setTimeout(() => footnoteEl.classList.remove("ring-2", "ring-[var(--accent-primary)]"), 2000);
       }
     }
   };
@@ -124,7 +124,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
           rounded border
           transition-all duration-150
           cursor-pointer
-          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500
+          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-primary)]
           ${colorClasses}
           ${className}
         `}
@@ -176,7 +176,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
                 {citation.pageIndex != null && (
                   <>
                     {(citation.author || citation.publishedAt) && <span>•</span>}
-                    <span className="px-1 py-0 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded font-medium">
+                    <span className="px-1 py-0 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] rounded font-medium">
                       p. {citation.pageIndex}
                     </span>
                   </>
@@ -186,7 +186,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
 
             {/* URL indicator */}
             {citation.url && (
-              <span className="flex items-center gap-1 text-xs text-blue-500">
+              <span className="flex items-center gap-1 text-xs text-[var(--accent-primary)]">
                 <ExternalLink className="w-3 h-3" />
                 <span className="truncate">{new URL(citation.url).hostname}</span>
               </span>

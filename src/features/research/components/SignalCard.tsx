@@ -32,7 +32,7 @@ function DeltaBadge({ deltaSummary }: DeltaBadgeProps) {
   const isNegative = deltaSummary.includes("-") || deltaSummary.toLowerCase().includes("down")
     || deltaSummary.toLowerCase().includes("decrease");
 
-  const colorClass = "bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge";
+  const colorClass = "bg-surface-secondary text-content-secondary border-edge";
 
   return (
     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
@@ -94,7 +94,7 @@ export function SignalCard({
         <div className="flex-1 min-w-0">
           {/* Signal Label */}
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium text-content-secondary bg-surface-secondary dark:bg-white/[0.06] px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="text-xs font-medium text-content-secondary bg-surface-secondary px-2 py-0.5 rounded-full flex items-center gap-1">
               <Tag className="w-2.5 h-2.5" />
               {signalLabel}
             </span>
@@ -118,7 +118,7 @@ export function SignalCard({
               {evidenceCount} source{evidenceCount !== 1 ? "s" : ""}
             </span>
             {signal.relatedSignalIds && signal.relatedSignalIds.length > 0 && (
-              <span className="text-xs text-content-secondary bg-surface-secondary dark:bg-white/[0.06] px-1.5 py-0.5 rounded">
+              <span className="text-xs text-content-secondary bg-surface-secondary px-1.5 py-0.5 rounded">
                 Links to {signal.relatedSignalIds.length} signal{signal.relatedSignalIds.length !== 1 ? "s" : ""}
               </span>
             )}
@@ -172,7 +172,7 @@ export function SignalList({ signals, onSignalClick, className = "" }: SignalLis
   if (!signals || signals.length === 0) {
     return (
       <div className="text-center py-12 text-content-secondary">
-        <div className="w-14 h-14 bg-surface-secondary dark:bg-white/[0.06] rounded-lg flex items-center justify-center mx-auto mb-4">
+        <div className="w-14 h-14 bg-surface-secondary rounded-lg flex items-center justify-center mx-auto mb-4">
           <Lightbulb className="w-7 h-7 text-content-muted" />
         </div>
         <h3 className="text-base font-semibold text-content mb-1">No signals yet</h3>

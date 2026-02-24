@@ -108,8 +108,8 @@ const SwarmStatusIcon = memo(function SwarmStatusIcon({
   if (["pending", "spawning", "executing", "gathering", "synthesizing"].includes(status)) {
     return (
       <div className="relative flex items-center">
-        <Loader2 className="w-3 h-3 text-violet-500 motion-safe:animate-spin" />
-        <span className="ml-0.5 text-xs text-violet-500 font-medium">
+        <Loader2 className="w-3 h-3 text-[var(--accent-primary)] motion-safe:animate-spin" />
+        <span className="ml-0.5 text-xs text-[var(--accent-primary)] font-medium">
           {completedCount}/{agentCount}
         </span>
       </div>
@@ -147,14 +147,14 @@ const ThreadTab = memo(function ThreadTab({
         isActive
           ? "bg-surface-secondary text-content shadow-sm border border-edge"
           : "text-content-secondary hover:text-content border border-transparent",
-        isSwarmActive && "ring-1 ring-violet-500/40 bg-violet-50/50"
+        isSwarmActive && "ring-1 ring-[var(--accent-primary)]/40 bg-[var(--accent-primary-bg)]"
       )}
     >
       {/* Icon */}
       {hasSwarm ? (
         <div className={cn(
           "w-5 h-5 rounded-md flex items-center justify-center",
-          isSwarmActive ? "bg-violet-100 text-violet-600" : "bg-surface-secondary text-content-muted"
+          isSwarmActive ? "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]" : "bg-surface-secondary text-content-muted"
         )}>
           <Zap className="w-3 h-3" />
         </div>
@@ -282,9 +282,9 @@ export function ThreadTabBar({
         onClick={onNewThread}
         className={cn(
           "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
-          "hover:bg-indigo-50 text-content-secondary hover:text-content-secondary",
-          "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
-          !activeThreadId && "bg-indigo-50 text-content-secondary border border-indigo-200/50"
+          "hover:bg-surface-hover text-content-secondary hover:text-content",
+          "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
+          !activeThreadId && "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20"
         )}
         title="New chat (⌘1)"
       >
@@ -300,9 +300,9 @@ export function ThreadTabBar({
             onClick={() => setShowSwarmMenu(!showSwarmMenu)}
             className={cn(
               "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
-              "hover:bg-violet-50 text-violet-600 hover:text-violet-700",
+              "hover:bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]",
               "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40",
-              showSwarmMenu && "bg-violet-50 border border-violet-200/50"
+              showSwarmMenu && "bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/20"
             )}
             title="Spawn parallel agents"
           >
@@ -357,8 +357,8 @@ export function ThreadTabBar({
                           : "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-4 h-4 text-violet-500" />
+                      <div className="w-8 h-8 rounded-lg bg-[var(--accent-primary-bg)] flex items-center justify-center flex-shrink-0">
+                        <Icon className="w-4 h-4 text-[var(--accent-primary)]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-content">

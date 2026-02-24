@@ -198,7 +198,7 @@ export function ThreadLane({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 py-4 bg-gray-50/50 dark:bg-white/[0.02] border-t border-edge">
+            <div className="px-4 py-4 bg-gray-50/50 border-t border-edge">
               {/* Thesis */}
               <div className="mb-3">
                 <h4 className="text-xs font-semibold text-content-secondary uppercase tracking-wide mb-1">

@@ -202,7 +202,7 @@ export function FundingDataReview() {
         </div>
 
         {/* Filters */}
-        <div className="bg-surface border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none p-6 mb-6">
+        <div className="bg-surface border border-transparent rounded-lg shadow dark:shadow-none p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-content-secondary mb-2">
@@ -213,7 +213,7 @@ export function FundingDataReview() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by company name..."
-                className="w-full px-4 py-2 border border-edge rounded-lg bg-white dark:bg-white/[0.04] text-content placeholder:text-content-muted focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-edge rounded-lg bg-surface text-content placeholder:text-content-muted focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div className="md:w-64">
@@ -223,7 +223,7 @@ export function FundingDataReview() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-edge rounded-lg bg-white dark:bg-white/[0.04] text-content focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-edge rounded-lg bg-surface text-content focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Issues ({allIssues.length})</option>
                 <option value="unknownCompany">
@@ -244,7 +244,7 @@ export function FundingDataReview() {
         </div>
 
         {/* Issues List */}
-        <div className="bg-surface border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none overflow-hidden">
+        <div className="bg-surface border border-transparent rounded-lg shadow dark:shadow-none overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-edge">
               <thead className="bg-surface-secondary">
@@ -357,7 +357,7 @@ function StatsCard({ title, value, color }: { title: string; value: number; colo
   }[color] ?? "bg-surface-secondary text-content-secondary";
 
   return (
-    <div className="bg-surface border border-transparent dark:border-white/[0.06] rounded-lg shadow dark:shadow-none p-6">
+    <div className="bg-surface border border-transparent rounded-lg shadow dark:shadow-none p-6">
       <h3 className="text-sm font-medium text-content-secondary mb-2">{title}</h3>
       <p className={`text-3xl font-bold ${colorClasses}`}>{value.toLocaleString()}</p>
     </div>
@@ -439,7 +439,7 @@ function ManualFixModal({
               type="text"
               value={correctName}
               onChange={(e) => setCorrectName(e.target.value)}
-              className="w-full px-4 py-2 border border-edge bg-white dark:bg-white/[0.04] text-content rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-edge bg-surface text-content rounded-lg focus:ring-2 focus:ring-blue-500"
               placeholder="Enter correct company name"
             />
           </div>
@@ -451,7 +451,7 @@ function ManualFixModal({
             <textarea
               value={reasoning}
               onChange={(e) => setReasoning(e.target.value)}
-              className="w-full px-4 py-2 border border-edge bg-white dark:bg-white/[0.04] text-content rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-edge bg-surface text-content rounded-lg focus:ring-2 focus:ring-blue-500"
               rows={3}
               placeholder="Explain why this is the correct name..."
             />

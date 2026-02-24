@@ -34,14 +34,14 @@ import type { TaskSpan, SpanType, SpanStatus } from './types';
 const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; bgColor: string; label: string }> = {
   agent: {
     icon: <Bot className="w-3 h-3" />,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/30',
+    color: 'text-[var(--accent-primary)]',
+    bgColor: 'bg-[var(--accent-primary-bg)]',
     label: 'Agent'
   },
   generation: {
     icon: <Sparkles className="w-3 h-3" />,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+    color: 'text-content-secondary',
+    bgColor: 'bg-surface-secondary',
     label: 'Generation'
   },
   tool: {
@@ -58,14 +58,14 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
   },
   handoff: {
     icon: <ArrowRightLeft className="w-3 h-3" />,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
+    color: 'text-[var(--accent-primary)]',
+    bgColor: 'bg-[var(--accent-primary-bg)]',
     label: 'Handoff'
   },
   retrieval: {
     icon: <Search className="w-3 h-3" />,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
+    color: 'text-[var(--accent-primary)]',
+    bgColor: 'bg-[var(--accent-primary-bg)]',
     label: 'Retrieval'
   },
   delegation: {
@@ -77,14 +77,14 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
   custom: {
     icon: <Cpu className="w-3 h-3" />,
     color: 'text-content-secondary',
-    bgColor: 'bg-surface-secondary dark:bg-gray-900/30',
+    bgColor: 'bg-surface-secondary',
     label: 'Custom'
   },
 };
 
 const spanStatusConfig: Record<SpanStatus, { icon: React.ReactNode; color: string }> = {
-  running: { icon: <Loader2 className="w-3 h-3 motion-safe:animate-spin" />, color: 'text-blue-500' },
-  completed: { icon: <CheckCircle2 className="w-3 h-3" />, color: 'text-indigo-500' },
+  running: { icon: <Loader2 className="w-3 h-3 motion-safe:animate-spin" />, color: 'text-[var(--accent-primary)]' },
+  completed: { icon: <CheckCircle2 className="w-3 h-3" />, color: 'text-emerald-600 dark:text-emerald-400' },
   error: { icon: <AlertCircle className="w-3 h-3" />, color: 'text-red-500' },
 };
 
@@ -223,7 +223,7 @@ export function TelemetrySpanTree({ spans, rootSpans, childrenByParent, classNam
         <span className="text-xs text-content font-medium">
           {spans.length} spans
         </span>
-        <span className="text-xs text-indigo-600">
+        <span className="text-xs text-emerald-600 dark:text-emerald-400">
           {completedSpans} completed
         </span>
         {errorSpans > 0 && (

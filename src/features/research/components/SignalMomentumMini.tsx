@@ -29,7 +29,7 @@ export const SignalMomentumMini: React.FC<SignalMomentumMiniProps> = ({ keyword,
   if (!cleanedKeyword) return null;
 
   return (
-    <div className="mt-6 rounded-md border border-edge bg-white/70 px-3 py-2 text-xs text-content-secondary flex items-center justify-between gap-3">
+    <div className="mt-6 rounded-md border border-edge bg-surface px-3 py-2 text-xs text-content-secondary flex items-center justify-between gap-3">
       <div>
         <div className="text-xs uppercase tracking-wider text-content-muted">Momentum</div>
         <div className="text-xs font-semibold text-content-secondary">{cleanedKeyword}</div>

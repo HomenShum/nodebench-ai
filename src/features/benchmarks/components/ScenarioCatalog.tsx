@@ -161,9 +161,9 @@ function ScenarioRow({
   return (
     <div
       className="
-        flex items-start gap-3 px-6 py-4 rounded-lg
-        border border-edge hover:border-content-muted/30
-        bg-surface-secondary hover:bg-surface
+        nb-surface-card flex items-start gap-3 px-4 py-4
+        hover:border-content-muted/30
+        bg-surface hover:bg-surface-secondary
         transition-colors group cursor-default
       "
     >
@@ -226,7 +226,7 @@ export function ScenarioCatalog({
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold text-content-muted uppercase tracking-wide">
+        <h2 className="text-xs font-semibold text-content-muted">
           Scenarios
         </h2>
         <span className="text-xs text-content-muted">4 task ladders</span>

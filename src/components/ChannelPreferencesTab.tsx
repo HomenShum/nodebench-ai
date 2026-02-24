@@ -97,7 +97,7 @@ function ChannelRow({
   return (
     <div
       data-testid={`channel-row-${meta.id}`}
-      className={`rounded-lg border ${config.enabled ? "border-blue-200 dark:border-blue-800/30 bg-blue-50/30 dark:bg-blue-950/10" : "border-edge bg-surface"} transition-colors`}
+      className={`rounded-lg border ${config.enabled ? "border-[var(--accent-primary)] bg-[var(--accent-primary-bg)]" : "border-edge bg-surface"} transition-colors`}
     >
       {/* Header row */}
       <div className="flex items-center gap-3 p-3">
@@ -111,10 +111,10 @@ function ChannelRow({
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-content">{meta.label}</span>
             {meta.providerType === "openclaw" && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">OpenClaw</span>
+              <span className="text-xs px-1.5 py-0.5 rounded bg-surface-secondary border border-edge text-content-secondary">OpenClaw</span>
             )}
             {inFallback && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-surface-secondary border border-edge text-[var(--accent-primary)]">
                 #{fallbackIndex + 1} priority
               </span>
             )}
@@ -190,7 +190,7 @@ function ChannelRow({
           <label className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
-              className="h-3.5 w-3.5 text-blue-600 rounded border-edge dark:border-gray-600"
+              className="h-3.5 w-3.5 text-[var(--accent-primary)] rounded border-edge dark:border-gray-600"
               checked={config.optedIn}
               onChange={(e) => onUpdate({ optedIn: e.target.checked })}
               data-testid={`channel-optin-${meta.id}`}
@@ -272,15 +272,15 @@ export function ChannelPreferencesTab() {
         const remote = channelPrefs.channelConfigs?.find((rc: any) => rc.channelId === c.channelId);
         return remote
           ? {
-              channelId: c.channelId,
-              enabled: remote.enabled,
-              identifier: remote.identifier,
-              optedIn: remote.optedIn,
-              quietHoursStart: remote.quietHoursStart,
-              quietHoursEnd: remote.quietHoursEnd,
-              maxPerDay: remote.maxPerDay,
-              contentTypes: remote.contentTypes,
-            }
+            channelId: c.channelId,
+            enabled: remote.enabled,
+            identifier: remote.identifier,
+            optedIn: remote.optedIn,
+            quietHoursStart: remote.quietHoursStart,
+            quietHoursEnd: remote.quietHoursEnd,
+            maxPerDay: remote.maxPerDay,
+            contentTypes: remote.contentTypes,
+          }
           : c;
       }),
     );
@@ -404,14 +404,14 @@ export function ChannelPreferencesTab() {
 
       {/* Fallback chain summary */}
       {preferredChannels.length > 0 && (
-        <div className="rounded-lg border border-blue-200 dark:border-blue-800/30 bg-blue-50/50 dark:bg-blue-950/20 p-3" data-testid="fallback-chain">
-          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Fallback Chain</div>
+        <div className="rounded-lg border border-edge bg-surface-secondary p-3" data-testid="fallback-chain">
+          <div className="text-xs font-bold text-content-secondary mb-1">Fallback Chain</div>
           <div className="flex flex-wrap gap-1.5">
             {preferredChannels.filter((id) => enabledIds.has(id)).map((id, i, arr) => {
               const meta = getChannelMeta(id);
               return (
                 <React.Fragment key={id}>
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-white dark:bg-white/[0.06] border border-blue-200 dark:border-blue-700/30 text-blue-700 dark:text-blue-300">
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-surface border border-edge text-[var(--accent-primary)]">
                     {meta?.label ?? id}
                   </span>
                   {i < arr.length - 1 && <span className="text-xs text-blue-400">→</span>}
@@ -419,7 +419,7 @@ export function ChannelPreferencesTab() {
               );
             })}
           </div>
-          <div className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+          <div className="text-[10px] text-content-muted mt-1 italic">
             Messages attempt channels left-to-right. If delivery fails, the next channel is tried.
           </div>
         </div>
@@ -448,12 +448,12 @@ export function ChannelPreferencesTab() {
       </div>
 
       {/* Security notice */}
-      <div className="rounded-lg border border-amber-200 dark:border-amber-800/30 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+      <div className="rounded-lg border border-edge bg-surface p-3">
         <div className="flex items-start gap-2">
           <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-amber-700 dark:text-amber-300 space-y-1">
             <div className="font-medium">Security Notes</div>
-            <ul className="list-disc pl-4 space-y-0.5 text-amber-600 dark:text-amber-400">
+            <ul className="list-disc pl-4 space-y-0.5 text-content-secondary">
               <li>WhatsApp (Baileys) uses an unofficial API — Meta may ban accounts. Use WhatsApp Business API for production.</li>
               <li>All outbound messages are scanned for PII/credential leaks before delivery.</li>
               <li>Message logs are retained for 30 days (GDPR compliance).</li>

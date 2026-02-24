@@ -162,7 +162,7 @@ export function ModelLeaderboard({
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-content-muted">Leaderboard</h2>
+        <h2 className="text-xs font-semibold text-content-muted">Leaderboard</h2>
         <span className="text-xs text-content-muted">All time</span>
       </div>
 
@@ -187,11 +187,11 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
   })();
   const seedStatus =
     entry.score === null
-      ? { dotClass: "bg-content-muted/40", label: "Not run" }
+      ? { dotClass: "bg-content-muted/40", label: "Not yet run" }
       : { dotClass: "bg-emerald-500/70", label: "Seeded" };
 
   return (
-    <div className="flex-none w-[11.25rem] sm:w-48 snap-start rounded-lg border border-edge bg-surface-secondary p-5 sm:p-6 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
+    <div className="nb-surface-card flex-none w-[11.25rem] sm:w-48 snap-start bg-surface p-4 sm:p-4 flex flex-col gap-2 hover:border-content-muted/30 transition-colors">
       <div className="flex items-start justify-between gap-1">
         <span className="text-sm font-semibold leading-tight text-content">{entry.displayName}</span>
         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${providerBadgeClass}`}>
@@ -240,11 +240,20 @@ function ModelCard({ entry }: { entry: LeaderboardEntry }) {
         </div>
       ) : (
         <div className="text-[10px] leading-none text-content-muted flex items-center justify-between gap-2">
-          <span>{entry.sourceLabel}</span>
-          <span className="inline-flex items-center gap-1.5 text-content-muted/70">
-            <span className={`h-1.5 w-1.5 rounded-full ${seedStatus.dotClass}`} />
-            <span>{seedStatus.label}</span>
-          </span>
+          {entry.score === null ? (
+            <span className="inline-flex items-center gap-1.5 text-content-muted/70">
+              <span className={`h-1.5 w-1.5 rounded-full ${seedStatus.dotClass}`} />
+              <span>{seedStatus.label}</span>
+            </span>
+          ) : (
+            <>
+              <span>{entry.sourceLabel}</span>
+              <span className="inline-flex items-center gap-1.5 text-content-muted/70">
+                <span className={`h-1.5 w-1.5 rounded-full ${seedStatus.dotClass}`} />
+                <span>{seedStatus.label}</span>
+              </span>
+            </>
+          )}
         </div>
       )}
     </div>

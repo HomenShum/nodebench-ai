@@ -103,14 +103,14 @@ function SeverityBadge({ severity }: { severity: Severity }) {
       label: "High",
     },
     medium: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       border: "border-edge",
       icon: <Info className="w-3 h-3" />,
       label: "Medium",
     },
     low: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-muted",
       border: "border-edge",
       icon: <Info className="w-3 h-3" />,
@@ -139,7 +139,7 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
     { bg: string; text: string; icon: React.ReactNode; label: string }
   > = {
     guidance_added: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       icon: <PlusCircle className="w-3 h-3" />,
       label: "Added",
@@ -151,7 +151,7 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
       label: "Removed",
     },
     guidance_modified: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       icon: <FileText className="w-3 h-3" />,
       label: "Modified",
@@ -169,31 +169,31 @@ function ChangeTypeBadge({ changeType }: { changeType: ChangeType }) {
       label: "Deprecated",
     },
     new_pattern: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       icon: <Zap className="w-3 h-3" />,
       label: "New Pattern",
     },
     pricing_change: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       icon: <Info className="w-3 h-3" />,
       label: "Pricing",
     },
     api_change: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       icon: <Zap className="w-3 h-3" />,
       label: "API Change",
     },
     model_update: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-secondary",
       icon: <Zap className="w-3 h-3" />,
       label: "Model Update",
     },
     minor_update: {
-      bg: "bg-surface-secondary dark:bg-white/[0.06]",
+      bg: "bg-surface-secondary",
       text: "text-content-muted",
       icon: <Info className="w-3 h-3" />,
       label: "Minor",
@@ -424,7 +424,7 @@ export function ChangeCard({
                 type="button"
                 onClick={() => onViewSource?.(source.canonicalUrl)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                         bg-surface-secondary dark:bg-white/[0.06] text-content-secondary rounded-lg hover:bg-surface-hover transition-colors"
+                         bg-surface-secondary text-content-secondary rounded-lg hover:bg-surface-hover transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 View Source
@@ -459,7 +459,7 @@ export function ChangeListItem({ diff, source, selected = false, onSelect }: Cha
       onClick={onSelect}
       className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
         selected
-          ? "border-edge bg-surface-secondary dark:bg-white/[0.06]"
+          ? "border-edge bg-surface-secondary"
           : "border-edge bg-surface hover:bg-surface-hover"
       }`}
       aria-current={selected}

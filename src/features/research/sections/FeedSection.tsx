@@ -95,7 +95,7 @@ function FeedSectionInner({
             placeholder="Search feed..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-[var(--accent-primary)]"
           />
         </div>
 
@@ -107,7 +107,7 @@ function FeedSectionInner({
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
                 selectedCategory === cat.id
-                  ? 'bg-gray-900 text-white'
+                  ? 'bg-[var(--accent-primary)] text-white'
                   : 'bg-surface-secondary text-content hover:bg-surface-hover'
               }`}
             >
@@ -121,7 +121,7 @@ function FeedSectionInner({
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20"
           >
             {sourceFilters.map((filter) => (
               <option key={filter.id} value={filter.id}>
@@ -144,7 +144,7 @@ function FeedSectionInner({
               setSelectedCategory(null);
               setSourceFilter('all');
             }}
-            className="mt-2 text-xs text-blue-600 hover:underline"
+            className="mt-2 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:underline"
           >
             Clear all filters
           </button>

@@ -3,13 +3,13 @@
 // Renders inline with dossier content
 
 import { useMemo } from "react";
-import { 
-  ExternalLink, 
-  Play, 
-  FileText, 
-  Image as ImageIcon, 
-  User, 
-  Building2, 
+import {
+  ExternalLink,
+  Play,
+  FileText,
+  Image as ImageIcon,
+  User,
+  Building2,
   Globe,
   Pin,
   CheckCircle2,
@@ -24,16 +24,16 @@ import { useSectionArtifacts, useArtifactStore } from "../../hooks/useArtifactSt
 interface MediaRailProps {
   /** Section ID to show artifacts for */
   sectionId: string;
-  
+
   /** Additional artifacts to display (e.g., unassigned) */
   additionalArtifacts?: ArtifactCard[];
-  
+
   /** Maximum artifacts to show (default: 8) */
   maxVisible?: number;
-  
+
   /** Compact mode (smaller cards) */
   compact?: boolean;
-  
+
   /** Called when artifact is clicked */
   onArtifactClick?: (artifact: ArtifactCard) => void;
 }
@@ -56,13 +56,13 @@ function getKindIcon(kind: ArtifactKind) {
 
 function getProviderColor(provider: ArtifactProvider | undefined): string {
   switch (provider) {
-    case "youtube": return "text-red-500";
-    case "sec": return "text-blue-600";
+    case "youtube": return "text-rose-500 dark:text-rose-400";
+    case "sec": return "text-sky-600 dark:text-sky-400";
     case "twitter": return "text-sky-500";
-    case "linkedin": return "text-blue-700";
+    case "linkedin": return "text-sky-700 dark:text-sky-500";
     case "crunchbase": return "text-orange-500";
     case "github": return "text-content";
-    case "news": return "text-indigo-600";
+    case "news": return "text-slate-600 dark:text-slate-400";
     default: return "text-content-secondary";
   }
 }
@@ -100,8 +100,8 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
   const cardClasses = `
     group relative flex flex-col bg-surface border border-edge rounded-lg
     overflow-hidden cursor-pointer transition-all duration-200
-    hover:border-purple-300 dark:hover:border-purple-700
-    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2
+    hover:border-[var(--accent-primary)]
+    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1
     ${compact ? 'w-40' : 'w-52'}
   `;
 
@@ -110,8 +110,8 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
       {/* Thumbnail or Placeholder */}
       <div className={`relative bg-surface-secondary ${compact ? 'h-24' : 'h-32'}`}>
         {thumbnail ? (
-          <img 
-            src={thumbnail} 
+          <img
+            src={thumbnail}
             alt={title}
             className="w-full h-full object-cover"
             loading="lazy"
@@ -123,12 +123,12 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
             </div>
           </div>
         )}
-        
+
         {/* Kind Badge */}
         <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-xs font-medium uppercase tracking-wide">
           {kind}
         </div>
-        
+
         {/* Video Play Overlay */}
         {kind === "video" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
@@ -137,34 +137,34 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
             </div>
           </div>
         )}
-        
+
         {/* Quality Badges */}
         <div className="absolute top-2 right-2 flex gap-1">
           {flags.isPinned && (
-            <div className="w-5 h-5 rounded-full bg-purple-500 flex items-center justify-center">
-              <Pin className="w-3 h-3 text-white" />
+            <div className="w-5 h-5 rounded-full bg-slate-800 dark:bg-slate-200 flex items-center justify-center">
+              <Pin className="w-3 h-3 text-white dark:text-slate-800" />
             </div>
           )}
           {flags.isCited && (
-            <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)] flex items-center justify-center">
               <CheckCircle2 className="w-3 h-3 text-white" />
             </div>
           )}
         </div>
       </div>
-      
+
       {/* Content */}
       <div className={`flex-1 ${compact ? 'p-2' : 'p-3'}`}>
         <h4 className={`font-medium text-content line-clamp-2 break-words ${compact ? 'text-xs' : 'text-sm'}`}>
           {title}
         </h4>
-        
+
         {!compact && snippet && (
           <p className="mt-1 text-xs text-content-secondary line-clamp-2 break-words overflow-hidden">
             {snippet}
           </p>
         )}
-        
+
         {/* Footer */}
         <div className="mt-2 flex items-center justify-between">
           <span className={`text-xs font-medium ${getProviderColor(provider)}`}>
@@ -177,7 +177,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
           )}
         </div>
       </div>
-      
+
       {/* External Link Icon */}
       <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
         <ExternalLink className="w-3.5 h-3.5 text-content-muted" />
@@ -218,7 +218,7 @@ export function MediaRail({
 }: MediaRailProps) {
   // Get artifacts for this section from store
   const sectionArtifacts = useSectionArtifacts(sectionId);
-  
+
   // Combine section artifacts with additional
   const allArtifacts = useMemo(() => {
     const combined = [...sectionArtifacts, ...additionalArtifacts];
@@ -230,7 +230,7 @@ export function MediaRail({
       return true;
     });
   }, [sectionArtifacts, additionalArtifacts]);
-  
+
   // Sort: pinned first, then cited, then by discoveredAt
   const sortedArtifacts = useMemo(() => {
     return [...allArtifacts]
@@ -246,11 +246,11 @@ export function MediaRail({
       })
       .slice(0, maxVisible);
   }, [allArtifacts, maxVisible]);
-  
+
   if (sortedArtifacts.length === 0) {
     return null;
   }
-  
+
   return (
     <div className="my-6">
       {/* Header */}
@@ -261,7 +261,7 @@ export function MediaRail({
         </span>
         <div className="h-px flex-1 bg-surface-secondary"></div>
       </div>
-      
+
       {/* Horizontal Scroll Rail */}
       <div className="relative">
         <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -274,15 +274,15 @@ export function MediaRail({
             />
           ))}
         </div>
-        
+
         {/* Fade edges */}
         <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white pointer-events-none"></div>
       </div>
-      
+
       {/* Show More Link */}
       {allArtifacts.length > maxVisible && (
         <div className="mt-2 text-center">
-          <button type="button" className="text-xs text-purple-600 hover:text-purple-800 font-medium">
+          <button type="button" className="text-xs text-[var(--accent-primary)] hover:opacity-80 font-medium">
             +{allArtifacts.length - maxVisible} more sources
           </button>
         </div>
@@ -303,9 +303,9 @@ interface InlineMediaRailProps {
 export function InlineMediaRail({ artifacts, maxVisible = 4 }: InlineMediaRailProps) {
   const visible = artifacts.slice(0, maxVisible);
   const remaining = artifacts.length - maxVisible;
-  
+
   if (visible.length === 0) return null;
-  
+
   return (
     <div className="flex items-center gap-2 flex-wrap mt-2">
       {visible.map(artifact => (

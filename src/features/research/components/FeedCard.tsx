@@ -65,9 +65,9 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getSentimentBadge = () => {
     if (!item.sentiment) return null;
     const badges = {
-      bullish: { icon: '🐂', label: 'Bullish', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
-      bearish: { icon: '🐻', label: 'Bearish', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
-      neutral: { icon: '⚖️', label: 'Neutral', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
+      bullish: { icon: '🐂', label: 'Bullish', color: 'bg-surface-secondary text-content-secondary border-edge' },
+      bearish: { icon: '🐻', label: 'Bearish', color: 'bg-surface-secondary text-content-secondary border-edge' },
+      neutral: { icon: '⚖️', label: 'Neutral', color: 'bg-surface-secondary text-content-secondary border-edge' },
     };
     const badge = badges[item.sentiment];
     return (
@@ -80,10 +80,10 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getSourceQualityBadge = () => {
     if (!item.sourceQuality) return null;
     const badges: Record<SourceQualityTier, { icon: string; label: string; color: string }> = {
-      excellent: { icon: '✓', label: 'Excellent', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
-      good: { icon: '●', label: 'Good', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
-      fair: { icon: '◐', label: 'Fair', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge' },
-      poor: { icon: '○', label: 'Poor', color: 'bg-surface-secondary dark:bg-white/[0.06] text-content-muted border-edge' },
+      excellent: { icon: '✓', label: 'Excellent', color: 'bg-surface-secondary text-content-secondary border-edge' },
+      good: { icon: '●', label: 'Good', color: 'bg-surface-secondary text-content-secondary border-edge' },
+      fair: { icon: '◐', label: 'Fair', color: 'bg-surface-secondary text-content-secondary border-edge' },
+      poor: { icon: '○', label: 'Poor', color: 'bg-surface-secondary text-content-muted border-edge' },
     };
     const badge = badges[item.sourceQuality];
     return (
@@ -96,7 +96,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
   const getVerifiedBadge = () => {
     if (!item.verified) return null;
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-surface-secondary dark:bg-white/[0.06] text-content-secondary border-edge" title="Facts verified">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border bg-surface-secondary text-content-secondary border-edge" title="Facts verified">
         ✓ Verified
       </span>
     );
@@ -167,11 +167,11 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         {/* Header: Type badge + Sentiment + Timestamp */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            {isDossier && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><FileText size={12} /></div>}
-            {isSignal && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><TrendingUp size={12} /></div>}
-            {item.type === 'news' && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><MessageSquare size={12} /></div>}
-            {isRepo && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><GitBranch size={12} /></div>}
-            {isProduct && <div className="p-1.5 bg-surface-secondary dark:bg-white/[0.06] rounded-md text-content-secondary border border-edge"><Package size={12} /></div>}
+            {isDossier && <div className="p-1.5 bg-surface-secondary rounded-md text-content-secondary border border-edge"><FileText size={12} /></div>}
+            {isSignal && <div className="p-1.5 bg-surface-secondary rounded-md text-content-secondary border border-edge"><TrendingUp size={12} /></div>}
+            {item.type === 'news' && <div className="p-1.5 bg-surface-secondary rounded-md text-content-secondary border border-edge"><MessageSquare size={12} /></div>}
+            {isRepo && <div className="p-1.5 bg-surface-secondary rounded-md text-content-secondary border border-edge"><GitBranch size={12} /></div>}
+            {isProduct && <div className="p-1.5 bg-surface-secondary rounded-md text-content-secondary border border-edge"><Package size={12} /></div>}
             <span className="text-xs font-medium text-content-secondary">
               {item.type === 'repo' ? 'GitHub' : item.type === 'product' ? 'Product' : item.type}
             </span>

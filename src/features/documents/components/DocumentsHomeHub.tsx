@@ -7050,7 +7050,7 @@ export function DocumentsHomeHub({
 
                     {(docViewMode === "list" || docViewMode === "cards") &&
                       filteredDocuments.length === 0 && (
-                        <div className="w-full rounded-lg border border-dashed border-edge bg-surface-secondary/40 dark:bg-white/[0.02]">
+                        <div className="w-full rounded-lg border border-dashed border-edge bg-surface-secondary/40">
                           <button
                             type="button"
                             onClick={() => open()}

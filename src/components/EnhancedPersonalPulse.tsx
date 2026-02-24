@@ -46,7 +46,7 @@ export function EnhancedPersonalPulse({
   return (
     <div className={`bg-surface rounded-lg border border-edge overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-edge bg-surface-secondary dark:bg-white/[0.02]">
+      <div className="px-6 py-4 border-b border-edge bg-surface-secondary">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-content-secondary" />

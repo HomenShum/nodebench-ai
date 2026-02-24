@@ -66,7 +66,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
   return (
     <div className="nb-page-shell editorial-layout">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-edge shadow-sm">
+      <header className="sticky top-0 z-50 bg-surface/95  border-b border-edge shadow-sm">
         <div className="nb-page-frame-narrow px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

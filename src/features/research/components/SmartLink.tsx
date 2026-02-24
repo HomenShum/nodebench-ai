@@ -47,7 +47,7 @@ export const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source 
     >
       <button
         type="button"
-        className="cursor-help font-medium text-blue-700 decoration-blue-300/60 decoration-2 underline underline-offset-4 transition-colors hover:bg-blue-50 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 rounded-sm px-0.5"
+        className="cursor-help font-medium text-[var(--accent-primary)] decoration-[var(--accent-primary)] decoration-2 underline underline-offset-4 transition-colors hover:bg-[var(--accent-primary-bg)] hover:text-[var(--accent-primary-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:ring-offset-1 rounded-sm px-0.5"
         aria-describedby={tooltipId}
         aria-expanded={isOpen}
         tabIndex={0}
@@ -67,7 +67,7 @@ export const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source 
       >
         <span className="flex flex-col gap-1">
           <span className="flex items-center gap-2">
-            <Info className="w-3.5 h-3.5 text-blue-500" />
+            <Info className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">Context</span>
           </span>
           <span className="text-sm leading-relaxed text-content font-sans">{summary}</span>

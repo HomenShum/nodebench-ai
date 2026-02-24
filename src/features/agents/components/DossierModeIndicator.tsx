@@ -74,7 +74,7 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
     return (
       <div className={cn(
         "flex items-center gap-1.5 px-2 py-1 rounded-md",
-        "bg-slate-50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-slate-400 dark:text-slate-500",
+        "bg-slate-50 border border-slate-200 dark:border-white/[0.08] text-slate-400 dark:text-slate-500",
         "text-xs",
         className
       )}>

@@ -3,13 +3,13 @@
 // Pinned artifacts first, grouped by provider/kind
 
 import { useMemo, useState } from "react";
-import { 
-  ExternalLink, 
-  Play, 
-  FileText, 
-  Image as ImageIcon, 
-  User, 
-  Building2, 
+import {
+  ExternalLink,
+  Play,
+  FileText,
+  Image as ImageIcon,
+  User,
+  Building2,
   Globe,
   Pin,
   CheckCircle2,
@@ -28,13 +28,13 @@ import { useAllArtifacts, useUnassignedArtifacts } from "../../hooks/useArtifact
 interface SourcesLibraryProps {
   /** Show only unassigned artifacts (default: false - show all) */
   unassignedOnly?: boolean;
-  
+
   /** Maximum items to show initially (default: 12) */
   initialVisible?: number;
-  
+
   /** Collapse by default */
   defaultCollapsed?: boolean;
-  
+
   /** Title override */
   title?: string;
 }
@@ -59,14 +59,14 @@ function getKindIcon(kind: ArtifactKind) {
 
 function getProviderColor(provider: ArtifactProvider | undefined): string {
   switch (provider) {
-    case "youtube": return "bg-red-50 text-red-600 border-red-200";
-    case "sec": return "bg-blue-50 text-blue-600 border-blue-200";
-    case "twitter": return "bg-sky-50 text-sky-600 border-sky-200";
-    case "linkedin": return "bg-blue-50 text-blue-700 border-blue-200";
-    case "crunchbase": return "bg-orange-50 text-orange-600 border-orange-200";
+    case "youtube": return "bg-rose-50/50 dark:bg-rose-500/5 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/30";
+    case "sec": return "bg-sky-50/50 dark:bg-sky-500/5 text-sky-600 dark:text-sky-400 border-sky-100 dark:border-sky-900/30";
+    case "twitter": return "bg-sky-50/50 dark:bg-sky-500/5 text-sky-600 dark:text-sky-400 border-sky-100 dark:border-sky-900/30";
+    case "linkedin": return "bg-sky-50/50 dark:bg-sky-500/5 text-sky-700 dark:text-sky-400 border-sky-100 dark:border-sky-900/30";
+    case "crunchbase": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
     case "github": return "bg-surface-secondary text-content border-edge";
-    case "news": return "bg-indigo-50 text-indigo-600 border-indigo-200";
-    case "arxiv": return "bg-amber-50 text-amber-700 border-amber-200";
+    case "news": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
+    case "arxiv": return "bg-slate-50/50 dark:bg-slate-500/5 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-900/30";
     default: return "bg-surface-secondary text-content-secondary border-edge";
   }
 }
@@ -114,7 +114,7 @@ interface SourceItemProps {
 
 function SourceItem({ artifact }: SourceItemProps) {
   const { flags, title, host, kind, provider, snippet, canonicalUrl, thumbnail } = artifact;
-  
+
   return (
     <a
       href={canonicalUrl}
@@ -128,14 +128,14 @@ function SourceItem({ artifact }: SourceItemProps) {
       `}
     >
       {/* Thumbnail or Icon */}
-      <div className="flex-shrink-0 w-12 h-12 rounded bg-white/50 dark:bg-white/[0.06] flex items-center justify-center overflow-hidden">
+      <div className="flex-shrink-0 w-12 h-12 rounded bg-surface-secondary flex items-center justify-center overflow-hidden">
         {thumbnail ? (
           <img src={thumbnail} alt="" className="w-full h-full object-cover" />
         ) : (
           <span className="opacity-60">{getKindIcon(kind)}</span>
         )}
       </div>
-      
+
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
@@ -143,17 +143,17 @@ function SourceItem({ artifact }: SourceItemProps) {
             {title}
           </h4>
           <div className="flex items-center gap-1 flex-shrink-0">
-            {flags.isPinned && <Pin className="w-3.5 h-3.5 text-purple-500" />}
-            {flags.isCited && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500" />}
+            {flags.isPinned && <Pin className="w-3.5 h-3.5 text-slate-500" />}
+            {flags.isCited && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />}
           </div>
         </div>
-        
+
         {snippet && (
           <p className="text-xs opacity-70 line-clamp-1 mt-0.5 break-words overflow-hidden">
             {snippet}
           </p>
         )}
-        
+
         <div className="flex items-center gap-2 mt-1.5">
           <span className="text-xs font-medium opacity-80">
             {getProviderLabel(provider)}
@@ -185,14 +185,14 @@ export function SourcesLibrary({
 }: SourcesLibraryProps) {
   const allArtifacts = useAllArtifacts();
   const unassignedArtifacts = useUnassignedArtifacts();
-  
+
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [showAll, setShowAll] = useState(false);
   const [groupBy, setGroupBy] = useState<GroupBy>("provider");
-  
+
   // Choose artifacts based on mode
   const artifacts = unassignedOnly ? unassignedArtifacts : allArtifacts;
-  
+
   // Sort: pinned first, then cited, then by discoveredAt
   const sortedArtifacts = useMemo(() => {
     return [...artifacts].sort((a, b) => {
@@ -203,34 +203,34 @@ export function SourcesLibrary({
       return b.discoveredAt - a.discoveredAt;
     });
   }, [artifacts]);
-  
+
   // Group artifacts
   const groupedArtifacts = useMemo(() => {
     if (groupBy === "none") {
       return { all: sortedArtifacts };
     }
-    
+
     const groups: Record<string, ArtifactCard[]> = {};
     for (const artifact of sortedArtifacts) {
-      const key = groupBy === "provider" 
+      const key = groupBy === "provider"
         ? (artifact.provider || "web")
         : artifact.kind;
       if (!groups[key]) groups[key] = [];
       groups[key].push(artifact);
     }
-    
+
     // Sort groups by size (largest first)
     const sortedEntries = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
     return Object.fromEntries(sortedEntries);
   }, [sortedArtifacts, groupBy]);
-  
+
   // Visible artifacts
   const visibleCount = showAll ? sortedArtifacts.length : initialVisible;
-  
+
   if (artifacts.length === 0) {
     return null;
   }
-  
+
   return (
     <div className="mt-12 border-t-2 border-edge pt-8">
       {/* Header */}
@@ -247,14 +247,14 @@ export function SourcesLibrary({
             <p className="text-xs text-content-secondary">
               {artifacts.length} source{artifacts.length !== 1 ? 's' : ''} discovered
               {artifacts.filter(a => a.flags.isPinned).length > 0 && (
-                <span className="ml-2 text-purple-600">
+                <span className="ml-2 text-[var(--accent-primary)]">
                   • {artifacts.filter(a => a.flags.isPinned).length} pinned
                 </span>
               )}
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           {/* Group By Toggle */}
           {!isCollapsed && (
@@ -265,7 +265,7 @@ export function SourcesLibrary({
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Group sources by"
-                className="bg-surface-secondary border-none rounded px-2 py-1 text-xs text-content-secondary focus:ring-1 focus:ring-purple-300"
+                className="bg-surface-secondary border-none rounded px-2 py-1 text-xs text-content-secondary focus:ring-1 focus:ring-[var(--accent-primary)]"
               >
                 <option value="provider">By Provider</option>
                 <option value="kind">By Type</option>
@@ -273,7 +273,7 @@ export function SourcesLibrary({
               </select>
             </div>
           )}
-          
+
           <button type="button" className="p-1 hover:bg-surface-hover rounded" aria-label={isCollapsed ? "Expand sources" : "Collapse sources"} aria-expanded={isCollapsed ? "false" : "true"}>
             {isCollapsed ? (
               <ChevronDown className="w-5 h-5 text-content-muted" />
@@ -283,7 +283,7 @@ export function SourcesLibrary({
           </button>
         </div>
       </div>
-      
+
       {/* Content */}
       {!isCollapsed && (
         <div className="space-y-6">
@@ -297,10 +297,10 @@ export function SourcesLibrary({
           ) : (
             // Grouped list
             Object.entries(groupedArtifacts).map(([group, items]) => {
-              const label = groupBy === "provider" 
+              const label = groupBy === "provider"
                 ? getProviderLabel(group as ArtifactProvider)
                 : getKindLabel(group as ArtifactKind);
-              
+
               return (
                 <div key={group}>
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-content-secondary mb-2 flex items-center gap-2">
@@ -317,7 +317,7 @@ export function SourcesLibrary({
                     <button
                       type="button"
                       onClick={() => setShowAll(true)}
-                      className="mt-2 text-xs text-purple-600 hover:text-purple-800 font-medium"
+                      className="mt-2 text-xs text-[var(--accent-primary)] hover:opacity-80 font-medium"
                     >
                       +{items.length - 4} more
                     </button>
@@ -326,7 +326,7 @@ export function SourcesLibrary({
               );
             })
           )}
-          
+
           {/* Show All / Collapse */}
           {sortedArtifacts.length > initialVisible && (
             <div className="text-center pt-4">

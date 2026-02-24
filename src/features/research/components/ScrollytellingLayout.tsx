@@ -558,7 +558,7 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
       )}
 
       {/* Mobile/Tablet Compact Dashboard (Sticky Top) */}
-      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90 backdrop-blur-sm border border-edge rounded-lg px-4 py-3">
+      <div className="lg:hidden relative mt-6 mb-8 mx-4 bg-[#fbfaf2]/90  border border-edge rounded-lg px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" />

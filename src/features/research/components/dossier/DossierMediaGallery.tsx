@@ -284,7 +284,7 @@ function ImageThumbnail({ image, onClick }: ImageThumbnailProps) {
       {/* Hover overlay */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 rounded-full bg-surface flex items-center justify-center shadow-lg">
             <ImageIcon className="h-5 w-5 text-content" />
           </div>
         </div>

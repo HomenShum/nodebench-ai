@@ -172,8 +172,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
       className={cn(
         "group bg-surface rounded-container border border-edge",
         "transition-all duration-200 hover:shadow-hover hover:bg-surface-secondary",
-        isActive && "ring-1 ring-offset-1 ring-offset-surface",
-        isActive && config.borderColorClass.replace("border-", "ring-")
+        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-[var(--accent-primary)]/40"
       )}
     >
       {/* Header */}

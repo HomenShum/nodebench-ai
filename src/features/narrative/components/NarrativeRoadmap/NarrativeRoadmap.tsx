@@ -112,7 +112,7 @@ export function NarrativeRoadmap({
 
   if (threads.length === 0) {
     return (
-      <div className={`bg-[#FAFAFA] dark:bg-white/[0.02] rounded-lg border border-edge p-8 ${className}`}>
+      <div className={`bg-[#FAFAFA] rounded-lg border border-edge p-8 ${className}`}>
         <div className="text-center">
           <Sparkles className="w-12 h-12 text-content-muted mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-content mb-2">
@@ -195,7 +195,7 @@ export function NarrativeRoadmap({
         >
           <div className="min-w-max">
             {/* Week Headers */}
-            <div className="flex border-b border-edge bg-gray-50/50 dark:bg-white/[0.02]">
+            <div className="flex border-b border-edge bg-gray-50/50">
               {/* Thread name column */}
               <div className="w-48 flex-shrink-0 px-4 py-3 border-r border-edge">
                 <span className="text-xs font-medium uppercase tracking-wider text-content-secondary">

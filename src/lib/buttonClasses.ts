@@ -12,5 +12,5 @@ export const buttonDanger =
   `${buttonBase} bg-white hover:bg-red-50 text-red-700 border-red-200`;
 
 export const buttonIcon =
-  "p-1 rounded transition-colors hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed";
+  "p-1 rounded transition-colors hover:bg-surface-hover disabled:opacity-30 disabled:cursor-not-allowed";
 

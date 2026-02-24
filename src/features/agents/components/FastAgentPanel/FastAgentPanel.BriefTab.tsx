@@ -541,7 +541,7 @@ export function BriefTab() {
                     "px-2 py-1 text-xs rounded transition-colors border",
                     date === displayDate
                       ? "bg-indigo-600 text-white font-medium border-indigo-600"
-                      : "bg-white dark:bg-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/[0.06]",
+                      : "bg-surface hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200",
                   )}
                   title={`View brief from ${date}`}
                 >

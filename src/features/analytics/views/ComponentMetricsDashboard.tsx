@@ -30,20 +30,28 @@ interface MetricCardProps {
 }
 
 function MetricCard({ title, value, subtitle, icon, accent, trend }: MetricCardProps) {
+  const trendTone =
+    trend?.direction === 'up'
+      ? 'text-[var(--accent-primary)]'
+      : trend?.direction === 'down'
+        ? 'text-content-secondary'
+        : 'text-content-muted';
+  const TrendIcon =
+    trend?.direction === 'up' ? ChevronUp : trend?.direction === 'down' ? ChevronDown : Activity;
+
   return (
-    <div className={`bg-surface border border-edge rounded-lg p-4 transition-shadow${accent ? ' border-l-2 border-l-indigo-500 dark:border-l-indigo-400' : ''}`}>
+    <div
+      className={`nb-surface-card p-4 transition-colors hover:border-content-muted/30${accent ? ' border-l-2 border-l-[var(--accent-primary)] bg-surface-secondary/30' : ''}`}
+    >
       <div className="flex items-start justify-between mb-2">
-        <div className="text-[11px] uppercase tracking-wide text-content-muted font-semibold">{title}</div>
-        <div className={accent ? 'text-indigo-500 dark:text-indigo-400' : 'text-content-secondary'}>{icon}</div>
+        <div className="text-xs font-medium text-content-secondary">{title}</div>
+        <div className={accent ? 'text-[var(--accent-primary)]' : 'text-content-secondary'}>{icon}</div>
       </div>
-      <div className={`text-2xl font-semibold mb-1 ${accent ? 'text-content' : 'text-content-secondary'}`}>{value}</div>
-      {subtitle && <div className="text-[11px] text-content-secondary">{subtitle}</div>}
+      <div className="text-2xl font-semibold mb-1 text-content">{value}</div>
+      {subtitle && <div className="text-xs text-content-secondary">{subtitle}</div>}
       {trend && (
-        <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' :
-            trend.direction === 'down' ? 'text-red-600' :
-              'text-content-secondary'
-          }`}>
-          {trend.direction === 'up' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        <div className={`flex items-center gap-1 text-xs mt-2 ${trendTone}`}>
+          <TrendIcon size={14} />
           <span>{Math.abs(trend.value)}%</span>
         </div>
       )}
@@ -139,7 +147,7 @@ function SourcePerformanceBar({
           {ctr > 0 && (
             <>
               <span className="text-content-muted/60">|</span>
-              <span className="font-semibold text-blue-600 dark:text-blue-300">
+              <span className="font-semibold text-[var(--accent-primary)]">
                 {parseFloat((ctr * 100).toFixed(1))}% CTR
               </span>
             </>
@@ -148,7 +156,7 @@ function SourcePerformanceBar({
       </div>
       <div className="h-2 bg-surface-secondary rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500 group-hover:from-indigo-500 group-hover:to-indigo-600"
+          className="h-full bg-[var(--accent-primary)]/80 rounded-full transition-all duration-500 group-hover:bg-[var(--accent-primary)]"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -189,7 +197,7 @@ function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: Cat
         <div className="flex items-center gap-2 mt-1">
           <div className="h-1.5 bg-surface-secondary rounded-full flex-1 max-w-[100px]">
             <div
-              className="h-full bg-purple-500 rounded-full"
+              className="h-full bg-[var(--accent-primary)]/70 rounded-full"
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -551,10 +559,13 @@ export default function ComponentMetricsDashboard() {
                         <div className="flex items-center gap-3">
                           <div className={`
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
-                            ${index === 0 ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' :
-                              index === 1 ? 'bg-surface-secondary text-content-secondary' :
-                                index === 2 ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' :
-                                  'bg-surface-secondary text-content-secondary'}
+                            ${index === 0
+                                ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/30'
+                                : index === 1
+                                  ? 'bg-surface border border-edge text-content-secondary'
+                                  : index === 2
+                                    ? 'bg-surface-secondary border border-edge text-content-secondary'
+                                    : 'bg-surface-secondary text-content-secondary'}
                           `}>
                             {index + 1}
                           </div>
@@ -569,7 +580,7 @@ export default function ComponentMetricsDashboard() {
                         </div>
                         <div className="text-right">
                           {source.avgCTR > 0 && (
-                            <div className="text-sm font-semibold text-blue-600">
+                            <div className="text-sm font-semibold text-[var(--accent-primary)]">
                               {parseFloat((source.avgCTR * 100).toFixed(1))}% CTR
                             </div>
                           )}
@@ -588,25 +599,25 @@ export default function ComponentMetricsDashboard() {
 
             {/* Integration Status Banner */}
             {aggregates.totalImpressions === 0 && (
-              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-lg p-4">
+              <div className="nb-surface-card border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]/40 p-4">
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="text-blue-600 dark:text-blue-400 mt-0.5" size={20} />
+                  <TrendingUp className="text-[var(--accent-primary)] mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                    <h3 className="font-semibold text-content mb-1">
                       Engagement Tracking Not Yet Active
                     </h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                    <p className="text-sm text-content-secondary mb-2">
                       Component metrics are being collected, but user engagement tracking (impressions, clicks, CTR)
                       is not yet integrated. See{' '}
                       <a
                         href="/docs/engagement-tracking"
-                        className="underline font-medium hover:text-blue-900 dark:hover:text-blue-100"
+                        className="underline font-medium hover:text-content"
                       >
                         integration guide
                       </a>
                       {' '}to enable full analytics.
                     </p>
-                    <div className="text-xs text-blue-600 dark:text-blue-400">
+                    <div className="text-xs text-content-muted">
                       Expected metrics after integration: Impressions, Clicks, CTR, Avg Read Time
                     </div>
                   </div>

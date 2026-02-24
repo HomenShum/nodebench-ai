@@ -14,16 +14,16 @@ interface DashboardProps {
 
 export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
   return (
-    <div className="flex h-full flex-col justify-between rounded-lg bg-white/80 p-6 shadow-xl backdrop-blur-xl ring-1 ring-white/40">
+    <div className="flex h-full flex-col justify-between rounded-lg bg-surface p-6 border border-edge shadow-sm">
       <div>
         <div className="flex items-center justify-between mb-8">
           <motion.div
             key={data.phaseLabel}
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-gray-900/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-content border border-gray-900/10"
+            className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1 text-xs font-semibold uppercase tracking-wider text-content border border-edge"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 motion-safe:animate-pulse"></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)] motion-safe:animate-pulse"></span>
             {data.phaseLabel}
           </motion.div>
           <div className="text-xs font-bold uppercase tracking-wider text-content-secondary">
@@ -39,7 +39,7 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
           </div>
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface-secondary shadow-inner">
             <motion.div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-indigo-500 to-purple-500"
+              className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent-primary)]"
               initial={{ width: 0 }}
               animate={{ width: `${data.marketSentiment}%` }}
               transition={{ type: "spring", stiffness: 40, damping: 15 }}

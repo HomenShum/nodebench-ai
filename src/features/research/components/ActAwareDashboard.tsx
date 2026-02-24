@@ -97,7 +97,7 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
       </div>
 
       {/* Velocity Big Stat */}
-      <div className="py-8 text-center bg-surface-secondary dark:bg-white/[0.04] border border-edge dark:border-white/10">
+      <div className="py-8 text-center bg-surface-secondary border border-edge dark:border-white/10">
         <span className="text-6xl font-bold text-gray-950 block">{velocity}</span>
         <span className="text-xs font-medium text-content-muted">Nodes / Hour</span>
       </div>

@@ -27,11 +27,11 @@ const statusConfig: Record<TaskSessionStatus, { dotColor: string; label: string 
     label: 'Pending'
   },
   running: { 
-    dotColor: 'bg-blue-500',
+    dotColor: 'bg-[var(--accent-primary)]',
     label: 'Running' 
   },
   completed: {
-    dotColor: 'bg-indigo-500',
+    dotColor: 'bg-emerald-500',
     label: 'Completed'
   },
   failed: {
@@ -39,30 +39,30 @@ const statusConfig: Record<TaskSessionStatus, { dotColor: string; label: string 
     label: 'Failed'
   },
   cancelled: {
-    dotColor: 'bg-amber-500',
+    dotColor: 'bg-content-secondary',
     label: 'Cancelled'
   },
 };
 
 const typeConfig: Record<TaskSessionType, { dotColor: string; label: string }> = {
   manual: {
-    dotColor: 'bg-purple-500',
+    dotColor: 'bg-content-secondary',
     label: 'Manual'
   },
   cron: {
-    dotColor: 'bg-orange-500',
+    dotColor: 'bg-content-secondary',
     label: 'Automated'
   },
   scheduled: {
-    dotColor: 'bg-blue-500',
+    dotColor: 'bg-content-secondary',
     label: 'Scheduled'
   },
   agent: {
-    dotColor: 'bg-indigo-500',
+    dotColor: 'bg-[var(--accent-primary)]',
     label: 'Agent'
   },
   swarm: {
-    dotColor: 'bg-indigo-500',
+    dotColor: 'bg-[var(--accent-primary)]',
     label: 'Swarm'
   },
 };
@@ -113,9 +113,9 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
     <div 
       className={cn(
         "p-3 rounded-lg border cursor-pointer transition-all",
-        "hover:bg-surface-secondary hover:border-indigo-500/30",
+        "hover:bg-surface-secondary hover:border-[var(--accent-primary)]/30",
         isSelected 
-          ? "bg-surface-secondary border-indigo-500/30 ring-1 ring-[var(--accent-primary)]" 
+          ? "bg-surface-secondary border-[var(--accent-primary)]/30 ring-1 ring-[var(--accent-primary)]" 
           : "bg-surface border-edge"
       )}
       onClick={onClick}

@@ -29,22 +29,25 @@ interface MetricCardProps {
 }
 
 function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: MetricCardProps) {
-  const colorClasses = {
-    green: 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-900/30',
-    red: 'bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30',
-    blue: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/25',
-    yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-900/30',
-    gray: 'bg-surface-secondary text-content-secondary border-edge',
+  const dotColor = {
+    green: 'bg-green-500',
+    red: 'bg-red-500',
+    blue: 'bg-[var(--accent-primary)]',
+    yellow: 'bg-yellow-500',
+    gray: 'bg-content-muted',
   };
 
   return (
-    <div className={`border rounded-lg p-4 ${colorClasses[color]}`}>
+    <div className="bg-surface border border-edge rounded-lg p-4">
       <div className="flex items-start justify-between mb-2">
-        <div className="text-sm font-medium opacity-75">{title}</div>
-        <div className="opacity-60">{icon}</div>
+        <div className="flex items-center gap-2">
+          <span className={`w-1.5 h-1.5 rounded-full ${dotColor[color]}`} />
+          <span className="text-sm font-medium text-content-secondary">{title}</span>
+        </div>
+        <div className="text-content-muted">{icon}</div>
       </div>
-      <div className="text-2xl font-bold mb-1">{value}</div>
-      {subtitle && <div className="text-xs opacity-60">{subtitle}</div>}
+      <div className="text-2xl font-bold text-content mb-1">{value}</div>
+      {subtitle && <div className="text-xs text-content-muted">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
           }`}>
@@ -75,9 +78,9 @@ function RejectionReasonBar({ reason, count, maxCount }: RejectionReasonBarProps
           {count} {count === 1 ? 'rejection' : 'rejections'}
         </div>
       </div>
-      <div className="h-2 bg-surface-secondary dark:bg-white/[0.08] rounded-full overflow-hidden">
+      <div className="h-1.5 bg-surface-secondary rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-500"
+          className="h-full bg-red-500/60 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -185,7 +188,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge dark:border-white/[0.06] rounded-lg text-sm bg-surface dark:bg-white/[0.06] text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
+              className="px-3 py-2 border border-edge rounded-lg text-sm bg-surface text-content focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -286,30 +289,21 @@ export default function RecommendationAnalyticsDashboard() {
               </div>
 
               <div className="grid grid-cols-5 gap-3">
-                <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900/30">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{metrics.accepted}</div>
-                  <div className="text-xs text-green-700 dark:text-green-500 mt-1">Accepted</div>
-                </div>
-
-                <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-900/30">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{metrics.rejected}</div>
-                  <div className="text-xs text-red-700 dark:text-red-500 mt-1">Rejected</div>
-                </div>
-
-                <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900/30">
-                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{metrics.ignored}</div>
-                  <div className="text-xs text-yellow-700 dark:text-yellow-500 mt-1">Ignored</div>
-                </div>
-
-                <div className="text-center p-3 bg-surface-secondary rounded-lg border border-edge">
-                  <div className="text-2xl font-bold text-content-secondary">{metrics.dismissed}</div>
-                  <div className="text-xs text-content-secondary dark:text-content-muted mt-1">Dismissed</div>
-                </div>
-
-                <div className="text-center p-3 bg-[var(--accent-primary-bg)] rounded-lg border border-[var(--accent-primary)]/25">
-                  <div className="text-2xl font-bold text-[var(--accent-primary)]">{metrics.snoozed}</div>
-                  <div className="text-xs text-[var(--accent-primary)] mt-1">Snoozed</div>
-                </div>
+                {[
+                  { label: 'Accepted', value: metrics.accepted, dot: 'bg-green-500' },
+                  { label: 'Rejected', value: metrics.rejected, dot: 'bg-red-500' },
+                  { label: 'Ignored', value: metrics.ignored, dot: 'bg-yellow-500' },
+                  { label: 'Dismissed', value: metrics.dismissed, dot: 'bg-content-muted' },
+                  { label: 'Snoozed', value: metrics.snoozed, dot: 'bg-[var(--accent-primary)]' },
+                ].map(({ label, value: v, dot }) => (
+                  <div key={label} className="text-center p-3 bg-surface-secondary rounded-lg border border-edge">
+                    <div className="text-2xl font-bold text-content">{v}</div>
+                    <div className="flex items-center justify-center gap-1.5 mt-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                      <span className="text-xs text-content-muted">{label}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

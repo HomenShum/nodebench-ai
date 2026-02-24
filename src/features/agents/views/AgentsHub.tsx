@@ -112,13 +112,13 @@ function QuickStatsBar() {
       value: stats.tasksCompleted,
       label: "Tasks Completed",
       icon: TrendingUp,
-      color: "text-blue-600",
+      color: "text-[var(--accent-primary)]",
     },
     {
       value: `${stats.successRate}%`,
       label: "Success Rate",
       icon: Sparkles,
-      color: "text-purple-600",
+      color: "text-content-secondary",
     },
     {
       value: costMetrics ? `$${costMetrics.dollarsSaved.toFixed(2)}` : "$0.00",

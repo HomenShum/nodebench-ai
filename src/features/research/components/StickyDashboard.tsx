@@ -261,7 +261,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
         </div>
 
         {/* --- ROW 1: HEADER & ACT INDICATOR --- */}
-        <div className="border-b border-gray-900/10 dark:border-white/[0.06] pb-6">
+        <div className="border-b border-gray-900/10 pb-6">
           <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-2xl font-semibold text-content tracking-tight">
               Pulse
@@ -342,7 +342,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
         initial={{ width: 0 }}
         animate={{ width: `${normalizeCapabilityScore(score)}%` }}
         transition={{ duration: 1.5, ease: "easeOut" }}
-        className="h-full bg-gray-900 dark:bg-white/70 rounded-full"
+        className="h-full bg-gray-900 dark:bg-surface rounded-full"
       />
     </div>
   </div>
@@ -350,7 +350,7 @@ const CapabilityBar = ({ label, score, icon, delta }: { label: string, score: nu
 
 const BucketColumn = ({ count, color, delta }: { count: number, color: string, delta?: number | null }) => {
   // Map old colors to new theme
-  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-gray-900 dark:bg-white/70' : 'bg-gray-300 dark:bg-gray-500';
+  const themeColor = color.includes('indigo') || color.includes('slate-900') ? 'bg-gray-900 dark:bg-surface' : 'bg-gray-300 dark:bg-gray-500';
 
   return (
     <div className="flex flex-col-reverse gap-[1px] w-full items-center group relative">
@@ -446,7 +446,7 @@ const AgentFooter = ({ workflowSteps }: { workflowSteps: WorkflowStep[] }) => {
       )}
 
       {activeStep && (
-        <div className="mt-3 p-3 bg-surface-secondary dark:bg-white/[0.04] border border-edge dark:border-white/[0.08]">
+        <div className="mt-3 p-3 bg-surface-secondary border border-edge dark:border-white/[0.08]">
           <p className="text-xs font-mono text-content-muted mb-1">Current Task</p>
           <p className="text-[12px] font-medium text-gray-950 dark:text-gray-100 italic">
             "{activeStep.name} in progress..."

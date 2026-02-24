@@ -62,22 +62,22 @@ const getPhaseIcon = (phase: TemporalPhase) => {
 const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
   const baseColors = {
     past: {
-      bg: isActive ? "bg-gray-700" : "bg-surface-secondary hover:bg-surface-secondary",
+      bg: isActive ? "bg-content-secondary" : "bg-surface-secondary hover:bg-surface-hover",
       text: isActive ? "text-white" : "text-content-secondary",
-      border: isActive ? "border-gray-700" : "border-edge",
-      dot: "bg-gray-400",
+      border: isActive ? "border-content-secondary" : "border-edge",
+      dot: "bg-content-muted",
     },
     present: {
-      bg: isActive ? "bg-blue-600 dark:bg-blue-500" : "bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20",
-      text: isActive ? "text-white" : "text-blue-700 dark:text-blue-300",
-      border: isActive ? "border-blue-600 dark:border-blue-500" : "border-blue-200 dark:border-blue-500/25",
-      dot: "bg-blue-500",
+      bg: isActive ? "bg-[var(--accent-primary)]" : "bg-[var(--accent-primary-bg)] hover:bg-[var(--accent-primary-bg)]",
+      text: isActive ? "text-white" : "text-[var(--accent-primary)]",
+      border: isActive ? "border-[var(--accent-primary)]" : "border-[var(--accent-primary)]/20",
+      dot: "bg-[var(--accent-primary)]",
     },
     future: {
-      bg: isActive ? "bg-purple-600 dark:bg-purple-500" : "bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20",
-      text: isActive ? "text-white" : "text-purple-700 dark:text-purple-300",
-      border: isActive ? "border-purple-600 dark:border-purple-500" : "border-purple-200 dark:border-purple-500/25",
-      dot: "bg-purple-400",
+      bg: isActive ? "bg-content" : "bg-surface-secondary hover:bg-surface-hover",
+      text: isActive ? "text-white" : "text-content",
+      border: isActive ? "border-content" : "border-edge",
+      dot: "bg-content",
     },
   };
   return baseColors[phase];
@@ -193,7 +193,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
     <div
       className={`
         ${sticky ? "sticky top-0 z-40" : ""}
-        bg-surface/95 backdrop-blur-sm border-b border-edge shadow-sm
+        bg-surface/95  border-b border-edge shadow-sm
         ${className}
       `}
     >
@@ -219,7 +219,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
                 <button
                   key={phase}
                   type="button"
-                  onClick={() => setPhaseFilter((prev) => (prev === phase ? "all" : phase))}
+                  onClick={() => setPhaseFilter(activePhaseFilter === phase ? "all" : phase)}
                   aria-pressed={isActiveFilter}
                   title={`Filter to ${phase} events`}
                   className={`flex items-center gap-1 px-2 py-1 rounded-full border transition-colors ${
@@ -254,24 +254,24 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               style={{ width: `${progressInfo.phasePercentages.past}%` }}
             />
             <div
-              className="h-full bg-blue-500/20 dark:bg-blue-500/25"
+              className="h-full bg-[var(--accent-primary-bg)]"
               style={{ width: `${progressInfo.phasePercentages.present}%` }}
             />
             <div
-              className="h-full bg-purple-500/20 dark:bg-purple-500/25"
+              className="h-full bg-surface-hover"
               style={{ width: `${progressInfo.phasePercentages.future}%` }}
             />
           </div>
           {/* Progress indicator — skip animation on mount to avoid initial jank */}
           <motion.div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-gray-500 via-blue-500 to-blue-600 rounded-full"
+            className="absolute top-0 left-0 h-full bg-[var(--accent-primary)] rounded-full"
             initial={false}
             animate={{ width: `${progressInfo.percentage}%` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
           {/* Current position marker */}
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-surface border-2 border-blue-600 dark:border-blue-400 rounded-full shadow-sm"
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-surface border-2 border-[var(--accent-primary)] rounded-full shadow-sm"
             initial={false}
             animate={{ left: `calc(${progressInfo.percentage}% - 6px)` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
@@ -382,7 +382,7 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
         flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
         border transition-all duration-200
         ${colors.bg} ${colors.text} ${colors.border}
-        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500
+        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-primary)]
       `}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}

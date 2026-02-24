@@ -502,14 +502,14 @@ export function CommandPalette({
                     </div>
 
                     {/* Footer Hints */}
-                    <div className="px-4 py-2 border-t border-edge bg-surface-secondary dark:bg-white/[0.02] flex items-center justify-between text-xs text-content-secondary">
+                    <div className="px-4 py-2 border-t border-edge bg-surface-secondary flex items-center justify-between text-xs text-content-secondary">
                         <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1">
-                                <kbd className="px-1 py-0.5 bg-white dark:bg-white/[0.06] rounded text-xs font-mono border border-edge dark:text-content-muted">↑↓</kbd>
+                                <kbd className="px-1 py-0.5 bg-surface rounded text-xs font-mono border border-edge dark:text-content-muted">↑↓</kbd>
                                 Navigate
                             </span>
                             <span className="flex items-center gap-1">
-                                <kbd className="px-1 py-0.5 bg-white dark:bg-white/[0.06] rounded text-xs font-mono border border-edge dark:text-content-muted">↵</kbd>
+                                <kbd className="px-1 py-0.5 bg-surface rounded text-xs font-mono border border-edge dark:text-content-muted">↵</kbd>
                                 Select
                             </span>
                         </div>
