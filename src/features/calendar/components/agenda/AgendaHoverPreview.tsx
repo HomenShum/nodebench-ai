@@ -98,22 +98,22 @@ export default function AgendaHoverPreview({
         {kind === "event" ? (
           <span className={`text-xs px-1.5 py-0.5 rounded border ${
             item?.status === 'cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-            item?.status === 'tentative' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-            'bg-indigo-50 text-content-secondary border-indigo-200'
+            item?.status === 'tentative' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20' :
+            'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20'
           }`}>
             {String(item?.status ?? 'confirmed')}
           </span>
         ) : kind === "task" ? (
           <span className={`text-xs px-1.5 py-0.5 rounded border ${
             item?.status === 'blocked' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-            item?.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-            item?.status === 'done' ? 'bg-indigo-50 text-content-secondary border-indigo-200' :
-            'bg-slate-50 text-slate-700 border-slate-200'
+            item?.status === 'in_progress' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20' :
+            item?.status === 'done' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20' :
+            'bg-surface-secondary text-content-secondary border-edge'
           }`}>
             {String(item?.status ?? 'todo')}
           </span>
         ) : (
-          <span className="text-xs px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">Holiday</span>
+          <span className="text-xs px-1.5 py-0.5 rounded border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20">Holiday</span>
         )}
       </div>
 

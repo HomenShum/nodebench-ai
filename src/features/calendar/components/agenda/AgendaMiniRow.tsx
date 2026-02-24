@@ -22,24 +22,24 @@ function stripeClass(kind: AgendaMiniKind, status?: string): string {
       case "cancelled":
         return "bg-rose-500/60";
       case "tentative":
-        return "bg-[var(--accent-primary)]/60";
+        return "bg-indigo-600/60";
       default:
         return "bg-content-muted";
     }
   }
   if (kind === "holiday") {
-    return "bg-[var(--accent-primary)]/70";
+    return "bg-indigo-600/70";
   }
   if (kind === "note") {
-    return "bg-[var(--accent-primary)]/70";
+    return "bg-indigo-600/70";
   }
   switch (status) {
     case "blocked":
       return "bg-rose-500/80";
     case "in_progress":
-      return "bg-[var(--accent-primary)]/70";
+      return "bg-indigo-600/70";
     case "done":
-      return "bg-[var(--accent-primary)]/80";
+      return "bg-indigo-600/80";
     default:
       return "bg-content-muted";
   }
@@ -48,41 +48,41 @@ function stripeClass(kind: AgendaMiniKind, status?: string): string {
 function eventContainerClasses(color?: string): string {
   switch (color) {
     case "green":
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10";
     case "amber":
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10";
     case "red":
       return "border-rose-200 bg-rose-50";
     case "purple":
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10";
     case "gray":
       return "border-edge bg-surface-secondary";
     case "blue":
     default:
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10";
   }
 }
 
 // Container styling for notes
 function noteContainerClasses(): string {
-  return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]";
+  return "border-indigo-500/30/20 bg-indigo-500/10";
 }
 
 function eventBadgeClasses(color?: string): string {
   switch (color) {
     case "green":
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400";
     case "amber":
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400";
     case "red":
       return "border-rose-200 bg-rose-50 text-rose-700";
     case "purple":
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400";
     case "gray":
       return "border-edge bg-surface-secondary text-content-secondary";
     case "blue":
     default:
-      return "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]";
+      return "border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400";
   }
 }
 
@@ -134,7 +134,7 @@ function renderSourceBadge(item: any) {
   const isProposed = item?.proposed === true;
   const base = "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs leading-tight";
   const pill = isProposed
-    ? "border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
+    ? "border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
     : "border-edge bg-surface-secondary text-content-secondary";
   const icon = sourceType === "gmail" ? <Mail className="h-3 w-3" /> : <CalendarDays className="h-3 w-3" />;
   const label = sourceType === "gmail" ? "Gmail" : sourceType === "gcal" ? "GCal" : "Doc";
@@ -202,10 +202,10 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
         kind === 'event'
           ? eventContainerClasses(item?.color)
           : kind === 'holiday'
-            ? 'border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]'
+            ? 'border-indigo-500/30/20 bg-indigo-500/10'
             : kind === 'note'
               ? noteContainerClasses()
-              : 'border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]'
+              : 'border-indigo-500/30/20 bg-indigo-500/10'
       }`}
       role={onSelect ? "button" : undefined}
       tabIndex={onSelect ? 0 : -1}
@@ -231,7 +231,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={String(item?.status ?? 'todo') === 'done' ? 'Mark task as not done' : 'Mark task as done'}
-              className="h-3.5 w-3.5 rounded border-edge text-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/50 bg-white dark:bg-surface"
+              className="h-3.5 w-3.5 rounded border-edge text-indigo-600 dark:text-indigo-400 focus:ring-1 focus:ring-indigo-500/50/50 bg-white dark:bg-surface"
             />
           ) : null}
           <span
@@ -239,10 +239,10 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               kind === 'event'
                 ? eventBadgeClasses(item?.color)
                 : kind === 'holiday'
-                  ? 'border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]'
+                  ? 'border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                   : kind === 'note'
-                    ? 'border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]'
-                  : 'border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]'
+                    ? 'border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                  : 'border-indigo-500/30/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
             }`}
           >
             {kind === 'event' ? 'Event' : kind === 'holiday' ? 'Holiday' : kind === 'note' ? 'Note' : 'Task'}
@@ -264,24 +264,24 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
             {kind === 'event' ? (
               <span className={`text-xs px-1.5 py-0.5 rounded border ${
                 item?.status === 'cancelled' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-700/40' :
-                item?.status === 'tentative' ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20' :
-                'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20'
+                item?.status === 'tentative' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20' :
+                'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20'
               }`}>
                 {String(item?.status ?? 'confirmed')}
               </span>
             ) : kind === 'task' ? (
               <span className={`text-xs px-1.5 py-0.5 rounded border ${
                 item?.status === 'blocked' ? 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-700/40' :
-                item?.status === 'in_progress' ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20' :
-                item?.status === 'done' ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20' :
+                item?.status === 'in_progress' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20' :
+                item?.status === 'done' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20' :
                 'bg-surface-secondary text-content-secondary border-edge'
               }`}>
                 {String(item?.status ?? 'todo')}
               </span>
             ) : kind === 'holiday' ? (
-              <span className="text-xs px-1.5 py-0.5 rounded border bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20">Holiday</span>
+              <span className="text-xs px-1.5 py-0.5 rounded border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20">Holiday</span>
             ) : (
-              <span className="text-xs px-1.5 py-0.5 rounded border bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20">Note</span>
+              <span className="text-xs px-1.5 py-0.5 rounded border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20">Note</span>
             )}
           </div>
           {/* Meta */}
@@ -305,7 +305,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
                 {item?.proposed && (
                   <div className="flex items-center gap-2 pt-1">
                     <button
-                      className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]"
+                      className="px-2 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-700"
                       onClick={(e) => { e.stopPropagation(); onAcceptProposed?.(item?._id as Id<"events">); }}
                     >
                       Accept
