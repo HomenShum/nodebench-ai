@@ -73,6 +73,27 @@ type LocalQaEntry = {
   warning: number;
   info: number;
   source?: string;
+  compositeScore?: number;
+  aspiration?: {
+    score: number | null;
+    grade: string | null;
+    style: string;
+    axes: Record<string, number | null>;
+    opportunityCount: number;
+    summary: string;
+  };
+  coherence?: {
+    score: number | null;
+    notes: string;
+    outlierRoutes: string[];
+    screenshotsUsed?: string[];
+  };
+  rubric?: {
+    governance?: {
+      score: number;
+      criteria: Array<{ id: string; pass: boolean; weight: number }>;
+    };
+  };
 };
 
 type QaIssue = {
@@ -1363,6 +1384,119 @@ export function DogfoodReviewView() {
             </div>
           </div>
         )}
+
+        {/* ── Design Governance ── */}
+        {localQaResults && localQaResults.length > 0 && (() => {
+          const latest = localQaResults[0];
+          const hasGovernance = latest.compositeScore != null || latest.aspiration || latest.coherence || latest.rubric?.governance;
+          if (!hasGovernance) return null;
+
+          const govScore = latest.rubric?.governance?.score ?? null;
+          const govCriteria = latest.rubric?.governance?.criteria ?? [];
+          const aspiration = latest.aspiration;
+          const coherence = latest.coherence;
+
+          return (
+            <div className=”nb-surface-card overflow-hidden”>
+              <div className=”px-5 py-3 border-b border-border/50 flex items-center justify-between”>
+                <div className=”flex items-center gap-2”>
+                  <div className=”text-sm font-medium text-foreground”>Design Governance</div>
+                  <span className=”text-xs px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground font-mono”>
+                    composite
+                  </span>
+                </div>
+                {latest.compositeScore != null && (
+                  <div className=”flex items-center gap-2 text-xs”>
+                    <span className=”text-muted-foreground”>Composite</span>
+                    <span className=”font-semibold text-base text-foreground font-mono”>{latest.compositeScore}/100</span>
+                  </div>
+                )}
+              </div>
+
+              <div className=”p-5 space-y-4”>
+                {/* Score breakdown */}
+                {latest.compositeScore != null && (
+                  <div className=”grid grid-cols-3 gap-3”>
+                    <div className=”rounded-md border border-border/40 bg-background p-3 text-center”>
+                      <div className=”text-xs text-muted-foreground mb-1”>QA (70%)</div>
+                      <div className=”text-lg font-semibold font-mono text-foreground”>{latest.score}</div>
+                    </div>
+                    <div className=”rounded-md border border-border/40 bg-background p-3 text-center”>
+                      <div className=”text-xs text-muted-foreground mb-1”>Aspiration (15%)</div>
+                      <div className=”text-lg font-semibold font-mono text-foreground”>
+                        {aspiration?.score ?? “—“}
+                      </div>
+                    </div>
+                    <div className=”rounded-md border border-border/40 bg-background p-3 text-center”>
+                      <div className=”text-xs text-muted-foreground mb-1”>Governance (15%)</div>
+                      <div className=”text-lg font-semibold font-mono text-foreground”>
+                        {govScore ?? “—“}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Governance criteria */}
+                {govCriteria.length > 0 && (
+                  <div className=”space-y-1.5”>
+                    <div className=”text-xs font-medium text-muted-foreground”>Governance criteria</div>
+                    {govCriteria.map((c) => (
+                      <div key={c.id} className=”flex items-center gap-2 text-xs font-mono”>
+                        <span className={c.pass ? “text-green-500” : “text-red-400”}>
+                          {c.pass ? “PASS” : “FAIL”}
+                        </span>
+                        <span className=”text-muted-foreground”>{c.id.replace(/_/g, “ “)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Aspiration axes */}
+                {aspiration?.axes && Object.keys(aspiration.axes).length > 0 && (
+                  <div className=”space-y-1.5”>
+                    <div className=”text-xs font-medium text-muted-foreground”>
+                      Aspiration axes
+                      {aspiration.grade && (
+                        <span className=”ml-2 px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground”>{aspiration.grade}</span>
+                      )}
+                    </div>
+                    <div className=”grid grid-cols-2 gap-x-4 gap-y-1”>
+                      {Object.entries(aspiration.axes).map(([axis, score]) => (
+                        <div key={axis} className=”flex items-center justify-between text-xs font-mono”>
+                          <span className=”text-muted-foreground capitalize”>{axis.replace(/_/g, “ “)}</span>
+                          <span className=”text-foreground”>{score ?? “—“}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Coherence */}
+                {coherence && coherence.score != null && (
+                  <div className=”space-y-1”>
+                    <div className=”text-xs font-medium text-muted-foreground”>Cross-route coherence</div>
+                    <div className=”flex items-center gap-3”>
+                      <span className={`text-lg font-semibold font-mono ${
+                        coherence.score >= 7 ? “text-green-500” :
+                        coherence.score >= 5 ? “text-amber-400” : “text-red-400”
+                      }`}>
+                        {coherence.score}/10
+                      </span>
+                      {coherence.notes && (
+                        <span className=”text-xs text-muted-foreground”>{coherence.notes}</span>
+                      )}
+                    </div>
+                    {coherence.outlierRoutes && coherence.outlierRoutes.length > 0 && (
+                      <div className=”text-xs text-muted-foreground”>
+                        Outliers: {coherence.outlierRoutes.join(“, “)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* â”€â”€ Overstory QA Orchestration Panel â”€â”€ */}
         <OverstoryStatusPanel />
