@@ -128,35 +128,35 @@
 /* ───── Type Scale (Linear/Vercel consistency) ───── */
 @layer components {
   .type-page-title { @apply text-2xl font-semibold tracking-tight; }
-  .type-section-title { @apply text-sm font-semibold; }
+  .type-section-title { @apply text-base font-semibold tracking-tight; }
   .type-card-title { @apply text-sm font-medium; }
   .type-body { @apply text-sm leading-relaxed; }
-  .type-caption { @apply text-xs; color: var(--text-muted); }
-  .type-label { @apply text-xs font-medium uppercase tracking-wider; color: var(--text-muted); }
+  .type-caption { @apply text-xs text-content-muted; }
+  .type-label { @apply text-xs font-medium uppercase tracking-wider text-content-muted; }
 
   /* Inline button standards — match Button component primitives */
   .btn-primary-xs {
     @apply px-2.5 py-1 text-xs font-medium rounded-md bg-[var(--accent-primary)] text-white
-           hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed
-           transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2
+           hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
            focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
   }
   .btn-primary-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--accent-primary)] text-white
-           hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed
-           transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2
+           hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
            focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
   }
   .btn-ghost-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md text-content-secondary
-           hover:bg-surface-hover hover:text-content disabled:opacity-50
-           transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2
+           hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-50
+           transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
            focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
   }
   .btn-outline-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md border border-edge text-content-secondary
-           hover:bg-surface-hover hover:text-content disabled:opacity-50
-           transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2
+           hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-50
+           transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
            focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
   }
 
@@ -174,7 +174,7 @@
     @apply w-full max-w-5xl mx-auto;
   }
   .nb-surface-card {
-    @apply rounded-xl border border-edge bg-surface shadow-sm;
+    @apply rounded-lg border border-edge bg-surface shadow-sm;
   }
 }
 
