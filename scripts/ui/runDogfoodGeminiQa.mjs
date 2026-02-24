@@ -1573,7 +1573,10 @@ const HARD_HALLUCINATION_FILTERS = [
   /category.*labels.*squished.*together|squished.*together.*unreadable.*string/i, // Flexbox category labels
   /incorrect.*pluraliz.*grammar|pluraliz.*grammar.*error|1 items/i,  // Pluralization already fixed
   /blank screen on initial load|stuck on loading|loading (video|analytics|personalized morning briefing)/i, // Preview/video lane timing artifact
-  /visible internal engineering jargon|dogfood tracker|dogfood \[x\]\/\d+|dogfood.*badge.*visible|badge.*dogfood/i, // QA overlay wording, not product bug
+  /visible internal engineering jargon|dogfood tracker|dogfood \[x\]\/\d+|dogfood.*badge.*visible|badge.*dogfood|internal ['"]?dogfood['"]? overlay visible/i, // QA overlay wording, not product bug
+  /dogfood.*toast|toast.*dogfood|p1internal.*dogfood/i, // QA walkthrough overlay misclassified as product toast
+  /stuck ['"]?signing in.*toast|signing in.*visible.*guest user/i, // auth transition timing during automated sign-in
+  /assistant button.*quality review|quality review page.*assistant button/i, // coordinate mis-click during agentic exploration
 ];
 
 function isHardHallucination(issue) {
@@ -1584,6 +1587,7 @@ function isHardHallucination(issue) {
 function isPreviewArtifactIssue(issue) {
   const text = `${issue.header ?? ""} ${issue.details ?? ""}`;
   const route = String(issue.route ?? issue.ts ?? "").toLowerCase();
+  const isVideoTimestampRange = /^\d+(\.\d+)?s-\d+(\.\d+)?s$/.test(String(issue.route ?? issue.ts ?? "").trim());
 
   if (
     issue.source === "agentic_video" &&
@@ -1593,6 +1597,14 @@ function isPreviewArtifactIssue(issue) {
   }
 
   if (/visible internal engineering jargon|dogfood tracker|dogfood \[x\]\/\d+|dogfood.*badge.*visible|badge.*dogfood/i.test(text)) {
+    return true;
+  }
+
+  if (isVideoTimestampRange && /(dogfood|signing in|sign-in|toast)/i.test(text)) {
+    return true;
+  }
+
+  if (/assistant button.*quality review|quality review page.*assistant button/i.test(text)) {
     return true;
   }
 
@@ -1616,7 +1628,7 @@ function isPreviewArtifactIssue(issue) {
     return true;
   }
 
-  if (/missing hover state/i.test(text) && /run benchmark/i.test(text)) {
+  if (/missing hover state/i.test(text) && /(run benchmark|run button)/i.test(text)) {
     return true;
   }
 
@@ -1657,6 +1669,12 @@ const SEVERITY_RUBRIC = [
   { id: "icons_labeled", weight: 1, axis: "usability", description: "Icons have labels or tooltips" },
   { id: "mobile_responsive", weight: 1, axis: "layout", description: "Mobile viewport renders properly" },
   { id: "no_agentic_interaction_bugs", weight: 2, axis: "interaction", description: "No bugs found during agentic visual exploration" },
+  // Design governance criteria (Phase 3)
+  { id: "no_gratuitous_uppercase", weight: 1, axis: "governance", description: "No ALL CAPS text outside small metadata labels" },
+  { id: "color_budget_respected", weight: 1, axis: "governance", description: "Fewer than 3 accent colors per screen" },
+  { id: "empty_states_present", weight: 1, axis: "governance", description: "No blank areas where content should be" },
+  { id: "consistent_card_radius", weight: 1, axis: "governance", description: "No mixed border-radius on same screen" },
+  { id: "standard_button_style", weight: 1, axis: "governance", description: "No non-standard button appearances" },
 ];
 
 function getPLevel(issue) {
@@ -1706,6 +1724,12 @@ function categorizeIssue(issue) {
   if (/grammar|spelling|punctuation|typo|pluraliz/i.test(text)) cats.push("grammar");
   if (/icon.*label|icon.*tooltip|ambiguous.*icon|icon.*without/i.test(text)) cats.push("icons");
   if (/mobile|fab|responsive|viewport.*small/i.test(text)) cats.push("mobile");
+  // Governance categories
+  if (/all.*caps|uppercase|shouting|loud.*text/i.test(text)) cats.push("uppercase");
+  if (/too.*many.*colors|accent.*overload|color.*budget|rainbow|inconsistent.*palette/i.test(text)) cats.push("color_budget");
+  if (/blank.*area|missing.*empty.*state|void.*content|no.*data.*shown/i.test(text)) cats.push("missing_empty_state");
+  if (/border.*radius|rounded.*mismatch|card.*radius|inconsistent.*rounding/i.test(text)) cats.push("card_radius");
+  if (/button.*style|non.*standard.*button|inconsistent.*button|button.*mismatch/i.test(text)) cats.push("button_style");
   return cats;
 }
 
@@ -1738,6 +1762,17 @@ function evaluateSeverityCriterion(criterionId, filteredIssues) {
       return !filteredIssues.some((i) => categorizeIssue(i).includes("mobile"));
     case "no_agentic_interaction_bugs":
       return !filteredIssues.some((i) => ["agentic", "agentic_video"].includes(i.source ?? ""));
+    // Governance criteria
+    case "no_gratuitous_uppercase":
+      return !filteredIssues.some((i) => categorizeIssue(i).includes("uppercase"));
+    case "color_budget_respected":
+      return !filteredIssues.some((i) => categorizeIssue(i).includes("color_budget"));
+    case "empty_states_present":
+      return !filteredIssues.some((i) => categorizeIssue(i).includes("missing_empty_state"));
+    case "consistent_card_radius":
+      return !filteredIssues.some((i) => categorizeIssue(i).includes("card_radius"));
+    case "standard_button_style":
+      return !filteredIssues.some((i) => categorizeIssue(i).includes("button_style"));
     default:
       return true;
   }
@@ -1867,6 +1902,12 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
         score >= 60 ? "C" :
           score >= 40 ? "D" : "F";
 
+  // Governance sub-score: how many governance criteria pass
+  const governanceCriteria = layer2Criteria.filter((c) => c.axis === "governance");
+  const governanceWeight = governanceCriteria.reduce((s, c) => s + c.weight, 0);
+  const governanceEarned = governanceCriteria.filter((c) => c.pass).reduce((s, c) => s + c.weight, 0);
+  const governanceScore = governanceWeight > 0 ? Math.round((governanceEarned / governanceWeight) * 100) : 100;
+
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // Rubric breakdown for traceability
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1885,6 +1926,7 @@ async function computeQaScore(videoRuns, screenRuns, deterministicState = {}) {
     layer1: { score: layer1Score, weight: 0.60, criteria: layer1Criteria.map((c) => ({ id: c.id, pass: c.pass, weight: c.weight, axis: c.axis })) },
     layer2: { score: layer2Score, weight: 0.30, criteria: layer2Criteria.map((c) => ({ id: c.id, pass: c.pass, weight: c.weight, axis: c.axis })) },
     layer3: { score: layer3Score, weight: 0.10, rawTaste },
+    governance: { score: governanceScore, criteria: governanceCriteria.map((c) => ({ id: c.id, pass: c.pass, weight: c.weight })) },
     agentic: {
       issueCount: agenticIssueData.length,
       screenshotIssues: agenticIssueData.filter((i) => i.source === "agentic").length,
@@ -2378,6 +2420,86 @@ Return ONLY JSON.`,
   return { opportunities, summary, aspirationScore, axes };
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Cross-route coherence check — sends 4-6 screenshots to Gemini
+// and asks if they look like the same app. Returns a 1-10 score.
+// ═══════════════════════════════════════════════════════════════════════
+async function runDesignCoherenceCheck(outDir) {
+  const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
+  if (!GEMINI_API_KEY) return { score: null, notes: "No API key" };
+
+  // Pick 6 diverse route screenshots
+  const screenshotDir = path.join(process.cwd(), "public", "dogfood", "screenshots");
+  const candidates = [
+    "home.png", "research-hub.png", "agents.png",
+    "funding.png", "documents.png", "calendar.png",
+    "benchmarks.png", "dogfood.png",
+  ];
+  const available = [];
+  for (const name of candidates) {
+    const p = path.join(screenshotDir, name);
+    try {
+      await fs.access(p);
+      available.push(p);
+    } catch { /* skip */ }
+  }
+  if (available.length < 3) return { score: null, notes: `Only ${available.length} screenshots found` };
+
+  const selected = available.slice(0, 6);
+  const imageParts = [];
+  for (const p of selected) {
+    const buf = await fs.readFile(p);
+    imageParts.push({
+      inlineData: { mimeType: "image/png", data: buf.toString("base64") }
+    });
+  }
+
+  const prompt = `You are a senior product designer evaluating visual consistency across ${selected.length} screenshots from the same web application.
+
+Rate the VISUAL CONSISTENCY of these screens on a scale of 1-10:
+- 10 = These all look like they belong to the same polished product (consistent typography, spacing, color palette, component style)
+- 7 = Mostly consistent with minor deviations
+- 5 = Noticeably different design languages on some screens
+- 3 = Looks like 2-3 different apps stitched together
+- 1 = Every screen looks completely different
+
+Evaluate ONLY visual consistency — not content, data, or functionality.
+
+Respond with ONLY a JSON object:
+{
+  "coherenceScore": <1-10>,
+  "notes": "<1-2 sentences explaining the rating>",
+  "outlierRoutes": ["<route names that diverge most from the majority>"]
+}`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const body = {
+      contents: [{ parts: [{ text: prompt }, ...imageParts] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 300, responseMimeType: "application/json" },
+    };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return { score: null, notes: `HTTP ${res.status}` };
+    const json = await res.json();
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const parsed = JSON.parse(text);
+    const result = {
+      score: typeof parsed.coherenceScore === "number" ? parsed.coherenceScore : null,
+      notes: parsed.notes ?? "",
+      outlierRoutes: parsed.outlierRoutes ?? [],
+      screenshotsUsed: selected.map((p) => path.basename(p)),
+    };
+    await fs.writeFile(path.join(outDir, "design-coherence.json"), JSON.stringify(result, null, 2), "utf8");
+    return result;
+  } catch (err) {
+    return { score: null, notes: err.message };
+  }
+}
+
 async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = false, designStyle = "linear", designMaxImages = 10 }) {
   const outDir = path.join(process.cwd(), ".tmp", "dogfood-gemini-qa");
   // Archive previous run before overwriting â€” preserves before/after for regression diffs.
@@ -2745,6 +2867,42 @@ async function runQaAndCapture({ baseURL, headless, noAgentic = false, design = 
             // non-fatal â€” aspiration score already in design-opportunities.json
           }
         }
+
+        // Cross-route coherence check
+        // eslint-disable-next-line no-console
+        console.log(`
+  Checking cross-route visual coherence...`);
+        const coherence = await runDesignCoherenceCheck(outDir);
+        if (coherence.score !== null) {
+          // eslint-disable-next-line no-console
+          console.log(`  COHERENCE: ${coherence.score}/10`);
+          if (coherence.notes) console.log(`    ${coherence.notes}`);
+          if (coherence.outlierRoutes?.length > 0) {
+            // eslint-disable-next-line no-console
+            console.log(`    Outliers: ${coherence.outlierRoutes.join(", ")}`);
+          }
+        }
+
+        // Compute composite score: qaScore * 0.70 + aspirationScore * 0.15 + governanceScore * 0.15
+        try {
+          const qaResultsPath2 = path.join(process.cwd(), "public", "dogfood", "qa-results.json");
+          const qaRaw2 = await fs.readFile(qaResultsPath2, "utf8");
+          const qaHistory2 = JSON.parse(qaRaw2);
+          if (Array.isArray(qaHistory2) && qaHistory2.length > 0) {
+            const entry2 = qaHistory2[0];
+            const qs = entry2.score ?? 0;
+            const as = aspirationScore ?? qs;
+            const gs = entry2.rubric?.governance?.score ?? 100;
+            const comp = Math.round(qs * 0.70 + as * 0.15 + gs * 0.15);
+            entry2.compositeScore = Math.max(0, Math.min(100, comp));
+            entry2.coherence = coherence;
+            await fs.writeFile(qaResultsPath2, JSON.stringify(qaHistory2, null, 2), "utf8");
+            // eslint-disable-next-line no-console
+            console.log(`  COMPOSITE: ${entry2.compositeScore}/100 (QA ${qs}*0.70 + Aspiration ${as}*0.15 + Governance ${gs}*0.15)`);
+          }
+        } catch {
+          // non-fatal
+        }
       } catch (designErr) {
         // eslint-disable-next-line no-console
         console.warn(`  âš  Design opportunity QA failed (non-fatal): ${designErr.message}`);
@@ -2975,10 +3133,22 @@ async function main() {
     files.add(path.join(repoRoot, "src", "main.tsx"));
     files.add(path.join(repoRoot, "src", "components", "MainLayout.tsx"));
 
+    const inferSegment = (route) => {
+      if (!route) return "";
+      const lower = String(route).toLowerCase();
+      if (lower.startsWith("/")) return lower.split("/").filter(Boolean)[0] ?? "";
+      if (/benchmarks|workbench/.test(lower)) return "benchmarks";
+      if (/signals|research/.test(lower)) return "research";
+      if (/activity|task manager/.test(lower)) return "agents";
+      if (/workspace|documents|calendar/.test(lower)) return "documents";
+      if (/pr suggestions|industry|github/.test(lower)) return "monitoring";
+      return "";
+    };
+
     const issues = Array.isArray(loopContext?.realIssues) ? loopContext.realIssues : [];
-    for (const issue of issues.slice(0, 3)) {
+    for (const issue of issues.slice(0, 6)) {
       const route = String(issue?.route ?? issue?.ts ?? "").trim();
-      const seg = route.startsWith("/") ? route.split("/").filter(Boolean)[0] : "";
+      const seg = inferSegment(route);
       if (!seg) continue;
       const featureDir = path.join(repoRoot, "src", "features", seg);
       const ok = await fs.stat(featureDir).then((s) => s.isDirectory()).catch(() => false);
@@ -3028,6 +3198,7 @@ async function main() {
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for loop patch proposal");
 
     const issues = Array.isArray(loopContext?.realIssues) ? loopContext.realIssues : [];
+    const diffSummary = getGitDiffSummary();
     if (issues.length === 0) return null;
 
     const loopDir = path.join(outDir, "loop");
@@ -3066,6 +3237,13 @@ ${attemptNote}
 
 REAL ISSUES (JSON):
 ${JSON.stringify(issues.slice(0, 6), null, 2)}
+
+CURRENT WORKTREE DIFF:
+Changed files:
+${diffSummary.names.length ? diffSummary.names.map((v) => `- ${v}`).join("\n") : "- none"}
+
+Diff stat:
+${diffSummary.stat || "(no diff stat)"}
 
 CONTEXT FILES:
 ${fileBlobs.join("\n\n")}
@@ -3118,6 +3296,7 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
     if (!GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY for design patch proposal");
 
     const opportunities = Array.isArray(designReport?.opportunities) ? designReport.opportunities : [];
+    const diffSummary = getGitDiffSummary();
     if (opportunities.length === 0) return null;
 
     const loopDir = path.join(outDir, "loop");
@@ -3161,6 +3340,13 @@ ${guidance}
 
 TOP OPPORTUNITIES (JSON):
 ${JSON.stringify(opportunities.slice(0, 6), null, 2)}
+
+CURRENT WORKTREE DIFF:
+Changed files:
+${diffSummary.names.length ? diffSummary.names.map((v) => `- ${v}`).join("\n") : "- none"}
+
+Diff stat:
+${diffSummary.stat || "(no diff stat)"}
 
 CONTEXT FILES:
 ${fileBlobs.join("\n\n")}
@@ -3223,6 +3409,38 @@ Return ONLY the unified diff. No commentary, no markdown fences.`;
       shell: false,
     });
     await new Promise((resolve) => child.on("close", resolve));
+  }
+
+  function getGitDiffSummary(maxFiles = 20) {
+    try {
+      const names = execSync("git diff --name-only", {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: 10_000,
+        windowsHide: true,
+        stdio: ["pipe", "pipe", "pipe"],
+      })
+        .split(/\r?\n/)
+        .map((v) => v.trim())
+        .filter(Boolean)
+        .slice(0, maxFiles);
+
+      const stat = execSync("git diff --stat", {
+        cwd: repoRoot,
+        encoding: "utf8",
+        timeout: 10_000,
+        windowsHide: true,
+        stdio: ["pipe", "pipe", "pipe"],
+      })
+        .trim()
+        .split(/\r?\n/)
+        .slice(0, 25)
+        .join("\n");
+
+      return { names, stat };
+    } catch {
+      return { names: [], stat: "" };
+    }
   }
 
   async function runLoop() {
