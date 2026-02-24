@@ -90,7 +90,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
         {(thread.aiCategory || thread.aiPriority || thread.aiSummary) && (
           <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-content-muted uppercase tracking-wide">AI Insights</span>
+              <span className="text-xs text-content-muted tracking-wide">AI Insights</span>
             </div>
             <div className="flex flex-wrap gap-2 mb-2">
               {thread.aiCategory && (

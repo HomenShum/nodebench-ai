@@ -178,7 +178,7 @@ function ThesisEvolutionTimeline({
           {/* Current thesis */}
           <div className="mt-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs uppercase font-semibold text-purple-600">Current</span>
+              <span className="text-xs font-semibold text-purple-600">Current</span>
             </div>
             <p className="text-sm text-purple-800">{currentThesis}</p>
           </div>
@@ -271,7 +271,7 @@ function PostCard({
         {/* Change Summary */}
         {post.changeSummary && post.changeSummary.length > 0 && (
           <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-            <span className="text-xs uppercase font-semibold text-blue-600 mb-1 block">What Changed</span>
+            <span className="text-xs font-semibold text-blue-600 mb-1 block">What Changed</span>
             <ul className="space-y-0.5">
               {post.changeSummary.map((change, i) => (
                 <li key={i} className="text-xs text-blue-800 flex items-start gap-1">

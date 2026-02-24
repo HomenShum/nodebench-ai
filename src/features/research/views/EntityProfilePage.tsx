@@ -105,18 +105,18 @@ const getEntityColors = (type: EntityType) => {
   switch (type) {
     case "company":
       return {
-        bg: "bg-indigo-50",
-        text: "text-content-secondary",
-        border: "border-indigo-200",
-        icon: "text-indigo-500",
+        bg: "bg-[var(--accent-primary-bg)]",
+        text: "text-[var(--accent-primary)]",
+        border: "border-[var(--accent-primary)]/25",
+        icon: "text-[var(--accent-primary)]",
         accent: "emerald",
       };
     case "person":
       return {
-        bg: "bg-indigo-50",
-        text: "text-indigo-700",
-        border: "border-indigo-200",
-        icon: "text-indigo-500",
+        bg: "bg-[var(--accent-primary-bg)]",
+        text: "text-[var(--accent-primary)]",
+        border: "border-[var(--accent-primary)]/25",
+        icon: "text-[var(--accent-primary)]",
         accent: "indigo",
       };
     case "funding_event":
@@ -174,7 +174,7 @@ const CollapsibleSection: React.FC<{
       >
         <div className="flex items-center gap-3">
           <span className="text-content-muted">{icon}</span>
-          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-content-secondary">
+          <h3 className="text-xs font-bold text-content-secondary">
             {title}
           </h3>
           {badge && (
@@ -204,7 +204,7 @@ const StatCard: React.FC<{
   <div className="rounded-lg border border-edge bg-background p-4">
     <div className="flex items-center gap-2 mb-1">
       {icon && <span className="text-content-muted">{icon}</span>}
-      <span className="text-xs font-bold text-content-muted uppercase tracking-wider">
+      <span className="text-xs font-bold text-content-muted">
         {label}
       </span>
     </div>
@@ -305,10 +305,10 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
   const freshnessInfo = getFreshnessLabel();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="nb-page-shell">
       {/* Header */}
-      <header className="bg-surface/90 border-b border-edge px-6 py-4 sticky top-0 z-10 ">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+      <header className="bg-surface/90 border-b border-edge sticky top-0 z-10">
+        <div className="nb-page-frame-narrow px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -319,7 +319,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-xs font-bold text-content-muted">
                 Topic Profile
               </p>
               <h1 className="text-xl font-bold text-content">
@@ -339,7 +339,8 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
       </header>
 
       {/* Content */}
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <div className="nb-page-inner">
+        <main className="nb-page-frame-narrow px-6 py-8">
         {isLoading ? (
           <div className="bg-surface rounded-lg border border-edge p-8">
             <div className="flex items-center gap-4">
@@ -365,13 +366,13 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       {decodeURIComponent(entityName)}
                     </h2>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold ${colors.bg} ${colors.text}`}
                     >
                       {entityType.replace("_", " ")}
                     </span>
                     {crm?.dataQuality && (
                       <span
-                        className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${crm.dataQuality === "verified"
+                        className={`px-2 py-0.5 rounded text-xs font-bold ${crm.dataQuality === "verified"
                             ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400"
                             : crm.dataQuality === "partial"
                               ? "bg-yellow-100 dark:bg-yellow-950/30 text-yellow-700 dark:text-yellow-400"
@@ -401,7 +402,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                           href={crm.website}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 hover:text-indigo-600 transition-colors"
+                          className="flex items-center gap-1.5 hover:text-[var(--accent-primary)] transition-colors"
                         >
                           <LinkIcon className="w-4 h-4" />
                           {crm.website.replace(/^https?:\/\//, "")}
@@ -484,13 +485,13 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-4 bg-surface-secondary rounded-lg">
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
+                      <p className="text-xs font-bold text-content-muted mb-2">
                         Known For
                       </p>
                       <p className="text-content">{adaptiveProfile.executiveSummary.whatTheyreKnownFor}</p>
                     </div>
                     <div className="p-4 bg-surface-secondary rounded-lg">
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
+                      <p className="text-xs font-bold text-content-muted mb-2">
                         Current Focus
                       </p>
                       <p className="text-content">{adaptiveProfile.executiveSummary.currentFocus}</p>
@@ -498,7 +499,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   </div>
                   {adaptiveProfile.executiveSummary.keyInsight && (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">
+                      <p className="text-xs font-bold text-amber-700 mb-2">
                         Key Insight
                       </p>
                       <p className="text-amber-900 leading-relaxed">
@@ -524,8 +525,8 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       <div className="pl-4">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-bold text-content-secondary">{event.date}</span>
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${event.significance === "high"
-                              ? "bg-indigo-100 text-content-secondary"
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${event.significance === "high"
+                              ? "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
                               : event.significance === "medium"
                                 ? "bg-yellow-100 text-yellow-700"
                                 : "bg-surface-secondary text-content"
@@ -564,32 +565,32 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Circle of Influence */}
                   {adaptiveProfile.circleOfInfluence && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="p-4 bg-indigo-50 rounded-lg">
-                        <p className="text-xs font-bold text-content-secondary uppercase tracking-wider mb-2">
+                      <div className="p-4 bg-[var(--accent-primary-bg)] rounded-lg">
+                        <p className="text-xs font-bold text-[var(--accent-primary)] mb-2">
                           Inner Circle
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {(adaptiveProfile.circleOfInfluence.tier1 || []).slice(0, 5).map((name: string, idx: number) => (
-                            <span key={idx} className="px-2 py-0.5 bg-indigo-100 text-content-secondary text-xs rounded">
+                            <span key={idx} className="px-2 py-0.5 bg-surface text-[var(--accent-primary)] text-xs rounded border border-[var(--accent-primary)]/20">
                               {name}
                             </span>
                           ))}
                         </div>
                       </div>
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
+                      <div className="p-4 bg-surface-secondary rounded-lg border border-[var(--accent-primary)]/15">
+                        <p className="text-xs font-bold text-content-secondary mb-2">
                           Extended Network
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {(adaptiveProfile.circleOfInfluence.tier2 || []).slice(0, 5).map((name: string, idx: number) => (
-                            <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
+                            <span key={idx} className="px-2 py-0.5 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] text-xs rounded">
                               {name}
                             </span>
                           ))}
                         </div>
                       </div>
                       <div className="p-4 bg-surface-secondary rounded-lg">
-                        <p className="text-xs font-bold text-content-secondary uppercase tracking-wider mb-2">
+                        <p className="text-xs font-bold text-content-secondary mb-2">
                           Broader Ecosystem
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -611,15 +612,15 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                         className="flex items-start gap-3 p-3 rounded-lg border border-edge bg-background"
                       >
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${rel.strength === "strong"
-                            ? "bg-indigo-100"
+                            ? "bg-[var(--accent-primary-bg)]"
                             : rel.strength === "moderate"
-                              ? "bg-blue-100"
+                              ? "bg-surface-secondary"
                               : "bg-surface-secondary"
                           }`}>
                           <Users className={`w-5 h-5 ${rel.strength === "strong"
-                              ? "text-indigo-500"
+                              ? "text-[var(--accent-primary)]"
                               : rel.strength === "moderate"
-                                ? "text-blue-500"
+                                ? "text-content-secondary"
                                 : "text-content-secondary"
                             }`} />
                         </div>
@@ -708,7 +709,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Investors */}
                   {(funding.investors || crm?.investors) && (
                     <div>
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
+                      <p className="text-xs font-bold text-content-muted mb-2">
                         Investors
                       </p>
                       <div className="flex flex-wrap gap-2">
@@ -729,7 +730,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Banker Takeaway */}
                   {funding.bankerTakeaway && (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">
+                      <p className="text-xs font-bold text-amber-700 mb-2">
                         Banker Takeaway
                       </p>
                       <p className="text-amber-900 leading-relaxed">
@@ -752,14 +753,14 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                   {/* Founders */}
                   {crm?.founders && crm.founders.length > 0 && (
                     <div>
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-2">
+                      <p className="text-xs font-bold text-content-muted mb-2">
                         Founders
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {crm.founders.map((founder: string, idx: number) => (
                           <span
                             key={idx}
-                            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-sm rounded-full font-medium"
+                            className="px-3 py-1.5 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] text-sm rounded-full font-medium"
                           >
                             {founder}
                           </span>
@@ -782,8 +783,8 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                             key={idx}
                             className="flex items-center gap-3 p-3 rounded-lg border border-edge bg-background"
                           >
-                            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                              <User className="w-5 h-5 text-indigo-500" />
+                            <div className="w-10 h-10 rounded-full bg-[var(--accent-primary-bg)] flex items-center justify-center">
+                              <User className="w-5 h-5 text-[var(--accent-primary)]" />
                             </div>
                             <div>
                               <p className="font-medium text-content">{person.name}</p>
@@ -904,7 +905,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       key={persona}
                       className="p-3 rounded-lg border border-edge bg-background"
                     >
-                      <p className="text-xs font-bold text-content-muted uppercase tracking-wider mb-1">
+                      <p className="text-xs font-bold text-content-muted mb-1">
                         {persona.replace(/_/g, " ")}
                       </p>
                       <p className="text-sm text-content">{hook}</p>
@@ -931,7 +932,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       rel="noopener noreferrer"
                       className="flex items-start gap-3 p-3 rounded-lg border border-edge bg-background hover:bg-white transition-colors group"
                     >
-                      <ExternalLink className="w-4 h-4 text-content-muted mt-0.5 flex-shrink-0 group-hover:text-indigo-500" />
+                      <ExternalLink className="w-4 h-4 text-content-muted mt-0.5 flex-shrink-0 group-hover:text-[var(--accent-primary)]" />
                       <div className="flex-1 min-w-0">
                         <p className="text-content group-hover:text-content-secondary transition-colors">
                           {source.name}
@@ -944,7 +945,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       </div>
                       {source.credibility && (
                         <span
-                          className={`px-2 py-0.5 rounded text-xs font-bold uppercase flex-shrink-0 ${source.credibility === "high"
+                          className={`px-2 py-0.5 rounded text-xs font-bold flex-shrink-0 ${source.credibility === "high"
                               ? "bg-green-100 text-green-700"
                               : source.credibility === "medium"
                                 ? "bg-yellow-100 text-yellow-700"
@@ -966,7 +967,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 <button
                   type="button"
                   onClick={() => handleViewDossier(entityContext.dossierId)}
-                  className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-white rounded-lg font-semibold hover:bg-[var(--accent-primary-hover)] transition-colors"
                 >
                   <FileText className="w-5 h-5" />
                   View Full Report
@@ -986,7 +987,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       })
                     );
                   }}
-                  className="flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-indigo-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-white rounded-lg font-semibold hover:bg-[var(--accent-primary-hover)] transition-colors"
                 >
                   <Sparkles className="w-5 h-5" />
                   Create Report
@@ -996,7 +997,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex items-center gap-2 px-6 py-3 bg-white border border-edge text-content-secondary rounded-lg font-semibold hover:bg-surface-hover transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-surface border border-edge text-content-secondary rounded-lg font-semibold hover:bg-surface-hover transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Back to Digest
@@ -1029,7 +1030,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                     })
                   );
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold hover:bg-indigo-600 transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-white rounded-lg font-semibold hover:bg-[var(--accent-primary-hover)] transition-colors"
               >
                 <Sparkles className="w-5 h-5" />
                 Create Report
@@ -1037,7 +1038,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex items-center gap-2 px-6 py-3 bg-white border border-edge text-content-secondary rounded-lg font-semibold hover:bg-surface-hover transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-surface border border-edge text-content-secondary rounded-lg font-semibold hover:bg-surface-hover transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Back to Digest
@@ -1045,7 +1046,8 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

@@ -158,7 +158,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
               </button>
             </div>
           ) : (
-            <span className="text-xs font-medium text-content-secondary uppercase tracking-wide">
+            <span className="text-xs font-medium text-content-secondary tracking-wide">
               {language}
             </span>
           )}

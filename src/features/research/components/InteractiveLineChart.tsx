@@ -296,7 +296,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
         })}
 
         {/* Chart Title Label */}
-        <text x="25" y="20" className="text-xs font-bold fill-slate-300 font-mono tracking-widest uppercase">
+        <text x="25" y="20" className="text-xs font-bold fill-slate-300 font-mono tracking-widest">
           {config.title || "Reliability Index"}
         </text>
 
@@ -309,7 +309,7 @@ export const InteractiveLineChart: React.FC<ChartProps> = ({
               x={x}
               y={height - 2}
               textAnchor="middle"
-              className={`text-[10px] font-mono uppercase ${muted ? "fill-slate-200" : "fill-slate-400"}`}
+              className={`text-[10px] font-mono ${muted ? "fill-slate-200" : "fill-slate-400"}`}
             >
               {label}
             </text>

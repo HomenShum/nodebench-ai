@@ -330,7 +330,7 @@ export function ForecastCard({
             )}
             <span
               className={cn(
-                "text-xs font-semibold uppercase tracking-wider",
+                "text-xs font-semibold",
                 isResolved
                   ? outcome
                     ? "text-green-600 dark:text-green-400"
@@ -419,7 +419,7 @@ export function ForecastCard({
             {/* Drivers */}
             {topDrivers.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
+                <p className="text-xs font-semibold text-content-muted mb-1">
                   Drivers
                 </p>
                 <ul className="space-y-0.5">
@@ -439,7 +439,7 @@ export function ForecastCard({
             {/* Counterarguments */}
             {topCounterarguments.length > 0 && (
               <div className="mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
+                <p className="text-xs font-semibold text-content-muted mb-1">
                   Counterarguments
                 </p>
                 <ul className="space-y-0.5">

@@ -201,7 +201,7 @@ export function ThreadLane({
             <div className="px-4 py-4 bg-gray-50/50 border-t border-edge">
               {/* Thesis */}
               <div className="mb-3">
-                <h4 className="text-xs font-semibold text-content-secondary uppercase tracking-wide mb-1">
+                <h4 className="text-xs font-semibold text-content-secondary tracking-wide mb-1">
                   Current Thesis
                 </h4>
                 <p className="text-sm text-content-secondary leading-relaxed">
@@ -212,7 +212,7 @@ export function ThreadLane({
               {/* Counter-thesis if present */}
               {thread.counterThesis && (
                 <div className="mb-3 pl-3 border-l-2 border-amber-300">
-                  <h4 className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">
+                  <h4 className="text-xs font-semibold text-amber-600 tracking-wide mb-1">
                     Counter-Narrative
                   </h4>
                   <p className="text-sm text-content-secondary leading-relaxed">

@@ -120,7 +120,7 @@ export function EnhancedTimelineStrip({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-content-muted" />
-            <span className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+            <span className="text-xs font-semibold text-content-secondary">
               Activity Timeline
             </span>
             <span className="text-xs text-content-muted">({filteredEvents.length})</span>

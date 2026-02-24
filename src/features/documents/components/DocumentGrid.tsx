@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from "react";
+﻿import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from "react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { DocumentView } from "@/features/documents/views/DocumentView";
 import { X, ZoomIn, ZoomOut, Maximize2, Calendar } from "lucide-react";
@@ -37,7 +37,7 @@ const getDocumentColors = (index: number) => {
     const colorIndex = index % 12;
     const backgroundColors = [ 'bg-indigo-600/10', 'bg-[var(--accent-secondary)]/10', 'bg-indigo-600/8', 'bg-[var(--accent-secondary)]/8', 'bg-indigo-600/12', 'bg-[var(--accent-secondary)]/12', 'bg-indigo-600/6', 'bg-[var(--accent-secondary)]/6', 'bg-indigo-600/14', 'bg-[var(--accent-secondary)]/14', 'bg-indigo-600/9', 'bg-[var(--accent-secondary)]/9', ];
     const dotColors = [ 'bg-blue-500', 'bg-indigo-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500', 'bg-red-500', 'bg-yellow-500', 'bg-indigo-500', 'bg-rose-500', 'bg-indigo-500', 'bg-lime-500', ];
-    const borderColors = [ 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', ];
+    const borderColors = [ 'border-indigo-500/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/20', 'border-[var(--accent-secondary)]/20', ];
     const outlineColors = [ 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', ];
     return { background: backgroundColors[colorIndex], dot: dotColors[colorIndex], border: borderColors[colorIndex], outlineColor: outlineColors[colorIndex] };
 };

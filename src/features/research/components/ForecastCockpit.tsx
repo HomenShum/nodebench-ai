@@ -71,7 +71,7 @@ export function ForecastCockpit() {
           daily before the LinkedIn digest.
         </p>
         <div className="rounded-lg border border-dashed border-edge dark:border-gray-600 bg-surface-secondary p-4 max-w-sm w-full text-left">
-          <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-2">
+          <p className="text-xs font-semibold text-content-muted mb-2">
             Quick start
           </p>
           <ol className="space-y-1.5 text-sm text-content-secondary">
@@ -150,7 +150,7 @@ export function ForecastCockpit() {
       {/* ── Active Forecasts ── */}
       {activeForecasts && activeForecasts.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-content-secondary uppercase tracking-wider mb-3">
+          <h3 className="text-sm font-medium text-content-secondary mb-3">
             Active Forecasts
           </h3>
           <div className="space-y-3">
@@ -174,7 +174,7 @@ export function ForecastCockpit() {
           <button
             type="button"
             onClick={() => setShowResolved(!showResolved)}
-            className="flex items-center gap-2 text-sm font-medium text-content-secondary uppercase tracking-wider mb-3 hover:text-content transition-colors"
+            className="flex items-center gap-2 text-sm font-medium text-content-secondary mb-3 hover:text-content transition-colors"
           >
             Resolved ({resolvedForecasts.length})
             {showResolved ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

@@ -170,7 +170,7 @@ export function AgendaListSection({
 
     return (
         <div className="mt-4">
-            <div className="text-xs uppercase tracking-wide text-content-muted mb-1">
+            <div className="text-xs tracking-wide text-content-muted mb-1">
                 {title}
             </div>
 

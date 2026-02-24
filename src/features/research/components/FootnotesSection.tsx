@@ -147,7 +147,7 @@ const FootnoteEntry: React.FC<{
         {/* Back-links */}
         {showBackLinks && citation.occurrences.length > 0 && (
           <div className="flex items-center gap-2 mt-2 pt-2 border-t border-edge">
-            <span className="text-xs text-content-secondary uppercase tracking-wider">Jump to:</span>
+            <span className="text-xs text-content-secondary">Jump to:</span>
             {citation.occurrences.map((occ, idx) => (
               <button
                 key={occ.id}

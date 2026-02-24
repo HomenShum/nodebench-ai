@@ -101,7 +101,7 @@ export function ApiUsageDisplay() {
       {/* Per-API Breakdown */}
       {apiNames.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-content-secondary mb-2 flex items-center gap-2 uppercase tracking-wider">
+          <h4 className="text-sm font-semibold text-content-secondary mb-2 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             API Breakdown
           </h4>
@@ -130,15 +130,15 @@ export function ApiUsageDisplay() {
 
                   <div className="grid grid-cols-3 gap-2 text-[10px] sm:text-xs">
                     <div>
-                      <div className="text-content-muted uppercase tracking-tight">Today</div>
+                      <div className="text-content-muted tracking-tight">Today</div>
                       <div className="font-bold text-content">{apiData.todayCalls}</div>
                     </div>
                     <div>
-                      <div className="text-content-muted uppercase tracking-tight">Month</div>
+                      <div className="text-content-muted tracking-tight">Month</div>
                       <div className="font-bold text-content">{apiData.monthCalls}</div>
                     </div>
                     <div>
-                      <div className="text-content-muted uppercase tracking-tight">Success</div>
+                      <div className="text-content-muted tracking-tight">Success</div>
                       <div className="font-bold text-emerald-600 dark:text-emerald-400">{successRate}%</div>
                     </div>
                   </div>
@@ -160,7 +160,7 @@ export function ApiUsageDisplay() {
       <div className="flex items-start gap-2 p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/30 opacity-80 shadow-sm">
         <AlertCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
         <div className="text-xs space-y-1">
-          <div className="font-bold text-content uppercase tracking-wider mb-1">Usage Tracking</div>
+          <div className="font-bold text-content mb-1">Usage Tracking</div>
           <div className="text-content-secondary space-y-0.5">
             <div>• <strong>Linkup:</strong> Web search (~€0.005 per search)</div>
             <div>• <strong>YouTube:</strong> Video search (10K free units/day)</div>

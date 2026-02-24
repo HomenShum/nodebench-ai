@@ -172,7 +172,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-2.5 py-1 bg-surface-secondary border border-edge rounded-md">
               {item.source === "GitHub" ? <div className="w-2 h-2 bg-black rounded-full" /> : <div className="w-2 h-2 bg-orange-500 rounded-full" />}
-              <span className="text-xs font-bold text-content uppercase tracking-wider">{item.source || "News"}</span>
+              <span className="text-xs font-bold text-content">{item.source || "News"}</span>
             </div>
             <span className="text-[color:var(--border-color)]">|</span>
             {item.url && (
@@ -185,7 +185,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                 View Original <ExternalLink className="w-3 h-3" />
               </a>
             )}
-            <span className="text-xs text-content-secondary uppercase tracking-wider hidden lg:inline">Click anywhere to dismiss (Esc)</span>
+            <span className="text-xs text-content-secondary hidden lg:inline">Click anywhere to dismiss (Esc)</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                   {readerState.status === "ready" && (
                     <div className="mt-10 pt-6 border-t border-edge">
                       <div className="flex items-center justify-between mb-4">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-content-secondary">Source Matrix</span>
+                        <span className="text-xs font-semibold text-content-secondary">Source Matrix</span>
                         <span className="text-xs text-content-secondary">{sourceMatrix.length} sources</span>
                       </div>
                       {sourceMatrixItems.length > 0 ? (
@@ -313,10 +313,10 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                 <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Deep dive</div>
+                      <div className="text-xs font-bold text-content-muted">Deep dive</div>
                       <div className="text-sm font-semibold text-content">Raw data + timeline</div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-content-muted">
+                    <div className="flex items-center gap-2 text-xs text-content-muted">
                       {(["summary", "data", "timeline"] as const).map((tab) => (
                         <button
                           key={tab}
@@ -348,11 +348,11 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                       </div>
                       {metrics.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs uppercase tracking-wider text-content-muted">Metrics</div>
+                          <div className="text-xs text-content-muted">Metrics</div>
                           <div className="grid grid-cols-2 gap-2">
                             {metrics.slice(0, 4).map((metric) => (
                               <div key={metric.label} className="rounded-md border border-edge bg-surface-secondary p-2">
-                                <div className="text-xs text-content-muted uppercase tracking-wider">{metric.label}</div>
+                                <div className="text-xs text-content-muted">{metric.label}</div>
                                 <div className="text-sm font-semibold text-content">{metric.value}</div>
                               </div>
                             ))}
@@ -361,11 +361,11 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                       )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-                          <div className="text-xs uppercase tracking-wider text-content-muted">Source</div>
+                          <div className="text-xs text-content-muted">Source</div>
                           <div className="text-sm font-semibold text-content">{item.source || "n/a"}</div>
                         </div>
                         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-                          <div className="text-xs uppercase tracking-wider text-content-muted">Timestamp</div>
+                          <div className="text-xs text-content-muted">Timestamp</div>
                           <div className="text-sm font-semibold text-content">{timestamp || "n/a"}</div>
                         </div>
                       </div>
@@ -376,11 +376,11 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
                     <div className="space-y-3">
                       <div className="grid grid-cols-2 gap-2 text-xs text-content-secondary">
                         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-                          <div className="uppercase tracking-wider text-content-muted">Content bytes</div>
+                          <div className=" text-content-muted">Content bytes</div>
                           <div className="text-sm font-semibold text-content">{readerData?.contentBytes ?? "n/a"}</div>
                         </div>
                         <div className="rounded-md border border-edge bg-surface-secondary p-2">
-                          <div className="uppercase tracking-wider text-content-muted">Sources</div>
+                          <div className=" text-content-muted">Sources</div>
                           <div className="text-sm font-semibold text-content">{sourceMatrix.length}</div>
                         </div>
                       </div>
@@ -412,7 +412,7 @@ export const FeedReaderModal: React.FC<FeedReaderModalProps> = ({ item, onClose,
 
                   {deepDiveTab === "timeline" && (
                     <div className="space-y-3 text-xs text-content-secondary">
-                      <div className="text-xs uppercase tracking-wider text-content-muted">Source matrix</div>
+                      <div className="text-xs text-content-muted">Source matrix</div>
                       {sourceMatrixItems.length > 0 ? (
                         <div className="space-y-2">
                           {sourceMatrixItems.map((source, idx) => (

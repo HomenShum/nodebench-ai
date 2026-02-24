@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect, useId } from "react";
 import { ExternalLink, FileText, Quote, BarChart3, Brain, Link2 } from "lucide-react";
@@ -41,17 +41,17 @@ const getCitationIcon = (type: CitationType) => {
 const getCitationColors = (type: CitationType) => {
   switch (type) {
     case "source":
-      return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-500/30/20";
+      return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-500/20";
     case "data":
       return "bg-surface-secondary text-content-secondary hover:bg-surface-hover border-edge";
     case "quote":
       return "bg-surface-secondary text-content hover:bg-surface-hover border-edge";
     case "analysis":
-      return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-500/30/20";
+      return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-500/20";
     case "internal":
       return "bg-surface-secondary text-content hover:bg-surface-hover border-edge";
     default:
-      return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-500/30/20";
+      return "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 border-indigo-500/20";
   }
 };
 
@@ -130,7 +130,7 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
         `}
         aria-describedby={showPreview ? tooltipId : undefined}
         aria-label={`Citation ${citation.number}: ${citation.label}`}
-        title={`[${citation.number}] ${citation.type} — ${citation.label}`}
+        title={`[${citation.number}] ${citation.type} â€” ${citation.label}`}
       >
         [{citation.number}]
       </button>
@@ -169,13 +169,13 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
             {(citation.author || citation.publishedAt || citation.pageIndex != null) && (
               <span className="flex items-center gap-2 text-xs text-content-secondary border-t border-edge pt-2">
                 {citation.author && <span>{citation.author}</span>}
-                {citation.author && citation.publishedAt && <span>•</span>}
+                {citation.author && citation.publishedAt && <span>â€¢</span>}
                 {citation.publishedAt && (
                   <span>{new Date(citation.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 )}
                 {citation.pageIndex != null && (
                   <>
-                    {(citation.author || citation.publishedAt) && <span>•</span>}
+                    {(citation.author || citation.publishedAt) && <span>â€¢</span>}
                     <span className="px-1 py-0 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded font-medium">
                       p. {citation.pageIndex}
                     </span>
@@ -199,4 +199,5 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
 };
 
 export default FootnoteMarker;
+
 

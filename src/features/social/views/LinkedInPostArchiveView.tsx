@@ -214,7 +214,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
                     ) : (
                       <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     )}
-                    <h2 className="text-sm font-semibold text-foreground tracking-wide uppercase">
+                    <h2 className="text-sm font-semibold text-foreground tracking-wide">
                       {formatDateHeader(date)}
                     </h2>
                     <span className="text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-// src/components/FastAgentPanel/FastAgentPanel.InputBar.tsx
+﻿// src/components/FastAgentPanel/FastAgentPanel.InputBar.tsx
 // Enhanced input bar with auto-resize, context pills, drag-and-drop, and floating design
 
 import React, { useState, useRef, useEffect, useCallback, KeyboardEvent, DragEvent } from 'react';
@@ -223,11 +223,11 @@ export function FastAgentInputBar({
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const MENTION_OPTIONS = [
-    { label: '@web', description: 'Search the web', icon: '🌐' },
-    { label: '@docs', description: 'Search documents', icon: '📄' },
-    { label: '@code', description: 'Analyze code', icon: '💻' },
-    { label: '@data', description: 'Query data sources', icon: '📊' },
-    { label: '@deep', description: 'Deep research mode', icon: '🔬' },
+    { label: '@web', description: 'Search the web', icon: 'ðŸŒ' },
+    { label: '@docs', description: 'Search documents', icon: 'ðŸ“„' },
+    { label: '@code', description: 'Analyze code', icon: 'ðŸ’»' },
+    { label: '@data', description: 'Query data sources', icon: 'ðŸ“Š' },
+    { label: '@deep', description: 'Deep research mode', icon: 'ðŸ”¬' },
   ];
 
   // Speech-to-text state
@@ -743,7 +743,7 @@ export function FastAgentInputBar({
       {/* Main Input Card */}
       <div className={cn(
         "bg-surface rounded-lg border border-edge shadow-sm transition-all duration-200 glass-surface",
-        "focus-within:shadow-md focus-within:border-indigo-500/30/30 focus-within:ring-2 focus-within:ring-indigo-500/50/[0.06]",
+        "focus-within:shadow-md focus-within:border-indigo-500/30 focus-within:ring-2 focus-within:ring-indigo-500/10",
         isDragOver && dragFeedback.border
       )}>
 
@@ -769,7 +769,7 @@ export function FastAgentInputBar({
                 <div className="fixed inset-0 z-10" onClick={() => setShowModelSelector(false)} />
                 <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface rounded-lg border border-edge shadow-xl z-20 py-1.5 max-h-80 overflow-y-auto dropdown-enter" style={{ '--dropdown-origin': 'bottom left' } as React.CSSProperties}>
                   <div className="px-3 py-2 border-b border-edge/50">
-                    <span className="text-xs font-bold text-content-muted uppercase tracking-wider">Select Model</span>
+                    <span className="text-xs font-bold text-content-muted">Select Model</span>
                   </div>
                   {APPROVED_MODEL_LIST.map((model) => (
                     <button
@@ -927,7 +927,7 @@ export function FastAgentInputBar({
         {showSlashCommands && (
           <div className="absolute bottom-full left-0 right-0 mb-2 mx-3 bg-surface rounded-lg border border-edge shadow-xl overflow-hidden z-50 dropdown-enter" style={{ '--dropdown-origin': 'bottom center' } as React.CSSProperties}>
             <div className="px-3 py-2 border-b border-edge/50 bg-surface-secondary">
-              <span className="text-xs font-medium text-content-muted uppercase tracking-wider">
+              <span className="text-xs font-medium text-content-muted">
                 Slash Commands
               </span>
             </div>
@@ -966,7 +966,7 @@ export function FastAgentInputBar({
             </div>
             <div className="px-3 py-2 border-t border-edge/50 bg-surface-secondary">
               <p className="text-xs text-content-muted">
-                <kbd className="px-1 py-0.5 bg-surface rounded mr-1">↑/↓</kbd>
+                <kbd className="px-1 py-0.5 bg-surface rounded mr-1">â†‘/â†“</kbd>
                 navigate
                 <kbd className="px-1 py-0.5 bg-surface rounded ml-2 mr-1">Tab</kbd>
                 select
@@ -1201,3 +1201,4 @@ export function FastAgentInputBar({
     </div>
   );
 }
+

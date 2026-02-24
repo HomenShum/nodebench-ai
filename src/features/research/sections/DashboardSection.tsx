@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DashboardSection - Right-rail dashboard metrics wrapper
  *
  * Provides:
@@ -142,7 +142,7 @@ function DashboardSectionInner({
   return (
     <div className={className}>
       {isViewingHistorical && (
-        <div className="mb-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/30/20 rounded-lg">
+        <div className="mb-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
@@ -215,7 +215,7 @@ function DashboardSectionInner({
 
       {availableDates.length > 1 && (
         <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
-          <div className="text-xs uppercase tracking-wider text-content-muted mb-2">
+          <div className="text-xs text-content-muted mb-2">
             Historical Data
           </div>
           <div className="flex flex-wrap gap-1">
@@ -249,4 +249,5 @@ export function DashboardSection(props: DashboardSectionProps) {
 }
 
 export default DashboardSection;
+
 

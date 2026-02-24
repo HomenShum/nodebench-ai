@@ -312,11 +312,12 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
   const progressPercentage = (completedSteps / onboardingSteps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="nb-page-shell">
+      <div className="nb-page-inner">
+        <div className="nb-page-frame px-6 py-8">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-            <Bot className="h-8 w-8 text-blue-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[var(--accent-primary-bg)] rounded-full mb-4">
+            <Bot className="h-8 w-8 text-[var(--accent-primary)]" />
           </div>
           <h1 className="text-4xl font-bold text-content mb-2">
             Welcome to Your AI Workspace
@@ -341,7 +342,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
           </div>
           <div className="w-full bg-surface-secondary rounded-full h-2">
             <div
-              className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out"
+              className="bg-[var(--accent-primary)] h-2 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -363,7 +364,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
           <div className="lg:col-span-1">
             <div className="bg-surface rounded-lg shadow-sm border border-edge p-6">
               <h2 className="text-lg font-semibold text-content mb-4 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <BookOpen className="h-5 w-5 text-[var(--accent-primary)]" />
                 Getting Started Guide
               </h2>
               <div className="space-y-4">
@@ -372,9 +373,9 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                     key={step.id}
                     className={`p-4 rounded-lg border transition-all cursor-pointer ${
                       step.completed
-                        ? 'bg-indigo-500/10 border-edge'
+                        ? 'bg-[var(--accent-primary-bg)] border-edge'
                         : index === currentStep
-                        ? 'bg-indigo-600/10 border-indigo-500/30/30 ring-2 ring-indigo-500/50/20'
+                        ? 'bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/30 ring-2 ring-[var(--accent-primary)]/20'
                         : 'bg-surface-secondary border-edge hover:bg-surface-hover'
                     }`}
                     onClick={() => step.action && !step.completed && void handleQuickAction(step.action)}
@@ -382,7 +383,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                     <div className="flex items-start gap-3">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                         step.completed
-                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                          ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]'
                           : 'bg-surface-secondary text-content-secondary'
                       }`}>
                         {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
@@ -391,7 +392,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                         <h4 className="font-semibold text-content">{step.title}</h4>
                         <p className="text-xs text-content-secondary mt-1">{step.description}</p>
                         {step.action && !step.completed && (
-                          <div className="mt-2 text-xs text-blue-600 font-semibold flex items-center gap-1">
+                          <div className="mt-2 text-xs text-[var(--accent-primary)] font-semibold flex items-center gap-1">
                             Try it <ArrowRight className="h-3 w-3" />
                           </div>
                         )}
@@ -424,8 +425,8 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
           <div className="lg:col-span-2">
             <div className="bg-surface rounded-lg shadow-sm border border-edge h-[600px] flex flex-col">
               <div className="p-4 border-b border-edge flex items-center gap-3">
-                <div className="w-10 h-10 bg-indigo-600/15 rounded-full flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-blue-600" />
+                <div className="w-10 h-10 bg-[var(--accent-primary-bg)] rounded-full flex items-center justify-center">
+                  <Bot className="h-5 w-5 text-[var(--accent-primary)]" />
                 </div>
                 <div>
                   <h3 className="font-medium text-content">AI Onboarding Assistant</h3>
@@ -439,7 +440,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                     case 'user':
                       return (
                         <div key={message.id} className="flex justify-end">
-                          <div className="bg-indigo-600 text-white rounded-lg px-4 py-2 max-w-lg">
+                          <div className="bg-[var(--accent-primary)] text-white rounded-lg px-4 py-2 max-w-lg">
                             <ReactMarkdown>{message.content}</ReactMarkdown>
                           </div>
                         </div>
@@ -463,12 +464,12 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                                 <Loader2 className="h-4 w-4 motion-safe:animate-spin my-2" />
                               )}
                               {message.documentCreated && (
-                                <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-blue-600" />
+                                <div className="mt-2 p-2 bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/20 rounded-md flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-[var(--accent-primary)]" />
                                   <span className="text-sm text-content">Document created:</span>
                                   <button
                                     onClick={() => onDocumentSelect(message.documentCreated!.id)}
-                                    className="font-semibold text-sm text-blue-600 hover:underline"
+                                    className="font-semibold text-sm text-[var(--accent-primary)] hover:underline"
                                   >
                                     {message.documentCreated.title}
                                   </button>
@@ -509,25 +510,25 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                 <div className="flex flex-wrap gap-2 mb-3">
                   <button
                     onClick={() => void handleQuickAction("How do I create my first document?")}
-                    className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
                   >
                     Create Document
                   </button>
                   <button
                     onClick={() => void handleQuickAction("What AI features are available?")}
-                    className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
                   >
                     AI Features
                   </button>
                   <button
                     onClick={() => void handleQuickAction("How does collaboration work?")}
-                    className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
                   >
                     Collaboration
                   </button>
                   <button
                     onClick={() => void handleQuickAction("Show me organization tips")}
-                    className="text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
+                    className="text-xs bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] px-3 py-1 rounded-full hover:bg-surface-hover transition-colors"
                   >
                     Organization
                   </button>
@@ -540,13 +541,13 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask me anything about getting started..."
-                    className="flex-1 px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50 focus:border-transparent"
                     disabled={isLoading}
                   />
                   <button
                     onClick={() => void handleSendMessage()}
                     disabled={!input.trim() || isLoading}
-                    className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -555,6 +556,7 @@ export function TutorialPage({ onGetStarted, onDocumentSelect }: WelcomePageProp
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

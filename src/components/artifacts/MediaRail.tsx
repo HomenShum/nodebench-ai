@@ -125,7 +125,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
         )}
 
         {/* Kind Badge */}
-        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-xs font-medium uppercase tracking-wide">
+        <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-xs font-medium tracking-wide">
           {kind}
         </div>
 
@@ -256,7 +256,7 @@ export function MediaRail({
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <div className="h-px flex-1 bg-surface-secondary"></div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-content-secondary">
+        <span className="text-xs font-semibold text-content-secondary">
           Sources & Media ({sortedArtifacts.length})
         </span>
         <div className="h-px flex-1 bg-surface-secondary"></div>

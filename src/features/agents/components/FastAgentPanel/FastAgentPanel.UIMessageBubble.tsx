@@ -817,7 +817,7 @@ const CodeBlockWithCopy = React.memo(function CodeBlockWithCopy({
   return (
     <div className="relative group/code rounded-lg overflow-hidden border border-edge my-3">
       <div className="flex items-center justify-between px-3 py-1.5 bg-surface-secondary border-b border-edge">
-        <span className="text-xs font-mono text-content-muted uppercase tracking-wider">{language}</span>
+        <span className="text-xs font-mono text-content-muted">{language}</span>
         <div className="flex items-center gap-2 opacity-0 group-hover/code:opacity-100 transition-opacity">
           {['html', 'svg', 'jsx', 'tsx', 'css'].includes(language) && (
             <button
@@ -1444,7 +1444,7 @@ function ToolStep({
                 {/* Arguments */}
                 {(part as any).args && (
                   <div>
-                    <div className="font-medium text-content-muted mb-1 text-xs uppercase tracking-wider">Input Arguments</div>
+                    <div className="font-medium text-content-muted mb-1 text-xs">Input Arguments</div>
                     <pre className="bg-surface p-2 rounded border border-edge overflow-x-auto font-mono text-xs text-content-secondary">
                       {JSON.stringify((part as any).args, null, 2)}
                     </pre>
@@ -1454,7 +1454,7 @@ function ToolStep({
                 {/* Raw Output */}
                 {hasOutput && (
                   <div>
-                    <div className="font-medium text-content-muted mb-1 text-xs uppercase tracking-wider">Raw Output</div>
+                    <div className="font-medium text-content-muted mb-1 text-xs">Raw Output</div>
                     <pre className="bg-surface p-2 rounded border border-edge overflow-x-auto font-mono text-xs text-content-secondary max-h-60">
                       {typeof part.output === 'string' ? part.output : JSON.stringify(part.output, null, 2)}
                     </pre>
@@ -2743,7 +2743,7 @@ export function FastAgentUIMessageBubble({
         {/* Edit Diff View */}
         {editDiff && (
           <div className="mt-2 rounded-lg border border-edge overflow-hidden text-xs font-mono">
-            <div className="px-3 py-1.5 bg-surface-secondary text-content-muted text-xs font-semibold uppercase tracking-wider">Edit Diff</div>
+            <div className="px-3 py-1.5 bg-surface-secondary text-content-muted text-xs font-semibold">Edit Diff</div>
             <div className="px-3 py-1.5 bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 line-through whitespace-pre-wrap">
               {editDiff.oldText}
             </div>

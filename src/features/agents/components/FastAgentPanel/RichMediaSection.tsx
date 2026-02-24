@@ -57,7 +57,7 @@ export function RichMediaSection({ media, showCitations = false }: RichMediaSect
         {hasToolMedia && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-xs font-semibold text-content-secondary uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-content-secondary tracking-wide">
                 📎 All Media Found by Agent
               </h3>
               <span className="text-xs text-content-secondary">
@@ -72,7 +72,7 @@ export function RichMediaSection({ media, showCitations = false }: RichMediaSect
         {hasUniqueTextMedia && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-xs font-semibold text-content-secondary uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-content-secondary tracking-wide">
                 💬 Referenced in Final Answer
               </h3>
               <span className="text-xs text-content-secondary">

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SwarmQuickActions.tsx
  *
  * Quick action cards shown in empty state to help users discover
@@ -151,7 +151,7 @@ const QuickActionCard = memo(function QuickActionCard({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={preset.placeholder}
-              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50/40 focus:border-violet-300 text-content placeholder:text-content-muted transition-all duration-200"
+              className="w-full px-3.5 py-2.5 pr-11 text-[13px] bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-violet-300 text-content placeholder:text-content-muted transition-all duration-200"
               autoFocus
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -248,3 +248,4 @@ export function SwarmQuickActions({
 }
 
 export default SwarmQuickActions;
+

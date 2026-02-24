@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AgentSidebar.tsx
  *
  * Right sidebar for Agents Hub matching Documents/Calendar pattern.
@@ -228,7 +228,7 @@ const RecentRuns = memo(function RecentRuns() {
                 </span>
                 {swarm.elapsedMs && (
                   <span className="text-xs text-content-muted">
-                    • {formatTime(swarm.elapsedMs)}
+                    â€¢ {formatTime(swarm.elapsedMs)}
                   </span>
                 )}
               </div>
@@ -321,7 +321,7 @@ const QuickStats = memo(function QuickStats() {
   }, [swarms]);
 
   return (
-    <div className="bg-gradient-to-br from-indigo-500/10 to-surface-secondary rounded-lg border border-indigo-500/30/20 p-3">
+    <div className="bg-gradient-to-br from-indigo-500/10 to-surface-secondary rounded-lg border border-indigo-500/20 p-3">
       <h4 className="text-xs font-semibold text-content mb-3 flex items-center gap-2">
         <BarChart3 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
         Performance
@@ -425,8 +425,8 @@ export const AgentSidebar = memo(function AgentSidebar({ className }: AgentSideb
     <aside
       ref={sidebarRef}
       className={cn(
-        "shrink-0 border-l border-edge bg-surface relative z-20",
-        isOpen ? "w-[280px] md:w-[320px] p-3" : "w-[18px] p-0",
+        "shrink-0 border-l border-edge bg-surface relative z-20 hidden lg:block",
+        isOpen ? "w-[280px] xl:w-[320px] p-3" : "w-[18px] p-0",
         className
       )}
     >
@@ -464,3 +464,4 @@ export const AgentSidebar = memo(function AgentSidebar({ className }: AgentSideb
 });
 
 export default AgentSidebar;
+

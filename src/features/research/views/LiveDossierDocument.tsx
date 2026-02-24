@@ -1,4 +1,4 @@
-import { useQuery } from "convex/react";
+﻿import { useQuery } from "convex/react";
 import { DeepAgentProgress } from "@/features/agents/views/DeepAgentProgress";
 import { TaskPlanPanel, workflowProgressToTaskSteps } from "@/features/agents/views/TaskPlanPanel";
 import { InlineMetrics, type WorkflowMetrics } from "@/features/agents/views/WorkflowMetricsBar";
@@ -24,9 +24,9 @@ import { RichMediaSection } from "@features/agents/components/FastAgentPanel/Ric
 import { DocumentActionGrid, type DocumentAction } from "@features/agents/components/FastAgentPanel/DocumentActionCard";
 import type { ExtractedMedia } from "@features/agents/components/FastAgentPanel/utils/mediaExtractor";
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HELPER UTILITIES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const truncateText = (text: string, max = 160) => {
     if (!text) return "";
@@ -69,7 +69,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     const isPerson = /\b(founder|CEO|CTO|executive|director)\b/i.test(contentContext);
 
     // Extract entity name from content (simple heuristic)
-    const entityMatch = contentContext.match(/(?:^|\n)(?:First — to make sure.*?— )?(?:\*\*)?([A-Z][a-zA-Z0-9\s&]+(?:LLC|Inc|Corporation)?)/);
+    const entityMatch = contentContext.match(/(?:^|\n)(?:First â€” to make sure.*?â€” )?(?:\*\*)?([A-Z][a-zA-Z0-9\s&]+(?:LLC|Inc|Corporation)?)/);
     const entityName = entityMatch ? entityMatch[1].trim() : "";
 
     // Generate contextual follow-ups
@@ -604,10 +604,10 @@ function LiveDossierDocumentInner({
             {/* Newsletter Container - Wider for better readability */}
             <div className="mx-auto max-w-[860px] px-6 sm:px-8 lg:px-10 py-8 sm:py-10">
 
-                {/* ═══════════════════════════════════════════════════════════════
+                {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                     NEWSPAPER-STYLE MASTHEAD
                     Classic newspaper design with serif fonts and decorative rules
-                ═══════════════════════════════════════════════════════════════ */}
+                â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
                 <header className="mb-10">
                     {/* Top decorative rule */}
                     <div className="h-1 bg-content dark:bg-surface-secondary mb-3" />
@@ -616,11 +616,11 @@ function LiveDossierDocumentInner({
                     {/* Edition & Date Row */}
                     <div className="flex justify-between items-center text-xs sm:text-sm mb-5">
                         <div className="flex items-center gap-3">
-                            <span className="font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                            <span className="font-bold text-muted-foreground">
                                 {editionLabel}
                             </span>
                             {isStreaming && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-xs font-bold uppercase tracking-wider motion-safe:animate-pulse">
+                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-red-600 text-white rounded-full text-xs font-bold motion-safe:animate-pulse">
                                     <span className="w-1.5 h-1.5 bg-white rounded-full" />
                                     Live
                                 </span>
@@ -639,7 +639,7 @@ function LiveDossierDocumentInner({
                     {/* Decorative divider */}
                     <div className="flex items-center gap-4 my-5">
                         <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-surface-secondary" />
-                        <span className="text-content-secondary dark:text-content-secondary">✦</span>
+                        <span className="text-content-secondary dark:text-content-secondary">âœ¦</span>
                         <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-surface-secondary" />
                     </div>
 
@@ -833,7 +833,7 @@ function LiveDossierDocumentInner({
                 {/* Footer */}
                 <footer className="mt-12 pt-4 border-t border-edge dark:border-edge text-center">
                     <p className="text-sm text-content-secondary dark:text-content-secondary">
-                        AI Assistant • {new Date().toLocaleTimeString()}
+                        AI Assistant â€¢ {new Date().toLocaleTimeString()}
                     </p>
                 </footer>
             </div>
@@ -891,9 +891,9 @@ function EmptyState() {
     );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // COLLAPSIBLE MEDIA SECTION - Unified inline display
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function hasAnyMedia(media: ExtractedMedia): boolean {
     return (
@@ -943,11 +943,11 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
                         <h3 className="text-sm font-semibold text-foreground">Media & Evidence</h3>
                         <p className="text-xs text-content dark:text-content-secondary">
                             {counts.videos > 0 && `${counts.videos} videos`}
-                            {counts.videos > 0 && counts.images > 0 && ' · '}
+                            {counts.videos > 0 && counts.images > 0 && ' Â· '}
                             {counts.images > 0 && `${counts.images} images`}
-                            {(counts.videos > 0 || counts.images > 0) && counts.sources > 0 && ' · '}
+                            {(counts.videos > 0 || counts.images > 0) && counts.sources > 0 && ' Â· '}
                             {counts.sources > 0 && `${counts.sources} sources`}
-                            {(counts.videos > 0 || counts.images > 0 || counts.sources > 0) && counts.profiles > 0 && ' · '}
+                            {(counts.videos > 0 || counts.images > 0 || counts.sources > 0) && counts.profiles > 0 && ' Â· '}
                             {counts.profiles > 0 && `${counts.profiles} people`}
                         </p>
                     </div>
@@ -1005,7 +1005,7 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
                         <h3 className="text-sm font-semibold text-foreground">Generated Documents</h3>
                         <p className="text-xs text-content dark:text-content-secondary">
                             {createdCount > 0 && `${createdCount} created`}
-                            {createdCount > 0 && updatedCount > 0 && ' · '}
+                            {createdCount > 0 && updatedCount > 0 && ' Â· '}
                             {updatedCount > 0 && `${updatedCount} updated`}
                         </p>
                     </div>
@@ -1103,7 +1103,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 
     const statusColors = {
         pending: "bg-content-secondary/20 text-content-secondary border-content-secondary/30",
-        running: "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30",
+        running: "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
         complete: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
         error: "bg-red-500/20 text-red-400 border-red-500/30",
     };
@@ -1129,7 +1129,7 @@ function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
 
     const statusBg = {
         pending: "bg-content-secondary/10 border-content-secondary/20",
-        running: "bg-indigo-600/10 border-indigo-500/30/20",
+        running: "bg-indigo-600/10 border-indigo-500/20",
         complete: "bg-emerald-500/10 border-emerald-500/20",
         error: "bg-red-500/10 border-red-500/20",
     };
@@ -1210,13 +1210,13 @@ function LiveAgentTicker({
                                     Multi-Agent Research
                                 </h3>
                                 {isActive && (
-                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30/30">
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30">
                                         <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full live-dot" />
-                                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Live</span>
+                                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Live</span>
                                     </span>
                                 )}
                                 {followUpLabel && (
-                                    <span className="px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30/30 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                                    <span className="px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                                         {followUpLabel}
                                     </span>
                                 )}
@@ -1234,7 +1234,7 @@ function LiveAgentTicker({
                                         <AgentIcon role={role || "coordinator"} status={status} />
                                         {/* Tooltip */}
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-surface border border-edge rounded text-xs text-content whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                            {roleLabels[role || "coordinator"]} • {status}
+                                            {roleLabels[role || "coordinator"]} â€¢ {status}
                                         </div>
                                     </div>
                                 ))
@@ -1252,7 +1252,7 @@ function LiveAgentTicker({
                         <div className="relative mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-3">
                                 <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                                     Tool Activity
                                 </span>
                                 <span className="text-xs text-white/40">
@@ -1272,7 +1272,7 @@ function LiveAgentTicker({
                         <div className="mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-2">
                                 <Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                                     Live Output
                                 </span>
                             </div>
@@ -1289,3 +1289,4 @@ function LiveAgentTicker({
         </div>
     );
 }
+

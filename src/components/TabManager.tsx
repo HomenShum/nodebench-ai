@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, Suspense, lazy } from "react";
+﻿import { useState, useCallback, useEffect, useRef, Suspense, lazy } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -309,7 +309,7 @@ export function TabManager({
   };
 
   const colorClasses = [
-    "bg-indigo-600/10 text-content border-indigo-500/30/20 hover:bg-indigo-600/15",
+    "bg-indigo-600/10 text-content border-indigo-500/20 hover:bg-indigo-600/15",
     "bg-[var(--accent-secondary)]/10 text-content border-[var(--accent-secondary)]/20 hover:bg-[var(--accent-secondary)]/15",
     "bg-indigo-600/8 text-content border-indigo-500/30/15 hover:bg-indigo-600/12",
     "bg-[var(--accent-secondary)]/8 text-content border-[var(--accent-secondary)]/15 hover:bg-[var(--accent-secondary)]/12",
@@ -317,7 +317,7 @@ export function TabManager({
     "bg-[var(--accent-secondary)]/12 text-content border-[var(--accent-secondary)]/25 hover:bg-[var(--accent-secondary)]/18",
     "bg-indigo-600/6 text-content border-indigo-500/30/12 hover:bg-indigo-600/10",
     "bg-[var(--accent-secondary)]/6 text-content border-[var(--accent-secondary)]/12 hover:bg-[var(--accent-secondary)]/10",
-    "bg-indigo-600/14 text-content border-indigo-500/30/30 hover:bg-indigo-600/20",
+    "bg-indigo-600/14 text-content border-indigo-500/30 hover:bg-indigo-600/20",
     "bg-[var(--accent-secondary)]/14 text-content border-[var(--accent-secondary)]/30 hover:bg-[var(--accent-secondary)]/20",
     "bg-indigo-600/9 text-content border-indigo-500/30/18 hover:bg-indigo-600/13",
     "bg-[var(--accent-secondary)]/9 text-content border-[var(--accent-secondary)]/18 hover:bg-[var(--accent-secondary)]/13",
@@ -333,7 +333,7 @@ export function TabManager({
       {isGridMode && (
         <div ref={containerRef} className="bg-surface border-b border-edge px-2 sm:px-4 py-2 flex-shrink-0">
           <div className="flex items-start gap-2">
-            {/* Tabs – single row scroller */}
+            {/* Tabs â€“ single row scroller */}
             <div className="flex-1 min-w-0 relative">
               <div
                 ref={tabsWrapRef}
@@ -352,7 +352,7 @@ export function TabManager({
                   const baseGap = iconOnly ? "gap-1" : compact ? "gap-1.5" : "gap-2";
                   const baseText = iconOnly ? "text-xs" : compact ? "text-xs" : "text-sm";
                   const baseMinW = iconOnly ? "min-w-[30px]" : compact ? "min-w-[44px]" : "min-w-[64px]";
-                  const selRing = selectedDocumentId === tab.id ? "ring-2 ring-indigo-500/50/40" : "";
+                  const selRing = selectedDocumentId === tab.id ? "ring-2 ring-indigo-500/40" : "";
 
                   return (
                     <button
@@ -437,3 +437,4 @@ export function TabManager({
     </div>
   );
 }
+

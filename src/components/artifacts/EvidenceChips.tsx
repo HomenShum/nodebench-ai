@@ -1,4 +1,4 @@
-// src/components/artifacts/EvidenceChips.tsx
+﻿// src/components/artifacts/EvidenceChips.tsx
 // Inline evidence chips [1][2][3] that link to source artifacts
 // Renders at {{fact:*}} anchor locations in markdown
 
@@ -7,9 +7,9 @@ import { ExternalLink } from "lucide-react";
 import { useArtifactStore } from "../../hooks/useArtifactStore";
 import type { ArtifactCard } from "../../shared/artifacts";
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TYPES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface EvidenceChipsProps {
   /** Fact ID from {{fact:xxx}} anchor */
@@ -36,9 +36,9 @@ interface EvidenceChipGroupProps {
   onChipClick?: (artifact: ArtifactCard, factId: string, index: number) => void;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SINGLE EVIDENCE CHIP
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function EvidenceChip({
   index,
@@ -64,16 +64,16 @@ function EvidenceChip({
 
   <button
     onClick={onClick}
-    className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded border border-indigo-500/30/20 transition-all cursor-pointer active:scale-95"
+    className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white rounded border border-indigo-500/20 transition-all cursor-pointer active:scale-95"
     title={artifact.title || artifact.canonicalUrl}
   >
     {index}
   </button>
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EVIDENCE CHIPS (for a single fact anchor)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
  * Render evidence chips for a single fact anchor.
@@ -114,9 +114,9 @@ export function EvidenceChips({ factId, onChipClick, compact }: EvidenceChipsPro
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EVIDENCE CHIP GROUP (for consistent numbering across section)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
  * Manages consistent numbering across all evidence in a section.
@@ -191,9 +191,9 @@ export function EvidenceChipGroup({
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SOURCE FOOTER (shows all sources for a section)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface SourceFooterProps {
   sectionId: string;
@@ -232,7 +232,7 @@ export function SourceFooter({ sectionId, evidenceLinks, onSourceClick }: Source
 
   return (
     <div className="mt-4 pt-3 border-t border-edge">
-      <p className="text-xs font-semibold text-content-secondary uppercase tracking-wide mb-2">
+      <p className="text-xs font-semibold text-content-secondary tracking-wide mb-2">
         Sources
       </p>
       <ol className="text-xs text-content-secondary space-y-1 list-none pl-0">
@@ -262,3 +262,4 @@ export function SourceFooter({ sectionId, evidenceLinks, onSourceClick }: Source
 }
 
 export default EvidenceChips;
+

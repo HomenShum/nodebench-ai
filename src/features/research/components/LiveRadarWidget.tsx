@@ -87,7 +87,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
             <Activity className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-content uppercase tracking-wider">Global Radar</h3>
+            <h3 className="text-xs font-bold text-content">Global Radar</h3>
             <p className="text-xs text-content-secondary">Agent-Curated Intelligence</p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
               activeTab === tab.id
                 ? 'bg-surface text-content shadow-sm border border-edge'
                 : 'text-content-secondary hover:bg-surface-hover hover:text-content'
@@ -159,17 +159,17 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
                       
                       {/* Smart Badges */}
                       {isViral && (
-                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-purple-50 text-purple-600 border border-purple-100 uppercase tracking-tight">
+                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-purple-50 text-purple-600 border border-purple-100 tracking-tight">
                           Viral
                         </span>
                       )}
                       {!isViral && isTrending && (
-                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-tight">
+                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-blue-50 text-blue-600 border border-blue-100 tracking-tight">
                           Hot
                         </span>
                       )}
                       {signal.type === 'signal' && (
-                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-tight">
+                        <span className="text-xs font-bold px-1.5 py-0 rounded-sm bg-amber-50 text-amber-600 border border-amber-100 tracking-tight">
                           Signal
                         </span>
                       )}
@@ -202,7 +202,7 @@ export const LiveRadarWidget: React.FC<LiveRadarWidgetProps> = ({ className = ''
       {/* Footer */}
       <button
         type="button"
-        className="w-full py-3 text-xs font-bold text-content-secondary hover:text-content hover:bg-surface-hover transition-colors border-t border-edge uppercase tracking-wider flex items-center justify-center gap-2"
+        className="w-full py-3 text-xs font-bold text-content-secondary hover:text-content hover:bg-surface-hover transition-colors border-t border-edge flex items-center justify-center gap-2"
       >
         View Full Intelligence Report <ArrowUpRight className="w-3 h-3" />
       </button>

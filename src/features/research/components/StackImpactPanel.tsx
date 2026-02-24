@@ -50,7 +50,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
   if (!hasValidTechStack) {
     return (
       <div className="rounded-lg border border-edge bg-white p-4 space-y-2">
-        <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Stack Impact</div>
+        <div className="text-xs font-bold text-content-muted">Stack Impact</div>
         <div className="text-sm font-semibold text-content">Set your tech stack</div>
         <div className="text-xs text-content-secondary">
           Add your stack in Settings to map direct and second-order exposure.
@@ -71,7 +71,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
     <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Stack Impact</div>
+          <div className="text-xs font-bold text-content-muted">Stack Impact</div>
           <div className="text-sm font-semibold text-content">Dependency Map</div>
         </div>
         <button
@@ -91,7 +91,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
       )}
 
       {impact?.riskLevel && (
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-amber-200 bg-amber-50 text-amber-700 text-xs font-bold">
           <AlertTriangle className="w-3 h-3" />
           {impact.riskLevel} risk
         </div>
@@ -127,7 +127,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
 
       {impact?.sourceUrls?.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Sources</div>
+          <div className="text-xs font-bold text-content-muted">Sources</div>
           <div className="flex flex-wrap gap-2 text-xs">
             {impact.sourceUrls.slice(0, 4).map((url: string, idx: number) => {
               let label = url;

@@ -83,7 +83,7 @@ function InsightCardComponent({
           <Icon className="w-4 h-4" />
         </div>
         {card.source && (
-          <span className="text-xs font-medium text-content-secondary uppercase tracking-wide">
+          <span className="text-xs font-medium text-content-secondary tracking-wide">
             {card.source}
           </span>
         )}
@@ -137,7 +137,7 @@ export function PulseGrid({
       {/* Section Header */}
       <div className="flex items-center gap-2 mb-4">
         <Zap className="w-4 h-4 text-amber-500" />
-        <h2 className="text-sm font-semibold text-content uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-content tracking-wide">
           Today's Pulse
         </h2>
       </div>

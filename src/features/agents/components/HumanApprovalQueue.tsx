@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HumanApprovalQueue.tsx
  *
  * Displays pending human-in-the-loop approval requests.
@@ -122,7 +122,7 @@ const RequestCard = memo(function RequestCard({
         {/* Expanded Context */}
         {isExpanded && request.context && (
           <div className="mt-3 p-2 bg-surface-secondary rounded-lg text-xs text-content-secondary">
-            <div className="flex items-center gap-1.5 mb-1 text-xs text-content-muted uppercase tracking-wider font-medium">
+            <div className="flex items-center gap-1.5 mb-1 text-xs text-content-muted font-medium">
               <Bot className="w-3 h-3" />
               Context
             </div>
@@ -150,7 +150,7 @@ const RequestCard = memo(function RequestCard({
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium",
                     "border border-edge",
-                    "hover:bg-indigo-500/10 hover:border-indigo-500/30/30",
+                    "hover:bg-indigo-500/10 hover:border-indigo-500/30",
                     "transition-colors"
                   )}
                 >
@@ -396,3 +396,4 @@ export const HumanApprovalQueue = memo(function HumanApprovalQueue({
 });
 
 export default HumanApprovalQueue;
+

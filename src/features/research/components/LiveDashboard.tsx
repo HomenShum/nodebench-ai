@@ -134,7 +134,7 @@ export const LiveDashboard: React.FC<{
         {snapshot?.sourceSummary && (
           <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs uppercase tracking-wider text-content-muted">
+              <div className="text-xs text-content-muted">
                 Data Sources
               </div>
               {availableDates.length > 0 && (
@@ -304,7 +304,7 @@ export const LiveDashboard: React.FC<{
       {snapshot.sourceSummary && (
         <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
           <div className="flex items-center justify-between mb-1">
-            <div className="text-xs uppercase tracking-wider text-content-muted">
+            <div className="text-xs text-content-muted">
               Data Sources
             </div>
             {availableDates.length > 0 && (
@@ -327,7 +327,7 @@ export const LiveDashboard: React.FC<{
       {/* Historical Date Picker */}
       {availableDates.length > 1 && (
         <div className="mt-2 px-3 py-2 bg-surface-secondary rounded-lg border border-edge">
-          <div className="text-xs uppercase tracking-wider text-content-muted mb-2">
+          <div className="text-xs text-content-muted mb-2">
             Historical Data
           </div>
           <div className="flex flex-wrap gap-1">

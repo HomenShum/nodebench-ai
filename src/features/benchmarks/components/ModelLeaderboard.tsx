@@ -166,12 +166,12 @@ export function ModelLeaderboard({
         <span className="text-xs text-content-muted">All time</span>
       </div>
 
-      <div className="xl:hidden scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto px-1 pr-3 sm:pr-4 pb-1 snap-x snap-mandatory">
+      <div className="lg:hidden scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto px-1 pr-3 sm:pr-4 pb-1 snap-x snap-mandatory">
         {entries.map((entry) => (
           <ModelCard key={entry.modelId} entry={entry} compact />
         ))}
       </div>
-      <div className="hidden xl:grid xl:grid-cols-6 xl:gap-4">
+      <div className="hidden lg:grid gap-3 sm:gap-4 [grid-template-columns:repeat(auto-fit,minmax(10.75rem,1fr))]">
         {entries.map((entry) => (
           <ModelCard key={entry.modelId} entry={entry} />
         ))}
@@ -191,11 +191,6 @@ function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compac
       : null;
     return { scenarioName, when: timeAgo(entry.lastRunAt) };
   })();
-  const seedStatus =
-    entry.score === null
-      ? { dotClass: "bg-content-muted/40", label: "Not yet run" }
-      : { dotClass: "bg-emerald-500/70", label: "Seeded" };
-
   return (
     <div className={`nb-surface-card ${sizingClass} bg-surface p-4 sm:p-4 flex flex-col gap-2 hover:border-content-muted/30 transition-colors`}>
       <div className="flex items-start justify-between gap-1">
@@ -248,17 +243,11 @@ function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compac
         <div className="text-[10px] leading-none text-content-muted flex items-center justify-between gap-2">
           {entry.score === null ? (
             <span className="inline-flex items-center gap-1.5 text-content-muted/70">
-              <span className={`h-1.5 w-1.5 rounded-full ${seedStatus.dotClass}`} />
-              <span>{seedStatus.label}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-content-muted/40" />
+              <span>Not yet run</span>
             </span>
           ) : (
-            <>
-              <span>{entry.sourceLabel}</span>
-              <span className="inline-flex items-center gap-1.5 text-content-muted/70">
-                <span className={`h-1.5 w-1.5 rounded-full ${seedStatus.dotClass}`} />
-                <span>{seedStatus.label}</span>
-              </span>
-            </>
+            <span>{entry.sourceLabel}</span>
           )}
         </div>
       )}

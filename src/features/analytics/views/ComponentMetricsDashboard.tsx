@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo } from 'react';
 import { useQuery } from 'convex/react';
@@ -116,7 +116,7 @@ function SourcePerformanceBar({
 }: SourcePerformanceBarProps) {
   const percentage = maxCount > 0 ? (itemCount / maxCount) * 100 : 0;
   const ofTotal = totalCount > 0 ? (itemCount / totalCount) * 100 : 0;
-  const title = `${formatSourceLabel(sourceName)} — ${itemCount} ${itemCount === 1 ? "item" : "items"} (${ofTotal.toFixed(1)}% of total)`;
+  const title = `${formatSourceLabel(sourceName)} â€” ${itemCount} ${itemCount === 1 ? "item" : "items"} (${ofTotal.toFixed(1)}% of total)`;
 
   return (
     <div className="group -mx-2 px-2 py-2 rounded-md border-b border-edge last:border-0 hover:bg-surface-hover/50 transition-colors" title={title}>
@@ -379,13 +379,13 @@ export default function ComponentMetricsDashboard() {
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-content-muted" />
               <div className="relative">
-                {/* Formatted date label — always shows readable format */}
+                {/* Formatted date label â€” always shows readable format */}
                 <span className="px-3 py-2 text-sm text-content-secondary border border-edge rounded-lg bg-surface inline-block min-w-[160px]">
                   {selectedDate
                     ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                     : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
-                {/* Native date input overlaid for picking — invisible but functional */}
+                {/* Native date input overlaid for picking â€” invisible but functional */}
                 <input
                   type="date"
                   value={selectedDate}
@@ -417,7 +417,7 @@ export default function ComponentMetricsDashboard() {
           </div>
         </div>
 
-        {/* Loading State — skeleton grid */}
+        {/* Loading State â€” skeleton grid */}
         {isLoading && (
           <div className="space-y-6 no-skeleton-animation" aria-busy="true" aria-live="polite">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -560,7 +560,7 @@ export default function ComponentMetricsDashboard() {
                           <div className={`
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
                             ${index === 0
-                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/30'
+                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30'
                                 : index === 1
                                   ? 'bg-surface border border-edge text-content-secondary'
                                   : index === 2
@@ -574,7 +574,7 @@ export default function ComponentMetricsDashboard() {
                               {source.sourceName}
                             </div>
                             <div className="text-xs text-content-secondary">
-                              {source.totalItems} {source.totalItems === 1 ? 'item' : 'items'} • {source.recordCount} {source.recordCount === 1 ? 'record' : 'records'}
+                              {source.totalItems} {source.totalItems === 1 ? 'item' : 'items'} â€¢ {source.recordCount} {source.recordCount === 1 ? 'record' : 'records'}
                             </div>
                           </div>
                         </div>
@@ -599,7 +599,7 @@ export default function ComponentMetricsDashboard() {
 
             {/* Integration Status Banner */}
             {aggregates.totalImpressions === 0 && (
-              <div className="nb-surface-card border-indigo-500/30/20 bg-indigo-500/10/40 p-4">
+              <div className="nb-surface-card border-indigo-500/20 bg-indigo-500/10/40 p-4">
                 <div className="flex items-start gap-3">
                   <TrendingUp className="text-indigo-600 dark:text-indigo-400 mt-0.5" size={20} />
                   <div>
@@ -631,3 +631,4 @@ export default function ComponentMetricsDashboard() {
     </div>
   );
 }
+

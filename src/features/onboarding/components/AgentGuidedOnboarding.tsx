@@ -143,7 +143,7 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
 
                     {/* Title */}
                     <h2 className="text-3xl font-bold text-content mb-1 tracking-tight">{step.title}</h2>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-content-secondary mb-4">{step.subtitle}</p>
+                    <p className="text-xs font-semibold text-content-secondary mb-4">{step.subtitle}</p>
 
                     {/* Description */}
                     <p className="text-content mb-8 leading-relaxed text-lg font-light">{step.description}</p>

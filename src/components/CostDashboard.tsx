@@ -69,7 +69,7 @@ export function CostDashboard() {
                 onClick={() => setTimeRange(range)}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   timeRange === range
-                    ? "bg-indigo-600 text-white"
+                    ? "bg-[var(--accent-primary)] text-white"
                     : "text-content-secondary hover:text-content"
                 }`}
               >
@@ -123,7 +123,7 @@ export function CostDashboard() {
 
         {/* P95 Latency */}
         <MetricCard
-          icon={<Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}
+          icon={<Clock className="w-5 h-5 text-[var(--accent-primary)]" />}
           label="P95 Latency"
           value={`${Math.round(metrics.p95LatencyMs)}ms`}
           subtitle={`Avg: ${Math.round(metrics.avgLatencyMs)}ms`}
@@ -261,7 +261,7 @@ export function CostDashboard() {
             <div className="text-sm text-content-secondary mb-1">
               Input Tokens
             </div>
-            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+            <div className="text-2xl font-bold text-[var(--accent-primary)]">
               {metrics.totalInputTokens.toLocaleString()}
             </div>
             <div className="text-xs text-content-secondary mt-1">

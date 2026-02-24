@@ -100,19 +100,19 @@ function QuickStatsBar() {
       value: stats.totalAgents,
       label: "AI Assistants",
       icon: Bot,
-      color: "text-indigo-600 dark:text-indigo-400",
+      color: "text-accent",
     },
     {
       value: stats.activeNow,
       label: "Active Now",
       icon: Activity,
-      color: stats.activeNow > 0 ? "text-green-600" : "text-content-muted",
+      color: stats.activeNow > 0 ? "text-content" : "text-content-muted",
     },
     {
       value: stats.tasksCompleted,
       label: "Tasks Completed",
       icon: TrendingUp,
-      color: "text-indigo-600 dark:text-indigo-400",
+      color: "text-content",
     },
     {
       value: `${stats.successRate}%`,
@@ -124,7 +124,7 @@ function QuickStatsBar() {
       value: costMetrics ? `$${costMetrics.dollarsSaved.toFixed(2)}` : "$0.00",
       label: "Cost Saved (24h)",
       icon: DollarSign,
-      color: "text-green-600",
+      color: "text-content",
     },
   ];
 
@@ -262,7 +262,7 @@ function ActiveSwarmsSection() {
           <h3 className="type-section-title text-content">
             Running Tasks
           </h3>
-          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-600 border border-green-500/20">
+          <span className="px-1.5 py-0.5 rounded-full text-xs font-medium bg-accent/10 text-accent border border-accent/20">
             {runningSwarms.length}
           </span>
         </div>
@@ -368,7 +368,7 @@ export function AgentsHub() {
             {/* Agent Status Grid */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <Activity className="w-4 h-4 text-accent" />
                 <h2 className="type-section-title text-content">
                   Available Agents
                 </h2>
@@ -414,7 +414,7 @@ export function AgentsHub() {
             {/* Coming Soon Banner */}
             <div className="nb-surface-card p-6 bg-gradient-to-r from-[var(--accent-primary-bg)] to-surface-secondary">
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <Sparkles className="w-5 h-5 text-accent" />
                 <h3 className="font-semibold text-content">
                   Background Research Active
                 </h3>

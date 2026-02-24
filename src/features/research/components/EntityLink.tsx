@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useRef, useEffect, useId } from "react";
 import { useNavigate } from "react-router-dom";
@@ -108,7 +108,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
       return {
         text: "text-content",
         bg: "bg-indigo-500/10 hover:bg-indigo-500/10",
-        border: "border-indigo-500/30/20",
+        border: "border-indigo-500/20",
         icon: "text-indigo-600 dark:text-indigo-400",
         badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
       };
@@ -116,7 +116,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
       return {
         text: "text-content",
         bg: "bg-indigo-500/10 hover:bg-indigo-500/10",
-        border: "border-indigo-500/30/20",
+        border: "border-indigo-500/20",
         icon: "text-indigo-600 dark:text-indigo-400",
         badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
       };
@@ -181,7 +181,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
       return {
         text: "text-content",
         bg: "bg-indigo-500/10 hover:bg-indigo-500/10",
-        border: "border-indigo-500/30/20",
+        border: "border-indigo-500/20",
         icon: "text-indigo-600 dark:text-indigo-400",
         badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
       };
@@ -441,3 +441,4 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
 };
 
 export default EntityLink;
+

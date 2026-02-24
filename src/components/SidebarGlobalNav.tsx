@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SidebarGlobalNav - Unified Top Navigation Component
  *
  * Linear-style monochrome active states with subtle background highlights.
@@ -80,7 +80,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-all duration-200 border-l-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 ${isActive
+                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-all duration-200 border-l-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 ${isActive
                     ? 'border-l-[rgb(79, 70, 229)] bg-indigo-500/10 text-content'
                     : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
                   }`}
@@ -103,7 +103,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }
               }}
               aria-current={isActive ? 'page' : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 ${isActive
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 ${isActive
                   ? 'bg-surface-secondary border-edge text-content'
                   : 'text-content-secondary hover:bg-surface-hover hover:text-content'
                 }`}
@@ -145,7 +145,7 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         key={dossier.id}
                         type="button"
                         onClick={() => onDossierSelect?.(dossier.id)}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-200 group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-200 group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
                       >
                         <FileText className="w-3.5 h-3.5 text-content-muted group-hover:text-content-secondary dark:group-hover:text-gray-300 shrink-0 transition-colors" />
                         <span className="truncate flex-1 text-left font-medium">{dossier.title || 'Untitled'}</span>
@@ -161,9 +161,9 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                       <button
                         type="button"
                         onClick={() => onNavigate('saved')}
-                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:opacity-85 font-semibold text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 rounded-sm"
+                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:opacity-85 font-semibold text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 rounded-sm"
                       >
-                        View all {recentDossiers.length} reports →
+                        View all {recentDossiers.length} reports â†’
                       </button>
                     )}
                   </>
@@ -182,3 +182,4 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
 };
 
 export default SidebarGlobalNav;
+

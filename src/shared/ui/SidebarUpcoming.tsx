@@ -128,7 +128,7 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
     <div className="space-y-4">
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs uppercase tracking-wide text-content-muted">Today</div>
+          <div className="text-xs tracking-wide text-content-muted">Today</div>
           <TaskCountBadge
             taskCount={upcoming?.counts?.todayTasks ?? 0}
             eventCount={upcoming?.counts?.todayEvents ?? 0}
@@ -204,7 +204,7 @@ export function SidebarUpcoming({ upcoming, onOpenDocument }: SidebarUpcomingPro
       </div>
       <div>
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs uppercase tracking-wide text-content-muted">This Week</div>
+          <div className="text-xs tracking-wide text-content-muted">This Week</div>
           <TaskCountBadge
             taskCount={upcoming?.counts?.weekTasks ?? 0}
             eventCount={upcoming?.counts?.weekEvents ?? 0}

@@ -29,7 +29,7 @@ const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
 
         {data.fundingChart && (
           <div className="mb-6">
-            <h4 className="mb-2 text-xs font-bold uppercase text-content-secondary">Funding Rounds</h4>
+            <h4 className="mb-2 text-xs font-bold text-content-secondary">Funding Rounds</h4>
             <div className="flex items-end gap-2">
               {data.fundingChart.seriesA !== undefined && (
                 <>
@@ -46,7 +46,7 @@ const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
 
         {data.roiChart && (
           <div className="mb-8 rounded-md border border-edge bg-surface-secondary p-3">
-            <h4 className="text-xs font-bold uppercase text-content-secondary mb-2">ROI Snapshot</h4>
+            <h4 className="text-xs font-bold text-content-secondary mb-2">ROI Snapshot</h4>
             <div className="text-sm text-content flex items-center justify-between">
               <span>Current cost</span>
               <span className="font-mono">${(data.roiChart.currentCost / 1_000_000).toFixed(1)}M</span>

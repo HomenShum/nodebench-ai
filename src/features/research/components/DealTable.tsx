@@ -83,7 +83,7 @@ export function DealTable({ deals, onDealClick }: DealTableProps) {
                                     <div className="text-xs text-content-muted mt-0.5">{deal.hqLocation}</div>
                                 </td>
                                 <td className="py-4 px-4">
-                                    <span className={`inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-tight border ${sectorColor}`}>
+                                    <span className={`inline-block px-2 py-0.5 text-xs font-bold tracking-tight border ${sectorColor}`}>
                                         {deal.sector}
                                     </span>
                                 </td>

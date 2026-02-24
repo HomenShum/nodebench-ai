@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useAction } from "convex/react";
@@ -17,7 +17,7 @@ import { useQuery, useMutation, useAction } from "convex/react";
 
     Quick chips (status/priority/dates) may open single-purpose anchored popovers; dismiss on pick/Esc.
 
-    Left status stripe: full height, no left-edge rounding; click cycles todo → in_progress → done → blocked; don't start drag on stripe click.
+    Left status stripe: full height, no left-edge rounding; click cycles todo â†’ in_progress â†’ done â†’ blocked; don't start drag on stripe click.
 
   - Kanban mode: Use TaskEditorPanel for full editing (no large inline expansion).
 
@@ -888,7 +888,7 @@ export function DocumentsHomeHub({
     // Do not auto-switch agendaMode; keep current mode (e.g., 'mini') and just change scope.
   }, []);
 
-  // Keyboard shortcuts for week navigation (←/→) and closing pickers with Esc
+  // Keyboard shortcuts for week navigation (â†/â†’) and closing pickers with Esc
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1543,7 +1543,7 @@ export function DocumentsHomeHub({
 
   const [agendaPopover, setAgendaPopover] = useState<AgendaPopoverState>(null);
 
-  // Agenda overlay state (separate from KanbanView’s state): track active task while dragging
+  // Agenda overlay state (separate from KanbanViewâ€™s state): track active task while dragging
 
   const [activeAgenda, setActiveAgenda] = useState<{
     type: "task" | "event";
@@ -2570,7 +2570,7 @@ export function DocumentsHomeHub({
             "unordered",
             highlights.map(
               (h) =>
-                `[${safeText(h.timestamp)}] ${safeText(h.description)}${h.importance === "high" ? " ⭐" : ""}`,
+                `[${safeText(h.timestamp)}] ${safeText(h.description)}${h.importance === "high" ? " â­" : ""}`,
             ),
           );
         }
@@ -2948,7 +2948,7 @@ export function DocumentsHomeHub({
     setShowToolbarEventDialog(true);
   };
 
-  // Open inline Event dialog prefilled to 09:00–10:00 on the selected date (from Mini calendar)
+  // Open inline Event dialog prefilled to 09:00â€“10:00 on the selected date (from Mini calendar)
 
   const handleAddEventForDate = (dateMs: number) => {
     if (!loggedInUser) {
@@ -3269,7 +3269,7 @@ export function DocumentsHomeHub({
     },
 
     {
-      label: "Brain dump → tasks",
+      label: "Brain dump â†’ tasks",
       text: "Turn my braindump into actionable tasks with due dates and priorities.",
     },
   ];
@@ -4263,7 +4263,7 @@ export function DocumentsHomeHub({
 
               <option value="month">This Month</option>
 
-              <option value="custom">Custom…</option>
+              <option value="custom">Customâ€¦</option>
             </select>
 
             {listRange === "custom" && (
@@ -4301,7 +4301,7 @@ export function DocumentsHomeHub({
                     void handleCreateQuickTask();
                   }
                 }}
-                placeholder="Quick add a task…"
+                placeholder="Quick add a taskâ€¦"
                 className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
               />
             </div>
@@ -4331,7 +4331,7 @@ export function DocumentsHomeHub({
                     void _handleCreateQuickEvent();
                   }
                 }}
-                placeholder="Quick add an event (title)…"
+                placeholder="Quick add an event (title)â€¦"
                 className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
               />
             </div>
@@ -4414,7 +4414,7 @@ export function DocumentsHomeHub({
                 </div>
               )}
 
-              <div className="text-xs uppercase tracking-wide text-content-muted mb-1">
+              <div className="text-xs tracking-wide text-content-muted mb-1">
                 Today
               </div>
 
@@ -4534,7 +4534,7 @@ export function DocumentsHomeHub({
 
           {listRange === "week" && (
             <div className="mt-4">
-              <div className="text-xs uppercase tracking-wide text-content-muted mb-1">
+              <div className="text-xs tracking-wide text-content-muted mb-1">
                 This Week
               </div>
 
@@ -4677,7 +4677,7 @@ export function DocumentsHomeHub({
 
           {listRange === "month" && (
             <div className="mt-4">
-              <div className="text-xs uppercase tracking-wide text-content-muted mb-1">
+              <div className="text-xs tracking-wide text-content-muted mb-1">
                 This Month
               </div>
 
@@ -4755,7 +4755,7 @@ export function DocumentsHomeHub({
 
           {listRange === "custom" && customBounds && (
             <div className="mt-4">
-              <div className="text-xs uppercase tracking-wide text-content-muted mb-1">
+              <div className="text-xs tracking-wide text-content-muted mb-1">
                 Custom Range
               </div>
 
@@ -5363,7 +5363,7 @@ export function DocumentsHomeHub({
               <input
                 value={kanbanQuickTitle}
                 onChange={(e) => setKanbanQuickTitle(e.target.value)}
-                placeholder="Quick task title…"
+                placeholder="Quick task titleâ€¦"
                 className="w-48 bg-transparent outline-none text-sm text-content placeholder-content-muted"
               />
             </div>
@@ -5531,7 +5531,7 @@ export function DocumentsHomeHub({
 
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-indigo-500/10 border-indigo-500/30/30 text-indigo-600 dark:text-indigo-400" : key === "done" ? "bg-indigo-500/10 border-indigo-500/30/20 text-content-secondary" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-surface-secondary border-edge text-content-secondary"}`}
+                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400" : key === "done" ? "bg-indigo-500/10 border-indigo-500/20 text-content-secondary" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-surface-secondary border-edge text-content-secondary"}`}
                         >
                           {sorted.length}
                         </span>
@@ -5665,7 +5665,7 @@ export function DocumentsHomeHub({
         <div className="flex items-center justify-between">
           {isToday ? (
             <div className="inline-flex items-center gap-2">
-              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-500/10 text-content-secondary border border-indigo-500/30/30">
+              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-500/10 text-content-secondary border border-indigo-500/30">
                 Today
               </span>
 
@@ -6976,7 +6976,7 @@ export function DocumentsHomeHub({
                             {s.name || "Untitled spreadsheet"}
                           </div>
                           <div className="text-xs text-content-secondary mt-1">
-                            Updated {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "—"}
+                            Updated {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "â€”"}
                           </div>
                         </button>
                       ))}
@@ -7056,7 +7056,7 @@ export function DocumentsHomeHub({
                             onClick={() => open()}
                             className="w-full flex flex-col items-center justify-center py-16 px-6 text-center rounded-lg hover:bg-surface-hover/40 transition-colors cursor-pointer group"
                           >
-                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30/30 flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-[1.02]">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-[1.02]">
                               <FileText className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <p className="text-lg font-semibold text-content mb-1">
@@ -7998,3 +7998,4 @@ export function DocumentsHomeHub({
     </>
   );
 }
+

@@ -41,7 +41,7 @@ function CodeBlockFallback({ code, language }: { code: string; language?: string
   return (
     <div className="relative group">
       <div className="absolute top-2 right-2 flex items-center gap-2">
-        <span className="text-xs font-mono text-content-muted uppercase">{language || 'code'}</span>
+        <span className="text-xs font-mono text-content-muted">{language || 'code'}</span>
       </div>
       <pre className="p-4 bg-[#1e1e1e] text-[#d4d4d4] rounded-lg overflow-x-auto text-sm font-mono motion-safe:animate-pulse">
         <code>{code}</code>
@@ -75,7 +75,7 @@ function HighlightedCodeBlock({
     <div className="relative group">
       {/* Header bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-1.5 bg-[#2d2d2d] rounded-t-lg border-b border-[#3d3d3d]">
-        <span className="text-xs font-mono text-content-muted uppercase tracking-wider">
+        <span className="text-xs font-mono text-content-muted">
           {language}
         </span>
         <button

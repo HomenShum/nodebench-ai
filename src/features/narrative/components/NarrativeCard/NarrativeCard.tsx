@@ -92,7 +92,7 @@ export function NarrativeCard({
           <div className="flex-1 space-y-3">
             {/* Category Tag */}
             <div className="flex items-center gap-2">
-              <span className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wider ${phaseColors.text}`}>
+              <span className={`flex items-center gap-1 text-xs font-medium ${phaseColors.text}`}>
                 {phaseDisplay.icon}
                 {phaseDisplay.label}
               </span>
@@ -204,7 +204,7 @@ export function NarrativeCard({
     <article onClick={onClick} className="group cursor-pointer">
       <div className="space-y-2">
         {/* Category */}
-        <span className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wider ${phaseColors.text}`}>
+        <span className={`flex items-center gap-1 text-xs font-medium ${phaseColors.text}`}>
           {phaseDisplay.icon}
           {phaseDisplay.label}
         </span>

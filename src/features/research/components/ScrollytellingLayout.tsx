@@ -138,7 +138,7 @@ const SectionRenderer = ({ section, onVisible, isLast = false, onAskAI }: Sectio
       {/* Date Badge - Inline with dot */}
       <div className="mb-3 flex items-center gap-2">
         <span className="h-1.5 w-1.5 rounded-full bg-content-secondary"></span>
-        <span className="text-xs font-medium text-content-secondary uppercase tracking-wide">
+        <span className="text-xs font-medium text-content-secondary tracking-wide">
           {section.meta.date}
         </span>
       </div>
@@ -562,11 +562,11 @@ export const ScrollytellingLayout: React.FC<ScrollytellingLayoutProps> = ({ data
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-indigo-500 motion-safe:animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-content">{activeLegacy.phaseLabel || "Briefing"}</span>
+            <span className="text-xs font-bold text-content">{activeLegacy.phaseLabel || "Briefing"}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-xs text-content-secondary uppercase font-medium">Sentiment</div>
+              <div className="text-xs text-content-secondary font-medium">Sentiment</div>
               <div className="text-sm font-bold text-content">{activeLegacy.marketSentiment}/100</div>
             </div>
           </div>

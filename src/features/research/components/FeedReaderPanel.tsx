@@ -163,7 +163,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             {/* Source Badge & Title */}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className={`text-xs font-semibold uppercase tracking-wider ${badge.text} ${badge.bg} px-2 py-0.5 rounded-full`}>
+                <span className={`text-xs font-semibold ${badge.text} ${badge.bg} px-2 py-0.5 rounded-full`}>
                   {badge.label}
                 </span>
                 {sourceDomain && (
@@ -254,7 +254,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
               <div className="grid grid-cols-3 gap-4 p-4 bg-surface-secondary rounded-lg border border-edge">
                 {displayItem.metrics.map((metric, i) => (
                   <div key={i} className="text-center">
-                    <div className="text-xs uppercase text-content-secondary font-medium">{metric.label}</div>
+                    <div className="text-xs text-content-secondary font-medium">{metric.label}</div>
                     <div className="text-lg font-mono font-bold text-content">{metric.value}</div>
                   </div>
                 ))}
@@ -304,7 +304,7 @@ export const FeedReaderPanel: React.FC<FeedReaderPanelProps> = ({ item, onClose 
             {readerState.status === "ready" && (
               <div className="mt-8 pt-6 border-t border-edge">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-content-secondary">
+                  <span className="text-xs font-semibold text-content-secondary">
                     Source Matrix
                   </span>
                   <span className="text-xs text-content-secondary">

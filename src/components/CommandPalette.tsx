@@ -416,7 +416,7 @@ export function CommandPalette({
             <div className="flex items-center justify-between px-4 pt-3 pb-2">
                 <div className="flex items-center gap-2">
                     <Command className="w-4 h-4 text-content-muted" />
-                    <span className="text-xs font-semibold text-content-secondary uppercase tracking-wider">Command Palette</span>
+                    <span className="text-xs font-semibold text-content-secondary">Command Palette</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-content-muted">
                     <kbd className="px-1.5 py-0.5 bg-surface-secondary rounded text-xs font-mono">ESC</kbd>
@@ -453,7 +453,7 @@ export function CommandPalette({
                 ) : (
                     Object.entries(groupedCommands).map(([section, commands]) => (
                         <div key={section} className="py-2">
-                            <div className="px-4 py-1.5 text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                            <div className="px-4 py-1.5 text-xs font-semibold text-content-secondary">
                                 {sectionLabels[section] || section}
                             </div>
                             {commands.map((cmd) => {

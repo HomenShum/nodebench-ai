@@ -77,7 +77,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         {/* User custom skills */}
         {userSkills && userSkills.length > 0 && (
           <div className="px-2.5 pt-2 pb-1">
-            <div className="text-xs font-medium text-content-muted uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="text-xs font-medium text-content-muted mb-1.5 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
               Your Skills
             </div>
@@ -101,7 +101,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
         {/* Built-in skills */}
         <div className="px-2.5 py-2">
           {userSkills && userSkills.length > 0 && (
-            <div className="text-xs font-medium text-content-muted uppercase tracking-wider mb-1.5 flex items-center gap-1">
+            <div className="text-xs font-medium text-content-muted mb-1.5 flex items-center gap-1">
               <Zap className="h-3 w-3" />
               Built-in
             </div>

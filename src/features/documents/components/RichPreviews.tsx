@@ -174,7 +174,7 @@ export function SpreadsheetPreview({
           {headers.slice(0, 4).map((header, i) => (
             <div
               key={i}
-              className="flex-1 border-r border-edge px-0.5 py-0.5 font-bold text-content-secondary truncate uppercase tracking-tighter text-center"
+              className="flex-1 border-r border-edge px-0.5 py-0.5 font-bold text-content-secondary truncate tracking-tighter text-center"
             >
               {header || `Col${i+1}`}
             </div>
@@ -367,7 +367,7 @@ export function EmptyStateOverlay({ variant = "empty" }: { variant?: "empty" | "
   return (
     <div className={`absolute inset-0 z-10 flex flex-col items-center justify-center ${bg} backdrop-blur-[1px]`}>
       <Icon className={`w-5 h-5 ${color} mb-1`} />
-      <span className="text-xs font-medium text-content-secondary uppercase tracking-wide">{label}</span>
+      <span className="text-xs font-medium text-content-secondary tracking-wide">{label}</span>
     </div>
   );
 }

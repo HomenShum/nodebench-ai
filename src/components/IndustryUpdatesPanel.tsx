@@ -75,7 +75,7 @@ export function IndustryUpdatesPanel() {
                 onClick={() => setSelectedProvider(null)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
                   selectedProvider === null
-                    ? "bg-indigo-600 text-white border-transparent font-semibold shadow-sm ring-2 ring-indigo-500/50/30"
+                    ? "bg-[var(--accent-primary)] text-white border-transparent font-semibold shadow-sm ring-2 ring-[var(--accent-primary)]/30"
                     : "bg-surface-secondary text-content-secondary border-edge hover:text-content hover:bg-surface"
                 }`}
               >
@@ -87,13 +87,13 @@ export function IndustryUpdatesPanel() {
                   onClick={() => setSelectedProvider(provider)}
                   className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
                     selectedProvider === provider
-                      ? "bg-indigo-600 text-white border-transparent"
+                      ? "bg-[var(--accent-primary)] text-white border-transparent"
                       : "bg-surface-secondary text-content-secondary border-edge hover:text-content hover:bg-surface"
                   }`}
                 >
                   {providerLabels[provider]}
                   {suggestions.byProvider[providerLabels[provider]] && (
-                    <span className="ml-1.5 px-1.5 py-0.5 bg-indigo-600 text-white rounded text-xs">
+                    <span className="ml-1.5 px-1.5 py-0.5 bg-[var(--accent-primary)] text-white rounded text-xs">
                       {suggestions.byProvider[providerLabels[provider]].length}
                     </span>
                   )}
@@ -105,8 +105,8 @@ export function IndustryUpdatesPanel() {
           {/* Updates List */}
           {filteredSuggestions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4">
-                <AlertCircle className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+              <div className="w-16 h-16 rounded-full bg-[var(--accent-primary-bg)] flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-[var(--accent-primary)]" />
               </div>
               {selectedProvider ? (
                 <>
@@ -222,7 +222,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-indigo-600 text-white text-xs font-medium rounded">
+            <span className="px-2 py-0.5 bg-[var(--accent-primary)] text-white text-xs font-medium rounded">
               {update.provider}
             </span>
             <div className={`flex items-center gap-1 ${relevanceColor}`}>
@@ -232,7 +232,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
             {update.status && update.status !== "new" && (
               <span className={`px-2 py-0.5 text-xs font-medium rounded ${
                 update.status === "implemented"
-                  ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                  ? "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
                   : "bg-green-100 text-green-700"
               }`}>
                 {update.status === "implemented" ? "✓ Implemented" : "✓ Reviewed"}
@@ -253,7 +253,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
           href={update.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10 rounded-md transition-colors"
+          className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:bg-[var(--accent-primary-bg)] rounded-md transition-colors"
         >
           View Source
           <ExternalLink className="w-3.5 h-3.5" />
@@ -266,7 +266,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-2 text-sm font-semibold text-content hover:text-indigo-600 dark:text-indigo-400 transition-colors"
+            className="flex items-center gap-2 text-sm font-semibold text-content hover:text-[var(--accent-primary)] transition-colors"
           >
             <Lightbulb className="w-4 h-4" />
             Key Insights ({update.actionableInsights.length})
@@ -317,7 +317,7 @@ const UpdateCard = React.memo(function UpdateCard({ update }: UpdateCardProps) {
             type="button"
             onClick={handleMarkImplemented}
             disabled={isUpdating}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Code className="w-4 h-4" />
             {isUpdating ? "Updating..." : "Mark as Implemented"}

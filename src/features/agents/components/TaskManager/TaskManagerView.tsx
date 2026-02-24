@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TaskManagerView - Main view for browsing and viewing task sessions
  * 
  * Features:
@@ -35,9 +35,9 @@ import { TaskSessionDetail } from './TaskSessionDetail';
 import type { TaskSession, TaskSessionStatus, TaskSessionType, TaskFilters } from './types';
 import type { Id } from '../../../../../convex/_generated/dataModel';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // FILTER OPTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const statusOptions: { value: TaskSessionStatus | 'all'; label: string; icon: React.ReactNode }[] = [
   { value: 'all', label: 'All Status', icon: <ListTodo className="w-3.5 h-3.5" /> },
@@ -62,9 +62,9 @@ const dateRangeOptions = [
   { value: 'all', label: 'All Time' },
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function getDateRange(range: string): { from: number | undefined; to: number | undefined } {
   const now = new Date();
@@ -85,9 +85,9 @@ function getDateRange(range: string): { from: number | undefined; to: number | u
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface TaskManagerViewProps {
   /** Show public sessions (for unauthenticated users) */
@@ -186,7 +186,7 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
               showFilters || hasActiveFilters
                 ? "bg-indigo-600 text-white"
-                : "bg-surface-secondary text-content-secondary border border-edge hover:text-content hover:border-indigo-500/30/30"
+                : "bg-surface-secondary text-content-secondary border border-edge hover:text-content hover:border-indigo-500/30"
             )}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -295,9 +295,9 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
             </p>
             <p className="text-sm text-content-secondary max-w-sm">
               {hasActiveFilters
-                ? 'Try clearing the filters — active sessions appear here as agents run research pipelines and workflows.'
+                ? 'Try clearing the filters â€” active sessions appear here as agents run research pipelines and workflows.'
                 : isPublic
-                  ? 'Public AI sessions — automated research pipelines, scheduled tasks, and multi-agent workflows — appear here as they run.'
+                  ? 'Public AI sessions â€” automated research pipelines, scheduled tasks, and multi-agent workflows â€” appear here as they run.'
                   : 'Start an agent task to see it here.'
               }
             </p>
@@ -338,3 +338,4 @@ export function TaskManagerView({ isPublic = false, className }: TaskManagerView
 }
 
 export default TaskManagerView;
+

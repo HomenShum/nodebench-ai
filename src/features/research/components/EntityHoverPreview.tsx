@@ -342,7 +342,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           {/* Key Facts */}
           {data.keyFacts && data.keyFacts.length > 0 && (
             <div className="mb-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-content-secondary mb-1.5">
+              <div className="text-xs font-bold text-content-secondary mb-1.5">
                 Key Facts
               </div>
               <ul className="space-y-1">
@@ -361,7 +361,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
             <div className="mb-3 p-2 bg-amber-50 border border-amber-100 rounded-lg">
               <div className="flex items-center gap-1 mb-1">
                 <Sparkles className="w-3 h-3 text-amber-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                <span className="text-xs font-bold text-amber-600">
                   Known For
                 </span>
               </div>
@@ -376,7 +376,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
             <div className="mb-3">
               <div className="flex items-center gap-1 mb-1.5">
                 <Users className="w-3 h-3 text-content-secondary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
+                <span className="text-xs font-bold text-content-secondary">
                   Network
                 </span>
               </div>
@@ -434,7 +434,7 @@ export const EntityHoverPreview: React.FC<EntityHoverPreviewProps> = ({
           {/* Sources */}
           {data.sources && data.sources.length > 0 && (
             <div className="mb-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-content-secondary mb-1.5">
+              <div className="text-xs font-bold text-content-secondary mb-1.5">
                 Sources
               </div>
               <div className="flex flex-wrap gap-1.5">

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * TaskSessionCard - Card component for displaying task session summary
  * 
  * Features:
@@ -17,9 +17,9 @@ import {
 import { cn } from '@/lib/utils';
 import type { TaskSession, TaskSessionStatus, TaskSessionType } from './types';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // STATUS CONFIGURATION
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const statusConfig: Record<TaskSessionStatus, { dotColor: string; label: string }> = {
   pending: {
@@ -67,9 +67,9 @@ const typeConfig: Record<TaskSessionType, { dotColor: string; label: string }> =
   },
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // UTILITIES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -95,9 +95,9 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface TaskSessionCardProps {
   session: TaskSession;
@@ -113,9 +113,9 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
     <div 
       className={cn(
         "p-3 rounded-lg border cursor-pointer transition-all",
-        "hover:bg-surface-secondary hover:border-indigo-500/30/30",
+        "hover:bg-surface-secondary hover:border-indigo-500/30",
         isSelected 
-          ? "bg-surface-secondary border-indigo-500/30/30 ring-1 ring-indigo-500/50" 
+          ? "bg-surface-secondary border-indigo-500/30 ring-1 ring-indigo-500/50" 
           : "bg-surface border-edge"
       )}
       onClick={onClick}
@@ -170,17 +170,23 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 
         {/* Tokens */}
         {session.totalTokens && (
-          <span className="flex items-center gap-1 text-[11px] text-content-muted" title={`${formatTokens(session.totalTokens)} tokens`}>
+          <span
+            className="flex items-center gap-1 text-[11px] text-content-muted"
+            title={`${formatTokens(session.totalTokens)} tokens`}
+          >
             <Zap className="w-3 h-3" />
-            {formatTokens(session.totalTokens)}
+            {formatTokens(session.totalTokens)} tokens
           </span>
         )}
 
         {/* Tools count */}
         {session.toolsUsed && session.toolsUsed.length > 0 && (
-          <span className="flex items-center gap-1 text-[11px] text-content-muted" title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}>
+          <span
+            className="flex items-center gap-1 text-[11px] text-content-muted"
+            title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}
+          >
             <Wrench className="w-3 h-3" />
-            {session.toolsUsed.length}
+            {session.toolsUsed.length} {session.toolsUsed.length === 1 ? "tool" : "tools"}
           </span>
         )}
       </div>
@@ -198,3 +204,4 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 }
 
 export default TaskSessionCard;
+

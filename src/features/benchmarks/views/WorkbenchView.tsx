@@ -68,7 +68,7 @@ function WorkbenchHeader() {
           <button
             disabled
             title="Configure a workbench app — coming in Phase 2"
-            className="btn-outline-sm inline-flex items-center gap-1.5 opacity-50 cursor-not-allowed whitespace-nowrap"
+            className="btn-outline-sm inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed whitespace-nowrap disabled:pointer-events-auto disabled:hover:opacity-90"
           >
             <Settings className="w-3.5 h-3.5" />
             <span className="sm:hidden">Configure</span>
@@ -77,7 +77,7 @@ function WorkbenchHeader() {
           <button
             disabled
             title="Run a benchmark — coming in Phase 2"
-            className="btn-primary-sm inline-flex items-center gap-1.5 opacity-30 cursor-not-allowed whitespace-nowrap"
+            className="btn-primary-sm inline-flex items-center gap-1.5 opacity-45 cursor-not-allowed whitespace-nowrap disabled:pointer-events-auto disabled:hover:opacity-65"
           >
             <Play className="w-3.5 h-3.5" />
             <span className="sm:hidden">Run</span>

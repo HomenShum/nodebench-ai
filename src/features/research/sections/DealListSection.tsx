@@ -123,7 +123,7 @@ function DealListSectionInner({ className = "", deals }: DealListSectionProps) {
     <div className={className}>
       <div className="mb-3 flex items-center justify-between text-xs text-content-secondary">
         <div className="flex items-center gap-2">
-          <span className="uppercase tracking-wider font-semibold text-content-secondary">Live Deal Flow</span>
+          <span className=" font-semibold text-content-secondary">Live Deal Flow</span>
           {isRefreshing && <span className="text-indigo-600">Refreshing…</span>}
           {!isRefreshing && cachedDeals?.length ? <span className="text-indigo-600">Synced</span> : null}
         </div>

@@ -303,7 +303,7 @@ export function SourcesLibrary({
 
               return (
                 <div key={group}>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-content-secondary mb-2 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-content-secondary mb-2 flex items-center gap-2">
                     {groupBy === "kind" && getKindIcon(group as ArtifactKind)}
                     {label}
                     <span className="text-content-muted">({items.length})</span>

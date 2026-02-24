@@ -109,7 +109,7 @@ export function DecisionTreeKanban({
   return (
     <div className={`space-y-4 font-sans ${className}`}>
       {/* Header Stats */}
-      <div className="flex items-center justify-between text-xs text-content-secondary uppercase tracking-wider border-b border-edge pb-2">
+      <div className="flex items-center justify-between text-xs text-content-secondary border-b border-edge pb-2">
         <div className="flex items-center gap-2">
           <PhaseIndicator status={graph.status} />
           <span>{graph.phase}</span>
@@ -142,7 +142,7 @@ export function DecisionTreeKanban({
       {/* Sourcing Phase (if any) */}
       {sourcingNodes.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold text-content-secondary uppercase tracking-wider">
+          <div className="text-xs font-bold text-content-secondary">
             Sources
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -156,7 +156,7 @@ export function DecisionTreeKanban({
       {/* Candidate Pipeline */}
       {candidateNodes.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs font-bold text-content-secondary uppercase tracking-wider">
+          <div className="text-xs font-bold text-content-secondary">
             Deal Flow Pipeline
           </div>
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -425,7 +425,7 @@ function EnrichmentGrid({ data }: { data?: CandidateData }) {
           key={id}
           className={`p-2 rounded border ${colorMap[color]}`}
         >
-          <div className="flex items-center gap-1 text-xs uppercase font-bold mb-1">
+          <div className="flex items-center gap-1 text-xs font-bold mb-1">
             <Icon className="w-3 h-3" />
             {label}
           </div>

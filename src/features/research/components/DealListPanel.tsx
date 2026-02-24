@@ -72,7 +72,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
             <Building className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-content-secondary">Deal List</p>
+            <p className="text-xs font-semibold text-content-secondary">Deal List</p>
             <p className="text-sm font-semibold text-content">Filter by stage & sector</p>
           </div>
         </div>

@@ -65,14 +65,14 @@ export const CostCrossoverCalculator: React.FC = () => {
         <div className="flex items-center gap-2">
           <Sliders className="w-4 h-4 text-content-secondary" />
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Cost Crossover</div>
+            <div className="text-xs font-bold text-content-muted">Cost Crossover</div>
             <div className="text-sm font-semibold text-content">Live calculator</div>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setPresentationMode((prev) => !prev)}
-          className="text-xs uppercase tracking-wider text-content-muted hover:text-content"
+          className="text-xs text-content-muted hover:text-content"
         >
           {presentationMode ? "Edit" : "Present"}
         </button>
@@ -139,13 +139,13 @@ export const CostCrossoverCalculator: React.FC = () => {
 
       <div className="grid grid-cols-2 gap-3 text-xs text-content-secondary">
         <div className="rounded-md border border-edge bg-surface-secondary p-3">
-          <div className="text-xs uppercase tracking-wider text-content-muted flex items-center gap-1">
+          <div className="text-xs text-content-muted flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> Cloud
           </div>
           <div className="text-lg font-semibold text-content">${cloudCost.toFixed(0)}</div>
         </div>
         <div className="rounded-md border border-edge bg-surface-secondary p-3">
-          <div className="text-xs uppercase tracking-wider text-content-muted flex items-center gap-1">
+          <div className="text-xs text-content-muted flex items-center gap-1">
             <DollarSign className="w-3 h-3" /> Local
           </div>
           <div className="text-lg font-semibold text-content">${localCost.toFixed(0)}</div>
@@ -153,7 +153,7 @@ export const CostCrossoverCalculator: React.FC = () => {
       </div>
 
       <div className="rounded-md border border-edge bg-surface p-3">
-        <div className="text-xs uppercase tracking-wider text-content-muted mb-2">Cost curve</div>
+        <div className="text-xs text-content-muted mb-2">Cost curve</div>
         <svg width={220} height={90} className="w-full">
           <path d={buildPath("cloud")} stroke="#2563eb" strokeWidth={2} fill="none" />
           <path d={buildPath("local")} stroke="#16a34a" strokeWidth={2} fill="none" />

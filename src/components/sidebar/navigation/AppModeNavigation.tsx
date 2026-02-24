@@ -14,7 +14,7 @@ interface AppModeNavigationProps {
 export function AppModeNavigation({ appMode, onModeChange }: AppModeNavigationProps) {
     return (
         <div className="py-4 px-3 space-y-1">
-            <div className="px-2 text-xs font-semibold text-content-muted uppercase tracking-wider mb-2">
+            <div className="px-2 text-xs font-semibold text-content-muted mb-2">
                 Workspace
             </div>
 

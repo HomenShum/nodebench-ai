@@ -35,7 +35,7 @@ export function OvernightMovesCard({ items, onOpen, onBrief }: OvernightMovesCar
             <Clock className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-content-secondary">Overnight Moves</p>
+            <p className="text-xs font-semibold text-content-secondary">Overnight Moves</p>
             <p className="text-sm font-semibold text-content">What changed while you were away</p>
           </div>
         </div>

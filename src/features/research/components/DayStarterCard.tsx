@@ -71,7 +71,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-content-secondary">Day Starter</p>
+            <p className="text-xs font-semibold text-content-secondary">Day Starter</p>
             <p className="text-sm font-semibold text-content">Choose a preset</p>
           </div>
         </div>

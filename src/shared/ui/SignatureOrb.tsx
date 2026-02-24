@@ -1,14 +1,14 @@
-/**
- * SignatureOrb — Central visual identity element
+﻿/**
+ * SignatureOrb â€” Central visual identity element
  *
  * The orb is NodeBench's brand mark. It appears across the app in different
- * forms — never the same way twice, but always recognizable:
+ * forms â€” never the same way twice, but always recognizable:
  *
- *   hero      → Full rotating rings + pulsing core (landing page)
- *   loading   → Medium spinning ring (replaces generic spinners)
- *   ambient   → Soft background glow (page header decoration)
- *   indicator → Tiny pulsing dot with ring (live status)
- *   empty     → Static orb with message (empty states)
+ *   hero      â†’ Full rotating rings + pulsing core (landing page)
+ *   loading   â†’ Medium spinning ring (replaces generic spinners)
+ *   ambient   â†’ Soft background glow (page header decoration)
+ *   indicator â†’ Tiny pulsing dot with ring (live status)
+ *   empty     â†’ Static orb with message (empty states)
  */
 
 import React, { useMemo } from "react";
@@ -32,7 +32,7 @@ export function SignatureOrb({
   const reduceMotion = useMemo(() => prefersReducedMotion(), []);
 
   switch (variant) {
-    // ─── HERO: Full-size rotating rings + pulsing core ───────────────
+    // â”€â”€â”€ HERO: Full-size rotating rings + pulsing core â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "hero":
       return (
         <div className={`relative flex items-center justify-center ${className}`}>
@@ -42,7 +42,7 @@ export function SignatureOrb({
               className={`absolute inset-0 will-change-transform ${reduceMotion ? "" : "motion-safe:animate-spin-slow"}`}
             >
               <div className="absolute inset-0 rounded-full border border-edge scale-100" />
-              <div className="absolute inset-0 rounded-full border border-indigo-500/30/20 scale-[1.3]" />
+              <div className="absolute inset-0 rounded-full border border-indigo-500/20 scale-[1.3]" />
             </div>
             {/* Glow halo */}
             <div className="absolute inset-0 rounded-full bg-indigo-600/[0.06] blur-2xl scale-[1.3]" />
@@ -59,7 +59,7 @@ export function SignatureOrb({
         </div>
       );
 
-    // ─── LOADING: Medium spinning ring for page transitions ──────────
+    // â”€â”€â”€ LOADING: Medium spinning ring for page transitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "loading":
       return (
         <div
@@ -79,7 +79,7 @@ export function SignatureOrb({
         </div>
       );
 
-    // ─── AMBIENT: Soft glow for page headers ─────────────────────────
+    // â”€â”€â”€ AMBIENT: Soft glow for page headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "ambient":
       return (
         <div
@@ -90,7 +90,7 @@ export function SignatureOrb({
         </div>
       );
 
-    // ─── INDICATOR: Tiny pulsing dot for live status ─────────────────
+    // â”€â”€â”€ INDICATOR: Tiny pulsing dot for live status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "indicator":
       return (
         <span
@@ -107,7 +107,7 @@ export function SignatureOrb({
         </span>
       );
 
-    // ─── EMPTY: Static orb with message ──────────────────────────────
+    // â”€â”€â”€ EMPTY: Static orb with message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "empty":
       return (
         <div
@@ -136,3 +136,4 @@ export function SignatureOrb({
 }
 
 export default SignatureOrb;
+

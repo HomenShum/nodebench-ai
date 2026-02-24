@@ -559,26 +559,26 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                   <div className="grid grid-cols-2 gap-2">
                     {insight.financials.burnRate && (
                       <div>
-                        <span className="text-xs text-indigo-600 uppercase">Burn Rate</span>
+                        <span className="text-xs text-indigo-600">Burn Rate</span>
                         <div className="font-semibold">${insight.financials.burnRate.toLocaleString()} / mo</div>
                       </div>
                     )}
                     {insight.financials.revenue && (
                       <div>
-                        <span className="text-xs text-indigo-600 uppercase">Revenue</span>
+                        <span className="text-xs text-indigo-600">Revenue</span>
                         <div className="font-semibold">${insight.financials.revenue.toLocaleString()} / yr</div>
                       </div>
                     )}
                     {insight.financials.costToServe && (
                       <div>
-                        <span className="text-xs text-indigo-600 uppercase">Cost to Serve</span>
+                        <span className="text-xs text-indigo-600">Cost to Serve</span>
                         <div className="font-semibold">${insight.financials.costToServe} unit</div>
                       </div>
                     )}
                   </div>
                   {insight.financials.unitEconomics && (
                     <div className="pt-2 border-t border-indigo-200">
-                      <span className="text-xs text-indigo-600 uppercase">Unit Economics</span>
+                      <span className="text-xs text-indigo-600">Unit Economics</span>
                       <div className="text-sm">{insight.financials.unitEconomics}</div>
                     </div>
                   )}
@@ -593,20 +593,20 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                   </div>
                   {insight.academicData.methodology && (
                     <div>
-                      <span className="text-xs text-indigo-600 uppercase">Methodology</span>
+                      <span className="text-xs text-indigo-600">Methodology</span>
                       <div className="font-medium">{insight.academicData.methodology}</div>
                     </div>
                   )}
                   <div className="flex gap-4 pt-1">
                     {insight.academicData.citations && (
                       <div className="flex flex-col">
-                        <span className="text-xs text-indigo-600 uppercase">Citations</span>
+                        <span className="text-xs text-indigo-600">Citations</span>
                         <span className="font-bold text-lg">{insight.academicData.citations}</span>
                       </div>
                     )}
                     {insight.academicData.pValue !== null && (
                       <div className="flex flex-col">
-                        <span className="text-xs text-indigo-600 uppercase">P-Value</span>
+                        <span className="text-xs text-indigo-600">P-Value</span>
                         <span className="font-bold text-lg">{insight.academicData.pValue}</span>
                       </div>
                     )}
@@ -647,7 +647,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
                   {insight.technicalSpecs.cveIds && insight.technicalSpecs.cveIds.length > 0 && (
                     <div className="pt-1">
-                      <span className="text-xs text-rose-600 font-bold uppercase">Security Constraints (CVEs)</span>
+                      <span className="text-xs text-rose-600 font-bold">Security Constraints (CVEs)</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {insight.technicalSpecs.cveIds.map((cve: string) => (
                           <span key={cve} className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-xs rounded border border-rose-200">{cve}</span>
@@ -671,13 +671,13 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
 
                   {insight.ecosystem.dependencies && insight.ecosystem.dependencies.length > 0 && (
                     <div>
-                      <span className="text-xs text-amber-600 uppercase">Dependencies</span>
+                      <span className="text-xs text-amber-600">Dependencies</span>
                       <div className="text-content-secondary">{insight.ecosystem.dependencies.join(", ")}</div>
                     </div>
                   )}
                   {insight.ecosystem.downstreamImpact && insight.ecosystem.downstreamImpact.length > 0 && (
                     <div>
-                      <span className="text-xs text-amber-600 uppercase">Downstream Impact</span>
+                      <span className="text-xs text-amber-600">Downstream Impact</span>
                       <div className="text-content-secondary">{insight.ecosystem.downstreamImpact.join(", ")}</div>
                     </div>
                   )}

@@ -58,7 +58,7 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
   return (
     <div className="relative rounded-lg border border-gray-900/10 bg-surface p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-xs font-black uppercase tracking-[0.3em] text-gray-900/60">
+        <div className="text-xs font-black text-gray-900/60">
           Entity Influence Map
         </div>
         <div className="text-xs font-mono text-content-muted">GraphRAG</div>
@@ -144,7 +144,7 @@ export const EntityRadar: React.FC<{ graph: EntityGraph | null }> = ({ graph }) 
           <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center shadow-lg border-4 border-indigo-50">
             <Building2 className="w-5 h-5 text-white" />
           </div>
-          <span className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-content">
+          <span className="mt-2 text-xs font-black text-content">
             {centerNode.label}
           </span>
         </motion.div>

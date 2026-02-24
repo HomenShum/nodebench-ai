@@ -99,7 +99,7 @@ const SectionRenderer = ({ section, onVisible, isLast = false }: SectionRenderer
       <div className="absolute left-[-4px] top-[10px] w-2 h-2 rounded-full bg-indigo-500 ring-4 ring-indigo-50 hidden xl:block" />
 
       {/* Date Badge */}
-      <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wider text-indigo-700">
+      <span className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 font-mono text-xs font-semibold text-indigo-700">
         {section.meta.date}
       </span>
 

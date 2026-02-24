@@ -121,7 +121,7 @@ export function CalendarDatePopover({
       {/* Header */}
       <div className={`px-5 py-4 ${(hasEvents || hasTasks || hasNotes || hasHolidays || hasFiles) ? "bg-surface" : "bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary"}`}>
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
+          <span className="text-xs font-bold text-content-secondary">
             {isToday ? "Today" : weekday}
           </span>
           <div className="px-2 py-0.5 bg-surface/70 rounded-full border border-edge text-xs font-medium text-content-secondary">
@@ -166,7 +166,7 @@ export function CalendarDatePopover({
             {/* Holidays */}
             {hasHolidays && (
               <div className="space-y-1.5">
-                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] tracking-wide flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   Holidays
                 </div>
@@ -185,7 +185,7 @@ export function CalendarDatePopover({
             {/* Events */}
             {hasEvents && (
               <div className="space-y-1.5">
-                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] tracking-wide flex items-center gap-1">
                   <CalIcon className="w-3 h-3" />
                   Events
                 </div>
@@ -267,7 +267,7 @@ export function CalendarDatePopover({
             {/* Tasks */}
             {hasTasks && (
               <div className="space-y-1.5">
-                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] tracking-wide flex items-center gap-1">
                   <CheckSquare className="w-3 h-3" />
                   Tasks
                 </div>
@@ -292,7 +292,7 @@ export function CalendarDatePopover({
             {/* Notes */}
             {hasNotes && (
               <div className="space-y-1.5">
-                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wide flex items-center gap-1">
+                <div className="px-1 text-xs font-semibold text-[var(--accent-primary)] tracking-wide flex items-center gap-1">
                   <StickyNote className="w-3 h-3" />
                   Notes
                 </div>
@@ -312,7 +312,7 @@ export function CalendarDatePopover({
             {/* Files */}
             {hasFiles && (
               <div className="pt-1 border-t border-edge space-y-1">
-                <div className="px-1 text-xs font-semibold text-content-muted uppercase mb-1">Related work</div>
+                <div className="px-1 text-xs font-semibold text-content-muted mb-1">Related work</div>
                 <div className="space-y-1">
                   {files.slice(0, 4).map((f) => (
                     <div

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useAction } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Doc } from "../../../../convex/_generated/dataModel";
@@ -416,7 +416,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                     <span
                       key={t._id}
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${kindPillClass(t.kind)}`}
-                      title={t.kind ? `${t.name} · ${t.kind === 'entity' ? 'topic' : t.kind}${typeof t.importance === 'number' ? ` · ${t.importance.toFixed(2)}` : ''}` : (typeof t.importance === 'number' ? `${t.name} · ${t.importance.toFixed(2)}` : t.name)}
+                      title={t.kind ? `${t.name} Â· ${t.kind === 'entity' ? 'topic' : t.kind}${typeof t.importance === 'number' ? ` Â· ${t.importance.toFixed(2)}` : ''}` : (typeof t.importance === 'number' ? `${t.name} Â· ${t.importance.toFixed(2)}` : t.name)}
                     >
                       {/* Left kind strip (click to cycle kind) */}
                       <button
@@ -470,7 +470,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                         title={`Remove ${t.name}`}
                         aria-label={`Remove ${t.name}`}
                       >
-                        ×
+                        Ã—
                       </button>
                     </span>
                   ))
@@ -484,7 +484,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                     <input
                       value={editingValue}
                       onChange={(e) => setEditingValue(e.target.value)}
-                      placeholder="Add tag…"
+                      placeholder="Add tagâ€¦"
                       className="bg-transparent outline-none h-5 min-w-[80px]"
                       autoFocus
                       onKeyDown={(e) => {
@@ -528,7 +528,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               disabled={isGenerating || !canGenerateTags}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${isGenerating || !canGenerateTags
                 ? 'bg-surface-hover text-content-muted border-edge cursor-not-allowed'
-                : 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30 hover:bg-indigo-600/20'
+                : 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30 hover:bg-indigo-600/20'
                 }`}
               title={canGenerateTags ? 'Generate tags with AI' : 'Only the document owner can generate tags'}
             >
@@ -551,7 +551,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                 <PresenceIndicator documentId={document._id} userId={userId} />
                 {!document.isPublic && isOwner && (
                   <div className="flex items-center gap-1 text-xs text-content-muted opacity-75">
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span className="italic">
                       You're editing alone. Make this document{" "}
                       <button
@@ -605,3 +605,4 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
     </div>
   );
 }
+

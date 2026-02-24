@@ -503,10 +503,10 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 <h1 className="text-5xl font-black tracking-tight text-black mb-1">
                   TODAY'S REPORT
                 </h1>
-                <p className="text-xs text-content uppercase tracking-wider">Research Report</p>
+                <p className="text-xs text-content">Research Report</p>
               </div>
               <div className="flex items-center justify-between text-xs text-content">
-                <span className="uppercase tracking-wide">Vol. 1, No. 1</span>
+                <span className="tracking-wide">Vol. 1, No. 1</span>
                 <span>
                   {new Date(document?._creationTime || Date.now()).toLocaleDateString("en-US", {
                     weekday: "long",
@@ -515,7 +515,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                     year: "numeric",
                   })}
                 </span>
-                <span className="uppercase tracking-wide">Price: Free</span>
+                <span className="tracking-wide">Price: Free</span>
               </div>
             </div>
 

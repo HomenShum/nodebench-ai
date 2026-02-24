@@ -1,4 +1,4 @@
-// import { useBlockNoteSyncSafe } from "../lib/useBlockNoteSyncSafe";
+﻿// import { useBlockNoteSyncSafe } from "../lib/useBlockNoteSyncSafe";
 
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
@@ -48,18 +48,18 @@ const useCalendarDocument = () => {
       const now = new Date();
       const currentMonth = now.toLocaleDateString('en-US', { month: 'long' });
       const currentYear = now.getFullYear();
-      const monthSpecificTitle = `📅 ${currentMonth} ${currentYear} Calendar`;
+      const monthSpecificTitle = `ðŸ“… ${currentMonth} ${currentYear} Calendar`;
 
       // Look for existing calendar document
       let calendarDoc = documents.find((doc: any) =>
         doc.title === monthSpecificTitle ||
-        doc.title.startsWith(`📅 ${currentMonth} ${currentYear}`)
+        doc.title.startsWith(`ðŸ“… ${currentMonth} ${currentYear}`)
       );
 
       // Fallback to any calendar from current month
       if (!calendarDoc) {
         calendarDoc = documents.find((doc: any) =>
-          doc.title.includes('📅') &&
+          doc.title.includes('ðŸ“…') &&
           doc.title.includes(currentMonth) &&
           doc.title.includes(currentYear.toString())
         );
@@ -490,8 +490,8 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 title="All-day or multi-day events appear in this strip"
                 aria-label="All-day events strip"
               >
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20">
-                  <Lightbulb className="w-3 h-3" /> All‑day & multi‑day
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  <Lightbulb className="w-3 h-3" /> Allâ€‘day & multiâ€‘day
                 </span>
               </div>
             )}
@@ -534,7 +534,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 return (
                   <div
                     key={`allday-${String(e._id)}`}
-                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-indigo-500/10 border border-indigo-500/30/20 text-content hover:ring-2 hover:ring-indigo-500/50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 cursor-grab active:cursor-grabbing"
+                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-indigo-500/10 border border-indigo-500/20 text-content hover:ring-2 hover:ring-indigo-500/50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 cursor-grab active:cursor-grabbing"
                     style={{ gridColumn: `${colStart} / ${colEnd}`, gridRow: rIdx + 1 }}
                     role="button"
                     tabIndex={0}
@@ -594,7 +594,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           title="Delete"
                           aria-label={`Delete event ${e.title}`}
                         >
-                          ×
+                          Ã—
                         </button>
                       </>
                     )}
@@ -801,7 +801,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               <div
                 key={dayIdx}
                 ref={(el) => { dayRefs.current[dayIdx] = el; }}
-                className="relative border-l border-edge cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 overflow-hidden"
+                className="relative border-l border-edge cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 overflow-hidden"
                 style={{ height: collapseEmpty ? totalDisplayHeight : hourHeightLocal * (showWorkHoursOnly ? (visibleEndHour - visibleStartHour) : 24) }}
                 role="gridcell"
                 tabIndex={0}
@@ -932,7 +932,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     >
                       <input
                         autoFocus
-                        placeholder="Add event title · Enter to save · Esc to cancel"
+                        placeholder="Add event title Â· Enter to save Â· Esc to cancel"
                         value={draft.title}
                         aria-label={`New event title input for ${d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`}
                         onChange={(ev) => setDraft({ ...draft, title: ev.target.value })}
@@ -1088,7 +1088,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           </div>
                           {allDay && (
                             <div className="mt-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-xs bg-indigo-500/10 border-indigo-500/30/20 text-indigo-600 dark:text-indigo-400">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-xs bg-indigo-500/10 border-indigo-500/20 text-indigo-600 dark:text-indigo-400">
                                 All-day
                               </span>
                             </div>
@@ -1099,7 +1099,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                             title="Delete"
                             aria-label={`Delete event ${e.title}`}
                           >
-                            ×
+                            Ã—
                           </button>
                         </>
                       )}
@@ -1187,7 +1187,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           <div className="relative">
             {/* Header */}
             <PageHeroHeader
-              icon={"📅"}
+              icon={"ðŸ“…"}
               title={"Calendar Hub"}
               date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               presets={

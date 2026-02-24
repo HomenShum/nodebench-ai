@@ -11,7 +11,7 @@ export interface SidebarMiniCalendarProps {
 export function SidebarMiniCalendar({ onSelectDate, onViewDay, onViewWeek, showViewFullCalendarLink }: SidebarMiniCalendarProps) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-content-muted mb-2">Calendar</div>
+      <div className="text-xs tracking-wide text-content-muted mb-2">Calendar</div>
       <MiniMonthCalendar
         onSelectDate={onSelectDate}
         onViewDay={onViewDay}

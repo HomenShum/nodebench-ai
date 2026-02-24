@@ -425,7 +425,7 @@ export function WhatChangedPanel({
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_1fr] gap-4">
           <div className="min-w-0">
-            <div className="text-xs font-medium text-content-muted uppercase tracking-wide mb-2">
+            <div className="text-xs font-medium text-content-muted tracking-wide mb-2">
               Recent changes
             </div>
             <div className="space-y-2 max-h-[70vh] overflow-auto pr-1">

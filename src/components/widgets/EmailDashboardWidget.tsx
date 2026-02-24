@@ -221,7 +221,7 @@ function StatCard({
     <div className={`p-4 rounded-lg border ${colorClasses[color]}`}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <span className="text-xs uppercase tracking-wide opacity-80">{label}</span>
+        <span className="text-xs tracking-wide opacity-80">{label}</span>
       </div>
       <p className="text-2xl font-bold">{value}</p>
     </div>

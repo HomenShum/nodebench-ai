@@ -156,7 +156,7 @@ export const InteractiveSpan: React.FC<InteractiveSpanProps> = ({
           <span className="flex flex-col gap-1">
             <span className="flex items-center gap-2">
               <VariantIcon className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-xs font-bold uppercase tracking-wider text-content-secondary">
+              <span className="text-xs font-bold text-content-secondary">
                 {dataIndex !== undefined ? `Point ${dataIndex}` : "Context"}
               </span>
             </span>

@@ -90,7 +90,7 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
     >
       <div>
         <div className="flex items-center justify-between mb-2">
-          <span className={clsx("text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded", badgeColor)}>
+          <span className={clsx("text-xs font-bold px-1.5 py-0.5 rounded", badgeColor)}>
             {item.source || "News"}
           </span>
           <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-indigo-400" />

@@ -33,7 +33,7 @@ export function IntelligenceTable({
     return (
         <div className={`bg-surface rounded-lg border border-edge shadow-sm overflow-hidden ${className}`}>
             {/* Table Header - Sticky */}
-            <div className="sticky top-0 z-10 flex items-center gap-4 px-4 py-2.5 bg-surface-secondary border-b border-edge text-xs font-semibold text-content-muted uppercase tracking-wider">
+            <div className="sticky top-0 z-10 flex items-center gap-4 px-4 py-2.5 bg-surface-secondary border-b border-edge text-xs font-semibold text-content-muted">
                 {/* Checkbox spacer */}
                 <div className="w-6 shrink-0" />
 

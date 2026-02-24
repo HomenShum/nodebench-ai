@@ -154,7 +154,7 @@ export function ActionConfirmation({
               {action.title}
             </h4>
             <span className={cn(
-              "text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-wider",
+              "text-xs font-bold px-2 py-0.5 rounded-full",
               config.color,
               action.riskTier === 'critical' ? 'bg-red-100 dark:bg-red-800/40' :
               action.riskTier === 'high' ? 'bg-orange-100 dark:bg-orange-800/40' :

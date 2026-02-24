@@ -80,7 +80,7 @@ export const RefsPills = ({ refs, onOpenRef }: RefsPillsProps) => {
           className="text-xs px-1.5 py-0.5 rounded-md border bg-surface text-content-secondary border-edge hover:bg-surface-hover"
           title={`${r.kind.toUpperCase()}: ${titleById[r.id] ?? r.id}`}
         >
-          <span className="uppercase mr-1">{r.kind[0]}</span>
+          <span className="mr-1">{r.kind[0]}</span>
 
           <span className="truncate inline-block max-w-[120px] align-top">
             {titleById[r.id] ?? r.id}

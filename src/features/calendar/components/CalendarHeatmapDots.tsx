@@ -60,7 +60,7 @@ export function CalendarHeatmapDots({
   // Priority ring color based on max priority
   const getPriorityClass = () => {
     if (hasDeadline || hasEarnings || maxPriority >= 4) return "ring-red-500";
-    if (maxPriority >= 1) return "ring-indigo-500/50";
+    if (maxPriority >= 1) return "ring-[var(--accent-primary)]/50";
     return "";
   };
 
@@ -75,25 +75,25 @@ export function CalendarHeatmapDots({
         )}
         {/* Accent pill for events */}
         {events > 0 && !hasDeadline && !hasEarnings && maxPriority < 4 && (
-          <div className={cn(pillSize, "rounded-full bg-indigo-600")} 
+          <div className={cn(pillSize, "rounded-full bg-[var(--accent-primary)]")} 
                style={{ width: Math.min(events * 4, 16) }}
                title={`${events} events`} />
         )}
         {/* Accent pill for tasks */}
         {tasks > 0 && (
-          <div className={cn(pillSize, "rounded-full bg-indigo-600/80")} 
+          <div className={cn(pillSize, "rounded-full bg-[var(--accent-primary)]/80")} 
                style={{ width: Math.min(tasks * 4, 16) }}
                title={`${tasks} tasks`} />
         )}
         {/* Accent pill for files/notes */}
         {(notes > 0 || files > 0) && (
-          <div className={cn(pillSize, "rounded-full bg-indigo-600/70")} 
+          <div className={cn(pillSize, "rounded-full bg-[var(--accent-primary)]/70")} 
                style={{ width: Math.min((notes + files) * 4, 16) }}
                title={`${notes + files} notes/files`} />
         )}
         {/* Accent pill for holidays */}
         {holidays > 0 && (
-          <div className={cn(pillSize, "rounded-full bg-indigo-600/60")} 
+          <div className={cn(pillSize, "rounded-full bg-[var(--accent-primary)]/60")} 
                style={{ width: 8 }}
                title={`${holidays} holidays`} />
         )}
@@ -111,22 +111,22 @@ export function CalendarHeatmapDots({
       )}
       {/* Accent dot for regular events */}
       {events > 0 && !hasDeadline && !hasEarnings && maxPriority < 4 && (
-        <span className={cn(dotSize, "rounded-full bg-indigo-600")} 
+        <span className={cn(dotSize, "rounded-full bg-[var(--accent-primary)]")} 
               title={`${events} events`} />
       )}
       {/* Accent dot for tasks */}
       {tasks > 0 && (
-        <span className={cn(dotSize, "rounded-full bg-indigo-600/80")} 
+        <span className={cn(dotSize, "rounded-full bg-[var(--accent-primary)]/80")} 
               title={`${tasks} tasks`} />
       )}
       {/* Accent dot for notes/files */}
       {(notes > 0 || files > 0) && (
-        <span className={cn(dotSize, "rounded-full bg-indigo-600/70")} 
+        <span className={cn(dotSize, "rounded-full bg-[var(--accent-primary)]/70")} 
               title={`${notes + files} notes/files`} />
       )}
       {/* Accent dot for holidays */}
       {holidays > 0 && (
-        <span className={cn(dotSize, "rounded-full bg-indigo-600/60")} 
+        <span className={cn(dotSize, "rounded-full bg-[var(--accent-primary)]/60")} 
               title={`${holidays} holidays`} />
       )}
     </div>
@@ -152,7 +152,7 @@ export function PriorityRing({
 }) {
   const getPriorityRing = () => {
     if (hasDeadline || hasEarnings || maxPriority >= 4) return "ring-2 ring-red-500/60";
-    if (maxPriority >= 1) return "ring-2 ring-indigo-500/50/60";
+    if (maxPriority >= 1) return "ring-2 ring-[var(--accent-primary)]/60";
     return "";
   };
 

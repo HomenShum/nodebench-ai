@@ -212,7 +212,7 @@ export function FastAgentThreadList({
 
           return (
             <div key={group}>
-              <h3 className="px-2 mb-1 text-xs font-semibold font-mono text-content-muted uppercase tracking-wider">
+              <h3 className="px-2 mb-1 text-xs font-semibold font-mono text-content-muted">
                 {group}
               </h3>
               <div className="space-y-0.5">

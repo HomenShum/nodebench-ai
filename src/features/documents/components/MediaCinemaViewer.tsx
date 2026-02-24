@@ -175,7 +175,7 @@ export function MediaCinemaViewer({
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white flex items-center gap-3 max-w-[80%]">
           <span className="font-medium truncate">{doc.title}</span>
           <span className="text-white/40">|</span>
-          <span className="text-sm text-white/70 uppercase tracking-wider flex-shrink-0">
+          <span className="text-sm text-white/70 flex-shrink-0">
             {doc.fileType || 'media'}
           </span>
         </div>

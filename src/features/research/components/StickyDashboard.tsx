@@ -232,7 +232,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
               <div className="flex justify-center items-center relative h-20 mb-2 overflow-hidden">
                 <DonutChart data={safeCharts.marketShare} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden px-1">
-                  <span className="text-[10px] font-bold uppercase text-content-muted leading-none mb-0.5 truncate max-w-full">
+                  <span className="text-[10px] font-bold text-content-muted leading-none mb-0.5 truncate max-w-full">
                     {topShare.label}
                   </span>
                   <NumberFlow value={topShare.value} suffix="%" className="text-sm font-bold text-content leading-none" />
@@ -248,7 +248,7 @@ export const StickyDashboard: React.FC<StickyDashboardProps> = ({
 
             {/* Tech Readiness Buckets */}
             <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-[9px] uppercase tracking-normal text-content-muted px-0.5">
+              <div className="flex justify-between text-[9px] tracking-normal text-content-muted px-0.5">
                 <span>Now</span><span>Next</span><span>Future</span>
               </div>
               <div className="flex justify-between gap-1 h-8">

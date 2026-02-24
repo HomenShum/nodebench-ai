@@ -1,12 +1,12 @@
-"use client";
+﻿"use client";
 
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, History, Zap, Telescope, ChevronLeft, ChevronRight } from "lucide-react";
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TYPES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export type TemporalPhase = "past" | "present" | "future";
 
@@ -44,9 +44,9 @@ export interface TimelineStripProps {
   className?: string;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const getPhaseIcon = (phase: TemporalPhase) => {
   switch (phase) {
@@ -70,7 +70,7 @@ const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
     present: {
       bg: isActive ? "bg-indigo-600" : "bg-indigo-500/10 hover:bg-indigo-500/10",
       text: isActive ? "text-white" : "text-indigo-600 dark:text-indigo-400",
-      border: isActive ? "border-indigo-500/30" : "border-indigo-500/30/20",
+      border: isActive ? "border-indigo-500/30" : "border-indigo-500/20",
       dot: "bg-indigo-600",
     },
     future: {
@@ -98,14 +98,14 @@ const formatDate = (dateStr: string): string => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 /**
  * TimelineStrip - AI-2027.com-inspired temporal context visualization
  *
- * Shows Past→Present→Future timeline with:
+ * Shows Pastâ†’Presentâ†’Future timeline with:
  * - Phase-colored event markers
  * - Active event highlighting
  * - Smooth scroll navigation
@@ -236,7 +236,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               <button
                 type="button"
                 onClick={() => setPhaseFilter("all")}
-                className="text-xs text-content-secondary hover:text-content uppercase tracking-wider"
+                className="text-xs text-content-secondary hover:text-content"
                 title="Show all phases"
               >
                 Reset
@@ -262,7 +262,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               style={{ width: `${progressInfo.phasePercentages.future}%` }}
             />
           </div>
-          {/* Progress indicator — skip animation on mount to avoid initial jank */}
+          {/* Progress indicator â€” skip animation on mount to avoid initial jank */}
           <motion.div
             className="absolute top-0 left-0 h-full bg-indigo-600 rounded-full"
             initial={false}
@@ -357,9 +357,9 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // SUB-COMPONENTS
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface TimelineEventChipProps {
   event: TimelineEvent;
@@ -403,3 +403,4 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
 };
 
 export default TimelineStrip;
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ThreadTabBar.tsx
  *
  * Fast horizontal tab navigation for thread switching.
@@ -143,11 +143,11 @@ const ThreadTab = memo(function ThreadTab({
       onClick={onSelect}
       className={cn(
         "group flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
-        "hover:bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-indigo-500/50/40",
+        "hover:bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
         isActive
           ? "bg-surface-secondary text-content shadow-sm border border-edge"
           : "text-content-secondary hover:text-content border border-transparent",
-        isSwarmActive && "ring-1 ring-indigo-500/50/40 bg-indigo-500/10"
+        isSwarmActive && "ring-1 ring-indigo-500/40 bg-indigo-500/10"
       )}
     >
       {/* Icon */}
@@ -181,7 +181,7 @@ const ThreadTab = memo(function ThreadTab({
       {/* Keyboard shortcut hint */}
       {index < 9 && (
         <span className="hidden group-hover:inline text-xs text-content-muted ml-0.5 opacity-60">
-          ⌘{index + 1}
+          âŒ˜{index + 1}
         </span>
       )}
     </button>
@@ -283,10 +283,10 @@ export function ThreadTabBar({
         className={cn(
           "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
           "hover:bg-surface-hover text-content-secondary hover:text-content",
-          "focus:outline-none focus:ring-2 focus:ring-indigo-500/50/40",
-          !activeThreadId && "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20"
+          "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
+          !activeThreadId && "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
         )}
-        title="New chat (⌘1)"
+        title="New chat (âŒ˜1)"
       >
         <Plus className="w-4 h-4" />
         <span className="hidden sm:inline">New</span>
@@ -301,8 +301,8 @@ export function ThreadTabBar({
             className={cn(
               "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
               "hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300",
-              "focus:outline-none focus:ring-2 focus:ring-indigo-500/50/40",
-              showSwarmMenu && "bg-indigo-500/10 border border-indigo-500/30/20"
+              "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
+              showSwarmMenu && "bg-indigo-500/10 border border-indigo-500/20"
             )}
             title="Spawn parallel agents"
           >
@@ -316,7 +316,7 @@ export function ThreadTabBar({
             <div className="absolute top-full left-0 mt-1 w-72 bg-surface rounded-lg border border-edge shadow-xl z-50 overflow-hidden">
               {/* Query Input */}
               <div className="p-3 border-b border-edge">
-                <label className="block text-xs font-medium text-content-muted uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-content-muted mb-1.5">
                   Research Query
                 </label>
                 <input
@@ -339,7 +339,7 @@ export function ThreadTabBar({
 
               {/* Preset Options */}
               <div className="p-2">
-                <div className="text-xs font-medium text-content-muted uppercase tracking-wider px-2 mb-1.5">
+                <div className="text-xs font-medium text-content-muted px-2 mb-1.5">
                   Agent Presets
                 </div>
                 {AGENT_PRESETS.map((preset) => {
@@ -379,7 +379,7 @@ export function ThreadTabBar({
               {/* Quick tip */}
               <div className="px-3 py-2 border-t border-edge bg-surface-secondary">
                 <div className="text-xs text-content-muted">
-                  💡 Or type <code className="px-1 py-0.5 bg-surface rounded">/spawn "query"</code> in chat
+                  ðŸ’¡ Or type <code className="px-1 py-0.5 bg-surface rounded">/spawn "query"</code> in chat
                 </div>
               </div>
             </div>
@@ -426,7 +426,7 @@ export function ThreadTabBar({
 
       {/* Keyboard hint */}
       <div className="hidden lg:flex items-center gap-1 px-2 text-xs text-content-muted flex-shrink-0">
-        <kbd className="px-1 py-0.5 bg-surface-secondary rounded text-[8px]">⌘1-9</kbd>
+        <kbd className="px-1 py-0.5 bg-surface-secondary rounded text-[8px]">âŒ˜1-9</kbd>
         <span>switch</span>
       </div>
     </div>
@@ -434,3 +434,4 @@ export function ThreadTabBar({
 }
 
 export default ThreadTabBar;
+

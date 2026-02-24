@@ -198,7 +198,7 @@ export function NarrativeRoadmap({
             <div className="flex border-b border-edge bg-gray-50/50">
               {/* Thread name column */}
               <div className="w-48 flex-shrink-0 px-4 py-3 border-r border-edge">
-                <span className="text-xs font-medium uppercase tracking-wider text-content-secondary">
+                <span className="text-xs font-medium text-content-secondary">
                   Threads
                 </span>
               </div>

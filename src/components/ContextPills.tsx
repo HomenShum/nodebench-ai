@@ -5,7 +5,7 @@ import { FileText, Layers3, History, BookOpen, Wrench, Layout } from "lucide-rea
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-2">
-      <div className="text-xs uppercase tracking-wide text-content-secondary mb-1 flex items-center gap-1">
+      <div className="text-xs tracking-wide text-content-secondary mb-1 flex items-center gap-1">
         <span>{title}</span>
       </div>
       <div className="flex flex-wrap gap-1.5">

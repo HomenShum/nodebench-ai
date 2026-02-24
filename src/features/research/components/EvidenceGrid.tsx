@@ -100,7 +100,7 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
               onError={(e) => (e.currentTarget.style.display = "none")}
             />
           )}
-          <span className="text-xs font-semibold uppercase tracking-wide text-content-secondary">
+          <span className="text-xs font-semibold tracking-wide text-content-secondary">
             {evidence.source}
           </span>
         </div>
@@ -152,7 +152,7 @@ export function EvidenceGrid({ evidence, className = "" }: EvidenceGridProps) {
     <div className={`relative ${className}`}>
       {/* Section Label */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wide text-content-secondary">
+        <span className="text-xs font-semibold tracking-wide text-content-secondary">
           Evidence ({evidence.length})
         </span>
         <div className="flex-1 h-px bg-[color:var(--border-color)]" />

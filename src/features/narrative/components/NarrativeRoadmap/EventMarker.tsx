@@ -119,7 +119,7 @@ export function EventMarker({
                       <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
                     )}
                     <span className={`
-                      text-xs uppercase tracking-wider font-medium
+                      text-xs font-medium
                       ${event.significance === "plot_twist" ? "text-red-400" :
                         event.significance === "major" ? "text-purple-400" :
                         event.significance === "moderate" ? "text-blue-400" :

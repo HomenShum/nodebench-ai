@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AgentStatusCard.tsx
  *
  * Real-time agent status card with live subscriptions.
@@ -180,7 +180,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
       className={cn(
         "group bg-surface rounded-container border border-edge",
         "transition-all duration-200 hover:shadow-hover hover:bg-surface-secondary",
-        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-indigo-500/50/40"
+        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-indigo-500/40"
       )}
     >
       {/* Header */}
@@ -217,7 +217,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
           <div className="mt-3 p-2 bg-surface-secondary rounded-lg border border-edge">
             <div className="flex items-center gap-1.5 mb-1">
               <Loader2 className="w-3 h-3 motion-safe:animate-spin text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xs font-medium text-content-muted uppercase tracking-wider">
+              <span className="text-xs font-medium text-content-muted">
                 Current Task
               </span>
             </div>
@@ -323,3 +323,4 @@ export const AgentStatusCard = memo(function AgentStatusCard({
 });
 
 export default AgentStatusCard;
+

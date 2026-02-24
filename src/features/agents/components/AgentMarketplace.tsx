@@ -122,7 +122,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
         <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
           <div className="flex items-center gap-1.5 mb-1.5">
             <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider">Success Rate</span>
+            <span className="text-[11px] font-medium text-content-muted">Success Rate</span>
           </div>
           <div className="text-lg font-semibold text-content">
             {Math.round(agent.successRate * 100)}%
@@ -132,7 +132,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
         <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Play className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider">Total Runs</span>
+            <span className="text-[11px] font-medium text-content-muted">Total Runs</span>
           </div>
           <div className="text-lg font-semibold text-content">
             {agent.usageCount.toLocaleString()}
@@ -142,7 +142,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
         <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Clock className="w-3.5 h-3.5 text-violet-500" />
-            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider">Avg Latency</span>
+            <span className="text-[11px] font-medium text-content-muted">Avg Latency</span>
           </div>
           <div className="text-lg font-semibold text-content">
             {(agent.avgLatencyMs / 1000).toFixed(1)}s
@@ -152,7 +152,7 @@ function AgentCard({ agent, rank }: AgentCardProps) {
         <div className="bg-surface-secondary rounded-md p-3 border border-edge/50">
           <div className="flex items-center gap-1.5 mb-1.5">
             <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-[11px] font-medium text-content-muted uppercase tracking-wider" title="Composite ranking: success rate + usage + speed">Overall Score</span>
+            <span className="text-[11px] font-medium text-content-muted" title="Composite ranking: success rate + usage + speed">Overall Score</span>
           </div>
           <div className="text-lg font-semibold text-content">
             {agent.phoenixScore}

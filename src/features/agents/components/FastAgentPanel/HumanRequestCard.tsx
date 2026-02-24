@@ -1,4 +1,4 @@
-// src/components/FastAgentPanel/HumanRequestCard.tsx
+﻿// src/components/FastAgentPanel/HumanRequestCard.tsx
 // UI component for displaying and responding to human-in-the-loop requests
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -138,7 +138,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
     <div
       className={cn(
         "rounded-lg border-2 p-4 shadow-md animate-in slide-in-from-top-2 duration-300",
-        isPending && "border-indigo-500/30/30 bg-indigo-500/10",
+        isPending && "border-indigo-500/30 bg-indigo-500/10",
         isAnswered && "border-green-400 bg-green-50",
         isCancelled && "border-content-muted bg-surface-secondary"
       )}
@@ -302,7 +302,7 @@ export function HumanRequestList({ requests, onRespond }: HumanRequestListProps)
       {/* Pending requests first */}
       {pendingRequests.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs font-semibold text-content-secondary uppercase tracking-wide flex items-center gap-2">
+          <h3 className="text-xs font-semibold text-content-secondary tracking-wide flex items-center gap-2">
             <MessageCircleQuestion className="h-4 w-4" />
             Pending Requests ({pendingRequests.length})
           </h3>
@@ -319,7 +319,7 @@ export function HumanRequestList({ requests, onRespond }: HumanRequestListProps)
       {/* Answered requests (collapsed by default) */}
       {answeredRequests.length > 0 && (
         <details className="group">
-          <summary className="text-xs font-semibold text-content-secondary uppercase tracking-wide cursor-pointer list-none flex items-center gap-2 hover:text-content">
+          <summary className="text-xs font-semibold text-content-secondary tracking-wide cursor-pointer list-none flex items-center gap-2 hover:text-content">
             <CheckCircle2 className="h-4 w-4" />
             Answered Requests ({answeredRequests.length})
           </summary>
@@ -337,4 +337,5 @@ export function HumanRequestList({ requests, onRespond }: HumanRequestListProps)
     </div>
   );
 }
+
 

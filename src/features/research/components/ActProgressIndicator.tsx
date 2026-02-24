@@ -31,7 +31,7 @@ const ActProgressIndicator: React.FC<ActProgressIndicatorProps> = ({
       className={`rounded-lg border border-edge bg-[#fbfaf2]/90 px-3 py-2 shadow-sm ${className}`}
     >
       <div className="flex items-center justify-between gap-2 mb-1">
-        <span className="text-xs font-semibold tracking-wide text-content uppercase">
+        <span className="text-xs font-semibold tracking-wide text-content">
           Research Depth
         </span>
         <span className="text-xs text-content-secondary">

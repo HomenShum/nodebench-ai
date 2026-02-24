@@ -1,4 +1,4 @@
-// src/components/views/LiveAgentLanes.tsx
+﻿// src/components/views/LiveAgentLanes.tsx
 // Multi-agent parallel streaming visualization
 // Matches existing LiveAgentTicker aesthetic (glass containers, AgentIcon, ToolChip)
 
@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { useAgentLanes, useLaneEvents, type Delegation, type AgentName } from "@/hooks/useAgentLanes";
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TYPES
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 interface LiveAgentLanesProps {
   runId: string | undefined;
@@ -30,9 +30,9 @@ interface LaneCardProps {
   delegation: Delegation;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // AGENT ICONS (matches LiveDossierDocument.tsx)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 const agentIcons: Record<AgentName, React.ReactNode> = {
   DocumentAgent: <FileText className="w-4 h-4" />,
@@ -52,7 +52,7 @@ const agentLabels: Record<AgentName, string> = {
 
 const statusColors = {
   scheduled: "bg-surface-secondary/20 text-content-muted border-edge/30",
-  running: "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30",
+  running: "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
   completed: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   failed: "bg-red-500/20 text-red-400 border-red-500/30",
   cancelled: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
@@ -66,9 +66,9 @@ const statusIcons = {
   cancelled: <AlertCircle className="w-3 h-3 text-yellow-400" />,
 };
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // LANE CARD (individual agent stream)
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function LaneCard({ delegation }: LaneCardProps) {
   const { text, toolsUsed, isStreaming } = useLaneEvents(delegation.delegationId);
@@ -85,7 +85,7 @@ function LaneCard({ delegation }: LaneCardProps) {
     <div
       className={`
         relative overflow-hidden rounded-lg border transition-all duration-300
-        ${isActive ? 'border-indigo-500/30/30 shadow-lg shadow-[rgb(79, 70, 229)]/10' : 'border-white/10'}
+        ${isActive ? 'border-indigo-500/30 shadow-lg shadow-[rgb(79, 70, 229)]/10' : 'border-white/10'}
         bg-gradient-to-br from-surface/80 to-surface-secondary/80 backdrop-blur-sm
       `}
     >
@@ -128,7 +128,7 @@ function LaneCard({ delegation }: LaneCardProps) {
           {toolsUsed.slice(0, 4).map((tool) => (
             <span
               key={tool}
-              className="px-2 py-0.5 rounded-full bg-indigo-600/10 border border-indigo-500/30/20 text-xs text-indigo-600 dark:text-indigo-400"
+              className="px-2 py-0.5 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-xs text-indigo-600 dark:text-indigo-400"
             >
               {tool}
             </span>
@@ -172,9 +172,9 @@ function LaneCard({ delegation }: LaneCardProps) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
   const { delegations, isLoading, hasActiveDelegations, completedCount, totalCount } =
@@ -199,7 +199,7 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
           <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <span className="text-sm font-semibold text-white">Parallel Agents</span>
           {hasActiveDelegations && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30/30">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30">
               <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full motion-safe:animate-pulse" />
               <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">LIVE</span>
             </span>
@@ -229,3 +229,4 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
 }
 
 export default LiveAgentLanes;
+

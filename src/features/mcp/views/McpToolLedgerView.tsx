@@ -133,7 +133,7 @@ export const McpToolLedgerView: React.FC = () => {
         </div>
 
         <div className="mb-6 nb-surface-card p-4">
-          <div className="text-xs uppercase tracking-wider text-content-secondary">Filters</div>
+          <div className="text-xs text-content-secondary">Filters</div>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-3">
             <label className="block">
               <div className="text-xs font-semibold text-content-secondary">Usage Date (UTC)</div>
@@ -217,7 +217,7 @@ export const McpToolLedgerView: React.FC = () => {
           <div className="mb-6 nb-surface-card p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-wider text-content-secondary">
+                <div className="text-xs text-content-secondary">
                   Policy Controls
                 </div>
                 <div className="mt-1 text-sm text-content-secondary">
@@ -252,7 +252,7 @@ export const McpToolLedgerView: React.FC = () => {
         {policyAndUsage && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="nb-surface-card p-4">
-              <div className="text-xs uppercase tracking-wider text-content-secondary">
+              <div className="text-xs text-content-secondary">
                 Usage By Risk Tier (Today)
               </div>
               <div className="mt-3 space-y-2">
@@ -291,7 +291,7 @@ export const McpToolLedgerView: React.FC = () => {
             </div>
 
             <div className="nb-surface-card p-4">
-              <div className="text-xs uppercase tracking-wider text-content-secondary">
+              <div className="text-xs text-content-secondary">
                 What This Enables
               </div>
               <ul className="mt-3 text-sm text-content-secondary list-disc pl-5 space-y-1">
@@ -307,7 +307,7 @@ export const McpToolLedgerView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 nb-surface-card overflow-hidden">
             <div className="px-4 py-3 border-b border-edge flex items-center justify-between">
-              <div className="text-xs uppercase tracking-wider text-content-secondary">
+              <div className="text-xs text-content-secondary">
                 Recent Tool Calls
               </div>
               <div className="text-xs text-content-secondary tabular-nums">
@@ -387,7 +387,7 @@ export const McpToolLedgerView: React.FC = () => {
 
           <div className="nb-surface-card overflow-hidden">
             <div className="px-4 py-3 border-b border-edge">
-              <div className="text-xs uppercase tracking-wider text-content-secondary">
+              <div className="text-xs text-content-secondary">
                 Call Detail
               </div>
             </div>

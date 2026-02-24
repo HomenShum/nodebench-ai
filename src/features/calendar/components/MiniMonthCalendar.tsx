@@ -658,7 +658,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
       <div className="p-3">
         <div className="grid grid-cols-7 text-center text-xs text-content-muted mb-2">
           {dayLabels.map((lbl, i) => (
-            <div key={`lbl_${lbl}_${i}`} className="font-semibold uppercase tracking-wider">{lbl}</div>
+            <div key={`lbl_${lbl}_${i}`} className="font-semibold">{lbl}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-1">

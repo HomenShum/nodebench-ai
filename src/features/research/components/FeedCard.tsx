@@ -119,7 +119,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         `}
       >
         <div className="flex items-center gap-3 mb-2">
-          <span className={`text-xs font-bold uppercase tracking-wider ${isSignal ? 'text-blue-300' : 'text-blue-600'}`}>
+          <span className={`text-xs font-bold ${isSignal ? 'text-blue-300' : 'text-blue-600'}`}>
             {item.sourceIcon ? 'Source' : 'News'}
           </span>
           <span className="text-[color:var(--border-color)] text-xs">•</span>
@@ -204,7 +204,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-dashed border-edge">
             {item.metrics.map((m, i) => (
               <div key={i} className="flex flex-col">
-                <span className="text-xs uppercase text-content-secondary">{m.label}</span>
+                <span className="text-xs text-content-secondary">{m.label}</span>
                 <span className="text-sm font-mono font-bold flex items-center gap-1 text-content">
                   {m.value}
                   {m.trend === 'up' && <ArrowUpRight className="w-3 h-3 text-green-500" />}

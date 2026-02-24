@@ -77,7 +77,7 @@ function KPITile({ icon, label, value, sublabel }: KPITileProps) {
         </div>
       </div>
       <div className="min-w-0">
-        <div className="text-xs font-black uppercase tracking-[0.2em] opacity-40 mb-1 font-outfit">{label}</div>
+        <div className="text-xs font-black opacity-40 mb-1 font-outfit">{label}</div>
         <div className="text-2xl font-bold leading-none tracking-tight text-content">{value}</div>
         {sublabel && <div className="text-xs font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
       </div>
@@ -100,7 +100,7 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 text-xs font-medium rounded-lg transition-all tracking-wider uppercase ${isSelected
+      className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${isSelected
         ? "bg-indigo-600 text-white shadow-sm"
         : "bg-surface text-content-secondary hover:text-content hover:bg-surface-hover border border-edge"
         }`}
@@ -190,7 +190,7 @@ export function ExecutiveBriefHeader({
               {effectiveThesis}
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-secondary/50 rounded-full text-xs font-bold text-content-secondary uppercase tracking-wider flex-shrink-0">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-surface-secondary/50 rounded-full text-xs font-bold text-content-secondary flex-shrink-0">
             <Calendar className="w-3 h-3" />
             <span>{effectiveDate}</span>
           </div>
@@ -228,7 +228,7 @@ export function ExecutiveBriefHeader({
       <div className="px-8 py-3 flex items-center gap-8 overflow-x-auto bg-surface-secondary/20">
         {/* Time Window */}
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className="text-xs font-bold text-content-secondary uppercase tracking-wider">Horizon</span>
+          <span className="text-xs font-bold text-content-secondary">Horizon</span>
           <div className="flex gap-1.5">
             {timeWindows.map((tw) => (
               <FilterChip
@@ -244,7 +244,7 @@ export function ExecutiveBriefHeader({
         {/* Topic Tags */}
         {effectiveTopics.length > 0 && (
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-xs font-bold text-content-secondary uppercase tracking-wider">Focus</span>
+            <span className="text-xs font-bold text-content-secondary">Focus</span>
             <div className="flex gap-1.5 flex-wrap">
               {effectiveTopics.slice(0, 6).map((tag) => (
                 <FilterChip

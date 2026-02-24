@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+﻿import { useMemo, useState, useEffect, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -1084,7 +1084,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               />
 
               <PageHeroHeader
-                icon={"🗺️"}
+                icon={"ðŸ—ºï¸"}
                 title={"Roadmap Hub"}
                 date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 accent
@@ -1109,7 +1109,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               <div className="nb-surface-card bg-surface/95 backdrop-blur p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-content-secondary">Roadmap Navigator</div>
+                    <div className="text-xs tracking-wide text-content-secondary">Roadmap Navigator</div>
                     <div className="text-xs font-semibold text-content">
                       Section {activeIndex + 1} of {roadmapNav.length}
                     </div>
@@ -1304,7 +1304,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 </div>
 
                 <div className="rounded-md border border-edge bg-surface p-3">
-                  <div className="text-xs uppercase tracking-wide text-content-secondary">Jump to</div>
+                  <div className="text-xs tracking-wide text-content-secondary">Jump to</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {roadmapNav.map((item) => (
                       <RoadmapNavButton key={item.target} item={item} />
@@ -1479,7 +1479,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                 ))}
               </div>
               <div className="rounded-md border border-edge bg-surface p-3">
-                <div className="text-xs uppercase tracking-wide text-content-secondary">Agent coverage map</div>
+                <div className="text-xs tracking-wide text-content-secondary">Agent coverage map</div>
                 <div className="mt-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   {agentCoverageMap.map((item) => (
                     <AgentCoverageCard key={item.agent} item={item} />
@@ -1656,11 +1656,11 @@ function StatusBreakdown({ title, data }: { title: string; data: Array<{ label: 
 
 const sectionToneClasses: Record<SectionTone, string> = {
   slate: "border-edge bg-surface text-content-secondary",
-  sky: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  indigo: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  emerald: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  teal: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  violet: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  sky: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  indigo: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  emerald: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  teal: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+  violet: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
   amber: "border-amber-500/20 bg-amber-500/10 text-amber-600",
   rose: "border-rose-500/20 bg-rose-500/10 text-rose-600",
 };
@@ -1741,7 +1741,7 @@ function RoadmapPulseCard({ item }: { item: RoadmapPulse }) {
 function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
   return (
     <div className="rounded-md border border-edge bg-surface p-3">
-      <div className="text-xs uppercase tracking-wide text-content-secondary">Workflow at a glance</div>
+      <div className="text-xs tracking-wide text-content-secondary">Workflow at a glance</div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {steps.map((step, index) => {
           const Icon = step.icon;
@@ -1768,8 +1768,8 @@ function RoadmapFlowStrip({ steps }: { steps: RoadmapFlowStep[] }) {
 function TagPill({ label, tone = "default" }: { label: string; tone?: "default" | "success" | "warning" | "info" }) {
   const toneClasses = {
     default: "border-edge bg-surface-secondary text-content-secondary",
-    success: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-    info: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+    success: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+    info: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   };
   return (
@@ -1813,7 +1813,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </span>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Primary deliverables</div>
+        <div className="text-xs tracking-wide text-content-secondary">Primary deliverables</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {persona.primaryDeliverables.map((deliverable) => (
             <TagPill key={deliverable} label={deliverable} />
@@ -1821,7 +1821,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Signal focus</div>
+        <div className="text-xs tracking-wide text-content-secondary">Signal focus</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {persona.signalFocus.map((signal) => (
             <TagPill key={signal} label={signal} />
@@ -1829,7 +1829,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Needs</div>
+        <div className="text-xs tracking-wide text-content-secondary">Needs</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {persona.needs.map((need) => (
             <li key={need}>{need}</li>
@@ -1837,7 +1837,7 @@ function PersonaCard({ persona }: { persona: PersonaProfile }) {
         </ul>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Deep agent backbone</div>
+        <div className="text-xs tracking-wide text-content-secondary">Deep agent backbone</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {persona.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -1858,7 +1858,7 @@ function PersonaMatrix({ personas }: { personas: PersonaProfile[] }) {
         </div>
       </div>
       <div className="hidden lg:block">
-        <div className="grid grid-cols-[minmax(160px,1fr)_minmax(180px,1.2fr)_minmax(200px,1.2fr)_minmax(220px,1.4fr)] gap-3 text-xs uppercase tracking-wide text-content-secondary">
+        <div className="grid grid-cols-[minmax(160px,1fr)_minmax(180px,1.2fr)_minmax(200px,1.2fr)_minmax(220px,1.4fr)] gap-3 text-xs tracking-wide text-content-secondary">
           <div>Persona</div>
           <div>Cadence</div>
           <div>Primary deliverables</div>
@@ -1892,7 +1892,7 @@ function PersonaMatrix({ personas }: { personas: PersonaProfile[] }) {
             <div className="text-xs font-semibold text-content">{persona.name}</div>
             <div className="text-xs text-content-secondary">{persona.cadence}</div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-content-secondary">Primary deliverables</div>
+              <div className="text-xs tracking-wide text-content-secondary">Primary deliverables</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {persona.primaryDeliverables.map((deliverable) => (
                   <TagPill key={`${persona.name}-${deliverable}-mobile`} label={deliverable} />
@@ -1900,7 +1900,7 @@ function PersonaMatrix({ personas }: { personas: PersonaProfile[] }) {
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-content-secondary">Signal focus</div>
+              <div className="text-xs tracking-wide text-content-secondary">Signal focus</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {persona.signalFocus.map((signal) => (
                   <TagPill key={`${persona.name}-${signal}-mobile`} label={signal} />
@@ -1921,7 +1921,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
     amber: { bar: "bg-amber-500", pill: "border-amber-500/30 bg-amber-500/10 text-amber-600" },
     emerald: {
       bar: "bg-indigo-600",
-      pill: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
+      pill: "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
     },
   };
   const tone = priorityStyles[priorityTone];
@@ -1942,7 +1942,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
               <div className="text-xs text-content-secondary mt-1">{item.summary}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-content-secondary">Personas</div>
+              <div className="text-xs tracking-wide text-content-secondary">Personas</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.personas.map((persona) => (
                   <TagPill key={persona} label={persona} />
@@ -1950,7 +1950,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-content-secondary">Agent backbone</div>
+              <div className="text-xs tracking-wide text-content-secondary">Agent backbone</div>
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.agents.map((agent) => (
                   <TagPill key={agent} label={agent} />
@@ -1972,7 +1972,7 @@ function QualityBarCard({ principle }: { principle: QualityPrinciple }) {
         <div className="text-xs text-content-secondary mt-1">{principle.detail}</div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Checks</div>
+        <div className="text-xs tracking-wide text-content-secondary">Checks</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {principle.checks.map((check) => (
             <li key={check}>{check}</li>
@@ -1991,7 +1991,7 @@ function PersonaSegmentCard({ segment }: { segment: PersonaSegment }) {
         <div className="text-xs text-content-secondary mt-1">{segment.description}</div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Personas</div>
+        <div className="text-xs tracking-wide text-content-secondary">Personas</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {segment.personas.map((persona) => (
             <TagPill key={persona} label={persona} />
@@ -1999,7 +1999,7 @@ function PersonaSegmentCard({ segment }: { segment: PersonaSegment }) {
         </div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Outcomes</div>
+        <div className="text-xs tracking-wide text-content-secondary">Outcomes</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {segment.outcomes.map((outcome) => (
             <li key={outcome}>{outcome}</li>
@@ -2018,7 +2018,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
         <div className="text-xs text-content-secondary mt-1">Cadence: {deliverable.cadence}</div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Outputs</div>
+        <div className="text-xs tracking-wide text-content-secondary">Outputs</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {deliverable.outputs.map((output) => (
             <li key={output}>{output}</li>
@@ -2026,7 +2026,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
         </ul>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Personas</div>
+        <div className="text-xs tracking-wide text-content-secondary">Personas</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {deliverable.personas.map((persona) => (
             <TagPill key={persona} label={persona} />
@@ -2034,7 +2034,7 @@ function DeliverableCard({ deliverable }: { deliverable: Deliverable }) {
         </div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Agent backbone</div>
+        <div className="text-xs tracking-wide text-content-secondary">Agent backbone</div>
         <div className="mt-2 flex flex-wrap gap-1">
           {deliverable.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -2068,7 +2068,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
     <div className="rounded-lg border border-edge bg-surface p-4 space-y-3 transition-shadow">
       <div>
         <div className="text-xs font-semibold text-content">{path.segment}</div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary mt-2">Entry points</div>
+        <div className="text-xs tracking-wide text-content-secondary mt-2">Entry points</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {path.entryPoints.map((entry) => (
             <TagPill key={entry} label={entry} />
@@ -2076,7 +2076,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
         </div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Triggers</div>
+        <div className="text-xs tracking-wide text-content-secondary">Triggers</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {path.triggers.map((trigger) => (
             <li key={trigger}>{trigger}</li>
@@ -2084,7 +2084,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
         </ul>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Outputs</div>
+        <div className="text-xs tracking-wide text-content-secondary">Outputs</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {path.outputs.map((output) => (
             <li key={output}>{output}</li>
@@ -2092,7 +2092,7 @@ function ActivationPathCard({ path }: { path: ActivationPath }) {
         </ul>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Agent backbone</div>
+        <div className="text-xs tracking-wide text-content-secondary">Agent backbone</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {path.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -2132,9 +2132,9 @@ function CoverageMatrix({ rows, segments }: { rows: CoverageMatrixRow[]; segment
     <div className="space-y-3">
       <div className="hidden md:block">
         <div className="grid grid-cols-[minmax(180px,1.2fr)_repeat(3,minmax(120px,1fr))] gap-2 text-xs">
-          <div className="text-xs uppercase tracking-wide text-content-secondary">Deliverable</div>
+          <div className="text-xs tracking-wide text-content-secondary">Deliverable</div>
           {segments.map((segment) => (
-            <div key={segment} className="text-xs uppercase tracking-wide text-content-secondary">
+            <div key={segment} className="text-xs tracking-wide text-content-secondary">
               {segment}
             </div>
           ))}
@@ -2188,7 +2188,7 @@ function MetricCard({ metric }: { metric: SuccessMetric }) {
         Target: {metric.target}
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Applies to</div>
+        <div className="text-xs tracking-wide text-content-secondary">Applies to</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {metric.personas.map((persona) => (
             <TagPill key={persona} label={persona} />
@@ -2204,11 +2204,11 @@ function RiskCard({ risk }: { risk: RiskDependency }) {
     <div className="rounded-lg border border-edge bg-surface p-4 space-y-3 transition-shadow">
       <div className="text-xs font-semibold text-content">{risk.title}</div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Impact</div>
+        <div className="text-xs tracking-wide text-content-secondary">Impact</div>
         <div className="text-xs text-content-secondary mt-1">{risk.impact}</div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Mitigation</div>
+        <div className="text-xs tracking-wide text-content-secondary">Mitigation</div>
         <div className="text-xs text-content-secondary mt-1">{risk.mitigation}</div>
       </div>
     </div>
@@ -2234,7 +2234,7 @@ function PhaseTimelineCard({ phase }: { phase: PhaseTimeline }) {
       </div>
       <div className="text-xs text-content-secondary">{phase.focus}</div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Deliverables</div>
+        <div className="text-xs tracking-wide text-content-secondary">Deliverables</div>
         <ul className="mt-1 space-y-1 text-xs text-content-secondary list-disc pl-4">
           {phase.deliverables.map((item) => (
             <li key={item}>{item}</li>
@@ -2253,7 +2253,7 @@ function OrchestrationCard({ stage }: { stage: OrchestrationStage }) {
         <div className="text-xs text-content-secondary mt-1">{stage.description}</div>
       </div>
       <div>
-        <div className="text-xs uppercase tracking-wide text-content-secondary">Agents</div>
+        <div className="text-xs tracking-wide text-content-secondary">Agents</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {stage.agents.map((agent) => (
             <TagPill key={agent} label={agent} />
@@ -2279,6 +2279,7 @@ function AgentCoverageCard({ item }: { item: AgentCoverage }) {
     </div>
   );
 }
+
 
 
 

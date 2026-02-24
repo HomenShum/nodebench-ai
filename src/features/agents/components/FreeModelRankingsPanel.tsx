@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FreeModelRankingsPanel.tsx
  *
  * Displays ranked list of discovered free models from OpenRouter.
@@ -64,7 +64,7 @@ const CapabilityBadge = memo(function CapabilityBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
       title={label}
     >
       <Icon className="w-2.5 h-2.5" />
@@ -135,7 +135,7 @@ const ModelRow = memo(function ModelRow({
       className={cn(
         "p-3 rounded-lg border transition-colors",
         isTop3
-          ? "bg-indigo-500/10/50 border-indigo-500/30/20"
+          ? "bg-indigo-500/10/50 border-indigo-500/20"
           : "border-edge hover:bg-surface-hover"
       )}
     >
@@ -146,7 +146,7 @@ const ModelRow = memo(function ModelRow({
             className={cn(
               "flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm",
               isTop3
-                ? "bg-indigo-500/10 border border-indigo-500/30/20"
+                ? "bg-indigo-500/10 border border-indigo-500/20"
                 : "bg-surface-secondary"
             )}
           >
@@ -327,3 +327,4 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
 });
 
 export default FreeModelRankingsPanel;
+

@@ -19,7 +19,7 @@ export function SourcesPanel({ activeSources, onToggleSource }: SourcesPanelProp
         <div className="p-3 border-b border-edge">
             <button
                 onClick={() => setIsSourcesOpen(!isSourcesOpen)}
-                className="flex items-center justify-between w-full text-xs font-semibold text-content-secondary uppercase tracking-wider mb-2 hover:text-content"
+                className="flex items-center justify-between w-full text-xs font-semibold text-content-secondary mb-2 hover:text-content"
             >
                 <span>Live Sources</span>
                 <div className="flex items-center gap-2">

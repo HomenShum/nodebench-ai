@@ -21,18 +21,18 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
             key={data.phaseLabel}
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1 text-xs font-semibold uppercase tracking-wider text-content border border-edge"
+            className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1 text-xs font-semibold text-content border border-edge"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 motion-safe:animate-pulse"></span>
             {data.phaseLabel}
           </motion.div>
-          <div className="text-xs font-bold uppercase tracking-wider text-content-secondary">
+          <div className="text-xs font-bold text-content-secondary">
             Live Metrics
           </div>
         </div>
 
         <div className="mb-10">
-          <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-content-secondary">Market Sentiment</h4>
+          <h4 className="mb-3 text-xs font-bold text-content-secondary">Market Sentiment</h4>
           <div className="flex items-end gap-3 mb-2">
             <span className="text-5xl font-bold tracking-tighter text-content">{data.marketSentiment}</span>
             <span className="mb-1.5 text-sm font-medium text-content-secondary">/ 100</span>
@@ -72,7 +72,7 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
 
       <div className="mt-10 border-t border-edge pt-6">
         <div className="flex justify-between items-center text-xs">
-          <span className="font-medium text-content-secondary uppercase tracking-wider">Region Focus</span>
+          <span className="font-medium text-content-secondary">Region Focus</span>
           <motion.div
             key={data.activeRegion}
             initial={{ opacity: 0, x: 10 }}

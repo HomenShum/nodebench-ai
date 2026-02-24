@@ -526,7 +526,7 @@ export function BriefTab() {
         {/* Date pills */}
         {availableDates.length > 1 && (
           <div className="mt-3">
-            <div className="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+            <div className="text-xs text-slate-400 dark:text-slate-500 mb-1">
               Historical Briefs
             </div>
             <div className="flex flex-wrap gap-1">
@@ -560,7 +560,7 @@ export function BriefTab() {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {personalFeatures.length > 0 && (
           <div>
-            <div className="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+            <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">
               Personalized Tasks
             </div>
             <div className="space-y-2">
@@ -607,7 +607,7 @@ export function BriefTab() {
         )}
 
         <div>
-          <div className="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
+          <div className="text-xs text-slate-400 dark:text-slate-500 mb-2">
             Global Brief Tasks
           </div>
           <div className="space-y-2">

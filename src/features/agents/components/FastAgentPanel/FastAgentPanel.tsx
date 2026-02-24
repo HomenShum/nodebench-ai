@@ -2661,7 +2661,7 @@ export function FastAgentPanel({
                   {/* Conversation Memory Chips */}
                   {activeThreadId && messagesToRender && messagesToRender.length > 2 && (
                     <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                      <span className="text-xs font-medium text-content-muted uppercase tracking-wider mr-1">Context:</span>
+                      <span className="text-xs font-medium text-content-muted mr-1">Context:</span>
                       {(() => {
                         const topics = new Set<string>();
                         messagesToRender.slice(0, 6).forEach((m: any) => {
@@ -2749,7 +2749,7 @@ export function FastAgentPanel({
                       {/* Recent threads / last run */}
                       <div className="px-4 pb-5">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="text-xs font-bold text-content-secondary uppercase tracking-wider">
+                          <div className="text-xs font-bold text-content-secondary">
                             Recent chats
                           </div>
                           {threads.length > 0 && (
@@ -2895,7 +2895,7 @@ export function FastAgentPanel({
                             return (
                               <div className="flex items-center gap-3 py-2 mb-2">
                                 <div className="flex-1 h-px bg-[var(--border-color)]" />
-                                <span className="text-xs font-medium text-content-muted uppercase tracking-wider">{label}</span>
+                                <span className="text-xs font-medium text-content-muted">{label}</span>
                                 <div className="flex-1 h-px bg-[var(--border-color)]" />
                               </div>
                             );
@@ -3083,7 +3083,7 @@ export function FastAgentPanel({
             {/* Quick Actions Toolbar */}
             {messagesToRender && messagesToRender.length > 0 && !isBusy && (
               <div className="flex items-center gap-1 px-3 pt-1.5">
-                <span className="text-[8px] text-content-muted uppercase tracking-wider mr-1">Quick:</span>
+                <span className="text-[8px] text-content-muted mr-1">Quick:</span>
                 {[
                   { label: 'Summarize', action: 'Summarize the conversation so far in 3 bullet points' },
                   { label: 'Simplify', action: 'Explain your last response in simpler terms' },

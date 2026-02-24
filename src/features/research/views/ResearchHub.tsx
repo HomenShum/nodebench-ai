@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+﻿import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { ArrowRight, Newspaper, Zap, TrendingUp, Briefcase, LayoutGrid, Layers, Bell, ScrollText } from "lucide-react";
 import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
@@ -7,7 +7,7 @@ import { EvidenceProvider, useEvidence } from "@/features/research/contexts/Evid
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
 import type { FeedItem } from "@/features/research/components/FeedCard";
 import type { Evidence } from "@/features/research/types";
-// Critical-path imports: always visible on default 'overview' tab — inline to avoid skeleton flash
+// Critical-path imports: always visible on default 'overview' tab â€” inline to avoid skeleton flash
 import { DigestSection } from "@/features/research/sections/DigestSection";
 import { PersonalPulse } from "@/features/research/components/PersonalPulse";
 import { DashboardSection } from "@/features/research/sections/DashboardSection";
@@ -627,7 +627,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                         <Newspaper className="w-4 h-4 text-content" />
                         <h3 className="text-sm font-semibold text-content tracking-tight">Daily Summary</h3>
                         {selectedDate && (
-                          <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-medium border border-indigo-500/30/20 rounded">Past</span>
+                          <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-medium border border-indigo-500/20 rounded">Past</span>
                         )}
                       </div>
                       <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-indigo-600')} />
@@ -658,7 +658,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <TrendingUp className="w-4 h-4 text-content-secondary" />
                       <h3 className="text-sm font-semibold text-content tracking-tight">Latest Updates</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-indigo-500/10 text-content border border-indigo-500/30/30 text-xs font-medium rounded">Live</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-500/10 text-content border border-indigo-500/30 text-xs font-medium rounded">Live</div>
                   </div>
                   <div className="bg-surface-secondary p-4 border border-edge rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>
@@ -703,7 +703,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                 </section>
               )}
 
-              {/* Deals, Changes, Changelog tabs removed — accessible via Cmd+K */}
+              {/* Deals, Changes, Changelog tabs removed â€” accessible via Cmd+K */}
             </div>
           </div>
 
@@ -775,3 +775,4 @@ export default function ResearchHub(props: ResearchHubProps) {
     </EvidenceProvider>
   );
 }
+

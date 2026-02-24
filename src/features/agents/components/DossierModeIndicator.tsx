@@ -106,7 +106,7 @@ export const DossierModeIndicator: React.FC<DossierModeIndicatorProps> = ({
         {/* Sync indicator */}
         <div className="flex items-center gap-1">
           <Link2 className={cn("w-3 h-3", actConfig.color)} />
-          <span className={cn("text-xs font-medium uppercase tracking-wider", actConfig.color)}>
+          <span className={cn("text-xs font-medium", actConfig.color)}>
             Synced
           </span>
         </div>

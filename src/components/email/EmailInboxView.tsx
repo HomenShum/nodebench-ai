@@ -268,7 +268,7 @@ function EmailThreadRow({
           {/* Tags */}
           <div className="flex items-center gap-2 flex-wrap">
             {thread.aiPriority && thread.aiPriority !== 'normal' && (
-              <span className={`px-2 py-0.5 ${priorityColors[thread.aiPriority]} text-white text-xs rounded uppercase`}>
+              <span className={`px-2 py-0.5 ${priorityColors[thread.aiPriority]} text-white text-xs rounded`}>
                 {thread.aiPriority}
               </span>
             )}

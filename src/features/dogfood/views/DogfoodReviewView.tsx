@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAction, useConvex, useMutation, useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -135,7 +135,7 @@ function slugifyForFile(input: string) {
     .slice(0, 60);
 }
 
-// ── Overstory Status Panel ────────────────────────────────────────────────────
+// â”€â”€ Overstory Status Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 type OverstoryAgent = {
   name: string;
@@ -235,7 +235,7 @@ function OverstoryStatusPanel() {
           <>
             {/* Agent Fleet */}
             <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="text-xs font-medium text-muted-foreground tracking-wide">
                 Agent Fleet ({agentEntries.length} agents)
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -276,7 +276,7 @@ function OverstoryStatusPanel() {
             {/* Gate Policy */}
             {ovManifest.gatePolicy && (
               <div className="space-y-2">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="text-xs font-medium text-muted-foreground tracking-wide">
                   Gate Policy
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -311,7 +311,7 @@ function OverstoryStatusPanel() {
             {/* Mail Protocol */}
             {ovManifest.mailProtocol && (
               <div className="space-y-2">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="text-xs font-medium text-muted-foreground tracking-wide">
                   Mail Protocol ({ovManifest.mailProtocol.qaRoutes.length} routes)
                 </div>
                 <div className="rounded-md bg-muted/20 border border-border/50 p-2 space-y-1">
@@ -332,7 +332,7 @@ function OverstoryStatusPanel() {
 
             {/* Quick Commands */}
             <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="text-xs font-medium text-muted-foreground tracking-wide">
                 Commands
               </div>
               <div className="rounded-md bg-muted/30 border border-border/50 p-3 font-mono text-xs text-foreground whitespace-pre-wrap">
@@ -641,7 +641,7 @@ export function DogfoodReviewView() {
                 />
               </div>
               <div className="rounded-md border border-border/60 bg-background p-3">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chapters</div>
+                <div className="text-xs font-semibold text-muted-foreground tracking-wide">Chapters</div>
                 <div className="mt-2 max-h-[420px] overflow-auto space-y-1">
                   {walkthrough.chapters?.map((c) => (
                     <button
@@ -740,7 +740,7 @@ export function DogfoodReviewView() {
                   <div className="p-3 space-y-1">
                     <div className="text-sm font-medium text-foreground truncate">{f.name}</div>
                     <div className="text-xs text-muted-foreground font-mono truncate">
-                      {f.startSec.toFixed(1)}s · {f.path}
+                      {f.startSec.toFixed(1)}s Â· {f.path}
                     </div>
                   </div>
                 </button>
@@ -828,11 +828,11 @@ export function DogfoodReviewView() {
                       <img src={s.image} alt={s.title} className="w-full h-auto block" loading="eager" decoding="sync" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      <label className="text-xs font-semibold text-muted-foreground tracking-wide">
                         Step text (editable)
                       </label>
                       <textarea
-                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
                         value={s.description}
                         onChange={(e) => {
                           const next = e.target.value;
@@ -1033,11 +1033,11 @@ export function DogfoodReviewView() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <label className="text-xs font-semibold text-muted-foreground tracking-wide">
               Prompt override (optional)
             </label>
             <textarea
-              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
+              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
               value={qaPrompt}
               onChange={(e) => setQaPrompt(e.target.value)}
               placeholder="Leave blank to use the default design + performance QA rubric."
@@ -1053,12 +1053,12 @@ export function DogfoodReviewView() {
           {(qaLast || (qaRuns && qaRuns.length > 0)) && (
             <div className="space-y-3">
               <div className="flex items-baseline justify-between gap-3">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Recent runs</div>
+                <div className="text-xs font-semibold text-muted-foreground tracking-wide">Recent runs</div>
                 <div className="text-xs text-muted-foreground">
                   {qaLast ? (
                     <span>
                       Latest: <span className="font-mono">{formatMs(qaLast.createdAt)}</span>
-                      {qaLast.source ? <span className="font-mono"> · {qaLast.source}</span> : null}
+                      {qaLast.source ? <span className="font-mono"> Â· {qaLast.source}</span> : null}
                     </span>
                   ) : null}
                 </div>
@@ -1069,7 +1069,7 @@ export function DogfoodReviewView() {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="text-sm font-medium text-foreground">Summary</div>
                     <div className="text-xs text-muted-foreground font-mono">
-                      {formatMs(run.createdAt)} · {run.provider}/{run.model}{run.source ? ` · ${run.source}` : ""}
+                      {formatMs(run.createdAt)} Â· {run.provider}/{run.model}{run.source ? ` Â· ${run.source}` : ""}
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground whitespace-pre-wrap">{run.summary}</div>
@@ -1096,7 +1096,7 @@ export function DogfoodReviewView() {
                           <div className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{it.details}</div>
                           {it.suggestedFix && (
                             <div className="mt-2 text-sm text-foreground whitespace-pre-wrap">
-                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mr-2">
+                              <span className="text-xs font-semibold text-muted-foreground tracking-wide mr-2">
                                 Suggested fix:
                               </span>
                               {it.suggestedFix}
@@ -1113,7 +1113,7 @@ export function DogfoodReviewView() {
             </div>
           )}
 
-          {/* QA Trend — severity burndown over last 14 days */}
+          {/* QA Trend â€” severity burndown over last 14 days */}
           {qaTrending && qaTrending.length > 0 && (() => {
             const maxTotal = Math.max(...qaTrending.map((d) => d.total), 1);
             const latest = qaTrending[qaTrending.length - 1];
@@ -1131,7 +1131,7 @@ export function DogfoodReviewView() {
             return (
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between gap-3">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">QA Trend</div>
+                  <div className="text-xs font-semibold text-muted-foreground tracking-wide">QA Trend</div>
                   <div className="flex items-baseline gap-2 text-xs text-muted-foreground">
                     <span className="font-mono">p0+p1: {critLatest}</span>
                     {prev && (
@@ -1167,7 +1167,7 @@ export function DogfoodReviewView() {
           })()}
 
           {qaTrending !== undefined && qaTrending.length === 0 && (
-            <div className="text-xs text-muted-foreground">No QA runs in the last 14 days — run a QA session above to start tracking trends.</div>
+            <div className="text-xs text-muted-foreground">No QA runs in the last 14 days â€” run a QA session above to start tracking trends.</div>
           )}
         </div>
 
@@ -1199,7 +1199,7 @@ export function DogfoodReviewView() {
             {Object.entries(grouped).map(([kind, items]) => (
               <section key={kind} className="space-y-3">
                 <div className="flex items-end justify-between">
-                  <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                  <h2 className="text-sm font-semibold text-foreground tracking-wide">
                     {kind} <span className="text-muted-foreground font-medium">({items.length})</span>
                   </h2>
                   <div className="text-xs text-muted-foreground">
@@ -1235,7 +1235,7 @@ export function DogfoodReviewView() {
           </div>
         )}
 
-        {/* ── Local Script QA Score History ── */}
+        {/* â”€â”€ Local Script QA Score History â”€â”€ */}
         {(localQaResults !== null || localQaError) && (
           <div className="nb-surface-card overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
@@ -1351,7 +1351,7 @@ export function DogfoodReviewView() {
                               </span>
                             )}
                             <span className="ml-auto text-xs text-muted-foreground font-mono">
-                              {e.ts ? new Date(e.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : "—"}
+                              {e.ts ? new Date(e.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : "â€”"}
                             </span>
                           </div>
                         );
@@ -1364,7 +1364,7 @@ export function DogfoodReviewView() {
           </div>
         )}
 
-        {/* ── Overstory QA Orchestration Panel ── */}
+        {/* â”€â”€ Overstory QA Orchestration Panel â”€â”€ */}
         <OverstoryStatusPanel />
 
         <div className="nb-surface-card p-5 space-y-2">
@@ -1381,3 +1381,4 @@ export function DogfoodReviewView() {
     </div>
   );
 }
+

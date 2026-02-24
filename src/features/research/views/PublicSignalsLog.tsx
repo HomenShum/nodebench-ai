@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+﻿import { useMemo, useState, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import ReactMarkdown from "react-markdown";
@@ -55,8 +55,18 @@ function formatUrlLabel(url: string) {
   }
 }
 
+function repairMojibake(text: string): string {
+  return text
+    .replace(/Ã¢â‚¬â€|â€”/g, "—")
+    .replace(/Ã¢â‚¬â€œ|â€“/g, "–")
+    .replace(/Ã¢â‚¬Â¢|â€¢/g, "•")
+    .replace(/Ã¢â‚¬Â¦|â€¦/g, "...")
+    .replace(/Â·/g, "·")
+    .replace(/Â/g, "");
+}
+
 function sanitizeSignalMarkdown(raw: string): string {
-  const normalized = raw.replace(/\r\n/g, "\n");
+  const normalized = repairMojibake(raw).replace(/\r\n/g, "\n");
   const mapped = normalized
     .replace(/\bai_ml\b/gi, "AI & ML")
     .replace(/\bopen_source\b/gi, "Open Source")
@@ -76,11 +86,14 @@ function sanitizeSignalMarkdown(raw: string): string {
       .replace(/\[?Open Signals Log\]?\([^)]*\)/gi, "")
       .replace(/\s*\[?Dashboard\]?\(\/[^)]*\)/gi, "")
       .replace(/\s+Dashboard\s*$/gi, "")
-      .replace(/\s+Source\s*$/g, "");
+      .replace(/\s+Source\s*$/g, "")
+      .replace(/\s+(Source|Dashboard)(?:\s+\1)+\s*$/gi, " $1")
+      .replace(/(\bSource\b|\bDashboard\b)\s+(?=\1\b)/gi, "");
 
     const trimmed = line.trim();
     if (
       /^(?:\*+\s*)?source[:]?$/i.test(trimmed) ||
+      /^(?:\*+\s*)?dashboard[:]?$/i.test(trimmed) ||
       /^(?:\*+\s*)?\[source\]\([^)]*\)$/i.test(trimmed)
     ) {
       continue;
@@ -181,9 +194,16 @@ export function PublicSignalsLog() {
                     <div className="text-xs px-2 py-0.5 rounded bg-surface-secondary text-content">
                       {formatKindLabel(e.kind)}
                     </div>
-                    <div className="text-sm font-semibold text-content">{e.title}</div>
+                    <div className="text-sm font-semibold text-content">
+                      {repairMojibake(String(e.title ?? ""))}
+                    </div>
                     <div className="ml-auto text-xs text-content-secondary">
-                      {typeof e.createdAt === "number" ? new Date(e.createdAt).toLocaleTimeString() : ""}
+                      {typeof e.createdAt === "number"
+                        ? new Date(e.createdAt).toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })
+                        : ""}
                     </div>
                   </div>
 
@@ -202,7 +222,7 @@ export function PublicSignalsLog() {
                   {Array.isArray(e.tags) && e.tags.length ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {e.tags.map((t: string) => (
-                        <span key={t} className="text-xs px-2 py-0.5 rounded border border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        <span key={t} className="text-xs px-2 py-0.5 rounded border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                           {t.replace(/_/g, ' ')}
                         </span>
                       ))}
@@ -217,3 +237,4 @@ export function PublicSignalsLog() {
     </div>
   );
 }
+

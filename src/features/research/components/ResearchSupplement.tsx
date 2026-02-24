@@ -200,7 +200,7 @@ const SupplementSectionCard: React.FC<SupplementSectionCardProps> = ({
               {/* Citation links */}
               {section.citationIds && section.citationIds.length > 0 && (
                 <div className="mt-4 pt-3 border-t border-edge">
-                  <span className="text-xs text-content-secondary uppercase tracking-wider">
+                  <span className="text-xs text-content-secondary">
                     Related Sources:
                   </span>
                   <div className="flex flex-wrap gap-1 mt-1">

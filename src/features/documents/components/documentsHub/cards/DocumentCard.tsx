@@ -608,7 +608,7 @@ export function DocumentCard({
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-edge">
           {/* Left: Type & Size */}
           <div className="flex items-center gap-1.5 text-xs text-content-muted min-w-0">
-            <span className="font-semibold uppercase tracking-wider">
+            <span className="font-semibold">
               {typeGuess === 'nbdoc' ? 'DOC' : typeGuess}
             </span>
             {formatFileSize(doc.fileSize) && (

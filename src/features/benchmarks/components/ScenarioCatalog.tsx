@@ -204,7 +204,12 @@ function ScenarioRow({
           className="
             flex items-center gap-1.5 px-2.5 py-1 rounded border border-edge
             bg-surface-secondary text-[11px] font-medium text-content-muted
-            opacity-60 cursor-not-allowed
+            opacity-70 cursor-not-allowed transition-colors
+            disabled:pointer-events-auto
+            disabled:hover:bg-surface
+            disabled:hover:border-content-muted/30
+            disabled:hover:text-content-secondary
+            group-hover:opacity-100
           "
         >
           <Play className="w-3 h-3" />

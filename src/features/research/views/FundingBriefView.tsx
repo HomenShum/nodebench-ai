@@ -44,17 +44,17 @@ const ROUND_TYPE_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
-// Sector category colors
-const SECTOR_COLORS: Record<string, { bg: string; text: string }> = {
-  healthcare: { bg: "bg-red-100 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400" },
-  fintech: { bg: "bg-green-100 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400" },
-  ai_ml: { bg: "bg-purple-100 dark:bg-purple-950/30", text: "text-purple-700 dark:text-purple-400" },
-  enterprise: { bg: "bg-blue-100 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400" },
-  consumer: { bg: "bg-orange-100 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400" },
-  deeptech: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-indigo-700 dark:text-indigo-400" },
-  climate: { bg: "bg-indigo-100 dark:bg-indigo-950/30", text: "text-content-secondary dark:text-content-muted" },
-  technology: { bg: "bg-surface-secondary", text: "text-content-secondary dark:text-content-muted" },
-  other: { bg: "bg-surface-secondary", text: "text-content-secondary dark:text-content-muted" },
+// Sector category colors — subtle left-border accent + neutral surface
+const SECTOR_COLORS: Record<string, { bg: string; text: string; border?: string }> = {
+  healthcare: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-red-400/60" },
+  fintech: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-green-400/60" },
+  ai_ml: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-purple-400/60" },
+  enterprise: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-blue-400/60" },
+  consumer: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-orange-400/60" },
+  deeptech: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-indigo-400/60" },
+  climate: { bg: "bg-surface-secondary", text: "text-content-secondary", border: "border-l-2 border-l-teal-400/60" },
+  technology: { bg: "bg-surface-secondary", text: "text-content-secondary" },
+  other: { bg: "bg-surface-secondary", text: "text-content-secondary" },
 };
 
 // Verification status badges
@@ -66,14 +66,14 @@ function VerificationBadge({
   const config = {
     verified: {
       icon: CheckCircle,
-      color: "text-green-600 dark:text-green-400",
-      bg: "bg-green-50 dark:bg-green-950/30",
+      color: "text-content-secondary",
+      bg: "bg-surface-secondary",
       label: "Verified",
     },
     pending: {
       icon: Clock,
-      color: "text-yellow-600 dark:text-yellow-400",
-      bg: "bg-yellow-50 dark:bg-yellow-950/30",
+      color: "text-content-muted",
+      bg: "bg-surface-secondary",
       label: "Pending",
     },
     unverified: {
@@ -156,7 +156,7 @@ function FundingCard({
             <h3 className="font-semibold text-content truncate">
               {/^unknown\s*company/i.test(event.companyName) ? 'Undisclosed' : event.companyName}
             </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">
               {ROUND_TYPE_LABELS[event.roundType] || event.roundType}
             </span>
             {event.verificationStatus && (
@@ -182,10 +182,10 @@ function FundingCard({
             <div
               className={`text-sm font-semibold ${
                 event.confidence >= 0.8
-                  ? "text-green-600 dark:text-green-400"
+                  ? "text-content"
                   : event.confidence >= 0.6
-                    ? "text-yellow-600 dark:text-yellow-400"
-                    : "text-red-500 dark:text-red-400"
+                    ? "text-content-secondary"
+                    : "text-content-muted"
               }`}
             >
               {Math.round(event.confidence * 100)}%
@@ -197,7 +197,7 @@ function FundingCard({
       {/* Metadata Row */}
       <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-content-secondary">
         {event.sector && (
-          <span className={`px-2 py-0.5 rounded-full text-xs ${sectorColor.bg} ${sectorColor.text}`}>
+          <span className={`px-2 py-0.5 rounded-full text-xs ${sectorColor.bg} ${sectorColor.text} ${sectorColor.border || ""}`}>
             {event.sector}
           </span>
         )}
@@ -240,7 +240,7 @@ function FundingCard({
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-3 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300"
+          className="flex items-center gap-1 mt-3 text-xs text-accent hover:text-accent/80"
           aria-expanded={expanded}
         >
           <ChevronDown
@@ -287,7 +287,7 @@ function FundingCard({
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1"
+                    className="text-xs text-accent hover:underline truncate flex items-center gap-1"
                   >
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     {event.sourceNames?.[idx] || url}
@@ -595,14 +595,14 @@ export function FundingBriefView() {
 
         {/* PDF Error Toast */}
         {pdfError && (
-          <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-lg flex items-center justify-between">
-            <span className="text-sm text-red-700">
+          <div className="mb-4 p-3 bg-surface-secondary border border-edge rounded-lg flex items-center justify-between">
+            <span className="text-sm text-content-secondary">
               PDF generation failed: {pdfError.message}
             </span>
             <button
               type="button"
               onClick={clearError}
-              className="text-red-500 hover:text-red-700 text-sm font-medium"
+              className="text-content-muted hover:text-content text-sm font-medium"
             >
               Dismiss
             </button>
@@ -619,7 +619,7 @@ export function FundingBriefView() {
           <select
             value={lookbackDays}
             onChange={(e) => setLookbackDays(Number(e.target.value))}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Time range"
           >
             <option value={7}>Last 7 days</option>
@@ -635,7 +635,7 @@ export function FundingBriefView() {
           <select
             value={roundTypeFilter}
             onChange={(e) => setRoundTypeFilter(e.target.value)}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Round type"
           >
             <option value="">All Rounds</option>
@@ -651,7 +651,7 @@ export function FundingBriefView() {
             placeholder="Filter by sector..."
             value={sectorFilter}
             onChange={(e) => setSectorFilter(e.target.value)}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Filter by sector"
           />
         </div>

@@ -52,7 +52,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
     <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Model Comparison</div>
+          <div className="text-xs font-bold text-content-muted">Model Comparison</div>
           <div className="text-sm font-semibold text-content">{context ?? modelKey}</div>
         </div>
         <button
@@ -70,7 +70,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
       )}
 
       {comparison?.recommendation && (
-        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-content text-xs font-bold uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-content text-xs font-bold">
           <TrendingUp className="w-3 h-3" />
           {comparison.recommendation}
         </div>

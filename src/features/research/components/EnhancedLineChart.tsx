@@ -137,7 +137,7 @@ function ChartHeader({ config, isLoading, onRefresh }: {
       <div className="min-w-0 flex-1">
         {/* Title with unit */}
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide truncate">
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 tracking-wide truncate">
             {config.title || "Trend"}
             {config.yAxisUnit && <span className="text-slate-400 dark:text-slate-500 font-normal"> ({config.yAxisUnit})</span>}
           </h3>
@@ -895,7 +895,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
               <div className={`bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs min-w-[120px] ${activePoint.isPinned ? "ring-2 ring-indigo-400" : ""
                 }`}>
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-xs uppercase tracking-wider text-indigo-200">
+                  <span className="text-xs text-indigo-200">
                     {activePoint.pointTooltip?.kicker ?? "Intel"}
                   </span>
                   {activePoint.isPinned && (
@@ -919,7 +919,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 {/* Evidence count */}
                 {(activePoint.linkedEvidenceIds?.length ?? 0) > 0 && (
                   <div className="mt-2 pt-2 border-t border-slate-700">
-                    <div className="text-xs text-slate-400 uppercase tracking-wider">
+                    <div className="text-xs text-slate-400">
                       Sources ({activePoint.linkedEvidenceIds?.length})
                     </div>
                     <div className="mt-1 space-y-1">

@@ -94,7 +94,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
                 transition={{ duration: 2, repeat: Infinity }}
                 className={`w-2 h-2 rounded-full ${colors.accent} ${colors.glow}`}
               />
-              <span className={`font-mono text-xs font-bold uppercase tracking-wider ${colors.accentText}/80`}>
+              <span className={`font-mono text-xs font-bold ${colors.accentText}/80`}>
                 {data.kicker || "Intel Log"}
               </span>
             </div>
@@ -114,7 +114,7 @@ export const ChartTooltip = ({ active, data, onEvidenceClick }: TooltipProps) =>
               <div className="relative mt-3 pt-2 border-t border-slate-700/50">
                 <div className="flex items-center gap-1 mb-1.5">
                   <FileText size={10} className={colors.accentText} />
-                  <span className="font-mono text-[10px] uppercase tracking-wide text-slate-400">
+                  <span className="font-mono text-[10px] tracking-wide text-slate-400">
                     Sources ({data.linkedEvidence.length})
                   </span>
                 </div>

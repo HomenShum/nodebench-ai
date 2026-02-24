@@ -47,7 +47,7 @@ export const PaperDetailsCard: React.FC<PaperDetailsCardProps> = ({ url, title }
     <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-content-muted">Citation Card</div>
+          <div className="text-xs font-bold text-content-muted">Citation Card</div>
           <div className="text-sm font-semibold text-content">{details?.title ?? "Research Paper"}</div>
         </div>
         <button
@@ -73,20 +73,20 @@ export const PaperDetailsCard: React.FC<PaperDetailsCardProps> = ({ url, title }
       )}
 
       <div className="text-xs text-content-secondary leading-relaxed">
-        <span className="text-xs font-bold uppercase tracking-wider text-content-muted">Abstract</span>
+        <span className="text-xs font-bold text-content-muted">Abstract</span>
         <div className="mt-1">{details?.abstract || "Abstract unavailable."}</div>
       </div>
 
       {details?.methodology && (
         <div className="text-xs text-content-secondary leading-relaxed">
-          <span className="text-xs font-bold uppercase tracking-wider text-content-muted">Methodology</span>
+          <span className="text-xs font-bold text-content-muted">Methodology</span>
           <div className="mt-1">{details.methodology}</div>
         </div>
       )}
 
       {details?.keyFindings?.length > 0 && (
         <div className="text-xs text-content-secondary">
-          <span className="text-xs font-bold uppercase tracking-wider text-content-muted">Key Findings</span>
+          <span className="text-xs font-bold text-content-muted">Key Findings</span>
           <ul className="mt-2 list-disc list-inside space-y-1">
             {details.keyFindings.slice(0, 4).map((item: string, idx: number) => (
               <li key={`${item}-${idx}`}>{item}</li>

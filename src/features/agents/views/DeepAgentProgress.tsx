@@ -29,7 +29,7 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                     )}
                 </div>
                 <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-content">
+                    <h3 className="text-sm font-bold text-content">
                         {isComplete ? "Deep Research Complete" : "Deep Research in Progress"}
                     </h3>
                     <p className="text-xs text-content-secondary">

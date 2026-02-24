@@ -30,7 +30,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         </span>
                         <span className="text-content">{todayFormatted}</span>
                         <span className="text-[color:var(--bg-tertiary)]">|</span>
-                        <span className="text-content font-bold tracking-wide uppercase text-xs">
+                        <span className="text-content font-bold tracking-wide text-xs">
                             Daily Brief
                         </span>
                     </div>
