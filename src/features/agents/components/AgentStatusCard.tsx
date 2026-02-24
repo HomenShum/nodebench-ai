@@ -180,7 +180,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
       className={cn(
         "group bg-surface rounded-container border border-edge",
         "transition-all duration-200 hover:shadow-hover hover:bg-surface-secondary",
-        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-[var(--accent-primary)]/40"
+        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-indigo-500/50/40"
       )}
     >
       {/* Header */}

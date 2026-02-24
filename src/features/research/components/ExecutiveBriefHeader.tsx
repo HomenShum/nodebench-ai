@@ -101,7 +101,7 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
       type="button"
       onClick={onClick}
       className={`px-4 py-2 text-xs font-medium rounded-lg transition-all tracking-wider uppercase ${isSelected
-        ? "bg-[var(--accent-primary)] text-white shadow-sm"
+        ? "bg-indigo-600 text-white shadow-sm"
         : "bg-surface text-content-secondary hover:text-content hover:bg-surface-hover border border-edge"
         }`}
     >

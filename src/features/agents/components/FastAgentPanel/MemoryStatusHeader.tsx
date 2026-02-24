@@ -89,7 +89,7 @@ export function MemoryStatusHeader({
                 className={cn(
                     "w-full flex items-center justify-between px-3 py-1.5",
                     "hover:bg-surface-secondary transition-colors",
-                    "focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)]"
+                    "focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50"
                 )}
             >
                 <div className="flex items-center gap-2 min-w-0">
@@ -139,7 +139,7 @@ export function MemoryStatusHeader({
             {!isExpanded && (
                 <div className="h-0.5 bg-surface-secondary">
                     <div
-                        className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] transition-all duration-300"
+                        className="h-full bg-gradient-to-r from-[rgb(79, 70, 229)] to-[var(--accent-secondary)] transition-all duration-300"
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>

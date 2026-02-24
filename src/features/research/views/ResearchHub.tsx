@@ -475,7 +475,7 @@ function ResearchHubContent(props: ResearchHubProps) {
       {!embedded && (
         <header className="h-16 bg-background/95  sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-md flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
+            <div className="w-10 h-10 bg-indigo-600 rounded-md flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
@@ -506,7 +506,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       key={date}
                       onClick={() => setSelectedDate(date)}
                       className={`px-3 py-1 text-xs font-medium transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
-                        ? "bg-[var(--accent-primary)] text-white"
+                        ? "bg-indigo-600 text-white"
                         : "text-content-muted hover:text-content"
                         }`}
                     >
@@ -517,7 +517,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-[var(--accent-primary)] text-white" : "text-content-muted"}`}
+                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-indigo-600 text-white" : "text-content-muted"}`}
                   >
                     Latest
                   </button>
@@ -603,7 +603,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all',
                       activeTab === tab.id
-                        ? 'bg-surface text-[var(--accent-primary)] shadow-sm border border-[var(--accent-primary)]/40 ring-1 ring-[var(--accent-primary)]/10'
+                        ? 'bg-surface text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-500/30/40 ring-1 ring-indigo-500/50/10'
                         : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                     )}
                   >
@@ -627,10 +627,10 @@ function ResearchHubContent(props: ResearchHubProps) {
                         <Newspaper className="w-4 h-4 text-content" />
                         <h3 className="text-sm font-semibold text-content tracking-tight">Daily Summary</h3>
                         {selectedDate && (
-                          <span className="px-1.5 py-0.5 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] text-xs font-medium border border-[var(--accent-primary)]/20 rounded">Past</span>
+                          <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-medium border border-indigo-500/30/20 rounded">Past</span>
                         )}
                       </div>
-                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-[var(--accent-primary)]')} />
+                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-indigo-600')} />
                     </div>
                     <DigestSection
                       onItemClick={handleDigestItemClick}
@@ -658,7 +658,7 @@ function ResearchHubContent(props: ResearchHubProps) {
                       <TrendingUp className="w-4 h-4 text-content-secondary" />
                       <h3 className="text-sm font-semibold text-content tracking-tight">Latest Updates</h3>
                     </div>
-                    <div className="px-1.5 py-0.5 bg-[var(--accent-primary-bg)] text-content border border-[var(--accent-primary)]/30 text-xs font-medium rounded">Live</div>
+                    <div className="px-1.5 py-0.5 bg-indigo-500/10 text-content border border-indigo-500/30/30 text-xs font-medium rounded">Live</div>
                   </div>
                   <div className="bg-surface-secondary p-4 border border-edge rounded-lg">
                     <React.Suspense fallback={<SectionLoading />}>

@@ -106,7 +106,7 @@ export function getThemeForFileType(type: FileType): DocumentCardTheme {
       return {
         ring: "",
         gradient: "",
-        iconBg: "bg-[var(--accent-primary)]",
+        iconBg: "bg-indigo-600",
         label: "bg-surface border-edge text-content-secondary",
         watermarkText: "text-content-secondary",
       } as const;

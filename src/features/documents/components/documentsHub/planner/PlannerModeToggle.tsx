@@ -52,7 +52,7 @@ export function PlannerModeToggle({ mode, onChange }: PlannerModeToggleProps) {
   };
 
   const baseClasses = "flex items-center gap-2 px-3 py-2 text-sm ";
-  const activeClasses = "bg-[var(--accent-primary)] text-white";
+  const activeClasses = "bg-indigo-600 text-white";
   const inactiveClasses = "text-content-secondary hover:text-content hover:bg-surface-hover";
 
   const listClasses = baseClasses + (mode === "list" ? activeClasses : inactiveClasses);

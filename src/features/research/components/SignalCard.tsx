@@ -72,7 +72,7 @@ export function SignalCard({
                  hover:border-edge transition-all duration-200"
     >
       {/* Left Accent Border */}
-      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--accent-primary)]" />
+      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-600" />
 
       {/* Header - Always Visible */}
       <button

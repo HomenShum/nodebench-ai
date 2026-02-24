@@ -166,7 +166,7 @@ export const AutonomousOperationsPanel = memo(function AutonomousOperationsPanel
         className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-[var(--accent-primary)]" />
+          <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <h3 className="text-sm font-semibold text-content">
             Autonomous Operations
           </h3>

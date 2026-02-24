@@ -142,7 +142,7 @@ const ModeSelector = memo(function ModeSelector({
                 className={cn(
                   "w-full flex items-start gap-2 px-3 py-2 text-left",
                   "hover:bg-surface-hover transition-colors",
-                  mode === key && "bg-[var(--accent-primary-bg)]"
+                  mode === key && "bg-indigo-500/10"
                 )}
               >
                 <ModeIcon className="w-4 h-4 mt-0.5 text-indigo-600 dark:text-indigo-400" />
@@ -202,7 +202,7 @@ const ModelSelector = memo(function ModelSelector({
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-left",
                 "hover:bg-surface-hover transition-colors",
-                model === m.value && "bg-[var(--accent-primary-bg)]"
+                model === m.value && "bg-indigo-500/10"
               )}
             >
               <div className="flex items-center gap-1.5">
@@ -318,7 +318,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
         <div
           className={cn(
             "flex flex-col bg-surface rounded-lg border border-edge",
-            "focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/20",
+            "focus-within:ring-2 focus-within:ring-indigo-500/50/20",
             "focus-within:border-indigo-500/30/50 transition-all"
           )}
         >
@@ -345,7 +345,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
               aria-label="Send message"
               className={cn(
                 "flex items-center justify-center w-8 h-8 rounded-lg",
-                "bg-[var(--accent-primary)] text-white",
+                "bg-indigo-600 text-white",
                 "hover:opacity-90 transition-opacity",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}

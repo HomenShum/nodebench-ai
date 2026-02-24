@@ -42,17 +42,17 @@ export function SignatureOrb({
               className={`absolute inset-0 will-change-transform ${reduceMotion ? "" : "motion-safe:animate-spin-slow"}`}
             >
               <div className="absolute inset-0 rounded-full border border-edge scale-100" />
-              <div className="absolute inset-0 rounded-full border border-[var(--accent-primary)]/20 scale-[1.3]" />
+              <div className="absolute inset-0 rounded-full border border-indigo-500/30/20 scale-[1.3]" />
             </div>
             {/* Glow halo */}
-            <div className="absolute inset-0 rounded-full bg-[var(--accent-primary)]/[0.06] blur-2xl scale-[1.3]" />
+            <div className="absolute inset-0 rounded-full bg-indigo-600/[0.06] blur-2xl scale-[1.3]" />
             {/* Pulsing core */}
             <div
               className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-surface border border-edge overflow-hidden shadow-sm ${reduceMotion ? "" : "motion-safe:animate-pulse-subtle"}`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)]/[0.08] via-transparent to-[var(--accent-primary)]/[0.04] rounded-full" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[rgb(79, 70, 229)]/[0.08] via-transparent to-[rgb(79, 70, 229)]/[0.04] rounded-full" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-[var(--accent-primary)]/60 shadow-[0_0_20px_var(--accent-primary)]" />
+                <div className="w-3 h-3 rounded-full bg-indigo-600/60 shadow-[0_0_20px_rgb(79, 70, 229)]" />
               </div>
             </div>
           </div>
@@ -70,11 +70,11 @@ export function SignatureOrb({
           <div className="w-16 h-16 relative flex items-center justify-center">
             {/* Spinning ring */}
             <div
-              className={`absolute inset-0 rounded-full border-2 border-edge border-t-[var(--accent-primary)] ${reduceMotion ? "" : "motion-safe:animate-spin"}`}
+              className={`absolute inset-0 rounded-full border-2 border-edge border-t-[rgb(79, 70, 229)] ${reduceMotion ? "" : "motion-safe:animate-spin"}`}
               style={reduceMotion ? undefined : { animationDuration: "1.2s" }}
             />
             {/* Static inner dot */}
-            <div className="w-2 h-2 rounded-full bg-[var(--accent-primary)]/50" />
+            <div className="w-2 h-2 rounded-full bg-indigo-600/50" />
           </div>
         </div>
       );
@@ -86,7 +86,7 @@ export function SignatureOrb({
           className={`absolute pointer-events-none ${className}`}
           aria-hidden="true"
         >
-          <div className="w-[300px] h-[300px] rounded-full bg-[var(--accent-primary)]/[0.04] blur-[80px]" />
+          <div className="w-[300px] h-[300px] rounded-full bg-indigo-600/[0.04] blur-[80px]" />
         </div>
       );
 
@@ -100,10 +100,10 @@ export function SignatureOrb({
         >
           {/* Ping ring */}
           {!reduceMotion && (
-            <span className="absolute w-3 h-3 rounded-full bg-[var(--accent-primary)]/30 motion-safe:animate-ping" />
+            <span className="absolute w-3 h-3 rounded-full bg-indigo-600/30 motion-safe:animate-ping" />
           )}
           {/* Static dot */}
-          <span className="relative w-2 h-2 rounded-full bg-[var(--accent-primary)]" />
+          <span className="relative w-2 h-2 rounded-full bg-indigo-600" />
         </span>
       );
 

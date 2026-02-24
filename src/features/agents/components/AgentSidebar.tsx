@@ -292,7 +292,7 @@ const MemoryStats = memo(function MemoryStats() {
           </div>
           <div className="h-1.5 bg-surface-secondary rounded-full overflow-hidden">
             <div
-              className="h-full bg-[var(--accent-primary)] rounded-full"
+              className="h-full bg-indigo-600 rounded-full"
               style={{ width: `${(stats.tokenUsage / 50000) * 100}%` }}
             />
           </div>

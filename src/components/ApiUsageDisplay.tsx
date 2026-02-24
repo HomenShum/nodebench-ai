@@ -30,7 +30,7 @@ export function ApiUsageDisplay() {
   return (
     <div className="p-4 border border-edge rounded-lg space-y-4 bg-surface shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <Activity className="h-5 w-5 text-[var(--accent-primary)]" />
+        <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
         <h3 className="font-semibold text-lg text-content">Usage</h3>
       </div>
 
@@ -86,7 +86,7 @@ export function ApiUsageDisplay() {
       {summary.totalCost > 0 && (
         <div className="p-3 bg-surface-secondary rounded-lg border border-edge">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-[var(--accent-primary)]" />
+            <DollarSign className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
             <span className="text-sm font-medium text-content-secondary">Estimated Cost</span>
           </div>
           <div className="text-2xl font-bold text-content mt-1">
@@ -118,7 +118,7 @@ export function ApiUsageDisplay() {
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${apiName === 'linkup' ? 'bg-blue-500' :
                         apiName === 'youtube' ? 'bg-red-500' :
-                          apiName === 'openai' ? 'bg-[var(--accent-primary)]' :
+                          apiName === 'openai' ? 'bg-indigo-600' :
                             'bg-content-muted'
                         }`} />
                       <span className="text-sm font-semibold capitalize text-content">{apiName}</span>
@@ -157,8 +157,8 @@ export function ApiUsageDisplay() {
       )}
 
       {/* Info Note */}
-      <div className="flex items-start gap-2 p-3 bg-[var(--accent-primary-bg)] rounded-lg border border-[var(--accent-primary)] opacity-80 shadow-sm">
-        <AlertCircle className="h-4 w-4 text-[var(--accent-primary)] flex-shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2 p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/30 opacity-80 shadow-sm">
+        <AlertCircle className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
         <div className="text-xs space-y-1">
           <div className="font-bold text-content uppercase tracking-wider mb-1">Usage Tracking</div>
           <div className="text-content-secondary space-y-0.5">

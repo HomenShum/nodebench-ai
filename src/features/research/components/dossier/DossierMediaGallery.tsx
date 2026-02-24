@@ -189,7 +189,7 @@ function MediaSection({
     <div
       className={`
         border-b border-edge
-        ${isHighlighted ? 'bg-[var(--accent-primary-bg)] ring-2 ring-[var(--accent-primary)] ring-inset' : ''}
+        ${isHighlighted ? 'bg-indigo-500/10 ring-2 ring-indigo-500/50 ring-inset' : ''}
         transition-all duration-200
       `}
     >

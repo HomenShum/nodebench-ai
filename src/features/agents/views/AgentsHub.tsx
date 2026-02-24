@@ -100,7 +100,7 @@ function QuickStatsBar() {
       value: stats.totalAgents,
       label: "AI Assistants",
       icon: Bot,
-      color: "text-[var(--accent-primary)]",
+      color: "text-indigo-600 dark:text-indigo-400",
     },
     {
       value: stats.activeNow,
@@ -112,7 +112,7 @@ function QuickStatsBar() {
       value: stats.tasksCompleted,
       label: "Tasks Completed",
       icon: TrendingUp,
-      color: "text-[var(--accent-primary)]",
+      color: "text-indigo-600 dark:text-indigo-400",
     },
     {
       value: `${stats.successRate}%`,
@@ -258,7 +258,7 @@ function ActiveSwarmsSection() {
         className="w-full flex items-center justify-between p-4 hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
+          <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <h3 className="type-section-title text-content">
             Running Tasks
           </h3>
@@ -368,7 +368,7 @@ export function AgentsHub() {
             {/* Agent Status Grid */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-4 h-4 text-[var(--accent-primary)]" />
+                <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <h2 className="type-section-title text-content">
                   Available Agents
                 </h2>
@@ -392,14 +392,14 @@ export function AgentsHub() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <h2 className="type-section-title text-content">
                     Task History
                   </h2>
                 </div>
                 <a
                   href="/#activity"
-                  className="flex items-center gap-1 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:underline"
+                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 hover:underline"
                 >
                   Public Feed <ExternalLink className="w-3 h-3" />
                 </a>
@@ -414,7 +414,7 @@ export function AgentsHub() {
             {/* Coming Soon Banner */}
             <div className="nb-surface-card p-6 bg-gradient-to-r from-[var(--accent-primary-bg)] to-surface-secondary">
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="w-5 h-5 text-[var(--accent-primary)]" />
+                <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 <h3 className="font-semibold text-content">
                   Background Research Active
                 </h3>

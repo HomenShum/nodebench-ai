@@ -97,7 +97,7 @@ function ChannelRow({
   return (
     <div
       data-testid={`channel-row-${meta.id}`}
-      className={`rounded-lg border ${config.enabled ? "border-[var(--accent-primary)] bg-[var(--accent-primary-bg)]" : "border-edge bg-surface"} transition-colors`}
+      className={`rounded-lg border ${config.enabled ? "border-indigo-500/30 bg-indigo-500/10" : "border-edge bg-surface"} transition-colors`}
     >
       {/* Header row */}
       <div className="flex items-center gap-3 p-3">
@@ -114,7 +114,7 @@ function ChannelRow({
               <span className="text-xs px-1.5 py-0.5 rounded bg-surface-secondary border border-edge text-content-secondary">OpenClaw</span>
             )}
             {inFallback && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-surface-secondary border border-edge text-[var(--accent-primary)]">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-surface-secondary border border-edge text-indigo-600 dark:text-indigo-400">
                 #{fallbackIndex + 1} priority
               </span>
             )}
@@ -190,7 +190,7 @@ function ChannelRow({
           <label className="flex items-center gap-2 text-xs">
             <input
               type="checkbox"
-              className="h-3.5 w-3.5 text-[var(--accent-primary)] rounded border-edge dark:border-gray-600"
+              className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 rounded border-edge dark:border-gray-600"
               checked={config.optedIn}
               onChange={(e) => onUpdate({ optedIn: e.target.checked })}
               data-testid={`channel-optin-${meta.id}`}
@@ -411,7 +411,7 @@ export function ChannelPreferencesTab() {
               const meta = getChannelMeta(id);
               return (
                 <React.Fragment key={id}>
-                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-surface border border-edge text-[var(--accent-primary)]">
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-surface border border-edge text-indigo-600 dark:text-indigo-400">
                     {meta?.label ?? id}
                   </span>
                   {i < arr.length - 1 && <span className="text-xs text-blue-400">→</span>}

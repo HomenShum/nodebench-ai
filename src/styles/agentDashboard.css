@@ -1,8 +1,8 @@
 /* Minimal, scoped styles for Agent Dashboard to complement existing Tailwind/util classes */
 .agent-dashboard .document-card__bg { position: absolute; right: 8px; top: 8px; opacity: 0.08; pointer-events: none; }
-.agent-dashboard .now-line { position: absolute; top: 80px; bottom: 0; width: 2px; background: var(--accent-primary); opacity: 0.7; }
+.agent-dashboard .now-line { position: absolute; top: 80px; bottom: 0; width: 2px; background: rgb(79, 70, 229); opacity: 0.7; }
 .agent-dashboard .chip { border: 1px solid var(--border-color); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--text-secondary); }
-.agent-dashboard .chip.active { background: var(--accent-primary-bg); color: var(--accent-primary); border-color: color-mix(in srgb, var(--accent-primary), transparent 70%); }
+.agent-dashboard .chip.active { background: var(--accent-primary-bg); color: rgb(79, 70, 229); border-color: color-mix(in srgb, rgb(79, 70, 229), transparent 70%); }
 
 /* Badges to mirror prototype styling */
 .agent-dashboard .badge-orchestrator { background: #EEF2FF; color: var(--accent-primary, #6366F1); border: 1px solid #C7D2FE; }
@@ -41,7 +41,7 @@
 /* Task card styles (match prototype structure) */
 .agent-dashboard .task-card { background:#fff; border:1px solid var(--border-color); border-radius:14px; transition:.2s ease; cursor:pointer; }
 .agent-dashboard .task-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,23,42,0.08); border-color: #D1D5DB; }
-.agent-dashboard .task-card.active { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary), transparent 80%); }
+.agent-dashboard .task-card.active { border-color: rgb(79, 70, 229); box-shadow: 0 0 0 2px color-mix(in srgb, rgb(79, 70, 229), transparent 80%); }
 
 .agent-dashboard .task-header { padding:12px 16px 10px; border-bottom:1px solid var(--border-color); background:#fff; }
 .agent-dashboard .task-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; margin-bottom:6px; }
@@ -59,7 +59,7 @@
 
 .agent-dashboard .mini-timeline { height:110px; position:relative; background: linear-gradient(#fff, #FAFAFA); }
 .agent-dashboard .mini-timeline .tick { position:absolute; top:0; bottom:0; width:1px; background: var(--border-color); opacity:.5; }
-.agent-dashboard .mini-timeline .now-line { position:absolute; top:0; bottom:0; width:2px; background: var(--accent-primary); opacity:.6; }
+.agent-dashboard .mini-timeline .now-line { position:absolute; top:0; bottom:0; width:2px; background: rgb(79, 70, 229); opacity:.6; }
 .agent-dashboard .mini-agent-row { position:absolute; left:0; right:0; height:9px; display:flex; align-items:center; }
 .agent-dashboard .mini-execution-bar { position:absolute; height:5px; border-radius:4px; border:1px solid transparent; }
 
@@ -87,7 +87,7 @@
 .agent-dashboard .timeline-controls { position: sticky; top: 0; z-index: 10; }
 .agent-dashboard .timeline-controls .btn { background:#fff; color: var(--text-primary); border:1px solid var(--border-color); padding:6px 10px; border-radius:8px; font-size:12px; }
 .agent-dashboard .timeline-controls .btn:hover { box-shadow: 0 6px 18px rgba(15,23,42,0.07); }
-.agent-dashboard .timeline-controls .btn.btn-primary { background: var(--accent-primary); color:#fff; border-color: var(--accent-primary); }
+.agent-dashboard .timeline-controls .btn.btn-primary { background: rgb(79, 70, 229); color:#fff; border-color: rgb(79, 70, 229); }
 .agent-dashboard .status-badge { margin-left:auto; padding:4px 8px; border-radius: 999px; font-size: 10px; font-weight:600; text-transform: uppercase; letter-spacing: .5px; background: #ECFDF5; color: #16A34A; border:1px solid #A7F3D0; }
 
 .agent-dashboard .timeline-container { position: relative; z-index: 0; display:grid; grid-template-columns: minmax(180px, 320px) 1fr; overflow:hidden; min-width: 0; width: 100%; }
@@ -113,7 +113,7 @@
 .agent-dashboard .main-agent { height:50px; padding:0 16px; background:#fff; border-bottom:1px dashed var(--border-color); }
 .agent-dashboard .main-agent:hover { background: var(--bg-tertiary); }
 .agent-dashboard .sub-agent { height:40px; padding:0 16px 0 40px; background:#fff; border-left:2px solid transparent; border-bottom:1px dashed var(--border-color); }
-.agent-dashboard .sub-agent:hover { background:#F9FAFB; border-left-color: var(--accent-primary); }
+.agent-dashboard .sub-agent:hover { background:#F9FAFB; border-left-color: rgb(79, 70, 229); }
 .agent-dashboard .agent-icon { width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:14px; background: var(--bg-tertiary); border:1px solid var(--border-color); }
 .agent-dashboard .sub-agent .agent-icon { width:20px; height:20px; font-size:12px; }
 .agent-dashboard .agent-name { flex:1; min-width:0; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -130,10 +130,10 @@
 .agent-dashboard .time-scale { height:40px; display:flex; align-items:center; padding:0 16px; font-size:11px; text-transform:uppercase; color: var(--text-secondary); border-bottom:1px solid var(--border-color); }
 .agent-dashboard .time-units { height:42px; display:flex; }
 .agent-dashboard .time-unit { flex:1; min-width:36px; display:flex; align-items:center; justify-content:center; font-size:11px; color: var(--text-secondary); border-right:1px solid var(--border-color); }
-.agent-dashboard .time-unit.now { background:#EEF2FF; color: var(--accent-primary); font-weight:600; }
+.agent-dashboard .time-unit.now { background:#EEF2FF; color: rgb(79, 70, 229); font-weight:600; }
 
-.agent-dashboard .current-time-line { position:absolute; top:82px; bottom:0; width:2px; background: var(--accent-primary); opacity:.6; pointer-events:none; }
-.agent-dashboard .current-time-line::after { content:""; position:absolute; top:-6px; left:50%; width:10px; height:10px; transform: translate(-50%, -50%); border-radius:50%; background: var(--accent-primary); box-shadow: 0 0 0 0 rgba(99,102,241,0.4); animation: pulse-dot 2s infinite; }
+.agent-dashboard .current-time-line { position:absolute; top:82px; bottom:0; width:2px; background: rgb(79, 70, 229); opacity:.6; pointer-events:none; }
+.agent-dashboard .current-time-line::after { content:""; position:absolute; top:-6px; left:50%; width:10px; height:10px; transform: translate(-50%, -50%); border-radius:50%; background: rgb(79, 70, 229); box-shadow: 0 0 0 0 rgba(99,102,241,0.4); animation: pulse-dot 2s infinite; }
 @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.35);} 70% { box-shadow: 0 0 0 8px rgba(99,102,241,0);} 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0);} }
 
 /* Single overlay grid for all rows */
@@ -240,7 +240,7 @@
 }
 .agent-dashboard .status-marker.start {
   left: -4px;
-  background: var(--accent-primary);
+  background: rgb(79, 70, 229);
 }
 .agent-dashboard .status-marker.end {
   right: -4px;

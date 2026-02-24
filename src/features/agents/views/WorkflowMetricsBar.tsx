@@ -128,8 +128,8 @@ export function WorkflowMetricsBar({
 
       {/* Running indicator */}
       {isRunning && (
-        <div className="flex items-center gap-1.5 text-xs text-[var(--accent-primary)]">
-          <span className="w-2 h-2 bg-[var(--accent-primary)] rounded-full motion-safe:animate-pulse" />
+        <div className="flex items-center gap-1.5 text-xs text-indigo-600 dark:text-indigo-400">
+          <span className="w-2 h-2 bg-indigo-600 rounded-full motion-safe:animate-pulse" />
           Running...
         </div>
       )}
@@ -146,7 +146,7 @@ interface MetricPillProps {
 }
 
 const colorClasses = {
-  blue: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20',
+  blue: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20',
   purple: 'bg-surface-secondary text-content-secondary border-edge',
   green: 'bg-green-50 text-green-700 border-green-200',
   amber: 'bg-surface-secondary text-content border-edge',

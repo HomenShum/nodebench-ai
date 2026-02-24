@@ -86,7 +86,7 @@ export default function PopoverMiniDocEditor({
         <div className="flex items-center gap-2">
           {title ? <div className="text-xs text-content-muted">{title}</div> : null}
           <button
-            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${dirty ? "bg-[var(--accent-primary)] text-white border-indigo-500/30 hover:bg-[var(--accent-primary)]/90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${dirty ? "bg-indigo-600 text-white border-indigo-500/30 hover:bg-indigo-600/90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title={saveLabel}
             onClick={() => void handleSave()}
             disabled={!dirty || saving}
@@ -109,7 +109,7 @@ export default function PopoverMiniDocEditor({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Write details…"
-        className="w-full min-h-[100px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+        className="w-full min-h-[100px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
       />
     </div>
   );

@@ -1075,7 +1075,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                     <span className="text-xs font-black text-content-muted uppercase tracking-[0.2em]">Triggered By Signals</span>
                     <div className="flex flex-wrap gap-2">
                       {action.linkedSignalIds.map((sigId: string) => (
-                        <div key={sigId} className="px-2 py-1 bg-[var(--accent-primary-bg)] text-content text-xs font-bold border border-[var(--accent-primary)]/20 flex items-center gap-2">
+                        <div key={sigId} className="px-2 py-1 bg-indigo-500/10 text-content text-xs font-bold border border-indigo-500/30/20 flex items-center gap-2">
                           <Zap className="w-3 h-3" />
                           <span>SIGNAL_{sigId}</span>
                         </div>

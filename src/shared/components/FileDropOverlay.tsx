@@ -109,8 +109,8 @@ export const FileDropOverlay: React.FC<FileDropOverlayProps> = ({
     <div
       className={
         "pointer-events-none fixed inset-0 z-50 flex items-center justify-center " +
-        "bg-[color-mix(in_oklab, canvas 70%, var(--accent-primary) 15%)] " +
-        "backdrop-blur-sm border-2 border-dashed border-[var(--accent-primary)] " +
+        "bg-[color-mix(in_oklab, canvas 70%, rgb(79, 70, 229) 15%)] " +
+        "backdrop-blur-sm border-2 border-dashed border-indigo-500/30 " +
         (className || "")
       }
     >

@@ -113,7 +113,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
       {isLong && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-2 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors"
+          className="flex items-center gap-1 mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 transition-colors"
         >
           {expanded ? (
             <>
@@ -141,7 +141,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
             className="inline-flex items-center gap-1 px-2 py-1 text-xs text-content-secondary hover:text-content hover:bg-surface-hover rounded transition-colors"
             title="Copy post text"
           >
-            {copied ? <Check className="w-3 h-3 text-[var(--accent-primary)]" /> : <Copy className="w-3 h-3" />}
+            {copied ? <Check className="w-3 h-3 text-indigo-600 dark:text-indigo-400" /> : <Copy className="w-3 h-3" />}
             {copied ? "Copied" : "Copy"}
           </button>
           {postUrl && (
@@ -149,7 +149,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
               href={postUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:bg-[var(--accent-primary-bg)] rounded transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10 rounded transition-colors"
             >
               <Linkedin className="w-3 h-3" />
               View

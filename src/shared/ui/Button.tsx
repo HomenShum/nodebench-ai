@@ -20,11 +20,11 @@ const sizeMap = {
 export const Button = forwardRef<HTMLButtonElement, Props>(
   ({ className, variant = "ghost", size = "md", loading, children, disabled, ...props }, ref) => {
     const base =
-      "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-60 disabled:cursor-not-allowed";
+      "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:opacity-60 disabled:cursor-not-allowed";
     const sizes = sizeMap[size];
     const variants =
       variant === "primary"
-        ? "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm"
+        ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
         : variant === "outline"
         ? "border border-edge text-content hover:bg-surface-hover"
         : variant === "destructive"

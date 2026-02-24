@@ -49,7 +49,7 @@ export function DocumentsSidebar({
             <button
               type="button"
               onClick={onAddTask}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
               disabled={!loggedInUser}
               title={!loggedInUser ? "Please sign in to create tasks" : undefined}
             >
@@ -68,7 +68,7 @@ export function DocumentsSidebar({
               <button
                 type="button"
                 onClick={onAddTask}
-                className="text-xs px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors"
+                className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
                 disabled={!loggedInUser}
               >
                 Create your first task
@@ -150,7 +150,7 @@ export function DocumentsSidebar({
           <button
             type="button"
             onClick={() => onCreateDocument("text")}
-            className="text-xs px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] transition-colors"
+            className="text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
           >
             New Doc
           </button>

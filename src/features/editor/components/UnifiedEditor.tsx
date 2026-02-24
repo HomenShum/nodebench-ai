@@ -892,7 +892,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
           <p className="text-content-secondary mb-4">Unable to load document</p>
           <p className="text-xs text-[var(--text-tertiary)] mb-4">{String(sync.error)}</p>
           <button
-            className="px-3 py-1.5 text-sm rounded bg-[var(--accent-primary)] text-white"
+            className="px-3 py-1.5 text-sm rounded bg-indigo-600 text-white"
             onClick={() => window.location.reload()}
           >
             Reload Page
@@ -916,7 +916,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
     return (
       <div className="flex items-center justify-center min-h-[300px]">
         <button
-          className="px-3 py-1.5 text-sm rounded bg-[var(--accent-primary)] text-white"
+          className="px-3 py-1.5 text-sm rounded bg-indigo-600 text-white"
           onClick={() => { void sync.create?.({ type: "doc", content: [] } as any); }}
         >
           Create document
@@ -944,7 +944,7 @@ export default function UnifiedEditor({ documentId, mode = "full", isGridMode, i
               {pendingProposal.message}
             </span>
             <button
-              className="px-2 py-0.5 text-xs rounded bg-[var(--accent-primary)] text-white hover:opacity-90"
+              className="px-2 py-0.5 text-xs rounded bg-indigo-600 text-white hover:opacity-90"
               onClick={() => {
                 try {
                   window.dispatchEvent(new CustomEvent('nodebench:applyActions', { detail: { actions: pendingProposal.actions, anchorBlockId: pendingProposal.anchorBlockId } }));

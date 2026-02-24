@@ -43,7 +43,7 @@
 .dark .bn-menu-item.selected,
 .dark .bn-toolbar-button.selected {
   background: var(--accent-primary-bg) !important;
-  color: var(--accent-primary) !important;
+  color: rgb(79, 70, 229) !important;
 }
 
 /* BlockNote side menu theming */
@@ -79,7 +79,7 @@
 /* AI context styling */
 .bn-block.ai-context-selected {
   background-color: var(--accent-primary-bg) !important;
-  border-left: 3px solid var(--accent-primary) !important;
+  border-left: 3px solid rgb(79, 70, 229) !important;
   border-radius: 4px !important;
   padding-left: 8px !important;
 }
@@ -239,7 +239,7 @@
   /* Emphasize on hover/selection subtly */
   .bn-block-outer[data-proposal-line]:hover > .bn-block > .bn-block-content::before,
   .bn-block-outer[data-proposal-line] > .bn-block[data-selected="true"] > .bn-block-content::before {
-    color: var(--accent-primary);
+    color: rgb(79, 70, 229);
     opacity: 1;
   }
 
@@ -247,8 +247,8 @@
   .mention {
     display: inline-block;
     background: var(--accent-primary-bg);
-    color: var(--accent-primary);
-    border: 1px solid var(--accent-primary);
+    color: rgb(79, 70, 229);
+    border: 1px solid rgb(79, 70, 229);
     border-radius: 6px;
     padding: 0 6px;
     margin: 0 2px;
@@ -288,7 +288,7 @@
   .mention-suggestion-item:hover,
   .mention-suggestion-item.active {
     background: var(--bg-hover);
-    color: var(--accent-primary);
+    color: rgb(79, 70, 229);
   }
 
   /* Tag suggestion enriched row */
@@ -329,7 +329,7 @@
     padding: 2px 6px;
     border-radius: 9999px;
     background: var(--bg-hover);
-    color: var(--accent-primary);
+    color: rgb(79, 70, 229);
     border: 1px solid var(--border-color);
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -354,7 +354,7 @@
 
   /* Target block highlight for AI proposal replace */
   .nb-target-block {
-    outline: 2px dashed var(--accent-primary);
+    outline: 2px dashed rgb(79, 70, 229);
     outline-offset: 4px;
     border-radius: 6px;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12) inset, 0 1px 2px rgba(0, 0, 0, 0.04);

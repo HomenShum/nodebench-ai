@@ -832,7 +832,7 @@ export function DogfoodReviewView() {
                         Step text (editable)
                       </label>
                       <textarea
-                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
                         value={s.description}
                         onChange={(e) => {
                           const next = e.target.value;
@@ -1037,7 +1037,7 @@ export function DogfoodReviewView() {
               Prompt override (optional)
             </label>
             <textarea
-              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
               value={qaPrompt}
               onChange={(e) => setQaPrompt(e.target.value)}
               placeholder="Leave blank to use the default design + performance QA rubric."
@@ -1303,7 +1303,7 @@ export function DogfoodReviewView() {
                           stroke="currentColor"
                           strokeWidth="2"
                           vectorEffect="non-scaling-stroke"
-                          className="text-[var(--accent-primary)]/80"
+                          className="text-indigo-600 dark:text-indigo-400/80"
                         />
                         {entries
                           .slice()

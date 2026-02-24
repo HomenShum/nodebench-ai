@@ -39,7 +39,7 @@ export function PlannerAiBar({
     <div className="w-full flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1">
-          <Sparkles className="h-4 w-4 text-[var(--accent-primary)]" />
+          <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           <input
             value={prompt}
             onChange={handleInputChange}
@@ -52,7 +52,7 @@ export function PlannerAiBar({
         <button
           type="button"
           onClick={onSend}
-          className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] text-sm flex items-center gap-2"
+          className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm flex items-center gap-2"
           title="Send"
           aria-label="Send message to AI assistant"
         >

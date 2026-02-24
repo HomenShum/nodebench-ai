@@ -31,10 +31,10 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
   const colorClasses = {
     green: 'bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800',
     red: 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
-    blue: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/25',
+    blue: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/25',
     yellow: 'bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
     gray: 'bg-surface-secondary dark:bg-gray-800/30 text-content-secondary border-edge',
-    purple: 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/25',
+    purple: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/25',
   };
 
   // Create accessible description
@@ -90,7 +90,7 @@ function RequestTypeBar({ requestType, avgReviewTimeSeconds, approvalRate, count
       </div>
       <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-[var(--accent-primary)] rounded-full transition-all duration-500"
+          className="h-full bg-indigo-600 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -117,7 +117,7 @@ function ModifiedFieldBar({ field, count, maxCount }: ModifiedFieldBarProps) {
       </div>
       <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-[var(--accent-primary)] rounded-full transition-all duration-500"
+          className="h-full bg-indigo-600 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -235,7 +235,7 @@ export default function HITLAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-surface text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
+              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-surface text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -442,11 +442,11 @@ export default function HITLAnalyticsDashboard() {
 
             {/* Insights */}
             {metrics.total > 10 && (
-              <div className="bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/25 rounded-lg p-4">
+              <div className="bg-indigo-500/10 border border-indigo-500/30/25 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <Lightbulb className="text-[var(--accent-primary)] mt-0.5" size={20} />
+                  <Lightbulb className="text-indigo-600 dark:text-indigo-400 mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-[var(--accent-primary)] mb-2">
+                    <h3 className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">
                       Automation Opportunities
                     </h3>
                     <ul className="text-sm text-content-secondary space-y-2">

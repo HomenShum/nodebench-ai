@@ -5,6 +5,15 @@ import type { Id } from "../../../../../convex/_generated/dataModel";
 import { X, Trash2, Calendar as CalendarIcon, MapPin, Palette, Tag } from "lucide-react";
 import { toast } from "sonner";
 
+const eventColorSwatchClasses: Record<"blue" | "green" | "amber" | "red" | "purple" | "gray", string> = {
+  blue: "bg-indigo-600",
+  green: "bg-emerald-500",
+  amber: "bg-indigo-600/70",
+  red: "bg-red-500",
+  purple: "bg-indigo-700",
+  gray: "bg-content-muted",
+};
+
 export default function InlineEventEditor({ eventId, onClose, documentIdForAssociation }: { eventId: Id<"events">; onClose: () => void; documentIdForAssociation?: Id<"documents"> | null }) {
   const ev = useQuery(api.domains.calendar.events.getEvent, { eventId });
   const updateEvent = useMutation(api.domains.calendar.events.updateEvent);
@@ -160,7 +169,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           <button
             onClick={() => { void save(); }}
             disabled={saveHint !== "unsaved" || isSaving}
-            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-indigo-500/30 hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-indigo-600 text-white border-indigo-500/30/30 hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title="Save changes"
           >
             <span className="inline-flex items-center gap-1"><CalendarIcon className="w-3.5 h-3.5" /> Save</span>
@@ -192,7 +201,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
           placeholder="Untitled event"
         />
         <div className="flex flex-wrap items-center gap-1.5">
@@ -211,7 +220,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-indigo-500/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
+                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-indigo-600 text-white border-indigo-500/30/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
                 title={`Set status: ${s}`}
               >
                 {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -261,7 +270,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
                 value={startStr}
                 onChange={(e) => setStartStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               />
             )}
             {showEndPicker && (
@@ -270,7 +279,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
                 value={endStr}
                 onChange={(e) => setEndStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               />
             )}
           </div>
@@ -296,7 +305,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Where is this event?"
-              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
             />
           </div>
         )}
@@ -313,9 +322,9 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
-                  c === "blue" ? "bg-blue-500" : c === "green" ? "bg-indigo-500" : c === "amber" ? "bg-amber-500" : c === "red" ? "bg-red-500" : c === "purple" ? "bg-purple-500" : "bg-gray-400"
-                } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
+                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-indigo-500/50 ${
+                  eventColorSwatchClasses[c]
+                } ${color === c ? "ring-2 ring-offset-1 ring-indigo-500/50" : ""}`}
                 title={c}
               />
             ))}
@@ -348,7 +357,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               onKeyDown={(e) => {
                 const el = e.currentTarget;
                 if (e.key === "Enter" || e.key === ",") {
@@ -367,7 +376,7 @@ export default function InlineEventEditor({ eventId, onClose, documentIdForAssoc
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Write details…"
-          className="w-full min-h-[60px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+          className="w-full min-h-[60px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
         />
 
         {/* Location moved to chip with inline input */}

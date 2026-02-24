@@ -68,10 +68,10 @@ const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
       dot: "bg-content-muted",
     },
     present: {
-      bg: isActive ? "bg-[var(--accent-primary)]" : "bg-[var(--accent-primary-bg)] hover:bg-[var(--accent-primary-bg)]",
-      text: isActive ? "text-white" : "text-[var(--accent-primary)]",
-      border: isActive ? "border-[var(--accent-primary)]" : "border-[var(--accent-primary)]/20",
-      dot: "bg-[var(--accent-primary)]",
+      bg: isActive ? "bg-indigo-600" : "bg-indigo-500/10 hover:bg-indigo-500/10",
+      text: isActive ? "text-white" : "text-indigo-600 dark:text-indigo-400",
+      border: isActive ? "border-indigo-500/30" : "border-indigo-500/30/20",
+      dot: "bg-indigo-600",
     },
     future: {
       bg: isActive ? "bg-content" : "bg-surface-secondary hover:bg-surface-hover",
@@ -254,7 +254,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
               style={{ width: `${progressInfo.phasePercentages.past}%` }}
             />
             <div
-              className="h-full bg-[var(--accent-primary-bg)]"
+              className="h-full bg-indigo-500/10"
               style={{ width: `${progressInfo.phasePercentages.present}%` }}
             />
             <div
@@ -264,14 +264,14 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           </div>
           {/* Progress indicator — skip animation on mount to avoid initial jank */}
           <motion.div
-            className="absolute top-0 left-0 h-full bg-[var(--accent-primary)] rounded-full"
+            className="absolute top-0 left-0 h-full bg-indigo-600 rounded-full"
             initial={false}
             animate={{ width: `${progressInfo.percentage}%` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           />
           {/* Current position marker */}
           <motion.div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-surface border-2 border-[var(--accent-primary)] rounded-full shadow-sm"
+            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-surface border-2 border-indigo-500/30 rounded-full shadow-sm"
             initial={false}
             animate={{ left: `calc(${progressInfo.percentage}% - 6px)` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
@@ -382,7 +382,7 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
         flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
         border transition-all duration-200
         ${colors.bg} ${colors.text} ${colors.border}
-        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--accent-primary)]
+        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500/50
       `}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}

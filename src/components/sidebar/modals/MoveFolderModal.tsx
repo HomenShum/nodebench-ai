@@ -54,7 +54,7 @@ export function MoveFolderModal({
                     </button>
                     <button
                         onClick={onMove}
-                        className="px-3 py-1 rounded-md bg-[var(--accent-primary)] text-white hover:opacity-90"
+                        className="px-3 py-1 rounded-md bg-indigo-600 text-white hover:opacity-90"
                     >
                         Move
                     </button>

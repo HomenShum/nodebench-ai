@@ -102,7 +102,7 @@
   }
 
   .dark :focus-visible {
-    outline: 2px solid var(--accent-primary);
+    outline: 2px solid rgb(79, 70, 229);
     outline-offset: 2px;
     box-shadow: 0 0 0 4px rgba(124, 138, 228, 0.25);
   }
@@ -136,28 +136,28 @@
 
   /* Inline button standards — match Button component primitives */
   .btn-primary-xs {
-    @apply px-2.5 py-1 text-xs font-medium rounded-md bg-[var(--accent-primary)] text-white
-           hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+    @apply px-2.5 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white
+           hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
+           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
   }
   .btn-primary-sm {
-    @apply px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--accent-primary)] text-white
-           hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+    @apply px-3 py-1.5 text-xs font-medium rounded-md bg-indigo-600 text-white
+           hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
+           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
   }
   .btn-ghost-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md text-content-secondary
            hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-50
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
+           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
   }
   .btn-outline-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md border border-edge text-content-secondary
            hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-50
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1;
+           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
   }
 
   /* Route-level shell primitives to keep page rhythm/color consistent */
@@ -225,7 +225,7 @@
 /* Refined focus ring — soft glow instead of harsh outline */
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent-primary), 0 0 12px rgba(94, 106, 210, 0.15);
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px rgb(79, 70, 229), 0 0 12px rgba(94, 106, 210, 0.15);
 }
 
 /* Inline code — monospace with subtle accent background */
@@ -235,7 +235,7 @@
   padding: 2px 6px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.875em;
-  color: var(--accent-primary);
+  color: rgb(79, 70, 229);
   border: 1px solid rgba(94, 106, 210, 0.12);
 }
 

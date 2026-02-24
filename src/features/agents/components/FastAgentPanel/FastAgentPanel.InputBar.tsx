@@ -743,7 +743,7 @@ export function FastAgentInputBar({
       {/* Main Input Card */}
       <div className={cn(
         "bg-surface rounded-lg border border-edge shadow-sm transition-all duration-200 glass-surface",
-        "focus-within:shadow-md focus-within:border-indigo-500/30/30 focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/[0.06]",
+        "focus-within:shadow-md focus-within:border-indigo-500/30/30 focus-within:ring-2 focus-within:ring-indigo-500/50/[0.06]",
         isDragOver && dragFeedback.border
       )}>
 
@@ -781,7 +781,7 @@ export function FastAgentInputBar({
                       }}
                       className={cn(
                         "w-full px-3 py-2.5 text-left hover:bg-surface-secondary transition-all duration-150",
-                        selectedModel === model.id && "bg-surface-secondary border-l-2 border-l-[var(--accent-primary)]"
+                        selectedModel === model.id && "bg-surface-secondary border-l-2 border-l-[rgb(79, 70, 229)]"
                       )}
                     >
                       <div className="flex items-center justify-between">
@@ -940,7 +940,7 @@ export function FastAgentInputBar({
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover-lift",
                     index === selectedCommandIndex
-                      ? "bg-[var(--accent-primary)]/10 text-content"
+                      ? "bg-indigo-600/10 text-content"
                       : "hover:bg-surface-secondary text-content-secondary"
                   )}
                 >

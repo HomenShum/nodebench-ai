@@ -46,8 +46,8 @@ export function ProactiveFeed() {
         <div className="nb-page-inner">
           <div className="nb-page-frame-narrow">
           <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[var(--accent-primary-bg)] mb-4">
-              <Sparkles className="w-8 h-8 text-[var(--accent-primary)]" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500/10 mb-4">
+              <Sparkles className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
             </div>
             <h1 className="type-page-title text-content mb-2">
               Enable Smart Alerts
@@ -59,7 +59,7 @@ export function ProactiveFeed() {
             <button
               type="button"
               onClick={() => setShowOnboarding(true)}
-              className="px-6 py-3 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] font-medium transition-colors"
+              className="px-6 py-3 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium transition-colors"
             >
               Get Started
             </button>
@@ -80,7 +80,7 @@ export function ProactiveFeed() {
       <div className="nb-page-shell">
         <div className="nb-page-inner">
           <div className="nb-page-frame-narrow flex items-center justify-center min-h-[40vh]">
-            <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent-primary)]" />
+            <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500/30" />
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function ProactiveFeed() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="type-page-title text-content flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-[var(--accent-primary)]" />
+                <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 Alerts & Insights
               </h1>
               <p className="text-content-secondary mt-1">
@@ -163,7 +163,7 @@ export function ProactiveFeed() {
               className={cn(
                 "px-3 py-1.5 rounded text-sm font-medium transition-colors",
                 statusFilter === filter.value
-                  ? "bg-[var(--accent-primary)] text-white"
+                  ? "bg-indigo-600 text-white"
                   : "bg-surface-secondary text-content-secondary hover:bg-surface-secondary"
               )}
             >
@@ -210,9 +210,9 @@ function StatCard({
   color?: "blue" | "green" | "purple" | "red";
 }) {
   const colorClasses = {
-    blue: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
+    blue: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
     green: "text-green-500 bg-green-500/10",
-    purple: "text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]",
+    purple: "text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
     red: "text-red-500 bg-red-500/10",
   };
 
@@ -243,7 +243,7 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      detected: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+      detected: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
       approved: "bg-green-500/20 text-green-600",
       completed: "bg-gray-500/20 text-content-secondary",
       dismissed: "bg-gray-500/20 text-content-secondary",
@@ -252,10 +252,10 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
   };
 
   return (
-    <div className="p-6 rounded-lg border border-edge bg-surface-secondary hover:border-[var(--accent-primary)]/40 transition-colors">
+    <div className="p-6 rounded-lg border border-edge bg-surface-secondary hover:border-indigo-500/30/40 transition-colors">
       <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 p-3 rounded-lg bg-[var(--accent-primary-bg)]">
-          <Icon className="w-6 h-6 text-[var(--accent-primary)]" />
+        <div className="flex-shrink-0 p-3 rounded-lg bg-indigo-500/10">
+          <Icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
         </div>
         <div className="flex-1">
           <div className="flex items-start justify-between mb-2">
@@ -293,7 +293,7 @@ function OpportunityCard({ opportunity }: { opportunity: any }) {
           )}
 
           <div className="flex items-center gap-4 mt-4">
-            <button type="button" className="px-4 py-2 rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] text-sm font-medium transition-colors">
+            <button type="button" className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium transition-colors">
               View Details
             </button>
             {opportunity.status !== "completed" && opportunity.status !== "dismissed" && (
@@ -317,7 +317,7 @@ function DailyBriefSections({ sections }: { sections: any[] }) {
   return (
     <div className="space-y-4">
       {sections.map((section, idx) => (
-        <div key={idx} className="border-l-2 border-[var(--accent-primary)] pl-4">
+        <div key={idx} className="border-l-2 border-indigo-500/30 pl-4">
           <h4 className="font-semibold text-content mb-2">
             {section.title}
           </h4>
@@ -326,7 +326,7 @@ function DailyBriefSections({ sections }: { sections: any[] }) {
               {section.items.map((item: any, itemIdx: number) => (
                 <li key={itemIdx} className="text-sm text-content-secondary">
                   <div className="flex items-start gap-2">
-                    <span className="text-[var(--accent-primary)] mt-0.5">•</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 mt-0.5">•</span>
                     <div className="flex-1">
                       <div className="font-medium text-content">
                         {item.title}

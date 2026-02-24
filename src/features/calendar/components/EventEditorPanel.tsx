@@ -17,11 +17,11 @@ type Props = {
 };
 
 const eventColorSwatchClasses: Record<"blue" | "green" | "amber" | "red" | "purple" | "gray", string> = {
-  blue: "bg-[var(--accent-primary)]",
+  blue: "bg-indigo-600",
   green: "bg-emerald-500",
-  amber: "bg-[var(--accent-primary)]/70",
+  amber: "bg-indigo-600/70",
   red: "bg-red-500",
-  purple: "bg-[var(--accent-primary-hover)]",
+  purple: "bg-indigo-700",
   gray: "bg-content-muted",
 };
 
@@ -194,7 +194,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
       {/* Header */}
       <div className="p-3 border-b border-edge flex items-center justify-between">
         <h3 className="text-sm font-semibold text-content truncate inline-flex items-center gap-2">
-          <CalendarDays className="w-4 h-4 text-[var(--accent-primary)]" /> Edit Event
+          <CalendarDays className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Edit Event
         </h3>
         <div className="flex items-center gap-2">
           <button
@@ -221,7 +221,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
             placeholder="Event title"
           />
         </div>
@@ -232,7 +232,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Write details…"
-            className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
           />
         </div>
 
@@ -253,7 +253,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
+                className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-indigo-600 text-white border-indigo-500/30/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
                 title={`Set status: ${s}`}
               >
                 {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -321,7 +321,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={startStr}
                 onChange={(e) => setStartStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               />
             )}
             {showEndPicker && (
@@ -330,7 +330,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={endStr}
                 onChange={(e) => setEndStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               />
             )}
           </div>
@@ -343,7 +343,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Where is this event?"
-              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
             />
           </div>
         )}
@@ -355,9 +355,9 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
+                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-indigo-500/50 ${
                   eventColorSwatchClasses[c]
-                } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
+                } ${color === c ? "ring-2 ring-offset-1 ring-indigo-500/50" : ""}`}
                 title={c}
               />
             ))}
@@ -390,7 +390,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               onKeyDown={(e) => {
                 const el = e.currentTarget;
                 if (e.key === "Enter" || e.key === ",") {
@@ -420,7 +420,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
         <button
           onClick={() => void handleSave()}
           disabled={isSaving}
-          className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+          className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
         >
           <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
         </button>
@@ -433,7 +433,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
         {/* Header */}
         <div className="p-4 border-b border-edge flex items-center justify-between">
           <h3 className="text-sm font-semibold text-content truncate inline-flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-[var(--accent-primary)]" /> Edit Event
+            <CalendarDays className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Edit Event
           </h3>
           <div className="flex items-center gap-2">
             <button
@@ -464,7 +464,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               placeholder="Event title"
             />
           </div>
@@ -475,7 +475,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Write details…"
-              className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+              className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
             />
           </div>
 
@@ -496,7 +496,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   key={s}
                   type="button"
                   onClick={() => setStatus(s)}
-                  className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
+                  className={`pill inline-flex items-center gap-1 text-xs ${status === s ? "bg-indigo-600 text-white border-indigo-500/30/30" : "bg-surface-secondary text-content-secondary border-edge"}`}
                   title={`Set status: ${s}`}
                 >
                   {s === "confirmed" ? "Confirmed" : s === "tentative" ? "Tentative" : "Cancelled"}
@@ -565,7 +565,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   onChange={(e) => setStartStr(e.target.value)}
                   disabled={allDay}
                   aria-label="Event start time"
-                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
                 />
               )}
               {showEndPicker && (
@@ -575,7 +575,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   onChange={(e) => setEndStr(e.target.value)}
                   disabled={allDay}
                   aria-label="Event end time"
-                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
                 />
               )}
             </div>
@@ -588,7 +588,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Where is this event?"
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
               />
             </div>
           )}
@@ -600,9 +600,9 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] ${
+                  className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-indigo-500/50 ${
                     eventColorSwatchClasses[c]
-                  } ${color === c ? "ring-2 ring-offset-1 ring-[var(--accent-primary)]" : ""}`}
+                  } ${color === c ? "ring-2 ring-offset-1 ring-indigo-500/50" : ""}`}
                   title={c}
                   aria-label={`Set color to ${c}`}
                 />
@@ -637,7 +637,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               <input
                 type="text"
                 placeholder="Add tag…"
-                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-[var(--accent-primary)]/30"
+                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30/30"
                 onKeyDown={(e) => {
                   const el = e.currentTarget;
                   if (e.key === "Enter" || e.key === ",") {
@@ -669,7 +669,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             type="button"
             onClick={() => void handleSave()}
             disabled={isSaving}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${isSaving ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>

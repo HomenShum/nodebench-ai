@@ -138,7 +138,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
     <div
       className={cn(
         "rounded-lg border-2 p-4 shadow-md animate-in slide-in-from-top-2 duration-300",
-        isPending && "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)]",
+        isPending && "border-indigo-500/30/30 bg-indigo-500/10",
         isAnswered && "border-green-400 bg-green-50",
         isCancelled && "border-content-muted bg-surface-secondary"
       )}
@@ -147,11 +147,11 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
       <div className="flex items-start gap-3 mb-3">
         <div className={cn(
           "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
-          isPending && "bg-[var(--accent-primary-bg)]",
+          isPending && "bg-indigo-500/10",
           isAnswered && "bg-green-100",
           isCancelled && "bg-surface-hover"
         )}>
-          {isPending && <MessageCircleQuestion className="h-5 w-5 text-[var(--accent-primary)]" />}
+          {isPending && <MessageCircleQuestion className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />}
           {isAnswered && <CheckCircle2 className="h-5 w-5 text-green-600" />}
           {isCancelled && <X className="h-5 w-5 text-content-secondary" />}
         </div>
@@ -207,8 +207,8 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
                   "px-3 py-1.5 rounded-md text-sm font-medium transition-all",
                   "border-2",
                   selectedOption === option
-                    ? "border-[var(--accent-primary)] bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
-                    : "border-edge bg-surface text-content hover:border-[var(--accent-primary)]/40 hover:bg-[var(--accent-primary-bg)]"
+                    ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                    : "border-edge bg-surface text-content hover:border-indigo-500/30/40 hover:bg-indigo-500/10"
                 )}
               >
                 {option}
@@ -226,7 +226,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             onChange={(e) => setResponse(e.target.value)}
             placeholder="Type your response..."
             rows={2}
-            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -255,7 +255,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             disabled={isSubmitting || (!selectedOption && !response.trim())}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-              "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]",
+              "bg-indigo-600 text-white hover:bg-indigo-700",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >

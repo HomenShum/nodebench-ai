@@ -114,7 +114,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <Linkedin className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -152,7 +152,7 @@ export const LinkedInPostArchiveView: React.FC = () => {
                   key={filter.key}
                   onClick={() => handleFilterChange(filter.key)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeFilter === filter.key
-                        ? "bg-[var(--accent-primary)] text-white"
+                        ? "bg-indigo-600 text-white"
                         : "bg-surface text-content-muted hover:bg-surface-hover border border-edge"
                       }`}
                   >
@@ -173,8 +173,8 @@ export const LinkedInPostArchiveView: React.FC = () => {
       <div className="px-4 py-6">
         {dateGroups.length === 0 && !isFirstLoad ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 bg-[var(--accent-primary-bg)] rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Linkedin className="w-8 h-8 text-[var(--accent-primary)]" />
+            <div className="w-16 h-16 bg-indigo-500/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <Linkedin className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
             </div>
             <h2 className="text-lg font-semibold text-foreground mb-2">No posts found</h2>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">

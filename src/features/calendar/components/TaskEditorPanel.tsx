@@ -316,7 +316,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               placeholder="Task title"
             />
             {/* Pills under title */}
@@ -357,7 +357,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
-              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               placeholder="Details, notes, links…"
             />
           </div>
@@ -366,7 +366,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <div>
               <label className="block text-xs font-medium text-content-secondary mb-1">Status</label>
               <select
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
               >
@@ -379,7 +379,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <div>
               <label className="block text-xs font-medium text-content-secondary mb-1">Priority</label>
               <select
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 value={priority ?? ""}
                 onChange={(e) => setPriority((e.target.value || undefined) as any)}
               >
@@ -398,7 +398,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               <div>
                 <label className="block text-xs font-medium text-content-secondary mb-1">Assignee</label>
                 <select
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   value={(assigneeId as any) ?? ''}
                   onChange={(e) => setAssigneeId((e.target.value || '') as any)}
                 >
@@ -412,7 +412,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     value={assigneeQuery}
                     onChange={(e) => setAssigneeQuery(e.target.value)}
                     placeholder="Search people…"
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   />
                   <button
                     type="button"
@@ -458,7 +458,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   value={newRefId}
                   onChange={(e) => setNewRefId(e.target.value)}
                   placeholder="Target ID"
-                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 />
                 <button
                   type="button"
@@ -518,7 +518,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 ))}
                 <input
                   placeholder="Add tag…"
-                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   onKeyDown={(e) => {
                     const el = e.currentTarget as HTMLInputElement;
                     if (e.key === 'Enter' || e.key === ',') {
@@ -539,7 +539,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               <div>
                 <label className="block text-xs font-medium text-content-secondary mb-1">Assignee</label>
                 <select
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   value={(assigneeId as any) ?? ''}
                   onChange={(e) => setAssigneeId((e.target.value || '') as any)}
                 >
@@ -553,7 +553,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     value={assigneeQuery}
                     onChange={(e) => setAssigneeQuery(e.target.value)}
                     placeholder="Search people…"
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   />
                   <button
                     type="button"
@@ -599,7 +599,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   value={newRefId}
                   onChange={(e) => setNewRefId(e.target.value)}
                   placeholder="Target ID"
-                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 />
                 <button
                   type="button"
@@ -659,7 +659,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 ))}
                 <input
                   placeholder="Add tag…"
-                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   onKeyDown={(e) => {
                     const el = e.currentTarget as HTMLInputElement;
                     if (e.key === 'Enter' || e.key === ',') {
@@ -681,7 +681,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 type="date"
                 value={startDateStr}
                 onChange={(e) => setStartDateStr(e.target.value)}
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               />
             </div>
             <div>
@@ -690,7 +690,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 type="date"
                 value={dueDateStr}
                 onChange={(e) => setDueDateStr(e.target.value)}
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               />
             </div>
           </div>
@@ -701,7 +701,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               <div>
                 <label className="block text-xs font-medium text-content-secondary mb-1">Assignee</label>
                 <select
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   value={(assigneeId as any) ?? ''}
                   onChange={(e) => setAssigneeId((e.target.value || '') as any)}
                 >
@@ -715,7 +715,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                     value={assigneeQuery}
                     onChange={(e) => setAssigneeQuery(e.target.value)}
                     placeholder="Search people…"
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   />
                   <button
                     type="button"
@@ -761,7 +761,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                   value={newRefId}
                   onChange={(e) => setNewRefId(e.target.value)}
                   placeholder="Target ID"
-                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="flex-1 text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 />
                 <button
                   type="button"
@@ -821,7 +821,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 ))}
                 <input
                   placeholder="Add tag…"
-                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   onKeyDown={(e) => {
                     const el = e.currentTarget as HTMLInputElement;
                     if (e.key === 'Enter' || e.key === ',') {
@@ -855,7 +855,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           <button
             onClick={() => void handleSave()}
             disabled={isSaving || saveHint !== "unsaved"}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>
@@ -902,7 +902,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               placeholder="Task title"
             />
             {/* Pills under title (overlay) */}
@@ -943,7 +943,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={5}
-              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               placeholder="Details, notes, links…"
             />
           </div>
@@ -952,7 +952,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <div>
               <label className="block text-xs font-medium text-content-secondary mb-1">Status</label>
               <select
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
               >
@@ -965,7 +965,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
             <div>
               <label className="block text-xs font-medium text-content-secondary mb-1">Priority</label>
               <select
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 value={priority ?? ""}
                 onChange={(e) => setPriority((e.target.value || undefined) as any)}
               >
@@ -985,7 +985,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 type="date"
                 value={startDateStr}
                 onChange={(e) => setStartDateStr(e.target.value)}
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               />
             </div>
             <div>
@@ -994,7 +994,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
                 type="date"
                 value={dueDateStr}
                 onChange={(e) => setDueDateStr(e.target.value)}
-                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
               />
             </div>
           </div>
@@ -1016,7 +1016,7 @@ export default function TaskEditorPanel({ taskId, onClose, embedded = false }: P
           <button
             onClick={() => void handleSave()}
             disabled={isSaving || saveHint !== "unsaved"}
-            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]'}`}
+            className={`text-xs px-3 py-1.5 rounded-md transition-colors ${(isSaving || saveHint !== 'unsaved') ? 'bg-surface-secondary text-content-muted border border-edge cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
           </button>

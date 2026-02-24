@@ -300,7 +300,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         {(!uiMessages || uiMessages.length === 0) && !sending && !optimisticUserMessage && (
           <div className="h-full flex items-center justify-center text-center">
             <div>
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-[var(--accent-primary)]/10 rounded-full mb-3">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-600/10 rounded-full mb-3">
                 <Bot className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="text-lg font-medium text-content mb-1">Start a conversation</div>
@@ -335,7 +335,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
         {/* Optimistic user message (shown immediately while sending) */}
         {optimisticUserMessage && (
           <div className="flex justify-end">
-            <div className="max-w-[85%] bg-[var(--accent-primary)] text-white rounded-lg overflow-hidden shadow-sm">
+            <div className="max-w-[85%] bg-indigo-600 text-white rounded-lg overflow-hidden shadow-sm">
               <div className="px-4 py-3">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <p>{optimisticUserMessage}</p>
@@ -386,7 +386,7 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
             </div>
             <a
               href="/sign-in"
-              className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-indigo-600 text-white hover:opacity-90 transition-opacity"
             >
               <LogIn className="w-3 h-3" />
               Sign in
@@ -410,13 +410,13 @@ export default function MiniNoteAgentChat({ user, pendingPrompt, onPromptConsume
             }}
             placeholder="Send a message… (Ctrl/Cmd + Enter to send)"
             rows={2}
-            className="flex-1 px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:border-transparent resize-y"
+            className="flex-1 px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent resize-y"
           />
           <button
             type="button"
             onClick={() => void send(input)}
             disabled={creating || sending || waitingForAgent || !input.trim() || (anonymousSession.isAnonymous && !anonymousSession.canSendMessage)}
-            className="h-10 px-3 py-2 mt-[2px] rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/90 transition-colors"
+            className="h-10 px-3 py-2 mt-[2px] rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-600/90 transition-colors"
             title={!user && !anonymousSession.isAnonymous ? 'Click to sign in and send' : 'Send message'}
           >
             {sending ? 'Sending…' : waitingForAgent ? 'Processing…' : !user && !anonymousSession.isAnonymous ? 'Send (sign in)' : 'Send'}
@@ -475,13 +475,13 @@ function MessageBubble({
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[85%] ${isUser ? 'bg-[var(--accent-primary)] text-white' : 'bg-surface-secondary text-content'} rounded-lg overflow-hidden shadow-sm`}>
+      <div className={`max-w-[85%] ${isUser ? 'bg-indigo-600 text-white' : 'bg-surface-secondary text-content'} rounded-lg overflow-hidden shadow-sm`}>
         {/* Main message content */}
         <div className="px-4 py-3">
           {/* Avatar + role for assistant */}
           {!isUser && (
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)]/20 flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full bg-indigo-600/20 flex items-center justify-center">
                 <Bot className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
               </div>
               <span className="text-xs font-medium text-content-secondary">Mini Note Agent</span>

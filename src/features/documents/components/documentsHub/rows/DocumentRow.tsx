@@ -237,7 +237,7 @@ export function DocumentRow({
         border-b border-edge 
         hover:bg-surface-hover cursor-pointer 
         transition-colors duration-150
-        ${isSelected ? "bg-[var(--accent-primary)]/10" : ""}
+        ${isSelected ? "bg-indigo-600/10" : ""}
       `}
     >
       {/* 1. Selection Checkbox */}
@@ -250,7 +250,7 @@ export function DocumentRow({
           className={`
             w-4 h-4 rounded border transition-all duration-150 flex items-center justify-center
             ${isSelected
-              ? "bg-[var(--accent-primary)] border-[var(--accent-primary)]"
+              ? "bg-indigo-600 border-indigo-500/30"
               : "border-edge bg-surface opacity-0 group-hover:opacity-100"
             }
           `}
@@ -335,7 +335,7 @@ export function DocumentRow({
               onChat(doc._id);
             }}
             title="Chat with AI"
-            className="p-1.5 hover:bg-[var(--accent-primary)]/10 rounded text-content-muted hover:text-[var(--accent-primary)] transition-colors"
+            className="p-1.5 hover:bg-indigo-600/10 rounded text-content-muted hover:text-indigo-600 dark:text-indigo-400 transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
           </button>

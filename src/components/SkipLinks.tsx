@@ -40,10 +40,10 @@ export function SkipLinks({ links = DEFAULT_LINKS }: SkipLinksProps) {
             sr-only focus:not-sr-only
             fixed top-0 left-0 z-[9999]
             px-4 py-2 m-2
-            bg-[var(--accent-primary)] text-white
+            bg-indigo-600 text-white
             rounded-md shadow-lg
             font-medium text-sm
-            focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/60 focus:ring-offset-2
+            focus:outline-none focus:ring-2 focus:ring-indigo-500/50/60 focus:ring-offset-2
             transition-transform
           "
         >

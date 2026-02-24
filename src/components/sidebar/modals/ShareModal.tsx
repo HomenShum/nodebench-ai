@@ -118,7 +118,7 @@ export function ShareModal({
                                 className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
                                     linkCopied
                                         ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400'
-                                        : 'bg-[var(--accent-primary)] text-white hover:opacity-90'
+                                        : 'bg-indigo-600 text-white hover:opacity-90'
                                 }`}
                             >
                                 {linkCopied ? (
@@ -141,7 +141,7 @@ export function ShareModal({
                     </button>
                     <button
                         onClick={handleApplyAndCopy}
-                        className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                        className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:opacity-90 transition-opacity"
                     >
                         {sharePublic ? 'Share & Copy Link' : 'Apply'}
                     </button>

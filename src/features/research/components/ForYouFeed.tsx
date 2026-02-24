@@ -367,7 +367,7 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
             <button
               type="button"
               onClick={handleSave}
-              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-[var(--accent-primary)] bg-[var(--accent-primary-bg)]' : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary'
+              className={`ml-auto p-2 rounded-full transition-colors ${saved ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'text-content-muted hover:text-content-secondary hover:bg-surface-secondary'
                 }`}
               title={saved ? "Saved" : "Save for later"}
               aria-label={saved ? "Saved" : "Save for later"}

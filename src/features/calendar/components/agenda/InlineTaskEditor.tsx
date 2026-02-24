@@ -308,7 +308,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
             disabled={saveHint !== "unsaved" || _isSaving}
             className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${
               saveHint === "unsaved" && !_isSaving
-                ? "bg-[var(--accent-primary)] text-white border-indigo-500/30 hover:opacity-90"
+                ? "bg-indigo-600 text-white border-indigo-500/30 hover:opacity-90"
                 : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"
             }`}
             title="Save changes"
@@ -345,7 +345,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           ref={titleRef}
-          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
           placeholder="Untitled"
         />
 
@@ -477,7 +477,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={startDateTimeStr}
                     onChange={(e) => setStartDateTimeStr(e.target.value)}
                     id={`start-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
                   />
                 ) : (
                   <input
@@ -485,7 +485,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={startDateStr}
                     onChange={(e) => setStartDateStr(e.target.value)}
                     id={`start-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
                   />
                 )}
               </div>
@@ -501,7 +501,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={dueDateTimeStr}
                     onChange={(e) => setDueDateTimeStr(e.target.value)}
                     id={`due-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
                   />
                 ) : (
                   <input
@@ -509,7 +509,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                     value={dueDateStr}
                     onChange={(e) => setDueDateStr(e.target.value)}
                     id={`due-picker-${String(taskId)}`}
-                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                    className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
                   />
                 )}
               </div>
@@ -529,7 +529,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
             <input
               type="text"
               placeholder="Add tag…"
-              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
               onKeyDown={(e) => {
                 const el = e.currentTarget as HTMLInputElement;
                 if (e.key === "Enter" || e.key === ",") {
@@ -552,7 +552,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                 value={assigneeQuery}
                 onChange={(e) => setAssigneeQuery(e.target.value)}
                 placeholder="Search users…"
-                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
               />
               <button
                 type="button"
@@ -596,7 +596,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
               <select
                 value={newRefKind}
                 onChange={(e) => setNewRefKind(e.target.value as RefItem["kind"]) }
-                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
               >
                 <option value="document">Document</option>
                 <option value="task">Task</option>
@@ -607,7 +607,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
                 value={newRefId}
                 onChange={(e) => setNewRefId(e.target.value)}
                 placeholder="Paste ID…"
-                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] focus:border-indigo-500/30"
+                className="text-xs bg-transparent border border-edge rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
               />
               <button
                 type="button"
@@ -630,7 +630,7 @@ export default function InlineTaskEditor({ taskId, onClose }: { taskId: Id<"task
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Write details…"
-          className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/30 resize-y"
+          className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
         />
 
         <div className="text-xs text-content-muted">Last updated {task.updatedAt ? timeAgo(task.updatedAt) : "—"}</div>

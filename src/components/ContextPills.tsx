@@ -17,7 +17,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Pill({ icon, label, subtle }: { icon?: React.ReactNode; label: string; subtle?: boolean }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${subtle ? "bg-surface/60" : "bg-[var(--accent-primary)]/10"} border-edge text-content max-w-[160px] truncate`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${subtle ? "bg-surface/60" : "bg-indigo-600/10"} border-edge text-content max-w-[160px] truncate`}>
       {icon}
       <span className="truncate">{label}</span>
     </span>

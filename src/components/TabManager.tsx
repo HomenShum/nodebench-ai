@@ -309,17 +309,17 @@ export function TabManager({
   };
 
   const colorClasses = [
-    "bg-[var(--accent-primary)]/10 text-content border-[var(--accent-primary)]/20 hover:bg-[var(--accent-primary)]/15",
+    "bg-indigo-600/10 text-content border-indigo-500/30/20 hover:bg-indigo-600/15",
     "bg-[var(--accent-secondary)]/10 text-content border-[var(--accent-secondary)]/20 hover:bg-[var(--accent-secondary)]/15",
-    "bg-[var(--accent-primary)]/8 text-content border-[var(--accent-primary)]/15 hover:bg-[var(--accent-primary)]/12",
+    "bg-indigo-600/8 text-content border-indigo-500/30/15 hover:bg-indigo-600/12",
     "bg-[var(--accent-secondary)]/8 text-content border-[var(--accent-secondary)]/15 hover:bg-[var(--accent-secondary)]/12",
-    "bg-[var(--accent-primary)]/12 text-content border-[var(--accent-primary)]/25 hover:bg-[var(--accent-primary)]/18",
+    "bg-indigo-600/12 text-content border-indigo-500/30/25 hover:bg-indigo-600/18",
     "bg-[var(--accent-secondary)]/12 text-content border-[var(--accent-secondary)]/25 hover:bg-[var(--accent-secondary)]/18",
-    "bg-[var(--accent-primary)]/6 text-content border-[var(--accent-primary)]/12 hover:bg-[var(--accent-primary)]/10",
+    "bg-indigo-600/6 text-content border-indigo-500/30/12 hover:bg-indigo-600/10",
     "bg-[var(--accent-secondary)]/6 text-content border-[var(--accent-secondary)]/12 hover:bg-[var(--accent-secondary)]/10",
-    "bg-[var(--accent-primary)]/14 text-content border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/20",
+    "bg-indigo-600/14 text-content border-indigo-500/30/30 hover:bg-indigo-600/20",
     "bg-[var(--accent-secondary)]/14 text-content border-[var(--accent-secondary)]/30 hover:bg-[var(--accent-secondary)]/20",
-    "bg-[var(--accent-primary)]/9 text-content border-[var(--accent-primary)]/18 hover:bg-[var(--accent-primary)]/13",
+    "bg-indigo-600/9 text-content border-indigo-500/30/18 hover:bg-indigo-600/13",
     "bg-[var(--accent-secondary)]/9 text-content border-[var(--accent-secondary)]/18 hover:bg-[var(--accent-secondary)]/13",
   ];
   const dotColors = [
@@ -352,7 +352,7 @@ export function TabManager({
                   const baseGap = iconOnly ? "gap-1" : compact ? "gap-1.5" : "gap-2";
                   const baseText = iconOnly ? "text-xs" : compact ? "text-xs" : "text-sm";
                   const baseMinW = iconOnly ? "min-w-[30px]" : compact ? "min-w-[44px]" : "min-w-[64px]";
-                  const selRing = selectedDocumentId === tab.id ? "ring-2 ring-[var(--accent-primary)]/40" : "";
+                  const selRing = selectedDocumentId === tab.id ? "ring-2 ring-indigo-500/50/40" : "";
 
                   return (
                     <button
@@ -363,7 +363,7 @@ export function TabManager({
                         "flex items-center rounded-lg border font-medium cursor-pointer transition-all duration-200 shrink-0 whitespace-nowrap",
                         colorClasses[colorIndex],
                         basePad, baseGap, baseText, baseMinW, selRing,
-                        "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50",
+                        "focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50",
                       ].join(" ")}
                       onClick={() => onDocumentSelect(tab.id)}
                       title={tab.title}

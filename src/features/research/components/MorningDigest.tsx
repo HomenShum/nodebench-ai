@@ -616,7 +616,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     const mixTotal = digestTotals.totalSignals + digestTotals.priorityCount || 1;
     const mix = [
       { label: 'Markets', count: digestTotals.marketCount, tone: 'bg-gray-900' },
-      { label: 'Topics', count: digestTotals.topicCount, tone: 'bg-[var(--accent-primary)]' },
+      { label: 'Topics', count: digestTotals.topicCount, tone: 'bg-indigo-600' },
       { label: 'Alerts', count: digestTotals.alertCount, tone: 'bg-amber-500' },
       { label: 'Priority', count: digestTotals.priorityCount, tone: 'bg-gray-500' },
     ];
@@ -719,7 +719,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
   const getRelevanceIndicator = (relevance?: string) => {
     switch (relevance) {
-      case 'high': return 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20';
+      case 'high': return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20';
       case 'medium': return 'bg-surface-secondary text-content border border-edge';
       default: return 'bg-surface-secondary text-content border border-edge';
     }
@@ -737,7 +737,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   return (
     <div className="relative rounded-lg border border-edge bg-surface  overflow-hidden">
       {/* Elegant gradient accent bar - warm black/amber */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-gray-900 via-[var(--accent-primary)]/40 to-gray-800 opacity-90" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-gray-900 via-[rgb(79, 70, 229)]/40 to-gray-800 opacity-90" />
 
       {/* Premium glass header */}
       <div className="relative flex items-center justify-between px-6 py-6 border-b border-edge/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-gray-100/30 dark:via-gray-800/30 to-transparent">
@@ -745,7 +745,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           {/* Animated icon container - black/beige */}
           <div className="relative group">
             <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
-            <div className="relative h-14 w-14 rounded-lg bg-gray-900 text-[var(--accent-primary)] flex items-center justify-center transform transition-all duration-300">
+            <div className="relative h-14 w-14 rounded-lg bg-gray-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transform transition-all duration-300">
               <Sparkles className="w-6 h-6" />
             </div>
           </div>
@@ -753,7 +753,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <div className="flex items-center gap-2 mb-1">
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-content-secondary">Executive Synthesis</p>
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-secondary border border-edge">
-                <Activity className="w-2.5 h-2.5 text-[var(--accent-primary)] motion-safe:animate-pulse" />
+                <Activity className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400 motion-safe:animate-pulse" />
                 <span className="text-[10px] font-bold text-content-secondary tracking-tight uppercase">Live Synthesis</span>
               </span>
             </div>
@@ -784,10 +784,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                     } dark:border-white/[0.08] dark:hover:border-white/[0.14]`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-[var(--accent-primary)]'
+                  <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-indigo-600 dark:text-indigo-400'
                     : stat.sentiment === 'bearish' ? 'text-rose-600'
                       : 'text-content'
-                    } ${stat.sentiment === 'bullish' ? 'dark:text-[var(--accent-primary)]'
+                    } ${stat.sentiment === 'bullish' ? 'dark:text-indigo-600 dark:text-indigo-400'
                       : stat.sentiment === 'bearish' ? 'dark:text-rose-400'
                         : 'dark:text-gray-100'
                     }`}>
@@ -908,7 +908,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       >
                         <span className={`shrink-0 px-2 py-1 text-xs font-bold uppercase tracking-wide rounded-md ${item.label === 'Market' ? 'bg-surface-secondary text-content-secondary border border-edge'
                           : item.label === 'Risk' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                            : 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20'
+                            : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20'
                           }`}>
                           {item.label}
                         </span>
@@ -1066,8 +1066,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
           {digestSections.length === 0 && isUsingSampleData && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-14 h-14 rounded-lg bg-[var(--accent-primary-bg)] flex items-center justify-center mb-4">
-                <Sparkles className="w-6 h-6 text-[var(--accent-primary)]" />
+              <div className="w-14 h-14 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-4">
+                <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <p className="text-base font-semibold text-content mb-1">No signals yet</p>
               <p className="text-sm text-content-secondary max-w-xs">Connect data sources or track topics to see your personalized daily summary here.</p>
@@ -1085,7 +1085,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                 {/* Section Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-edge/50 bg-gradient-to-r from-transparent via-surface-secondary/30 to-transparent">
                   <div className="flex items-center gap-4">
-                    <div className={`h-11 w-11 rounded-lg flex items-center justify-center transition-all duration-300 ${section.sentiment === 'bullish' ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20 shadow-sm'
+                    <div className={`h-11 w-11 rounded-lg flex items-center justify-center transition-all duration-300 ${section.sentiment === 'bullish' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20 shadow-sm'
                       : section.sentiment === 'bearish' ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20 shadow-sm'
                         : 'bg-surface-secondary text-content-secondary border border-edge shadow-sm'
                       }`}>
@@ -1096,7 +1096,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs font-semibold text-content-secondary uppercase tracking-wider">{section.items.length} {section.items.length === 1 ? 'signal' : 'signals'}</span>
                         {section.sentiment !== 'neutral' && (
-                          <span className={`px-1.5 py-0.5 text-xs font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]'
+                          <span className={`px-1.5 py-0.5 text-xs font-bold uppercase rounded ${section.sentiment === 'bullish' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                             : 'bg-rose-500/10 text-rose-600'
                             }`}>
                             {section.sentiment}
@@ -1129,7 +1129,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                           className="flex items-start gap-3 flex-1 cursor-pointer"
                         >
                           <span className={`mt-2 h-2 w-2 rounded-full transition-all duration-300 ${item.relevance === 'high' ? 'bg-surface-secondary border border-edge shadow-sm'
-                            : item.relevance === 'medium' ? 'bg-[var(--accent-primary)]/80'
+                            : item.relevance === 'medium' ? 'bg-indigo-600/80'
                               : 'bg-content-muted/30'
                             } group-hover/item:scale-125`} />
                           <div className="text-sm font-medium text-content-secondary leading-relaxed group-hover/item:text-content transition-colors overflow-hidden">
@@ -1162,7 +1162,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                             <ChevronRight className="w-4 h-4" />
                           </button>
                           <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${item.relevance === 'high' ? 'bg-surface-secondary text-content-secondary border border-edge'
-                            : item.relevance === 'medium' ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20'
+                            : item.relevance === 'medium' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20'
                               : 'bg-surface-secondary/50 text-content-muted border border-edge/50'
                             }`}>
                             {item.relevance === 'high' ? 'Priority' : item.relevance === 'medium' ? 'Watch' : 'FYI'}

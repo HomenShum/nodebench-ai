@@ -67,7 +67,7 @@ export function SkillsPanel({ onClose, onSelectSkill }: SkillsPanelProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search skills..."
             autoFocus
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-surface-secondary border-0 rounded-lg text-content placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-surface-secondary border-0 rounded-lg text-content placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
           />
         </div>
       </div>

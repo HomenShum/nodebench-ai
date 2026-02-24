@@ -208,7 +208,7 @@ export const ProposalInlineDecorations: React.FC<ProposalInlineDecorationsProps>
             <button onClick={() => setExpanded((prev) => ({ ...prev, [blk.id]: !prev[blk.id] }))} className="text-xs px-2 py-0.5 rounded border">
               {expanded[blk.id] ? 'Collapse' : 'Expand'}
             </button>
-            <button onClick={applySelected} className="text-xs px-2 py-0.5 rounded bg-[var(--accent-primary)] text-white">Apply</button>
+            <button onClick={applySelected} className="text-xs px-2 py-0.5 rounded bg-indigo-600 text-white">Apply</button>
             <button onClick={() => setPendingProposal(null)} className="text-xs px-2 py-0.5 rounded border">Dismiss</button>
           </div>
         </div>

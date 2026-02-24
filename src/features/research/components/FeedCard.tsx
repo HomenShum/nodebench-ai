@@ -114,7 +114,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
         onClick={onClick}
         className={`
           group relative p-5 rounded-lg transition-shadow duration-150 cursor-pointer
-          bg-surface border border-edge focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
+          bg-surface border border-edge focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 outline-none
           ${isSignal ? 'bg-slate-900 border-slate-800 text-white hover:border-slate-700' : ''}
         `}
       >
@@ -155,12 +155,12 @@ export const FeedCard: React.FC<FeedCardProps> = ({ item, onClick, onAnalyze, on
       onClick={onClick}
       className={`
         group relative break-inside-avoid cursor-pointer overflow-hidden rounded-lg border transition-shadow duration-150 bg-surface text-content
-        border-edge focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 outline-none
-        ${isSelected ? 'ring-2 ring-[var(--accent-primary)] ring-offset-1' : ''}
+        border-edge focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 outline-none
+        ${isSelected ? 'ring-2 ring-indigo-500/50 ring-offset-1' : ''}
       `}
     >
       {item.relevanceScore && item.relevanceScore > 70 && (
-        <div className="absolute top-0 left-0 right-0 h-0.5 bg-[var(--accent-primary)]" />
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-indigo-600" />
       )}
 
       <div className="p-5">

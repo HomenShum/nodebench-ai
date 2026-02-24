@@ -44,7 +44,7 @@ export function UnifiedRow({
       {/* Active indicator - left border accent */}
       {isSelected && (
         <span
-          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-[var(--accent-primary)] rounded-full"
+          className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-indigo-600 rounded-full"
           aria-hidden="true"
         />
       )}
@@ -55,7 +55,7 @@ export function UnifiedRow({
           type="checkbox"
           checked={item.status === "done"}
           onChange={(e) => { e.stopPropagation(); onToggleDone(item); }}
-          className="h-4 w-4 accent-[var(--accent-primary)] cursor-pointer flex-shrink-0"
+          className="h-4 w-4 accent-[rgb(79, 70, 229)] cursor-pointer flex-shrink-0"
           title={item.status === 'done' ? 'Mark as todo' : 'Mark as done'}
         />
       ) : (

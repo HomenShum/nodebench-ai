@@ -185,7 +185,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
                 type="button"
                 onClick={() => setActiveSection(id)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors ${activeSection === id
-                    ? 'bg-[var(--accent-primary)] text-white'
+                    ? 'bg-indigo-600 text-white'
                     : 'bg-surface-secondary text-content-secondary hover:bg-surface hover:text-content'
                   }`}
               >

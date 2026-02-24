@@ -720,7 +720,7 @@ function LiveDossierDocumentInner({
 
                     {/* Streaming cursor */}
                     {isStreaming && (
-                        <span className="inline-block w-2.5 h-6 bg-[var(--accent-primary)] ml-1 motion-safe:animate-pulse align-middle rounded-sm"></span>
+                        <span className="inline-block w-2.5 h-6 bg-indigo-600 ml-1 motion-safe:animate-pulse align-middle rounded-sm"></span>
                     )}
                 </article>
 
@@ -806,7 +806,7 @@ function LiveDossierDocumentInner({
                             type="button"
                             onClick={() => handleFollowUp("Synthesize all the above information into a single, comprehensive, and well-structured final report. Remove redundancies and organize logically.")}
                             disabled={isAppending}
-                            className={`group flex items-center gap-3 px-8 py-4 bg-[var(--accent-primary)] dark:bg-[var(--accent-primary)] text-white rounded-full font-semibold text-base shadow-xl hover:bg-[var(--accent-primary-hover)] dark:hover:bg-[var(--accent-primary-hover)] transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
+                            className={`group flex items-center gap-3 px-8 py-4 bg-indigo-600 dark:bg-indigo-600 text-white rounded-full font-semibold text-base shadow-xl hover:bg-indigo-700 dark:hover:bg-indigo-700 transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
                         >
                             {isAppending ? (
                                 <Loader2 className="w-5 h-5 motion-safe:animate-spin text-white/80" />
@@ -857,7 +857,7 @@ function EmptyState() {
             <div className="text-center">
                 {/* Icon container - rounded-lg for consistency */}
                 <div className="inline-flex items-center justify-center p-6 rounded-lg bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary dark:from-[var(--accent-primary-bg)] dark:to-surface-secondary/70 mb-6">
-                    <FileText className="w-10 h-10 text-[var(--accent-primary)]" />
+                    <FileText className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
                 </div>
 
                 {/* Heading */}
@@ -882,7 +882,7 @@ function EmptyState() {
                         <span>Media discovery</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 rounded-lg">
-                        <Link2 className="w-4 h-4 text-[var(--accent-primary)]" />
+                        <Link2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                         <span>Inline citations</span>
                     </div>
                 </div>
@@ -1103,7 +1103,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 
     const statusColors = {
         pending: "bg-content-secondary/20 text-content-secondary border-content-secondary/30",
-        running: "bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-[var(--accent-primary)]/30",
+        running: "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30",
         complete: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
         error: "bg-red-500/20 text-red-400 border-red-500/30",
     };
@@ -1112,7 +1112,7 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
         <div className={`relative w-8 h-8 rounded-lg border flex items-center justify-center transition-all duration-300 ${statusColors[status]}`}>
             {icons[role] || <Bot className="w-3.5 h-3.5" />}
             {status === "running" && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[var(--accent-primary)] rounded-full live-dot" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-600 rounded-full live-dot" />
             )}
         </div>
     );
@@ -1122,14 +1122,14 @@ function AgentIcon({ role, status }: { role: string; status: TimelineStep["statu
 function ToolChip({ step, index }: { step: TimelineStep; index: number }) {
     const statusIcons = {
         pending: <Loader2 className="w-3 h-3 text-content-secondary" />,
-        running: <Loader2 className="w-3 h-3 text-[var(--accent-primary)] motion-safe:animate-spin" />,
+        running: <Loader2 className="w-3 h-3 text-indigo-600 dark:text-indigo-400 motion-safe:animate-spin" />,
         complete: <CheckCircle2 className="w-3 h-3 text-emerald-400" />,
         error: <AlertCircle className="w-3 h-3 text-red-400" />,
     };
 
     const statusBg = {
         pending: "bg-content-secondary/10 border-content-secondary/20",
-        running: "bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/20",
+        running: "bg-indigo-600/10 border-indigo-500/30/20",
         complete: "bg-emerald-500/10 border-emerald-500/20",
         error: "bg-red-500/10 border-red-500/20",
     };
@@ -1210,13 +1210,13 @@ function LiveAgentTicker({
                                     Multi-Agent Research
                                 </h3>
                                 {isActive && (
-                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30">
-                                        <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full live-dot" />
-                                        <span className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">Live</span>
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30/30">
+                                        <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full live-dot" />
+                                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Live</span>
                                     </span>
                                 )}
                                 {followUpLabel && (
-                                    <span className="px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30 text-xs font-medium text-[var(--accent-primary)]">
+                                    <span className="px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30/30 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                                         {followUpLabel}
                                     </span>
                                 )}
@@ -1251,8 +1251,8 @@ function LiveAgentTicker({
                     {recentSteps.length > 0 && (
                         <div className="relative mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-3">
-                                <Activity className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                                <span className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">
+                                <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                                     Tool Activity
                                 </span>
                                 <span className="text-xs text-white/40">
@@ -1271,15 +1271,15 @@ function LiveAgentTicker({
                     {isActive && liveOutput && (
                         <div className="mt-4 pt-4 border-t border-white/5">
                             <div className="flex items-center gap-2 mb-2">
-                                <Zap className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                                <span className="text-xs font-semibold text-[var(--accent-primary)] uppercase tracking-wider">
+                                <Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                                     Live Output
                                 </span>
                             </div>
                             <div className="bg-black/20 rounded-lg p-3 border border-white/5">
                                 <p className="text-xs text-white/80 font-mono leading-relaxed">
                                     {truncateText(liveOutput, 200)}
-                                    <span className="typewriter-cursor text-[var(--accent-primary)]" />
+                                    <span className="typewriter-cursor text-indigo-600 dark:text-indigo-400" />
                                 </p>
                             </div>
                         </div>

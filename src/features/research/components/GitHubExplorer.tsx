@@ -62,7 +62,7 @@ export function GitHubExplorer() {
               onClick={() => setSelectedLanguage(undefined)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
                 selectedLanguage === undefined
-                  ? "bg-[var(--accent-primary)] text-white border-transparent"
+                  ? "bg-indigo-600 text-white border-transparent"
                   : "bg-surface-secondary text-content-secondary border-edge hover:text-content hover:bg-surface"
               }`}
             >
@@ -75,7 +75,7 @@ export function GitHubExplorer() {
                 onClick={() => setSelectedLanguage(language)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${
                   selectedLanguage === language
-                    ? "bg-[var(--accent-primary)] text-white border-transparent"
+                    ? "bg-indigo-600 text-white border-transparent"
                     : "bg-surface-secondary text-content-secondary border-edge hover:text-content hover:bg-surface"
                 }`}
               >

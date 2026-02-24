@@ -64,7 +64,7 @@ const CapabilityBadge = memo(function CapabilityBadge({
 
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--accent-primary-bg)] text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20"
       title={label}
     >
       <Icon className="w-2.5 h-2.5" />
@@ -80,7 +80,7 @@ const CapabilityBadge = memo(function CapabilityBadge({
 const ScoreBar = memo(function ScoreBar({
   score,
   label,
-  color = "bg-[var(--accent-primary)]",
+  color = "bg-indigo-600",
 }: {
   score: number;
   label: string;
@@ -135,7 +135,7 @@ const ModelRow = memo(function ModelRow({
       className={cn(
         "p-3 rounded-lg border transition-colors",
         isTop3
-          ? "bg-[var(--accent-primary-bg)]/50 border-indigo-500/30/20"
+          ? "bg-indigo-500/10/50 border-indigo-500/30/20"
           : "border-edge hover:bg-surface-hover"
       )}
     >
@@ -146,7 +146,7 @@ const ModelRow = memo(function ModelRow({
             className={cn(
               "flex items-center justify-center w-7 h-7 rounded-lg font-bold text-sm",
               isTop3
-                ? "bg-[var(--accent-primary-bg)] border border-indigo-500/30/20"
+                ? "bg-indigo-500/10 border border-indigo-500/30/20"
                 : "bg-surface-secondary"
             )}
           >
@@ -313,7 +313,7 @@ export const FreeModelRankingsPanel = memo(function FreeModelRankingsPanel() {
                 <button
                   type="button"
                   onClick={() => setShowAll(true)}
-                  className="w-full mt-4 py-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-[var(--accent-primary-bg)] rounded-lg transition-colors"
+                  className="w-full mt-4 py-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
                 >
                   Show all models
                 </button>

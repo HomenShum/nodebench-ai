@@ -528,7 +528,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
               disabled={isGenerating || !canGenerateTags}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs border transition-colors ${isGenerating || !canGenerateTags
                 ? 'bg-surface-hover text-content-muted border-edge cursor-not-allowed'
-                : 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30 hover:bg-[var(--accent-primary)]/20'
+                : 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30 hover:bg-indigo-600/20'
                 }`}
               title={canGenerateTags ? 'Generate tags with AI' : 'Only the document owner can generate tags'}
             >
@@ -583,7 +583,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                     <span>{new Date(lastModified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     <span>{new Date(lastModified).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     {lastEditedBy && <LastEditorDisplay userId={lastEditedBy} />}
-                    {isRecent && <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full"></span>}
+                    {isRecent && <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>}
                   </div>
                   <div className="flex items-center gap-1 text-xs text-content-muted opacity-75">
                     <span>created</span>
@@ -595,7 +595,7 @@ export function DocumentHeader({ document }: DocumentHeaderProps) {
                   <span>created</span>
                   <span>{new Date(document._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   <span>{new Date(document._creationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  {isRecent && <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full"></span>}
+                  {isRecent && <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>}
                 </div>
               );
             })()}

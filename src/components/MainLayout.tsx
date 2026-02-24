@@ -502,7 +502,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -516,7 +516,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   <button
                     type="button"
                     onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
-                    className="text-content-muted hover:text-content-secondary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 rounded-sm px-1"
+                    className="text-content-muted hover:text-content-secondary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 rounded-sm px-1"
                   >
                     Home
                   </button>
@@ -539,11 +539,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               onClick={commandPalette.toggle}
               aria-label="Open command palette"
               data-testid="open-command-palette"
-              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 hover:border-[var(--accent-primary)]/30"
+              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 hover:border-indigo-500/30/30"
             >
               <Search className="h-4 w-4 text-content-muted group-hover:text-content-secondary transition-colors" />
               <span className="flex-1 text-left group-hover:text-content-secondary transition-colors">Search...</span>
-              <kbd className="ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded px-1.5 py-0.5 font-mono group-hover:border-[var(--accent-primary)]/30 transition-colors shadow-sm">
+              <kbd className="ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded px-1.5 py-0.5 font-mono group-hover:border-indigo-500/30/30 transition-colors shadow-sm">
                 {commandShortcutLabel}
               </kbd>
             </button>
@@ -556,7 +556,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setShowResearchDossier(false)}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-hover dark:hover:bg-white/10 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-surface-secondary text-content-secondary hover:bg-surface-hover dark:hover:bg-white/10 transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Home
@@ -565,7 +565,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] shadow-sm transition-all duration-200 relative active:scale-[0.98] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition-all duration-200 relative active:scale-[0.98] active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 Research
@@ -582,16 +582,16 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               type="button"
               onClick={() => setShowFastAgent((open) => !open)}
               aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 ${
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 ${
                 showFastAgent
-                  ? "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
+                  ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                   : "bg-surface text-content hover:bg-surface-hover"
               }`}
             >
               <Zap className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Assistant</span>
               {!showFastAgent && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[var(--accent-primary)]/80 rounded-full" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-600/80 rounded-full" />
               )}
             </button>
 
@@ -602,7 +602,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             <button
               type="button"
               onClick={() => openSettings(user ? "profile" : "usage")}
-              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40"
+              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40"
               aria-label="Settings"
               data-testid="open-settings"
             >
@@ -610,7 +610,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 user.image ? (
                   <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
                 ) : (
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-primary-hover)] flex items-center justify-center text-white text-xs font-bold">
+                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[rgb(79, 70, 229)] to-[var(--accent-primary-hover)] flex items-center justify-center text-white text-xs font-bold">
                     {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
                   </div>
                 )

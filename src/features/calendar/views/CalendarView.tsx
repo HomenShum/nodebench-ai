@@ -471,7 +471,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               <div className="font-medium text-content">
                 {d.toLocaleDateString("en-US", { weekday: "short" })}
               </div>
-              <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mt-1 ${d.toDateString() === now.toDateString() ? "bg-[var(--accent-primary)] text-white" : "text-content"}`}>
+              <div className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs mt-1 ${d.toDateString() === now.toDateString() ? "bg-indigo-600 text-white" : "text-content"}`}>
                 {d.getDate()}
               </div>
             </div>
@@ -490,7 +490,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 title="All-day or multi-day events appear in this strip"
                 aria-label="All-day events strip"
               >
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/20">
                   <Lightbulb className="w-3 h-3" /> All‑day & multi‑day
                 </span>
               </div>
@@ -534,7 +534,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 return (
                   <div
                     key={`allday-${String(e._id)}`}
-                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/20 text-content hover:ring-2 hover:ring-[var(--accent-primary)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 cursor-grab active:cursor-grabbing"
+                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-indigo-500/10 border border-indigo-500/30/20 text-content hover:ring-2 hover:ring-indigo-500/50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 cursor-grab active:cursor-grabbing"
                     style={{ gridColumn: `${colStart} / ${colEnd}`, gridRow: rIdx + 1 }}
                     role="button"
                     tabIndex={0}
@@ -583,7 +583,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           }
                           setEditingId(null);
                         }}
-                        className="w-full text-xs bg-surface/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                        className="w-full text-xs bg-surface/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-indigo-500/50"
                       />
                     ) : (
                       <>
@@ -801,7 +801,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               <div
                 key={dayIdx}
                 ref={(el) => { dayRefs.current[dayIdx] = el; }}
-                className="relative border-l border-edge cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/40 overflow-hidden"
+                className="relative border-l border-edge cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/40 overflow-hidden"
                 style={{ height: collapseEmpty ? totalDisplayHeight : hourHeightLocal * (showWorkHoursOnly ? (visibleEndHour - visibleStartHour) : 24) }}
                 role="gridcell"
                 tabIndex={0}
@@ -896,7 +896,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               >
                 {/* Today background highlight */}
                 {d.toDateString() === now.toDateString() && (
-                  <div className="absolute inset-0 bg-[var(--accent-primary-bg)] pointer-events-none" />
+                  <div className="absolute inset-0 bg-indigo-500/10 pointer-events-none" />
                 )}
                 {/* Hour lines (disabled in collapsed mode) */}
                 {!collapseEmpty && renderedHours.map((h) => (
@@ -906,7 +906,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 {/* Hovered slot highlight (15-min granularity) - off in collapsed mode */}
                 {!collapseEmpty && hoverSlot && hoverSlot.dayIdx === dayIdx && (
                   <div
-                    className="absolute left-0 right-0 bg-[var(--accent-primary-bg)] ring-1 ring-[var(--accent-primary)]/30 pointer-events-none"
+                    className="absolute left-0 right-0 bg-indigo-500/10 ring-1 ring-indigo-500/50/30 pointer-events-none"
                     style={{ top: hoverSlot.slotIdx * slotHeight, height: slotHeight }}
                   />
                 )}
@@ -926,7 +926,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                   const height = Math.max(endTop - startTop, 28);
                   return (
                     <div
-                      className="absolute left-1 right-1 rounded-md border-2 border-dashed border-[var(--accent-primary)] bg-[var(--accent-primary-bg)] p-1.5 shadow-sm"
+                      className="absolute left-1 right-1 rounded-md border-2 border-dashed border-indigo-500/30 bg-indigo-500/10 p-1.5 shadow-sm"
                       style={{ top: startTop, height }}
                       onClick={(ev) => ev.stopPropagation()}
                     >
@@ -964,7 +964,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                   const height = Math.max(bottom - top, 2);
                   return (
                     <div
-                      className="absolute left-1 right-1 rounded-md border-2 border-dashed border-[var(--accent-primary)]/50 bg-[var(--accent-primary-bg)] pointer-events-none"
+                      className="absolute left-1 right-1 rounded-md border-2 border-dashed border-indigo-500/30/50 bg-indigo-500/10 pointer-events-none"
                       style={{ top, height }}
                     />
                   );
@@ -1025,14 +1025,14 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     <div
                       key={e._id}
                       ref={(el) => { if (el) eventRefs.current[String(e._id)] = el; }}
-                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:ring-2 hover:ring-[var(--accent-primary)]/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/70 cursor-grab active:cursor-grabbing"
+                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:ring-2 hover:ring-indigo-500/50/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/70 cursor-grab active:cursor-grabbing"
                       style={{
                         top: pe.top,
                         height: pe.height,
                         left: `calc(${leftPercent}% + 2px)`,
                         width: `calc(${colWidth}% - 4px)`,
                         backgroundColor: "var(--accent-primary-bg)",
-                        borderLeft: "3px solid var(--accent-primary)",
+                        borderLeft: "3px solid rgb(79, 70, 229)",
                       }}
                       title={`${start.toLocaleTimeString()} - ${end.toLocaleTimeString()} - Drag to AI assistant to create a report`}
                       data-event-block
@@ -1088,7 +1088,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           </div>
                           {allDay && (
                             <div className="mt-0.5">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-xs bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/20 text-[var(--accent-primary)]">
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-md border text-xs bg-indigo-500/10 border-indigo-500/30/20 text-indigo-600 dark:text-indigo-400">
                                 All-day
                               </span>
                             </div>
@@ -1173,7 +1173,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-4 border-edge"></div>
-                <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-4 border-[var(--accent-primary)] border-t-transparent absolute inset-0"></div>
+                <div className="motion-safe:animate-spin rounded-full h-12 w-12 border-4 border-indigo-500/30 border-t-transparent absolute inset-0"></div>
               </div>
               <p className="text-sm text-content-secondary font-medium">
                 {isCreating ? 'Creating your calendar...' : 'Loading calendar...'}

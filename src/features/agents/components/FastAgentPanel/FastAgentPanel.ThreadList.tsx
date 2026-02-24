@@ -190,7 +190,7 @@ export function FastAgentThreadList({
             onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(-1); }}
             onKeyDown={handleKeyNav}
             aria-label="Search conversations"
-            className="w-full pl-8 pr-8 py-1.5 bg-surface border border-edge/60 rounded-lg text-xs text-content placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20 focus:border-indigo-500/30/50 transition-all"
+            className="w-full pl-8 pr-8 py-1.5 bg-surface border border-edge/60 rounded-lg text-xs text-content placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/20 focus:border-indigo-500/30/50 transition-all"
           />
           {searchQuery && (
             <button
@@ -229,7 +229,7 @@ export function FastAgentThreadList({
                   >
                     {/* Active indicator bar */}
                     {activeThreadId === thread._id && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-[var(--accent-primary)]" />
+                      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-indigo-600" />
                     )}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">

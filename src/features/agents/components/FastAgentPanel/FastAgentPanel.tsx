@@ -2103,7 +2103,7 @@ export function FastAgentPanel({
         onDragLeave={(e) => { if (e.currentTarget === e.target) setIsDragOver(false); }}
       >
         {/* Skip to content link (a11y) */}
-        <a href="#fa-chat-input" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:bg-[var(--accent-primary)] focus:text-white focus:px-3 focus:py-1.5 focus:rounded focus:text-xs">
+        <a href="#fa-chat-input" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:bg-indigo-600 focus:text-white focus:px-3 focus:py-1.5 focus:rounded focus:text-xs">
           Skip to chat input
         </a>
 
@@ -2160,7 +2160,7 @@ export function FastAgentPanel({
                         role="option"
                         aria-selected={p.id === activePersona}
                         onClick={() => { setActivePersona(p.id); setShowPersonaPicker(false); toast.success(`Switched to ${p.name}`); }}
-                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${p.id === activePersona ? 'bg-[var(--accent-primary)]/10 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-content-secondary hover:bg-surface-secondary'}`}
+                        className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left transition-colors ${p.id === activePersona ? 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 font-medium' : 'text-content-secondary hover:bg-surface-secondary'}`}
                       >
                         <span>{p.icon}</span>
                         <span>{p.name}</span>
@@ -2486,7 +2486,7 @@ export function FastAgentPanel({
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full px-3 py-1.5 text-xs text-left transition-colors ${activeTab === tab.id
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-[var(--accent-primary)]/5'
+                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-600/5'
                     : 'text-content-secondary hover:text-content hover:bg-surface-secondary'
                     }`}
                 >
@@ -2629,7 +2629,7 @@ export function FastAgentPanel({
                 {/* Scroll progress bar */}
                 {scrollProgress > 0.01 && scrollProgress < 0.99 && (
                   <div className="h-[2px] bg-surface-secondary flex-shrink-0">
-                    <div className="h-full bg-[var(--accent-primary)] transition-all duration-100" style={{ width: `${scrollProgress * 100}%` }} />
+                    <div className="h-full bg-indigo-600 transition-all duration-100" style={{ width: `${scrollProgress * 100}%` }} />
                   </div>
                 )}
 
@@ -3140,7 +3140,7 @@ export function FastAgentPanel({
                   key={tone.id}
                   type="button"
                   onClick={() => setTonePreset(tone.id)}
-                  className={`text-xs px-1.5 py-0.5 rounded-md border transition-colors ${tonePreset === tone.id ? 'bg-[var(--accent-primary)]/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium' : 'bg-transparent border-transparent text-content-muted hover:text-content'}`}
+                  className={`text-xs px-1.5 py-0.5 rounded-md border transition-colors ${tonePreset === tone.id ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium' : 'bg-transparent border-transparent text-content-muted hover:text-content'}`}
                   title={`Tone: ${tone.label}`}
                 >
                   {tone.icon}
@@ -3182,7 +3182,7 @@ export function FastAgentPanel({
             {/* Reply-To Indicator */}
             {replyToMsg && (
               <div className="mx-3 mt-1 px-3 py-1.5 rounded-t-lg border border-b-0 border-edge bg-surface-secondary flex items-center gap-2">
-                <div className="w-0.5 h-6 rounded-full bg-[var(--accent-primary)]" />
+                <div className="w-0.5 h-6 rounded-full bg-indigo-600" />
                 <div className="flex-1 min-w-0">
                   <span className="text-xs text-content-muted">Replying to {(replyToMsg as any).role === 'user' ? 'yourself' : 'AI'}</span>
                   <p className="text-xs text-content-secondary truncate">{((replyToMsg as any).text || (replyToMsg as any).content || '').slice(0, 80)}</p>
@@ -3258,7 +3258,7 @@ export function FastAgentPanel({
                     max={18}
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="w-[50px] h-1 accent-[var(--accent-primary)]"
+                    className="w-[50px] h-1 accent-[rgb(79, 70, 229)]"
                     aria-label={`Font size: ${fontSize}px`}
                   />
                   <span className="text-xs text-content-muted">A</span>
@@ -3426,7 +3426,7 @@ export function FastAgentPanel({
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder="Enter a custom system prompt for this thread (e.g., 'You are a financial analyst specializing in tech stocks...')"
                 aria-label="Custom system prompt"
-                className="flex-1 bg-surface-secondary border border-edge rounded-lg p-3 text-xs text-content placeholder:text-content-muted resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/20"
+                className="flex-1 bg-surface-secondary border border-edge rounded-lg p-3 text-xs text-content placeholder:text-content-muted resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50/20"
                 rows={5}
               />
               <div className="flex items-center justify-between mt-3">
@@ -3581,7 +3581,7 @@ export function FastAgentPanel({
                         }}
                         title="Click to scroll to this message"
                       >
-                        <div className={`absolute left-[-5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-surface ${isUser ? 'bg-[var(--accent-primary)]' : 'bg-green-500'}`} />
+                        <div className={`absolute left-[-5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-surface ${isUser ? 'bg-indigo-600' : 'bg-green-500'}`} />
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-surface-secondary text-content-muted">{isUser ? 'You' : 'AI'}</span>
                           <span className="text-xs tabular-nums text-content-muted">~{tokEst} tok</span>
@@ -3640,7 +3640,7 @@ export function FastAgentPanel({
                     : 0;
                   return (
                     <div key={idx} className="flex items-center gap-2 px-4 py-1.5 text-xs">
-                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUser ? 'bg-[var(--accent-primary)]' : 'bg-green-500'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUser ? 'bg-indigo-600' : 'bg-green-500'}`} />
                       <span className="font-medium text-content-secondary w-6">{isUser ? 'You' : 'AI'}</span>
                       <span className="flex-1 truncate text-content-muted">{(msg.text || msg.content || '').slice(0, 60)}</span>
                       <div className="flex items-center gap-1">
@@ -3790,7 +3790,7 @@ export function FastAgentPanel({
                           <div className="flex items-center gap-2">
                             <span className="text-xs w-8 text-content-muted">You</span>
                             <div className="flex-1 h-2 bg-surface-secondary rounded-full overflow-hidden">
-                              <div className="h-full bg-[var(--accent-primary)] rounded-full" style={{ width: `${Math.min((avgUserLen / Math.max(avgUserLen, avgAiLen, 1)) * 100, 100)}%` }} />
+                              <div className="h-full bg-indigo-600 rounded-full" style={{ width: `${Math.min((avgUserLen / Math.max(avgUserLen, avgAiLen, 1)) * 100, 100)}%` }} />
                             </div>
                             <span className="text-xs text-content-muted tabular-nums w-12 text-right">{avgUserLen} ch</span>
                           </div>
@@ -3830,10 +3830,10 @@ export function FastAgentPanel({
                     return (
                       <div
                         key={thread._id || idx}
-                        className={`relative pl-6 py-2 cursor-pointer rounded-r-lg transition-colors ${isActive ? 'bg-[var(--accent-primary)]/10' : 'hover:bg-surface-secondary'}`}
+                        className={`relative pl-6 py-2 cursor-pointer rounded-r-lg transition-colors ${isActive ? 'bg-indigo-600/10' : 'hover:bg-surface-secondary'}`}
                         onClick={() => { setActiveThreadId(thread._id); setShowBranchTree(false); }}
                       >
-                        <div className={`absolute left-[-5px] top-4 w-2.5 h-2.5 rounded-full border-2 border-surface ${isActive ? 'bg-[var(--accent-primary)]' : 'bg-content-muted'}`} />
+                        <div className={`absolute left-[-5px] top-4 w-2.5 h-2.5 rounded-full border-2 border-surface ${isActive ? 'bg-indigo-600' : 'bg-content-muted'}`} />
                         <div className="text-xs font-medium text-content truncate">{thread.title || 'Untitled'}</div>
                         <div className="text-xs text-content-muted">
                           {(thread as any).messageCount || '?'} msgs · {new Date(thread._creationTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -3919,12 +3919,12 @@ export function FastAgentPanel({
               <div className="p-4 space-y-3">
                 <p className="text-xs text-content-muted">Paste a ChatGPT or Claude conversation export (JSON format)</p>
                 <textarea
-                  className="w-full h-[120px] p-2 text-xs font-mono bg-surface-secondary border border-edge rounded-lg text-content resize-none focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full h-[120px] p-2 text-xs font-mono bg-surface-secondary border border-edge rounded-lg text-content resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   placeholder='{"messages": [{"role": "user", "content": "..."}, ...]}'
                 />
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => setShowImport(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface-secondary text-content-muted">Cancel</button>
-                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white">Import</button>
+                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white">Import</button>
                 </div>
               </div>
             </div>
@@ -3934,7 +3934,7 @@ export function FastAgentPanel({
         {/* Drag-to-resize handle (left edge) */}
         {variant !== 'sidebar' && (
           <div
-            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-[var(--accent-primary)]/30 transition-colors z-50 group"
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-600/30 transition-colors z-50 group"
             onMouseDown={(e) => {
               e.preventDefault();
               const startX = e.clientX;

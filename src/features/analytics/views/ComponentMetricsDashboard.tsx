@@ -32,7 +32,7 @@ interface MetricCardProps {
 function MetricCard({ title, value, subtitle, icon, accent, trend }: MetricCardProps) {
   const trendTone =
     trend?.direction === 'up'
-      ? 'text-[var(--accent-primary)]'
+      ? 'text-indigo-600 dark:text-indigo-400'
       : trend?.direction === 'down'
         ? 'text-content-secondary'
         : 'text-content-muted';
@@ -41,11 +41,11 @@ function MetricCard({ title, value, subtitle, icon, accent, trend }: MetricCardP
 
   return (
     <div
-      className={`nb-surface-card p-4 transition-colors hover:border-content-muted/30${accent ? ' border-l-2 border-l-[var(--accent-primary)] bg-surface-secondary/30' : ''}`}
+      className={`nb-surface-card p-4 transition-colors hover:border-content-muted/30${accent ? ' border-l-2 border-l-[rgb(79, 70, 229)] bg-surface-secondary/30' : ''}`}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="text-xs font-medium text-content-secondary">{title}</div>
-        <div className={accent ? 'text-[var(--accent-primary)]' : 'text-content-secondary'}>{icon}</div>
+        <div className={accent ? 'text-indigo-600 dark:text-indigo-400' : 'text-content-secondary'}>{icon}</div>
       </div>
       <div className="text-2xl font-semibold mb-1 text-content">{value}</div>
       {subtitle && <div className="text-xs text-content-secondary">{subtitle}</div>}
@@ -147,7 +147,7 @@ function SourcePerformanceBar({
           {ctr > 0 && (
             <>
               <span className="text-content-muted/60">|</span>
-              <span className="font-semibold text-[var(--accent-primary)]">
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
                 {parseFloat((ctr * 100).toFixed(1))}% CTR
               </span>
             </>
@@ -156,7 +156,7 @@ function SourcePerformanceBar({
       </div>
       <div className="h-2 bg-surface-secondary rounded-full overflow-hidden">
         <div
-          className="h-full bg-[var(--accent-primary)]/80 rounded-full transition-all duration-500 group-hover:bg-[var(--accent-primary)]"
+          className="h-full bg-indigo-600/80 rounded-full transition-all duration-500 group-hover:bg-indigo-600"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -197,7 +197,7 @@ function CategoryBreakdown({ category, itemCount, percentage, avgReadTime }: Cat
         <div className="flex items-center gap-2 mt-1">
           <div className="h-1.5 bg-surface-secondary rounded-full flex-1 max-w-[100px]">
             <div
-              className="h-full bg-[var(--accent-primary)]/70 rounded-full"
+              className="h-full bg-indigo-600/70 rounded-full"
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -400,7 +400,7 @@ export default function ComponentMetricsDashboard() {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(Number(e.target.value))}
-              className="px-3 py-2 border border-edge bg-surface text-content-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+              className="px-3 py-2 border border-edge bg-surface text-content-secondary rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
             >
               <option value={1}>Last 24 hours</option>
               <option value={7}>Last 7 days</option>
@@ -560,7 +560,7 @@ export default function ComponentMetricsDashboard() {
                           <div className={`
                             flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
                             ${index === 0
-                                ? 'bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/30'
+                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30/30'
                                 : index === 1
                                   ? 'bg-surface border border-edge text-content-secondary'
                                   : index === 2
@@ -580,7 +580,7 @@ export default function ComponentMetricsDashboard() {
                         </div>
                         <div className="text-right">
                           {source.avgCTR > 0 && (
-                            <div className="text-sm font-semibold text-[var(--accent-primary)]">
+                            <div className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
                               {parseFloat((source.avgCTR * 100).toFixed(1))}% CTR
                             </div>
                           )}
@@ -599,9 +599,9 @@ export default function ComponentMetricsDashboard() {
 
             {/* Integration Status Banner */}
             {aggregates.totalImpressions === 0 && (
-              <div className="nb-surface-card border-[var(--accent-primary)]/20 bg-[var(--accent-primary-bg)]/40 p-4">
+              <div className="nb-surface-card border-indigo-500/30/20 bg-indigo-500/10/40 p-4">
                 <div className="flex items-start gap-3">
-                  <TrendingUp className="text-[var(--accent-primary)] mt-0.5" size={20} />
+                  <TrendingUp className="text-indigo-600 dark:text-indigo-400 mt-0.5" size={20} />
                   <div>
                     <h3 className="font-semibold text-content mb-1">
                       Engagement Tracking Not Yet Active

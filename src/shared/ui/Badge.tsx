@@ -22,7 +22,7 @@ export function Badge({
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     info: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400",
     error: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400",
-    brand: "border-[var(--accent-primary)]/30 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]",
+    brand: "border-indigo-500/30/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
     neutral: "border-gray-300/40 dark:border-white/10 bg-surface-secondary text-content-secondary",
     premium: "border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-400",
   };

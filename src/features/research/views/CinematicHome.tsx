@@ -106,16 +106,16 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <div className={`
                         relative flex items-center gap-3 px-5 py-4 rounded-lg border transition-all duration-200
                         bg-surface shadow-sm
-                        focus-within:border-[var(--accent-primary)] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/10
+                        focus-within:border-indigo-500/30 focus-within:ring-2 focus-within:ring-indigo-500/50/10
                         ${isDragOver
-                            ? 'border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/10'
+                            ? 'border-indigo-500/30 ring-2 ring-indigo-500/50/10'
                             : 'border-edge hover:border-content-muted/30 hover:shadow-md'
                         }
                     `}>
                         {isDragOver ? (
                             <div className="flex items-center gap-3 w-full py-1">
-                                <Upload className="w-5 h-5 text-[var(--accent-primary)] motion-safe:animate-bounce" />
-                                <span className="text-[var(--accent-primary)] font-medium">Drop your file here...</span>
+                                <Upload className="w-5 h-5 text-indigo-600 dark:text-indigo-400 motion-safe:animate-bounce" />
+                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">Drop your file here...</span>
                             </div>
                         ) : (
                             <>
@@ -135,7 +135,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="flex-shrink-0 p-2 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2"
+                                    className="flex-shrink-0 p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2"
                                     aria-label="Send"
                                 >
                                     <Send className="w-4 h-4" />
@@ -155,7 +155,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <button
                         type="button"
                         onClick={() => onEnterHub()}
-                        className="hover:text-[var(--accent-primary)] transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 rounded-sm px-1"
+                        className="hover:text-indigo-600 dark:text-indigo-400 transition-colors flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 rounded-sm px-1"
                     >
                         Browse What's New <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -163,7 +163,7 @@ export default function CinematicHome({ onEnterHub, onEnterWorkspace, onOpenFast
                     <button
                         type="button"
                         onClick={onEnterWorkspace}
-                        className="hover:text-[var(--accent-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50 rounded-sm px-1"
+                        className="hover:text-indigo-600 dark:text-indigo-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 rounded-sm px-1"
                     >
                         Your Workspace
                     </button>
@@ -258,7 +258,7 @@ function QuickStartCard({ title, desc, icon, onClick }: {
                 group nb-surface-card w-full text-left
                 px-4 py-3 transition-all duration-200
                 hover:bg-surface-hover hover:border-edge
-                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50
+                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50
             "
         >
             <div className="flex items-start gap-3">
@@ -290,7 +290,7 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
             onClick={onClick}
             className={`
                 group relative p-6 text-left cursor-pointer overflow-hidden border rounded-xl transition-all duration-200
-                active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50
+                active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50
                 ${isDark
                     ? 'bg-surface-secondary border-edge text-content hover:bg-surface-hover shadow-sm'
                     : 'bg-surface border-edge text-content hover:bg-surface-hover shadow-sm'
@@ -299,7 +299,7 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
         >
             <div className="relative z-10 flex flex-col h-full">
                 <div className={`w-9 h-9 mb-4 flex items-center justify-center rounded-lg border
-                    ${isDark ? 'bg-surface border-edge text-[var(--accent-primary)]' : 'bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/15 text-[var(--accent-primary)]'}
+                    ${isDark ? 'bg-surface border-edge text-indigo-600 dark:text-indigo-400' : 'bg-indigo-500/10 border-indigo-500/30/15 text-indigo-600 dark:text-indigo-400'}
                 `}>
                     {icon}
                 </div>
@@ -315,7 +315,7 @@ function DiscoveryCard({ title, desc, btnText, onClick, variant, icon }: {
                     <span className="text-sm font-semibold transition-all duration-200 text-content">
                         {btnText}
                     </span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 text-[var(--accent-primary)]" />
+                    <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 text-indigo-600 dark:text-indigo-400" />
                 </div>
             </div>
         </button>

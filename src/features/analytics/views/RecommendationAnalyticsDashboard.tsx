@@ -33,7 +33,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
   const dotColor = {
     green: 'bg-green-500',
     red: 'bg-red-500',
-    blue: 'bg-[var(--accent-primary)]',
+    blue: 'bg-indigo-600',
     yellow: 'bg-yellow-500',
     gray: 'bg-content-muted',
   };
@@ -189,7 +189,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge rounded-lg text-sm bg-surface text-content focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/50"
+              className="px-3 py-2 border border-edge rounded-lg text-sm bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -287,7 +287,7 @@ export default function RecommendationAnalyticsDashboard() {
                   { label: 'Rejected', value: metrics.rejected, dot: 'bg-red-500' },
                   { label: 'Ignored', value: metrics.ignored, dot: 'bg-yellow-500' },
                   { label: 'Dismissed', value: metrics.dismissed, dot: 'bg-content-muted' },
-                  { label: 'Snoozed', value: metrics.snoozed, dot: 'bg-[var(--accent-primary)]' },
+                  { label: 'Snoozed', value: metrics.snoozed, dot: 'bg-indigo-600' },
                 ].map(({ label, value: v, dot }) => (
                   <div key={label} className="text-center p-3 bg-surface-secondary rounded-lg border border-edge">
                     <div className="text-2xl font-bold text-content">{v}</div>
@@ -331,11 +331,11 @@ export default function RecommendationAnalyticsDashboard() {
 
             {/* Insights */}
             {metrics.total > 0 && (
-              <div className="bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/25 rounded-lg p-4">
+              <div className="bg-indigo-500/10 border border-indigo-500/30/25 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <PieChart className="text-[var(--accent-primary)] mt-0.5" size={20} />
+                  <PieChart className="text-indigo-600 dark:text-indigo-400 mt-0.5" size={20} />
                   <div>
-                    <h3 className="font-semibold text-[var(--accent-primary)] mb-1">
+                    <h3 className="font-semibold text-indigo-600 dark:text-indigo-400 mb-1">
                       Insights
                     </h3>
                     <ul className="text-sm text-content-secondary space-y-1">

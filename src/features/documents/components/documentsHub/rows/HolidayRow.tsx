@@ -48,7 +48,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
           "bg-surface-secondary border border-edge " +
           "transition-all duration-200 hover:bg-surface-hover " +
           "flex items-center justify-between " +
-          "focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent-primary)] hover:ring-2 ring-1 ring-[var(--accent-primary)]/10"
+          "focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500/50 hover:ring-2 ring-1 ring-indigo-500/50/10"
         }
         role="button"
         tabIndex={0}

@@ -52,7 +52,7 @@ const agentLabels: Record<AgentName, string> = {
 
 const statusColors = {
   scheduled: "bg-surface-secondary/20 text-content-muted border-edge/30",
-  running: "bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-[var(--accent-primary)]/30",
+  running: "bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/30",
   completed: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   failed: "bg-red-500/20 text-red-400 border-red-500/30",
   cancelled: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
@@ -60,7 +60,7 @@ const statusColors = {
 
 const statusIcons = {
   scheduled: <Loader2 className="w-3 h-3 text-content-muted" />,
-  running: <Loader2 className="w-3 h-3 text-[var(--accent-primary)] motion-safe:animate-spin" />,
+  running: <Loader2 className="w-3 h-3 text-indigo-600 dark:text-indigo-400 motion-safe:animate-spin" />,
   completed: <CheckCircle2 className="w-3 h-3 text-emerald-400" />,
   failed: <AlertCircle className="w-3 h-3 text-red-400" />,
   cancelled: <AlertCircle className="w-3 h-3 text-yellow-400" />,
@@ -85,7 +85,7 @@ function LaneCard({ delegation }: LaneCardProps) {
     <div
       className={`
         relative overflow-hidden rounded-lg border transition-all duration-300
-        ${isActive ? 'border-[var(--accent-primary)]/30 shadow-lg shadow-[var(--accent-primary)]/10' : 'border-white/10'}
+        ${isActive ? 'border-indigo-500/30/30 shadow-lg shadow-[rgb(79, 70, 229)]/10' : 'border-white/10'}
         bg-gradient-to-br from-surface/80 to-surface-secondary/80 backdrop-blur-sm
       `}
     >
@@ -98,7 +98,7 @@ function LaneCard({ delegation }: LaneCardProps) {
         `}>
           {agentIcons[delegation.agentName] || <Bot className="w-4 h-4" />}
           {isActive && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[var(--accent-primary)] rounded-full motion-safe:animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-indigo-600 rounded-full motion-safe:animate-pulse" />
           )}
         </div>
 
@@ -128,7 +128,7 @@ function LaneCard({ delegation }: LaneCardProps) {
           {toolsUsed.slice(0, 4).map((tool) => (
             <span
               key={tool}
-              className="px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/20 text-xs text-[var(--accent-primary)]"
+              className="px-2 py-0.5 rounded-full bg-indigo-600/10 border border-indigo-500/30/20 text-xs text-indigo-600 dark:text-indigo-400"
             >
               {tool}
             </span>
@@ -147,7 +147,7 @@ function LaneCard({ delegation }: LaneCardProps) {
           <p className="text-xs text-white/70 font-mono leading-relaxed whitespace-pre-wrap">
             {truncatedText}
             {isStreaming && (
-              <span className="inline-block w-1.5 h-4 bg-[var(--accent-primary)] ml-0.5 motion-safe:animate-pulse" />
+              <span className="inline-block w-1.5 h-4 bg-indigo-600 ml-0.5 motion-safe:animate-pulse" />
             )}
           </p>
         ) : isActive ? (
@@ -196,12 +196,12 @@ export function LiveAgentLanes({ runId, className = "" }: LiveAgentLanesProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
+          <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <span className="text-sm font-semibold text-white">Parallel Agents</span>
           {hasActiveDelegations && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30">
-              <span className="w-1.5 h-1.5 bg-[var(--accent-primary)] rounded-full motion-safe:animate-pulse" />
-              <span className="text-xs font-medium text-[var(--accent-primary)]">LIVE</span>
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-600/20 border border-indigo-500/30/30">
+              <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full motion-safe:animate-pulse" />
+              <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">LIVE</span>
             </span>
           )}
         </div>

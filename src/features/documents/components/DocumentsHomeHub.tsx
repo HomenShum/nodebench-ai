@@ -1580,7 +1580,7 @@ export function DocumentsHomeHub({
 
       el.classList.add(
         "ring-2",
-        "ring-[var(--accent-primary)]",
+        "ring-indigo-500/50",
         "ring-offset-1",
         "ring-offset-surface-secondary",
       );
@@ -1588,7 +1588,7 @@ export function DocumentsHomeHub({
       setTimeout(() => {
         el.classList.remove(
           "ring-2",
-          "ring-[var(--accent-primary)]",
+          "ring-indigo-500/50",
           "ring-offset-1",
           "ring-offset-surface-secondary",
         );
@@ -4250,7 +4250,7 @@ export function DocumentsHomeHub({
             </label>
 
             <select
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               value={listRange}
               onChange={(e) => {
                 const v = e.target.value;
@@ -4288,8 +4288,8 @@ export function DocumentsHomeHub({
           {/* Quick task input */}
 
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 focus-within:ring-2 focus-within:ring-[var(--accent-primary)]">
-              <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 focus-within:ring-2 focus-within:ring-indigo-500/50">
+              <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
 
               <input
                 value={newTaskTitle}
@@ -4308,7 +4308,7 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void handleCreateQuickTask()}
-              className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               title="Add task"
               disabled={!loggedInUser}
             >
@@ -4320,7 +4320,7 @@ export function DocumentsHomeHub({
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3">
             <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 min-w-0">
-              <Calendar className="h-4 w-4 text-[var(--accent-primary)]" />
+              <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
 
               <input
                 value={newEventTitle}
@@ -4381,7 +4381,7 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void _handleCreateQuickEvent()}
-              className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               title="Add event"
               disabled={
                 !loggedInUser ||
@@ -5357,8 +5357,8 @@ export function DocumentsHomeHub({
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface focus-within:ring-2 focus-within:ring-[var(--accent-primary)]">
-              <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface focus-within:ring-2 focus-within:ring-indigo-500/50">
+              <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
 
               <input
                 value={kanbanQuickTitle}
@@ -5369,7 +5369,7 @@ export function DocumentsHomeHub({
             </div>
 
             <select
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               value={kanbanQuickStatus}
               onChange={(e) => setKanbanQuickStatus(e.target.value as Status)}
             >
@@ -5386,12 +5386,12 @@ export function DocumentsHomeHub({
               type="datetime-local"
               value={kanbanQuickDue}
               onChange={(e) => setKanbanQuickDue(e.target.value)}
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               aria-label="Due date"
             />
 
             <select
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               value={kanbanQuickPriority}
               onChange={(e) => setKanbanQuickPriority(e.target.value)}
             >
@@ -5408,7 +5408,7 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void handleCreateQuickTaskKanban()}
-              className="px-3 py-2 bg-[var(--accent-primary)] text-white rounded-md hover:bg-[var(--accent-primary-hover)] text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               title="Add task"
               disabled={!loggedInUser}
             >
@@ -5477,7 +5477,7 @@ export function DocumentsHomeHub({
                     {/* Lane watermark */}
 
                     <span
-                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-[var(--accent-primary)]" : key === "done" ? "text-[var(--accent-primary)]" : key === "blocked" ? "text-rose-400" : "text-content-muted"}`}
+                      className={`document-card__bg document-row__bg ${key === "in_progress" ? "text-indigo-600 dark:text-indigo-400" : key === "done" ? "text-indigo-600 dark:text-indigo-400" : key === "blocked" ? "text-rose-400" : "text-content-muted"}`}
                     >
                       <ListTodo className="h-14 w-14 rotate-12" />
                     </span>
@@ -5501,7 +5501,7 @@ export function DocumentsHomeHub({
                     <div className="flex items-center justify-between mb-2">
                       {editingLane === key ? (
                         <input
-                          className={`text-sm font-semibold bg-transparent border-b border-edge focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-[var(--accent-primary)]" : key === "done" ? "text-content-secondary" : key === "blocked" ? "text-rose-700" : "text-content-secondary"}`}
+                          className={`text-sm font-semibold bg-transparent border-b border-edge focus:outline-none focus:ring-0 ${key === "in_progress" ? "text-indigo-600 dark:text-indigo-400" : key === "done" ? "text-content-secondary" : key === "blocked" ? "text-rose-700" : "text-content-secondary"}`}
                           autoFocus
                           value={laneDraft}
                           onChange={(e) => setLaneDraft(e.target.value)}
@@ -5521,7 +5521,7 @@ export function DocumentsHomeHub({
                         />
                       ) : (
                         <h3
-                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-[var(--accent-primary)]" : key === "done" ? "text-content-secondary" : key === "blocked" ? "text-rose-700" : "text-content-secondary"}`}
+                          className={`text-sm font-semibold cursor-text ${key === "in_progress" ? "text-indigo-600 dark:text-indigo-400" : key === "done" ? "text-content-secondary" : key === "blocked" ? "text-rose-700" : "text-content-secondary"}`}
                           title="Click to rename lane"
                           onClick={() => startEditLane(key)}
                         >
@@ -5531,7 +5531,7 @@ export function DocumentsHomeHub({
 
                       <div className="flex items-center gap-2">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/30 text-[var(--accent-primary)]" : key === "done" ? "bg-[var(--accent-primary-bg)] border-[var(--accent-primary)]/20 text-content-secondary" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-surface-secondary border-edge text-content-secondary"}`}
+                          className={`px-2 py-0.5 rounded-full text-xs border ${key === "in_progress" ? "bg-indigo-500/10 border-indigo-500/30/30 text-indigo-600 dark:text-indigo-400" : key === "done" ? "bg-indigo-500/10 border-indigo-500/30/20 text-content-secondary" : key === "blocked" ? "bg-rose-50 border-rose-200 text-rose-700" : "bg-surface-secondary border-edge text-content-secondary"}`}
                         >
                           {sorted.length}
                         </span>
@@ -5660,12 +5660,12 @@ export function DocumentsHomeHub({
     return (
       <div
         ref={setNodeRef}
-        className={`relative group border-b border-r border-edge p-2 min-h-[160px] ${isOver ? "bg-[var(--accent-primary-bg)]" : ""}`}
+        className={`relative group border-b border-r border-edge p-2 min-h-[160px] ${isOver ? "bg-indigo-500/10" : ""}`}
       >
         <div className="flex items-center justify-between">
           {isToday ? (
             <div className="inline-flex items-center gap-2">
-              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--accent-primary-bg)] text-content-secondary border border-[var(--accent-primary)]/30">
+              <span className="text-xs inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-500/10 text-content-secondary border border-indigo-500/30/30">
                 Today
               </span>
 
@@ -5682,7 +5682,7 @@ export function DocumentsHomeHub({
           <button
             onClick={onAddTask}
             title="Add item"
-            className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover text-content-muted opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 ring-[var(--accent-primary)]"
+            className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover text-content-muted opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 ring-indigo-500/50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -5846,7 +5846,7 @@ export function DocumentsHomeHub({
                           {/* Favorite */}
 
                           <button
-                            className={`w-5 h-5 rounded border ${entry.item.isFavorite ? "bg-yellow-500 text-yellow-100 border-yellow-500" : "bg-surface hover:bg-surface-hover border-edge text-content-secondary hover:text-[var(--accent-primary)]"}`}
+                            className={`w-5 h-5 rounded border ${entry.item.isFavorite ? "bg-yellow-500 text-yellow-100 border-yellow-500" : "bg-surface hover:bg-surface-hover border-edge text-content-secondary hover:text-indigo-600 dark:text-indigo-400"}`}
                             title={
                               entry.item.isFavorite ? "Unfavorite" : "Favorite"
                             }
@@ -5868,7 +5868,7 @@ export function DocumentsHomeHub({
                           {/* Open */}
 
                           <button
-                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-[var(--accent-primary)]"
+                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-indigo-600 dark:text-indigo-400"
                             title="Open"
                             aria-label="Open"
                             onClick={(btnEv) => {
@@ -5905,7 +5905,7 @@ export function DocumentsHomeHub({
                           {/* Convert to event with undo */}
 
                           <button
-                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-[var(--accent-primary)]"
+                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-indigo-600 dark:text-indigo-400"
                             title="Convert to event"
                             aria-label="Convert to event"
                             onClick={async (btnEv) => {
@@ -6027,7 +6027,7 @@ export function DocumentsHomeHub({
                           {/* Open */}
 
                           <button
-                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-[var(--accent-primary)]"
+                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-indigo-600 dark:text-indigo-400"
                             title="Open"
                             aria-label="Open"
                             onClick={(evBtn) => {
@@ -6068,7 +6068,7 @@ export function DocumentsHomeHub({
                           {/* Convert to task with undo */}
 
                           <button
-                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-[var(--accent-primary)]"
+                            className="w-5 h-5 rounded bg-surface hover:bg-surface-hover border border-edge text-content-secondary hover:text-indigo-600 dark:text-indigo-400"
                             title="Convert to task"
                             aria-label="Convert to task"
                             onClick={async (evBtn) => {
@@ -6967,7 +6967,7 @@ export function DocumentsHomeHub({
                         <button
                           key={String(s._id)}
                           type="button"
-                          className="text-left rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover p-3 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                          className="text-left rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                           onClick={() => {
                             navigate(`/spreadsheets/${String(s._id)}`);
                           }}
@@ -7056,8 +7056,8 @@ export function DocumentsHomeHub({
                             onClick={() => open()}
                             className="w-full flex flex-col items-center justify-center py-16 px-6 text-center rounded-lg hover:bg-surface-hover/40 transition-colors cursor-pointer group"
                           >
-                            <div className="w-12 h-12 rounded-xl bg-[var(--accent-primary-bg)] border border-[var(--accent-primary)]/30 flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-[1.02]">
-                              <FileText className="w-7 h-7 text-[var(--accent-primary)]" />
+                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30/30 flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-[1.02]">
+                              <FileText className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <p className="text-lg font-semibold text-content mb-1">
                               Drop a PDF to extract key points
@@ -7363,7 +7363,7 @@ export function DocumentsHomeHub({
                                 className="text-sm font-semibold text-content mb-3 flex items-center gap-2"
                                 title="Calendar-related items like schedules and events"
                               >
-                                <Calendar className="h-4 w-4 text-[var(--accent-primary)]" />
+                                <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                 Calendar{" "}
                                 <span className="text-content-secondary font-normal">
                                   ({groupedDocuments.calendar.length})
@@ -7467,7 +7467,7 @@ export function DocumentsHomeHub({
                                 className="text-sm font-semibold text-content mb-3 flex items-center gap-2"
                                 title="Text documents you created or imported"
                               >
-                                <FileText className="h-4 w-4 text-[var(--accent-primary)]" />
+                                <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                 Documents{" "}
                                 <span className="text-content-secondary font-normal">
                                   ({groupedDocuments.text.length})
@@ -7571,7 +7571,7 @@ export function DocumentsHomeHub({
                                 className="text-sm font-semibold text-content mb-3 flex items-center gap-2"
                                 title="Uploaded files (PDFs, images, spreadsheets, etc.)"
                               >
-                                <File className="h-4 w-4 text-[var(--accent-primary)]" />
+                                <File className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                                 Files{" "}
                                 <span className="text-content-secondary font-normal">
                                   ({groupedDocuments.files.length})
@@ -7790,7 +7790,7 @@ export function DocumentsHomeHub({
                   value={newTaskModalTitle}
                   onChange={(e) => setNewTaskModalTitle(e.target.value)}
                   placeholder="e.g., Follow up with design team"
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                 />
               </div>
 
@@ -7804,7 +7804,7 @@ export function DocumentsHomeHub({
                   onChange={(e) => setNewTaskModalDescription(e.target.value)}
                   placeholder="Add a few details to provide context..."
                   rows={3}
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)] resize-y"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-indigo-500/50 resize-y"
                 />
               </div>
 
@@ -7818,7 +7818,7 @@ export function DocumentsHomeHub({
                     type="date"
                     value={newTaskModalDue}
                     onChange={(e) => setNewTaskModalDue(e.target.value)}
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   />
                 </div>
 
@@ -7830,7 +7830,7 @@ export function DocumentsHomeHub({
                   <select
                     value={newTaskModalPriority}
                     onChange={(e) => setNewTaskModalPriority(e.target.value)}
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
                   >
                     <option value="">None</option>
 
@@ -7860,7 +7860,7 @@ export function DocumentsHomeHub({
                   disabled={
                     !newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask
                   }
-                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-surface-secondary text-content-muted border border-edge cursor-not-allowed" : "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]"}`}
+                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-surface-secondary text-content-muted border border-edge cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
                   title={!loggedInUser ? "Please sign in to create tasks" : undefined}
                 >
                   {isSubmittingTask ? "Creating..." : "Create Task"}

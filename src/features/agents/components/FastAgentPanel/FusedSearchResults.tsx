@@ -96,13 +96,13 @@ export interface FusedSearchResultsProps {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SOURCE_CONFIG: Record<SearchSource, { icon: React.ElementType; label: string; color: string }> = {
-  linkup: { icon: Globe, label: "Web", color: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20" },
+  linkup: { icon: Globe, label: "Web", color: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20" },
   sec: { icon: Building2, label: "SEC", color: "bg-surface-secondary text-content-secondary border-edge" },
   rag: { icon: Database, label: "Internal", color: "bg-surface-secondary text-content-secondary border-edge" },
   documents: { icon: FileText, label: "Docs", color: "bg-green-100 text-green-700 border-green-200" },
   news: { icon: Newspaper, label: "News", color: "bg-red-100 text-red-700 border-red-200" },
   youtube: { icon: Youtube, label: "YouTube", color: "bg-rose-100 text-rose-700 border-rose-200" },
-  arxiv: { icon: BookOpen, label: "arXiv", color: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20" },
+  arxiv: { icon: BookOpen, label: "arXiv", color: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30/20" },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -130,7 +130,7 @@ function SourceBadge({ source, count, active, onClick }: {
       aria-label={`Filter by ${config.label} source (${count} result${count !== 1 ? 's' : ''})`}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
-        "focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1",
+        "focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1",
         active ? config.color : "bg-surface-hover text-content-muted border-edge opacity-50"
       )}
     >
@@ -160,7 +160,7 @@ function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1 rounded"
+        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1 rounded"
         aria-expanded={expanded}
         aria-controls="source-error-details"
       >
@@ -200,7 +200,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
       target="_blank"
       rel="noopener noreferrer"
       aria-label={ariaLabel}
-      className="group block p-3 rounded-lg border border-edge hover:border-edge transition-all bg-surface focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1"
+      className="group block p-3 rounded-lg border border-edge hover:border-edge transition-all bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1"
     >
       <div className="flex items-start gap-3">
         {/* Source icon */}
@@ -210,10 +210,10 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-medium text-content truncate group-hover:text-[var(--accent-primary-hover)]">{result.title}</h4>
+            <h4 className="text-sm font-medium text-content truncate group-hover:text-indigo-700 dark:text-indigo-300">{result.title}</h4>
             {citationNumber !== undefined && (
               <span
-                className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] flex items-center justify-center text-xs font-semibold"
+                className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-semibold"
                 aria-label={`Citation ${citationNumber}`}
               >
                 {citationNumber}
@@ -309,7 +309,7 @@ export function FusedSearchResults({
             {filteredResults.length} result{filteredResults.length !== 1 ? 's' : ''}
           </span>
           {activeSources.size < sourcesQueried.length && (
-            <button type="button" onClick={resetFilters} className="text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] hover:underline flex items-center gap-1">
+            <button type="button" onClick={resetFilters} className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 hover:underline flex items-center gap-1">
               <X className="w-3 h-3" /> Reset filters
             </button>
           )}
@@ -363,7 +363,7 @@ export function FusedSearchResults({
         <button
           type="button"
           onClick={() => setShowAll(!showAll)}
-          className="w-full py-2 text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-1 rounded"
+          className="w-full py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1 rounded"
           aria-expanded={showAll}
           aria-label={showAll ? "Show fewer results" : `Show ${filteredResults.length - INITIAL_COUNT} more results`}
         >

@@ -219,7 +219,7 @@ export function CleanSidebar({
         aria-label={label}
         onClick={() => onViewChange?.(view as any)}
         className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${currentView === view
-            ? 'border-l-[var(--accent-primary)] bg-[var(--accent-primary-bg)] text-content'
+            ? 'border-l-[rgb(79, 70, 229)] bg-indigo-500/10 text-content'
             : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
           }`}
       >
@@ -241,7 +241,7 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="w-8 h-8 bg-[var(--accent-primary)] rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-[var(--accent-primary-hover)] transition-colors"
+              className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-indigo-700 transition-colors"
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <span className="text-white font-bold text-sm">N</span>

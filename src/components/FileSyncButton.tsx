@@ -29,7 +29,7 @@ export const FileSyncButton: React.FC = () => {
     <button
       onClick={() => void handleSync()}
       disabled={isSyncing}
-      className="flex items-center gap-2 px-3 py-2 text-sm bg-[var(--accent-primary)] text-white rounded-lg hover:bg-[var(--accent-primary)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-600/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title="Convert uploaded files to documents"
     >
       {isSyncing ? (

@@ -119,7 +119,7 @@ export const McpToolLedgerView: React.FC = () => {
                   className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
                     policyAndUsage.config.enforce
                       ? "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400"
-                      : "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]"
+                      : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
                   }`}
                 >
                   {policyAndUsage.config.enforce ? "Active" : "Monitoring"}
@@ -231,7 +231,7 @@ export const McpToolLedgerView: React.FC = () => {
                 className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   policyAndUsage.config.enforce
                     ? "bg-red-600 text-white hover:bg-red-500"
-                    : "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]"
+                    : "bg-indigo-600 text-white hover:bg-indigo-700"
                 } ${policyActionBusy ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 {policyActionBusy
@@ -272,7 +272,7 @@ export const McpToolLedgerView: React.FC = () => {
                         <div className="flex-1">
                           <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
                             <div
-                              className="h-2 bg-[var(--accent-primary)]"
+                              className="h-2 bg-indigo-600"
                               style={{ width: `${pct ?? 0}%` }}
                             />
                           </div>
@@ -328,7 +328,7 @@ export const McpToolLedgerView: React.FC = () => {
                     c.allowed === false
                       ? { label: "BLOCKED", cls: "bg-red-100 dark:bg-red-950/30 text-red-900 dark:text-red-400" }
                       : c.success === true
-                        ? { label: "OK", cls: "bg-[var(--accent-primary-bg)] text-[var(--accent-primary)]" }
+                        ? { label: "OK", cls: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" }
                       : c.success === false
                           ? { label: "ERROR", cls: "bg-rose-500/10 text-rose-600 dark:text-rose-400" }
                           : { label: "RUNNING", cls: "bg-surface-secondary text-content-secondary" };
@@ -347,7 +347,7 @@ export const McpToolLedgerView: React.FC = () => {
                           {c.allowed === false ? (
                             <XCircle className="h-4 w-4 text-red-600" />
                           ) : c.success === true ? (
-                            <CheckCircle2 className="h-4 w-4 text-[var(--accent-primary)]" />
+                            <CheckCircle2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                           ) : (
                             <Clock className="h-4 w-4 text-content-secondary" />
                           )}

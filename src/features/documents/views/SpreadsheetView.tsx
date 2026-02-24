@@ -853,7 +853,7 @@ useEffect(() => {
                       </label>
                       <div className="flex items-center gap-2">
                         <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover">Cancel</button>
-                        <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
+                        <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-600/90">Analyze</button>
                       </div>
                     </div>
                   </div>
@@ -1034,7 +1034,7 @@ useEffect(() => {
         </div>
       </Panel>
       <PanelResizeHandle
-        className="w-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] transition-colors cursor-col-resize"
+        className="w-1 bg-[var(--border-color)] hover:bg-indigo-600 transition-colors cursor-col-resize"
         onDoubleClick={resetHorizontal}
         title="Double-click to reset layout"
       />

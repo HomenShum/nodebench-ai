@@ -321,19 +321,19 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
     switch (fileType) {
       case 'csv':
       case 'excel':
-        return <Table className="h-8 w-8 text-[var(--accent-primary)]" />;
+        return <Table className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />;
       case 'image':
         return <ImageIcon className="h-8 w-8 text-cyan-500" />;
       case 'video':
-        return <FileVideo className="h-8 w-8 text-[var(--accent-primary)]" />;
+        return <FileVideo className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />;
       case 'audio':
-        return <FileAudio className="h-8 w-8 text-[var(--accent-primary)]" />;
+        return <FileAudio className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />;
       case 'pdf':
         return <FileText className="h-8 w-8 text-red-500" />;
       case 'text':
         return <FileText className="h-8 w-8 text-content-secondary" />;
       case 'code':
-        return <Code2 className="h-8 w-8 text-[var(--accent-primary)]" />;
+        return <Code2 className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />;
       default:
         return <File className="h-8 w-8 text-content-muted" />;
     }
@@ -548,7 +548,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
             <a
               href={storageUrl}
               download={file.fileName}
-              className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 transition-colors"
             >
               <Download className="h-4 w-4" />
               Download {file.fileName}
@@ -611,10 +611,10 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                     </button>
                     {isImageOrVideo && (
                       <>
-                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit height" aria-label="Fit height">
+                        <button type="button" onClick={() => { setFitAxis('height'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'height' && zoomMode === 'fit' ? 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit height" aria-label="Fit height">
                           <StretchVertical strokeWidth={1.25} className="h-4 w-4" />
                         </button>
-                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit width" aria-label="Fit width">
+                        <button type="button" onClick={() => { setFitAxis('width'); setZoomMode('fit'); }} className={`p-1 rounded-md ${fitAxis === 'width' && zoomMode === 'fit' ? 'bg-indigo-600/10 text-indigo-600 dark:text-indigo-400' : 'hover:bg-surface-hover text-content-secondary'}`} title="Fit width" aria-label="Fit width">
                           <StretchHorizontal strokeWidth={1.25} className="h-4 w-4" />
                         </button>
                       </>
@@ -654,7 +654,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                         </label>
                         <div className="flex items-center gap-2">
                           <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover">Cancel</button>
-                          <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90">Analyze</button>
+                          <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-600/90">Analyze</button>
                         </div>
                       </div>
                     </div>
@@ -696,7 +696,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
               </div>
             </Panel>
             <PanelResizeHandle
-              className="w-1 bg-[var(--border-color)] hover:bg-[var(--accent-primary)] transition-colors cursor-col-resize"
+              className="w-1 bg-[var(--border-color)] hover:bg-indigo-600 transition-colors cursor-col-resize"
               onDoubleClick={resetHorizontal}
               title="Double-click to reset layout"
             />

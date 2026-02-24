@@ -35,10 +35,10 @@ interface DocumentGridProps {
 // Color system (no changes)
 const getDocumentColors = (index: number) => {
     const colorIndex = index % 12;
-    const backgroundColors = [ 'bg-[var(--accent-primary)]/10', 'bg-[var(--accent-secondary)]/10', 'bg-[var(--accent-primary)]/8', 'bg-[var(--accent-secondary)]/8', 'bg-[var(--accent-primary)]/12', 'bg-[var(--accent-secondary)]/12', 'bg-[var(--accent-primary)]/6', 'bg-[var(--accent-secondary)]/6', 'bg-[var(--accent-primary)]/14', 'bg-[var(--accent-secondary)]/14', 'bg-[var(--accent-primary)]/9', 'bg-[var(--accent-secondary)]/9', ];
+    const backgroundColors = [ 'bg-indigo-600/10', 'bg-[var(--accent-secondary)]/10', 'bg-indigo-600/8', 'bg-[var(--accent-secondary)]/8', 'bg-indigo-600/12', 'bg-[var(--accent-secondary)]/12', 'bg-indigo-600/6', 'bg-[var(--accent-secondary)]/6', 'bg-indigo-600/14', 'bg-[var(--accent-secondary)]/14', 'bg-indigo-600/9', 'bg-[var(--accent-secondary)]/9', ];
     const dotColors = [ 'bg-blue-500', 'bg-indigo-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-cyan-500', 'bg-red-500', 'bg-yellow-500', 'bg-indigo-500', 'bg-rose-500', 'bg-indigo-500', 'bg-lime-500', ];
     const borderColors = [ 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', 'border-indigo-500/30/20', 'border-[var(--accent-secondary)]/20', ];
-    const outlineColors = [ 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', 'var(--accent-primary)', 'var(--accent-secondary)', ];
+    const outlineColors = [ 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', 'rgb(79, 70, 229)', 'var(--accent-secondary)', ];
     return { background: backgroundColors[colorIndex], dot: dotColors[colorIndex], border: borderColors[colorIndex], outlineColor: outlineColors[colorIndex] };
 };
   
@@ -414,7 +414,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
             <div className="bg-surface/95 backdrop-blur-md border-b border-edge">
               <div className="flex items-center justify-between px-4 py-3"> 
                 <div className="flex items-center gap-3">
-                  <div className={clsx("w-3 h-3 rounded-full shadow-sm", isCalendarDoc ? "bg-amber-500" : "bg-[var(--accent-primary)]")} />
+                  <div className={clsx("w-3 h-3 rounded-full shadow-sm", isCalendarDoc ? "bg-amber-500" : "bg-indigo-600")} />
                   <span className="text-lg font-semibold text-content">{fullscreenTab.title}</span>
                   <span className="text-sm text-content-secondary bg-surface-secondary px-2 py-1 rounded-md">Fullscreen</span>
                 </div> 
@@ -637,7 +637,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
                   )}
                   {isSelected && isFullscreen && (
                     <div className="absolute top-2 right-2 z-10">
-                      <div className="w-3 h-3 bg-[var(--accent-primary)] rounded-full shadow-sm motion-safe:animate-pulse" />
+                      <div className="w-3 h-3 bg-indigo-600 rounded-full shadow-sm motion-safe:animate-pulse" />
                     </div>
                   )}
                 </div>
@@ -658,7 +658,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
             </div> 
             <h3 className="text-lg font-semibold text-content">Maximum Tabs Reached</h3> 
             <p className="mt-2 text-sm text-content-secondary"> You have {openTabs.length} tabs open, but a single grid can only display 16. Please create a new grid panel to open more. </p> 
-            <button onClick={() => setMaxDocsWarningDismissed(true)} className="mt-6 w-full bg-[var(--accent-primary)] text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity" > OK </button> 
+            <button onClick={() => setMaxDocsWarningDismissed(true)} className="mt-6 w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity" > OK </button> 
           </div> 
         </div> 
       )}

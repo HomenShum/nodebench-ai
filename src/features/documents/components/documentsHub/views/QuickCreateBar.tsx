@@ -131,7 +131,7 @@ export function QuickCreateBar({
         <div className={`space-y-2 ${className}`}>
             {/* Quick task input */}
             <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface">
-                <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
+                <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                 <input
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
@@ -148,7 +148,7 @@ export function QuickCreateBar({
                 <button
                     type="button"
                     onClick={() => void handleCreateTask()}
-                    className="px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50"
+                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:opacity-50"
                     title="Add task"
                     disabled={!isLoggedIn || isCreatingTask || !newTaskTitle.trim()}
                 >
@@ -160,7 +160,7 @@ export function QuickCreateBar({
             {showEventCreate && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 min-w-0">
-                        <Calendar className="h-4 w-4 text-[var(--accent-primary)]" />
+                        <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                         <input
                             value={newEventTitle}
                             onChange={(e) => setNewEventTitle(e.target.value)}
@@ -207,7 +207,7 @@ export function QuickCreateBar({
                     <button
                         type="button"
                         onClick={() => void handleCreateEvent()}
-                        className="px-3 py-1.5 bg-[var(--accent-primary)] text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 whitespace-nowrap"
+                        className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:opacity-50 whitespace-nowrap"
                         title="Add event"
                         disabled={
                             !isLoggedIn ||

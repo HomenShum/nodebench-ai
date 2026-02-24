@@ -244,7 +244,7 @@ export const TaskRowGlobal = ({
           "bg-surface-secondary border border-edge " +
           "transition-all duration-200 hover:bg-surface-hover " +
           "flex items-center justify-between " +
-          "focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--accent-primary)] hover:ring-2 ring-1 ring-[var(--accent-primary)]/10"
+          "focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500/50 hover:ring-2 ring-1 ring-indigo-500/50/10"
         }
         role="button"
         tabIndex={0}
@@ -432,7 +432,7 @@ export const TaskRowGlobal = ({
                 onClick={handleStarClick}
                 aria-label={t.isFavorite ? "Unfavorite task" : "Favorite task"}
                 title={t.isFavorite ? "Unfavorite" : "Favorite"}
-                className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
+                className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
                   t.isFavorite
                     ? "bg-yellow-500 text-yellow-100 shadow-sm"
                     : "bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge"
@@ -446,7 +446,7 @@ export const TaskRowGlobal = ({
                 onClick={handleDeleteTask}
                 aria-label="Delete task"
                 title="Delete"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -459,7 +459,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Open"
                 title="Open"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               >
                 <Edit3 className="h-3.5 w-3.5" />
               </button>
@@ -472,7 +472,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Convert to event"
                 title="Convert to event"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
               </button>
@@ -489,7 +489,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Delete event"
                 title="Delete"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-red-500 text-content-secondary hover:text-white border border-edge hover:border-red-500 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -502,7 +502,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Open"
                 title="Open"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               >
                 <Edit3 className="h-3.5 w-3.5" />
               </button>
@@ -515,7 +515,7 @@ export const TaskRowGlobal = ({
                 }}
                 aria-label="Convert to task"
                 title="Convert to task"
-                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-surface hover:bg-surface-hover text-content-secondary hover:text-indigo-600 dark:text-indigo-400 border border-edge hover:border-indigo-500/30/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" />
               </button>

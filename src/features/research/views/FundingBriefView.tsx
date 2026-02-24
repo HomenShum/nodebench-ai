@@ -156,7 +156,7 @@ function FundingCard({
             <h3 className="font-semibold text-content truncate">
               {/^unknown\s*company/i.test(event.companyName) ? 'Undisclosed' : event.companyName}
             </h3>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium">
               {ROUND_TYPE_LABELS[event.roundType] || event.roundType}
             </span>
             {event.verificationStatus && (
@@ -240,7 +240,7 @@ function FundingCard({
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-3 text-xs text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]"
+          className="flex items-center gap-1 mt-3 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300"
           aria-expanded={expanded}
         >
           <ChevronDown
@@ -287,7 +287,7 @@ function FundingCard({
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-[var(--accent-primary)] hover:underline truncate flex items-center gap-1"
+                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline truncate flex items-center gap-1"
                   >
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     {event.sourceNames?.[idx] || url}
@@ -619,7 +619,7 @@ export function FundingBriefView() {
           <select
             value={lookbackDays}
             onChange={(e) => setLookbackDays(Number(e.target.value))}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
             aria-label="Time range"
           >
             <option value={7}>Last 7 days</option>
@@ -635,7 +635,7 @@ export function FundingBriefView() {
           <select
             value={roundTypeFilter}
             onChange={(e) => setRoundTypeFilter(e.target.value)}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
             aria-label="Round type"
           >
             <option value="">All Rounds</option>
@@ -651,7 +651,7 @@ export function FundingBriefView() {
             placeholder="Filter by sector..."
             value={sectorFilter}
             onChange={(e) => setSectorFilter(e.target.value)}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]/50"
+            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
             aria-label="Filter by sector"
           />
         </div>

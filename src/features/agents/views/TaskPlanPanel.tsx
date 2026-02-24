@@ -96,14 +96,14 @@ export function TaskPlanPanel({
             "w-8 h-8 rounded-full flex items-center justify-center",
             isComplete ? "bg-green-100" :
             hasError ? "bg-red-100" :
-            isRunning ? "bg-[var(--accent-primary-bg)]" : "bg-surface-hover"
+            isRunning ? "bg-indigo-500/10" : "bg-surface-hover"
           )}>
             {isComplete ? (
               <CheckCircle2 className="w-4 h-4 text-green-600" />
             ) : hasError ? (
               <AlertCircle className="w-4 h-4 text-red-600" />
             ) : isRunning ? (
-              <Loader2 className="w-4 h-4 text-[var(--accent-primary)] motion-safe:animate-spin" />
+              <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 motion-safe:animate-spin" />
             ) : (
               <Sparkles className="w-4 h-4 text-content-secondary" />
             )}
@@ -118,7 +118,7 @@ export function TaskPlanPanel({
               </span>
             </div>
             {activeStep && isRunning && (
-              <p className="text-xs text-[var(--accent-primary)] mt-0.5 motion-safe:animate-pulse">
+              <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 motion-safe:animate-pulse">
                 {activeStep.label}...
               </p>
             )}
@@ -147,7 +147,7 @@ export function TaskPlanPanel({
         <div
           className={cn(
             "h-full transition-all duration-500 ease-out",
-            isComplete ? "bg-green-500" : hasError ? "bg-red-500" : "bg-[var(--accent-primary)]"
+            isComplete ? "bg-green-500" : hasError ? "bg-red-500" : "bg-indigo-600"
           )}
           style={{ width: `${progressPercent}%` }}
         />
@@ -197,14 +197,14 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
         <div className={cn(
           "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300",
           isComplete ? "bg-green-500 border-green-500" :
-          isActive ? "bg-white border-[var(--accent-primary)] ring-4 ring-[var(--accent-primary-bg)]" :
+          isActive ? "bg-white border-indigo-500/30 ring-4 ring-[var(--accent-primary-bg)]" :
           isError ? "bg-red-500 border-red-500" :
           "bg-white border-edge"
         )}>
           {isComplete ? (
             <CheckCircle2 className="w-4 h-4 text-white" />
           ) : isActive ? (
-            <Loader2 className="w-4 h-4 text-[var(--accent-primary)] motion-safe:animate-spin" />
+            <Loader2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 motion-safe:animate-spin" />
           ) : isError ? (
             <AlertCircle className="w-4 h-4 text-white" />
           ) : (
@@ -221,7 +221,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
         <div className="flex items-center justify-between">
           <h4 className={cn(
             "text-sm font-medium leading-none",
-            isActive ? "text-[var(--accent-primary)]" :
+            isActive ? "text-indigo-600 dark:text-indigo-400" :
             isComplete ? "text-content" :
             isError ? "text-red-700" :
             "text-content-secondary"
@@ -252,7 +252,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
         {(step.toolName || step.agentName) && (
           <div className="flex items-center gap-2 mt-1">
             {step.toolName && (
-              <span className="text-xs px-1.5 py-0.5 bg-[var(--accent-primary-bg)] text-[var(--accent-primary)] rounded">
+              <span className="text-xs px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded">
                 {step.toolName}
               </span>
             )}
@@ -272,7 +272,7 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
                 <div className={cn(
                   "w-2 h-2 rounded-full",
                   substep.status === 'completed' ? "bg-green-500" :
-                  substep.status === 'in_progress' ? "bg-[var(--accent-primary)] motion-safe:animate-pulse" :
+                  substep.status === 'in_progress' ? "bg-indigo-600 motion-safe:animate-pulse" :
                   substep.status === 'error' ? "bg-red-500" :
                   "bg-content-muted"
                 )} />

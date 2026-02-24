@@ -34,8 +34,8 @@ import type { TaskSpan, SpanType, SpanStatus } from './types';
 const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; bgColor: string; label: string }> = {
   agent: {
     icon: <Bot className="w-3 h-3" />,
-    color: 'text-[var(--accent-primary)]',
-    bgColor: 'bg-[var(--accent-primary-bg)]',
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bgColor: 'bg-indigo-500/10',
     label: 'Agent'
   },
   generation: {
@@ -58,14 +58,14 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
   },
   handoff: {
     icon: <ArrowRightLeft className="w-3 h-3" />,
-    color: 'text-[var(--accent-primary)]',
-    bgColor: 'bg-[var(--accent-primary-bg)]',
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bgColor: 'bg-indigo-500/10',
     label: 'Handoff'
   },
   retrieval: {
     icon: <Search className="w-3 h-3" />,
-    color: 'text-[var(--accent-primary)]',
-    bgColor: 'bg-[var(--accent-primary-bg)]',
+    color: 'text-indigo-600 dark:text-indigo-400',
+    bgColor: 'bg-indigo-500/10',
     label: 'Retrieval'
   },
   delegation: {
@@ -83,7 +83,7 @@ const spanTypeConfig: Record<SpanType, { icon: React.ReactNode; color: string; b
 };
 
 const spanStatusConfig: Record<SpanStatus, { icon: React.ReactNode; color: string }> = {
-  running: { icon: <Loader2 className="w-3 h-3 motion-safe:animate-spin" />, color: 'text-[var(--accent-primary)]' },
+  running: { icon: <Loader2 className="w-3 h-3 motion-safe:animate-spin" />, color: 'text-indigo-600 dark:text-indigo-400' },
   completed: { icon: <CheckCircle2 className="w-3 h-3" />, color: 'text-emerald-600 dark:text-emerald-400' },
   error: { icon: <AlertCircle className="w-3 h-3" />, color: 'text-red-500' },
 };

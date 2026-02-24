@@ -100,8 +100,8 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
   const cardClasses = `
     group relative flex flex-col bg-surface border border-edge rounded-lg
     overflow-hidden cursor-pointer transition-all duration-200
-    hover:border-[var(--accent-primary)]
-    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-1
+    hover:border-indigo-500/30
+    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1
     ${compact ? 'w-40' : 'w-52'}
   `;
 
@@ -146,7 +146,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
             </div>
           )}
           {flags.isCited && (
-            <div className="w-5 h-5 rounded-full bg-[var(--accent-primary)] flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center">
               <CheckCircle2 className="w-3 h-3 text-white" />
             </div>
           )}
@@ -282,7 +282,7 @@ export function MediaRail({
       {/* Show More Link */}
       {allArtifacts.length > maxVisible && (
         <div className="mt-2 text-center">
-          <button type="button" className="text-xs text-[var(--accent-primary)] hover:opacity-80 font-medium">
+          <button type="button" className="text-xs text-indigo-600 dark:text-indigo-400 hover:opacity-80 font-medium">
             +{allArtifacts.length - maxVisible} more sources
           </button>
         </div>

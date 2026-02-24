@@ -469,7 +469,7 @@ export function CommandPalette({
                                         className={`
                                                     w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-l-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500
                                                     ${isSelected
-                                                ? 'bg-surface-secondary text-content border-l-[var(--accent-primary)]'
+                                                ? 'bg-surface-secondary text-content border-l-[rgb(79, 70, 229)]'
                                                 : 'text-content-secondary hover:bg-surface-hover border-l-transparent'
                                             }
                                                 `}
