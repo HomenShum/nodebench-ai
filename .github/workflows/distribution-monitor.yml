@@ -1,0 +1,56 @@
+name: Distribution Monitor
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday 9am UTC
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check npm downloads
+        run: |
+          echo "=== npm Downloads ==="
+          curl -s "https://api.npmjs.org/downloads/point/last-week/nodebench-mcp" | jq '.'
+          curl -s "https://api.npmjs.org/downloads/point/last-month/nodebench-mcp" | jq '.'
+          echo ""
+          echo "=== npm Package Info ==="
+          curl -s "https://registry.npmjs.org/nodebench-mcp/latest" | jq '{name, version, description: .description[0:80]}'
+
+      - name: Check Official MCP Registry
+        run: |
+          echo "=== MCP Registry ==="
+          curl -s "https://registry.modelcontextprotocol.io/v0.1/servers?search=nodebench" | jq '.servers[0].server.name, .servers[0]._meta'
+
+      - name: Check GitHub stats
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== GitHub Stars & Forks ==="
+          curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/HomenShum/nodebench-ai" | jq '{stars: .stargazers_count, forks: .forks_count, watchers: .subscribers_count, open_issues: .open_issues_count}'
+          echo ""
+          echo "=== Recent Release Downloads ==="
+          curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/HomenShum/nodebench-ai/releases/latest" | jq '{tag: .tag_name, published: .published_at}'
+
+      - name: Check directory listings
+        run: |
+          echo "=== Cline Marketplace Issue ==="
+          curl -s "https://api.github.com/repos/cline/mcp-marketplace/issues/801" | jq '{state, title: .title[0:60], labels: [.labels[].name]}'
+          echo ""
+          echo "=== awesome-mcp-servers Issue ==="
+          curl -s "https://api.github.com/repos/punkpeye/awesome-mcp-servers/issues/2788" | jq '{state, title: .title[0:60], labels: [.labels[].name]}'
+          echo ""
+          echo "=== mcp.so Issue ==="
+          curl -s "https://api.github.com/repos/chatmcp/mcpso/issues/693" | jq '{state, title: .title[0:60], labels: [.labels[].name]}'
+
+      - name: Summary
+        run: |
+          echo "============================================"
+          echo " NodeBench MCP Distribution Dashboard"
+          echo " $(date -u '+%Y-%m-%d %H:%M UTC')"
+          echo "============================================"
+          echo ""
+          echo "Channels: npm, GitHub, Official MCP Registry,"
+          echo "          Cline, awesome-mcp-servers, mcp.so,"
+          echo "          mcpservers.org, Glama.ai, PulseMCP"

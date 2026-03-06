@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.HomenShum/nodebench",
+  "description": "260 MCP tools across 49 domains. AI Flywheel, quality gates, research, web scraping.",
+  "repository": {
+    "url": "https://github.com/HomenShum/nodebench-ai",
+    "source": "github",
+    "subfolder": "packages/mcp-local"
+  },
+  "version": "2.31.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "nodebench-mcp",
+      "version": "2.31.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": []
+    }
+  ]
+}

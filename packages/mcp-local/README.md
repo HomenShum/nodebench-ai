@@ -1,5 +1,12 @@
 # NodeBench MCP
 
+[![npm version](https://img.shields.io/npm/v/nodebench-mcp.svg)](https://www.npmjs.com/package/nodebench-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/nodebench-mcp.svg)](https://www.npmjs.com/package/nodebench-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/HomenShum/nodebench-ai.svg)](https://github.com/HomenShum/nodebench-ai)
+[![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io)
+[![Tools](https://img.shields.io/badge/Tools-260-orange.svg)](https://www.npmjs.com/package/nodebench-mcp)
+
 **Make AI agents catch the bugs they normally ship.**
 
 One command gives your agent structured research, risk assessment, 3-layer testing, quality gates, and a persistent knowledge base — so every fix is thorough and every insight compounds into future work.
@@ -191,6 +198,92 @@ npx nodebench-mcp --reset-stats        # Clear analytics data
 ```
 
 All analytics data is stored locally in `~/.nodebench/analytics.db` and never leaves your machine.
+
+---
+
+## Headless Engine API (v2.30.0)
+
+NodeBench now ships a **headless, API-first Agentic Engine** — plug it into any client workflow and sell results, not software seats.
+
+```bash
+# Start MCP server with engine API on port 6276
+npx nodebench-mcp --engine
+
+# With auth token
+npx nodebench-mcp --engine --engine-secret "your-token"
+# or: ENGINE_SECRET=your-token npx nodebench-mcp --engine
+```
+
+### API Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/` | Engine status, tool count, uptime |
+| GET | `/api/health` | Health check |
+| GET | `/api/tools` | List all available tools |
+| POST | `/api/tools/:name` | Execute a single tool |
+| GET | `/api/workflows` | List all 32 workflow chains |
+| POST | `/api/workflows/:name` | Execute a workflow (with SSE streaming) |
+| POST | `/api/sessions` | Create an isolated session |
+| GET | `/api/sessions/:id` | Session status + call history |
+| GET | `/api/sessions/:id/trace` | Full disclosure trace |
+| GET | `/api/sessions/:id/report` | Conformance report |
+| DELETE | `/api/sessions/:id` | End session |
+| GET | `/api/presets` | List presets with tool counts |
+
+### Quick Examples
+
+```bash
+# Execute a single tool
+curl -X POST http://127.0.0.1:6276/api/tools/discover_tools \
+  -H "Content-Type: application/json" \
+  -d '{"args": {"query": "security audit"}, "preset": "full"}'
+
+# Run a workflow with streaming
+curl -N -X POST http://127.0.0.1:6276/api/workflows/fix_bug \
+  -H "Content-Type: application/json" \
+  -d '{"preset": "web_dev", "streaming": true}'
+
+# Create a session, execute tools, get conformance report
+SESSION=$(curl -s -X POST http://127.0.0.1:6276/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"preset": "web_dev"}' | jq -r .sessionId)
+
+curl -X POST "http://127.0.0.1:6276/api/tools/run_recon" \
+  -H "Content-Type: application/json" \
+  -d "{\"args\": {\"focusArea\": \"web\"}, \"sessionId\": \"$SESSION\"}"
+
+curl "http://127.0.0.1:6276/api/sessions/$SESSION/report"
+```
+
+### Conformance Reports
+
+Every workflow execution produces a conformance report scoring:
+- **Step completeness** — did all required tools execute?
+- **Quality gate** — did the quality gate pass?
+- **Test layers** — were unit/integration/e2e results logged?
+- **Flywheel** — was the methodology completed?
+- **Learnings** — were findings banked for next time?
+
+Grades: A (90+) / B (75+) / C (60+) / D (40+) / F (<40). Sell these reports as "Zero-bug deployment certificates" or "Automated WebMCP Conformance Reports."
+
+### SSE Streaming
+
+Workflow execution supports Server-Sent Events for real-time progress:
+
+```
+event: start
+data: {"workflow":"fix_bug","totalSteps":7,"sessionId":"eng_..."}
+
+event: step
+data: {"stepIndex":0,"tool":"search_all_knowledge","status":"running"}
+
+event: step
+data: {"stepIndex":0,"tool":"search_all_knowledge","status":"complete","durationMs":42}
+
+event: complete
+data: {"totalSteps":7,"totalDurationMs":340,"conformanceScore":88,"grade":"B"}
+```
 
 ---
 
