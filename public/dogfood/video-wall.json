@@ -1,0 +1,37 @@
+{
+  "capturedAtIso": "2026-03-06T00:00:00.000Z",
+  "items": [
+    {
+      "id": "full-dogfood-walkthrough",
+      "title": "Full Dogfood Walkthrough",
+      "description": "Published route-by-route walkthrough across the main NodeBench surfaces.",
+      "src": "/dogfood/walkthrough.mp4",
+      "mime": "video/mp4",
+      "group": "full"
+    },
+    {
+      "id": "agentic-session",
+      "title": "Agentic Session Recording",
+      "description": "Broader dogfood session artifact captured during the Gemini QA loop.",
+      "src": "/dogfood/videos/agentic-session.webm",
+      "mime": "video/webm",
+      "group": "full"
+    },
+    {
+      "id": "classic-wake-word",
+      "title": "Classic Home Wake Word",
+      "description": "Focused recording of hey nodebench activation on the classic home surface.",
+      "src": "/dogfood/videos/classic-wake-word.webm",
+      "mime": "video/webm",
+      "group": "voice"
+    },
+    {
+      "id": "cockpit-wake-word",
+      "title": "Cockpit Wake Word",
+      "description": "Focused recording of hey nodebench activation inside the cockpit HUD.",
+      "src": "/dogfood/videos/cockpit-wake-word.webm",
+      "mime": "video/webm",
+      "group": "voice"
+    }
+  ]
+}

@@ -8,7 +8,7 @@
  * - Smooth transitions
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
@@ -31,10 +31,14 @@ import {
   Activity,
   CheckSquare,
   FlaskConical,
+  Terminal,
+  HeartPulse,
+  Orbit,
 } from "lucide-react";
 import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./SidebarGlobalNav";
 import { SidebarButton } from "./ui";
 import { Tooltip } from "../shared/ui/Tooltip";
+import { sanitizeDocumentTitle } from "@/lib/displayText";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -52,6 +56,7 @@ interface CleanSidebarProps {
   onDocumentSelect?: (docId: Id<"documents">) => void;
   currentView?:
   | 'documents'
+  | 'spreadsheets'
   | 'calendar'
   | 'roadmap'
   | 'timeline'
@@ -74,9 +79,13 @@ interface CleanSidebarProps {
   | 'pr-suggestions'
   | 'linkedin-posts'
   | 'mcp-ledger'
-  | 'dogfood';
+  | 'dogfood'
+  | 'engine-demo'
+  | 'observability'
+  | 'oracle';
   onViewChange?: (view:
     | 'documents'
+    | 'spreadsheets'
     | 'calendar'
     | 'roadmap'
     | 'timeline'
@@ -99,7 +108,10 @@ interface CleanSidebarProps {
     | 'pr-suggestions'
     | 'linkedin-posts'
     | 'mcp-ledger'
-    | 'dogfood') => void;
+    | 'dogfood'
+    | 'engine-demo'
+    | 'observability'
+    | 'oracle') => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
@@ -108,25 +120,28 @@ interface CleanSidebarProps {
 // NOTE for Codex: Workbench is NOT dev-only — it's a core product surface.
 // Keep FlaskConical here alongside Activity Log + Usage & Costs.
 const dashboardItems = [
-  { icon: DollarSign, label: 'Usage & Costs', view: 'cost-dashboard' as const, subtitle: 'Spending trends' },
-  { icon: TrendingUp, label: 'Industry News', view: 'industry-updates' as const, subtitle: 'Latest updates' },
-  { icon: Activity, label: 'Activity Log', view: 'mcp-ledger' as const, subtitle: 'Request history' },
-  { icon: FlaskConical, label: 'Workbench', view: 'benchmarks' as const, subtitle: 'Model benchmarks' },
+  { icon: FlaskConical, label: 'Run benchmarks', view: 'benchmarks' as const, subtitle: 'Compare models on real tasks' },
+  { icon: HeartPulse, label: 'System health', view: 'observability' as const, subtitle: 'Observability and self-healing' },
+  { icon: Activity, label: 'Tool activity', view: 'mcp-ledger' as const, subtitle: 'Requests, audits, and traces' },
+  { icon: TrendingUp, label: 'Market watch', view: 'industry-updates' as const, subtitle: 'Industry and company movement' },
+  { icon: DollarSign, label: 'Spend', view: 'cost-dashboard' as const, subtitle: 'Usage and cost trends' },
+  { icon: Terminal, label: 'Engine API', view: 'engine-demo' as const, subtitle: 'Headless engine demo' },
+  { icon: Orbit, label: 'The Oracle', view: 'oracle' as const, subtitle: 'Career trajectory & quests' },
 ];
 
 // Dev-only items — hidden in production builds
 const devItems = [
-  { icon: CheckSquare, label: 'Quality Review', view: 'dogfood' as const, subtitle: 'Design review evidence' },
+  { icon: CheckSquare, label: 'Review evidence', view: 'dogfood' as const, subtitle: 'QA captures and verification' },
 ];
 
 // Discovery items
 const discoveryItems = [
-  { icon: Sparkles, label: 'For You', view: 'for-you-feed' as const, subtitle: 'Personalized feed' },
-  { icon: BookOpen, label: 'Recommendations', view: 'document-recommendations' as const, subtitle: 'Suggested reads' },
-  { icon: Zap, label: 'Agent Templates', view: 'agent-marketplace' as const, subtitle: 'Ready-made workflows' },
-  { icon: Github, label: 'GitHub Explorer', view: 'github-explorer' as const, subtitle: 'Repos & trends' },
-  { icon: GitPullRequest, label: 'PR Suggestions', view: 'pr-suggestions' as const, subtitle: 'Code reviews' },
-  { icon: Linkedin, label: 'LinkedIn Posts', view: 'linkedin-posts' as const, subtitle: 'Post archive' },
+  { icon: Sparkles, label: 'Suggested signals', view: 'for-you-feed' as const, subtitle: 'Personalized feed' },
+  { icon: BookOpen, label: 'Recommended docs', view: 'document-recommendations' as const, subtitle: 'Suggested reading' },
+  { icon: Zap, label: 'Ready workflows', view: 'agent-marketplace' as const, subtitle: 'Prebuilt agent flows' },
+  { icon: Github, label: 'Repo tracking', view: 'github-explorer' as const, subtitle: 'Repositories and trends' },
+  { icon: GitPullRequest, label: 'Review pull requests', view: 'pr-suggestions' as const, subtitle: 'Suggested code reviews' },
+  { icon: Linkedin, label: 'Social archive', view: 'linkedin-posts' as const, subtitle: 'LinkedIn post history' },
 ];
 
 const moreSectionViews = new Set<string>([
@@ -135,7 +150,40 @@ const moreSectionViews = new Set<string>([
   ...discoveryItems.map((i) => i.view),
 ]);
 
-export function CleanSidebar({
+const researchViews = new Set<string>([
+  'research',
+  'signals',
+  'benchmarks',
+  'funding',
+  'footnotes',
+  'showcase',
+  'cost-dashboard',
+  'industry-updates',
+  'for-you-feed',
+  'document-recommendations',
+  'agent-marketplace',
+  'github-explorer',
+  'pr-suggestions',
+  'linkedin-posts',
+  'mcp-ledger',
+  'dogfood',
+  'engine-demo',
+  'observability',
+]);
+
+const workspaceViews = new Set<string>([
+  'documents',
+  'spreadsheets',
+  'calendar',
+  'roadmap',
+  'timeline',
+  'public',
+  'agents',
+  'activity',
+  'entity',
+]);
+
+export const CleanSidebar = memo(function CleanSidebar({
   appMode,
   onModeChange,
   activeSources: _activeSources,
@@ -151,7 +199,8 @@ export function CleanSidebar({
   onToggleCollapse,
 }: CleanSidebarProps) {
   const [isDocsOpen, setIsDocsOpen] = useState(true);
-  const [isMoreOpen, setIsMoreOpen] = useState(() => moreSectionViews.has(currentView));
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isAllToolsOpen, setIsAllToolsOpen] = useState(false);
   const user = useQuery(api.domains.auth.auth.loggedInUser);
   const { signIn } = useAuthActions();
   const trash = useQuery(api.domains.documents.documents.getTrash);
@@ -165,15 +214,28 @@ export function CleanSidebar({
     });
   };
 
-  const recentDocs = (documents ?? []).slice(0, 8);
+  const recentDocs = useMemo(() => {
+    const byTitle = new Map<string, any>();
+    for (const doc of documents ?? []) {
+      const id = String(doc?._id ?? "");
+      if (!id) continue;
 
-  useEffect(() => {
-    // If the user navigates to a destination inside "More", ensure the section is expanded
-    // so the active state is visible and navigation stays self-evident.
-    if (moreSectionViews.has(currentView)) {
-      setIsMoreOpen(true);
+      const title = sanitizeDocumentTitle(doc?.title);
+      const key = title.toLowerCase();
+      const existing = byTitle.get(key);
+      if (!existing) {
+        byTitle.set(key, doc);
+        continue;
+      }
+
+      const existingUpdated = Number(existing?.updatedAt ?? 0);
+      const candidateUpdated = Number(doc?.updatedAt ?? 0);
+      if (candidateUpdated > existingUpdated) {
+        byTitle.set(key, doc);
+      }
     }
-  }, [currentView]);
+    return Array.from(byTitle.values()).slice(0, 8);
+  }, [documents]);
 
   const recentDossiers: RecentDossier[] = useMemo(() => {
     return (documents ?? [])
@@ -181,7 +243,7 @@ export function CleanSidebar({
       .slice(0, 5)
       .map((doc: any) => ({
         id: doc._id,
-        title: doc.title || 'Untitled Report',
+        title: sanitizeDocumentTitle(doc.title, 'Untitled Report'),
         updatedAt: doc.updatedAt ? new Date(doc.updatedAt) : undefined,
         isAgentUpdating: false,
       }));
@@ -200,7 +262,8 @@ export function CleanSidebar({
   };
 
   const getActivePage = (): ActivePage => {
-    if (currentView === 'research') return 'research';
+    if (currentView === 'research' || researchViews.has(currentView)) return 'research';
+    if (workspaceViews.has(currentView)) return 'workspace';
     if (appMode === 'dossier') return 'saved';
     return 'workspace';
   };
@@ -211,12 +274,35 @@ export function CleanSidebar({
     onModeChange('dossier');
   };
 
+  const featuredMoreItems = useMemo(
+    () => [
+      dashboardItems.find((item) => item.view === 'benchmarks'),
+      dashboardItems.find((item) => item.view === 'observability'),
+      discoveryItems.find((item) => item.view === 'for-you-feed'),
+      discoveryItems.find((item) => item.view === 'agent-marketplace'),
+    ].filter(Boolean) as Array<(typeof dashboardItems)[number]>,
+    [],
+  );
+
+  const secondaryMoreItems = useMemo(() => {
+    const featuredViews = new Set(featuredMoreItems.map((item) => item.view));
+    return [
+      ...dashboardItems,
+      ...(import.meta.env.DEV ? devItems : []),
+      ...discoveryItems,
+    ].filter((item) => !featuredViews.has(item.view));
+  }, [featuredMoreItems]);
+
   // Collapsed icon-only button helper
   const CollapsedButton = ({ icon: Icon, label, view }: { icon: any; label: string; view: string }) => (
     <Tooltip content={label} side="right" wrapperClassName="block">
       <button
         type="button"
         aria-label={label}
+        data-agent-id={`sidebar:nav:${view}`}
+        data-agent-action="navigate"
+        data-agent-label={label}
+        data-agent-target={view}
         onClick={() => onViewChange?.(view as any)}
         className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-colors duration-150 border-l-2 ${currentView === view
             ? 'border-l-primary bg-[var(--accent-primary-bg)] text-content'
@@ -232,6 +318,8 @@ export function CleanSidebar({
     <aside
       aria-label="Sidebar navigation"
       data-sidebar
+      data-agent-id="chrome:sidebar"
+      data-agent-label="Sidebar navigation"
       className="h-full flex flex-col bg-surface"
     >
       {/* Logo */}
@@ -241,8 +329,11 @@ export function CleanSidebar({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:opacity-90 transition-opacity"
+              className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:brightness-110 hover:shadow-sm active:scale-[0.95] transition-all duration-200"
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              data-agent-id="sidebar:action:toggle-collapse"
+              data-agent-action="toggle"
+              data-agent-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <span className="font-bold text-sm">N</span>
             </button>
@@ -266,22 +357,35 @@ export function CleanSidebar({
         />
       </div>
 
-      {/* More — Dashboards & Discovery collapsed by default */}
+      {/* Explore - Dashboards & Discovery collapsed by default */}
       <div className={`${isCollapsed ? 'px-1' : 'px-3'} mt-4 mb-2`}>
         {!isCollapsed ? (
           <>
             <button
               type="button"
               onClick={() => setIsMoreOpen(!isMoreOpen)}
-              className="w-full flex items-center justify-between px-2 mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-content-muted/80 hover:text-content-secondary transition-colors"
+              className="w-full flex items-center justify-between px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-content-muted/80 hover:text-content-secondary transition-colors"
+              data-agent-id="sidebar:section:more"
+              data-agent-action="toggle"
+              data-agent-label={isMoreOpen ? 'Collapse Explore section' : 'Expand Explore section'}
             >
-              <span>More</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span>Explore</span>
+                {!isMoreOpen && moreSectionViews.has(currentView) && (
+                  <span className="inline-flex rounded-full border border-primary/25 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
+                    Viewing
+                  </span>
+                )}
+              </span>
               {isMoreOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             </button>
             {isMoreOpen && (
               <div className="space-y-3">
-                <div className="space-y-0.5">
-                  {dashboardItems.map((item) => (
+                <div className="space-y-1.5">
+                  <div className="px-2 text-[10px] uppercase tracking-wide text-content-muted/70 font-semibold">
+                    Featured
+                  </div>
+                  {featuredMoreItems.map((item) => (
                     <SidebarButton
                       key={item.view}
                       icon={<item.icon />}
@@ -289,42 +393,54 @@ export function CleanSidebar({
                       subtitle={item.subtitle}
                       onClick={() => onViewChange?.(item.view)}
                       isActive={currentView === item.view}
-                    />
-                  ))}
-                  {import.meta.env.DEV && devItems.map((item) => (
-                    <SidebarButton
-                      key={item.view}
-                      icon={<item.icon />}
-                      label={item.label}
-                      subtitle={item.subtitle}
-                      onClick={() => onViewChange?.(item.view)}
-                      isActive={currentView === item.view}
+                      data-agent-id={`sidebar:nav:${item.view}`}
+                      data-agent-action="navigate"
+                      data-agent-label={item.label}
+                      data-agent-target={item.view}
                     />
                   ))}
                 </div>
-                <div className="space-y-0.5">
-                  {discoveryItems.map((item) => (
-                    <SidebarButton
-                      key={item.view}
-                      icon={<item.icon />}
-                      label={item.label}
-                      subtitle={item.subtitle}
-                      onClick={() => onViewChange?.(item.view)}
-                      isActive={currentView === item.view}
-                    />
-                  ))}
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAllToolsOpen((open) => !open)}
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-[11px] font-medium text-content-secondary hover:bg-surface-hover hover:text-content"
+                    data-agent-id="sidebar:section:all-tools"
+                    data-agent-action="toggle"
+                    data-agent-label={isAllToolsOpen ? 'Collapse all tools' : 'Expand all tools'}
+                  >
+                    <span>Browse more tools</span>
+                    {isAllToolsOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                  </button>
+                  {isAllToolsOpen && (
+                    <div className="space-y-1.5">
+                      {secondaryMoreItems.map((item) => (
+                        <SidebarButton
+                          key={item.view}
+                          icon={<item.icon />}
+                          label={item.label}
+                          subtitle={item.subtitle}
+                          onClick={() => onViewChange?.(item.view)}
+                          isActive={currentView === item.view}
+                          data-agent-id={`sidebar:nav:${item.view}`}
+                          data-agent-action="navigate"
+                          data-agent-label={item.label}
+                          data-agent-target={item.view}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
           </>
         ) : (
-          /* Collapsed: show just icons for dashboards + discovery */
+          /* Collapsed: keep the icon rail intentionally short */
           <div className="space-y-0.5">
-            {[...dashboardItems, ...(import.meta.env.DEV ? devItems : [])].map((item) => (
+            {featuredMoreItems.map((item) => (
               <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
             ))}
-            <div className="h-px bg-edge opacity-60 mx-2 my-2" />
-            {discoveryItems.map((item) => (
+            {(import.meta.env.DEV ? devItems : []).map((item) => (
               <CollapsedButton key={item.view} icon={item.icon} label={item.label} view={item.view} />
             ))}
           </div>
@@ -340,7 +456,7 @@ export function CleanSidebar({
       {!isCollapsed && (
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-content-muted/80">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-content-muted/80">
               Files
             </span>
             <FolderOpen className="w-3.5 h-3.5 text-content-muted/60" />
@@ -351,7 +467,10 @@ export function CleanSidebar({
               <button
                 type="button"
                 onClick={() => setIsDocsOpen(!isDocsOpen)}
-                className="flex items-center justify-between w-full text-[10px] font-semibold text-content-muted/80 uppercase tracking-[0.2em] mb-2 hover:text-content px-2"
+                className="flex items-center justify-between w-full text-[10px] font-semibold text-content-muted/80 uppercase tracking-wider mb-2 hover:text-content px-2"
+                data-agent-id="sidebar:section:docs"
+                data-agent-action="toggle"
+                data-agent-label={isDocsOpen ? 'Collapse documents' : 'Expand documents'}
               >
                 <span>Recent Documents</span>
                 <div className="flex items-center gap-2">
@@ -375,12 +494,16 @@ export function CleanSidebar({
                           ? 'bg-black/[0.06] dark:bg-white/[0.08] text-content'
                           : 'text-content-secondary hover:bg-surface-hover hover:text-content'
                           }`}
-                        title={doc.title || 'Untitled'}
+                        title={sanitizeDocumentTitle(doc.title)}
+                        data-agent-id={`sidebar:doc:${doc._id}`}
+                        data-agent-action="navigate"
+                        data-agent-label={sanitizeDocumentTitle(doc.title)}
+                        data-agent-target="document"
                       >
                         <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-content-secondary' : 'text-content-muted group-hover:text-content-secondary dark:group-hover:text-content-muted'
                           }`} />
                         <span className="truncate text-left">
-                          {doc.title || 'Untitled'}
+                          {sanitizeDocumentTitle(doc.title)}
                         </span>
                       </button>
                     );
@@ -455,6 +578,10 @@ export function CleanSidebar({
                     onClick={() => onOpenSettings?.('profile')}
                     className="p-1.5 text-content-muted hover:text-content-secondary rounded-md hover:bg-surface-hover transition-colors"
                     aria-label="Open settings"
+                    data-agent-id="sidebar:action:settings"
+                    data-agent-action="navigate"
+                    data-agent-label="Open settings"
+                    data-agent-target="settings"
                   >
                     <Settings className="w-4 h-4" />
                   </button>
@@ -482,6 +609,6 @@ export function CleanSidebar({
       </div>
     </aside>
   );
-}
+});
 
 export default CleanSidebar;

@@ -1,0 +1,227 @@
+{
+  "capturedAtIso": "2026-03-09T19:58:22.504Z",
+  "baseURL": "http://127.0.0.1:4175",
+  "mime": "video/mp4",
+  "publish": "static",
+  "chapters": [
+    {
+      "index": 1,
+      "name": "Home",
+      "path": "/",
+      "startSec": 0
+    },
+    {
+      "index": 2,
+      "name": "Research Hub",
+      "path": "/research",
+      "startSec": 2
+    },
+    {
+      "index": 3,
+      "name": "Research: Overview",
+      "path": "/research/overview",
+      "startSec": 4.1
+    },
+    {
+      "index": 4,
+      "name": "Research: Signals",
+      "path": "/research/signals",
+      "startSec": 6.2
+    },
+    {
+      "index": 5,
+      "name": "Research: Briefing",
+      "path": "/research/briefing",
+      "startSec": 8.3
+    },
+    {
+      "index": 6,
+      "name": "Research: Deals",
+      "path": "/research/deals",
+      "startSec": 10.4
+    },
+    {
+      "index": 7,
+      "name": "Research: Changes",
+      "path": "/research/changelog",
+      "startSec": 12.6
+    },
+    {
+      "index": 8,
+      "name": "Workspace: Documents",
+      "path": "/documents",
+      "startSec": 14.7
+    },
+    {
+      "index": 9,
+      "name": "Workspace: Spreadsheets",
+      "path": "/spreadsheets",
+      "startSec": 16.8
+    },
+    {
+      "index": 10,
+      "name": "Workspace: Calendar",
+      "path": "/calendar",
+      "startSec": 18.9
+    },
+    {
+      "index": 11,
+      "name": "Assistants",
+      "path": "/agents",
+      "startSec": 21
+    },
+    {
+      "index": 12,
+      "name": "Roadmap",
+      "path": "/roadmap",
+      "startSec": 23.1
+    },
+    {
+      "index": 13,
+      "name": "Timeline",
+      "path": "/timeline",
+      "startSec": 25.2
+    },
+    {
+      "index": 14,
+      "name": "Showcase",
+      "path": "/showcase",
+      "startSec": 27.3
+    },
+    {
+      "index": 15,
+      "name": "Sources",
+      "path": "/footnotes",
+      "startSec": 29.4
+    },
+    {
+      "index": 16,
+      "name": "Signals Log",
+      "path": "/signals",
+      "startSec": 31.6
+    },
+    {
+      "index": 17,
+      "name": "Benchmarks",
+      "path": "/benchmarks",
+      "startSec": 33.7
+    },
+    {
+      "index": 18,
+      "name": "Funding Brief",
+      "path": "/funding",
+      "startSec": 35.8
+    },
+    {
+      "index": 19,
+      "name": "Activity",
+      "path": "/activity",
+      "startSec": 37.9
+    },
+    {
+      "index": 20,
+      "name": "Review Queue",
+      "path": "/review-queue",
+      "startSec": 40
+    },
+    {
+      "index": 21,
+      "name": "Performance Analytics",
+      "path": "/analytics/components",
+      "startSec": 42.1
+    },
+    {
+      "index": 22,
+      "name": "Feedback",
+      "path": "/analytics/recommendations",
+      "startSec": 44.2
+    },
+    {
+      "index": 23,
+      "name": "Usage & Costs",
+      "path": "/cost",
+      "startSec": 46.3
+    },
+    {
+      "index": 24,
+      "name": "Industry News",
+      "path": "/industry",
+      "startSec": 48.4
+    },
+    {
+      "index": 25,
+      "name": "For You",
+      "path": "/for-you",
+      "startSec": 50.5
+    },
+    {
+      "index": 26,
+      "name": "Recommendations",
+      "path": "/recommendations",
+      "startSec": 52.7
+    },
+    {
+      "index": 27,
+      "name": "Agent Templates",
+      "path": "/marketplace",
+      "startSec": 54.8
+    },
+    {
+      "index": 28,
+      "name": "GitHub Explorer",
+      "path": "/github",
+      "startSec": 56.9
+    },
+    {
+      "index": 29,
+      "name": "PR Suggestions",
+      "path": "/pr-suggestions",
+      "startSec": 59
+    },
+    {
+      "index": 30,
+      "name": "LinkedIn Archive",
+      "path": "/linkedin",
+      "startSec": 61.1
+    },
+    {
+      "index": 31,
+      "name": "Activity Log",
+      "path": "/activity-log",
+      "startSec": 63.2
+    },
+    {
+      "index": 32,
+      "name": "Quality Review",
+      "path": "/quality-review",
+      "startSec": 65.3
+    },
+    {
+      "index": 33,
+      "name": "Public Docs",
+      "path": "/public",
+      "startSec": 67.4
+    },
+    {
+      "index": 34,
+      "name": "Interaction: Command Palette",
+      "path": "(interaction)",
+      "startSec": 69.5
+    },
+    {
+      "index": 35,
+      "name": "Interaction: Settings",
+      "path": "(interaction)",
+      "startSec": 70.8
+    },
+    {
+      "index": 36,
+      "name": "End",
+      "path": "(end)",
+      "startSec": 73.3
+    }
+  ],
+  "videoUrl": null,
+  "videoPath": "/dogfood/walkthrough.mp4",
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-03-09_125653.mp4"
+}

@@ -1,0 +1,330 @@
+{
+  "capturedAtIso": "2026-03-09T19:56:03.109Z",
+  "baseURL": "http://127.0.0.1:4175",
+  "steps": [
+    {
+      "index": 1,
+      "kind": "route",
+      "name": "Home",
+      "path": "/",
+      "title": "1. Home",
+      "description": "Navigate to / to review the Home screen.",
+      "image": "/dogfood/scribe/01-home.png"
+    },
+    {
+      "index": 2,
+      "kind": "route",
+      "name": "Research Hub",
+      "path": "/research",
+      "title": "2. Research Hub",
+      "description": "Navigate to /research to review the Research Hub screen.",
+      "image": "/dogfood/scribe/02-research-hub.png"
+    },
+    {
+      "index": 3,
+      "kind": "route",
+      "name": "Research: Overview",
+      "path": "/research/overview",
+      "title": "3. Research: Overview",
+      "description": "Navigate to /research/overview to review the Research: Overview screen.",
+      "image": "/dogfood/scribe/03-research-overview.png"
+    },
+    {
+      "index": 4,
+      "kind": "route",
+      "name": "Research: Signals",
+      "path": "/research/signals",
+      "title": "4. Research: Signals",
+      "description": "Navigate to /research/signals to review the Research: Signals screen.",
+      "image": "/dogfood/scribe/04-research-signals.png"
+    },
+    {
+      "index": 5,
+      "kind": "route",
+      "name": "Research: Briefing",
+      "path": "/research/briefing",
+      "title": "5. Research: Briefing",
+      "description": "Navigate to /research/briefing to review the Research: Briefing screen.",
+      "image": "/dogfood/scribe/05-research-briefing.png"
+    },
+    {
+      "index": 6,
+      "kind": "route",
+      "name": "Research: Deals",
+      "path": "/research/deals",
+      "title": "6. Research: Deals",
+      "description": "Navigate to /research/deals to review the Research: Deals screen.",
+      "image": "/dogfood/scribe/06-research-deals.png"
+    },
+    {
+      "index": 7,
+      "kind": "route",
+      "name": "Research: Changes",
+      "path": "/research/changelog",
+      "title": "7. Research: Changes",
+      "description": "Navigate to /research/changelog to review the Research: Changes screen.",
+      "image": "/dogfood/scribe/07-research-changes.png"
+    },
+    {
+      "index": 8,
+      "kind": "route",
+      "name": "Workspace: Documents",
+      "path": "/documents",
+      "title": "8. Workspace: Documents",
+      "description": "Navigate to /documents to review the Workspace: Documents screen.",
+      "image": "/dogfood/scribe/08-workspace-documents.png"
+    },
+    {
+      "index": 9,
+      "kind": "route",
+      "name": "Workspace: Spreadsheets",
+      "path": "/spreadsheets",
+      "title": "9. Workspace: Spreadsheets",
+      "description": "Navigate to /spreadsheets to review the Workspace: Spreadsheets screen.",
+      "image": "/dogfood/scribe/09-workspace-spreadsheets.png"
+    },
+    {
+      "index": 10,
+      "kind": "route",
+      "name": "Workspace: Calendar",
+      "path": "/calendar",
+      "title": "10. Workspace: Calendar",
+      "description": "Navigate to /calendar to review the Workspace: Calendar screen.",
+      "image": "/dogfood/scribe/10-workspace-calendar.png"
+    },
+    {
+      "index": 11,
+      "kind": "route",
+      "name": "Assistants",
+      "path": "/agents",
+      "title": "11. Assistants",
+      "description": "Navigate to /agents to review the Assistants screen.",
+      "image": "/dogfood/scribe/11-assistants.png"
+    },
+    {
+      "index": 12,
+      "kind": "route",
+      "name": "Roadmap",
+      "path": "/roadmap",
+      "title": "12. Roadmap",
+      "description": "Navigate to /roadmap to review the Roadmap screen.",
+      "image": "/dogfood/scribe/12-roadmap.png"
+    },
+    {
+      "index": 13,
+      "kind": "route",
+      "name": "Timeline",
+      "path": "/timeline",
+      "title": "13. Timeline",
+      "description": "Navigate to /timeline to review the Timeline screen.",
+      "image": "/dogfood/scribe/13-timeline.png"
+    },
+    {
+      "index": 14,
+      "kind": "route",
+      "name": "Showcase",
+      "path": "/showcase",
+      "title": "14. Showcase",
+      "description": "Navigate to /showcase to review the Showcase screen.",
+      "image": "/dogfood/scribe/14-showcase.png"
+    },
+    {
+      "index": 15,
+      "kind": "route",
+      "name": "Sources",
+      "path": "/footnotes",
+      "title": "15. Sources",
+      "description": "Navigate to /footnotes to review the Sources screen.",
+      "image": "/dogfood/scribe/15-sources.png"
+    },
+    {
+      "index": 16,
+      "kind": "route",
+      "name": "Signals Log",
+      "path": "/signals",
+      "title": "16. Signals Log",
+      "description": "Navigate to /signals to review the Signals Log screen.",
+      "image": "/dogfood/scribe/16-signals-log.png"
+    },
+    {
+      "index": 17,
+      "kind": "route",
+      "name": "Benchmarks",
+      "path": "/benchmarks",
+      "title": "17. Benchmarks",
+      "description": "Navigate to /benchmarks to review the Benchmarks screen.",
+      "image": "/dogfood/scribe/17-benchmarks.png"
+    },
+    {
+      "index": 18,
+      "kind": "route",
+      "name": "Funding Brief",
+      "path": "/funding",
+      "title": "18. Funding Brief",
+      "description": "Navigate to /funding to review the Funding Brief screen.",
+      "image": "/dogfood/scribe/18-funding-brief.png"
+    },
+    {
+      "index": 19,
+      "kind": "route",
+      "name": "Activity",
+      "path": "/activity",
+      "title": "19. Activity",
+      "description": "Navigate to /activity to review the Activity screen.",
+      "image": "/dogfood/scribe/19-activity.png"
+    },
+    {
+      "index": 20,
+      "kind": "route",
+      "name": "Review Queue",
+      "path": "/analytics/hitl",
+      "title": "20. Review Queue",
+      "description": "Navigate to /analytics/hitl to review the Review Queue screen.",
+      "image": "/dogfood/scribe/20-review-queue.png"
+    },
+    {
+      "index": 21,
+      "kind": "route",
+      "name": "Performance Analytics",
+      "path": "/analytics/components",
+      "title": "21. Performance Analytics",
+      "description": "Navigate to /analytics/components to review the Performance Analytics screen.",
+      "image": "/dogfood/scribe/21-performance-analytics.png"
+    },
+    {
+      "index": 22,
+      "kind": "route",
+      "name": "Feedback",
+      "path": "/analytics/recommendations",
+      "title": "22. Feedback",
+      "description": "Navigate to /analytics/recommendations to review the Feedback screen.",
+      "image": "/dogfood/scribe/22-feedback.png"
+    },
+    {
+      "index": 23,
+      "kind": "route",
+      "name": "Usage & Costs",
+      "path": "/cost",
+      "title": "23. Usage & Costs",
+      "description": "Navigate to /cost to review the Usage & Costs screen.",
+      "image": "/dogfood/scribe/23-usage-costs.png"
+    },
+    {
+      "index": 24,
+      "kind": "route",
+      "name": "Industry News",
+      "path": "/industry",
+      "title": "24. Industry News",
+      "description": "Navigate to /industry to review the Industry News screen.",
+      "image": "/dogfood/scribe/24-industry-news.png"
+    },
+    {
+      "index": 25,
+      "kind": "route",
+      "name": "For You",
+      "path": "/for-you",
+      "title": "25. For You",
+      "description": "Navigate to /for-you to review the For You screen.",
+      "image": "/dogfood/scribe/25-for-you.png"
+    },
+    {
+      "index": 26,
+      "kind": "route",
+      "name": "Recommendations",
+      "path": "/recommendations",
+      "title": "26. Recommendations",
+      "description": "Navigate to /recommendations to review the Recommendations screen.",
+      "image": "/dogfood/scribe/26-recommendations.png"
+    },
+    {
+      "index": 27,
+      "kind": "route",
+      "name": "Agent Templates",
+      "path": "/marketplace",
+      "title": "27. Agent Templates",
+      "description": "Navigate to /marketplace to review the Agent Templates screen.",
+      "image": "/dogfood/scribe/27-agent-templates.png"
+    },
+    {
+      "index": 28,
+      "kind": "route",
+      "name": "GitHub Explorer",
+      "path": "/github",
+      "title": "28. GitHub Explorer",
+      "description": "Navigate to /github to review the GitHub Explorer screen.",
+      "image": "/dogfood/scribe/28-github-explorer.png"
+    },
+    {
+      "index": 29,
+      "kind": "route",
+      "name": "PR Suggestions",
+      "path": "/pr-suggestions",
+      "title": "29. PR Suggestions",
+      "description": "Navigate to /pr-suggestions to review the PR Suggestions screen.",
+      "image": "/dogfood/scribe/29-pr-suggestions.png"
+    },
+    {
+      "index": 30,
+      "kind": "route",
+      "name": "LinkedIn Archive",
+      "path": "/linkedin",
+      "title": "30. LinkedIn Archive",
+      "description": "Navigate to /linkedin to review the LinkedIn Archive screen.",
+      "image": "/dogfood/scribe/30-linkedin-archive.png"
+    },
+    {
+      "index": 31,
+      "kind": "route",
+      "name": "Activity Log",
+      "path": "/mcp/ledger",
+      "title": "31. Activity Log",
+      "description": "Navigate to /mcp/ledger to review the Activity Log screen.",
+      "image": "/dogfood/scribe/31-activity-log.png"
+    },
+    {
+      "index": 32,
+      "kind": "route",
+      "name": "Quality Review",
+      "path": "/dogfood",
+      "title": "32. Quality Review",
+      "description": "Navigate to /dogfood to review the Quality Review screen.",
+      "image": "/dogfood/scribe/32-quality-review.png"
+    },
+    {
+      "index": 33,
+      "kind": "route",
+      "name": "Public Docs",
+      "path": "/public",
+      "title": "33. Public Docs",
+      "description": "Navigate to /public to review the Public Docs screen.",
+      "image": "/dogfood/scribe/33-public-docs.png"
+    },
+    {
+      "index": 34,
+      "kind": "interaction",
+      "name": "Interaction: Command Palette",
+      "path": "(interaction)",
+      "title": "34. Interaction: Command Palette",
+      "description": "Open the command palette (Cmd/Ctrl+K) and confirm search + navigation are responsive.",
+      "image": "/dogfood/scribe/34-interaction-command-palette.png"
+    },
+    {
+      "index": 35,
+      "kind": "interaction",
+      "name": "Interaction: Settings",
+      "path": "(interaction)",
+      "title": "35. Interaction: Settings",
+      "description": "Open Settings and click through tabs to confirm layout, copy, and controls are coherent.",
+      "image": "/dogfood/scribe/35-interaction-settings.png"
+    },
+    {
+      "index": 36,
+      "kind": "interaction",
+      "name": "Interaction: Assistant Panel",
+      "path": "(interaction)",
+      "title": "36. Interaction: Assistant Panel",
+      "description": "Open the Assistant panel to verify it loads and the chat surface is usable.",
+      "image": "/dogfood/scribe/36-interaction-assistant-panel.png"
+    }
+  ]
+}

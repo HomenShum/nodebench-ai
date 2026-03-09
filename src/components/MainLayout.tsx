@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, startTransition, Suspense, lazy } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, startTransition, Suspense, lazy } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useConvexAuth, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -8,7 +8,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { CleanSidebar } from "./CleanSidebar";
 // Agent Chat Panel removed
 
-import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, Zap, Menu, X as CloseIcon, Search, ChevronRight, Settings as SettingsIcon, Loader2 } from "lucide-react";
 import { useContextPills } from "../hooks/contextPills";
 import HashtagQuickNotePopover from "./HashtagQuickNotePopover";
 import MiniEditorPopover from "@/shared/components/MiniEditorPopover";
@@ -19,18 +19,22 @@ import { QuickCaptureWidget } from "./QuickCapture";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { LazyView } from "@/shared/components/LazyView";
 import { usePanelResize } from "../hooks/usePanelResize";
-import { useMainLayoutRouting } from "../hooks/useMainLayoutRouting";
+import { useMainLayoutRouting, type MainView } from "../hooks/useMainLayoutRouting";
 import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
 import { ViewSkeleton } from "./skeletons";
+import { AgentMetadata } from "./AgentMetadata";
+import { useViewWebMcpTools } from "../hooks/useViewWebMcpTools";
+import { VIEW_PATH_MAP, VIEW_TITLES, VIEW_SUBTITLES } from "@/lib/viewRegistry";
+import { OracleSessionBanner } from "./OracleSessionBanner";
+import { useOracleSessionContext } from "@/contexts/OracleSessionContext";
+
+// ─── Lazy imports: only views with custom rendering logic in MainLayout ──────
+// Simple views (no props) use the registry component from @/lib/viewRegistry.
+import { VIEW_MAP, type MainView as _MainViewCheck } from "@/lib/viewRegistry";
 
 const PublicDocuments = lazy(() =>
   import("@/features/documents/views/PublicDocuments").then((mod) => ({
     default: mod.PublicDocuments,
-  })),
-);
-const DocumentsHomeHub = lazy(() =>
-  import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({
-    default: mod.DocumentsHomeHub,
   })),
 );
 const SpreadsheetsHub = lazy(() =>
@@ -48,11 +52,6 @@ const CalendarHomeHub = lazy(() =>
     default: mod.CalendarHomeHub,
   })),
 );
-const AgentsHub = lazy(() =>
-  import("@/features/agents/views/AgentsHub").then((mod) => ({
-    default: mod.AgentsHub,
-  })),
-);
 const TimelineRoadmapView = lazy(() =>
   import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({
     default: mod.TimelineRoadmapView,
@@ -66,33 +65,14 @@ const PhaseAllShowcase = lazy(() =>
   })),
 );
 const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
-const PublicSignalsLog = lazy(() =>
-  import("@/features/research/views/PublicSignalsLog").then((mod) => ({
-    default: mod.PublicSignalsLog,
-  })),
-);
-// NOTE for Codex: ModelEvalDashboard is still used inside WorkbenchView's
-// "Capability Deep Dive" collapsible section — do not remove this import.
-const ModelEvalDashboard = lazy(() =>
-  import("@/features/research/components/ModelEvalDashboard").then((mod) => ({
-    default: mod.ModelEvalDashboard,
-  })),
-);
-// WorkbenchView replaces the old ModelEvalDashboard-only /benchmarks route.
-// It wraps ModelEvalDashboard + adds leaderboard, scenario catalog, runs table.
-const WorkbenchView = lazy(() =>
-  import("@/features/benchmarks/views/WorkbenchView").then((mod) => ({
-    default: mod.WorkbenchView,
-  })),
-);
 const EntityProfilePage = lazy(() =>
   import("@/features/research/views/EntityProfilePage").then((mod) => ({
     default: mod.EntityProfilePage,
   })),
 );
-const FundingBriefView = lazy(() =>
-  import("@/features/research/views/FundingBriefView").then((mod) => ({
-    default: mod.FundingBriefView,
+const DocumentsHomeHub = lazy(() =>
+  import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({
+    default: mod.DocumentsHomeHub,
   })),
 );
 const TabManager = lazy(() =>
@@ -103,76 +83,6 @@ const TabManager = lazy(() =>
 const FastAgentPanel = lazy(() =>
   import("@features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
     default: mod.FastAgentPanel,
-  })),
-);
-const PublicActivityView = lazy(() =>
-  import("@/features/agents/views/PublicActivityView").then((mod) => ({
-    default: mod.PublicActivityView,
-  })),
-);
-const HITLAnalyticsDashboard = lazy(() =>
-  import("@/features/analytics/views/HITLAnalyticsDashboard").then((mod) => ({
-    default: mod.default,
-  })),
-);
-const ComponentMetricsDashboard = lazy(() =>
-  import("@/features/analytics/views/ComponentMetricsDashboard").then((mod) => ({
-    default: mod.default,
-  })),
-);
-const RecommendationFeedbackDashboard = lazy(() =>
-  import("@/features/analytics/views/RecommendationAnalyticsDashboard").then((mod) => ({
-    default: mod.default,
-  })),
-);
-const CostDashboard = lazy(() =>
-  import("@/components/CostDashboard").then((mod) => ({
-    default: mod.CostDashboard,
-  })),
-);
-const IndustryUpdatesPanel = lazy(() =>
-  import("@/components/IndustryUpdatesPanel").then((mod) => ({
-    default: mod.IndustryUpdatesPanel,
-  })),
-);
-const ForYouFeed = lazy(() =>
-  import("@/features/research/components/ForYouFeed").then((mod) => ({
-    default: mod.ForYouFeed,
-  })),
-);
-const DocumentRecommendations = lazy(() =>
-  import("@/features/documents/components/DocumentRecommendations").then((mod) => ({
-    default: mod.DocumentRecommendations,
-  })),
-);
-const AgentMarketplace = lazy(() =>
-  import("@/features/agents/components/AgentMarketplace").then((mod) => ({
-    default: mod.AgentMarketplace,
-  })),
-);
-const GitHubExplorer = lazy(() =>
-  import("@/features/research/components/GitHubExplorer").then((mod) => ({
-    default: mod.GitHubExplorer,
-  })),
-);
-const PRSuggestions = lazy(() =>
-  import("@/features/monitoring/components/PRSuggestions").then((mod) => ({
-    default: mod.PRSuggestions,
-  })),
-);
-const LinkedInPostArchiveView = lazy(() =>
-  import("@/features/social/views/LinkedInPostArchiveView").then((mod) => ({
-    default: mod.LinkedInPostArchiveView,
-  })),
-);
-const McpToolLedgerView = lazy(() =>
-  import("@/features/mcp/views/McpToolLedgerView").then((mod) => ({
-    default: mod.McpToolLedgerView,
-  })),
-);
-const DogfoodReviewView = lazy(() =>
-  import("@/features/dogfood/views/DogfoodReviewView").then((mod) => ({
-    default: mod.DogfoodReviewView,
   })),
 );
 const SettingsModal = lazy(() => import("./SettingsModal"));
@@ -196,60 +106,61 @@ const prefetchRoutes = () => {
     import("@/features/agents/views/PublicActivityView").catch(() => {});
     import("@/features/research/components/GitHubExplorer").catch(() => {});
     import("@/features/monitoring/components/PRSuggestions").catch(() => {});
+    import("@/features/research/views/PublicSignalsLog").catch(() => {});
+    import("@/features/research/views/FootnotesPage").catch(() => {});
   };
   if ("requestIdleCallback" in window) {
-    (window as any).requestIdleCallback(prefetch, { timeout: 3000 });
+    (window as any).requestIdleCallback(prefetch, { timeout: 1200 });
   } else {
-    setTimeout(prefetch, 2000);
+    window.setTimeout(prefetch, 450);
   }
 };
 
 // Fire once on module load (after initial render settles)
 if (typeof window !== "undefined") {
-  setTimeout(prefetchRoutes, 1500);
+  window.setTimeout(prefetchRoutes, 250);
 }
 
 const viewFallbackDefault = <ViewSkeleton variant="default" />;
 const viewFallbackDocuments = <ViewSkeleton variant="documents" />;
 const viewFallbackCalendar = <ViewSkeleton variant="calendar" />;
-const viewFallbackAgents = <ViewSkeleton variant="agents" />;
-const viewFallbackSettings = <ViewSkeleton variant="settings" />;
 const viewFallbackDashboard = <ViewSkeleton variant="dashboard" />;
-const viewFallbackCost = <ViewSkeleton variant="cost-dashboard" />;
-const viewFallbackIndustry = <ViewSkeleton variant="industry-updates" />;
-
 const viewFallback = viewFallbackDefault;
 const EMPTY_FOOTNOTES_LIBRARY = { citations: {} as Record<string, unknown>, order: [] as string[], updatedAt: new Date().toISOString() };
 
-const VIEW_TITLES: Record<string, string> = {
-  research: 'Home',
-  public: 'Shared with You',
-  spreadsheets: 'Spreadsheets',
-  'for-you-feed': 'For You',
-  'document-recommendations': 'Suggestions',
-  'agent-marketplace': 'Agent Templates',
-  'github-explorer': 'GitHub',
-  'pr-suggestions': 'PR Suggestions',
-  calendar: 'Calendar',
-  roadmap: 'Roadmap',
-  timeline: 'Timeline',
-  signals: 'Signals',
-  benchmarks: 'Benchmarks',
-  funding: 'Funding',
-  'analytics-hitl': 'Review Queue',
-  'analytics-components': 'Performance Analytics',
-  'analytics-recommendations': 'Feedback',
-  'cost-dashboard': 'Usage & Costs',
-  'industry-updates': 'Industry News',
-  'linkedin-posts': 'LinkedIn Posts',
-  'mcp-ledger': 'Activity Log',
-  dogfood: 'Quality Review',
-  documents: 'My Workspace',
-  agents: 'Assistants',
-  activity: 'Activity',
-  showcase: 'Showcase',
-  footnotes: 'Sources',
-};
+// VIEW_TITLES and VIEW_SUBTITLES imported from @/lib/viewRegistry (single source of truth)
+
+const WORKSPACE_ROOT_VIEWS = new Set([
+  'documents',
+  'spreadsheets',
+  'calendar',
+  'roadmap',
+  'timeline',
+  'public',
+  'agents',
+  'activity',
+]);
+
+const RESEARCH_ROOT_VIEWS = new Set([
+  'research',
+  'signals',
+  'benchmarks',
+  'funding',
+  'footnotes',
+  'showcase',
+  'cost-dashboard',
+  'industry-updates',
+  'for-you-feed',
+  'document-recommendations',
+  'agent-marketplace',
+  'github-explorer',
+  'pr-suggestions',
+  'linkedin-posts',
+  'mcp-ledger',
+  'dogfood',
+  'engine-demo',
+  'observability',
+]);
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -282,6 +193,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const navigate = useNavigate();
 
   const viewResetKey = `${location.pathname}:${currentView}:${String(selectedSpreadsheetId ?? "")}:${String(entityName ?? "")}:${showResearchDossier ? "dossier" : "home"}:${researchHubInitialTab}`;
+
+  // Per-view WebMCP tools — register contextual tools when view changes
+  const webmcpViewEnabled = typeof navigator !== "undefined" && !!navigator.modelContext;
+  useViewWebMcpTools(currentView, webmcpViewEnabled);
+
+  // Oracle session context — for cross-check status banner
+  const oracleSession = useOracleSessionContext();
 
   // User stats for unread briefings badge
   const userStats = useQuery(api.domains.auth.userStats.getUserActivitySummary);
@@ -364,6 +282,12 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   // Settings modal state
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [settingsInitialTab, setSettingsTab] = useState<string>('usage');
+  const [viewportMode, setViewportMode] = useState<"mobile" | "tablet" | "desktop">(() => {
+    if (typeof window === "undefined") return "desktop";
+    if (window.innerWidth < 768) return "mobile";
+    if (window.innerWidth < 1024) return "tablet";
+    return "desktop";
+  });
 
   // Open settings modal with optional tab
   const openSettings = useCallback((tab?: string) => {
@@ -374,13 +298,161 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   // Command Palette state with global Cmd/Ctrl+K shortcut
   const commandPalette = useCommandPalette();
+  const routeKey = `${currentView}:${showResearchDossier ? "hub" : "home"}`;
+  const previousRouteKeyRef = useRef(routeKey);
+  const [isResearchButtonPressed, setIsResearchButtonPressed] = useState(false);
+  const [isOpeningResearchHub, setIsOpeningResearchHub] = useState(false);
+  const [isAssistantButtonPressed, setIsAssistantButtonPressed] = useState(false);
+
+  useEffect(() => {
+    if (previousRouteKeyRef.current !== routeKey && commandPalette.isOpen) {
+      commandPalette.close();
+    }
+    previousRouteKeyRef.current = routeKey;
+  }, [routeKey, commandPalette.isOpen, commandPalette.close]);
+
+  useEffect(() => {
+    if (!isResearchButtonPressed) return;
+    const timer = window.setTimeout(() => setIsResearchButtonPressed(false), 220);
+    return () => window.clearTimeout(timer);
+  }, [isResearchButtonPressed]);
+
+  useEffect(() => {
+    // NOTE(coworker): Keep this explicit visual feedback while navigation resolves.
+    if (currentView === "research" && showResearchDossier) {
+      setIsOpeningResearchHub(false);
+      return;
+    }
+    if (!isOpeningResearchHub) return;
+    const timer = window.setTimeout(() => setIsOpeningResearchHub(false), 1400);
+    return () => window.clearTimeout(timer);
+  }, [currentView, showResearchDossier, isOpeningResearchHub]);
+
+  useEffect(() => {
+    if (!isAssistantButtonPressed) return;
+    const timer = window.setTimeout(() => setIsAssistantButtonPressed(false), 220);
+    return () => window.clearTimeout(timer);
+  }, [isAssistantButtonPressed]);
+
+  const navigateToView = useCallback((view: MainView) => {
+    setCurrentView(view);
+    const targetPath = VIEW_PATH_MAP[view];
+    if (targetPath && location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  }, [location.pathname, navigate, setCurrentView]);
+
+  const goToResearchHome = useCallback(() => {
+    setCurrentView('research');
+    setShowResearchDossier(false);
+    if (location.pathname !== '/') {
+      navigate('/');
+    }
+  }, [location.pathname, navigate, setCurrentView, setShowResearchDossier]);
+
+  const goToResearchHub = useCallback((tab: "overview" | "signals" | "briefing" | "forecasts" = "overview") => {
+    const resolvedTab = tab === "forecasts" ? "overview" : tab;
+    const targetPath = resolvedTab === "overview" ? "/research/overview" : `/research/${resolvedTab}`;
+    setCurrentView('research');
+    setResearchHubInitialTab(resolvedTab);
+    setShowResearchDossier(true);
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  }, [location.pathname, navigate, setCurrentView, setResearchHubInitialTab, setShowResearchDossier]);
+
+  const goToWorkspaceRoot = useCallback(() => {
+    setCurrentView('documents');
+    onDocumentSelect(null);
+    if (location.pathname !== '/documents') {
+      navigate('/documents');
+    }
+  }, [location.pathname, navigate, onDocumentSelect, setCurrentView]);
+
+  const isCommandPaletteDisabled = currentView === "dogfood";
+
+  useEffect(() => {
+    // NOTE(coworker): Quality Review is a visual evidence screen; keep it unobstructed.
+    if (isCommandPaletteDisabled && commandPalette.isOpen) {
+      commandPalette.close();
+    }
+  }, [isCommandPaletteDisabled, commandPalette.isOpen, commandPalette.close]);
   const commandShortcutLabel =
     typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
       ? "⌘K"
       : "Ctrl+K";
 
+  const showCommandShortcutHint =
+    typeof window === "undefined"
+      ? true
+      : !(
+          window.matchMedia("(pointer: coarse)").matches ||
+          window.matchMedia("(hover: none)").matches ||
+          window.innerWidth < 1024 ||
+          (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0)
+        );
+  const showHomeCommandSurface = currentView === "research" && !showResearchDossier;
+  const showHeaderCommandTrigger = !showHomeCommandSurface;
+  const showResearchHubAction = currentView !== "research";
+  const isMobileViewport = viewportMode === "mobile";
+  const isTabletViewport = viewportMode === "tablet";
+  const surfaceRoot = useMemo(() => {
+    if (currentView === "research") {
+      return {
+        page: "research" as const,
+        label: "Research",
+        onClick: goToResearchHome,
+      };
+    }
+
+    if (WORKSPACE_ROOT_VIEWS.has(currentView)) {
+      return {
+        page: "workspace" as const,
+        label: "Workspace",
+        onClick: goToWorkspaceRoot,
+      };
+    }
+
+    if (RESEARCH_ROOT_VIEWS.has(currentView)) {
+      return {
+        page: "research" as const,
+        label: "Research",
+        onClick: goToResearchHome,
+      };
+    }
+
+    return {
+      page: "workspace" as const,
+      label: "Workspace",
+      onClick: goToWorkspaceRoot,
+    };
+  }, [currentView, goToResearchHome, goToWorkspaceRoot]);
+  const currentSurfaceTitle =
+    currentView === "research"
+      ? showResearchDossier
+        ? "Research hub"
+        : "Research"
+      : VIEW_TITLES[currentView] || (currentView === "entity" ? entityName || "Entity" : selectedDocumentId ? "Document" : "Workspace");
+  const currentSurfaceSubtitle =
+    currentView === "research"
+      ? showResearchDossier
+        ? "Follow the active intelligence stream without losing context."
+        : "Use the command deck below for voice, search, and navigation."
+      : VIEW_SUBTITLES[currentView] || "Stay oriented while moving between surfaces.";
+  const contextChips = [
+    selectedDocumentId ? "Document in focus" : null,
+    selectedSpreadsheetId ? "Spreadsheet active" : null,
+    currentView === "entity" && entityName ? entityName : null,
+    showHeaderCommandTrigger ? "Global commands available" : "Voice and command deck below",
+  ].filter(Boolean) as string[];
+
   // Sync Fast Agent panel state with global context
-  const { registerExternalState, options: fastAgentOpenOptions, clearOptions: clearFastAgentOptions } = useFastAgent();
+  const {
+    registerExternalState,
+    openWithContext,
+    options: fastAgentOpenOptions,
+    clearOptions: clearFastAgentOptions,
+  } = useFastAgent();
   const showFastAgentRef = useRef(showFastAgent);
   showFastAgentRef.current = showFastAgent;
 
@@ -394,6 +466,18 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   useEffect(() => {
     if (showFastAgent) setFastAgentHasMounted(true);
   }, [showFastAgent]);
+
+  const handleOpenFastAgentWithPrompt = useCallback(
+    (prompt: string) => {
+      const normalized = prompt.trim();
+      if (!normalized) {
+        setShowFastAgent(true);
+        return;
+      }
+      openWithContext({ initialMessage: normalized });
+    },
+    [openWithContext],
+  );
 
   // Removed quick prompt handoff (AIChatPanel removed)
 
@@ -432,13 +516,49 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     }
   }, [location.search, setCurrentView, onDocumentSelect]);
 
+  useEffect(() => {
+    const computeViewportMode = () => {
+      if (window.innerWidth < 768) return "mobile" as const;
+      if (window.innerWidth < 1024) return "tablet" as const;
+      return "desktop" as const;
+    };
+
+    const updateViewportMode = () => {
+      setViewportMode(computeViewportMode());
+    };
+
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode);
+    return () => window.removeEventListener("resize", updateViewportMode);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      setIsMobileSidebarOpen(false);
+    }
+  }, [isMobileViewport]);
+
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [location.pathname, currentView]);
+
+  const effectiveSidebarMode = isTabletViewport ? true : isSidebarCollapsed;
+  const sidebarViewportWidth = isMobileViewport
+    ? Math.min(sidebarWidth, 320)
+    : isTabletViewport
+      ? 72
+      : effectiveSidebarWidth;
+
 
   return (
     <div className="h-screen flex bg-surface transition-colors duration-200">
+      {/* Agent traversability: JSON-LD metadata for external crawlers */}
+      <AgentMetadata currentView={currentView} currentPath={location.pathname} />
+
       {/* Mobile Sidebar Overlay */}
-      {isMobileSidebarOpen && (
+      {isMobileViewport && isMobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
@@ -447,11 +567,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       <div
         className={`
            flex-shrink-0 h-full bg-surface border-r border-edge z-50 transition-[transform,width] duration-200
-           lg:relative lg:translate-x-0
+           md:relative md:translate-x-0
            fixed inset-y-0 left-0
-           ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+           ${isMobileViewport ? (isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
          `}
-        style={{ width: `${effectiveSidebarWidth}px` }}
+        style={{ width: `${sidebarViewportWidth}px` }}
       >
         <CleanSidebar
           appMode={appMode}
@@ -465,19 +585,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             );
           }}
           onOpenSettings={openSettings}
-          onGoHome={() => {
-            setCurrentView('research');
-            setShowResearchDossier(false);
-          }}
-          onEnterResearchHub={() => {
-            setCurrentView('research');
-            setShowResearchDossier(true);
-          }}
+          onGoHome={goToResearchHome}
+          onEnterResearchHub={() => goToResearchHub("overview")}
           selectedDocumentId={selectedDocumentId}
           onDocumentSelect={onDocumentSelect}
           currentView={currentView}
-          onViewChange={setCurrentView}
-          isCollapsed={isSidebarCollapsed}
+          onViewChange={navigateToView}
+          isCollapsed={effectiveSidebarMode}
           onToggleCollapse={toggleSidebarCollapse}
         />
       </div>
@@ -502,7 +616,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="md:hidden p-1.5 rounded-md text-content-muted hover:text-content hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                 aria-label={isMobileSidebarOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileSidebarOpen ? <CloseIcon className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -515,60 +629,79 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 ) : (
                   <button
                     type="button"
-                    onClick={() => { setCurrentView('research'); setShowResearchDossier(false); }}
+                    onClick={surfaceRoot.onClick}
                     className="text-content-muted hover:text-content-secondary transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-sm px-1"
+                    data-agent-id="chrome:nav:home"
+                    data-agent-action="navigate"
+                    data-agent-label={`Go to ${surfaceRoot.label}`}
+                    data-agent-target={surfaceRoot.page}
                   >
-                    Home
+                    {surfaceRoot.label}
                   </button>
                 )}
                 {currentView !== 'research' && (
                   <>
-                    <ChevronRight className="w-3 h-3 text-content-muted shrink-0" />
+                    <span aria-hidden="true" className="text-content-muted shrink-0 text-xs">
+                      /
+                    </span>
                     <span className="font-medium text-content truncate">
-                      {VIEW_TITLES[currentView] || (currentView === 'entity' ? entityName || 'Entity' : selectedDocumentId ? 'My Documents' : 'My Workspace')}
+                      {VIEW_TITLES[currentView] || (currentView === 'entity' ? entityName || 'Entity' : selectedDocumentId ? 'Document' : 'Workspace')}
                     </span>
                   </>
                 )}
               </nav>
             </div>
 
-          {/* Center: Cmd+K search trigger */}
-          <div className="hidden sm:flex flex-1 justify-center px-4">
+          {/* Center: unified command trigger */}
+          {showHeaderCommandTrigger ? (
+          <div className="hidden flex-1 justify-center px-4 sm:flex">
             <button
               type="button"
-              onClick={commandPalette.toggle}
-              aria-label="Open command palette"
+              onClick={isCommandPaletteDisabled ? undefined : commandPalette.toggle}
+              aria-label="Open command bar"
               data-testid="open-command-palette"
-              className="flex items-center gap-2 px-3 py-1.5 w-full max-w-sm bg-surface-secondary hover:bg-surface border border-edge rounded-lg text-sm text-content-muted transition-all duration-200 group active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:border-primary/30"
+              data-agent-id="chrome:search:command-palette"
+              data-agent-action="search"
+              data-agent-label="Open command bar"
+              aria-disabled={isCommandPaletteDisabled}
+              className={`nb-search-surface w-full max-w-md px-3 py-1.5 text-sm text-content-muted group focus-visible:outline-none ${isCommandPaletteDisabled ? "opacity-60 cursor-not-allowed" : ""} ${showHomeCommandSurface ? "opacity-80 hover:opacity-100" : ""}`}
             >
               <Search className="h-4 w-4 text-content-muted group-hover:text-content-secondary transition-colors" />
-              <span className="flex-1 text-left group-hover:text-content-secondary transition-colors">Search...</span>
-              <kbd className="ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded px-1.5 py-0.5 font-mono group-hover:border-primary/30 transition-colors shadow-sm">
+              <span className="flex-1 text-left group-hover:text-content-secondary transition-colors">Ask, search, or jump</span>
+              <kbd className={`ml-auto text-xs font-medium text-content-muted bg-surface border border-edge rounded-md px-1.5 py-0.5 font-mono group-hover:border-primary/30 transition-colors shadow-sm ${showCommandShortcutHint ? "hidden xl:inline-flex" : "hidden"}`}>
                 {commandShortcutLabel}
               </kbd>
             </button>
           </div>
+          ) : <div className="hidden flex-1 sm:flex" />}
 
           {/* Right: actions */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Research Hub CTA */}
-            {currentView === 'research' && showResearchDossier ? (
+            {showResearchHubAction && (
               <button
                 type="button"
-                onClick={() => setShowResearchDossier(false)}
-                className="hidden sm:inline-flex items-center gap-1.5 btn-ghost-sm"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Home
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => { onShowResearchHub?.(); setCurrentView('research'); setResearchHubInitialTab("overview"); setShowResearchDossier(true); }}
-                className="hidden sm:inline-flex items-center gap-1.5 btn-primary-sm relative"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Research
+                onClick={() => {
+                  setIsResearchButtonPressed(true);
+                  setIsOpeningResearchHub(true);
+                  commandPalette.close();
+                  onShowResearchHub?.();
+                  goToResearchHub("overview");
+                }}
+                disabled={isOpeningResearchHub}
+                aria-busy={isOpeningResearchHub}
+                data-agent-id="chrome:action:research-hub"
+                data-agent-action="navigate"
+                data-agent-label="Open Research Hub"
+                data-agent-target="research"
+                className={`hidden sm:inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-[13px] font-medium text-content transition-all duration-200 hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 relative ${isOpeningResearchHub ? "opacity-95 shadow-md ring-2 ring-primary/45" : ""} ${isResearchButtonPressed ? "ring-2 ring-primary/40 shadow-sm" : ""}`}
+                >
+                  {isOpeningResearchHub ? (
+                    <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin motion-reduce:animate-none" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  <span className="hidden sm:inline">{isOpeningResearchHub ? "Opening..." : "Open hub"}</span>
                 {(userStats?.unreadBriefings ?? 0) > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full inline-flex items-center justify-center font-bold">
                     {userStats!.unreadBriefings > 9 ? '9+' : userStats!.unreadBriefings}
@@ -580,20 +713,26 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             {/* Fast Agent toggle */}
             <button
               type="button"
-              onClick={() => setShowFastAgent((open) => !open)}
-              aria-label={showFastAgent ? "Close assistant" : "Open assistant"}
+              onClick={() => {
+                setIsAssistantButtonPressed(true);
+                setShowFastAgent((open) => !open);
+              }}
+              aria-label={showFastAgent ? "Close agent panel" : "Open agent panel"}
               aria-pressed={showFastAgent}
               data-testid="assistant-toggle"
-              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+              data-agent-id="chrome:action:assistant-toggle"
+              data-agent-action="toggle"
+              data-agent-label={showFastAgent ? "Close agent panel" : "Open agent panel"}
+              className={`relative flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-medium rounded-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                 showFastAgent
                   ? "bg-[var(--accent-primary-bg)] text-content"
                   : "bg-surface text-content hover:bg-surface-hover"
-              }`}
+              } ${isAssistantButtonPressed ? "ring-2 ring-primary/35 shadow-sm" : ""}`}
             >
               <Zap className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Assistant</span>
+              <span className="hidden sm:inline">Agent</span>
               {!showFastAgent && (
-                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary/80" />
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-surface" />
               )}
             </button>
 
@@ -604,15 +743,19 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
             <button
               type="button"
               onClick={() => openSettings(user ? "profile" : "usage")}
-              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex items-center gap-2 p-1 rounded-md hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Settings"
               data-testid="open-settings"
+              data-agent-id="chrome:action:settings"
+              data-agent-action="navigate"
+              data-agent-label="Open settings"
+              data-agent-target="settings"
             >
               {user ? (
                 user.image ? (
                   <img src={user.image} alt={user.name || user.email || "User avatar"} width={24} height={24} className="h-6 w-6 rounded-full" />
                 ) : (
-                  <div className="h-6 w-6 rounded-full bg-gradient-to-br from-[rgb(79, 70, 229)] to-[var(--accent-primary-hover)] flex items-center justify-center text-white text-xs font-bold">
+                  <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
                     {(user.name?.charAt(0) || user.email?.charAt(0) || "U").toUpperCase()}
                   </div>
                 )
@@ -637,6 +780,9 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                 disabled={isAnonSigningIn}
                 className="ml-auto inline-flex min-w-[96px] items-center justify-center px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
                 aria-busy={isAnonSigningIn}
+                data-agent-id="chrome:action:sign-in"
+                data-agent-action="create"
+                data-agent-label="Sign in"
               >
                 <span className="inline-flex items-center gap-1.5">
                   {isAnonSigningIn && (
@@ -653,14 +799,54 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   try { localStorage.setItem("nodebench_preview_dismissed", "1"); } catch {}
                 }}
                 className="p-1 rounded hover:bg-muted/60 text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                data-agent-id="chrome:action:dismiss-banner"
+                data-agent-action="toggle"
+                data-agent-label="Dismiss preview banner"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
           )}
 
+          <div className="border-b border-edge/70 bg-surface/55 px-4 py-2 sm:px-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-content">{currentSurfaceTitle}</div>
+                <div className="truncate text-xs text-content-muted">{currentSurfaceSubtitle}</div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {oracleSession?.hasActiveSession && (() => {
+                  const s = oracleSession.state.crossCheckStatus ?? "aligned";
+                  const cfg = { aligned: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", drifting: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400", violated: "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400" }[s];
+                  return (
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium ${cfg}`}>
+                      {s === "aligned" ? "✓" : s === "drifting" ? "⚠" : "✕"} {s}
+                    </span>
+                  );
+                })()}
+                {contextChips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="inline-flex items-center rounded-full border border-edge bg-surface px-2.5 py-1 text-[11px] text-content-secondary"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Oracle Session Banner — persistent cross-check status */}
+          {oracleSession && (
+            <OracleSessionBanner
+              state={oracleSession.state}
+              onComplete={oracleSession.hasActiveSession ? () => oracleSession.completeSession() : undefined}
+              onCancel={oracleSession.hasActiveSession ? () => oracleSession.cancelSession() : undefined}
+            />
+          )}
+
           {/* Content Area - Resizable Split */}
-          <div className="flex-1 overflow-hidden" data-main-content>
+          <div className="relative flex-1 overflow-hidden" data-main-content data-agent-id={`view:${currentView}:content`} data-agent-label={VIEW_TITLES[currentView] || currentView}>
             {currentView === "research" ? (
               <LazyView
                 title="Research Hub failed to load"
@@ -675,6 +861,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     }}
                     onEnterWorkspace={() => setCurrentView("documents")}
                     onOpenFastAgent={() => setShowFastAgent(true)}
+                    onOpenFastAgentWithPrompt={handleOpenFastAgentWithPrompt}
                     onOpenAgents={() => setCurrentView("agents")}
                     onOpenWorkbench={() => setCurrentView("benchmarks")}
                   />
@@ -723,10 +910,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   />
                 )}
               </LazyView>
-            ) : currentView === "agents" ? (
-              <LazyView title="AI Assistants failed to load" resetKey={viewResetKey} fallback={viewFallbackAgents}>
-                <AgentsHub />
-              </LazyView>
             ) : currentView === "calendar" ? (
               <LazyView title="Calendar failed to load" resetKey={viewResetKey} fallback={viewFallbackCalendar}>
                 <CalendarHomeHub
@@ -750,146 +933,6 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   onBack={() => setCurrentView("research")}
                 />
               </LazyView>
-            ) : currentView === "signals" ? (
-              <LazyView title="Signals failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <PublicSignalsLog />
-              </LazyView>
-            ) : currentView === "benchmarks" ? (
-              // WorkbenchView has its own scroll container + sticky header
-              // — do NOT add overflow or padding classes on the LazyView wrapper.
-              <LazyView
-                title="Workbench failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full"
-              >
-                <WorkbenchView />
-              </LazyView>
-            ) : currentView === "funding" ? (
-              <LazyView title="Funding Brief failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <FundingBriefView />
-              </LazyView>
-            ) : currentView === "activity" ? (
-              <LazyView title="Activity failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <PublicActivityView />
-              </LazyView>
-            ) : currentView === "analytics-hitl" ? (
-              <LazyView
-                title="Review Queue failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <HITLAnalyticsDashboard />
-              </LazyView>
-            ) : currentView === "analytics-components" ? (
-              <LazyView
-                title="Usage & Costs failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <ComponentMetricsDashboard />
-              </LazyView>
-            ) : currentView === "analytics-recommendations" ? (
-              <LazyView
-                title="Feedback failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <RecommendationFeedbackDashboard />
-              </LazyView>
-            ) : currentView === "cost-dashboard" ? (
-              <LazyView
-                title="Cost Dashboard failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackCost}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <CostDashboard />
-              </LazyView>
-            ) : currentView === "industry-updates" ? (
-              <LazyView
-                title="Industry News failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackIndustry}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <IndustryUpdatesPanel />
-              </LazyView>
-            ) : currentView === "for-you-feed" ? (
-              <LazyView
-                title="For You feed failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <ForYouFeed />
-              </LazyView>
-            ) : currentView === "document-recommendations" ? (
-              <LazyView
-                title="Recommendations failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDocuments}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <DocumentRecommendations />
-              </LazyView>
-            ) : currentView === "agent-marketplace" ? (
-              <LazyView
-                title="Agent Templates failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackAgents}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <AgentMarketplace />
-              </LazyView>
-            ) : currentView === "github-explorer" ? (
-              <LazyView
-                title="GitHub Explorer failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <GitHubExplorer />
-              </LazyView>
-            ) : currentView === "pr-suggestions" ? (
-              <LazyView
-                title="PR Suggestions failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <PRSuggestions />
-              </LazyView>
-            ) : currentView === "linkedin-posts" ? (
-              <LazyView
-                title="LinkedIn Archive failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDocuments}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <LinkedInPostArchiveView />
-              </LazyView>
-            ) : currentView === "mcp-ledger" ? (
-              <LazyView
-                title="Activity Log failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <McpToolLedgerView />
-              </LazyView>
-            ) : currentView === "dogfood" ? (
-              <LazyView
-                title="Quality Review failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDefault}
-                className="h-full overflow-auto bg-surface pb-24"
-              >
-                <DogfoodReviewView />
-              </LazyView>
             ) : currentView === "entity" && entityName ? (
               <LazyView title="Entity profile failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <EntityProfilePage
@@ -901,6 +944,26 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   }}
                 />
               </LazyView>
+            ) : VIEW_MAP[currentView]?.component ? (
+              /* ── Registry-driven renderer ────────────────────────────────
+               * All views with a non-null `component` in the VIEW_REGISTRY
+               * are rendered here via a single lookup — no per-view branch.
+               * Adding a new simple view = add 1 entry to viewRegistry.ts.
+               */
+              (() => {
+                const RegistryComponent = VIEW_MAP[currentView].component!;
+                const entry = VIEW_MAP[currentView];
+                return (
+                  <LazyView
+                    title={`${entry.title} failed to load`}
+                    resetKey={viewResetKey}
+                    fallback={viewFallbackDefault}
+                    className="h-full overflow-auto bg-surface pb-24"
+                  >
+                    <RegistryComponent />
+                  </LazyView>
+                );
+              })()
             ) : (
               <LazyView title="Workspace failed to load" resetKey={viewResetKey} fallback={viewFallbackDocuments}>
                 <div className="h-full flex">

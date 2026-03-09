@@ -1,4 +1,5 @@
-import { FlaskConical, Clock, Settings, Play } from "lucide-react";
+import { Clock, Settings, Play } from "lucide-react";
+import { SignatureOrb } from "@/shared/ui/SignatureOrb";
 import { WORKBENCH_SCENARIOS } from "./ScenarioCatalog";
 
 export interface WorkbenchRunRow {
@@ -104,9 +105,10 @@ function StatusIndicator({ status }: { status: WorkbenchRunRow["status"] }) {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-edge bg-surface-secondary">
-        <FlaskConical className="h-6 w-6 text-content-muted" />
-      </div>
+      <SignatureOrb variant="empty" className="mb-2 py-0" />
+      <span className="rounded-full border border-edge bg-surface-secondary px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
+        Awaiting first run
+      </span>
       <p className="text-sm font-semibold text-content">No benchmark runs yet</p>
       <p className="mt-1 max-w-md text-xs leading-relaxed text-content-muted">
         Runs appear here after you configure a workbench app and trigger a benchmark.
@@ -130,6 +132,9 @@ function EmptyState() {
           Run benchmark
         </button>
       </div>
+      <p className="mt-3 max-w-sm text-[11px] leading-relaxed text-content-muted">
+        The empty state is intentional. Live evals above already show how the product scores and streams proof before self-serve execution opens up.
+      </p>
     </div>
   );
 }

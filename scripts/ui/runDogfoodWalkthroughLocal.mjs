@@ -1,6 +1,7 @@
 import net from "node:net";
 import path from "node:path";
 import { existsSync } from "node:fs";
+import { rm, rename } from "node:fs/promises";
 import { spawn } from "node:child_process";
 
 function parseArgs(argv) {
@@ -17,6 +18,30 @@ function parseArgs(argv) {
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+async function removePathRobustly(targetPath) {
+  if (!existsSync(targetPath)) return;
+
+  const attempts = 5;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      await rm(targetPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 150 });
+      return;
+    } catch (error) {
+      if (attempt === attempts - 1) {
+        const quarantinePath = `${targetPath}.stale-${Date.now()}`;
+        try {
+          await rename(targetPath, quarantinePath);
+          await rm(quarantinePath, { recursive: true, force: true, maxRetries: 3, retryDelay: 150 });
+          return;
+        } catch {
+          throw error;
+        }
+      }
+      await sleep(300 * (attempt + 1));
+    }
+  }
 }
 
 async function killProcessTree(proc) {
@@ -95,6 +120,21 @@ async function waitForHttpOk(url, timeoutMs) {
   throw new Error(`Timed out waiting for HTTP at ${url}`);
 }
 
+async function runShellCommand(command, { cwd = process.cwd(), env = {} } = {}) {
+  const child = spawn(command, {
+    cwd,
+    stdio: "inherit",
+    env: { ...process.env, ...env },
+    shell: true,
+    windowsHide: true,
+  });
+
+  return await new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code) => resolve(Number(code ?? 0)));
+  });
+}
+
 async function findOpenPort(host, startPort, tries = 30) {
   for (let i = 0; i < tries; i++) {
     const port = startPort + i;
@@ -124,6 +164,8 @@ async function main() {
   const publish = (args.get("publish") ?? (screens ? "true" : "false")) === "true";
   const scenarios = (args.get("scenarios") ?? (screens ? "true" : "false")) === "true";
   const play = (args.get("play") ?? "false") === "true";
+  const routeShards = Math.max(1, Number(args.get("routeShards") ?? process.env.DOGFOOD_ROUTE_SHARDS ?? 1));
+  const includeInteractionLane = (args.get("interactions") ?? "true") !== "false";
 
   const repoRoot = process.cwd();
   const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -145,6 +187,7 @@ async function main() {
     });
   } else {
     // Build + preview server (fast start, production-like behavior).
+    await removePathRobustly(path.join(repoRoot, "dist", "dogfood"));
     // eslint-disable-next-line no-console
     console.log(`Building: ${npmCmd} run build`);
     const build = spawn(`${npmCmd} run build`, {
@@ -182,30 +225,57 @@ async function main() {
       // Route-by-route screenshot suite (writes test-results/full-ui-dogfood/*.png)
       // Use BASE_URL so Playwright points at the preview/dev server we just started.
       // eslint-disable-next-line no-console
-      console.log(`Running dogfood e2e screenshots (BASE_URL=${baseURL})...`);
-      const e2e = spawn(
-        `${npxCmd} playwright test tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1`,
-        {
-          cwd: repoRoot,
-          stdio: "inherit",
-          env: { ...process.env, BASE_URL: baseURL },
-          shell: true,
-        },
-      );
-      const e2eCode = await new Promise((resolve) => e2e.on("exit", resolve));
-      if (e2eCode !== 0) throw new Error(`Dogfood e2e exited with code ${e2eCode}`);
+      console.log(`Running dogfood e2e screenshots (BASE_URL=${baseURL}, routeShards=${routeShards})...`);
+      const playwrightCommand = `${npxCmd} playwright test tests/e2e/full-ui-dogfood.spec.ts --project=chromium --workers=1`;
+      const screenshotLanes = [];
+
+      for (let shardIndex = 1; shardIndex <= routeShards; shardIndex += 1) {
+        screenshotLanes.push(
+          runShellCommand(playwrightCommand, {
+            cwd: repoRoot,
+            env: {
+              BASE_URL: baseURL,
+              DOGFOOD_ROUTE_SHARD_INDEX: String(shardIndex),
+              DOGFOOD_ROUTE_SHARD_TOTAL: String(routeShards),
+              DOGFOOD_INCLUDE_INTERACTIONS: "false",
+              DOGFOOD_INCLUDE_ROUTES: "true",
+            },
+          }).then((code) => {
+            if (code !== 0) {
+              throw new Error(`Dogfood route shard ${shardIndex}/${routeShards} exited with code ${code}`);
+            }
+          }),
+        );
+      }
+
+      if (includeInteractionLane) {
+        screenshotLanes.push(
+          runShellCommand(playwrightCommand, {
+            cwd: repoRoot,
+            env: {
+              BASE_URL: baseURL,
+              DOGFOOD_ROUTE_SHARD_INDEX: "1",
+              DOGFOOD_ROUTE_SHARD_TOTAL: "1",
+              DOGFOOD_INCLUDE_INTERACTIONS: "true",
+              DOGFOOD_INCLUDE_ROUTES: "false",
+            },
+          }).then((code) => {
+            if (code !== 0) {
+              throw new Error(`Dogfood interaction lane exited with code ${code}`);
+            }
+          }),
+        );
+      }
+
+      await Promise.all(screenshotLanes);
 
       if (publish) {
         // Publish screenshots to /public so /dogfood can render them.
         // eslint-disable-next-line no-console
         console.log("Publishing screenshot manifest to public/dogfood...");
-        const pub = spawn(`${npmCmd} run dogfood:publish`, {
+        const pubCode = await runShellCommand(`${npmCmd} run dogfood:publish`, {
           cwd: repoRoot,
-          stdio: "inherit",
-          env: { ...process.env },
-          shell: true,
         });
-        const pubCode = await new Promise((resolve) => pub.on("exit", resolve));
         if (pubCode !== 0) throw new Error(`dogfood:publish exited with code ${pubCode}`);
       }
     }
@@ -309,4 +379,10 @@ async function main() {
   }
 }
 
-await main();
+try {
+  await main();
+  process.exit(0);
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}

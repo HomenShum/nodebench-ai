@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-03-01T06:49:32.837Z",
+  "method": "isolated-dom-injection",
+  "totalScreens": 14,
+  "captured": 14,
+  "results": [
+    {
+      "id": "1.1-agent-welcome",
+      "status": "ok",
+      "size": 55765
+    },
+    {
+      "id": "1.2-agent-fast",
+      "status": "ok",
+      "size": 50467
+    },
+    {
+      "id": "1.3-agent-deep",
+      "status": "ok",
+      "size": 51433
+    },
+    {
+      "id": "1.4-agent-ready",
+      "status": "ok",
+      "size": 54631
+    },
+    {
+      "id": "2.1-profile-saved",
+      "status": "ok",
+      "size": 11003
+    },
+    {
+      "id": "2.2-profile-step1",
+      "status": "ok",
+      "size": 23890
+    },
+    {
+      "id": "2.3-profile-step2",
+      "status": "ok",
+      "size": 24077
+    },
+    {
+      "id": "3.1-proactive-welcome",
+      "status": "ok",
+      "size": 56853
+    },
+    {
+      "id": "3.2-proactive-consent",
+      "status": "ok",
+      "size": 57844
+    },
+    {
+      "id": "3.3-proactive-features",
+      "status": "ok",
+      "size": 56813
+    },
+    {
+      "id": "3.4-proactive-preferences",
+      "status": "ok",
+      "size": 54398
+    },
+    {
+      "id": "3.5-proactive-success",
+      "status": "ok",
+      "size": 51698
+    },
+    {
+      "id": "4.1-tutorial-inprogress",
+      "status": "ok",
+      "size": 96802
+    },
+    {
+      "id": "4.2-tutorial-complete",
+      "status": "ok",
+      "size": 105000
+    }
+  ]
+}

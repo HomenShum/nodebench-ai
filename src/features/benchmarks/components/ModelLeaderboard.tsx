@@ -53,7 +53,7 @@ function scoreBarColor(score: number | null): string {
 
 function scoreBarWidth(score: number | null): string {
   if (score === null) return "0%";
-  return `${Math.max(2, score)}%`;
+  return `${Math.min(100, Math.max(6, score))}%`;
 }
 
 function gradeDotColor(score: number | null): string {
@@ -137,7 +137,7 @@ export function ModelLeaderboard({
               providerLabel: benchmarkModel.providerLabel,
               score,
               grade: scoreToGrade(score),
-              sourceLabel: "Function calling accuracy",
+              sourceLabel: "Tool-use evaluation",
               lastRunAt: null,
               lastScenarioId: null,
             };
@@ -166,7 +166,7 @@ export function ModelLeaderboard({
         <span className="text-xs text-content-muted">All time</span>
       </div>
 
-      <div className="lg:hidden scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto px-1 pr-3 sm:pr-4 pb-1 snap-x snap-mandatory">
+      <div className="lg:hidden scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto overflow-y-visible px-1 pr-6 sm:pr-4 pb-2 snap-x snap-mandatory">
         {entries.map((entry) => (
           <ModelCard key={entry.modelId} entry={entry} compact />
         ))}
@@ -182,7 +182,7 @@ export function ModelLeaderboard({
 
 function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compact?: boolean }) {
   const providerBadgeClass = PROVIDER_COLORS[entry.provider] ?? "bg-surface-secondary text-content-muted";
-  const sizingClass = compact ? "flex-none w-[11.25rem] sm:w-48 snap-start" : "min-w-0";
+  const sizingClass = compact ? "flex-none w-[12.5rem] sm:w-52 snap-start" : "min-w-0";
 
   const runMeta = (() => {
     if (!entry.lastRunAt) return null;
@@ -220,7 +220,7 @@ function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compac
             </span>
           </span>
         ) : (
-          <span className="inline-block h-5 w-14 rounded bg-content-muted/10" aria-label="Not yet run" />
+          <span className="inline-block h-5 w-14 rounded bg-content-muted/20" aria-label="Not yet run" />
         )}
 
         {entry.grade && (
@@ -242,10 +242,18 @@ function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compac
       ) : (
         <div className="text-[10px] leading-none text-content-muted flex items-center justify-between gap-2">
           {entry.score === null ? (
-            <span className="inline-flex items-center gap-1.5 text-content-muted/70">
-              <span className="h-1.5 w-1.5 rounded-full bg-content-muted/40" />
-              <span>Not yet run</span>
-            </span>
+            <div className="min-w-0">
+              <span
+                className="inline-flex items-center gap-1.5 text-content-secondary"
+                title="Connect a benchmark app to unlock this lane."
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-content-muted/70" />
+                <span className="font-medium">Not yet run</span>
+              </span>
+              <div className="mt-1 text-[10px] leading-relaxed text-content-muted">
+                Connect a benchmark app to unlock this lane.
+              </div>
+            </div>
           ) : (
             <span>{entry.sourceLabel}</span>
           )}

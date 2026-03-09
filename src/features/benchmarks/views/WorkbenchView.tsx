@@ -42,6 +42,8 @@ const ModelEvalDashboard = lazy(() =>
   }))
 );
 
+const STREAM_PREVIEW_LIMIT = 320;
+
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 function WorkbenchHeader() {
@@ -65,7 +67,8 @@ function WorkbenchHeader() {
         </div>
 
         {/* Right: CTA buttons (both disabled — Phase 2) */}
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+        <div className="shrink-0 self-start sm:self-auto">
+          <div className="flex items-center gap-2">
           <button
             disabled
             title="Configure a workbench app — coming in Phase 2"
@@ -84,6 +87,10 @@ function WorkbenchHeader() {
             <span className="sm:hidden">Run</span>
             <span className="hidden sm:inline">Run Benchmark</span>
           </button>
+          </div>
+          <p className="mt-2 max-w-xs text-[11px] leading-relaxed text-content-muted">
+            Execution unlocks after you connect a benchmark app. The live eval and guard panels below show the current benchmark bar until then.
+          </p>
         </div>
       </div>
     </div>
@@ -224,6 +231,38 @@ function formatLatency(ms?: number) {
     return "n/a";
   }
   return `${Math.round(ms)}ms`;
+}
+
+function StreamPayloadBlock({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const normalized = value.trim();
+  const isLong = normalized.length > STREAM_PREVIEW_LIMIT || normalized.split("\n").length > 6;
+  const displayValue =
+    expanded || !isLong ? normalized : `${normalized.slice(0, STREAM_PREVIEW_LIMIT).trimEnd()}…`;
+
+  return (
+    <div className="mt-2 rounded-md border border-edge bg-surface p-2 text-[11px] text-content-muted">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-medium text-content">{label}</div>
+        {isLong ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="text-[10px] font-medium text-primary hover:opacity-80"
+          >
+            {expanded ? "Collapse" : "Show full"}
+          </button>
+        ) : null}
+      </div>
+      <div className="mt-1 whitespace-pre-wrap break-words">{displayValue}</div>
+    </div>
+  );
 }
 
 function LiveGuardPanel() {
@@ -517,12 +556,22 @@ function EnterpriseEvalPanel() {
               {visibleEvents.length}/{artifact.stream.events.length} telemetry events visible in the latest eval replay.
             </div>
           </div>
-          <div className="text-xs text-content-muted flex items-center gap-2">
-            <Play className="w-3.5 h-3.5" />
-            {artifact.stream.video?.status === "ready"
-              ? "Video published"
-              : artifact.stream.video?.note ?? "Video capture pending"}
-          </div>
+          {artifact.stream.video?.url ? (
+            <a
+              href={artifact.stream.video.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content hover:border-primary/30 hover:text-primary"
+            >
+              <Play className="w-3.5 h-3.5" />
+              {artifact.stream.video?.status === "ready" ? "Open published video" : "Open capture"}
+            </a>
+          ) : (
+            <div className="text-xs text-content-muted flex items-center gap-2">
+              <Play className="w-3.5 h-3.5" />
+              {artifact.stream.video?.note ?? "Video capture pending"}
+            </div>
+          )}
         </div>
         {artifact.stream.video?.url ? (
           <video
@@ -547,18 +596,8 @@ function EnterpriseEvalPanel() {
                     {event.caseId ? <span>{event.caseId}</span> : null}
                     {typeof event.lane === "number" ? <span>lane {event.lane}</span> : null}
                   </div>
-                  {event.request ? (
-                    <div className="mt-2 rounded-md border border-edge bg-surface p-2 text-[11px] text-content-muted">
-                      <div className="font-medium text-content">Input</div>
-                      <div className="mt-1 whitespace-pre-wrap">{event.request}</div>
-                    </div>
-                  ) : null}
-                  {event.response ? (
-                    <div className="mt-2 rounded-md border border-edge bg-surface p-2 text-[11px] text-content-muted">
-                      <div className="font-medium text-content">Output</div>
-                      <div className="mt-1 whitespace-pre-wrap">{event.response}</div>
-                    </div>
-                  ) : null}
+                  {event.request ? <StreamPayloadBlock label="Input" value={event.request} /> : null}
+                  {event.response ? <StreamPayloadBlock label="Output" value={event.response} /> : null}
                   {event.telemetry ? (
                     <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-content-muted">
                       {Object.entries(event.telemetry).map(([key, value]) => (
