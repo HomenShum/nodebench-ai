@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import { Home, LayoutGrid, Bookmark, ChevronRight, FileText, Loader2, Bot } from 'lucide-react';
 import { Tooltip } from '../shared/ui/Tooltip';
+import { sanitizeDocumentTitle } from '@/lib/displayText';
 
 export type ActivePage = 'research' | 'workspace' | 'saved';
 
@@ -28,23 +29,23 @@ interface SidebarGlobalNavProps {
 const navItems = [
   {
     id: 'research' as const,
-    label: 'Home',
+    label: 'Research',
     icon: Home,
-    desc: 'Research & Reports',
+    desc: 'Signals, briefs, and reports',
     expandable: false
   },
   {
     id: 'workspace' as const,
-    label: 'My Workspace',
+    label: 'Workspace',
     icon: LayoutGrid,
-    desc: 'Files & Analysis',
+    desc: 'Documents, tasks, and analysis',
     expandable: false
   },
   {
     id: 'saved' as const,
     label: 'Saved Reports',
     icon: Bookmark,
-    desc: 'Library',
+    desc: 'Saved reports and dossiers',
     expandable: true
   }
 ];
@@ -80,8 +81,8 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-all duration-200 border-l-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 ${isActive
-                    ? 'border-l-[rgb(79, 70, 229)] bg-indigo-500/10 text-content'
+                className={`w-10 h-10 mx-auto rounded-md flex items-center justify-center transition-all duration-200 border-l-2 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive
+                    ? 'border-l-[rgb(79,70,229)] bg-indigo-500/12 text-content shadow-[inset_0_0_0_1px_rgba(99,102,241,0.18)]'
                     : 'border-l-transparent text-content-muted hover:bg-surface-hover hover:text-content-secondary'
                   }`}
               >
@@ -103,8 +104,8 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                 }
               }}
               aria-current={isActive ? 'page' : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] border border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 ${isActive
-                  ? 'bg-surface-secondary border-edge text-content'
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive
+                  ? 'bg-indigo-500/8 border-indigo-500/20 text-content shadow-[inset_0_0_0_1px_rgba(99,102,241,0.12)]'
                   : 'text-content-secondary hover:bg-surface-hover hover:text-content'
                 }`}
             >
@@ -145,10 +146,10 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                         key={dossier.id}
                         type="button"
                         onClick={() => onDossierSelect?.(dossier.id)}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-200 group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 text-[12px] text-content-secondary hover:text-content hover:bg-surface-hover rounded-md transition-all duration-200 group active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <FileText className="w-3.5 h-3.5 text-content-muted group-hover:text-content-secondary dark:group-hover:text-gray-300 shrink-0 transition-colors" />
-                        <span className="truncate flex-1 text-left font-medium">{dossier.title || 'Untitled'}</span>
+                        <span className="truncate flex-1 text-left font-medium">{sanitizeDocumentTitle(dossier.title)}</span>
                         {dossier.isAgentUpdating && (
                           <span className="flex items-center gap-1 text-xs bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full">
                             <Bot className="w-2.5 h-2.5" />
@@ -161,9 +162,9 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
                       <button
                         type="button"
                         onClick={() => onNavigate('saved')}
-                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:opacity-85 font-semibold text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 rounded-sm"
+                        className="w-full px-2.5 py-1.5 text-xs text-indigo-600 dark:text-indigo-400 hover:opacity-85 font-semibold text-left transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
                       >
-                        View all {recentDossiers.length} reports â†’
+                        View all {recentDossiers.length} reports {"->"}
                       </button>
                     )}
                   </>
@@ -182,4 +183,3 @@ export const SidebarGlobalNav: React.FC<SidebarGlobalNavProps> = ({
 };
 
 export default SidebarGlobalNav;
-

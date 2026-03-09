@@ -34,6 +34,12 @@ Milestone: Unified Temporal Agentic OS Phase 1 substrate
 - The Oracle UI now hard-gates live Convex queries behind `VITE_ENABLE_ORACLE_LIVE_DATA`, so the builder surface falls back to demo mode instead of crashing when the Oracle backend is not deployed.
 - Builder-facing benchmark and navigation UX have been upgraded from the latest QA pass: mobile drawer behavior, tablet collapsed rail defaults, clickable published video proof, expandable telemetry payloads, clearer disabled-state explanations, improved benchmark empty states, and a text-based breadcrumb separator.
 - The local dogfood runner now clears stale `dist/dogfood` output robustly on Windows before preview builds, which removes a recurring `ENOTEMPTY` failure during segmented verification.
+- The Oracle homepage is now framed as a public product surface with a clear value proposition, explicit starting points, and preview/live data status instead of opening with unexplained internal jargon.
+- Oracle session and trace surfaces now format long durations compactly and replace raw goal IDs with short goal references so internal storage identifiers are no longer leaked into the public UI.
+- The command palette now only advertises real product destinations that exist in the current navigation model, replacing the previous dead-end analytics, calendar, and quality-review shortcuts.
+- Research Hub embedded chrome now uses a neutral top summary instead of a misleading back-navigation control, and guest footer copy now explains what preview mode includes.
+- Signal feed cards now use semantic headings and text-based source labels instead of emoji-only source markers, reducing ambiguity across screen readers and OS renderers.
+- Benchmark copy now clarifies score and latency units, renames the chart toggle to a clearer action, and explains unrun leaderboard lanes as pending the first benchmark app connection.
 
 ## Open defects
 - Keep long-running dogfood stable against stale client caches and route-level regressions.
@@ -42,7 +48,7 @@ Milestone: Unified Temporal Agentic OS Phase 1 substrate
 - A real Convex ingestion run has not been executed yet because the repo-wide Convex resolver lane is currently blocked by unrelated pre-existing domain export issues.
 
 ## Next quest
-Execute the first real Convex ingestion run against a representative dump, confirm the control tower substrate counts move, and then connect the `enterpriseInvestigation` replay manifest, MCP span helpers, and latency guard results into a proof-linked task session or operator workflow.
+Publish the refreshed public-facing homepage and benchmark/research polish to production, then run a focused live QA pass on `/`, `/research`, and `/benchmarks` to confirm the first-impression fixes are visible on the website.
 
 ## Blockers
 - None at the contract level.
@@ -55,6 +61,7 @@ Execute the first real Convex ingestion run against a representative dump, confi
 - Full `npm run dogfood:verify` now passes again after the Oracle live-data gate and the layout/benchmark QA fixes.
 - Scenario regression now passes the long-session route-accumulation lane, the mobile dark-mode lane, and the dogfood artifact ingestion lane in the same closed loop.
 - The remaining dogfood noise is limited to benign `net::ERR_ABORTED` media request logs after navigation; artifact verification still passes with `screenshots=145`, `frames=36`, `scribe=36`, and `chapters=36`.
+- After the public-facing copy and navigation cleanup, `npm run dogfood:verify` still passes with the same artifact floor and no new route-regression failures.
 
 ## Update rule
 Any agent changing Oracle-related behavior must update this file after implementation, tests, dogfood, and a vision cross-check are complete.

@@ -16,6 +16,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskSession, TaskSessionStatus, TaskSessionType } from './types';
+import { fmtCompact } from '@/lib/formatNumber';
+import {
+  formatDurationCompact,
+  formatGoalReference,
+  formatUsd,
+  getCrossCheckPresentation,
+} from '../oracleControlTowerUtils';
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // STATUS CONFIGURATION
@@ -47,11 +54,11 @@ const statusConfig: Record<TaskSessionStatus, { dotColor: string; label: string 
 const typeConfig: Record<TaskSessionType, { dotColor: string; label: string }> = {
   manual: {
     dotColor: 'bg-content-secondary',
-    label: 'Manual'
+    label: 'User'
   },
   cron: {
     dotColor: 'bg-content-secondary',
-    label: 'Automated'
+    label: 'Cron'
   },
   scheduled: {
     dotColor: 'bg-content-secondary',
@@ -71,17 +78,9 @@ const typeConfig: Record<TaskSessionType, { dotColor: string; label: string }> =
 // UTILITIES
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  if (ms < 3600000) return `${Math.round(ms / 60000)}m`;
-  return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
-}
-
 function formatTokens(tokens: number): string {
   if (tokens < 1000) return `${tokens}`;
-  if (tokens < 1000000) return `${(tokens / 1000).toFixed(1)}k`;
-  return `${(tokens / 1000000).toFixed(1)}M`;
+  return fmtCompact(tokens).toUpperCase();
 }
 
 function formatDate(timestamp: number): string {
@@ -108,6 +107,7 @@ interface TaskSessionCardProps {
 export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCardProps) {
   const statusCfg = statusConfig[session.status];
   const typeCfg = typeConfig[session.type];
+  const crossCheck = getCrossCheckPresentation(session.crossCheckStatus);
   
   return (
     <div 
@@ -115,7 +115,7 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
         "p-3 rounded-lg border cursor-pointer transition-all",
         "hover:bg-surface-secondary hover:border-indigo-500/30",
         isSelected 
-          ? "bg-surface-secondary border-indigo-500/30 ring-1 ring-indigo-500/50" 
+          ? "bg-surface-secondary border-indigo-500/30 ring-1 ring-ring" 
           : "bg-surface border-edge"
       )}
       onClick={onClick}
@@ -123,12 +123,27 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
       {/* Header: Title + Status */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-content truncate">
-            {session.title.replace(/^Cron:\s*/i, 'Scheduled: ')}
-          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-medium text-content truncate">
+              {session.title.replace(/^Cron:\s*/i, 'Scheduled: ')}
+            </h3>
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                crossCheck.className,
+              )}
+            >
+              {crossCheck.questLabel}
+            </span>
+          </div>
           {session.description && (
             <p className="text-[13px] leading-snug text-content-secondary line-clamp-2 mt-1">
               {session.description}
+            </p>
+          )}
+          {session.deltaFromVision && (
+            <p className="mt-1 text-[11px] leading-snug text-content-muted line-clamp-2">
+              {session.deltaFromVision}
             </p>
           )}
         </div>
@@ -145,33 +160,26 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
       </div>
 
       {/* Type badge + Meta */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Type badge */}
-        <span className="flex items-center gap-1.5 text-[10px] text-content-muted">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-secondary px-2 py-1 text-[10px] font-medium text-content-secondary">
           <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", typeCfg.dotColor)} />
           <span>{typeCfg.label}</span>
         </span>
 
-        {/* Date */}
-        <span className="flex items-center gap-1 text-[11px] text-content-muted">
+        <span className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface px-2 py-1 text-[11px] text-content-muted">
           <Clock className="w-3 h-3" />
           {formatDate(session.startedAt)}
         </span>
 
-        {/* Duration */}
         {session.totalDurationMs && (
-          <>
-            <span className="text-content-muted opacity-35">·</span>
-            <span className="text-[11px] text-content-muted">
-              {formatDuration(session.totalDurationMs)}
-            </span>
-          </>
+          <span className="inline-flex items-center rounded-full border border-edge bg-surface px-2 py-1 text-[11px] text-content-muted">
+            {formatDurationCompact(session.totalDurationMs)}
+          </span>
         )}
 
-        {/* Tokens */}
         {session.totalTokens && (
           <span
-            className="flex items-center gap-1 text-[11px] text-content-muted"
+            className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface px-2 py-1 text-[11px] text-content-muted"
             title={`${formatTokens(session.totalTokens)} tokens`}
           >
             <Zap className="w-3 h-3" />
@@ -179,14 +187,25 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
           </span>
         )}
 
-        {/* Tools count */}
+        {session.estimatedCostUsd !== undefined && (
+          <span className="inline-flex items-center rounded-full border border-edge bg-surface px-2 py-1 text-[11px] text-content-muted">
+            {formatUsd(session.estimatedCostUsd)}
+          </span>
+        )}
+
         {session.toolsUsed && session.toolsUsed.length > 0 && (
           <span
-            className="flex items-center gap-1 text-[11px] text-content-muted"
+            className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface px-2 py-1 text-[11px] text-content-muted"
             title={`${session.toolsUsed.length} ${session.toolsUsed.length === 1 ? 'tool' : 'tools'} used`}
           >
             <Wrench className="w-3 h-3" />
             {session.toolsUsed.length} {session.toolsUsed.length === 1 ? "tool" : "tools"}
+          </span>
+        )}
+
+        {session.goalId && (
+          <span className="inline-flex items-center rounded-full border border-edge bg-surface px-2 py-1 text-[11px] text-content-muted">
+            {formatGoalReference(session.goalId)}
           </span>
         )}
       </div>
@@ -204,4 +223,3 @@ export function TaskSessionCard({ session, isSelected, onClick }: TaskSessionCar
 }
 
 export default TaskSessionCard;
-

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DialogOverlay } from "@/shared/components/DialogOverlay";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -6,26 +6,24 @@ import {
     Search,
     FileText,
     CheckSquare,
-    Calendar,
     Zap,
     Settings,
     Home,
-    Users,
-    Clock,
     TrendingUp,
-    Archive,
-    Trash2,
-    Edit,
     Plus,
-    X,
     Command,
     ArrowRight,
-    Hash,
     Sparkles,
     FileSearch,
-    BarChart2,
-    Globe
+    Globe,
+    Layout,
+    Orbit,
+    HeartPulse,
+    FlaskConical,
+    Activity,
 } from 'lucide-react';
+import { useThemeSafe } from "../contexts/ThemeContext";
+import { sanitizeDocumentTitle } from "@/lib/displayText";
 
 export interface CommandAction {
     id: string;
@@ -33,9 +31,15 @@ export interface CommandAction {
     description?: string;
     icon: ReactNode;
     keywords: string[];
-    section: 'navigation' | 'create' | 'search' | 'ai' | 'recent' | 'settings';
+    section: 'navigation' | 'create' | 'search' | 'ai' | 'recent' | 'settings' | 'mode';
     shortcut?: string;
     action: () => void;
+}
+
+export interface ExecutedCommand {
+    id: string;
+    label: string;
+    section: CommandAction['section'];
 }
 
 interface CommandPaletteProps {
@@ -45,6 +49,9 @@ interface CommandPaletteProps {
     onCreateDocument?: () => void;
     onCreateTask?: () => void;
     onOpenSettings?: () => void;
+    onCommandExecuted?: (command: ExecutedCommand) => void;
+    /** Extra actions injected by the host (e.g. cockpit mode switches) */
+    additionalActions?: CommandAction[];
 }
 
 export function CommandPalette({
@@ -53,9 +60,12 @@ export function CommandPalette({
     onNavigate,
     onCreateDocument,
     onCreateTask,
-    onOpenSettings
+    onOpenSettings,
+    onCommandExecuted,
+    additionalActions,
 }: CommandPaletteProps) {
     const [query, setQuery] = useState('');
+    const deferredQuery = useDeferredValue(query);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
@@ -63,26 +73,36 @@ export function CommandPalette({
     const recentDocs = useQuery(api.domains.documents.documents.getSidebar);
     const recentTasks = null;
 
+    // Layout toggle
+    const { theme, setLayout } = useThemeSafe();
+    const isCockpit = theme.layout === "cockpit";
+    const layoutLabel = isCockpit ? "Switch to Classic Layout" : "Switch to Cockpit Layout";
+    const layoutDesc = isCockpit ? "Traditional sidebar navigation" : "Jarvis-style HUD with 5 focal modes";
+    const layoutAction = useCallback(() => {
+        setLayout(isCockpit ? "classic" : "cockpit");
+        onClose();
+    }, [isCockpit, setLayout, onClose]);
+
     // Define all available commands
     const allCommands = useMemo<CommandAction[]>(() => {
         const commands: CommandAction[] = [
             // Navigation
             {
                 id: 'nav-home',
-                label: 'Go to Home',
-                description: 'Return to the main dashboard',
+                label: 'Go to Oracle',
+                description: 'Open the control tower and active loop view',
                 icon: <Home className="w-4 h-4" />,
-                keywords: ['home', 'dashboard', 'main'],
+                keywords: ['home', 'oracle', 'control tower', 'main'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('research');
+                    onNavigate?.('oracle');
                     onClose();
                 }
             },
             {
                 id: 'nav-documents',
-                label: 'Go to Documents',
-                description: 'View and manage your documents',
+                label: 'Go to Workspace',
+                description: 'View documents, notes, and active work',
                 icon: <FileText className="w-4 h-4" />,
                 keywords: ['documents', 'files', 'workspace'],
                 section: 'navigation',
@@ -92,23 +112,35 @@ export function CommandPalette({
                 }
             },
             {
-                id: 'nav-calendar',
-                label: 'Go to Calendar',
-                description: 'View your schedule and events',
-                icon: <Calendar className="w-4 h-4" />,
-                keywords: ['calendar', 'schedule', 'events', 'meetings'],
+                id: 'nav-research',
+                label: 'Go to Research Hub',
+                description: 'Open live signals, briefs, and timelines',
+                icon: <Sparkles className="w-4 h-4" />,
+                keywords: ['research', 'signals', 'briefing', 'hub'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('calendar');
+                    onNavigate?.('research');
+                    onClose();
+                }
+            },
+            {
+                id: 'nav-benchmarks',
+                label: 'Go to Benchmarks',
+                description: 'Inspect model evals, telemetry, and published proof',
+                icon: <FlaskConical className="w-4 h-4" />,
+                keywords: ['benchmarks', 'eval', 'telemetry', 'proof'],
+                section: 'navigation',
+                action: () => {
+                    onNavigate?.('benchmarks');
                     onClose();
                 }
             },
             {
                 id: 'nav-agents',
-                label: 'Go to Assistants',
-                description: 'Manage your AI assistants',
+                label: 'Go to Agent Workflows',
+                description: 'Open active threads, runs, and task sessions',
                 icon: <Zap className="w-4 h-4" />,
-                keywords: ['agents', 'ai', 'automation'],
+                keywords: ['agents', 'workflows', 'automation', 'tasks'],
                 section: 'navigation',
                 action: () => {
                     onNavigate?.('agents');
@@ -116,26 +148,26 @@ export function CommandPalette({
                 }
             },
             {
-                id: 'nav-dogfood',
-                label: 'Go to Quality Review',
-                description: 'Design review evidence gallery',
-                icon: <CheckSquare className="w-4 h-4" />,
-                keywords: ['quality', 'review', 'design', 'screenshots', 'qa'],
+                id: 'nav-health',
+                label: 'Go to System Health',
+                description: 'Check observability, maintenance, and recovery loops',
+                icon: <HeartPulse className="w-4 h-4" />,
+                keywords: ['health', 'observability', 'maintenance', 'alerts'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('dogfood');
+                    onNavigate?.('observability');
                     onClose();
                 }
             },
             {
-                id: 'nav-analytics',
-                label: 'Go to Analytics',
-                description: 'View your productivity analytics',
-                icon: <BarChart2 className="w-4 h-4" />,
-                keywords: ['analytics', 'stats', 'productivity', 'insights'],
+                id: 'nav-tool-activity',
+                label: 'Go to Tool Activity',
+                description: 'Review auditable tool calls and request traces',
+                icon: <Activity className="w-4 h-4" />,
+                keywords: ['tools', 'activity', 'ledger', 'trace', 'mcp'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('analytics');
+                    onNavigate?.('mcp-ledger');
                     onClose();
                 }
             },
@@ -169,14 +201,13 @@ export function CommandPalette({
             },
             {
                 id: 'create-event',
-                label: 'Create New Event',
-                description: 'Schedule a new calendar event',
-                icon: <Calendar className="w-4 h-4" />,
-                keywords: ['new', 'create', 'event', 'meeting', 'appointment'],
+                label: 'Start Oracle Review',
+                description: 'Open the control tower and inspect the current loop',
+                icon: <Orbit className="w-4 h-4" />,
+                keywords: ['oracle', 'review', 'control tower', 'investigation'],
                 section: 'create',
                 action: () => {
-                    // Navigate to calendar with create modal
-                    onNavigate?.('calendar');
+                    onNavigate?.('oracle');
                     onClose();
                 }
             },
@@ -195,13 +226,13 @@ export function CommandPalette({
             },
             {
                 id: 'ai-insights',
-                label: 'Get Productivity Insights',
-                description: 'AI-powered productivity recommendations',
+                label: 'Open Enterprise Eval',
+                description: 'Inspect the full temporal evaluation stream and judge output',
                 icon: <TrendingUp className="w-4 h-4" />,
-                keywords: ['ai', 'insights', 'productivity', 'recommendations'],
+                keywords: ['eval', 'enterprise', 'judge', 'temporal', 'investigation'],
                 section: 'ai',
                 action: () => {
-                    onNavigate?.('analytics');
+                    onNavigate?.('benchmarks');
                     onClose();
                 }
             },
@@ -246,6 +277,17 @@ export function CommandPalette({
                     onClose();
                 }
             },
+
+            // Layout toggle
+            {
+                id: 'layout-toggle',
+                label: layoutLabel,
+                description: layoutDesc,
+                icon: <Layout className="w-4 h-4" />,
+                keywords: ['layout', 'cockpit', 'classic', 'jarvis', 'hud', 'mode', 'switch'],
+                section: 'settings',
+                action: layoutAction,
+            },
         ];
 
         // Add recent documents
@@ -253,10 +295,10 @@ export function CommandPalette({
             recentDocs.forEach((doc: any) => {
                 commands.push({
                     id: `doc-${doc._id}`,
-                    label: doc.title || 'Untitled Document',
+                    label: sanitizeDocumentTitle(doc.title, 'Untitled Document'),
                     description: `Open recent document`,
                     icon: <FileText className="w-4 h-4" />,
-                    keywords: ['recent', 'document', doc.title?.toLowerCase() || ''],
+                    keywords: ['recent', 'document', sanitizeDocumentTitle(doc.title, 'Untitled Document').toLowerCase()],
                     section: 'recent',
                     action: () => {
                         onClose();
@@ -282,8 +324,8 @@ export function CommandPalette({
             });
         }
 
-        return commands;
-    }, [recentDocs, recentTasks, onNavigate, onCreateDocument, onCreateTask, onOpenSettings, onClose]);
+        return [...(additionalActions ?? []), ...commands];
+    }, [additionalActions, recentDocs, recentTasks, onNavigate, onCreateDocument, onCreateTask, onOpenSettings, onClose, layoutLabel, layoutDesc, layoutAction]);
 
     // Lightweight fuzzy scorer: returns 0 (no match) or positive score (higher = better)
     const fuzzyScore = useCallback((text: string, term: string): number => {
@@ -307,17 +349,18 @@ export function CommandPalette({
         return 10 + maxConsecutive * 5;
     }, []);
 
-    // Filter and rank commands with fuzzy search
+    // Filter and rank commands with fuzzy search (deferred so typing stays responsive)
     const filteredCommands = useMemo(() => {
-        if (!query.trim()) {
+        if (!deferredQuery.trim()) {
             return allCommands.filter(cmd =>
+                cmd.section === 'mode' ||
                 cmd.section === 'navigation' ||
                 cmd.section === 'create' ||
                 cmd.section === 'recent'
             );
         }
 
-        const searchTerm = query.trim();
+        const searchTerm = deferredQuery.trim();
         const scored = allCommands
             .map(cmd => {
                 const labelScore = fuzzyScore(cmd.label, searchTerm);
@@ -330,7 +373,7 @@ export function CommandPalette({
             .sort((a, b) => b.score - a.score);
 
         return scored.map(({ cmd }) => cmd);
-    }, [query, allCommands, fuzzyScore]);
+    }, [deferredQuery, allCommands, fuzzyScore]);
 
     // Group commands by section
     const groupedCommands = useMemo(() => {
@@ -346,7 +389,17 @@ export function CommandPalette({
         return groups;
     }, [filteredCommands]);
 
+    const executeCommand = useCallback((command: CommandAction) => {
+        onCommandExecuted?.({
+            id: command.id,
+            label: command.label,
+            section: command.section,
+        });
+        command.action();
+    }, [onCommandExecuted]);
+
     const sectionLabels: Record<string, string> = {
+        mode: 'Switch Mode',
         navigation: 'Navigate',
         create: 'Create New',
         search: 'Search Results',
@@ -370,7 +423,7 @@ export function CommandPalette({
                 e.preventDefault();
                 const selectedCommand = filteredCommands[selectedIndex];
                 if (selectedCommand) {
-                    selectedCommand.action();
+                    executeCommand(selectedCommand);
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -380,7 +433,7 @@ export function CommandPalette({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, filteredCommands, selectedIndex, onClose]);
+    }, [isOpen, filteredCommands, selectedIndex, onClose, executeCommand]);
 
     // Auto-focus input when opened
     useEffect(() => {
@@ -436,6 +489,9 @@ export function CommandPalette({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search commands or navigate…"
                     className="flex-1 bg-transparent border-none outline-none text-content placeholder:text-content-muted dark:placeholder-gray-500 text-sm"
+                    data-agent-id="cmd:search"
+                    data-agent-action="search"
+                    data-agent-label="Search commands"
                 />
             </div>
 
@@ -464,10 +520,13 @@ export function CommandPalette({
                                     <button
                                         key={cmd.id}
                                         data-index={currentIndex}
-                                        onClick={() => cmd.action()}
+                                        data-agent-id={`cmd:${cmd.id}`}
+                                        data-agent-action="navigate"
+                                        data-agent-label={cmd.label}
+                                        onClick={() => executeCommand(cmd)}
                                         onMouseEnter={() => setSelectedIndex(currentIndex)}
                                         className={`
-                                                    w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-l-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500
+                                                    w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-l-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring
                                                     ${isSelected
                                                 ? 'bg-surface-secondary text-content border-l-[rgb(79, 70, 229)]'
                                                 : 'text-content-secondary hover:bg-surface-hover border-l-transparent'

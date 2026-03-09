@@ -163,7 +163,7 @@ export function ModelLeaderboard({
     <section>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xs font-semibold text-content-muted">Leaderboard</h2>
-        <span className="text-xs text-content-muted">All time</span>
+        <span className="text-xs text-content-muted">Score (0-100) · all time</span>
       </div>
 
       <div className="lg:hidden scrollbar-none -mx-1 flex gap-3 sm:gap-4 overflow-x-auto overflow-y-visible px-1 pr-6 sm:pr-4 pb-2 snap-x snap-mandatory">
@@ -248,7 +248,7 @@ function ModelCard({ entry, compact = false }: { entry: LeaderboardEntry; compac
                 title="Connect a benchmark app to unlock this lane."
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-content-muted/70" />
-                <span className="font-medium">Not yet run</span>
+                <span className="font-medium">Awaiting first run</span>
               </span>
               <div className="mt-1 text-[10px] leading-relaxed text-content-muted">
                 Connect a benchmark app to unlock this lane.

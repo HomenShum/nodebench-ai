@@ -23,23 +23,25 @@ import {
   CheckCircle2,
   AlertCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert,
+  Target,
+  Link2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TelemetrySpanTree } from './TelemetrySpanTree';
 import type { TaskSession, TaskTrace, TaskSpan } from './types';
 import type { Id } from '../../../../../convex/_generated/dataModel';
+import {
+  formatDurationCompact,
+  formatGoalReference,
+  formatUsd,
+  getCrossCheckPresentation,
+} from '../oracleControlTowerUtils';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════
-
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  if (ms < 3600000) return `${Math.round(ms / 60000)}m`;
-  return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
-}
 
 function formatTokens(tokens: number): string {
   if (tokens < 1000) return tokens.toLocaleString();
@@ -55,6 +57,16 @@ function formatDateTime(timestamp: number): string {
     minute: '2-digit',
     second: '2-digit'
   });
+}
+
+function formatLinkLabel(href?: string): string {
+  if (!href) return "Reference";
+  try {
+    const url = new URL(href);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return href;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -106,11 +118,11 @@ function TraceItem({ trace, isExpanded, onToggle }: TraceItemProps) {
           </span>
         )}
 
-        {trace.totalDurationMs && (
-          <span className="text-xs text-content-muted">
-            {formatDuration(trace.totalDurationMs)}
-          </span>
-        )}
+            {trace.totalDurationMs && (
+              <span className="text-xs text-content-muted">
+                {formatDurationCompact(trace.totalDurationMs)}
+              </span>
+            )}
 
         {statusIcon}
       </button>
@@ -175,6 +187,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
   }
 
   const { session, traces } = sessionData;
+  const crossCheck = getCrossCheckPresentation(session.crossCheckStatus);
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -203,6 +216,16 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
 
         {/* Metrics row */}
         <div className="flex items-center gap-4 mt-3 flex-wrap">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium",
+              crossCheck.className,
+            )}
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            {crossCheck.questLabel}
+          </span>
+
           <span className="flex items-center gap-1 text-xs text-content-muted">
             <Clock className="w-3.5 h-3.5" />
             {formatDateTime(session.startedAt)}
@@ -210,7 +233,7 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
 
           {session.totalDurationMs && (
             <span className="text-xs text-content-muted">
-              Duration: {formatDuration(session.totalDurationMs)}
+              Duration: {formatDurationCompact(session.totalDurationMs)}
             </span>
           )}
 
@@ -218,6 +241,12 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
             <span className="flex items-center gap-1 text-xs text-content-muted">
               <Zap className="w-3.5 h-3.5" />
               {formatTokens(session.totalTokens)} tokens
+            </span>
+          )}
+
+          {session.estimatedCostUsd !== undefined && (
+            <span className="text-xs text-content-muted">
+              Cost: {formatUsd(session.estimatedCostUsd)}
             </span>
           )}
 
@@ -235,6 +264,79 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
             </span>
           )}
         </div>
+
+        {(session.goalId || session.deltaFromVision || session.successCriteria?.length || session.sourceRefs?.length) && (
+          <div className="mt-4 rounded-lg border border-edge bg-surface p-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-content">
+              <Target className="w-4 h-4 text-accent" />
+              Oracle Cross-Check
+            </div>
+
+            {session.goalId && (
+              <div className="mt-2 text-xs text-content-muted">
+                Goal reference: <span className="font-mono text-content">{formatGoalReference(session.goalId)}</span>
+              </div>
+            )}
+
+            {session.visionSnapshot && (
+              <p className="mt-2 text-sm leading-6 text-content-secondary">{session.visionSnapshot}</p>
+            )}
+
+            {session.deltaFromVision && (
+              <div className="mt-2 rounded-md border border-edge bg-background/40 p-2 text-xs leading-5 text-content-secondary">
+                {session.deltaFromVision}
+              </div>
+            )}
+
+            {session.successCriteria && session.successCriteria.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs font-medium uppercase tracking-[0.16em] text-content-muted">
+                  Success Criteria
+                </div>
+                <ul className="mt-2 space-y-1 text-sm text-content-secondary">
+                  {session.successCriteria.map((criterion) => (
+                    <li key={criterion} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-accent" />
+                      <span>{criterion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {session.sourceRefs && session.sourceRefs.length > 0 && (
+              <div className="mt-3">
+                <div className="text-xs font-medium uppercase tracking-[0.16em] text-content-muted">
+                  Source References
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {session.sourceRefs.map((ref, idx) => (
+                    ref.href ? (
+                      <a
+                        key={`${ref.label}-${idx}`}
+                        href={ref.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface px-2 py-1 text-xs text-content-secondary hover:text-content"
+                      >
+                        <Link2 className="w-3 h-3" />
+                        {ref.label || formatLinkLabel(ref.href)}
+                      </a>
+                    ) : (
+                      <span
+                        key={`${ref.label}-${idx}`}
+                        className="inline-flex items-center gap-1 rounded-full border border-edge bg-surface px-2 py-1 text-xs text-content-secondary"
+                      >
+                        <Link2 className="w-3 h-3" />
+                        {ref.label}
+                      </span>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Traces section */}
@@ -269,5 +371,3 @@ export function TaskSessionDetail({ sessionId, onBack, className }: TaskSessionD
 }
 
 export default TaskSessionDetail;
-
-

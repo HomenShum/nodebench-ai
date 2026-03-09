@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { CompactSignalCard } from './CompactSignalCard';
 import { cn } from '@/lib/utils';
+import { sanitizeDocumentTitle } from '@/lib/displayText';
 
 interface PersonalPulseProps {
     personalizedContext: any;
@@ -26,7 +27,7 @@ function StatusPill({ isLive, count, total, freshness }: { isLive: boolean; coun
         )}>
             <span className={cn('w-1.5 h-1.5 rounded-full', isLive ? 'bg-indigo-500 motion-safe:animate-pulse' : 'bg-amber-500')} />
             {isLive ? `${count}/${total} signals` : 'Waiting'}
-            <span className="text-content-muted">•</span>
+            <span aria-hidden="true" className="text-content-muted">/</span>
             <span className="text-content-secondary">{freshness}</span>
         </div>
     );
@@ -88,7 +89,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
         )}>
             {/* LEFT: SIGNAL FEED */}
             <div className={cn(
-                'bg-white border border-edge rounded-lg overflow-hidden',
+                'bg-surface border border-edge rounded-lg overflow-hidden',
                 hasWorkspaceContent ? 'lg:col-span-8' : 'lg:col-span-full'
             )}>
                 {/* Header */}
@@ -96,8 +97,8 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                     <div className="flex items-center gap-2">
                         <Zap className="w-4 h-4 text-content-secondary" />
                         <div>
-                            <div className="text-xs font-semibold text-content-secondary">Your Signal Feed</div>
-                            <div className="text-xs text-content-secondary">Latest headlines from your tracked sources</div>
+                            <h3 className="text-xs font-semibold text-content-secondary">Your Signal Feed</h3>
+                            <p className="text-xs text-content-secondary">Latest headlines from your tracked sources</p>
                         </div>
                     </div>
                     <StatusPill isLive={isLiveData && hasFeatures} count={totalSignals} total={totalAvailable} freshness={freshnessLabel} />
@@ -166,13 +167,13 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
 
             {/* RIGHT: WORKSPACE CONTEXT (TABBED) - Only show if there's content */}
             {hasWorkspaceContent && (
-                <div className="lg:col-span-4 bg-white border border-edge rounded-lg overflow-hidden">
+                <div className="lg:col-span-4 bg-surface border border-edge rounded-lg overflow-hidden pb-24 lg:pb-16">
                     <div className="px-4 py-3 bg-surface-secondary border-b border-edge">
                         <div className="flex items-center justify-between">
                             <div className="text-xs font-semibold text-content-secondary">Your Context</div>
                             <div className="text-xs text-content-secondary">Quick access</div>
                         </div>
-                        <div className="mt-2 inline-flex rounded-lg border border-edge bg-white p-1">
+                        <div className="mt-2 inline-flex rounded-lg border border-edge bg-surface p-1">
                             <button
                                 type="button"
                                 onClick={() => setContextTab('tasks')}
@@ -245,7 +246,7 @@ export function PersonalPulse({ personalizedContext, tasksToday, recentDocs, onD
                                         className="w-full text-left px-4 py-2.5 hover:bg-surface-hover group"
                                     >
                                         <div className="flex items-center gap-2">
-                                            <div className="text-[12px] text-content-secondary truncate flex-1">{doc.title}</div>
+                                        <div className="text-[12px] text-content-secondary truncate flex-1">{sanitizeDocumentTitle(doc.title)}</div>
                                             <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-content-secondary shrink-0" />
                                         </div>
                                         <div className="text-xs text-content-muted mt-0.5">

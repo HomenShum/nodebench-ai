@@ -202,14 +202,13 @@ const ThompsonBanner = memo(function ThompsonBanner() {
         <div className="flex items-center gap-2">
           <Waypoints className="h-4 w-4 text-accent" />
           <span className="text-xs font-medium tracking-widest text-content-muted uppercase">
-            Thompson Protocol Active
+            Plain-English guidance
           </span>
         </div>
       </div>
       <div className="px-5 py-3 text-sm text-content-secondary leading-relaxed">
-        All guidance translates jargon into plain English, explains intuition before mechanics,
-        acknowledges friction instead of pretending certainty, and cites source references.
-        Game framing clarifies action but never hides evidence.
+        This view translates internal agent telemetry into plain English. It explains what changed,
+        why it matters, where the evidence lives, and what to do next without hiding the underlying proof.
       </div>
     </div>
   );
@@ -243,13 +242,41 @@ function OracleViewScaffold({
                 <Waypoints className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-content">Oracle Control Tower</h1>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-content-muted">
+                  NodeBench AI
+                </div>
+                <h1 className="text-xl font-bold text-content">Operational memory for long-running AI work</h1>
                 <p className="text-sm text-content-secondary">
-                  Builder-facing loop health &mdash; vision alignment, telemetry burn, dogfood evidence
-                  {oracleData.isDemo && (
-                    <span className="ml-2 text-xs text-amber-500">(demo mode)</span>
-                  )}
+                  Use the Oracle to see where agents are drifting, what evidence they collected, and what a human should approve next.
                 </p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-[1.6fr,1fr]">
+              <div className="rounded-xl border border-edge bg-surface p-4">
+                <div className="text-sm font-semibold text-content">What this is</div>
+                <p className="mt-2 text-sm leading-6 text-content-secondary">
+                  A control tower for builders, platform teams, and buyers who need agents to keep their intent, show their work,
+                  and stay auditable across long-running sessions.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs text-content-secondary">
+                  <a href="/benchmarks" className="inline-flex items-center rounded-full border border-edge bg-background/50 px-3 py-1.5 hover:text-content">
+                    Open benchmarks
+                  </a>
+                  <a href="/research" className="inline-flex items-center rounded-full border border-edge bg-background/50 px-3 py-1.5 hover:text-content">
+                    Explore research
+                  </a>
+                  <span className="inline-flex items-center rounded-full border border-edge bg-background/50 px-3 py-1.5">
+                    {oracleData.isDemo ? "Preview data active" : "Live data active"}
+                  </span>
+                </div>
+              </div>
+              <div className="rounded-xl border border-edge bg-surface p-4">
+                <div className="text-sm font-semibold text-content">How to start</div>
+                <ul className="mt-2 space-y-2 text-sm leading-6 text-content-secondary">
+                  <li>1. Check active loops and drift status below.</li>
+                  <li>2. Open benchmarks to inspect proof, judges, and replay.</li>
+                  <li>3. Use research to trace sources, timelines, and signals.</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -282,7 +309,7 @@ function OracleViewScaffold({
                   Game-Framed View
                 </span>
                 <span className="text-xs text-content-muted">
-                  Translation layer &mdash; quests, debuffs, trajectory EXP
+                  Translation layer for quests, debuffs, and trajectory momentum
                 </span>
               </div>
               {showGameLayer ? (

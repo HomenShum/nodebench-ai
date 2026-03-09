@@ -1,10 +1,11 @@
 ﻿import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { ArrowRight, Newspaper, Zap, TrendingUp, Briefcase, LayoutGrid, Layers, Bell, ScrollText } from "lucide-react";
+import { ArrowRight, Newspaper, Zap, TrendingUp, LayoutGrid, Layers } from "lucide-react";
 import { formatBriefDate, isBriefDateToday } from "@/lib/briefDate";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { EvidenceProvider, useEvidence } from "@/features/research/contexts/EvidenceContext";
 import { useFastAgent } from "@/features/agents/context/FastAgentContext";
+import { ErrorBoundary as SectionErrorBoundary } from "@/components/ErrorBoundary";
 import type { FeedItem } from "@/features/research/components/FeedCard";
 import type { Evidence } from "@/features/research/types";
 // Critical-path imports: always visible on default 'overview' tab â€” inline to avoid skeleton flash
@@ -12,40 +13,34 @@ import { DigestSection } from "@/features/research/sections/DigestSection";
 import { PersonalPulse } from "@/features/research/components/PersonalPulse";
 import { DashboardSection } from "@/features/research/sections/DashboardSection";
 import { ActAwareDashboard } from "@/features/research/components/ActAwareDashboard";
+import { BriefingSection } from "@/features/research/sections/BriefingSection";
+import { FeedSection } from "@/features/research/sections/FeedSection";
+import ForecastCockpit from "@/features/research/components/ForecastCockpit";
+import { IntelPulseMonitor } from "@/features/research/components/IntelPulseMonitor";
+import { NotificationActivityPanel } from "@/components/NotificationActivityPanel";
 // Lazy-load non-default tab sections (only loaded when user switches tabs)
-const BriefingSection = React.lazy(() => import("@/features/research/sections/BriefingSection").then(m => ({ default: m.BriefingSection })));
-const FeedSection = React.lazy(() => import("@/features/research/sections/FeedSection").then(m => ({ default: m.FeedSection })));
-const IntelPulseMonitor = React.lazy(() => import("@/features/research/components/IntelPulseMonitor").then(m => ({ default: m.IntelPulseMonitor })));
 const FeedReaderModal = React.lazy(() => import("@/features/research/components/FeedReaderModal").then(m => ({ default: m.FeedReaderModal })));
 const EntityContextDrawer = React.lazy(() => import("@/features/research/components/EntityContextDrawer").then(m => ({ default: m.EntityContextDrawer })));
-const DealRadar = React.lazy(() => import("@/features/research/components/DealRadar").then(m => ({ default: m.DealRadar })));
-const NotificationActivityPanel = React.lazy(() => import("@/components/NotificationActivityPanel").then(m => ({ default: m.NotificationActivityPanel })));
-const WhatChangedPanelLazy = React.lazy(() => import("@/features/research/components/WhatChangedPanel"));
-const ProductChangelogPanelLazy = React.lazy(() => import("@/features/research/components/ProductChangelogPanel"));
-const ForecastCockpitLazy = React.lazy(() => import("@/features/research/components/ForecastCockpit"));
 
 import { usePersonalBrief } from "@/features/research/hooks/usePersonalBrief";
 import { TimelineStrip, type TimelineEvent, type TemporalPhase } from "@/features/research/components/TimelineStrip";
 import type { ReaderItem } from "@/features/research/components/FeedReaderModal";
 import { cn } from "@/lib/utils";
 
-// Loading fallback for lazy-loaded sections - static skeleton (no motion-safe:animate-pulse to avoid frame drops)
-const SectionLoading = () => (
-  <div className="py-6 space-y-4 opacity-40">
-    <div className="flex items-center gap-3">
-      <div className="w-10 h-10 bg-surface-secondary rounded-lg" />
-      <div className="space-y-2 flex-1">
-        <div className="h-4 bg-surface-secondary rounded w-1/3" />
-        <div className="h-3 bg-surface-secondary rounded w-1/2" />
-      </div>
+function SectionFallback({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div className="rounded-lg border border-edge bg-surface p-5">
+      <h4 className="text-sm font-semibold text-content">{title}</h4>
+      <p className="mt-1 text-xs text-content-secondary">{message}</p>
     </div>
-    <div className="space-y-2">
-      <div className="h-3 bg-surface-secondary rounded w-full" />
-      <div className="h-3 bg-surface-secondary rounded w-5/6" />
-      <div className="h-3 bg-surface-secondary rounded w-4/6" />
-    </div>
-  </div>
-);
+  );
+}
 
 // Tab definitions for the main content sections
 type ContentTab = 'overview' | 'signals' | 'briefing' | 'forecasts';
@@ -86,6 +81,7 @@ function ResearchHubContent(props: ResearchHubProps) {
   const updateFocus = useMutation(api.domains.dossier.focusState.updateFocus);
   const seedAuditSignals = useMutation(api.feed.seedAuditSignals);
   const [activeAct, setActiveAct] = useState<"actI" | "actII" | "actIII">("actI");
+  const [activeTimelineEventId, setActiveTimelineEventId] = useState<string | undefined>(undefined);
   const [phaseFilter, setPhaseFilter] = useState<TemporalPhase | "all">("all");
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [readerItem, setReaderItem] = useState<ReaderItem | null>(null);
@@ -147,6 +143,12 @@ function ResearchHubContent(props: ResearchHubProps) {
       })
       .catch((err) => console.warn("[ResearchHub] Audit signal seed failed:", err?.message || err));
   }, [seedAuditSignals]);
+
+  useEffect(() => {
+    // Warm lazy-only overlays to reduce first-open chunk failures during rapid QA traversal.
+    void import("@/features/research/components/FeedReaderModal");
+    void import("@/features/research/components/EntityContextDrawer");
+  }, []);
 
   const phasedDashboardMetrics = useMemo(() => {
     if (!dashboardMetrics) return null;
@@ -223,14 +225,21 @@ function ResearchHubContent(props: ResearchHubProps) {
   const timelineEvents: TimelineEvent[] = useMemo(() => {
     const events: TimelineEvent[] = [];
     const now = new Date();
+    const toIso = (value: unknown): string | null => {
+      if (typeof value !== "string" && typeof value !== "number") return null;
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return null;
+      return parsed.toISOString();
+    };
 
     // Past events from evidence
     evidence?.forEach((e: any, idx: number) => {
       if (e.date || e.timestamp) {
-        const dateStr = e.date || e.timestamp;
+        const dateIso = toIso(e.date ?? e.timestamp);
+        if (!dateIso) return;
         events.push({
           id: `evidence-${idx}`,
-          date: typeof dateStr === 'string' ? dateStr : new Date(dateStr).toISOString(),
+          date: dateIso,
           label: e.title || e.label || 'Evidence',
           description: e.summary || e.text,
           phase: 'past',
@@ -239,10 +248,11 @@ function ResearchHubContent(props: ResearchHubProps) {
     });
 
     // Present: Today's briefing
-    if (briefingDateString) {
+    const briefingIso = briefingDateString ? toIso(`${briefingDateString}T00:00:00Z`) : null;
+    if (briefingIso) {
       events.push({
         id: 'today-briefing',
-        date: briefingDateString,
+        date: briefingIso,
         label: briefLabel,
         description: executiveBrief?.summary || 'Current market synthesis',
         phase: 'present',
@@ -264,12 +274,43 @@ function ResearchHubContent(props: ResearchHubProps) {
     return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [evidence, briefingDateString, executiveBrief, briefLabel]);
 
+  const resolvedActiveTimelineEventId = useMemo(() => {
+    if (activeTimelineEventId && timelineEvents.some((event) => event.id === activeTimelineEventId)) {
+      return activeTimelineEventId;
+    }
+    return timelineEvents.find((event) => event.isCurrent)?.id ?? timelineEvents.find((event) => event.phase === "present")?.id;
+  }, [activeTimelineEventId, timelineEvents]);
+
+  useEffect(() => {
+    if (activeTimelineEventId && !timelineEvents.some((event) => event.id === activeTimelineEventId)) {
+      setActiveTimelineEventId(undefined);
+    }
+  }, [activeTimelineEventId, timelineEvents]);
+
+  useEffect(() => {
+    if (!activeTimelineEventId) {
+      const next = timelineEvents.find((event) => event.isCurrent)?.id ?? timelineEvents.find((event) => event.phase === "present")?.id;
+      if (next) setActiveTimelineEventId(next);
+    }
+  }, [activeTimelineEventId, timelineEvents]);
+
   const formatTimestamp = useCallback((value?: string) => {
     if (!value) return "";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }, []);
+
+  const formatDayChipDate = useCallback((value: string) => {
+    const date = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }, []);
+
+  const briefingDateStamp = useMemo(() => {
+    // NOTE(coworker): Keep this defensive to avoid full-view crashes from malformed dates.
+    return typeof briefingDateString === "string" ? briefingDateString.replace(/-/g, ".") : "Live";
+  }, [briefingDateString]);
 
   const buildReaderItem = useCallback((input: {
     id?: string;
@@ -475,7 +516,7 @@ function ResearchHubContent(props: ResearchHubProps) {
       {!embedded && (
         <header className="h-16 bg-background/95  sticky top-0 z-50 flex items-center justify-between px-6 lg:px-8 border-b border-edge">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-indigo-600 rounded-md flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
+            <div className="w-10 h-10 bg-[var(--accent-primary)] rounded-md flex items-center justify-center text-white shadow-none transform transition-transform duration-300">
               <span className="text-2xl">N</span>
             </div>
             <div>
@@ -506,18 +547,18 @@ function ResearchHubContent(props: ResearchHubProps) {
                       key={date}
                       onClick={() => setSelectedDate(date)}
                       className={`px-3 py-1 text-xs font-medium transition-all ${(selectedDate === date || (!selectedDate && date === briefingDateString))
-                        ? "bg-indigo-600 text-white"
+                        ? "bg-[var(--accent-primary)] text-white"
                         : "text-content-muted hover:text-content"
                         }`}
                     >
-                      {new Date(date + "T00:00:00").toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {formatDayChipDate(date)}
                     </button>
                   ))}
                   <div className="w-[1px] h-3 bg-edge mx-1" />
                   <button
                     type="button"
                     onClick={() => setSelectedDate(undefined)}
-                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-indigo-600 text-white" : "text-content-muted"}`}
+                    className={`px-3 py-1 text-xs font-medium transition-all ${!selectedDate ? "bg-[var(--accent-primary)] text-white" : "text-content-muted"}`}
                   >
                     Latest
                   </button>
@@ -533,25 +574,25 @@ function ResearchHubContent(props: ResearchHubProps) {
             </div>
             <div className="hidden sm:block w-[1px] h-6 bg-edge" />
             <div className="text-sm font-medium text-content-secondary font-mono">
-              <span>{briefingDateString?.replace(/-/g, '.')}</span>
+              <span>{briefingDateStamp}</span>
             </div>
           </div>
         </header>
       )}
 
       {/* UNIFIED SCROLL CONTAINER */}
-      <main className="flex-1 overflow-y-auto custom-scrollbar bg-surface">
-        {embedded && onGoHome && (
+      <main className="flex-1 overflow-y-auto custom-scrollbar bg-surface pb-20 sm:pb-14">
+        {embedded && (
           <div className="mx-auto max-w-[1600px] px-6 md:px-12 xl:px-16 pt-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-edge pb-3">
-              <button
-                type="button"
-                onClick={onGoHome}
-                className="flex items-center gap-2 text-xs font-medium text-content-secondary hover:text-content transition-colors"
-              >
-                <ArrowRight className="w-3 h-3 rotate-180" />
-                <span>Return to Pulse Overview</span>
-              </button>
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-content-muted">
+                  Research Hub
+                </div>
+                <div className="mt-1 text-sm text-content-secondary">
+                  Live signals, source-backed briefs, and forecast context in one place.
+                </div>
+              </div>
               {briefDateLabel && (
                 <div className="text-xs font-mono text-content-secondary">
                   {isBriefToday ? "Updated today" : `Latest brief: ${briefDateLabel}`}
@@ -561,35 +602,48 @@ function ResearchHubContent(props: ResearchHubProps) {
           </div>
         )}
         {/* TIMELINE STRIP - Past + Present + Future temporal context */}
-        <TimelineStrip
-          events={timelineEvents}
-          activeEventId={activeAct === 'actI' ? 'today-briefing' : undefined}
-          phaseFilter={phaseFilter}
-          onPhaseChange={setPhaseFilter}
-          onEventClick={(event) => {
-            const currentAct = event.phase === 'past' ? 'actI' : event.phase === 'present' ? 'actII' : 'actIII';
-            openWithContext({
-              contextTitle: `Timeline: ${event.label}`,
-              initialMessage: `Tell me more about: "${event.label}" (${event.date})${event.description ? `\n\nContext: ${event.description}` : ''}`,
-              dossierContext: {
-                ...dossierContextBase,
-                currentAct,
-                activeSectionId: "timeline_strip",
-              },
-            });
-            // Also update the active act based on event phase
-            if (event.phase === 'past') setActiveAct('actI');
-            else if (event.phase === 'present') setActiveAct('actII');
-            else setActiveAct('actIII');
-            setPhaseFilter(event.phase);
-          }}
-          className="mx-auto max-w-[1600px] px-8 md:px-12 pt-6"
-        />
+        <SectionErrorBoundary
+          section="Timeline"
+          fallback={
+            <div className="mx-auto max-w-[1600px] px-8 md:px-12 pt-6">
+              <SectionFallback
+                title="Timeline unavailable"
+                message="The timeline encountered a render issue. Refresh to retry."
+              />
+            </div>
+          }
+        >
+          <TimelineStrip
+            events={timelineEvents}
+            activeEventId={resolvedActiveTimelineEventId}
+            phaseFilter={phaseFilter}
+            onPhaseChange={setPhaseFilter}
+            onEventClick={(event) => {
+              setActiveTimelineEventId(event.id);
+              const currentAct = event.phase === 'past' ? 'actI' : event.phase === 'present' ? 'actII' : 'actIII';
+              openWithContext({
+                contextTitle: `Timeline: ${event.label}`,
+                initialMessage: `Tell me more about: "${event.label}" (${event.date})${event.description ? `\n\nContext: ${event.description}` : ''}`,
+                dossierContext: {
+                  ...dossierContextBase,
+                  currentAct,
+                  activeSectionId: "timeline_strip",
+                },
+              });
+              // Also update the active act based on event phase
+              if (event.phase === 'past') setActiveAct('actI');
+              else if (event.phase === 'present') setActiveAct('actII');
+              else setActiveAct('actIII');
+              setPhaseFilter(event.phase);
+            }}
+            className="mx-auto max-w-[1600px] px-8 md:px-12 pt-6"
+          />
+        </SectionErrorBoundary>
 
         <div className="max-w-[1600px] mx-auto flex items-start gap-4">
 
           {/* LEFT: MAIN CONTENT WITH TABS */}
-          <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-16">
+          <div className="flex-1 pl-6 md:pl-10 pr-4 md:pr-6 py-4 pb-28 sm:pb-20">
 
             {/* TAB NAVIGATION */}
             <nav className="flex items-center gap-1 mb-4 p-1 bg-surface-secondary rounded-lg border border-edge w-fit">
@@ -600,15 +654,20 @@ function ResearchHubContent(props: ResearchHubProps) {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
+                    aria-pressed={activeTab === tab.id}
+                    aria-current={activeTab === tab.id ? 'page' : undefined}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all',
+                      'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       activeTab === tab.id
-                        ? 'bg-surface text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-500/30/40 ring-1 ring-indigo-500/50/10'
-                        : 'text-content-secondary hover:text-content hover:bg-surface-hover'
+                        ? 'bg-[var(--accent-primary)] text-white shadow-[0_10px_24px_rgba(79,70,229,0.24)] ring-1 ring-primary/35 -translate-y-px'
+                        : 'text-content-secondary hover:text-content hover:bg-surface-hover hover:shadow-sm active:scale-[0.99]'
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">{tab.label}</span>
+                    {activeTab === tab.id ? (
+                      <span className="absolute inset-x-2 -bottom-1 h-0.5 rounded-full bg-white/80" aria-hidden="true" />
+                    ) : null}
                   </button>
                 );
               })}
@@ -630,22 +689,42 @@ function ResearchHubContent(props: ResearchHubProps) {
                           <span className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-medium border border-indigo-500/20 rounded">Past</span>
                         )}
                       </div>
-                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-indigo-600')} />
+                      <div className={cn('w-1.5 h-1.5 rounded-full motion-safe:animate-pulse', selectedDate ? 'bg-content-secondary' : 'bg-[var(--accent-primary)]')} />
                     </div>
-                    <DigestSection
-                      onItemClick={handleDigestItemClick}
-                      onEntityClick={handleEntityOpen}
-                    />
+                    <SectionErrorBoundary
+                      section="Daily summary"
+                      fallback={
+                        <SectionFallback
+                          title="Daily summary unavailable"
+                          message="This panel hit a render issue. Refresh to retry."
+                        />
+                      }
+                    >
+                      <DigestSection
+                        onItemClick={handleDigestItemClick}
+                        onEntityClick={handleEntityOpen}
+                      />
+                    </SectionErrorBoundary>
                   </section>
 
                   {/* Personal Pulse */}
                   <section className="pt-2">
-                    <PersonalPulse
-                      personalizedContext={personalizedContext}
-                      tasksToday={tasksToday || []}
-                      recentDocs={recentDocs || []}
-                      onDocumentSelect={props.onDocumentSelect}
-                    />
+                    <SectionErrorBoundary
+                      section="Personal pulse"
+                      fallback={
+                        <SectionFallback
+                          title="Personal pulse unavailable"
+                          message="We couldn't render personalized signals right now."
+                        />
+                      }
+                    >
+                      <PersonalPulse
+                        personalizedContext={personalizedContext}
+                        tasksToday={tasksToday || []}
+                        recentDocs={recentDocs || []}
+                        onDocumentSelect={props.onDocumentSelect}
+                      />
+                    </SectionErrorBoundary>
                   </section>
                 </div>
               )}
@@ -660,14 +739,22 @@ function ResearchHubContent(props: ResearchHubProps) {
                     </div>
                     <div className="px-1.5 py-0.5 bg-indigo-500/10 text-content border border-indigo-500/30 text-xs font-medium rounded">Live</div>
                   </div>
-                  <div className="bg-surface-secondary p-4 border border-edge rounded-lg">
-                    <React.Suspense fallback={<SectionLoading />}>
+                  <SectionErrorBoundary
+                    section="Signals"
+                    fallback={
+                      <SectionFallback
+                        title="Signals unavailable"
+                        message="We couldn't render the signal stream right now. Refresh to retry."
+                      />
+                    }
+                  >
+                    <div className="bg-surface-secondary p-4 border border-edge rounded-lg">
                       <FeedSection
                         onItemClick={handleFeedItemClick}
                         onOpenWithAgent={handleFeedOpenWithAgent}
                       />
-                    </React.Suspense>
-                  </div>
+                    </div>
+                  </SectionErrorBoundary>
                 </section>
               )}
 
@@ -681,7 +768,15 @@ function ResearchHubContent(props: ResearchHubProps) {
                     </div>
                     <span className="text-xs font-medium text-content-muted">In-depth</span>
                   </div>
-                  <React.Suspense fallback={<SectionLoading />}>
+                  <SectionErrorBoundary
+                    section="Briefing"
+                    fallback={
+                      <SectionFallback
+                        title="Briefing unavailable"
+                        message="The full briefing panel hit a render issue. Refresh to retry."
+                      />
+                    }
+                  >
                     <BriefingSection
                       onActChange={(act) => {
                         setActiveAct(act as any);
@@ -690,16 +785,24 @@ function ResearchHubContent(props: ResearchHubProps) {
                       onAskAI={handleAskAI}
                       onOpenReader={handleOpenReader}
                     />
-                  </React.Suspense>
+                  </SectionErrorBoundary>
                 </section>
               )}
 
               {/* FORECASTS TAB: Prediction Cockpit */}
               {activeTab === 'forecasts' && (
                 <section className="animate-in fade-in duration-300 pb-8">
-                  <React.Suspense fallback={<SectionLoading />}>
-                    <ForecastCockpitLazy />
-                  </React.Suspense>
+                  <SectionErrorBoundary
+                    section="Forecasts"
+                    fallback={
+                      <SectionFallback
+                        title="Forecasts unavailable"
+                        message="Forecast charts could not render. Refresh to retry."
+                      />
+                    }
+                  >
+                    <ForecastCockpit />
+                  </SectionErrorBoundary>
                 </section>
               )}
 
@@ -713,57 +816,79 @@ function ResearchHubContent(props: ResearchHubProps) {
             <div className="absolute left-0 top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-edge to-transparent" />
 
             <div className="space-y-4 pl-4">
-              {phasedDashboardMetrics ? (
-                <ActAwareDashboard
-                  activeAct={activeAct}
-                  dashboardData={phasedDashboardMetrics}
-                  executiveBrief={executiveBrief}
-                  sourceSummary={sourceSummary}
-                  evidence={evidence || []}
-                  workflowSteps={workflowSteps}
-                  deltas={deltas}
-                  onDataPointClick={handleDashboardPointClick}
-                  onEvidenceClick={handleEvidenceOpen}
-                />
-              ) : (
-                <DashboardSection activeAct={activeAct} />
-              )}
-              <React.Suspense fallback={<SectionLoading />}>
+              <SectionErrorBoundary
+                section="Context graph"
+                fallback={
+                  <SectionFallback
+                    title="Context graph unavailable"
+                    message="The context panel failed to render. Refresh to retry."
+                  />
+                }
+              >
+                {phasedDashboardMetrics ? (
+                  <ActAwareDashboard
+                    activeAct={activeAct}
+                    dashboardData={phasedDashboardMetrics}
+                    executiveBrief={executiveBrief}
+                    sourceSummary={sourceSummary}
+                    evidence={evidence || []}
+                    workflowSteps={workflowSteps}
+                    deltas={deltas}
+                    onDataPointClick={handleDashboardPointClick}
+                    onEvidenceClick={handleEvidenceOpen}
+                  />
+                ) : (
+                  <DashboardSection activeAct={activeAct} />
+                )}
+              </SectionErrorBoundary>
+              <SectionErrorBoundary
+                section="Activity log"
+                fallback={
+                  <SectionFallback
+                    title="Activity log unavailable"
+                    message="Recent activity could not be loaded right now."
+                  />
+                }
+              >
                 <NotificationActivityPanel
                   mode="topic"
                   variant="hub"
                   title="Activity Log"
                   limit={4}
                 />
-              </React.Suspense>
+              </SectionErrorBoundary>
             </div>
           </aside>
         </div>
       </main>
 
       {/* LIVE INTEL FLOW MONITOR */}
-      <React.Suspense fallback={null}>
+      <SectionErrorBoundary section="Intel monitor" fallback={null}>
         <IntelPulseMonitor taskResults={taskResults || []} />
-      </React.Suspense>
+      </SectionErrorBoundary>
 
-      <React.Suspense fallback={null}>
-        <FeedReaderModal
-          item={readerItem}
-          techStack={techStack}
-          onClose={() => setReaderItem(null)}
-        />
-      </React.Suspense>
-      <React.Suspense fallback={null}>
-        <EntityContextDrawer
-          isOpen={Boolean(activeEntity)}
-          entityName={activeEntity?.name ?? null}
-          entityType={activeEntity?.type}
-          trackedHashtags={trackedHashtags}
-          techStack={techStack}
-          onClose={handleEntityClose}
-          onOpenReader={handleOpenReader}
-        />
-      </React.Suspense>
+      <SectionErrorBoundary section="Reader modal" fallback={null}>
+        <React.Suspense fallback={null}>
+          <FeedReaderModal
+            item={readerItem}
+            techStack={techStack}
+            onClose={() => setReaderItem(null)}
+          />
+        </React.Suspense>
+      </SectionErrorBoundary>
+      <SectionErrorBoundary section="Entity drawer" fallback={null}>
+        <React.Suspense fallback={null}>
+          <EntityContextDrawer
+            isOpen={Boolean(activeEntity)}
+            entityName={activeEntity?.name ?? null}
+            entityType={activeEntity?.type}
+            trackedHashtags={trackedHashtags}
+            techStack={techStack}
+            onClose={handleEntityClose}
+            onOpenReader={handleOpenReader}
+          />
+        </React.Suspense>
+      </SectionErrorBoundary>
     </div>
   );
 }
@@ -775,4 +900,3 @@ export default function ResearchHub(props: ResearchHubProps) {
     </EvidenceProvider>
   );
 }
-

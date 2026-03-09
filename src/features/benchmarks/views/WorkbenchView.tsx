@@ -114,10 +114,10 @@ function CapabilityDeepDive() {
       >
         <div>
           <span className="type-label">
-            Capability Deep Dive
+            Open detailed evaluation charts
           </span>
           <p className="text-xs text-content-muted mt-0.5">
-            Evaluation results — pass rates, latency, and cost across scenarios
+            Expand pass rates, latency, and cost charts across benchmark scenarios
           </p>
         </div>
         {open ? (
@@ -230,7 +230,12 @@ function formatLatency(ms?: number) {
   if (typeof ms !== "number" || !Number.isFinite(ms)) {
     return "n/a";
   }
-  return `${Math.round(ms)}ms`;
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  const seconds = ms / 1000;
+  if (seconds < 60) return `${seconds >= 10 ? Math.round(seconds) : seconds.toFixed(1)}s`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  return remainingSeconds === 0 ? `${minutes}m` : `${minutes}m ${remainingSeconds}s`;
 }
 
 function StreamPayloadBlock({
@@ -261,6 +266,59 @@ function StreamPayloadBlock({
         ) : null}
       </div>
       <div className="mt-1 whitespace-pre-wrap break-words">{displayValue}</div>
+    </div>
+  );
+}
+
+type StreamEvent = EnterpriseEvalArtifact["stream"]["events"][number];
+
+function TelemetryEventCard({ event }: { event: StreamEvent }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasPayloads = !!(event.request || event.response || event.telemetry);
+
+  return (
+    <div className="rounded-lg border border-edge bg-surface-secondary">
+      <button
+        type="button"
+        onClick={() => hasPayloads && setExpanded((v) => !v)}
+        aria-expanded={hasPayloads ? expanded : undefined}
+        className={`w-full text-left p-2 ${hasPayloads ? "cursor-pointer" : "cursor-default"}`}
+      >
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="font-medium text-content">{event.type}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-content-muted">{new Date(event.at).toLocaleTimeString("en-US")}</span>
+            {hasPayloads ? (
+              expanded ? (
+                <ChevronUp className="w-3 h-3 text-content-muted shrink-0" />
+              ) : (
+                <ChevronDown className="w-3 h-3 text-content-muted shrink-0" />
+              )
+            ) : null}
+          </div>
+        </div>
+        <div className="text-xs text-content mt-1">{event.detail}</div>
+        <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-content-muted">
+          {event.caseId ? <span>{event.caseId}</span> : null}
+          {typeof event.lane === "number" ? <span>lane {event.lane}</span> : null}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="px-2 pb-2">
+          {event.request ? <StreamPayloadBlock label="Input" value={event.request} /> : null}
+          {event.response ? <StreamPayloadBlock label="Output" value={event.response} /> : null}
+          {event.telemetry ? (
+            <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-content-muted">
+              {Object.entries(event.telemetry).map(([key, value]) => (
+                <div key={key}>
+                  {key}: {String(value)}
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
@@ -364,8 +422,8 @@ function LiveGuardPanel() {
             </span>
           </div>
           <div className="mt-2 space-y-1 text-xs text-content-muted">
-            <div>P95 latency: {formatLatency(artifact.checks.fastSearch.p95Ms)}</div>
-            <div>Average latency: {formatLatency(artifact.checks.fastSearch.averageMs)}</div>
+            <div>P95 latency (time): {formatLatency(artifact.checks.fastSearch.p95Ms)}</div>
+            <div>Average latency (time): {formatLatency(artifact.checks.fastSearch.averageMs)}</div>
             <div>Results: {artifact.checks.fastSearch.resultCount}</div>
             <div>Citations: {artifact.checks.fastSearch.citationCount}</div>
           </div>
@@ -385,8 +443,8 @@ function LiveGuardPanel() {
             </span>
           </div>
           <div className="mt-2 space-y-1 text-xs text-content-muted">
-            <div>P95 latency: {formatLatency(artifact.checks.enterpriseInvestigation.p95Ms)}</div>
-            <div>Average latency: {formatLatency(artifact.checks.enterpriseInvestigation.averageMs)}</div>
+            <div>P95 latency (time): {formatLatency(artifact.checks.enterpriseInvestigation.p95Ms)}</div>
+            <div>Average latency (time): {formatLatency(artifact.checks.enterpriseInvestigation.averageMs)}</div>
             <div>Causal chain events: {artifact.checks.enterpriseInvestigation.causalChainLength}</div>
             <div>Source hashes: {artifact.checks.enterpriseInvestigation.snapshotHashCount}</div>
           </div>
@@ -586,28 +644,7 @@ function EnterpriseEvalPanel() {
             <div className="text-xs font-medium text-content mb-2">Streamed steps</div>
             <div className="space-y-2">
               {visibleEvents.map((event, index) => (
-                <div key={`${event.at}-${index}`} className="rounded-lg border border-edge bg-surface-secondary p-2">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="font-medium text-content">{event.type}</span>
-                    <span className="text-content-muted">{new Date(event.at).toLocaleTimeString("en-US")}</span>
-                  </div>
-                  <div className="text-xs text-content mt-1">{event.detail}</div>
-                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-content-muted">
-                    {event.caseId ? <span>{event.caseId}</span> : null}
-                    {typeof event.lane === "number" ? <span>lane {event.lane}</span> : null}
-                  </div>
-                  {event.request ? <StreamPayloadBlock label="Input" value={event.request} /> : null}
-                  {event.response ? <StreamPayloadBlock label="Output" value={event.response} /> : null}
-                  {event.telemetry ? (
-                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-content-muted">
-                      {Object.entries(event.telemetry).map(([key, value]) => (
-                        <div key={key}>
-                          {key}: {String(value)}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
+                <TelemetryEventCard key={`${event.at}-${index}`} event={event} />
               ))}
             </div>
           </div>
