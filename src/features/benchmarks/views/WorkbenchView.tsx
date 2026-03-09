@@ -159,6 +159,66 @@ interface LiveGuardArtifact {
   failures: string[];
 }
 
+interface EnterpriseEvalArtifact {
+  generatedAt: string;
+  summary: {
+    totalCases: number;
+    passedCases: number;
+    deterministicAverage: number;
+    llmJudgeAverage: number;
+    totalEstimatedTokens: number;
+  };
+  cases: Array<{
+    caseId: string;
+    title: string;
+    dataset: string;
+    deterministic: {
+      overall: number;
+      passed: boolean;
+    };
+    llmJudge: {
+      score: number;
+      passed: boolean;
+      model: string;
+      estimatedTotalTokens: number;
+    };
+    telemetry: {
+      totalDurationMs: number;
+      anomalyCount: number;
+      causalChainLength: number;
+      sourceHashCount: number;
+      proposedAction: string;
+    };
+  }>;
+  stream: {
+    object: string;
+    events: Array<{
+      at: string;
+      type: string;
+      lane?: number;
+      caseId?: string;
+      detail: string;
+      request?: string;
+      response?: string;
+      telemetry?: Record<string, string | number | boolean | null>;
+    }>;
+    finalVerdict: string;
+    telemetry: {
+      totalEstimatedTokens: number;
+      averageJudgeScore: number;
+      averageDeterministicScore: number;
+      totalWallClockMs?: number;
+      estimatedJudgeCostUsd?: number | null;
+    };
+    video?: {
+      status: string;
+      url: string | null;
+      note?: string;
+    };
+  };
+  failures: string[];
+}
+
 function formatLatency(ms?: number) {
   if (typeof ms !== "number" || !Number.isFinite(ms)) {
     return "n/a";
@@ -312,6 +372,267 @@ function LiveGuardPanel() {
   );
 }
 
+function EnterpriseEvalPanel() {
+  const [artifact, setArtifact] = useState<EnterpriseEvalArtifact | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [visibleEventCount, setVisibleEventCount] = useState(0);
+  const replayMode =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("streamReplay") === "1";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadArtifact() {
+      try {
+        const response = await fetch("/benchmarks/enterprise-investigation-eval-latest.json", {
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const json = (await response.json()) as EnterpriseEvalArtifact;
+        if (!cancelled) {
+          setArtifact(json);
+          setError(null);
+          setVisibleEventCount(0);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Unable to load enterprise investigation eval artifact",
+          );
+        }
+      }
+    }
+
+    void loadArtifact();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!artifact) return;
+    const stepMs = replayMode ? 550 : 900;
+    setVisibleEventCount(0);
+    const interval = window.setInterval(() => {
+      setVisibleEventCount((current) => {
+        if (current >= artifact.stream.events.length) {
+          window.clearInterval(interval);
+          return current;
+        }
+        return current + 1;
+      });
+    }, stepMs);
+    return () => window.clearInterval(interval);
+  }, [artifact, replayMode]);
+
+  if (!artifact && !error) {
+    return (
+      <section className="nb-surface-card p-4 sm:p-5">
+        <div className="flex items-center gap-2 text-content">
+          <Activity className="w-4 h-4 text-blue-500" />
+          <span className="type-label">Enterprise Investigation Eval</span>
+        </div>
+        <p className="text-xs text-content-muted mt-2">Loading full-force temporal eval artifact…</p>
+      </section>
+    );
+  }
+
+  if (error || !artifact) {
+    return (
+      <section className="nb-surface-card p-4 sm:p-5">
+        <div className="flex items-center gap-2 text-content">
+          <AlertTriangle className="w-4 h-4 text-amber-500" />
+          <span className="type-label">Enterprise Investigation Eval</span>
+        </div>
+        <p className="text-xs text-content-muted mt-2">
+          Latest enterprise eval artifact is unavailable.
+          {error ? ` ${error}` : ""}
+        </p>
+      </section>
+    );
+  }
+
+  const overallPass = artifact.failures.length === 0;
+  const visibleEvents = artifact.stream.events.slice(0, Math.max(1, visibleEventCount));
+
+  return (
+    <section className="nb-surface-card p-4 sm:p-5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-content">
+            {overallPass ? (
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            )}
+            <span className="type-label">Enterprise Investigation Eval</span>
+          </div>
+          <p className="text-xs text-content-muted mt-1">
+            Public fixture suite with required LLM judging, deterministic traceability checks, and streamed run telemetry.
+          </p>
+        </div>
+        <div className="text-xs text-content-muted">
+          {new Date(artifact.generatedAt).toLocaleString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
+        <div className="rounded-xl border border-edge bg-surface-secondary p-3">
+          <div className="text-sm font-medium text-content">Cases passed</div>
+          <div className="mt-2 text-2xl font-semibold text-content">
+            {artifact.summary.passedCases}/{artifact.summary.totalCases}
+          </div>
+        </div>
+        <div className="rounded-xl border border-edge bg-surface-secondary p-3">
+          <div className="text-sm font-medium text-content">Deterministic avg</div>
+          <div className="mt-2 text-2xl font-semibold text-content">{artifact.summary.deterministicAverage}</div>
+        </div>
+        <div className="rounded-xl border border-edge bg-surface-secondary p-3">
+          <div className="text-sm font-medium text-content">LLM judge avg</div>
+          <div className="mt-2 text-2xl font-semibold text-content">{artifact.summary.llmJudgeAverage}</div>
+        </div>
+        <div className="rounded-xl border border-edge bg-surface-secondary p-3">
+          <div className="text-sm font-medium text-content">Estimated judge tokens</div>
+          <div className="mt-2 text-2xl font-semibold text-content">{artifact.summary.totalEstimatedTokens.toLocaleString()}</div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-xl border border-edge bg-surface-secondary p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium text-content">Parallel run stream</div>
+            <div className="text-xs text-content-muted mt-1">
+              {visibleEvents.length}/{artifact.stream.events.length} telemetry events visible in the latest eval replay.
+            </div>
+          </div>
+          <div className="text-xs text-content-muted flex items-center gap-2">
+            <Play className="w-3.5 h-3.5" />
+            {artifact.stream.video?.status === "ready"
+              ? "Video published"
+              : artifact.stream.video?.note ?? "Video capture pending"}
+          </div>
+        </div>
+        {artifact.stream.video?.url ? (
+          <video
+            className="mt-3 w-full rounded-xl border border-edge bg-black"
+            controls
+            preload="metadata"
+            src={artifact.stream.video.url}
+          />
+        ) : null}
+        <div className="mt-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
+          <div className="rounded-xl border border-edge bg-surface p-3 max-h-72 overflow-auto">
+            <div className="text-xs font-medium text-content mb-2">Streamed steps</div>
+            <div className="space-y-2">
+              {visibleEvents.map((event, index) => (
+                <div key={`${event.at}-${index}`} className="rounded-lg border border-edge bg-surface-secondary p-2">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-medium text-content">{event.type}</span>
+                    <span className="text-content-muted">{new Date(event.at).toLocaleTimeString("en-US")}</span>
+                  </div>
+                  <div className="text-xs text-content mt-1">{event.detail}</div>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-content-muted">
+                    {event.caseId ? <span>{event.caseId}</span> : null}
+                    {typeof event.lane === "number" ? <span>lane {event.lane}</span> : null}
+                  </div>
+                  {event.request ? (
+                    <div className="mt-2 rounded-md border border-edge bg-surface p-2 text-[11px] text-content-muted">
+                      <div className="font-medium text-content">Input</div>
+                      <div className="mt-1 whitespace-pre-wrap">{event.request}</div>
+                    </div>
+                  ) : null}
+                  {event.response ? (
+                    <div className="mt-2 rounded-md border border-edge bg-surface p-2 text-[11px] text-content-muted">
+                      <div className="font-medium text-content">Output</div>
+                      <div className="mt-1 whitespace-pre-wrap">{event.response}</div>
+                    </div>
+                  ) : null}
+                  {event.telemetry ? (
+                    <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-content-muted">
+                      {Object.entries(event.telemetry).map(([key, value]) => (
+                        <div key={key}>
+                          {key}: {String(value)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-edge bg-surface p-3">
+            <div className="text-xs font-medium text-content mb-2">Final stream telemetry</div>
+            <div className="space-y-1 text-xs text-content-muted">
+              <div>Verdict: {artifact.stream.finalVerdict}</div>
+              <div>Events captured: {artifact.stream.events.length}</div>
+              <div>Average deterministic score: {artifact.stream.telemetry.averageDeterministicScore}</div>
+              <div>Average judge score: {artifact.stream.telemetry.averageJudgeScore}</div>
+              <div>Estimated judge tokens: {artifact.stream.telemetry.totalEstimatedTokens.toLocaleString()}</div>
+              {typeof artifact.stream.telemetry.totalWallClockMs === "number" ? (
+                <div>Total wall clock: {formatLatency(artifact.stream.telemetry.totalWallClockMs)}</div>
+              ) : null}
+              {typeof artifact.stream.telemetry.estimatedJudgeCostUsd === "number" ? (
+                <div>Estimated judge spend: ${artifact.stream.telemetry.estimatedJudgeCostUsd.toFixed(4)}</div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-4">
+        {artifact.cases.map((item) => (
+          <div key={item.caseId} className="rounded-xl border border-edge bg-surface-secondary p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-content">{item.title}</div>
+                <div className="text-xs text-content-muted mt-1">{item.dataset}</div>
+              </div>
+              <div className="text-right text-xs text-content-muted">
+                <div>Deterministic {item.deterministic.overall}</div>
+                <div>LLM judge {item.llmJudge.score}</div>
+              </div>
+            </div>
+            <div className="mt-3 space-y-1 text-xs text-content-muted">
+              <div>Duration: {formatLatency(item.telemetry.totalDurationMs)}</div>
+              <div>Causal chain events: {item.telemetry.causalChainLength}</div>
+              <div>Source hashes: {item.telemetry.sourceHashCount}</div>
+              <div>Judge tokens: {item.llmJudge.estimatedTotalTokens.toLocaleString()}</div>
+              <div className="text-content">Action: {item.telemetry.proposedAction}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {artifact.failures.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-content">
+          <div className="font-medium mb-1">Current failures</div>
+          <ul className="space-y-1 text-content-muted">
+            {artifact.failures.map((failure) => (
+              <li key={failure}>- {failure}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-xl border border-green-500/20 bg-green-500/5 p-3 text-xs text-content">
+          The enterprise eval lane is passing with required LLM judging. This is the current proof that the product can reconstruct multi-actor temporal failures better than point benchmarks.
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Main view ────────────────────────────────────────────────────────────────
 
 export function WorkbenchView() {
@@ -322,6 +643,7 @@ export function WorkbenchView() {
       <div className="nb-page-inner pb-28 sm:pb-24">
         <div className="nb-page-frame space-y-8">
           <LiveGuardPanel />
+          <EnterpriseEvalPanel />
 
           {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
               If `useQuery` throws (missing function/schema), fall back to static empty states

@@ -1,0 +1,353 @@
+{
+  "object": "enterprise_investigation_eval_stream",
+  "events": [
+    {
+      "at": "2026-03-09T06:18:35.511Z",
+      "type": "suite.started",
+      "detail": "Enterprise investigation eval suite started.",
+      "request": "Run the public fixture suite with required LLM judging and bounded parallelism.",
+      "response": "Initializing parallel lanes, deterministic scoring, and low-cost judge configuration.",
+      "telemetry": {
+        "caseCount": 4,
+        "concurrency": 2,
+        "judgeModel": "gemini-2.0-flash",
+        "judgeKeysBootstrappedFromConvexEnv": true,
+        "bootstrappedKeyCount": 3
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:35.552Z",
+      "type": "case.started",
+      "lane": 1,
+      "caseId": "xz-backdoor",
+      "detail": "XZ Utils trust-capture backdoor started.",
+      "request": "Query: Trace the temporal causal chain that led to the XZ Utils backdoor release and explain the human incentive failure. Sources: https://www.openwall.com/lists/oss-security/2024/03/29/4, https://github.com/tukaani-project/xz/pull/5, https://boehs.org/node/everything-i-know-about-the-xz-backdoor Timeline events: 3",
+      "telemetry": {
+        "lane": 1,
+        "sourceCount": 3,
+        "timelineEvents": 3,
+        "fixtureDocuments": 3,
+        "costProfile": "free_public"
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:35.568Z",
+      "type": "case.started",
+      "lane": 2,
+      "caseId": "gitlab-db-loss",
+      "detail": "GitLab 2017 production database loss started.",
+      "request": "Query: Trace the decision chain behind the GitLab production database loss and recommend the missing guardrail. Sources: https://about.gitlab.com/blog/2017/02/01/gitlab-dot-com-database-incident/, https://jira.example.com/browse/GL-2017-DB, https://slack.example.com/archives/gitlab-incident Timeline events: 3",
+      "telemetry": {
+        "lane": 2,
+        "sourceCount": 3,
+        "timelineEvents": 3,
+        "fixtureDocuments": 3,
+        "costProfile": "free_public"
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:35.594Z",
+      "type": "case.investigation_built",
+      "lane": 1,
+      "caseId": "xz-backdoor",
+      "detail": "XZ Utils trust-capture backdoor produced enterprise investigation output.",
+      "response": "Forecast: Observed numeric pressure is rising from 8.00 to 21.00. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast. Action: Freeze the affected release lane, rotate privileged maintainership, and require two-person review plus reproducible builds before the next distribution push. Causal chain: A new contributor became release-critical through repeated h…",
+      "telemetry": {
+        "lane": 1,
+        "buildDurationMs": 42,
+        "causalChainLength": 3,
+        "anomalyCount": 1,
+        "sourceHashCount": 3,
+        "deterministicScore": 100,
+        "confidenceScore": 0.9
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:35.594Z",
+      "type": "case.llm_judge_requested",
+      "lane": 1,
+      "caseId": "xz-backdoor",
+      "detail": "XZ Utils trust-capture backdoor sent to the required LLM judge.",
+      "request": "Model: gemini-2.0-flash Threshold: 78 Expected summary: The XZ incident was a trust-capture operation. Helpful patches established credibility, mailing-list pressure weakened maintainer resistance, and release urgency let a malicious release path through. The real failure was governance over privileged maintainership and release review, not just a late code diff. Actual summary: Query: Trace the temporal causal chain that led to the XZ Utils backdoor release and explain the human incentive failure. Confidence: 0.9…",
+      "telemetry": {
+        "lane": 1,
+        "estimatedInputTokens": 548
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:35.615Z",
+      "type": "case.investigation_built",
+      "lane": 2,
+      "caseId": "gitlab-db-loss",
+      "detail": "GitLab 2017 production database loss produced enterprise investigation output.",
+      "response": "Forecast: Observed numeric pressure is falling from 300.00 to 2.00. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast. Action: Lock down destructive production access, rehearse recovery from backup and replica promotion, and require two-person approval on irreversible data-plane commands. Causal chain: War-room pressure escalated after hours of degraded s…",
+      "telemetry": {
+        "lane": 2,
+        "buildDurationMs": 47,
+        "causalChainLength": 3,
+        "anomalyCount": 1,
+        "sourceHashCount": 3,
+        "deterministicScore": 100,
+        "confidenceScore": 0.9
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:35.615Z",
+      "type": "case.llm_judge_requested",
+      "lane": 2,
+      "caseId": "gitlab-db-loss",
+      "detail": "GitLab 2017 production database loss sent to the required LLM judge.",
+      "request": "Model: gemini-2.0-flash Threshold: 78 Expected summary: The GitLab failure chain ran from operational fatigue and time pressure to a destructive production command, then to the discovery that replica and backup assumptions were weaker than expected. The right fix is production access friction plus practiced recovery controls, not just asking engineers to be more careful. Actual summary: Query: Trace the decision chain behind the GitLab production database loss and recommend the missing guardrail. Confidence: 0.9 F…",
+      "telemetry": {
+        "lane": 2,
+        "estimatedInputTokens": 641
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:37.881Z",
+      "type": "case.judged",
+      "lane": 2,
+      "caseId": "gitlab-db-loss",
+      "detail": "GitLab 2017 production database loss judged by gemini-2.0-flash.",
+      "response": "Score: 92 Reasoning: The response correctly identifies the key elements of the GitLab incident: the operational fatigue, the destructive command, and the failure of backups and replicas. It also proposes appropriate remedial actions, including locking down production access and rehearsing recovery procedures. The causal chain is well-reconstructed, and the game theory analysis correctly identifies the pressure points and process bypass issues. The answer is well-supported by evidence from the incident postmortem, …",
+      "telemetry": {
+        "lane": 2,
+        "judgeScore": 92,
+        "judgePassed": true,
+        "judgeDurationMs": 2265,
+        "estimatedInputTokens": 641,
+        "estimatedOutputTokens": 315,
+        "estimatedTotalTokens": 956,
+        "estimatedJudgeCostUsd": 0.00019
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:37.881Z",
+      "type": "case.completed",
+      "lane": 2,
+      "caseId": "gitlab-db-loss",
+      "detail": "GitLab 2017 production database loss completed on lane 2.",
+      "telemetry": {
+        "lane": 2,
+        "totalDurationMs": 2312,
+        "deterministicPassed": true,
+        "judgePassed": true,
+        "totalEstimatedTokens": 956,
+        "estimatedJudgeCostUsd": 0.00019
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:37.881Z",
+      "type": "case.started",
+      "lane": 2,
+      "caseId": "enron-entities",
+      "detail": "Enron off-balance-sheet coordination started.",
+      "request": "Query: Trace the temporal chain behind Enron's off-balance-sheet entity concealment and identify the incentive failure. Sources: https://www.cs.cmu.edu/~enron/email/skilling-fastow-entity-thread, https://www.sec.gov/Archives/enron/off-balance-sheet-filing, https://example.com/enron-postmortem Timeline events: 3",
+      "telemetry": {
+        "lane": 2,
+        "sourceCount": 3,
+        "timelineEvents": 3,
+        "fixtureDocuments": 3,
+        "costProfile": "free_public"
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:37.883Z",
+      "type": "case.investigation_built",
+      "lane": 2,
+      "caseId": "enron-entities",
+      "detail": "Enron off-balance-sheet coordination produced enterprise investigation output.",
+      "response": "Forecast: Observed numeric pressure is falling from 27.00 to 12.00. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast. Action: Tighten disclosure controls, segregate entity approvals from performance incentives, and require governance review before any related-entity reporting leaves finance. Causal chain: Executive email velocity spiked while new off-bal…",
+      "telemetry": {
+        "lane": 2,
+        "buildDurationMs": 2,
+        "causalChainLength": 3,
+        "anomalyCount": 1,
+        "sourceHashCount": 3,
+        "deterministicScore": 97,
+        "confidenceScore": 0.9
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:37.883Z",
+      "type": "case.llm_judge_requested",
+      "lane": 2,
+      "caseId": "enron-entities",
+      "detail": "Enron off-balance-sheet coordination sent to the required LLM judge.",
+      "request": "Model: gemini-2.0-flash Threshold: 78 Expected summary: Enron's collapse was not a single bad filing. Private executive coordination rose first, formal disclosures lagged behind internal reality, and the system rewarded cleaner external leverage optics over truthful governance. The real failure was incentive design and disclosure control, not just accounting complexity. Actual summary: Query: Trace the temporal chain behind Enron's off-balance-sheet entity concealment and identify the incentive failure. Confidence…",
+      "telemetry": {
+        "lane": 2,
+        "estimatedInputTokens": 625
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:38.110Z",
+      "type": "case.judged",
+      "lane": 1,
+      "caseId": "xz-backdoor",
+      "detail": "XZ Utils trust-capture backdoor judged by gemini-2.0-flash.",
+      "response": "Score: 88 Reasoning: The response correctly identifies the temporal chain of events leading to the XZ Utils backdoor, including the establishment of trust through helpful patches, mailing list pressure, and the eventual malicious release. It also correctly diagnoses the incentive failure, noting that local delivery pressure overrode broader system safety. The proposed actions are reasonable and address the identified issues. The response is well-structured and provides supporting evidence. It could be improved by …",
+      "telemetry": {
+        "lane": 1,
+        "judgeScore": 88,
+        "judgePassed": true,
+        "judgeDurationMs": 2516,
+        "estimatedInputTokens": 548,
+        "estimatedOutputTokens": 343,
+        "estimatedTotalTokens": 891,
+        "estimatedJudgeCostUsd": 0.000192
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:38.110Z",
+      "type": "case.completed",
+      "lane": 1,
+      "caseId": "xz-backdoor",
+      "detail": "XZ Utils trust-capture backdoor completed on lane 1.",
+      "telemetry": {
+        "lane": 1,
+        "totalDurationMs": 2558,
+        "deterministicPassed": true,
+        "judgePassed": true,
+        "totalEstimatedTokens": 891,
+        "estimatedJudgeCostUsd": 0.000192
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:38.110Z",
+      "type": "case.started",
+      "lane": 1,
+      "caseId": "ftx-alameda",
+      "detail": "FTX and Alameda balance-sheet regime shift started.",
+      "request": "Query: Trace the temporal causal chain behind the FTX and Alameda balance-sheet breakdown and identify the missing control. Sources: https://www.courtlistener.com/docket/ftx-bankruptcy-alameda-timeline, https://www.sec.gov/ftx-alameda-complaint, https://example.com/ftx-balance-sheet-analysis Timeline events: 3",
+      "telemetry": {
+        "lane": 1,
+        "sourceCount": 3,
+        "timelineEvents": 3,
+        "fixtureDocuments": 3,
+        "costProfile": "free_public"
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:38.113Z",
+      "type": "case.investigation_built",
+      "lane": 1,
+      "caseId": "ftx-alameda",
+      "detail": "FTX and Alameda balance-sheet regime shift produced enterprise investigation output.",
+      "response": "Forecast: Observed numeric pressure is falling from 65.00 to 7.00. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast. Action: Segregate treasury authority, reconcile related-party exposures against primary ledgers, and require disclosure controls before any further capital movement. Causal chain: Analysts flagged a fragile Alameda balance sheet built on i…",
+      "telemetry": {
+        "lane": 1,
+        "buildDurationMs": 3,
+        "causalChainLength": 3,
+        "anomalyCount": 1,
+        "sourceHashCount": 3,
+        "deterministicScore": 100,
+        "confidenceScore": 0.9
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:38.113Z",
+      "type": "case.llm_judge_requested",
+      "lane": 1,
+      "caseId": "ftx-alameda",
+      "detail": "FTX and Alameda balance-sheet regime shift sent to the required LLM judge.",
+      "request": "Model: gemini-2.0-flash Threshold: 78 Expected summary: The FTX-Alameda failure was a governance and disclosure collapse. Analysts first saw a fragile balance sheet, bankruptcy records exposed related-party commingling, and regulators later tied the regime shift to undisclosed transfers. The real fix is treasury segregation and disclosure controls, not just better market monitoring. Actual summary: Query: Trace the temporal causal chain behind the FTX and Alameda balance-sheet breakdown and identify the missing co…",
+      "telemetry": {
+        "lane": 1,
+        "estimatedInputTokens": 605
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:39.537Z",
+      "type": "case.judged",
+      "lane": 2,
+      "caseId": "enron-entities",
+      "detail": "Enron off-balance-sheet coordination judged by gemini-2.0-flash.",
+      "response": "Score: 88 Reasoning: The response correctly identifies the temporal chain of events leading to Enron's collapse, focusing on the misalignment of incentives and the lag in external disclosures compared to internal realities. It highlights the role of executive coordination in structuring off-balance-sheet entities and the subsequent failure of governance to keep pace with these activities. The proposed actions are relevant and address the identified issues. The answer captures the essence of the Enron failure as a …",
+      "telemetry": {
+        "lane": 2,
+        "judgeScore": 88,
+        "judgePassed": true,
+        "judgeDurationMs": 1654,
+        "estimatedInputTokens": 625,
+        "estimatedOutputTokens": 262,
+        "estimatedTotalTokens": 887,
+        "estimatedJudgeCostUsd": 0.000167
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:39.537Z",
+      "type": "case.completed",
+      "lane": 2,
+      "caseId": "enron-entities",
+      "detail": "Enron off-balance-sheet coordination completed on lane 2.",
+      "telemetry": {
+        "lane": 2,
+        "totalDurationMs": 1656,
+        "deterministicPassed": true,
+        "judgePassed": true,
+        "totalEstimatedTokens": 887,
+        "estimatedJudgeCostUsd": 0.000167
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:40.322Z",
+      "type": "case.judged",
+      "lane": 1,
+      "caseId": "ftx-alameda",
+      "detail": "FTX and Alameda balance-sheet regime shift judged by gemini-2.0-flash.",
+      "response": "Score: 92 Reasoning: The response accurately reconstructs the temporal chain of events leading to the FTX/Alameda breakdown, identifies the critical missing controls, and proposes relevant remedial actions. It correctly identifies the initial analyst concerns, the subsequent bankruptcy filings revealing treasury commingling, and the regulatory findings of undisclosed transfers and disclosure failures. The game theory analysis correctly points out the disclosure lag and governance failures. The proposed actions are…",
+      "telemetry": {
+        "lane": 1,
+        "judgeScore": 92,
+        "judgePassed": true,
+        "judgeDurationMs": 2209,
+        "estimatedInputTokens": 605,
+        "estimatedOutputTokens": 343,
+        "estimatedTotalTokens": 948,
+        "estimatedJudgeCostUsd": 0.000198
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:40.322Z",
+      "type": "case.completed",
+      "lane": 1,
+      "caseId": "ftx-alameda",
+      "detail": "FTX and Alameda balance-sheet regime shift completed on lane 1.",
+      "telemetry": {
+        "lane": 1,
+        "totalDurationMs": 2212,
+        "deterministicPassed": true,
+        "judgePassed": true,
+        "totalEstimatedTokens": 948,
+        "estimatedJudgeCostUsd": 0.000198
+      }
+    },
+    {
+      "at": "2026-03-09T06:18:40.322Z",
+      "type": "suite.completed",
+      "detail": "Enterprise investigation eval suite passed.",
+      "response": "Passed cases: 4/4 Average deterministic: 99 Average judge: 90 Estimated tokens: 3682 Estimated judge spend: 0.000747",
+      "telemetry": {
+        "concurrency": 2,
+        "totalWallClockMs": 4770,
+        "totalEstimatedTokens": 3682,
+        "totalEstimatedJudgeCostUsd": 0.000747,
+        "passedCases": 4
+      }
+    }
+  ],
+  "finalVerdict": "PASS",
+  "telemetry": {
+    "totalEstimatedTokens": 3682,
+    "averageJudgeScore": 90,
+    "averageDeterministicScore": 99,
+    "totalWallClockMs": 4770,
+    "estimatedJudgeCostUsd": 0.000747
+  },
+  "video": {
+    "status": "ready",
+    "url": "/benchmarks/videos/enterprise-investigation-eval-stream-latest.webm",
+    "note": "Recorded playback of the latest parallel enterprise investigation eval run."
+  }
+}

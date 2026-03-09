@@ -94,6 +94,7 @@
     "bench:persona": "tsx scripts/run-persona-episode-eval.ts",
     "bench:api-headless:guard": "npm --prefix apps/api-headless run bench:guard",
     "bench:api-headless:live": "tsx scripts/run-api-headless-live-guard.ts",
+    "bench:enterprise-investigation:eval": "tsx scripts/run-enterprise-investigation-eval.ts",
     "mcp:dataset:refresh": "npm --prefix packages/mcp-local run dataset:bfcl:refresh",
     "mcp:dataset:test": "npm --prefix packages/mcp-local run test:open-dataset",
     "mcp:dataset:bench": "npm run mcp:dataset:refresh && npm run mcp:dataset:test",

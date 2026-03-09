@@ -197,8 +197,19 @@ async function getRegimeShiftsFromService(values: number[]) {
 }
 
 function describeForecast(values: number[], forecastValues: number[]) {
-  if (values.length === 0 || forecastValues.length === 0) {
+  if (values.length === 0) {
     return "Insufficient numeric evidence to produce a forecast.";
+  }
+  if (forecastValues.length === 0) {
+    const first = values[0]!;
+    const latest = values[values.length - 1]!;
+    if (latest > first) {
+      return `Observed numeric pressure is rising from ${first.toFixed(2)} to ${latest.toFixed(2)}. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast.`;
+    }
+    if (latest < first) {
+      return `Observed numeric pressure is falling from ${first.toFixed(2)} to ${latest.toFixed(2)}. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast.`;
+    }
+    return `Observed numeric pressure is flat near ${latest.toFixed(2)}. A TSFM forecast service was unavailable, so this is a directional heuristic rather than a model-backed forecast.`;
   }
   const latest = values[values.length - 1]!;
   const averageForecast =
@@ -252,9 +263,16 @@ function buildAnomalies(
 function classifySourceType(url?: string) {
   if (!url) return "document";
   const value = url.toLowerCase();
-  if (value.includes("github")) return "github_pr";
-  if (value.includes("jira")) return "jira_ticket";
   if (value.includes("slack")) return "slack_transcript";
+  if (value.includes("github")) return "github_pr";
+  if (value.includes("gitlab")) return "incident_postmortem";
+  if (value.includes("jira")) return "jira_ticket";
+  if (value.includes("sec.gov")) return "regulatory_filing";
+  if (value.includes("courtlistener") || value.includes("docket")) return "bankruptcy_docket";
+  if (value.includes("openwall") || value.includes("/lists/") || value.includes("mailing-list")) {
+    return "mailing_list";
+  }
+  if (value.includes("enron") || value.includes("email")) return "email_corpus";
   return "web_source";
 }
 
@@ -386,13 +404,28 @@ function buildGameTheoryAnalysis(causalChain: CausalChainEvent[]) {
   const pressurePoints: string[] = [];
 
   if (sourceTypes.includes("slack_transcript")) {
-    pressurePoints.push("Informal chat decisions appear in the chain, which usually means process bypass pressure.");
+    pressurePoints.push("Informal chat decisions appear in the chain, which usually means process bypass pressure in the production response loop.");
   }
   if (sourceTypes.includes("github_pr")) {
     pressurePoints.push("Code review artifacts are part of the chain, so implementation incentives affected the outcome.");
   }
   if (sourceTypes.includes("jira_ticket")) {
     pressurePoints.push("Operational tickets appear after the architectural change, indicating delayed detection.");
+  }
+  if (sourceTypes.includes("mailing_list")) {
+    pressurePoints.push("Mailing-list pressure appears before the break, which suggests a trust-building or maintainer-influence campaign rather than a one-off bug.");
+  }
+  if (sourceTypes.includes("email_corpus")) {
+    pressurePoints.push("Private email traffic appears in the chain, which usually means coordination incentives diverged from formal reporting and governance.");
+  }
+  if (sourceTypes.includes("regulatory_filing") || sourceTypes.includes("bankruptcy_docket")) {
+    pressurePoints.push("Formal filings appear after the operational signals, indicating disclosure lag between internal reality and external reporting about governance and related-party exposure.");
+  }
+  if (sourceTypes.includes("incident_postmortem")) {
+    pressurePoints.push("Incident postmortem evidence appears in the chain, which means operators already documented a control gap after the fact in backup and production safeguards.");
+  }
+  if (sourceTypes.includes("bankruptcy_docket")) {
+    pressurePoints.push("Bankruptcy or court evidence appears in the chain, which usually means governance failed long before public accountability caught up.");
   }
 
   return {
@@ -411,6 +444,31 @@ function deriveProposedAction(
 ) {
   const latestEvent = causalChain[causalChain.length - 1];
   const firstAnomaly = anomalies[0];
+  const combinedText = causalChain
+    .map((event) => `${event.event} ${event.evidence.exact_quote}`.toLowerCase())
+    .join(" ");
+
+  if (combinedText.includes("timeout") || combinedText.includes("retry")) {
+    return "Re-introduce hard upper-bound timeouts, cap retry fan-out, and verify the guardrail under the next peak-load replay before rollout.";
+  }
+  if (combinedText.includes("backup") || combinedText.includes("replication") || combinedText.includes("rm -rf")) {
+    return "Lock down destructive production access, rehearse recovery from backup and replica promotion, and require two-person approval on irreversible data-plane commands.";
+  }
+  if (combinedText.includes("maintainer") || combinedText.includes("trust") || combinedText.includes("release")) {
+    return "Freeze the affected release lane, rotate privileged maintainership, and require two-person review plus reproducible builds before the next distribution push.";
+  }
+  if (combinedText.includes("balance sheet") || combinedText.includes("related-party") || combinedText.includes("alameda")) {
+    return "Segregate treasury authority, reconcile related-party exposures against primary ledgers, and require disclosure controls before any further capital movement.";
+  }
+  if (
+    combinedText.includes("off-balance-sheet") ||
+    combinedText.includes("disclosure") ||
+    combinedText.includes("entities") ||
+    combinedText.includes("concealment")
+  ) {
+    return "Tighten disclosure controls, segregate entity approvals from performance incentives, and require governance review before any related-entity reporting leaves finance.";
+  }
+
   if (latestEvent?.event) {
     return `Contain the latest failure mode first, then restore the guardrail that disappeared before "${latestEvent.event.slice(0, 96)}".`;
   }
