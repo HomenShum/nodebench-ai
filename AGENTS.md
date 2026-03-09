@@ -23,6 +23,56 @@ Non-goals:
 - Retroactively changing the meaning of past posts
 - Rewriting all historical content for formatting
 
+## Oracle harness-first workflow
+
+Use this when building or refining the internal Oracle builder system.
+
+Required docs:
+- `ORACLE_VISION.md`
+- `ORACLE_STATE.md`
+- `ORACLE_LOOP.md`
+
+Rules:
+- Extend the existing NodeBench harness. Do not build a second agent platform.
+- Every non-trivial Oracle slice must store and surface:
+  - `goalId`
+  - `visionSnapshot`
+  - `successCriteria[]`
+  - `sourceRefs[]`
+  - `crossCheckStatus`
+  - `deltaFromVision`
+  - `dogfoodRunId`
+- The first shipped surface is the builder-facing control tower, not end-user career coaching.
+- Always run the closed loop after Oracle changes:
+  - typecheck
+  - build
+  - tests
+  - dogfood verification when UI changed
+- Always update `ORACLE_STATE.md` after the loop so the next agent can resume without re-deriving context.
+
+## Unified Temporal local stack
+
+Use this when the current slice needs the Oracle UI, headless QA API, TSFM service, and ingestion service running together on day 1.
+
+Primary entrypoint:
+
+```powershell
+docker compose up --build tsfm-inference ingestion-extract api-headless oracle-ui
+```
+
+Rules:
+- Keep Convex external to the compose stack and pass `CONVEX_URL` through the environment.
+- Do not invent a new frontend entrypoint. The current Oracle UI is the root Vite app on port `5173`.
+- The ingestion service must stay extraction-only. It maps source text into entities, claims, numeric facts, and temporal markers. Narrative reasoning happens elsewhere.
+- The TSFM service must stay math-only. It forecasts and detects anomalies or structural breaks; it does not write narratives.
+- The day-1 bridge into Convex is `domains/temporal/ingestion:ingestStructuredSourceText`. Use it to turn raw text into stored observations, derived signals, and the first forecastable stream.
+- The day-1 public grounding surface in `apps/api-headless` is `POST /v1/search` and `POST /v1/fetch`. Keep these thin: search should reuse Convex search actions, and fetch should normalize web content then call `ingestion-extract` for exact-source extraction.
+- When adding enterprise-grade temporal reasoning, prefer extending `outputType` on `/v1/search` rather than creating a new public route unless the contract truly diverges.
+- Evidence claims should carry immutable content hashes whenever possible. Do not rely on mutable URLs alone for audit-critical reasoning.
+- Before claiming search or temporal API performance improvements, run `npm run bench:api-headless:guard`.
+- When `CONVEX_URL` is available and the claim depends on real backend latency or fetched-source behavior, run `npm run bench:api-headless:live` and inspect `docs/architecture/benchmarks/api-headless-live-guard-latest.md`.
+- If you change this local stack workflow, update `docs/guides/UNIFIED_TEMPORAL_LOCAL_STACK.md` and this file in the same loop.
+
 ## How the investigation was done
 
 ### 1. Pull historical posts from Convex
@@ -219,6 +269,25 @@ Apply:
 ```powershell
 npx convex run --push "domains/social/linkedinArchiveEdits:proposeAndApplyLegacyEdits" "{dryRun:false,mode:'unknown_placeholders_to_undisclosed',maxEdits:25}"
 ```
+
+### Full live page sweep for Unknown placeholders (org posts)
+
+Use this when the LinkedIn page still shows legacy posts with `Unknown Company`, `Unknown round`, or synthetic unknown hashtags that are not fully represented in archive rows.
+
+1) Collect target post URNs from LinkedIn page-posts UI (Boost links include `content=urn:li:share:...`).
+2) Dry-run the sweep:
+
+```powershell
+npx convex run "domains/social/linkedinPosting:sweepAndFixUnknownPlaceholders" "{postUrns:['urn:li:share:...'],dryRun:true,maxPosts:50}"
+```
+
+3) Apply live updates:
+
+```powershell
+npx convex run "domains/social/linkedinPosting:sweepAndFixUnknownPlaceholders" "{postUrns:['urn:li:share:...'],dryRun:false,maxPosts:50}"
+```
+
+4) Verify in LinkedIn page-posts UI that no post text matches unknown placeholders.
 
 ### One-time demo URL cleanup (LinkedIn + archive)
 
@@ -470,6 +539,37 @@ npm run mcp:dataset:bench:all
 
 Purpose: run invariant audits, persist a boolean-gated report, attach an optional LLM explanation.
 
+### Continuous observability control tower
+
+Purpose: unify health checks, active alerts, self-healing, nightly maintenance, intent hotspots, and bug-loop backlog into one operator view inside NodeBench.
+
+In-app surface:
+- `Autonomous Operations` panel in the agents workspace now reads from `domains/operations/autonomousControlTower:getAutonomousControlTowerSnapshot`
+- The panel shows:
+  - current system health and active alerts
+  - 24h self-healing success rate and recent actions
+  - latest nightly maintenance status
+  - intent hotspot loop counts and bug-loop counts
+  - prioritized attention queue for issues that need intervention
+
+Manual run from the UI:
+- Use `Run Now` in the `Autonomous Operations` panel. This triggers:
+  - `domains/observability/healthMonitor:runAllHealthChecks`
+  - `domains/observability/selfHealer:runSelfHealing`
+  - `domains/operations/selfMaintenance:runNightlySelfMaintenance`
+
+Manual run from Convex:
+
+```powershell
+npx convex run --push "domains/operations/autonomousControlTower:getAutonomousControlTowerSnapshot" "{}"
+```
+
+Immediate maintenance pass:
+
+```powershell
+npx convex run --push "domains/operations/autonomousControlTower:runAutonomousMaintenanceNow" "{includeLlmExplanation:false}"
+```
+
 Manual run:
 
 ```powershell
@@ -504,8 +604,28 @@ Rules:
 
 Local commands:
 ```powershell
+# Segmented repo test gate (app + first-party MCP packages)
+npm run test:run
+
+# Increase independent test-lane parallelism when the machine can handle it
+$env:NODEBENCH_TEST_SEGMENT_PARALLEL=2
+npm run test:run
+
+# Optional: include the embedded Overstory Bun suite as a separate lane
+npm run test:run:full
+
 # Capture end-to-end walkthrough evidence (screenshots + video + scribe + frames)
 npm run dogfood:full:local
+
+# Parallelize dogfood route capture into small shards plus a dedicated interactions lane
+$env:DOGFOOD_ROUTE_SHARDS=3
+npm run dogfood:full:local -- --routeShards 3
+
+# Segmented dogfood smoke gate (capture + artifact verification, Gemini auto-skips if no key)
+npm run dogfood:verify
+
+# Force the Gemini scoring lane
+npm run dogfood:verify:strict
 
 # Run Gemini QA (video + sampled frames + screenshots) and persist runs for /dogfood review
 npm run dogfood:qa:gemini
