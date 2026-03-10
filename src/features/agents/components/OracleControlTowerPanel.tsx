@@ -3,14 +3,20 @@ import { useQuery } from "convex/react";
 import {
   AlertTriangle,
   ArrowRight,
+  BarChart3,
+  Beaker,
   CheckCircle2,
   ExternalLink,
+  FileText,
   Flag,
   Loader2,
+  Lightbulb,
+  Radio,
   ShieldAlert,
   Swords,
   Timer,
   Waypoints,
+  Wrench,
   Zap,
 } from "lucide-react";
 import { api } from "../../../../convex/_generated/api";
@@ -127,6 +133,40 @@ interface OracleControlTowerSnapshot {
     }>;
   };
   nextRecommendedAction: string;
+  industryMetrics?: {
+    toolCalls: {
+      last24h: number;
+      successRate24h: number;
+      failedLast24h: number;
+      avgDurationMs: number;
+      totalWeek: number;
+      topTools: Array<{ name: string; count: number }>;
+    };
+    evidence: {
+      totalArtifacts: number;
+      totalPacks: number;
+      totalChainLinks: number;
+    };
+    narrative: {
+      newInsightsThisWeek: number;
+      totalEvents: number;
+      hypotheses: {
+        active: number;
+        supported: number;
+        weakened: number;
+        total: number;
+      };
+    };
+    signals: {
+      totalIngested: number;
+      pending: number;
+      processed: number;
+    };
+    eval: {
+      totalRuns: number;
+      avgPassRate: number | null;
+    };
+  };
 }
 
 function StatCard({
@@ -152,10 +192,235 @@ function StatCard({
   );
 }
 
+// ── Compact metric row ──────────────────────────────────────────────────────
+function MetricRow({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+  sub?: string;
+  accent?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 py-1.5">
+      <Icon className={cn("h-3.5 w-3.5 shrink-0", accent ?? "text-content-muted")} />
+      <span className="text-xs text-content-secondary flex-1 truncate">{label}</span>
+      <span className="text-sm font-semibold tabular-nums text-content">{value}</span>
+      {sub ? <span className="text-[11px] text-content-muted">{sub}</span> : null}
+    </div>
+  );
+}
+
+// ── Progress bar ────────────────────────────────────────────────────────────
+function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  return (
+    <div className="h-1.5 w-full rounded-full bg-background/60 overflow-hidden">
+      <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+// ── Industry Metrics Panel ──────────────────────────────────────────────────
+function IndustryMetricsSection({
+  metrics,
+}: {
+  metrics: NonNullable<OracleControlTowerSnapshot["industryMetrics"]>;
+}) {
+  const { toolCalls, evidence, narrative, signals, eval: evalData } = metrics;
+
+  return (
+    <div className="rounded-xl border border-edge bg-surface p-4 space-y-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-content">
+        <BarChart3 className="h-4 w-4 text-accent" />
+        Industry Metrics
+      </div>
+
+      {/* Tool Calls */}
+      <div className="rounded-lg border border-edge bg-background/40 p-3 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-content">Tool Execution</span>
+          <span className="text-[11px] text-content-muted">24h / 7d</span>
+        </div>
+        <MetricRow
+          icon={Wrench}
+          label="Calls (24h)"
+          value={formatCompactNumber(toolCalls.last24h)}
+          accent="text-blue-400"
+        />
+        <MetricRow
+          icon={Zap}
+          label="Success rate"
+          value={`${toolCalls.successRate24h}%`}
+          accent={toolCalls.successRate24h >= 95 ? "text-emerald-400" : toolCalls.successRate24h >= 80 ? "text-amber-400" : "text-red-400"}
+        />
+        {toolCalls.failedLast24h > 0 && (
+          <MetricRow
+            icon={AlertTriangle}
+            label="Failed"
+            value={toolCalls.failedLast24h}
+            accent="text-red-400"
+          />
+        )}
+        <MetricRow
+          icon={Timer}
+          label="Avg latency"
+          value={toolCalls.avgDurationMs > 0 ? formatDurationCompact(toolCalls.avgDurationMs) : "N/A"}
+          accent="text-violet-400"
+        />
+        <MetricRow
+          icon={Wrench}
+          label="Total (7d)"
+          value={formatCompactNumber(toolCalls.totalWeek)}
+          accent="text-blue-400"
+        />
+
+        {toolCalls.topTools.length > 0 && (
+          <div className="mt-2 space-y-1">
+            <div className="text-[10px] uppercase tracking-widest text-content-muted">Top tools</div>
+            {toolCalls.topTools.slice(0, 5).map((tool) => (
+              <div key={tool.name} className="flex items-center gap-2">
+                <span className="text-[11px] text-content-secondary truncate flex-1">{tool.name}</span>
+                <MiniBar value={tool.count} max={toolCalls.topTools[0].count} color="bg-blue-500/60" />
+                <span className="text-[10px] tabular-nums text-content-muted w-6 text-right">{tool.count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Evidence & Artifacts */}
+      <div className="rounded-lg border border-edge bg-background/40 p-3 space-y-1.5">
+        <span className="text-xs font-medium text-content">Evidence Gathered</span>
+        <MetricRow
+          icon={FileText}
+          label="Source artifacts"
+          value={formatCompactNumber(evidence.totalArtifacts)}
+          accent="text-emerald-400"
+        />
+        <MetricRow
+          icon={Swords}
+          label="Evidence packs"
+          value={formatCompactNumber(evidence.totalPacks)}
+          accent="text-amber-400"
+        />
+        <MetricRow
+          icon={Waypoints}
+          label="Chain/deduction links"
+          value={formatCompactNumber(evidence.totalChainLinks)}
+          accent="text-cyan-400"
+        />
+      </div>
+
+      {/* Narrative Intelligence */}
+      <div className="rounded-lg border border-edge bg-background/40 p-3 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-content">Narrative Intelligence</span>
+          {narrative.newInsightsThisWeek > 0 && (
+            <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-400">
+              +{narrative.newInsightsThisWeek} new this week
+            </span>
+          )}
+        </div>
+        <MetricRow
+          icon={Lightbulb}
+          label="New insights (7d)"
+          value={narrative.newInsightsThisWeek}
+          accent="text-amber-400"
+        />
+        <MetricRow
+          icon={Lightbulb}
+          label="Total events tracked"
+          value={formatCompactNumber(narrative.totalEvents)}
+          accent="text-pink-400"
+        />
+
+        {narrative.hypotheses.total > 0 && (
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+            <div className="rounded-md border border-edge bg-surface px-2 py-1.5 text-center">
+              <div className="text-sm font-semibold tabular-nums text-emerald-400">{narrative.hypotheses.active}</div>
+              <div className="text-[10px] text-content-muted">Active</div>
+            </div>
+            <div className="rounded-md border border-edge bg-surface px-2 py-1.5 text-center">
+              <div className="text-sm font-semibold tabular-nums text-blue-400">{narrative.hypotheses.supported}</div>
+              <div className="text-[10px] text-content-muted">Supported</div>
+            </div>
+            <div className="rounded-md border border-edge bg-surface px-2 py-1.5 text-center">
+              <div className="text-sm font-semibold tabular-nums text-amber-400">{narrative.hypotheses.weakened}</div>
+              <div className="text-[10px] text-content-muted">Weakened</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Signals */}
+      <div className="rounded-lg border border-edge bg-background/40 p-3 space-y-1.5">
+        <span className="text-xs font-medium text-content">Signal Pipeline</span>
+        <MetricRow
+          icon={Radio}
+          label="Total ingested"
+          value={formatCompactNumber(signals.totalIngested)}
+          accent="text-violet-400"
+        />
+        <MetricRow
+          icon={CheckCircle2}
+          label="Processed"
+          value={formatCompactNumber(signals.processed)}
+          accent="text-emerald-400"
+        />
+        {signals.pending > 0 && (
+          <MetricRow
+            icon={Loader2}
+            label="Pending"
+            value={signals.pending}
+            accent="text-amber-400"
+          />
+        )}
+        {signals.totalIngested > 0 && (
+          <MiniBar
+            value={signals.processed}
+            max={signals.totalIngested}
+            color="bg-emerald-500/60"
+          />
+        )}
+      </div>
+
+      {/* Eval */}
+      {evalData.totalRuns > 0 && (
+        <div className="rounded-lg border border-edge bg-background/40 p-3 space-y-1.5">
+          <span className="text-xs font-medium text-content">Evaluation</span>
+          <MetricRow
+            icon={Beaker}
+            label="Eval runs"
+            value={evalData.totalRuns}
+            accent="text-cyan-400"
+          />
+          {evalData.avgPassRate !== null && (
+            <MetricRow
+              icon={CheckCircle2}
+              label="Avg pass rate"
+              value={`${evalData.avgPassRate}%`}
+              accent={evalData.avgPassRate >= 80 ? "text-emerald-400" : evalData.avgPassRate >= 60 ? "text-amber-400" : "text-red-400"}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
   const snapshot = useQuery(api.domains.taskManager.queries.getOracleControlTowerSnapshot, {
     limit: 6,
   }) as OracleControlTowerSnapshot | undefined;
+  const industryMetrics = useQuery(api.domains.taskManager.queries.getIndustryMetrics) as
+    | NonNullable<OracleControlTowerSnapshot["industryMetrics"]>
+    | undefined;
 
   if (snapshot === undefined) {
     return (
@@ -481,6 +746,9 @@ export const OracleControlTowerPanel = memo(function OracleControlTowerPanel() {
         </div>
 
         <div className="space-y-4">
+          {/* ── Industry Metrics ─────────────────────────────────────── */}
+          {industryMetrics && <IndustryMetricsSection metrics={industryMetrics} />}
+
           <div className="rounded-xl border border-edge bg-surface p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-semibold text-content">Dogfood verdict</div>
