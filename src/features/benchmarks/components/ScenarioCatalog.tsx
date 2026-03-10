@@ -175,6 +175,8 @@ function ScenarioRow({
         <div className="flex flex-col items-end gap-1">
           <button
             disabled
+            aria-label={`Run ${scenario.name} benchmark — unlocks after app setup in Phase 2`}
+            aria-describedby={`run-disabled-hint-${scenario.id}`}
             title="Benchmark execution coming in Phase 2. Configure a workbench app first."
             className="
               w-full sm:w-auto h-11 sm:h-8 flex items-center justify-center gap-1.5 px-3 sm:px-2.5 rounded border border-edge
@@ -184,10 +186,14 @@ function ScenarioRow({
               disabled:hover:text-content group-hover:opacity-100
             "
           >
-            <Play className="w-3 h-3" />
-            Run
+            <Play className="w-3 h-3" aria-hidden="true" />
+            <span>Run</span>
+            <span className="sr-only">— not available until Phase 2 app configuration</span>
           </button>
-          <span className="max-w-[11rem] text-right text-[10px] leading-relaxed text-content-muted">
+          <span
+            id={`run-disabled-hint-${scenario.id}`}
+            className="max-w-[11rem] text-right text-[10px] leading-relaxed text-content-muted"
+          >
             Unlocks after app setup in Phase 2.
           </span>
         </div>

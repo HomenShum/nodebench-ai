@@ -610,7 +610,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           style={{ width: '100%' }}
         >
           {/* Top Bar — Linear-style with breadcrumb + Cmd+K */}
-          <div className="h-12 bg-surface/80 backdrop-blur-md border-b border-edge px-4 sm:px-5 flex items-center transition-colors duration-200 relative z-10">
+          <div className="h-12 bg-surface/95 supports-[backdrop-filter]:bg-surface/90 backdrop-blur-md border-b border-edge px-4 sm:px-5 flex items-center transition-colors duration-200 relative z-sticky">
             {/* Left: hamburger + breadcrumb */}
             <div className="flex items-center gap-2 min-w-0">
               <button

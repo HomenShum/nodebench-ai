@@ -32,10 +32,10 @@ export function CleanHeader({
   const user = useQuery(api.domains.auth.auth.loggedInUser);
 
   return (
-    <div className="bg-surface/80 backdrop-blur-md border-b border-edge px-4 py-2 flex items-center gap-4 transition-colors duration-200">
+    <div className="bg-surface/95 supports-[backdrop-filter]:bg-surface/90 backdrop-blur-md border-b border-edge px-4 py-2 flex items-center gap-4 transition-colors duration-200">
       {/* Centered Search Bar */}
       <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-2xl flex items-center gap-2 rounded-lg border border-edge bg-surface-secondary px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-500/30 transition-colors">
+        <div className="w-full max-w-2xl flex items-center gap-2 rounded-lg border border-edge bg-surface-secondary px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring focus-within:border-ring transition-colors">
           <Search className="h-4 w-4 text-content-secondary" />
           <input
             value={quickChatInput}
@@ -52,7 +52,7 @@ export function CleanHeader({
           />
           <button
             onClick={onQuickChat}
-            className="p-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            className="btn-primary-sm p-1.5"
             aria-label="Search"
           >
             <Send className="h-3.5 w-3.5" />

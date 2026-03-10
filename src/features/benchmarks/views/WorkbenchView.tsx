@@ -27,6 +27,7 @@ import { ChevronDown, ChevronUp, Settings, Play, CheckCircle2, AlertTriangle, Ac
 import { ModelLeaderboard } from "../components/ModelLeaderboard";
 import { ScenarioCatalog } from "../components/ScenarioCatalog";
 import { WorkbenchRunsTable } from "../components/WorkbenchRunsTable";
+import { TelemetryInspector } from "../components/TelemetryInspector";
 import { SignatureOrb } from "@/shared/ui/SignatureOrb";
 import { api } from "../../../../convex/_generated/api";
 
@@ -48,7 +49,7 @@ const STREAM_PREVIEW_LIMIT = 320;
 
 function WorkbenchHeader() {
   return (
-    <div className="sticky top-0 z-10 bg-surface border-b border-edge">
+    <div className="relative z-[1] bg-surface border-b border-edge">
       <div className="nb-page-frame px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         {/* Left: icon + title + subtitle */}
         <div className="flex items-start gap-3">
@@ -68,7 +69,15 @@ function WorkbenchHeader() {
 
         {/* Right: CTA buttons (both disabled — Phase 2) */}
         <div className="shrink-0 self-start sm:self-auto">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="#telemetry-inspector"
+            className="btn-outline-sm inline-flex min-h-11 sm:min-h-8 items-center gap-1.5 whitespace-nowrap"
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span className="sm:hidden">Inspector</span>
+            <span className="hidden sm:inline">Open Inspector</span>
+          </a>
           <button
             disabled
             title="Configure a workbench app — coming in Phase 2"
@@ -720,6 +729,7 @@ export function WorkbenchView() {
         <div className="nb-page-frame space-y-8">
           <LiveGuardPanel />
           <EnterpriseEvalPanel />
+          <TelemetryInspector />
 
           {/* NOTE(coworker): Keep Workbench resilient if the Convex backend isn't updated yet.
               If `useQuery` throws (missing function/schema), fall back to static empty states
