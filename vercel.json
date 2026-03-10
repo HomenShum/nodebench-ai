@@ -1,9 +1,12 @@
 {
   "buildCommand": "npm run build",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/((?!assets/|icons/|images/|fonts/|dogfood/|benchmarks/.*\\.(json|md|webm|mp4|png|jpg|jpeg|svg|gif|ico|txt|xml)|manifest\\.webmanifest|sw\\.js|registerSW\\.js|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)",
-      "destination": "/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
     }
   ]
 }
