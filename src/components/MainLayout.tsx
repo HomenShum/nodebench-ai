@@ -24,7 +24,7 @@ import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
 import { ViewSkeleton } from "./skeletons";
 import { AgentMetadata } from "./AgentMetadata";
 import { useViewWebMcpTools } from "../hooks/useViewWebMcpTools";
-import { VIEW_PATH_MAP, VIEW_TITLES, VIEW_SUBTITLES } from "@/lib/viewRegistry";
+import { VIEW_PATH_MAP, VIEW_TITLES, VIEW_SUBTITLES, resolvePathToView } from "@/lib/viewRegistry";
 import { OracleSessionBanner } from "./OracleSessionBanner";
 import { useOracleSessionContext } from "@/contexts/OracleSessionContext";
 
@@ -143,6 +143,7 @@ const WORKSPACE_ROOT_VIEWS = new Set([
 
 const RESEARCH_ROOT_VIEWS = new Set([
   'research',
+  'oracle',
   'signals',
   'benchmarks',
   'funding',
@@ -193,6 +194,25 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const navigate = useNavigate();
 
   const viewResetKey = `${location.pathname}:${currentView}:${String(selectedSpreadsheetId ?? "")}:${String(entityName ?? "")}:${showResearchDossier ? "dossier" : "home"}:${researchHubInitialTab}`;
+
+  useEffect(() => {
+    const resolved = resolvePathToView(location.pathname || "/");
+    if (resolved.view !== "oracle" || currentView === "oracle") return;
+
+    setCurrentView("oracle");
+    setShowResearchDossier(false);
+    setResearchHubInitialTab("overview");
+    setEntityName(null);
+    setSelectedSpreadsheetId(null);
+  }, [
+    currentView,
+    location.pathname,
+    setCurrentView,
+    setEntityName,
+    setResearchHubInitialTab,
+    setSelectedSpreadsheetId,
+    setShowResearchDossier,
+  ]);
 
   // Per-view WebMCP tools — register contextual tools when view changes
   const webmcpViewEnabled = typeof navigator !== "undefined" && !!navigator.modelContext;

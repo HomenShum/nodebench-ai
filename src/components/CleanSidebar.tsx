@@ -152,6 +152,7 @@ const moreSectionViews = new Set<string>([
 
 const researchViews = new Set<string>([
   'research',
+  'oracle',
   'signals',
   'benchmarks',
   'funding',

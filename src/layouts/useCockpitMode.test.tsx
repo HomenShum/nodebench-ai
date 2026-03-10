@@ -1,0 +1,58 @@
+import { MemoryRouter } from "react-router-dom";
+import { renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const setCurrentView = vi.fn();
+let mockCurrentView: "oracle" | "research" = "oracle";
+
+vi.mock("../hooks/useMainLayoutRouting", () => ({
+  useMainLayoutRouting: () => ({
+    currentView: mockCurrentView,
+    setCurrentView,
+    entityName: null,
+    setEntityName: vi.fn(),
+    selectedSpreadsheetId: null,
+    setSelectedSpreadsheetId: vi.fn(),
+    showResearchDossier: false,
+    setShowResearchDossier: vi.fn(),
+    researchHubInitialTab: "overview",
+    setResearchHubInitialTab: vi.fn(),
+    isTransitioning: false,
+    setIsTransitioning: vi.fn(),
+  }),
+}));
+
+import { useCockpitMode } from "./useCockpitMode";
+
+describe("useCockpitMode", () => {
+  beforeEach(() => {
+    setCurrentView.mockReset();
+    mockCurrentView = "oracle";
+    window.localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("does not restore a saved cockpit mode over an explicit oracle deep link", () => {
+    window.localStorage.setItem("nodebench-cockpit-mode", "mission");
+
+    renderHook(() => useCockpitMode(), {
+      wrapper: ({ children }) => <MemoryRouter initialEntries={["/oracle"]}>{children}</MemoryRouter>,
+    });
+
+    expect(setCurrentView).not.toHaveBeenCalled();
+  });
+
+  it("restores the saved cockpit mode on home-like routes", () => {
+    mockCurrentView = "research";
+    window.localStorage.setItem("nodebench-cockpit-mode", "system");
+
+    renderHook(() => useCockpitMode(), {
+      wrapper: ({ children }) => <MemoryRouter initialEntries={["/"]}>{children}</MemoryRouter>,
+    });
+
+    expect(setCurrentView).toHaveBeenCalledWith("oracle");
+  });
+});

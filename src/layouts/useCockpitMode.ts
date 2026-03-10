@@ -1,0 +1,81 @@
+/**
+ * useCockpitMode — Hook that wraps useMainLayoutRouting with mode awareness.
+ *
+ * Adds CockpitMode derivation on top of the existing routing system.
+ * Navigating to a mode switches to that mode's default view.
+ */
+
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useMainLayoutRouting } from "../hooks/useMainLayoutRouting";
+import {
+  type CockpitMode,
+  VIEW_TO_MODE,
+  MODES,
+  getModeForView,
+  VIEW_PATH_MAP,
+} from "./cockpitModes";
+
+const COCKPIT_MODE_KEY = "nodebench-cockpit-mode";
+
+export function useCockpitMode() {
+  const routing = useMainLayoutRouting();
+  const { setCurrentView } = routing;
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const mode = VIEW_TO_MODE[routing.currentView] ?? "mission";
+  const modeConfig = useMemo(() => getModeForView(routing.currentView), [routing.currentView]);
+  const skipInitialPersistRef = useRef(true);
+
+  // Persist the current mode whenever it changes
+  useEffect(() => {
+    if (skipInitialPersistRef.current) {
+      skipInitialPersistRef.current = false;
+      return;
+    }
+    localStorage.setItem(COCKPIT_MODE_KEY, mode);
+  }, [mode]);
+
+  // On first mount, restore the last active mode if it differs from the current view's mode
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+    const isHomeLikePath =
+      location.pathname === "/" ||
+      location.pathname === "/research" ||
+      location.pathname === "/research/overview" ||
+      location.pathname === "/hub";
+    if (!isHomeLikePath) return;
+    const saved = localStorage.getItem(COCKPIT_MODE_KEY) as CockpitMode | null;
+    if (saved && saved !== mode) {
+      const config = MODES.find((m) => m.id === saved);
+      if (config) {
+        setCurrentView(config.defaultView);
+        const path = VIEW_PATH_MAP[config.defaultView] ?? `/${config.defaultView}`;
+        navigate(path);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const setMode = useCallback(
+    (m: CockpitMode) => {
+      const config = MODES.find((c) => c.id === m);
+      if (config) {
+        setCurrentView(config.defaultView);
+        const path = VIEW_PATH_MAP[config.defaultView] ?? `/${config.defaultView}`;
+        navigate(path);
+      }
+    },
+    [setCurrentView, navigate],
+  );
+
+  return {
+    ...routing,
+    mode,
+    setMode,
+    modeConfig,
+  };
+}

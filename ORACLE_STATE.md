@@ -40,15 +40,18 @@ Milestone: Unified Temporal Agentic OS Phase 1 substrate
 - Research Hub embedded chrome now uses a neutral top summary instead of a misleading back-navigation control, and guest footer copy now explains what preview mode includes.
 - Signal feed cards now use semantic headings and text-based source labels instead of emoji-only source markers, reducing ambiguity across screen readers and OS renderers.
 - Benchmark copy now clarifies score and latency units, renames the chart toggle to a clearer action, and explains unrun leaderboard lanes as pending the first benchmark app connection.
+- Oracle deep links are now protected at the shell level: explicit `/oracle` routes no longer get overwritten by persisted cockpit mode, and the classic shell force-corrects stray view drift back to Oracle.
+- Cockpit mode now includes Oracle as a first-class system view, and the cockpit focal renderer has an explicit Oracle branch instead of falling through to the workspace default.
+- Sidebar grouping now treats Oracle as a research-adjacent proof surface so breadcrumbs, active state, and public navigation stay consistent.
+- Added a regression test for `useCockpitMode` covering both protected Oracle deep links and home-route mode restoration.
 
 ## Open defects
-- Keep long-running dogfood stable against stale client caches and route-level regressions.
 - Connect proof-pack generation to a real task session once the first end-to-end temporal loop lands.
 - Containerizing Convex is still deferred. The local stack expects an external `CONVEX_URL`.
 - A real Convex ingestion run has not been executed yet because the repo-wide Convex resolver lane is currently blocked by unrelated pre-existing domain export issues.
 
 ## Next quest
-Publish the refreshed public-facing homepage and benchmark/research polish to production, then run a focused live QA pass on `/`, `/research`, and `/benchmarks` to confirm the first-impression fixes are visible on the website.
+Deploy the Oracle shell-route fix and run a focused live QA pass on `/oracle` and `/benchmarks` to confirm the public site shows the Oracle surface, not the research home fallback.
 
 ## Blockers
 - None at the contract level.
@@ -62,6 +65,8 @@ Publish the refreshed public-facing homepage and benchmark/research polish to pr
 - Scenario regression now passes the long-session route-accumulation lane, the mobile dark-mode lane, and the dogfood artifact ingestion lane in the same closed loop.
 - The remaining dogfood noise is limited to benign `net::ERR_ABORTED` media request logs after navigation; artifact verification still passes with `screenshots=145`, `frames=36`, `scribe=36`, and `chapters=36`.
 - After the public-facing copy and navigation cleanup, `npm run dogfood:verify` still passes with the same artifact floor and no new route-regression failures.
+- After the Oracle route fix, local browser verification now shows `data-agent-id="view:oracle:content"` on `/oracle` and the Telemetry Inspector still renders correctly on `/benchmarks`.
+- `npm run dogfood:verify:smoke` passes after the Oracle route fix, including segmented route shards and scenario regression. The only remaining noise is a Playwright HTML reporter `EBUSY` write on Windows after the run completes; the verification itself still passes.
 
 ## Update rule
 Any agent changing Oracle-related behavior must update this file after implementation, tests, dogfood, and a vision cross-check are complete.
