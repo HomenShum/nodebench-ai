@@ -8,15 +8,15 @@
 import { lazy, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { VIEW_PATH_MAP, VIEW_TITLES } from "./cockpitModes";
+import { VIEW_MAP } from "@/lib/viewRegistry";
 import { Id } from "../../convex/_generated/dataModel";
 import { LazyView } from "@/shared/components/LazyView";
 import { ViewSkeleton } from "@/components/skeletons";
 import type { MainView, ResearchTab } from "../hooks/useMainLayoutRouting";
 
-// Lazy imports — same as MainLayout
-const PublicDocuments = lazy(() =>
-  import("@/features/documents/views/PublicDocuments").then((mod) => ({ default: mod.PublicDocuments })),
-);
+// ─── Lazy imports: only views with custom rendering (props/callbacks) ────────
+// Simple views (no props) use the registry component via the fallback at the
+// bottom of the render chain — no per-view lazy import needed here.
 const DocumentsHomeHub = lazy(() =>
   import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({ default: mod.DocumentsHomeHub })),
 );
@@ -29,9 +29,6 @@ const SpreadsheetSheetView = lazy(() =>
 const CalendarHomeHub = lazy(() =>
   import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({ default: mod.CalendarHomeHub })),
 );
-const AgentsHub = lazy(() =>
-  import("@/features/agents/views/AgentsHub").then((mod) => ({ default: mod.AgentsHub })),
-);
 const TimelineRoadmapView = lazy(() =>
   import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({ default: mod.TimelineRoadmapView })),
 );
@@ -41,75 +38,24 @@ const PhaseAllShowcase = lazy(() =>
   import("@/features/research/views/PhaseAllShowcase").then((mod) => ({ default: mod.PhaseAllShowcase })),
 );
 const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
-const PublicSignalsLog = lazy(() =>
-  import("@/features/research/views/PublicSignalsLog").then((mod) => ({ default: mod.PublicSignalsLog })),
-);
-const WorkbenchView = lazy(() =>
-  import("@/features/benchmarks/views/WorkbenchView").then((mod) => ({ default: mod.WorkbenchView })),
-);
 const EntityProfilePage = lazy(() =>
   import("@/features/research/views/EntityProfilePage").then((mod) => ({ default: mod.EntityProfilePage })),
-);
-const FundingBriefView = lazy(() =>
-  import("@/features/research/views/FundingBriefView").then((mod) => ({ default: mod.FundingBriefView })),
 );
 const TabManager = lazy(() =>
   import("@/components/TabManager").then((mod) => ({ default: mod.TabManager })),
 );
-const PublicActivityView = lazy(() =>
-  import("@/features/agents/views/PublicActivityView").then((mod) => ({ default: mod.PublicActivityView })),
+const ControlPlaneLanding = lazy(() =>
+  import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({ default: mod.ControlPlaneLanding })),
 );
-const HITLAnalyticsDashboard = lazy(() =>
-  import("@/features/analytics/views/HITLAnalyticsDashboard").then((mod) => ({ default: mod.default })),
-);
-const ComponentMetricsDashboard = lazy(() =>
-  import("@/features/analytics/views/ComponentMetricsDashboard").then((mod) => ({ default: mod.default })),
-);
-const RecommendationFeedbackDashboard = lazy(() =>
-  import("@/features/analytics/views/RecommendationAnalyticsDashboard").then((mod) => ({ default: mod.default })),
-);
-const CostDashboard = lazy(() =>
-  import("@/components/CostDashboard").then((mod) => ({ default: mod.CostDashboard })),
-);
-const IndustryUpdatesPanel = lazy(() =>
-  import("@/components/IndustryUpdatesPanel").then((mod) => ({ default: mod.IndustryUpdatesPanel })),
-);
-const ForYouFeed = lazy(() =>
-  import("@/features/research/components/ForYouFeed").then((mod) => ({ default: mod.ForYouFeed })),
-);
-const DocumentRecommendations = lazy(() =>
-  import("@/features/documents/components/DocumentRecommendations").then((mod) => ({ default: mod.DocumentRecommendations })),
-);
-const AgentMarketplace = lazy(() =>
-  import("@/features/agents/components/AgentMarketplace").then((mod) => ({ default: mod.AgentMarketplace })),
-);
-const GitHubExplorer = lazy(() =>
-  import("@/features/research/components/GitHubExplorer").then((mod) => ({ default: mod.GitHubExplorer })),
-);
-const PRSuggestions = lazy(() =>
-  import("@/features/monitoring/components/PRSuggestions").then((mod) => ({ default: mod.PRSuggestions })),
-);
-const LinkedInPostArchiveView = lazy(() =>
-  import("@/features/social/views/LinkedInPostArchiveView").then((mod) => ({ default: mod.LinkedInPostArchiveView })),
-);
-const McpToolLedgerView = lazy(() =>
-  import("@/features/mcp/views/McpToolLedgerView").then((mod) => ({ default: mod.McpToolLedgerView })),
-);
-const DogfoodReviewView = lazy(() =>
-  import("@/features/dogfood/views/DogfoodReviewView").then((mod) => ({ default: mod.DogfoodReviewView })),
-);
-const OracleView = lazy(() =>
-  import("@/features/oracle/views/OracleView").then((mod) => ({ default: mod.OracleView })),
+const PublicDocuments = lazy(() =>
+  import("@/features/documents/views/PublicDocuments").then((mod) => ({ default: mod.PublicDocuments })),
 );
 
 // Skeleton fallbacks
 const viewFallbackDefault = <ViewSkeleton variant="default" />;
 const viewFallbackDocuments = <ViewSkeleton variant="documents" />;
 const viewFallbackCalendar = <ViewSkeleton variant="calendar" />;
-const viewFallbackAgents = <ViewSkeleton variant="agents" />;
 const viewFallbackDashboard = <ViewSkeleton variant="dashboard" />;
-const viewFallbackCost = <ViewSkeleton variant="cost-dashboard" />;
-const viewFallbackIndustry = <ViewSkeleton variant="industry-updates" />;
 
 const EMPTY_FOOTNOTES_LIBRARY = {
   citations: {} as Record<string, unknown>,
@@ -258,10 +204,6 @@ export function FocalArea({
             />
           )}
         </LazyView>
-      ) : currentView === "agents" ? (
-        <LazyView title="AI Assistants failed to load" resetKey={viewResetKey} fallback={viewFallbackAgents}>
-          <AgentsHub />
-        </LazyView>
       ) : currentView === "calendar" ? (
         <LazyView title="Calendar failed to load" resetKey={viewResetKey} fallback={viewFallbackCalendar}>
           <CalendarHomeHub
@@ -291,77 +233,12 @@ export function FocalArea({
             }}
           />
         </LazyView>
-      ) : currentView === "signals" ? (
-        <LazyView title="Signals failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-          <PublicSignalsLog />
-        </LazyView>
-      ) : currentView === "benchmarks" ? (
-        <LazyView title="Workbench failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full">
-          <WorkbenchView />
-        </LazyView>
-      ) : currentView === "funding" ? (
-        <LazyView title="Funding Brief failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-          <FundingBriefView />
-        </LazyView>
-      ) : currentView === "activity" ? (
-        <LazyView title="Activity failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-          <PublicActivityView />
-        </LazyView>
-      ) : currentView === "analytics-hitl" ? (
-        <LazyView title="Review Queue failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <HITLAnalyticsDashboard />
-        </LazyView>
-      ) : currentView === "analytics-components" ? (
-        <LazyView title="Usage & Costs failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <ComponentMetricsDashboard />
-        </LazyView>
-      ) : currentView === "analytics-recommendations" ? (
-        <LazyView title="Feedback failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <RecommendationFeedbackDashboard />
-        </LazyView>
-      ) : currentView === "cost-dashboard" ? (
-        <LazyView title="Cost Dashboard failed to load" resetKey={viewResetKey} fallback={viewFallbackCost} className="h-full overflow-auto bg-surface pb-24">
-          <CostDashboard />
-        </LazyView>
-      ) : currentView === "industry-updates" ? (
-        <LazyView title="Industry News failed to load" resetKey={viewResetKey} fallback={viewFallbackIndustry} className="h-full overflow-auto bg-surface pb-24">
-          <IndustryUpdatesPanel />
-        </LazyView>
-      ) : currentView === "for-you-feed" ? (
-        <LazyView title="For You feed failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <ForYouFeed />
-        </LazyView>
-      ) : currentView === "document-recommendations" ? (
-        <LazyView title="Recommendations failed to load" resetKey={viewResetKey} fallback={viewFallbackDocuments} className="h-full overflow-auto bg-surface pb-24">
-          <DocumentRecommendations />
-        </LazyView>
-      ) : currentView === "agent-marketplace" ? (
-        <LazyView title="Agent Templates failed to load" resetKey={viewResetKey} fallback={viewFallbackAgents} className="h-full overflow-auto bg-surface pb-24">
-          <AgentMarketplace />
-        </LazyView>
-      ) : currentView === "github-explorer" ? (
-        <LazyView title="GitHub Explorer failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <GitHubExplorer />
-        </LazyView>
-      ) : currentView === "pr-suggestions" ? (
-        <LazyView title="PR Suggestions failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <PRSuggestions />
-        </LazyView>
-      ) : currentView === "linkedin-posts" ? (
-        <LazyView title="LinkedIn Archive failed to load" resetKey={viewResetKey} fallback={viewFallbackDocuments} className="h-full overflow-auto bg-surface pb-24">
-          <LinkedInPostArchiveView />
-        </LazyView>
-      ) : currentView === "mcp-ledger" ? (
-        <LazyView title="Activity Log failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <McpToolLedgerView />
-        </LazyView>
-      ) : currentView === "dogfood" ? (
-        <LazyView title="Quality Review failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <DogfoodReviewView />
-        </LazyView>
-      ) : currentView === "oracle" ? (
-        <LazyView title="Oracle failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault} className="h-full overflow-auto bg-surface pb-24">
-          <OracleView />
+      ) : currentView === "control-plane" ? (
+        <LazyView title="Landing failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
+          <ControlPlaneLanding onNavigate={(view) => {
+            navigate(VIEW_PATH_MAP[view as MainView] ?? `/${view}`);
+            setCurrentView(view as MainView);
+          }} />
         </LazyView>
       ) : currentView === "entity" && entityName ? (
         <LazyView title="Entity profile failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
@@ -374,6 +251,27 @@ export function FocalArea({
             }}
           />
         </LazyView>
+      ) : VIEW_MAP[currentView]?.component ? (
+        /* ── Registry-driven renderer ────────────────────────────────────
+         * All views with a non-null `component` in VIEW_REGISTRY are
+         * rendered here via a single lookup — no per-view branch needed.
+         * Adding a new simple view = add 1 entry to viewRegistry.ts.
+         * Matches the same pattern used in MainLayout (classic layout).
+         */
+        (() => {
+          const RegistryComponent = VIEW_MAP[currentView].component!;
+          const entry = VIEW_MAP[currentView];
+          return (
+            <LazyView
+              title={`${entry.title} failed to load`}
+              resetKey={viewResetKey}
+              fallback={viewFallbackDefault}
+              className="h-full overflow-auto bg-surface pb-24"
+            >
+              <RegistryComponent />
+            </LazyView>
+          );
+        })()
       ) : (
         <LazyView title="Workspace failed to load" resetKey={viewResetKey} fallback={viewFallbackDocuments}>
           <div className="h-full flex">

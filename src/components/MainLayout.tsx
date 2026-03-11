@@ -24,13 +24,13 @@ import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
 import { ViewSkeleton } from "./skeletons";
 import { AgentMetadata } from "./AgentMetadata";
 import { useViewWebMcpTools } from "../hooks/useViewWebMcpTools";
-import { VIEW_PATH_MAP, VIEW_TITLES, VIEW_SUBTITLES, resolvePathToView } from "@/lib/viewRegistry";
+import { VIEW_PATH_MAP, VIEW_TITLES, VIEW_SUBTITLES, resolvePathToView, WORKSPACE_SURFACE_VIEWS, AGENTS_SURFACE_VIEWS, RESEARCH_SURFACE_VIEWS, GROUP_VIEW_MAP, VIEW_MAP } from "@/lib/viewRegistry";
 import { OracleSessionBanner } from "./OracleSessionBanner";
 import { useOracleSessionContext } from "@/contexts/OracleSessionContext";
 
 // ─── Lazy imports: only views with custom rendering logic in MainLayout ──────
 // Simple views (no props) use the registry component from @/lib/viewRegistry.
-import { VIEW_MAP, type MainView as _MainViewCheck } from "@/lib/viewRegistry";
+import { type MainView as _MainViewCheck } from "@/lib/viewRegistry";
 
 const PublicDocuments = lazy(() =>
   import("@/features/documents/views/PublicDocuments").then((mod) => ({
@@ -68,6 +68,11 @@ const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage
 const EntityProfilePage = lazy(() =>
   import("@/features/research/views/EntityProfilePage").then((mod) => ({
     default: mod.EntityProfilePage,
+  })),
+);
+const ControlPlaneLanding = lazy(() =>
+  import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({
+    default: mod.ControlPlaneLanding,
   })),
 );
 const DocumentsHomeHub = lazy(() =>
@@ -130,38 +135,9 @@ const EMPTY_FOOTNOTES_LIBRARY = { citations: {} as Record<string, unknown>, orde
 
 // VIEW_TITLES and VIEW_SUBTITLES imported from @/lib/viewRegistry (single source of truth)
 
-const WORKSPACE_ROOT_VIEWS = new Set([
-  'documents',
-  'spreadsheets',
-  'calendar',
-  'roadmap',
-  'timeline',
-  'public',
-  'agents',
-  'activity',
-]);
-
-const RESEARCH_ROOT_VIEWS = new Set([
-  'research',
-  'oracle',
-  'signals',
-  'benchmarks',
-  'funding',
-  'footnotes',
-  'showcase',
-  'cost-dashboard',
-  'industry-updates',
-  'for-you-feed',
-  'document-recommendations',
-  'agent-marketplace',
-  'github-explorer',
-  'pr-suggestions',
-  'linkedin-posts',
-  'mcp-ledger',
-  'dogfood',
-  'engine-demo',
-  'observability',
-]);
+// Derived from viewRegistry route groups — no more hardcoded view lists
+const WORKSPACE_ROOT_VIEWS = new Set([...WORKSPACE_SURFACE_VIEWS, ...AGENTS_SURFACE_VIEWS]);
+const RESEARCH_ROOT_VIEWS = new Set([...RESEARCH_SURFACE_VIEWS, ...GROUP_VIEW_MAP.internal]);
 
 interface MainLayoutProps {
   selectedDocumentId: Id<"documents"> | null;
@@ -192,21 +168,28 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
 
   const location = useLocation();
   const navigate = useNavigate();
+  const resolvedRoute = useMemo(() => resolvePathToView(location.pathname || "/"), [location.pathname]);
 
   const viewResetKey = `${location.pathname}:${currentView}:${String(selectedSpreadsheetId ?? "")}:${String(entityName ?? "")}:${showResearchDossier ? "dossier" : "home"}:${researchHubInitialTab}`;
 
   useEffect(() => {
-    const resolved = resolvePathToView(location.pathname || "/");
-    if (resolved.view !== "oracle" || currentView === "oracle") return;
+    if (location.pathname === "/" || location.pathname === "") return;
+    if (currentView === resolvedRoute.view) return;
 
-    setCurrentView("oracle");
+    setCurrentView(resolvedRoute.view);
     setShowResearchDossier(false);
-    setResearchHubInitialTab("overview");
-    setEntityName(null);
-    setSelectedSpreadsheetId(null);
+    setResearchHubInitialTab(resolvedRoute.researchTab);
+    setEntityName(resolvedRoute.entityName);
+    setSelectedSpreadsheetId(
+      resolvedRoute.spreadsheetId ? (resolvedRoute.spreadsheetId as Id<"spreadsheets">) : null,
+    );
   }, [
     currentView,
     location.pathname,
+    resolvedRoute.entityName,
+    resolvedRoute.researchTab,
+    resolvedRoute.spreadsheetId,
+    resolvedRoute.view,
     setCurrentView,
     setEntityName,
     setResearchHubInitialTab,
@@ -363,10 +346,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   }, [location.pathname, navigate, setCurrentView]);
 
   const goToResearchHome = useCallback(() => {
+    const targetPath = VIEW_PATH_MAP.research ?? '/research';
     setCurrentView('research');
     setShowResearchDossier(false);
-    if (location.pathname !== '/') {
-      navigate('/');
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
     }
   }, [location.pathname, navigate, setCurrentView, setShowResearchDossier]);
 
@@ -417,11 +401,32 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const isMobileViewport = viewportMode === "mobile";
   const isTabletViewport = viewportMode === "tablet";
   const surfaceRoot = useMemo(() => {
+    // Use parentId from the registry for nested views — enables "back to parent" breadcrumb
+    const entry = VIEW_MAP[currentView];
+    const parentId = entry?.parentId;
+    if (parentId) {
+      const parentEntry = VIEW_MAP[parentId];
+      const parentTitle = parentEntry?.title ?? VIEW_TITLES[parentId] ?? parentId;
+      return {
+        page: parentId,
+        label: parentTitle,
+        onClick: () => navigateToView(parentId),
+      };
+    }
+
     if (currentView === "research") {
       return {
         page: "research" as const,
         label: "Research",
         onClick: goToResearchHome,
+      };
+    }
+
+    if (currentView === "control-plane") {
+      return {
+        page: "control-plane" as const,
+        label: "DeepTrace",
+        onClick: () => navigateToView("control-plane"),
       };
     }
 
@@ -446,7 +451,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       label: "Workspace",
       onClick: goToWorkspaceRoot,
     };
-  }, [currentView, goToResearchHome, goToWorkspaceRoot]);
+  }, [currentView, goToResearchHome, goToWorkspaceRoot, navigateToView]);
   const currentSurfaceTitle =
     currentView === "research"
       ? showResearchDossier
@@ -518,6 +523,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     setFastAgentThreadId,
     setSelectedDocumentIdsForAgent,
     setCurrentView,
+    navigateToView,
     onDocumentSelect,
     setIsGridMode,
     setIsTransitioning,
@@ -866,7 +872,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           )}
 
           {/* Content Area - Resizable Split */}
-          <div className="relative flex-1 overflow-hidden" data-main-content data-agent-id={`view:${currentView}:content`} data-agent-label={VIEW_TITLES[currentView] || currentView}>
+          <div
+            className="relative flex-1 overflow-hidden"
+            data-main-content
+            data-current-view={currentView}
+            data-route-view={resolvedRoute.view}
+            data-agent-id={`view:${currentView}:content`}
+            data-agent-label={VIEW_TITLES[currentView] || currentView}
+          >
             {currentView === "research" ? (
               <LazyView
                 title="Research Hub failed to load"
@@ -875,23 +888,20 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               >
                 {!showResearchDossier ? (
                   <CinematicHome
-                    onEnterHub={(tab) => {
-                      setResearchHubInitialTab(tab ?? "overview");
-                      setShowResearchDossier(true);
-                    }}
-                    onEnterWorkspace={() => setCurrentView("documents")}
+                    onEnterHub={goToResearchHub}
+                    onEnterWorkspace={goToWorkspaceRoot}
                     onOpenFastAgent={() => setShowFastAgent(true)}
                     onOpenFastAgentWithPrompt={handleOpenFastAgentWithPrompt}
-                    onOpenAgents={() => setCurrentView("agents")}
-                    onOpenWorkbench={() => setCurrentView("benchmarks")}
+                    onOpenAgents={() => navigateToView("agents")}
+                    onOpenWorkbench={() => navigateToView("benchmarks")}
                   />
                 ) : (
                   <ResearchHub
                     embedded
                     initialTab={researchHubInitialTab}
-                    onGoHome={() => setShowResearchDossier(false)}
+                    onGoHome={goToResearchHome}
                     onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
-                    onEnterWorkspace={() => setCurrentView("documents")}
+                    onEnterWorkspace={goToWorkspaceRoot}
                     activeSources={activeSources}
                     onToggleSource={(sourceId) =>
                       setActiveSources((prev) =>
@@ -943,14 +953,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </LazyView>
             ) : currentView === "showcase" ? (
               <LazyView title="Showcase failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <PhaseAllShowcase onBack={() => setCurrentView("research")} />
+                <PhaseAllShowcase onBack={goToResearchHome} />
               </LazyView>
             ) : currentView === "footnotes" ? (
               <LazyView title="Sources failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
                 <FootnotesPage
                   library={EMPTY_FOOTNOTES_LIBRARY}
                   briefTitle="Latest Daily Brief"
-                  onBack={() => setCurrentView("research")}
+                  onBack={goToResearchHome}
                 />
               </LazyView>
             ) : currentView === "entity" && entityName ? (
@@ -959,10 +969,13 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                   entityName={entityName}
                   onBack={() => {
                     setEntityName(null);
-                    setCurrentView("research");
-                    navigate("/");
+                    goToResearchHome();
                   }}
                 />
+              </LazyView>
+            ) : currentView === "control-plane" ? (
+              <LazyView title="Landing failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
+                <ControlPlaneLanding onNavigate={(view) => navigateToView(view as MainView)} />
               </LazyView>
             ) : VIEW_MAP[currentView]?.component ? (
               /* ── Registry-driven renderer ────────────────────────────────
@@ -1071,18 +1084,18 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         isOpen={commandPalette.isOpen}
         onClose={commandPalette.close}
         onNavigate={(view) => {
-          setCurrentView(view as typeof currentView);
+          navigateToView(view as typeof currentView);
         }}
         onCreateDocument={() => {
           // Navigate to documents and trigger new document creation
-          setCurrentView('documents');
+          navigateToView('documents');
           onDocumentSelect(null);
           // Dispatch event to create new document
           window.dispatchEvent(new CustomEvent('document:create'));
         }}
         onCreateTask={() => {
           // Navigate to calendar/tasks view
-          setCurrentView('calendar');
+          navigateToView('calendar');
         }}
         onOpenSettings={() => openSettings('usage')}
       />

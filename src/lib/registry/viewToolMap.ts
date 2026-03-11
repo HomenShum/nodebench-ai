@@ -32,6 +32,64 @@ export interface ViewToolDefinition {
 export type ViewToolMap = Partial<Record<MainView, ViewToolDefinition[]>>;
 
 export const VIEW_TOOL_MAP: ViewToolMap = {
+  "control-plane": [
+    {
+      name: "nb_open_receipts",
+      description: "Jump into the live receipts feed from the control plane landing page.",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "nb_open_delegation",
+      description: "Open the delegation surface to review scoped authority and approval gates.",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "nb_open_investigation",
+      description: "Open the investigation surface for replay, evidence, and root-cause review.",
+      inputSchema: { type: "object", properties: {} },
+    },
+  ],
+
+  receipts: [
+    {
+      name: "nb_filter_receipts",
+      description: "Filter action receipts by channel, policy, approval state, or direction.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          query: { type: "string" },
+          approvalState: {
+            type: "string",
+            enum: ["all", "not_required", "pending", "approved", "denied"],
+          },
+        },
+      },
+    },
+    {
+      name: "nb_review_pending_approvals",
+      description: "Review approval-gated OpenClaw receipts waiting for a human decision.",
+      inputSchema: { type: "object", properties: {} },
+    },
+  ],
+
+  delegation: [
+    {
+      name: "nb_list_escalated_actions",
+      description: "List escalated actions that triggered policy review or human approval.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          limit: { type: "number" },
+        },
+      },
+    },
+    {
+      name: "nb_open_approval_queue",
+      description: "Open the approval queue for OpenClaw actions held before execution.",
+      inputSchema: { type: "object", properties: {} },
+    },
+  ],
+
   research: [
     {
       name: "nb_search_research",

@@ -58,6 +58,17 @@ export interface RouteResult {
   traceId: string;
 }
 
+function isOpenClawChannel(channelId: ChannelId) {
+  return (
+    channelId === "whatsapp" ||
+    channelId === "signal" ||
+    channelId === "imessage" ||
+    channelId === "msteams" ||
+    channelId === "matrix" ||
+    channelId === "webchat"
+  );
+}
+
 /* ================================================================== */
 /* CORE ROUTING                                                        */
 /* ================================================================== */
@@ -207,6 +218,13 @@ export const deliverToChannels = internalAction({
     userId: v.optional(v.string()),
     sourceEventType: v.optional(v.string()),
     sourceEventId: v.optional(v.string()),
+    agentId: v.optional(v.string()),
+    policyId: v.optional(v.string()),
+    policyRuleName: v.optional(v.string()),
+    policyAction: v.optional(v.union(v.literal("allowed"), v.literal("denied"), v.literal("escalated"))),
+    evidenceRefs: v.optional(v.array(v.string())),
+    canUndo: v.optional(v.boolean()),
+    undoInstructions: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const content: RawContent = {
@@ -233,6 +251,49 @@ export const deliverToChannels = internalAction({
       `skipped ${result.skipped.length}, trace=${result.traceId}`,
     );
 
+    await Promise.all(
+      result.results
+        .filter((delivery) => isOpenClawChannel(delivery.channelId))
+        .map((delivery) =>
+          ctx.runAction(internal.domains.agents.receipts.actionReceipts.emitReceipt, {
+            agentId: args.agentId ?? "messaging-outbound-pipeline",
+            userId: args.userId as Id<"users"> | undefined,
+            toolName: `channel_send:${delivery.channelId}`,
+            sessionKey: (args.recipients?.[delivery.channelId] as string | undefined) ?? undefined,
+            channelId: delivery.channelId,
+            direction: delivery.success ? "outbound" : "error",
+            deployment: "openclaw-gateway",
+            params: {
+              traceId: result.traceId,
+              sourceEventType: args.sourceEventType,
+              sourceEventId: args.sourceEventId,
+            },
+            actionSummary: `Delivered ${args.contentType} via ${delivery.channelId}`,
+            policyId: args.policyId ?? "pol_outbound_messaging_default",
+            policyRuleName: args.policyRuleName ?? "Outbound messaging default",
+            policyAction: args.policyAction ?? "allowed",
+            evidenceRefs: args.evidenceRefs ?? [],
+            resultSuccess: delivery.success,
+            resultSummary: delivery.success
+              ? `Message sent via ${delivery.channelId}`
+              : `Message failed via ${delivery.channelId}: ${delivery.error ?? "unknown error"}`,
+            resultOutputHash: delivery.messageId,
+            canUndo: args.canUndo ?? false,
+            undoInstructions: args.undoInstructions,
+            violations: delivery.success
+              ? []
+              : [
+                  {
+                    ruleId: "rule_openclaw_delivery_failure",
+                    ruleName: "OpenClaw delivery failure",
+                    severity: "warning",
+                    description: delivery.error ?? "OpenClaw delivery failed",
+                  },
+                ],
+          }),
+        ),
+    );
+
     return result;
   },
 });
@@ -248,6 +309,13 @@ export const sendToChannel = internalAction({
     text: v.string(),
     subject: v.optional(v.string()),
     urgency: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+    agentId: v.optional(v.string()),
+    policyId: v.optional(v.string()),
+    policyRuleName: v.optional(v.string()),
+    evidenceRefs: v.optional(v.array(v.string())),
+    canUndo: v.optional(v.boolean()),
+    undoInstructions: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const provider = getProvider(args.channelId as ChannelId);
@@ -272,6 +340,46 @@ export const sendToChannel = internalAction({
       raw: content,
     };
 
-    return provider.send(message);
+    const result = await provider.send(message);
+
+    if (isOpenClawChannel(args.channelId as ChannelId)) {
+      await ctx.runAction(internal.domains.agents.receipts.actionReceipts.emitReceipt, {
+        agentId: args.agentId ?? "messaging-send-to-channel",
+        userId: args.userId,
+        toolName: `channel_send:${args.channelId}`,
+        sessionKey: args.recipient,
+        channelId: args.channelId,
+        direction: result.success ? "outbound" : "error",
+        deployment: "openclaw-gateway",
+        params: {
+          subject: args.subject,
+          urgency: args.urgency,
+        },
+        actionSummary: `Sent direct notification via ${args.channelId}`,
+        policyId: args.policyId ?? "pol_outbound_messaging_default",
+        policyRuleName: args.policyRuleName ?? "Outbound messaging default",
+        policyAction: "allowed",
+        evidenceRefs: args.evidenceRefs ?? [],
+        resultSuccess: result.success,
+        resultSummary: result.success
+          ? `Message sent via ${args.channelId}`
+          : `Message failed via ${args.channelId}: ${result.error ?? "unknown error"}`,
+        resultOutputHash: result.messageId,
+        canUndo: args.canUndo ?? false,
+        undoInstructions: args.undoInstructions,
+        violations: result.success
+          ? []
+          : [
+              {
+                ruleId: "rule_openclaw_delivery_failure",
+                ruleName: "OpenClaw delivery failure",
+                severity: "warning",
+                description: result.error ?? "OpenClaw delivery failed",
+              },
+            ],
+      });
+    }
+
+    return result;
   },
 });

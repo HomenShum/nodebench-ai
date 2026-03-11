@@ -10,6 +10,7 @@ interface UseGlobalEventListenersOptions {
 
     // Navigation / Views
     setCurrentView: (view: MainView) => void;
+    navigateToView?: (view: MainView) => void;
     onDocumentSelect: (documentId: Id<"documents"> | null) => void;
     setIsGridMode: (isGrid: boolean) => void;
     setIsTransitioning: (isTransitioning: boolean) => void;
@@ -32,6 +33,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
         setFastAgentThreadId,
         setSelectedDocumentIdsForAgent,
         setCurrentView,
+        navigateToView,
         onDocumentSelect,
         setIsGridMode,
         setIsTransitioning,
@@ -39,6 +41,11 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
         setHashtagPopover,
         openSettings,
     } = options;
+
+    const goToView = (view: MainView) => {
+        if (navigateToView) navigateToView(view);
+        else setCurrentView(view);
+    };
 
     // Fast Agent Thread Navigation
     useEffect(() => {
@@ -80,7 +87,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
                 const ids: Id<"documents">[] = Array.isArray(maybeIds) ? maybeIds : [];
                 if (ids.length === 0) return;
 
-                setCurrentView('documents');
+                goToView('documents');
                 setIsGridMode(true);
 
                 // Select each document to let TabManager add them as tabs
@@ -98,7 +105,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
         return () => {
             window.removeEventListener('ai:openMultipleDocuments', handler);
         };
-    }, [setCurrentView, setIsGridMode, onDocumentSelect]);
+    }, [navigateToView, onDocumentSelect, setIsGridMode, setCurrentView]);
 
     // Open Single Document (Mentions/Deep Links)
     useEffect(() => {
@@ -111,7 +118,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
                 const sourceId = e.detail?.sourceDocumentId as Id<"documents"> | undefined;
                 const openInGrid = Boolean(e.detail?.openInGrid);
 
-                setCurrentView('documents');
+                goToView('documents');
 
                 if (openInGrid) {
                     setIsGridMode(true);
@@ -139,7 +146,7 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
         return () => {
             window.removeEventListener('nodebench:openDocument', handler as EventListener);
         };
-    }, [setCurrentView, setIsGridMode, onDocumentSelect]);
+    }, [navigateToView, onDocumentSelect, setIsGridMode, setCurrentView]);
 
     // Mention Popover
     useEffect(() => {
@@ -211,11 +218,11 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
 
     // Global Navigation Shortcuts
     useEffect(() => {
-        const toCalendar = () => setCurrentView('calendar');
-        const toTimeline = () => setCurrentView('documents');
-        const toDocuments = () => setCurrentView('documents');
-        const toRoadmap = () => setCurrentView('roadmap');
-        const toAgents = () => setCurrentView('agents');
+        const toCalendar = () => goToView('calendar');
+        const toTimeline = () => goToView('documents');
+        const toDocuments = () => goToView('documents');
+        const toRoadmap = () => goToView('roadmap');
+        const toAgents = () => goToView('agents');
 
         window.addEventListener('navigate:calendar', toCalendar as unknown as EventListener);
         window.addEventListener('navigate:timeline', toTimeline as unknown as EventListener);
@@ -230,5 +237,5 @@ export function useGlobalEventListeners(options: UseGlobalEventListenersOptions)
             window.removeEventListener('navigate:roadmap', toRoadmap as unknown as EventListener);
             window.removeEventListener('navigate:agents', toAgents as unknown as EventListener);
         };
-    }, [setCurrentView]);
+    }, [navigateToView, setCurrentView]);
 }

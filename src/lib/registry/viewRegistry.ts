@@ -47,9 +47,26 @@ export type MainView =
   | "mcp-ledger"
   | "engine-demo"
   | "observability"
-  | "oracle";
+  | "oracle"
+  | "dev-dashboard"
+  | "investigation"
+  | "control-plane"
+  | "receipts"
+  | "delegation";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
+
+// ─── Route groups ────────────────────────────────────────────────────────────
+
+/**
+ * Route classification for navigation, sidebar rendering, and access control.
+ *
+ * - core:     Primary product surfaces — always visible in sidebar nav
+ * - nested:   Sub-pages of core surfaces — accessed via tabs/links within a parent
+ * - internal: Dev/admin routes — hidden from external users, shown in dev mode
+ * - legacy:   Deprecated routes that redirect — never rendered directly
+ */
+export type RouteGroup = "core" | "nested" | "internal" | "legacy";
 
 // ─── Registry entry shape ────────────────────────────────────────────────────
 
@@ -71,6 +88,14 @@ export interface ViewRegistryEntry {
   component: LazyExoticComponent<ComponentType<any>> | null;
   /** Whether this view requires a dynamic segment (e.g. /entity/:name) */
   dynamic?: boolean;
+  /** Route classification — determines sidebar visibility and navigation tier */
+  group: RouteGroup;
+  /** Whether this view appears in the primary sidebar navigation */
+  navVisible: boolean;
+  /** Parent view for nested routes — enables programmatic "back to parent" navigation */
+  parentId?: MainView;
+  /** For legacy routes: the view id to redirect to instead of rendering */
+  redirectTo?: MainView;
 }
 
 // ─── Lazy component factories ────────────────────────────────────────────────
@@ -88,20 +113,60 @@ const lazyNamed = (
 // ─── The Registry ────────────────────────────────────────────────────────────
 
 export const VIEW_REGISTRY: ViewRegistryEntry[] = [
+  // ── Control Plane (landing) ──────────────────────────────────────────────
+  {
+    id: "control-plane",
+    title: "DeepTrace",
+    subtitle: "Agent trust infrastructure by NodeBench",
+    path: "/",
+    aliases: ["/control-plane", "/home", "/landing"],
+    component: null, // Custom rendering in MainLayout (passes onNavigate)
+    group: "core",
+    navVisible: true,
+  },
+  {
+    id: "receipts",
+    title: "Receipts",
+    subtitle: "Tamper-evident records of what agents saw, did, and were allowed to do",
+    path: "/receipts",
+    aliases: ["/action-receipts"],
+    component: lazyView(() => import("@/features/controlPlane/views/ActionReceiptFeed")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+  },
+  {
+    id: "delegation",
+    title: "Delegation",
+    subtitle: "Scoped permissions, approval gates, and trust boundaries",
+    path: "/delegation",
+    aliases: ["/delegate", "/passport"],
+    component: lazyView(() => import("@/features/controlPlane/views/DelegationShowcase")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
+  },
+
   // ── Research & Intelligence ────────────────────────────────────────────────
   {
     id: "research",
-    title: "Research",
+    title: "Research Hub",
     subtitle: "Signals, briefings, and agent entry points",
     path: "/research",
     aliases: ["/hub"],
     component: null, // Custom rendering (CinematicHome / ResearchHub toggle)
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "signals",
     title: "Signals",
     path: "/signals",
     component: lazyNamed(() => import("@/features/research/views/PublicSignalsLog"), "PublicSignalsLog"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "for-you-feed",
@@ -110,6 +175,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/for-you",
     aliases: ["/feed"],
     component: lazyNamed(() => import("@/features/research/components/ForYouFeed"), "ForYouFeed"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "industry-updates",
@@ -118,6 +186,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/industry",
     aliases: ["/dashboard/industry"],
     component: lazyNamed(() => import("@/components/IndustryUpdatesPanel"), "IndustryUpdatesPanel"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "funding",
@@ -125,6 +196,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/funding",
     aliases: ["/funding-brief"],
     component: lazyNamed(() => import("@/features/research/views/FundingBriefView"), "FundingBriefView"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "showcase",
@@ -132,6 +206,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/showcase",
     aliases: ["/demo"],
     component: null, // Custom rendering in MainLayout (passes onBack prop)
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "footnotes",
@@ -139,6 +216,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/footnotes",
     aliases: ["/sources"],
     component: null, // Custom rendering in MainLayout (passes library/onBack props)
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "entity",
@@ -146,14 +226,30 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/entity",
     component: lazyNamed(() => import("@/features/research/views/EntityProfilePage"), "EntityProfilePage"),
     dynamic: true,
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "benchmarks",
     title: "Run Benchmarks",
-    subtitle: "Model comparison on production-shaped tasks",
-    path: "/benchmarks",
-    aliases: ["/eval"],
+    subtitle: "Proof, replay, and receipts for agent runs",
+    path: "/internal/benchmarks",
+    aliases: ["/benchmarks", "/eval"],
     component: lazyNamed(() => import("@/features/benchmarks/views/WorkbenchView"), "WorkbenchView"),
+    group: "internal",
+    navVisible: false,
+    parentId: "control-plane",
+  },
+  {
+    id: "investigation",
+    title: "Investigation",
+    subtitle: "Investigate what the agent did, why it did it, and what evidence it used",
+    path: "/investigation",
+    aliases: ["/investigate", "/enterprise-demo"],
+    component: lazyView(() => import("@/features/investigation/views/EnterpriseInvestigationView")),
+    group: "core",
+    navVisible: true,
   },
 
   // ── Workspace & Build ──────────────────────────────────────────────────────
@@ -161,33 +257,47 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     id: "documents",
     title: "Workspace",
     subtitle: "Files, notes, and work in progress",
-    path: "/documents",
-    aliases: ["/docs", "/workspace"],
+    path: "/workspace",
+    aliases: ["/documents", "/docs"],
     component: lazyNamed(() => import("@/features/documents/components/DocumentsHomeHub"), "DocumentsHomeHub"),
+    group: "core",
+    navVisible: true,
   },
   {
     id: "spreadsheets",
     title: "Spreadsheets",
     path: "/spreadsheets",
     component: null, // Custom rendering (SpreadsheetsHub / SpreadsheetSheetView toggle)
+    group: "nested",
+    navVisible: false,
+    parentId: "documents",
   },
   {
     id: "calendar",
     title: "Calendar",
     path: "/calendar",
     component: null, // Custom rendering in MainLayout (passes onDocumentSelect/onGridModeToggle)
+    group: "nested",
+    navVisible: false,
+    parentId: "documents",
   },
   {
     id: "roadmap",
     title: "Roadmap",
     path: "/roadmap",
     component: null, // Shares TimelineRoadmapView with timeline
+    group: "nested",
+    navVisible: false,
+    parentId: "documents",
   },
   {
     id: "timeline",
     title: "Timeline",
     path: "/timeline",
     component: null, // Shares TimelineRoadmapView with roadmap
+    group: "nested",
+    navVisible: false,
+    parentId: "documents",
   },
   {
     id: "public",
@@ -195,6 +305,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/public",
     aliases: ["/shared"],
     component: null, // Custom rendering in MainLayout (passes onDocumentSelect prop)
+    group: "nested",
+    navVisible: false,
+    parentId: "documents",
   },
   {
     id: "document-recommendations",
@@ -203,6 +316,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/recommendations",
     aliases: ["/discover"],
     component: lazyView(() => import("@/components/RecommendationCard").then((m) => ({ default: (m as any).DocumentRecommendations ?? m.default }))),
+    group: "nested",
+    navVisible: false,
+    parentId: "documents",
   },
 
   // ── Agents & Automation ────────────────────────────────────────────────────
@@ -212,6 +328,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Live agent threads and workflows",
     path: "/agents",
     component: lazyNamed(() => import("@/features/agents/views/AgentsHub"), "AgentsHub"),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "agent-marketplace",
@@ -220,6 +339,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/marketplace",
     aliases: ["/agent-marketplace"],
     component: lazyNamed(() => import("@/features/agents/components/AgentMarketplace"), "AgentMarketplace"),
+    group: "nested",
+    navVisible: false,
+    parentId: "agents",
   },
   {
     id: "activity",
@@ -227,14 +349,20 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/activity",
     aliases: ["/public-activity"],
     component: lazyNamed(() => import("@/features/agents/views/PublicActivityView"), "PublicActivityView"),
+    group: "nested",
+    navVisible: false,
+    parentId: "agents",
   },
   {
     id: "mcp-ledger",
     title: "Tool Activity",
     subtitle: "Auditable tool calls and request traces",
-    path: "/mcp-ledger",
-    aliases: ["/mcp/ledger", "/activity-log"],
+    path: "/internal/mcp-ledger",
+    aliases: ["/mcp-ledger", "/mcp/ledger", "/activity-log"],
     component: lazyNamed(() => import("@/features/mcp/views/McpToolLedgerView"), "McpToolLedgerView"),
+    group: "internal",
+    navVisible: false,
+    parentId: "agents",
   },
 
   // ── Code & Social Intelligence ─────────────────────────────────────────────
@@ -245,6 +373,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/github",
     aliases: ["/github-explorer"],
     component: lazyNamed(() => import("@/features/research/components/GitHubExplorer"), "GitHubExplorer"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "pr-suggestions",
@@ -253,6 +384,9 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/pr-suggestions",
     aliases: ["/prs"],
     component: lazyNamed(() => import("@/features/monitoring/components/PRSuggestions"), "PRSuggestions"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "linkedin-posts",
@@ -260,57 +394,76 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     subtitle: "Social output history and archive",
     path: "/linkedin",
     component: lazyNamed(() => import("@/features/social/views/LinkedInPostArchiveView"), "LinkedInPostArchiveView"),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
 
   // ── Analytics & System ─────────────────────────────────────────────────────
   {
     id: "analytics-hitl",
     title: "Review Queue",
-    path: "/analytics/hitl",
-    aliases: ["/analytics/review-queue", "/review-queue"],
+    path: "/internal/analytics/hitl",
+    aliases: ["/analytics/hitl", "/analytics/review-queue", "/review-queue"],
     component: lazyView(() => import("@/features/analytics/views/HITLAnalyticsDashboard")),
+    group: "internal",
+    navVisible: false,
   },
   {
     id: "analytics-components",
     title: "Performance Analytics",
-    path: "/analytics/components",
+    path: "/internal/analytics/components",
+    aliases: ["/analytics/components"],
     component: lazyView(() => import("@/features/analytics/views/ComponentMetricsDashboard")),
+    group: "internal",
+    navVisible: false,
   },
   {
     id: "analytics-recommendations",
     title: "Feedback",
-    path: "/analytics/recommendations",
+    path: "/internal/analytics/recommendations",
+    aliases: ["/analytics/recommendations"],
     component: lazyNamed(() => import("@/features/analytics/views/RecommendationAnalyticsDashboard"), "default"),
+    group: "internal",
+    navVisible: false,
   },
   {
     id: "cost-dashboard",
     title: "Spend",
     subtitle: "Usage and spend trends",
-    path: "/cost",
-    aliases: ["/dashboard/cost"],
+    path: "/internal/cost",
+    aliases: ["/cost", "/dashboard/cost"],
     component: lazyNamed(() => import("@/components/CostDashboard"), "CostDashboard"),
+    group: "internal",
+    navVisible: false,
   },
   {
     id: "dogfood",
     title: "Review Evidence",
-    path: "/dogfood",
-    aliases: ["/quality-review"],
+    path: "/internal/dogfood",
+    aliases: ["/dogfood", "/quality-review"],
     component: lazyNamed(() => import("@/features/dogfood/views/DogfoodReviewView"), "DogfoodReviewView"),
+    group: "internal",
+    navVisible: false,
   },
   {
     id: "observability",
     title: "System Health",
     subtitle: "System health, maintenance, and recovery loops",
-    path: "/observability",
-    aliases: ["/health", "/system-health"],
+    path: "/internal/observability",
+    aliases: ["/observability", "/health", "/system-health"],
     component: lazyView(() => import("@/features/observability/views/ObservabilityView")),
+    group: "internal",
+    navVisible: false,
   },
   {
     id: "engine-demo",
     title: "Engine API",
-    path: "/engine",
-    aliases: ["/engine-demo"],
+    path: "/internal/engine",
+    aliases: ["/engine", "/engine-demo"],
     component: lazyView(() => import("@/features/engine/views/EngineDemoView")),
+    group: "internal",
+    navVisible: false,
   },
 
   // ── Oracle ─────────────────────────────────────────────────────────────────
@@ -321,6 +474,20 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     path: "/oracle",
     aliases: ["/career", "/trajectory"],
     component: lazyNamed(() => import("@/features/oracle/views/OracleView"), "OracleView"),
+    group: "core",
+    navVisible: true,
+  },
+
+  // ── Dev Dashboard ────────────────────────────────────────────────────────
+  {
+    id: "dev-dashboard",
+    title: "Dev Dashboard",
+    subtitle: "Repo evolution timeline, domain branches, and milestones",
+    path: "/internal/dev-dashboard",
+    aliases: ["/dev-dashboard", "/dev", "/evolution"],
+    component: lazyView(() => import("@/features/devDashboard/DevDashboard")),
+    group: "internal",
+    navVisible: false,
   },
 ];
 
@@ -356,7 +523,11 @@ export function resolvePathToView(rawPathname: string): {
   spreadsheetId: string | null;
   researchTab: ResearchTab;
 } {
-  const pathname = (rawPathname || "/").toLowerCase();
+  const normalized = (rawPathname || "/")
+    .split("?")[0]
+    .split("#")[0]
+    .toLowerCase();
+  const pathname = normalized !== "/" ? normalized.replace(/\/+$/, "") || "/" : "/";
 
   // Special cases requiring parameter extraction
   if (pathname.startsWith("/onboarding")) {
@@ -383,27 +554,77 @@ export function resolvePathToView(rawPathname: string): {
     return { view: "research", entityName: null, spreadsheetId: null, researchTab: tab };
   }
 
-  // General matching: check each registry entry's path and aliases
-  for (const entry of VIEW_REGISTRY) {
-    if (entry.id === "research" || entry.id === "entity" || entry.id === "spreadsheets") continue; // handled above
-    const paths = [entry.path, ...(entry.aliases ?? [])];
-    for (const p of paths) {
-      if (pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p)) {
-        // Avoid partial prefix matches — "/for-you" shouldn't match "/for"
-        // Only match if pathname equals path, starts with path+"/", or path is the full prefix
-        if (pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p + "?")) {
-          return { view: entry.id, entityName: null, spreadsheetId: null, researchTab: "overview" };
-        }
+  // General matching: longest path wins. Never let "/" swallow all routes.
+  const candidates = VIEW_REGISTRY
+    .filter((entry) => !["research", "entity", "spreadsheets"].includes(entry.id))
+    .flatMap((entry) => [entry.path, ...(entry.aliases ?? [])].map((path) => ({ view: entry.id, path })))
+    .sort((a, b) => b.path.length - a.path.length);
+
+  for (const candidate of candidates) {
+    if (candidate.path === "/") {
+      if (pathname === "/") {
+        return { view: candidate.view, entityName: null, spreadsheetId: null, researchTab: "overview" };
       }
+      continue;
+    }
+
+    if (pathname === candidate.path || pathname.startsWith(candidate.path + "/")) {
+      return { view: candidate.view, entityName: null, spreadsheetId: null, researchTab: "overview" };
     }
   }
 
-  // Default view
-  return { view: "oracle", entityName: null, spreadsheetId: null, researchTab: "overview" };
+  // Default view — landing page
+  return { view: "control-plane", entityName: null, spreadsheetId: null, researchTab: "overview" };
 }
 
 /** All view IDs (for type checking and iteration) */
 export const ALL_VIEW_IDS: MainView[] = VIEW_REGISTRY.map((e) => e.id);
+
+// ─── Route group derived sets (replace hardcoded sets in MainLayout/CleanSidebar) ──
+
+/** Map: group → set of view ids in that group */
+export const GROUP_VIEW_MAP: Record<RouteGroup, Set<MainView>> = VIEW_REGISTRY.reduce(
+  (acc, entry) => {
+    acc[entry.group].add(entry.id);
+    return acc;
+  },
+  { core: new Set<MainView>(), nested: new Set<MainView>(), internal: new Set<MainView>(), legacy: new Set<MainView>() },
+);
+
+/** Views visible in primary sidebar navigation */
+export const NAV_VISIBLE_VIEWS: Set<MainView> = new Set(
+  VIEW_REGISTRY.filter((e) => e.navVisible).map((e) => e.id),
+);
+
+/** Map: parent view id → set of child view ids */
+export const CHILDREN_MAP: Partial<Record<MainView, Set<MainView>>> = VIEW_REGISTRY.reduce(
+  (acc, entry) => {
+    if (entry.parentId) {
+      if (!acc[entry.parentId]) acc[entry.parentId] = new Set<MainView>();
+      acc[entry.parentId]!.add(entry.id);
+    }
+    return acc;
+  },
+  {} as Partial<Record<MainView, Set<MainView>>>,
+);
+
+/** Research surface: core research + all its nested children */
+export const RESEARCH_SURFACE_VIEWS: Set<MainView> = new Set([
+  "research",
+  ...(CHILDREN_MAP["research"] ?? []),
+]);
+
+/** Workspace surface: documents + all its nested children */
+export const WORKSPACE_SURFACE_VIEWS: Set<MainView> = new Set([
+  "documents",
+  ...(CHILDREN_MAP["documents"] ?? []),
+]);
+
+/** Agents surface: agents + all its nested children */
+export const AGENTS_SURFACE_VIEWS: Set<MainView> = new Set([
+  "agents",
+  ...(CHILDREN_MAP["agents"] ?? []),
+]);
 
 // ─── Compile-time completeness check ────────────────────────────────────────
 // If you add a value to MainView but forget to add a registry entry,
