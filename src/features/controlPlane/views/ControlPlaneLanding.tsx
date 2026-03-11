@@ -53,6 +53,7 @@ const AGENTS_PATH = VIEW_PATH_MAP.agents ?? "/agents";
 const BENCHMARKS_PATH = VIEW_PATH_MAP.benchmarks ?? "/internal/benchmarks";
 const MCP_LEDGER_PATH = VIEW_PATH_MAP["mcp-ledger"] ?? "/internal/mcp-ledger";
 const ORACLE_PATH = VIEW_PATH_MAP.oracle ?? "/oracle";
+const PRODUCT_DIRECTION_PATH = VIEW_PATH_MAP["product-direction"] ?? "/product-direction";
 const RESEARCH_BRIEFING_PATH = "/research/briefing";
 
 const ROLE_PATHS = [
@@ -157,6 +158,13 @@ const SECONDARY_SURFACES = [
     title: "Research Hub",
     subtitle: "Signals, briefings, and evidence-backed context.",
     path: RESEARCH_BRIEFING_PATH,
+  },
+  {
+    id: "product-direction",
+    icon: Search,
+    title: "Product Direction",
+    subtitle: "Public-evidence memo for what a company should build next.",
+    path: PRODUCT_DIRECTION_PATH,
   },
   {
     id: "documents",
@@ -507,7 +515,9 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-zinc-400">
           <BadgeCheck className="h-3.5 w-3.5 text-emerald-300" aria-hidden="true" />
-          <span>Cold start path: receipts for review, agents for execution, investigation for proof.</span>
+          <span>
+            Cold start path: receipts for review, agents for execution, investigation for proof, and product direction for strategic fit.
+          </span>
         </div>
       </div>
     </div>

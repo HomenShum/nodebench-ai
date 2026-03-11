@@ -25,6 +25,7 @@ import {
 import { useThemeSafe } from "../contexts/ThemeContext";
 import { sanitizeDocumentTitle } from "@/lib/displayText";
 import { rankCommandPaletteCommands } from "./commandPaletteUtils";
+import type { MainView } from "@/lib/viewRegistry";
 
 export interface CommandAction {
     id: string;
@@ -46,7 +47,7 @@ export interface ExecutedCommand {
 interface CommandPaletteProps {
     isOpen: boolean;
     onClose: () => void;
-    onNavigate?: (view: string) => void;
+    onNavigate?: (view: MainView) => void;
     onCreateDocument?: () => void;
     onCreateTask?: () => void;
     onOpenSettings?: () => void;
@@ -161,12 +162,24 @@ export function CommandPalette({
                 }
             },
             {
+                id: 'nav-product-direction',
+                label: 'Open Product Direction Memo',
+                description: 'Review the evidence-bounded in-house product recommendation workflow',
+                icon: <FileSearch className="w-4 h-4" />,
+                keywords: ['strategy', 'product direction', 'memo', 'evidence', 'recommendation'],
+                section: 'ai',
+                action: () => {
+                    onNavigate?.('product-direction');
+                    onClose();
+                }
+            },
+            {
                 id: 'nav-benchmarks',
-                label: 'Go to Benchmarks',
-                description: 'Inspect benchmark receipts, replay, and published proof',
+                label: 'Open Benchmark Workbench',
+                description: 'Inspect internal benchmark receipts, replay, and published proof',
                 icon: <FlaskConical className="w-4 h-4" />,
                 keywords: ['benchmarks', 'eval', 'receipts', 'proof', 'replay'],
-                section: 'navigation',
+                section: 'ai',
                 action: () => {
                     onNavigate?.('benchmarks');
                     onClose();
@@ -186,11 +199,11 @@ export function CommandPalette({
             },
             {
                 id: 'nav-health',
-                label: 'Go to System Health',
+                label: 'Open System Health',
                 description: 'Check observability, maintenance, and recovery loops',
                 icon: <HeartPulse className="w-4 h-4" />,
                 keywords: ['health', 'observability', 'maintenance', 'alerts'],
-                section: 'navigation',
+                section: 'settings',
                 action: () => {
                     onNavigate?.('observability');
                     onClose();
@@ -198,11 +211,11 @@ export function CommandPalette({
             },
             {
                 id: 'nav-tool-activity',
-                label: 'Go to Tool Activity',
+                label: 'Open Tool Activity',
                 description: 'Review action receipts and auditable tool calls',
                 icon: <Activity className="w-4 h-4" />,
                 keywords: ['tools', 'activity', 'ledger', 'receipt', 'trace', 'mcp'],
-                section: 'navigation',
+                section: 'settings',
                 action: () => {
                     onNavigate?.('mcp-ledger');
                     onClose();
@@ -263,13 +276,13 @@ export function CommandPalette({
             },
             {
                 id: 'ai-insights',
-                label: 'Open Enterprise Eval',
-                description: 'Inspect the full evaluation stream, receipts, and judge output',
+                label: 'Open Investigation Trail',
+                description: 'Trace from receipts to evidence, approval, and replay',
                 icon: <TrendingUp className="w-4 h-4" />,
-                keywords: ['eval', 'enterprise', 'judge', 'receipts', 'investigation'],
+                keywords: ['investigation', 'evidence', 'trace', 'approval', 'replay'],
                 section: 'ai',
                 action: () => {
-                    onNavigate?.('benchmarks');
+                    onNavigate?.('investigation');
                     onClose();
                 }
             },

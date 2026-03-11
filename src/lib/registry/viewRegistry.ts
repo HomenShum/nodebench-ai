@@ -52,7 +52,8 @@ export type MainView =
   | "investigation"
   | "control-plane"
   | "receipts"
-  | "delegation";
+  | "delegation"
+  | "product-direction";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -117,7 +118,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   {
     id: "control-plane",
     title: "DeepTrace",
-    subtitle: "Agent trust infrastructure by NodeBench",
+    subtitle: "Agent trust control plane by NodeBench",
     path: "/",
     aliases: ["/control-plane", "/home", "/landing"],
     component: null, // Custom rendering in MainLayout (passes onNavigate)
@@ -126,10 +127,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     id: "receipts",
-    title: "Receipts",
-    subtitle: "Tamper-evident records of what agents saw, did, and were allowed to do",
+    title: "Action Receipts",
+    subtitle: "Denied, approval-gated, and reversible records of what agents saw, did, and were allowed to do",
     path: "/receipts",
-    aliases: ["/action-receipts"],
+    aliases: ["/action-receipts", "/control-plane/receipts"],
     component: lazyView(() => import("@/features/controlPlane/views/ActionReceiptFeed")),
     group: "nested",
     navVisible: false,
@@ -137,10 +138,10 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
   },
   {
     id: "delegation",
-    title: "Delegation",
-    subtitle: "Scoped permissions, approval gates, and trust boundaries",
+    title: "Passport",
+    subtitle: "Scoped permissions, approval gates, and trust boundaries before an agent acts",
     path: "/delegation",
-    aliases: ["/delegate", "/passport"],
+    aliases: ["/delegate", "/passport", "/control-plane/delegation", "/control-plane/passport"],
     component: lazyView(() => import("@/features/controlPlane/views/DelegationShowcase")),
     group: "nested",
     navVisible: false,
@@ -158,6 +159,17 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "control-plane",
+  },
+  {
+    id: "product-direction",
+    title: "Product Direction",
+    subtitle: "Evidence-bounded memo for what a company should build next",
+    path: "/product-direction",
+    aliases: ["/strategy", "/strategy/product-direction", "/research/product-direction"],
+    component: lazyView(() => import("@/features/strategy/views/ProductDirectionMemoView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "research",
   },
   {
     id: "signals",

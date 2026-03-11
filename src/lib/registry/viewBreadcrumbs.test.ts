@@ -37,6 +37,31 @@ describe("buildViewBreadcrumbs", () => {
     ]);
   });
 
+  it("builds research breadcrumbs for the product direction memo", () => {
+    expect(
+      buildViewBreadcrumbs({
+        currentView: "product-direction",
+        researchHubInitialTab: "overview",
+        showResearchDossier: false,
+      }),
+    ).toEqual([
+      {
+        id: "research",
+        isCurrent: false,
+        label: "Research Hub",
+        path: "/research",
+        view: "research",
+      },
+      {
+        id: "product-direction",
+        isCurrent: true,
+        label: "Product Direction",
+        path: "/product-direction",
+        view: "product-direction",
+      },
+    ]);
+  });
+
   it("builds research tab breadcrumbs when the dossier shell is open", () => {
     expect(
       buildViewBreadcrumbs({

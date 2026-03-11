@@ -2,6 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ROUTES = [
   { path: "/", name: "home" },
+  { path: "/receipts", name: "receipts" },
+  { path: "/delegation", name: "delegation" },
+  { path: "/investigation", name: "investigation" },
+  { path: "/product-direction", name: "product-direction" },
   { path: "/research", name: "research-hub" },
   { path: "/research/overview", name: "research-overview" },
   { path: "/research/signals", name: "research-signals" },

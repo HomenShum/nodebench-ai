@@ -21,7 +21,8 @@ describe("ControlPlaneLanding", () => {
     expect(screen.getByText("Investigate a run")).toBeInTheDocument();
     expect(screen.getAllByText("Read today's brief").length).toBeGreaterThan(0);
     expect(screen.getByText("Debug evals and replay proof")).toBeInTheDocument();
-    expect(screen.getByText("Launch work and unblock runs")).toBeInTheDocument();
+    expect(screen.getByText("Inspect tool activity")).toBeInTheDocument();
+    expect(screen.getByText("Product Direction")).toBeInTheDocument();
   });
 
   it("stores the preferred path when a primary route is chosen", () => {
