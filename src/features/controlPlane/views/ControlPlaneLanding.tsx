@@ -54,6 +54,7 @@ const BENCHMARKS_PATH = VIEW_PATH_MAP.benchmarks ?? "/internal/benchmarks";
 const MCP_LEDGER_PATH = VIEW_PATH_MAP["mcp-ledger"] ?? "/internal/mcp-ledger";
 const ORACLE_PATH = VIEW_PATH_MAP.oracle ?? "/oracle";
 const PRODUCT_DIRECTION_PATH = VIEW_PATH_MAP["product-direction"] ?? "/product-direction";
+const EXECUTION_TRACE_PATH = VIEW_PATH_MAP["execution-trace"] ?? "/execution-trace";
 const RESEARCH_BRIEFING_PATH = "/research/briefing";
 
 const ROLE_PATHS = [
@@ -165,6 +166,13 @@ const SECONDARY_SURFACES = [
     title: "Product Direction",
     subtitle: "Public-evidence memo for what a company should build next.",
     path: PRODUCT_DIRECTION_PATH,
+  },
+  {
+    id: "execution-trace",
+    icon: FileText,
+    title: "Execution Trace",
+    subtitle: "Search, edit, verify, and export workflows as auditable receipts.",
+    path: EXECUTION_TRACE_PATH,
   },
   {
     id: "documents",

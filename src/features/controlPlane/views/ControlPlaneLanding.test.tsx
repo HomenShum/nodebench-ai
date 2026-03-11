@@ -23,6 +23,7 @@ describe("ControlPlaneLanding", () => {
     expect(screen.getByText("Debug evals and replay proof")).toBeInTheDocument();
     expect(screen.getByText("Inspect tool activity")).toBeInTheDocument();
     expect(screen.getByText("Product Direction")).toBeInTheDocument();
+    expect(screen.getByText("Execution Trace")).toBeInTheDocument();
   });
 
   it("stores the preferred path when a primary route is chosen", () => {

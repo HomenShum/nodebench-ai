@@ -174,6 +174,18 @@ export function CommandPalette({
                 }
             },
             {
+                id: 'nav-execution-trace',
+                label: 'Open Execution Trace',
+                description: 'Inspect a traceable search, edit, verify, and export workflow',
+                icon: <FileSearch className="w-4 h-4" />,
+                keywords: ['execution trace', 'workflow trace', 'spreadsheet', 'verify', 'export', 'audit'],
+                section: 'ai',
+                action: () => {
+                    onNavigate?.('execution-trace');
+                    onClose();
+                }
+            },
+            {
                 id: 'nav-benchmarks',
                 label: 'Open Benchmark Workbench',
                 description: 'Inspect internal benchmark receipts, replay, and published proof',

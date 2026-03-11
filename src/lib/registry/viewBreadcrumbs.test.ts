@@ -62,6 +62,31 @@ describe("buildViewBreadcrumbs", () => {
     ]);
   });
 
+  it("builds control-plane breadcrumbs for execution trace", () => {
+    expect(
+      buildViewBreadcrumbs({
+        currentView: "execution-trace",
+        researchHubInitialTab: "overview",
+        showResearchDossier: false,
+      }),
+    ).toEqual([
+      {
+        id: "control-plane",
+        isCurrent: false,
+        label: "DeepTrace",
+        path: "/",
+        view: "control-plane",
+      },
+      {
+        id: "execution-trace",
+        isCurrent: true,
+        label: "Execution Trace",
+        path: "/execution-trace",
+        view: "execution-trace",
+      },
+    ]);
+  });
+
   it("builds research tab breadcrumbs when the dossier shell is open", () => {
     expect(
       buildViewBreadcrumbs({

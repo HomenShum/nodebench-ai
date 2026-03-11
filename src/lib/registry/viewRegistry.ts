@@ -53,7 +53,8 @@ export type MainView =
   | "control-plane"
   | "receipts"
   | "delegation"
-  | "product-direction";
+  | "product-direction"
+  | "execution-trace";
 
 export type ResearchTab = "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
 
@@ -170,6 +171,17 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     group: "nested",
     navVisible: false,
     parentId: "research",
+  },
+  {
+    id: "execution-trace",
+    title: "Execution Trace",
+    subtitle: "Traceable record of search, edits, verification, and export",
+    path: "/execution-trace",
+    aliases: ["/workflow-trace", "/trace/execution"],
+    component: lazyView(() => import("@/features/strategy/views/ExecutionTraceView")),
+    group: "nested",
+    navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "signals",
@@ -420,6 +432,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/analytics/views/HITLAnalyticsDashboard")),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "analytics-components",
@@ -429,6 +442,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/analytics/views/ComponentMetricsDashboard")),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "analytics-recommendations",
@@ -438,6 +452,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyNamed(() => import("@/features/analytics/views/RecommendationAnalyticsDashboard"), "default"),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "cost-dashboard",
@@ -448,6 +463,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyNamed(() => import("@/components/CostDashboard"), "CostDashboard"),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "dogfood",
@@ -457,6 +473,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyNamed(() => import("@/features/dogfood/views/DogfoodReviewView"), "DogfoodReviewView"),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "observability",
@@ -467,6 +484,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/observability/views/ObservabilityView")),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
   {
     id: "engine-demo",
@@ -476,6 +494,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/engine/views/EngineDemoView")),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
 
   // ── Oracle ─────────────────────────────────────────────────────────────────
@@ -500,6 +519,7 @@ export const VIEW_REGISTRY: ViewRegistryEntry[] = [
     component: lazyView(() => import("@/features/devDashboard/DevDashboard")),
     group: "internal",
     navVisible: false,
+    parentId: "control-plane",
   },
 ];
 
@@ -619,6 +639,26 @@ export const CHILDREN_MAP: Partial<Record<MainView, Set<MainView>>> = VIEW_REGIS
   },
   {} as Partial<Record<MainView, Set<MainView>>>,
 );
+
+/** Ordered ancestry from top-level surface to the current view */
+export function getViewLineage(viewId: MainView): MainView[] {
+  const lineage: MainView[] = [];
+  let current: MainView | undefined = viewId;
+  const visited = new Set<MainView>();
+
+  while (current && !visited.has(current)) {
+    lineage.unshift(current);
+    visited.add(current);
+    current = VIEW_MAP[current]?.parentId;
+  }
+
+  return lineage;
+}
+
+/** Top-level packaged product surface for a view */
+export function getPrimarySurfaceView(viewId: MainView): MainView {
+  return getViewLineage(viewId)[0] ?? viewId;
+}
 
 /** Research surface: core research + all its nested children */
 export const RESEARCH_SURFACE_VIEWS: Set<MainView> = new Set([

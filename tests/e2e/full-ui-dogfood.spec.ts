@@ -6,6 +6,7 @@ const ROUTES = [
   { path: "/delegation", name: "delegation" },
   { path: "/investigation", name: "investigation" },
   { path: "/product-direction", name: "product-direction" },
+  { path: "/execution-trace", name: "execution-trace" },
   { path: "/research", name: "research-hub" },
   { path: "/research/overview", name: "research-overview" },
   { path: "/research/signals", name: "research-signals" },
