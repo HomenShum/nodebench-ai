@@ -44,6 +44,93 @@ const VARIANTS = [
   { theme: "light", viewport: { width: 390, height: 844 }, suffix: "-mobile-light" },
 ] as const;
 
+type BrowserIssueKind = "pageerror" | "console" | "requestfailed" | "response";
+
+type BrowserIssue = {
+  kind: BrowserIssueKind;
+  route: string;
+  detail: string;
+};
+
+const BENIGN_PAGE_ERROR_PATTERNS = [/ResizeObserver loop limit exceeded/i];
+const BENIGN_CONSOLE_ERROR_PATTERNS = [
+  /ResizeObserver loop limit exceeded/i,
+  /^Failed to load resource: the server responded with a status of 404 \(Not Found\)$/i,
+];
+const BENIGN_REQUEST_FAILURE_PATTERNS = [/ERR_ABORTED/i];
+const BENIGN_RESPONSE_FAILURE_PATTERNS = [
+  /\/benchmarks\/videos\/enterprise-investigation-eval-stream-latest\.webm$/i,
+  /\/dogfood\/videos\/agentic-session\.webm$/i,
+  /\/dogfood\/videos\/classic-wake-word\.webm$/i,
+  /\/dogfood\/videos\/cockpit-wake-word\.webm$/i,
+  /\/dogfood\/walkthrough\.mp4$/i,
+];
+
+function isBenignBrowserIssue(kind: BrowserIssueKind, detail: string) {
+  const patterns =
+    kind === "pageerror"
+      ? BENIGN_PAGE_ERROR_PATTERNS
+      : kind === "console"
+        ? BENIGN_CONSOLE_ERROR_PATTERNS
+        : kind === "requestfailed"
+          ? BENIGN_REQUEST_FAILURE_PATTERNS
+          : BENIGN_RESPONSE_FAILURE_PATTERNS;
+
+  return patterns.some((pattern) => pattern.test(detail));
+}
+
+function readPositiveIntegerEnv(name: string, fallback: number) {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getSelectedRoutes() {
+  const shardTotal = readPositiveIntegerEnv("DOGFOOD_ROUTE_SHARD_TOTAL", 1);
+  const shardIndex = Math.min(
+    Math.max(readPositiveIntegerEnv("DOGFOOD_ROUTE_SHARD_INDEX", 1), 1),
+    shardTotal,
+  );
+
+  return ROUTES.filter((_, index) => index % shardTotal === shardIndex - 1);
+}
+
+function shouldIncludeInteractions() {
+  return process.env.DOGFOOD_INCLUDE_INTERACTIONS !== "false";
+}
+
+function shouldIncludeRoutes() {
+  return process.env.DOGFOOD_INCLUDE_ROUTES !== "false";
+}
+
+async function resetBrowserStorage(page: Page) {
+  await page.evaluate(async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
+
+    if ("caches" in window) {
+      const cacheKeys = await caches.keys();
+      await Promise.all(cacheKeys.map((key) => caches.delete(key)));
+    }
+  });
+}
+
+function formatBrowserIssues(issues: BrowserIssue[]) {
+  if (issues.length === 0) {
+    return "No unexpected browser runtime issues were captured.";
+  }
+
+  return issues
+    .map((issue, index) => `${index + 1}. [${issue.kind}] ${issue.route}: ${issue.detail}`)
+    .join("\n");
+}
+
 async function signInIfPrompted(page: Page) {
   const signInButton = page.getByRole("button", { name: /sign in anonymously|sign in/i }).first();
   if (await signInButton.count()) {
@@ -96,21 +183,50 @@ async function setTheme(page: Page, theme: "dark" | "light") {
 }
 
 test.describe("Full UI Dogfood", () => {
+  test.use({ serviceWorkers: "block" });
   test("dogfood all routes — dark/light × desktop/mobile", async ({ page }) => {
     // 4 variants × ~37 routes + interactions ≈ 20 min
     test.setTimeout(30 * 60 * 1000);
+    const selectedRoutes = shouldIncludeRoutes() ? getSelectedRoutes() : [];
+    const includeInteractions = shouldIncludeInteractions();
+
+    const browserIssues: BrowserIssue[] = [];
+    let activeRoute = "/";
+    const captureIssue = (kind: BrowserIssueKind, detail: string) => {
+      if (isBenignBrowserIssue(kind, detail)) {
+        return;
+      }
+      browserIssues.push({ kind, route: activeRoute, detail });
+    };
 
     // Set initial dark theme via evaluate (not addInitScript — that overrides on every nav)
-    page.on('pageerror', error => console.error('BROWSER ERROR:', error));
-    page.on('console', msg => {
-      if (msg.type() === 'error') console.error('BROWSER CONSOLE ERROR:', msg.text());
+    page.on("pageerror", (error) => {
+      const detail = error?.message ?? String(error);
+      captureIssue("pageerror", detail);
+      console.error("BROWSER ERROR:", detail);
     });
-    page.on('requestfailed', request => {
-      console.error('REQUEST FAILED:', request.url(), request.failure()?.errorText);
+    page.on("console", (msg) => {
+      if (msg.type() !== "error") return;
+      const detail = msg.text();
+      captureIssue("console", detail);
+      console.error("BROWSER CONSOLE ERROR:", detail);
+    });
+    page.on("requestfailed", (request) => {
+      const detail = `${request.url()} ${request.failure()?.errorText ?? ""}`.trim();
+      captureIssue("requestfailed", detail);
+      console.error("REQUEST FAILED:", detail);
+    });
+    page.on("response", (response) => {
+      if (response.status() < 400) return;
+      const detail = `${response.url()} ${response.status()}`;
+      captureIssue("response", detail);
+      console.error("HTTP RESPONSE ERROR:", detail);
     });
 
     console.log('Navigating to root...');
+    activeRoute = "/";
     await page.goto("/", { waitUntil: "networkidle" });
+    await resetBrowserStorage(page);
     await page.evaluate(() => {
       localStorage.setItem(
         "nodebench-theme",
@@ -126,6 +242,7 @@ test.describe("Full UI Dogfood", () => {
       localStorage.setItem("theme", "dark");
     });
 
+    activeRoute = "/";
     await page.goto("/", { waitUntil: "networkidle" });
     await expect(page.getByText("Convex backend not configured")).toHaveCount(0);
 
@@ -141,11 +258,13 @@ test.describe("Full UI Dogfood", () => {
       await page.setViewportSize(variant.viewport);
       await setTheme(page, variant.theme);
       // Reload to apply theme fully
+      activeRoute = "/";
       await page.goto("/", { waitUntil: "networkidle" });
       await page.waitForTimeout(1000);
 
-      for (const route of ROUTES) {
+      for (const route of selectedRoutes) {
         console.log(`  Route: ${route.path}`);
+        activeRoute = route.path;
         await page.goto(route.path, { waitUntil: "networkidle" });
         await page.waitForTimeout(1500); // Wait for animations
         await expect(page.getByText("Something went wrong")).toHaveCount(0);
@@ -157,8 +276,14 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // ─── Interaction captures (desktop dark only — primary variant) ────
+    if (!includeInteractions) {
+      expect(browserIssues, formatBrowserIssues(browserIssues)).toEqual([]);
+      return;
+    }
+
     await page.setViewportSize({ width: 1440, height: 900 });
     await setTheme(page, "dark");
+    activeRoute = "/";
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
 
@@ -198,10 +323,15 @@ test.describe("Full UI Dogfood", () => {
 
     // Command palette
     const openBtn = page.getByTestId("open-command-palette");
-    await expect(openBtn).toBeVisible();
-    await openBtn.click();
-
     const dialog = page.getByRole("dialog", { name: "Command palette" });
+    if (await openBtn.count()) {
+      await expect(openBtn).toBeVisible();
+      await openBtn.click();
+    } else {
+      const isMac = await page.evaluate(() => /Mac|iPhone|iPad|iPod/.test(navigator.platform));
+      await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
+    }
+
     await expect(dialog).toBeVisible();
     await page.screenshot({
       path: "test-results/full-ui-dogfood/command-palette.png",
@@ -218,6 +348,7 @@ test.describe("Full UI Dogfood", () => {
     await page.waitForTimeout(250);
 
     // Assistant panel
+    activeRoute = "/";
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
     const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();
@@ -239,6 +370,7 @@ test.describe("Full UI Dogfood", () => {
     // that only surface during actual human interaction depth.
 
     // 1. Agent panel — open, type a message, capture thread view
+    activeRoute = "/agents";
     await page.goto("/agents", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const agentInput = page.locator("input[placeholder*='Ask anything'], textarea[placeholder*='Ask anything']").first();
@@ -253,6 +385,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 2. Calendar — click a date to open event popover/editor
+    activeRoute = "/calendar";
     await page.goto("/calendar", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const calendarDay = page.locator("div[role='button'][aria-pressed]").first();
@@ -268,6 +401,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 3. Research Hub — hover on entity links to trigger hover preview
+    activeRoute = "/research";
     await page.goto("/research", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const entityLink = page.locator("button.border-b-2.border-dashed").first();
@@ -281,6 +415,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 4. Research Briefing — click a signal card to expand details
+    activeRoute = "/research/briefing";
     await page.goto("/research/briefing", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const signalCard = page.locator("button[aria-expanded][type='button']").first();
@@ -294,6 +429,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 5. Documents — hover a document card for preview
+    activeRoute = "/documents";
     await page.goto("/documents", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const docCard = page.locator("div[draggable='true']").first();
@@ -307,6 +443,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 6. GitHub Explorer — click a repo link
+    activeRoute = "/github";
     await page.goto("/github", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const repoLink = page.locator("a[href*='github.com'][target='_blank']").first();
@@ -320,6 +457,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 7. Funding Brief — click a deal entry in list panel
+    activeRoute = "/funding";
     await page.goto("/funding", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const dealBtn = page.locator("button[type='button'].w-full.text-left").first();
@@ -333,6 +471,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 8. Search input on home — type and see suggestions
+    activeRoute = "/";
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
     const searchInput = page.locator("input[placeholder*='Ask anything']").first();
@@ -361,6 +500,7 @@ test.describe("Full UI Dogfood", () => {
     // Real human use scenarios: querying agent, streaming outputs, panels
 
     // 10. FastAgentPanel — full chat interaction flow
+    activeRoute = "/agents";
     await page.goto("/agents", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
     // Try to open the FastAgent panel via FAB or inline trigger
@@ -414,6 +554,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 13. Swarm lanes / live agent lanes — observe multi-agent execution
+    activeRoute = "/agents/live";
     await page.goto("/agents/live", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
     const laneCard = page.locator("[class*='lane'], [class*='agent-card'], [class*='rounded-xl'][class*='border']").first();
@@ -427,6 +568,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 14. Dogfood review gallery — navigate frames and video
+    activeRoute = "/dogfood";
     await page.goto("/dogfood", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1000);
     // Click a frame thumbnail to select it
@@ -450,6 +592,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 16. Task manager — hover task card for details
+    activeRoute = "/activity";
     await page.goto("/activity", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const taskCard = page.locator("[class*='task-card'], [class*='session-card'], div[class*='rounded-lg border'][class*='p-4']").first();
@@ -469,6 +612,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 17. Analytics — hover chart data points for tooltips
+    activeRoute = "/analytics/recommendations";
     await page.goto("/analytics/recommendations", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const chartArea = page.locator("svg .recharts-bar-rectangle, svg rect[class*='recharts'], svg .recharts-line-dot").first();
@@ -482,6 +626,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 18. MCP Ledger — expand a tool row for details
+    activeRoute = "/mcp/ledger";
     await page.goto("/mcp/ledger", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(800);
     const toolRow = page.locator("tr[role='row'], div[role='row']").first();
@@ -495,6 +640,7 @@ test.describe("Full UI Dogfood", () => {
     }
 
     // 19. Keyboard shortcut discovery — press ? to show shortcuts overlay
+    activeRoute = "/";
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(600);
     await page.keyboard.press("?");
@@ -508,5 +654,7 @@ test.describe("Full UI Dogfood", () => {
       await page.keyboard.press("Escape");
       await page.waitForTimeout(200);
     }
+
+    expect(browserIssues, formatBrowserIssues(browserIssues)).toEqual([]);
   });
 });

@@ -12,6 +12,7 @@
 
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Activity,
   ArrowRight,
   BadgeCheck,
   Bot,
@@ -38,10 +39,21 @@ import {
   saveBuyerChecklistState,
   saveBuyerPreferredPath,
 } from "../lib/onboardingState";
+import { VIEW_PATH_MAP, type MainView } from "@/lib/viewRegistry";
 
 interface ControlPlaneLandingProps {
-  onNavigate: (view: string, path?: string) => void;
+  onNavigate: (view: MainView, path?: string) => void;
 }
+
+const RECEIPTS_PATH = VIEW_PATH_MAP.receipts ?? "/receipts";
+const DELEGATION_PATH = VIEW_PATH_MAP.delegation ?? "/delegation";
+const INVESTIGATION_PATH = VIEW_PATH_MAP.investigation ?? "/investigation";
+const DOCUMENTS_PATH = VIEW_PATH_MAP.documents ?? "/workspace";
+const AGENTS_PATH = VIEW_PATH_MAP.agents ?? "/agents";
+const BENCHMARKS_PATH = VIEW_PATH_MAP.benchmarks ?? "/internal/benchmarks";
+const MCP_LEDGER_PATH = VIEW_PATH_MAP["mcp-ledger"] ?? "/internal/mcp-ledger";
+const ORACLE_PATH = VIEW_PATH_MAP.oracle ?? "/oracle";
+const RESEARCH_BRIEFING_PATH = "/research/briefing";
 
 const ROLE_PATHS = [
   {
@@ -50,7 +62,7 @@ const ROLE_PATHS = [
     label: "Review agent actions",
     description: "See what agents did and whether it was allowed",
     target: "receipts",
-    path: "/receipts",
+    path: RECEIPTS_PATH,
     preferredPath: "receipts" as BuyerPreferredPath,
     accent: "border-indigo-500/30 hover:border-indigo-400/50 hover:bg-indigo-500/5",
     iconColor: "text-indigo-400",
@@ -62,7 +74,7 @@ const ROLE_PATHS = [
     label: "Review passport & approvals",
     description: "See scoped tools, denied actions, and approval-gated steps",
     target: "delegation",
-    path: "/control-plane/passport",
+    path: DELEGATION_PATH,
     preferredPath: "delegation" as BuyerPreferredPath,
     accent: "border-emerald-500/30 hover:border-emerald-400/50 hover:bg-emerald-500/5",
     iconColor: "text-emerald-400",
@@ -73,7 +85,7 @@ const ROLE_PATHS = [
     label: "Investigate a run",
     description: "Trace from action to evidence to approval",
     target: "investigation",
-    path: "/investigation",
+    path: INVESTIGATION_PATH,
     preferredPath: "investigation" as BuyerPreferredPath,
     accent: "border-amber-500/30 hover:border-amber-400/50 hover:bg-amber-500/5",
     iconColor: "text-amber-400",
@@ -84,7 +96,7 @@ const ROLE_PATHS = [
     label: "Read today's brief",
     description: "Signals, briefings, and market context",
     target: "research",
-    path: "/research/briefing",
+    path: RESEARCH_BRIEFING_PATH,
     preferredPath: "research-briefing" as BuyerPreferredPath,
     accent: "border-violet-500/30 hover:border-violet-400/50 hover:bg-violet-500/5",
     iconColor: "text-violet-400",
@@ -94,15 +106,15 @@ const ROLE_PATHS = [
 interface ChecklistItem {
   id: BuyerChecklistId;
   label: string;
-  target: string;
+  target: MainView;
   path: string;
 }
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
-  { id: "receipt", label: "Open an action receipt", target: "receipts", path: "/control-plane/receipts" },
-  { id: "delegation", label: "Open the passport", target: "delegation", path: "/control-plane/passport" },
-  { id: "investigation", label: "Inspect an investigation", target: "investigation", path: "/investigation" },
-  { id: "brief", label: "Read today's brief", target: "research", path: "/research/briefing" },
+  { id: "receipt", label: "Open an action receipt", target: "receipts", path: RECEIPTS_PATH },
+  { id: "delegation", label: "Open the passport", target: "delegation", path: DELEGATION_PATH },
+  { id: "investigation", label: "Inspect an investigation", target: "investigation", path: INVESTIGATION_PATH },
+  { id: "brief", label: "Read today's brief", target: "research", path: RESEARCH_BRIEFING_PATH },
 ];
 
 const CORE_SURFACES = [
@@ -111,7 +123,7 @@ const CORE_SURFACES = [
     icon: ScrollText,
     title: "Action Receipts",
     subtitle: "Tamper-evident records of what an agent saw, did, and was allowed to do.",
-    path: "/control-plane/receipts",
+    path: RECEIPTS_PATH,
     accent: "from-indigo-500/20 to-indigo-500/5",
     iconColor: "text-indigo-300",
     borderColor: "border-indigo-500/25 hover:border-indigo-400/50",
@@ -121,7 +133,7 @@ const CORE_SURFACES = [
     icon: KeyRound,
     title: "Passport",
     subtitle: "Scope tools, approvals, and authority before an agent acts.",
-    path: "/control-plane/passport",
+    path: DELEGATION_PATH,
     accent: "from-emerald-500/20 to-emerald-500/5",
     iconColor: "text-emerald-300",
     borderColor: "border-emerald-500/25 hover:border-emerald-400/50",
@@ -131,7 +143,7 @@ const CORE_SURFACES = [
     icon: Search,
     title: "Investigation",
     subtitle: "See what the agent did, why it did it, and what evidence supports the result.",
-    path: "/investigation",
+    path: INVESTIGATION_PATH,
     accent: "from-amber-500/20 to-amber-500/5",
     iconColor: "text-amber-300",
     borderColor: "border-amber-500/25 hover:border-amber-400/50",
@@ -144,28 +156,28 @@ const SECONDARY_SURFACES = [
     icon: Shield,
     title: "Research Hub",
     subtitle: "Signals, briefings, and evidence-backed context.",
-    path: "/research/briefing",
-  },
-  {
-    id: "benchmarks",
-    icon: Sparkles,
-    title: "Benchmarks",
-    subtitle: "Proof, replay, and eval receipts for agent runs.",
-    path: "/benchmarks",
+    path: RESEARCH_BRIEFING_PATH,
   },
   {
     id: "documents",
     icon: FileText,
     title: "Workspace",
     subtitle: "Documents, spreadsheets, and work in progress.",
-    path: "/workspace",
+    path: DOCUMENTS_PATH,
+  },
+  {
+    id: "agents",
+    icon: Bot,
+    title: "Agent Workflows",
+    subtitle: "Launch work, monitor active threads, and clear operator blockers.",
+    path: AGENTS_PATH,
   },
   {
     id: "oracle",
     icon: Bot,
     title: "The Oracle",
     subtitle: "Builder-facing control tower for long-running loops.",
-    path: "/oracle",
+    path: ORACLE_PATH,
   },
 ] as const;
 
@@ -177,18 +189,18 @@ const POWER_USER_PATHS = [
     label: "Debug evals and replay proof",
     description: "Open benchmark receipts, compare runs, and see where latency or judge quality breaks down.",
     target: "benchmarks",
-    path: "/benchmarks",
+    path: BENCHMARKS_PATH,
     accent: "border-cyan-500/25 bg-cyan-500/[0.04] hover:border-cyan-400/45 hover:bg-cyan-500/[0.07]",
     iconColor: "text-cyan-300",
   },
   {
-    id: "agent-operator",
-    icon: Bot,
+    id: "platform-operator",
+    icon: Activity,
     eyebrow: "For agent operators",
-    label: "Launch work and unblock runs",
-    description: "Open the simplified agent workspace to start requests, watch running tasks, and clear approvals.",
-    target: "agents",
-    path: "/agents",
+    label: "Inspect tool activity",
+    description: "Review internal tool traces, blocked steps, and request history behind the primary product surfaces.",
+    target: "mcp-ledger",
+    path: MCP_LEDGER_PATH,
     accent: "border-fuchsia-500/25 bg-fuchsia-500/[0.04] hover:border-fuchsia-400/45 hover:bg-fuchsia-500/[0.07]",
     iconColor: "text-fuchsia-300",
   },
@@ -217,7 +229,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
   );
 
   const handleNavigateWithPreference = useCallback(
-    (target: string, path?: string, nextPreferredPath?: BuyerPreferredPath) => {
+    (target: MainView, path?: string, nextPreferredPath?: BuyerPreferredPath) => {
       if (nextPreferredPath) {
         saveBuyerPreferredPath(nextPreferredPath);
         setPreferredPath(nextPreferredPath);
@@ -264,7 +276,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
             <button
               type="button"
-              onClick={() => handleNavigateWithPreference("receipts", "/control-plane/receipts", "receipts")}
+              onClick={() => handleNavigateWithPreference("receipts", RECEIPTS_PATH, "receipts")}
               className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-2 text-sm font-medium text-indigo-100 transition hover:border-indigo-300/50 hover:bg-indigo-500/15"
             >
               Open Receipts
@@ -272,7 +284,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             </button>
             <button
               type="button"
-              onClick={() => handleNavigateWithPreference("delegation", "/control-plane/passport", "delegation")}
+              onClick={() => handleNavigateWithPreference("delegation", DELEGATION_PATH, "delegation")}
               className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-white/10"
             >
               Open Passport
@@ -495,7 +507,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-xs text-zinc-400">
           <BadgeCheck className="h-3.5 w-3.5 text-emerald-300" aria-hidden="true" />
-          <span>Cold start path: receipts for buyers, agents for operators, benchmarks for developers.</span>
+          <span>Cold start path: receipts for review, agents for execution, investigation for proof.</span>
         </div>
       </div>
     </div>
