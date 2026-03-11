@@ -78,6 +78,8 @@ export default defineConfig(({ mode }) => {
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         // Cache Google Fonts
         runtimeCaching: [

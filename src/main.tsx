@@ -230,13 +230,22 @@ createRoot(document.getElementById("root")!).render(
   </BrowserRouter>,
 );
 
+// NOTE(coworker): Playwright/WebDriver runs can load stale hashed chunks between rapid preview rebuilds.
+// Skip SW registration in automated browser contexts so QA reflects current build output.
+const isAutomatedBrowser =
+  typeof navigator !== "undefined" && (navigator.webdriver || /Playwright/i.test(navigator.userAgent));
+
 // Register service worker for caching and offline support
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && import.meta.env.PROD && !isAutomatedBrowser) {
   import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({
+    const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
-        console.log('[PWA] New content available, will update on next visit');
+        console.log('[PWA] New content available, applying update');
+        void updateSW(true);
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 150);
       },
       onOfflineReady() {
         console.log('[PWA] App ready to work offline');
