@@ -235,6 +235,30 @@ createRoot(document.getElementById("root")!).render(
 const isAutomatedBrowser =
   typeof navigator !== "undefined" && (navigator.webdriver || /Playwright/i.test(navigator.userAgent));
 
+const shouldResetLocalServiceWorkers =
+  typeof window !== "undefined" &&
+  typeof navigator !== "undefined" &&
+  "serviceWorker" in navigator &&
+  (window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost" ||
+    !import.meta.env.PROD ||
+    isAutomatedBrowser);
+
+if (shouldResetLocalServiceWorkers) {
+  navigator.serviceWorker
+    .getRegistrations()
+    .then(async (registrations) => {
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+      if ("caches" in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(cacheKeys.map((cacheKey) => caches.delete(cacheKey)));
+      }
+    })
+    .catch(() => {
+      // Best-effort reset for local/dev shells.
+    });
+}
+
 // Register service worker for caching and offline support
 if ('serviceWorker' in navigator && import.meta.env.PROD && !isAutomatedBrowser) {
   import('virtual:pwa-register').then(({ registerSW }) => {

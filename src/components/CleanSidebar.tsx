@@ -39,6 +39,7 @@ import { SidebarGlobalNav, type ActivePage, type RecentDossier } from "./Sidebar
 import { SidebarButton } from "./ui";
 import { Tooltip } from "../shared/ui/Tooltip";
 import { sanitizeDocumentTitle } from "@/lib/displayText";
+import { type MainView, WORKSPACE_SURFACE_VIEWS, AGENTS_SURFACE_VIEWS, RESEARCH_SURFACE_VIEWS, GROUP_VIEW_MAP, VIEW_MAP } from "@/lib/viewRegistry";
 
 type AppMode = 'workspace' | 'fast-agent' | 'deep-agent' | 'dossier';
 
@@ -54,66 +55,11 @@ interface CleanSidebarProps {
   onEnterResearchHub?: () => void;
   selectedDocumentId?: Id<"documents"> | null;
   onDocumentSelect?: (docId: Id<"documents">) => void;
-  currentView?:
-  | 'documents'
-  | 'spreadsheets'
-  | 'calendar'
-  | 'roadmap'
-  | 'timeline'
-  | 'public'
-  | 'agents'
-  | 'research'
-  | 'signals'
-  | 'benchmarks'
-  | 'funding'
-  | 'activity'
-  | 'entity'
-  | 'footnotes'
-  | 'showcase'
-  | 'cost-dashboard'
-  | 'industry-updates'
-  | 'for-you-feed'
-  | 'document-recommendations'
-  | 'agent-marketplace'
-  | 'github-explorer'
-  | 'pr-suggestions'
-  | 'linkedin-posts'
-  | 'mcp-ledger'
-  | 'dogfood'
-  | 'engine-demo'
-  | 'observability'
-  | 'oracle';
-  onViewChange?: (view:
-    | 'documents'
-    | 'spreadsheets'
-    | 'calendar'
-    | 'roadmap'
-    | 'timeline'
-    | 'public'
-    | 'agents'
-    | 'research'
-    | 'signals'
-    | 'benchmarks'
-    | 'funding'
-    | 'activity'
-    | 'entity'
-    | 'footnotes'
-    | 'showcase'
-    | 'cost-dashboard'
-    | 'industry-updates'
-    | 'for-you-feed'
-    | 'document-recommendations'
-    | 'agent-marketplace'
-    | 'github-explorer'
-    | 'pr-suggestions'
-    | 'linkedin-posts'
-    | 'mcp-ledger'
-    | 'dogfood'
-    | 'engine-demo'
-    | 'observability'
-    | 'oracle') => void;
+  currentView?: MainView;
+  onViewChange?: (view: MainView) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
+  showGuestPreviewFooter?: boolean;
 }
 
 // Dashboard items
@@ -150,39 +96,9 @@ const moreSectionViews = new Set<string>([
   ...discoveryItems.map((i) => i.view),
 ]);
 
-const researchViews = new Set<string>([
-  'research',
-  'oracle',
-  'signals',
-  'benchmarks',
-  'funding',
-  'footnotes',
-  'showcase',
-  'cost-dashboard',
-  'industry-updates',
-  'for-you-feed',
-  'document-recommendations',
-  'agent-marketplace',
-  'github-explorer',
-  'pr-suggestions',
-  'linkedin-posts',
-  'mcp-ledger',
-  'dogfood',
-  'engine-demo',
-  'observability',
-]);
-
-const workspaceViews = new Set<string>([
-  'documents',
-  'spreadsheets',
-  'calendar',
-  'roadmap',
-  'timeline',
-  'public',
-  'agents',
-  'activity',
-  'entity',
-]);
+// Derived from viewRegistry route groups — no more hardcoded view lists
+const researchViews = new Set<string>([...RESEARCH_SURFACE_VIEWS, ...GROUP_VIEW_MAP.internal]);
+const workspaceViews = new Set<string>([...WORKSPACE_SURFACE_VIEWS, ...AGENTS_SURFACE_VIEWS, 'entity']);
 
 export const CleanSidebar = memo(function CleanSidebar({
   appMode,
@@ -198,6 +114,7 @@ export const CleanSidebar = memo(function CleanSidebar({
   onViewChange,
   isCollapsed = false,
   onToggleCollapse,
+  showGuestPreviewFooter = false,
 }: CleanSidebarProps) {
   const [isDocsOpen, setIsDocsOpen] = useState(true);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -254,15 +171,21 @@ export const CleanSidebar = memo(function CleanSidebar({
     if (page === 'research') {
       onViewChange?.('research');
       onGoHome?.();
+    } else if (page === 'investigation') {
+      onViewChange?.('investigation');
     } else if (page === 'workspace') {
       onViewChange?.('documents');
       onModeChange('workspace');
+    } else if (page === 'agents') {
+      onViewChange?.('agents');
     } else if (page === 'saved') {
       onModeChange('dossier');
     }
   };
 
   const getActivePage = (): ActivePage => {
+    if (currentView === 'investigation') return 'investigation';
+    if (currentView === 'agents' || currentView === 'agent-marketplace' || currentView === 'activity' || currentView === 'mcp-ledger') return 'agents';
     if (currentView === 'research' || researchViews.has(currentView)) return 'research';
     if (workspaceViews.has(currentView)) return 'workspace';
     if (appMode === 'dossier') return 'saved';
@@ -287,11 +210,17 @@ export const CleanSidebar = memo(function CleanSidebar({
 
   const secondaryMoreItems = useMemo(() => {
     const featuredViews = new Set(featuredMoreItems.map((item) => item.view));
+    const isDev = import.meta.env.DEV;
     return [
       ...dashboardItems,
-      ...(import.meta.env.DEV ? devItems : []),
+      ...(isDev ? devItems : []),
       ...discoveryItems,
-    ].filter((item) => !featuredViews.has(item.view));
+    ].filter((item) => {
+      if (featuredViews.has(item.view)) return false;
+      // Hide internal views in production — still accessible via URL
+      if (!isDev && VIEW_MAP[item.view as MainView]?.group === "internal") return false;
+      return true;
+    });
   }, [featuredMoreItems]);
 
   // Collapsed icon-only button helper
@@ -326,23 +255,30 @@ export const CleanSidebar = memo(function CleanSidebar({
       {/* Logo */}
       <div className={`h-14 flex items-center ${isCollapsed ? 'justify-center' : 'px-3'} border-b border-edge`}>
         <div className="flex items-center gap-2.5 min-w-0">
-          <Tooltip content={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} side="right">
+          <Tooltip content={isCollapsed ? 'Go to home' : 'Collapse sidebar'} side="right">
             <button
               type="button"
-              onClick={onToggleCollapse}
+              onClick={isCollapsed ? () => onViewChange?.('control-plane' as MainView) : onToggleCollapse}
               className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 hover:brightness-110 hover:shadow-sm active:scale-[0.95] transition-all duration-200"
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              data-agent-id="sidebar:action:toggle-collapse"
-              data-agent-action="toggle"
-              data-agent-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={isCollapsed ? 'Go to home' : 'Collapse sidebar'}
+              data-agent-id={isCollapsed ? "sidebar:nav:home" : "sidebar:action:toggle-collapse"}
+              data-agent-action={isCollapsed ? "navigate" : "toggle"}
+              data-agent-label={isCollapsed ? 'Go to home' : 'Collapse sidebar'}
             >
               <span className="font-bold text-sm">N</span>
             </button>
           </Tooltip>
           {!isCollapsed && (
-            <span className="text-sm font-semibold text-content tracking-tight truncate">
+            <button
+              type="button"
+              onClick={() => onViewChange?.('control-plane' as MainView)}
+              className="text-sm font-semibold text-content tracking-tight truncate hover:text-primary transition-colors"
+              data-agent-id="sidebar:nav:home"
+              data-agent-action="navigate"
+              data-agent-label="Go to NodeBench home"
+            >
               NodeBench AI
-            </span>
+            </button>
           )}
         </div>
       </div>
@@ -572,7 +508,7 @@ export const CleanSidebar = memo(function CleanSidebar({
                   {isAnonymous ? "Guest User" : (user?.name ?? "User")}
                 </div>
                 <div className="text-xs text-content-muted font-medium">
-                  {isAnonymous ? "Preview mode" : "Pro Account"}
+                  {isAnonymous ? (showGuestPreviewFooter ? "Preview mode" : "Guest access") : "Pro Account"}
                 </div>
               </div>
               {!isAnonymous && (
@@ -595,7 +531,7 @@ export const CleanSidebar = memo(function CleanSidebar({
           )}
         </div>
 
-        {!isCollapsed && isAnonymous && (
+        {!isCollapsed && isAnonymous && showGuestPreviewFooter && (
           <div className="space-y-2">
             <div className="rounded-lg border border-edge bg-surface-secondary px-3 py-2 text-[11px] leading-relaxed text-content-secondary">
               Preview includes the Oracle, research, and benchmark proof. Sign in to save work, connect apps, and run personalized flows.

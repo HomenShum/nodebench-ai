@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useThemeSafe } from "../contexts/ThemeContext";
 import { sanitizeDocumentTitle } from "@/lib/displayText";
+import { rankCommandPaletteCommands } from "./commandPaletteUtils";
 
 export interface CommandAction {
     id: string;
@@ -89,13 +90,49 @@ export function CommandPalette({
             // Navigation
             {
                 id: 'nav-home',
-                label: 'Go to Oracle',
-                description: 'Open the control tower and active loop view',
+                label: 'Go to DeepTrace Home',
+                description: 'Open the agent trust control plane',
                 icon: <Home className="w-4 h-4" />,
-                keywords: ['home', 'oracle', 'control tower', 'main'],
+                keywords: ['home', 'control plane', 'receipts', 'main', 'deeptrace'],
                 section: 'navigation',
                 action: () => {
-                    onNavigate?.('oracle');
+                    onNavigate?.('control-plane');
+                    onClose();
+                }
+            },
+            {
+                id: 'nav-receipts',
+                label: 'Go to Receipts',
+                description: 'Inspect denied, approval-gated, and reversible agent actions',
+                icon: <Orbit className="w-4 h-4" />,
+                keywords: ['receipts', 'actions', 'trust', 'review', 'approval'],
+                section: 'navigation',
+                action: () => {
+                    onNavigate?.('receipts');
+                    onClose();
+                }
+            },
+            {
+                id: 'nav-delegation',
+                label: 'Go to Passport',
+                description: 'Review scoped permissions, denied tools, and approval gates',
+                icon: <CheckSquare className="w-4 h-4" />,
+                keywords: ['passport', 'delegation', 'scope', 'permissions', 'approve', 'policy'],
+                section: 'navigation',
+                action: () => {
+                    onNavigate?.('delegation');
+                    onClose();
+                }
+            },
+            {
+                id: 'nav-investigation',
+                label: 'Go to Investigation',
+                description: 'Trace from action to evidence to approval',
+                icon: <TrendingUp className="w-4 h-4" />,
+                keywords: ['investigation', 'evidence', 'trace', 'replay', 'prove'],
+                section: 'navigation',
+                action: () => {
+                    onNavigate?.('investigation');
                     onClose();
                 }
             },
@@ -126,9 +163,9 @@ export function CommandPalette({
             {
                 id: 'nav-benchmarks',
                 label: 'Go to Benchmarks',
-                description: 'Inspect model evals, telemetry, and published proof',
+                description: 'Inspect benchmark receipts, replay, and published proof',
                 icon: <FlaskConical className="w-4 h-4" />,
-                keywords: ['benchmarks', 'eval', 'telemetry', 'proof'],
+                keywords: ['benchmarks', 'eval', 'receipts', 'proof', 'replay'],
                 section: 'navigation',
                 action: () => {
                     onNavigate?.('benchmarks');
@@ -162,9 +199,9 @@ export function CommandPalette({
             {
                 id: 'nav-tool-activity',
                 label: 'Go to Tool Activity',
-                description: 'Review auditable tool calls and request traces',
+                description: 'Review action receipts and auditable tool calls',
                 icon: <Activity className="w-4 h-4" />,
-                keywords: ['tools', 'activity', 'ledger', 'trace', 'mcp'],
+                keywords: ['tools', 'activity', 'ledger', 'receipt', 'trace', 'mcp'],
                 section: 'navigation',
                 action: () => {
                     onNavigate?.('mcp-ledger');
@@ -201,13 +238,13 @@ export function CommandPalette({
             },
             {
                 id: 'create-event',
-                label: 'Start Oracle Review',
-                description: 'Open the control tower and inspect the current loop',
+                label: 'Open Receipts Review',
+                description: 'Jump into the receipts stream and inspect the current run',
                 icon: <Orbit className="w-4 h-4" />,
-                keywords: ['oracle', 'review', 'control tower', 'investigation'],
+                keywords: ['receipts', 'review', 'control plane', 'investigation'],
                 section: 'create',
                 action: () => {
-                    onNavigate?.('oracle');
+                    onNavigate?.('receipts');
                     onClose();
                 }
             },
@@ -227,9 +264,9 @@ export function CommandPalette({
             {
                 id: 'ai-insights',
                 label: 'Open Enterprise Eval',
-                description: 'Inspect the full temporal evaluation stream and judge output',
+                description: 'Inspect the full evaluation stream, receipts, and judge output',
                 icon: <TrendingUp className="w-4 h-4" />,
-                keywords: ['eval', 'enterprise', 'judge', 'temporal', 'investigation'],
+                keywords: ['eval', 'enterprise', 'judge', 'receipts', 'investigation'],
                 section: 'ai',
                 action: () => {
                     onNavigate?.('benchmarks');
@@ -352,12 +389,12 @@ export function CommandPalette({
     // Filter and rank commands with fuzzy search (deferred so typing stays responsive)
     const filteredCommands = useMemo(() => {
         if (!deferredQuery.trim()) {
-            return allCommands.filter(cmd =>
+            return rankCommandPaletteCommands(allCommands.filter(cmd =>
                 cmd.section === 'mode' ||
                 cmd.section === 'navigation' ||
                 cmd.section === 'create' ||
                 cmd.section === 'recent'
-            );
+            ), deferredQuery);
         }
 
         const searchTerm = deferredQuery.trim();

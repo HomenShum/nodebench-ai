@@ -25,9 +25,11 @@ import {
   Cpu,
   ClipboardList,
   ExternalLink,
+  PanelTop,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "../../../../convex/_generated/api";
+import { loadAgentsViewMode, saveAgentsViewMode } from "@/features/controlPlane/lib/onboardingState";
 
 // Shared UI components
 import { TopDividerBar } from "@shared/ui/TopDividerBar";
@@ -40,6 +42,7 @@ import { AgentCommandBar, type AgentMode, type ApprovedModel } from "../componen
 import { HumanApprovalQueue } from "../components/HumanApprovalQueue";
 import { AgentSidebar } from "../components/AgentSidebar";
 import { AutonomousOperationsPanel } from "../components/AutonomousOperationsPanel";
+import { OracleControlTowerPanel } from "../components/OracleControlTowerPanel";
 
 // Lazy-loaded heavy sub-components (behind tabs/expandable sections)
 const SwarmLanesView = lazy(() =>
@@ -295,7 +298,69 @@ function ActiveSwarmsSection() {
 // Main Component
 // ============================================================================
 
+function QuickActionsSummary({ onShowAdvanced }: { onShowAdvanced: () => void }) {
+  return (
+    <div className="nb-surface-card p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <PanelTop className="h-4 w-4 text-accent" />
+            <h2 className="type-section-title text-content">Quick actions</h2>
+          </div>
+          <p className="mt-2 text-sm text-content-secondary">
+            Start a request, review running tasks, or approve blocked work without opening the full operator cockpit.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onShowAdvanced}
+          className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition hover:bg-surface-hover hover:text-content-secondary"
+        >
+          Open advanced view
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {[
+          {
+            title: "Run a request",
+            body: "Use the command bar to launch research, compare sources, or hand work to an agent.",
+          },
+          {
+            title: "Review active work",
+            body: "The running tasks lane below is the fastest way to see what the system is doing right now.",
+          },
+          {
+            title: "Approve blocked actions",
+            body: "Use the human approval queue for any step that needs review before it can continue.",
+          },
+        ].map((item) => (
+          <div key={item.title} className="rounded-xl border border-edge bg-surface-secondary/40 p-4">
+            <div className="text-sm font-medium text-content">{item.title}</div>
+            <p className="mt-1 text-xs leading-relaxed text-content-muted">{item.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AgentsHub() {
+  const [advancedMode, setAdvancedMode] = useState(() => {
+    return loadAgentsViewMode() === "advanced";
+  });
+  const setViewMode = useCallback((mode: "basic" | "advanced") => {
+    saveAgentsViewMode(mode);
+    setAdvancedMode(mode === "advanced");
+  }, []);
+  const toggleMode = useCallback(() => {
+    setAdvancedMode((prev) => {
+      const next = !prev;
+      saveAgentsViewMode(next ? "advanced" : "basic");
+      return next;
+    });
+  }, []);
+
   const { spawnSwarm } = useSwarmActions();
 
   const handleCommandSubmit = useCallback(
@@ -345,73 +410,106 @@ export function AgentsHub() {
               className="mb-6"
             />
 
-            {/* Quick Stats */}
-            <div className="mb-6">
-              <QuickStatsBar />
-            </div>
-
-            {/* Command Bar */}
+            {/* Command Bar — always visible */}
             <div className="mb-6">
               <AgentCommandBar onSubmit={handleCommandSubmit} />
             </div>
 
-            {/* Autonomous Operations Status */}
-            <div className="mb-6">
-              <AutonomousOperationsPanel />
-            </div>
+            {!advancedMode && (
+              <div className="mb-6">
+                <QuickActionsSummary onShowAdvanced={() => setViewMode("advanced")} />
+              </div>
+            )}
 
-            {/* Active Swarms */}
+            {/* Active Swarms — always visible */}
             <div className="mb-6">
               <ActiveSwarmsSection />
             </div>
 
-            {/* Agent Status Grid */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-4 h-4 text-accent" />
-                <h2 className="type-section-title text-content">
-                  Available Agents
-                </h2>
-              </div>
-              <AgentGrid />
-            </div>
-
-            {/* Free Model Rankings */}
-            <div className="mb-6">
-              <Suspense fallback={<div className="h-[200px]" />}>
-                <FreeModelRankingsPanel />
-              </Suspense>
-            </div>
-
-            {/* Human Approval Queue */}
+            {/* Human Approval Queue — always visible */}
             <div className="mb-6">
               <HumanApprovalQueue />
             </div>
 
-            {/* Task Manager - Agent Task History & Telemetry */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <h2 className="type-section-title text-content">
-                    Task History
-                  </h2>
-                </div>
-                <a
-                  href="/#activity"
-                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 hover:underline"
-                >
-                  Public Feed <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-              <div className="nb-surface-card overflow-hidden h-[500px]">
-                <Suspense fallback={<div className="h-full flex items-center justify-center text-xs text-content-muted">Loading tasks...</div>}>
-                  <TaskManagerView isPublic={false} className="h-full" />
-                </Suspense>
-              </div>
+            {/* Mode toggle */}
+            <div className="mb-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="flex items-center gap-2 rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition hover:bg-surface-hover hover:text-content-secondary"
+              >
+                <Cpu className="h-3.5 w-3.5" />
+                {advancedMode ? "Show less" : "Advanced view"}
+              </button>
+              {!advancedMode && (
+                <p className="text-[11px] text-content-muted">
+                  Advanced view adds the operator sidebar, Oracle controls, stats, rankings, and task history.
+                </p>
+              )}
             </div>
 
-            {/* Coming Soon Banner */}
+            {/* ── Advanced sections ── */}
+            {advancedMode && (
+              <>
+                {/* Quick Stats */}
+                <div className="mb-6">
+                  <QuickStatsBar />
+                </div>
+
+                {/* Autonomous Operations Status */}
+                <div className="mb-6">
+                  <AutonomousOperationsPanel />
+                </div>
+
+                {/* Oracle Control Tower */}
+                <div className="mb-6">
+                  <OracleControlTowerPanel />
+                </div>
+
+                {/* Agent Status Grid */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Activity className="w-4 h-4 text-accent" />
+                    <h2 className="type-section-title text-content">
+                      Available Agents
+                    </h2>
+                  </div>
+                  <AgentGrid />
+                </div>
+
+                {/* Free Model Rankings */}
+                <div className="mb-6">
+                  <Suspense fallback={<div className="h-[200px]" />}>
+                    <FreeModelRankingsPanel />
+                  </Suspense>
+                </div>
+
+                {/* Task Manager - Agent Task History & Telemetry */}
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <ClipboardList className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                      <h2 className="type-section-title text-content">
+                        Task History
+                      </h2>
+                    </div>
+                    <a
+                      href="/#activity"
+                      className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 hover:underline"
+                    >
+                      Public Feed <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <div className="nb-surface-card overflow-hidden h-[500px]">
+                    <Suspense fallback={<div className="h-full flex items-center justify-center text-xs text-content-muted">Loading tasks...</div>}>
+                      <TaskManagerView isPublic={false} className="h-full" />
+                    </Suspense>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Background Research Banner — always visible */}
             <div className="nb-surface-card p-6 bg-gradient-to-r from-[var(--accent-primary-bg)] to-surface-secondary">
               <div className="flex items-center gap-3 mb-2">
                 <Sparkles className="w-5 h-5 text-accent" />
@@ -428,7 +526,7 @@ export function AgentsHub() {
           </div>
 
           {/* Sidebar */}
-          <AgentSidebar />
+          {advancedMode ? <AgentSidebar /> : null}
         </div>
       </div>
     </div>

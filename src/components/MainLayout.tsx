@@ -21,76 +21,67 @@ import { LazyView } from "@/shared/components/LazyView";
 import { usePanelResize } from "../hooks/usePanelResize";
 import { useMainLayoutRouting, type MainView } from "../hooks/useMainLayoutRouting";
 import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
+import { FocalArea } from "../layouts/FocalArea";
 import { ViewSkeleton } from "./skeletons";
 import { AgentMetadata } from "./AgentMetadata";
+import { ViewBreadcrumbs } from "./ViewBreadcrumbs";
 import { useViewWebMcpTools } from "../hooks/useViewWebMcpTools";
 import { VIEW_PATH_MAP, VIEW_TITLES, VIEW_SUBTITLES, resolvePathToView, WORKSPACE_SURFACE_VIEWS, AGENTS_SURFACE_VIEWS, RESEARCH_SURFACE_VIEWS, GROUP_VIEW_MAP, VIEW_MAP } from "@/lib/viewRegistry";
+import { buildViewBreadcrumbs } from "@/lib/registry/viewBreadcrumbs";
 import { OracleSessionBanner } from "./OracleSessionBanner";
 import { useOracleSessionContext } from "@/contexts/OracleSessionContext";
+import {
+  deriveChecklistCompletionsFromRoute,
+  loadBuyerChecklistState,
+  mergeChecklistCompletions,
+  saveBuyerChecklistState,
+} from "@/features/controlPlane/lib/onboardingState";
 
-// ─── Lazy imports: only views with custom rendering logic in MainLayout ──────
-// Simple views (no props) use the registry component from @/lib/viewRegistry.
-import { type MainView as _MainViewCheck } from "@/lib/viewRegistry";
-
-const PublicDocuments = lazy(() =>
-  import("@/features/documents/views/PublicDocuments").then((mod) => ({
-    default: mod.PublicDocuments,
-  })),
-);
-const SpreadsheetsHub = lazy(() =>
-  import("@/features/spreadsheets/components/SpreadsheetsHub").then((mod) => ({
-    default: mod.SpreadsheetsHub,
-  })),
-);
-const SpreadsheetSheetView = lazy(() =>
-  import("@/features/spreadsheets/views/SpreadsheetSheetView").then((mod) => ({
-    default: mod.SpreadsheetSheetView,
-  })),
-);
-const CalendarHomeHub = lazy(() =>
-  import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({
-    default: mod.CalendarHomeHub,
-  })),
-);
-const TimelineRoadmapView = lazy(() =>
-  import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({
-    default: mod.TimelineRoadmapView,
-  })),
-);
-const ResearchHub = lazy(() => import("@/features/research/views/ResearchHub"));
-const CinematicHome = lazy(() => import("@/features/research/views/CinematicHome"));
-const PhaseAllShowcase = lazy(() =>
-  import("@/features/research/views/PhaseAllShowcase").then((mod) => ({
-    default: mod.PhaseAllShowcase,
-  })),
-);
-const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
-const EntityProfilePage = lazy(() =>
-  import("@/features/research/views/EntityProfilePage").then((mod) => ({
-    default: mod.EntityProfilePage,
-  })),
-);
-const ControlPlaneLanding = lazy(() =>
-  import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({
-    default: mod.ControlPlaneLanding,
-  })),
-);
-const DocumentsHomeHub = lazy(() =>
-  import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({
-    default: mod.DocumentsHomeHub,
-  })),
-);
-const TabManager = lazy(() =>
-  import("./TabManager").then((mod) => ({
-    default: mod.TabManager,
-  })),
-);
 const FastAgentPanel = lazy(() =>
   import("@features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
     default: mod.FastAgentPanel,
   })),
 );
 const SettingsModal = lazy(() => import("./SettingsModal"));
+const DocumentsHomeHub = lazy(() =>
+  import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({ default: mod.DocumentsHomeHub })),
+);
+const SpreadsheetsHub = lazy(() =>
+  import("@/features/spreadsheets/components/SpreadsheetsHub").then((mod) => ({ default: mod.SpreadsheetsHub })),
+);
+const SpreadsheetSheetView = lazy(() =>
+  import("@/features/spreadsheets/views/SpreadsheetSheetView").then((mod) => ({ default: mod.SpreadsheetSheetView })),
+);
+const CalendarHomeHub = lazy(() =>
+  import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({ default: mod.CalendarHomeHub })),
+);
+const TimelineRoadmapView = lazy(() =>
+  import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({ default: mod.TimelineRoadmapView })),
+);
+const ResearchHub = lazy(() => import("@/features/research/views/ResearchHub"));
+const CinematicHome = lazy(() => import("@/features/research/views/CinematicHome"));
+const PhaseAllShowcase = lazy(() =>
+  import("@/features/research/views/PhaseAllShowcase").then((mod) => ({ default: mod.PhaseAllShowcase })),
+);
+const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
+const EntityProfilePage = lazy(() =>
+  import("@/features/research/views/EntityProfilePage").then((mod) => ({ default: mod.EntityProfilePage })),
+);
+const TabManager = lazy(() =>
+  import("@/components/TabManager").then((mod) => ({ default: mod.TabManager })),
+);
+const ControlPlaneLanding = lazy(() =>
+  import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({ default: mod.ControlPlaneLanding })),
+);
+const PublicDocuments = lazy(() =>
+  import("@/features/documents/views/PublicDocuments").then((mod) => ({ default: mod.PublicDocuments })),
+);
+
+const EMPTY_FOOTNOTES_LIBRARY = {
+  citations: {} as Record<string, unknown>,
+  order: [] as string[],
+  updatedAt: new Date().toISOString(),
+};
 
 // Prefetch likely next routes after idle (perceived-performance optimization).
 // Uses requestIdleCallback where available, falls back to 2s setTimeout.
@@ -131,7 +122,6 @@ const viewFallbackDocuments = <ViewSkeleton variant="documents" />;
 const viewFallbackCalendar = <ViewSkeleton variant="calendar" />;
 const viewFallbackDashboard = <ViewSkeleton variant="dashboard" />;
 const viewFallback = viewFallbackDefault;
-const EMPTY_FOOTNOTES_LIBRARY = { citations: {} as Record<string, unknown>, order: [] as string[], updatedAt: new Date().toISOString() };
 
 // VIEW_TITLES and VIEW_SUBTITLES imported from @/lib/viewRegistry (single source of truth)
 
@@ -221,8 +211,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
     !isAuthenticated &&
     !user &&
     !previewBannerDismissed &&
-    currentView === "research" &&
-    !showResearchDossier;
+    (currentView === "control-plane" || (currentView === "research" && !showResearchDossier));
 
   // Handle anonymous sign in
   const handleAnonymousSignIn = useCallback(async () => {
@@ -340,6 +329,14 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   const navigateToView = useCallback((view: MainView) => {
     setCurrentView(view);
     const targetPath = VIEW_PATH_MAP[view];
+    if (targetPath && location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  }, [location.pathname, navigate, setCurrentView]);
+
+  const navigateToRouteTarget = useCallback((view: MainView, path?: string) => {
+    setCurrentView(view);
+    const targetPath = path ?? VIEW_PATH_MAP[view];
     if (targetPath && location.pathname !== targetPath) {
       navigate(targetPath);
     }
@@ -464,6 +461,15 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
         ? "Follow the active intelligence stream without losing context."
         : "Use the command deck below for voice, search, and navigation."
       : VIEW_SUBTITLES[currentView] || "Stay oriented while moving between surfaces.";
+  const breadcrumbs = useMemo(
+    () =>
+      buildViewBreadcrumbs({
+        currentView,
+        researchHubInitialTab,
+        showResearchDossier,
+      }),
+    [currentView, researchHubInitialTab, showResearchDossier],
+  );
   const contextChips = [
     selectedDocumentId ? "Document in focus" : null,
     selectedSpreadsheetId ? "Spreadsheet active" : null,
@@ -543,6 +549,21 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   }, [location.search, setCurrentView, onDocumentSelect]);
 
   useEffect(() => {
+    const completions = deriveChecklistCompletionsFromRoute({
+      currentView,
+      showResearchDossier,
+      researchHubInitialTab,
+    });
+    if (completions.length === 0) return;
+
+    const stored = loadBuyerChecklistState();
+    const next = mergeChecklistCompletions(stored, completions);
+    if (next !== stored) {
+      saveBuyerChecklistState(next);
+    }
+  }, [currentView, researchHubInitialTab, showResearchDossier]);
+
+  useEffect(() => {
     const computeViewportMode = () => {
       if (window.innerWidth < 768) return "mobile" as const;
       if (window.innerWidth < 1024) return "tablet" as const;
@@ -619,6 +640,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           onViewChange={navigateToView}
           isCollapsed={effectiveSidebarMode}
           onToggleCollapse={toggleSidebarCollapse}
+          showGuestPreviewFooter={showGuestWorkspaceCta}
         />
       </div>
 
@@ -665,7 +687,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
                     {surfaceRoot.label}
                   </button>
                 )}
-                {currentView !== 'research' && (
+                {currentView !== 'research' && currentView !== 'control-plane' && (
                   <>
                     <span aria-hidden="true" className="text-content-muted shrink-0 text-xs">
                       /
@@ -837,6 +859,16 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           <div className="border-b border-edge/70 bg-surface/55 px-4 py-2 sm:px-6">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0">
+                <ViewBreadcrumbs
+                  items={breadcrumbs}
+                  onNavigate={(item) => {
+                    if (item.view) {
+                      navigateToRouteTarget(item.view, item.path);
+                    } else if (item.path) {
+                      navigate(item.path);
+                    }
+                  }}
+                />
                 <div className="text-sm font-semibold text-content">{currentSurfaceTitle}</div>
                 <div className="truncate text-xs text-content-muted">{currentSurfaceSubtitle}</div>
               </div>
@@ -975,7 +1007,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
               </LazyView>
             ) : currentView === "control-plane" ? (
               <LazyView title="Landing failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <ControlPlaneLanding onNavigate={(view) => navigateToView(view as MainView)} />
+                <ControlPlaneLanding onNavigate={(view, path) => navigateToRouteTarget(view as MainView, path)} />
               </LazyView>
             ) : VIEW_MAP[currentView]?.component ? (
               /* ── Registry-driven renderer ────────────────────────────────
