@@ -1,13 +1,13 @@
 # NodeBench AI — Claude Code Project Instructions
 
 ## Project overview
-NodeBench MCP — a 218-tool Model Context Protocol server with progressive discovery, agent-as-a-graph embeddings, toolset gating presets, and CLI subcommands for human-friendly demo/onboarding. Monorepo with `packages/mcp-local` (main server) and `packages/convex-mcp-nodebench` (Convex auditor).
+NodeBench MCP — a 289-tool Model Context Protocol server with progressive discovery, agent-as-a-graph embeddings, toolset gating presets, and CLI subcommands for human-friendly demo/onboarding. Monorepo with `packages/mcp-local` (main server) and `packages/convex-mcp-nodebench` (Convex auditor).
 
 ## Key files
 - `AGENTS.md` — Full methodology, eval bench, tool pipeline, agent contract
 - `AI_FLYWHEEL.md` — Mandatory 7-step flywheel (step 7 = re-examine for 11/10)
 - `packages/mcp-local/src/index.ts` — Server entry, toolset gating, CLI args, CLI subcommands (discover/setup/workflow/quickref/call)
-- `packages/mcp-local/src/tools/toolRegistry.ts` — 175-entry tool catalog with `nextTools` + `relatedTools` cross-refs, `computeRelatedTools()` auto-derivation, `hybridSearch` with offset pagination
+- `packages/mcp-local/src/tools/toolRegistry.ts` — 289-entry tool catalog with `nextTools` + `relatedTools` cross-refs, `computeRelatedTools()` auto-derivation, `hybridSearch` with offset pagination
 - `packages/mcp-local/src/tools/progressiveDiscoveryTools.ts` — `discover_tools` (pagination + expansion), `get_tool_quick_ref` (multi-hop BFS depth 1-3), `get_workflow_chain`
 - `packages/mcp-local/src/tools/skillUpdateTools.ts` — Skill freshness tracking
 
@@ -38,7 +38,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 **Two-hop discovery**: Follow a rule's `related_` to reach its neighbors, then follow *their* `related_` for second-degree connections. Example: `process` → `a11y` → `keyboard`.
 
 ## Progressive Discovery features
-- **`relatedTools`**: Conceptually adjacent tools auto-populated on all 215 entries (949 connections, 191% amplification over `nextTools`, 90% cross-domain)
+- **`relatedTools`**: Conceptually adjacent tools auto-populated on all 289 entries
 - **Cursor pagination**: `discover_tools` supports `offset`/`limit` with stable `totalMatches` and `hasMore`
 - **Result expansion**: `discover_tools({ expand: 3 })` adds `relatedTools` neighbors at 50% parent score
 - **Multi-hop BFS**: `get_tool_quick_ref({ depth: 2 })` traverses `nextTools` + `relatedTools` edges, returns `hopDistance` and `reachedVia`
@@ -54,7 +54,7 @@ Modular rules live in `.claude/rules/` — each focused on one concern with `rel
 - **Self-direction**: Never wait for permission or next instructions. When a task completes, immediately identify and start the next highest-impact action. Verify visually first, code-grep second. Only pause for user input when direction is genuinely ambiguous.
 - **Scenario-based testing**: Never write simple tests. Every test must start from a real user persona and goal, simulate realistic behavior, and verify at scale. Required: all behavior angles (happy/sad/adversarial/concurrent/degraded), both short-running (burst) and long-running (sustained accumulation) scenarios. Shallow tests that pass in isolation but miss production failure modes are banned. Use `/scenario-testing` command to audit existing tests.
 - **Agentic reliability**: On every backend/infra change, run the 8-point checklist automatically: BOUND (memory eviction), HONEST_STATUS (no fake 2xx), HONEST_SCORES (no hardcoded floors), TIMEOUT (abort controllers), SSRF (URL validation), BOUND_READ (response size caps), ERROR_BOUNDARY (async error handling), DETERMINISTIC (stable hashing). Use `/agentic-reliability-audit` for full codebase sweep. See `.claude/rules/agentic_reliability.md`.
-- Presets: default (54 tools), web_dev (106), research (71), data (78), devops (68), mobile (95), academic (86), multi_agent (83), content (73), full (218) — see `toolsetRegistry.ts`
+- Presets: default (81 tools), web_dev (150), research (115), data (122), devops (92), mobile (126), academic (113), multi_agent (136), content (115), full (295) — see `toolsetRegistry.ts`
 - CLI subcommands: `discover`, `setup`, `workflow`, `quickref`, `call` — run-and-exit, bypass MCP transport, call tool handlers directly. Respects `--preset` and `--no-embedding`. Test with `cliSubcommands.test.ts`.
 
 ## Local Dashboard

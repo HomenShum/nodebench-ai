@@ -72,7 +72,7 @@ const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "f
 
 const PRESETS: Record<string, string[]> = {
   default: DEFAULT_TOOLSETS,
-  // Themed presets — bridge between default (50 tools) and full (175 tools)
+  // Themed presets — bridge between default (81 tools) and full (295 tools)
   web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping"],
   research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence"],
   data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
@@ -136,12 +136,12 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         }),
         "",
         "Examples:",
-        "  npx nodebench-mcp                    # Default (50 tools) - core AI Flywheel",
+        "  npx nodebench-mcp                    # Default (81 tools) - core AI Flywheel",
         "  npx nodebench-mcp --preset web_dev   # Web development (+ vision, SEO, git)",
         "  npx nodebench-mcp --preset research  # Research workflows (+ web, LLM, RSS, email)",
         "  npx nodebench-mcp --preset data      # Data analysis (+ local file parsing, LLM)",
         "  npx nodebench-mcp --preset academic  # Academic writing (+ paper tools, LLM)",
-        "  npx nodebench-mcp --preset full      # All 175 tools",
+        "  npx nodebench-mcp --preset full      # All 295 tools",
         "  npx nodebench-mcp --smart-preset     # Get AI-powered preset recommendation",
         "  npx nodebench-mcp --stats            # Show usage statistics",
         "  npx nodebench-mcp --toolsets verification,eval,recon",
@@ -2677,7 +2677,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.30.0" },
+  { name: "nodebench-mcp-methodology", version: "2.32.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
