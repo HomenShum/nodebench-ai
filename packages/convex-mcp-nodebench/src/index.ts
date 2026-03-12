@@ -367,6 +367,28 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
           },
         ],
       },
+      {
+        name: "execution-trace-substrate",
+        description: "Design or extend a Convex-backed execution trace substrate for runs, steps, decisions, evidence, verifications, and approvals.",
+        arguments: [
+          {
+            name: "projectDir",
+            description: "Absolute path to the project root",
+            required: true,
+          },
+        ],
+      },
+      {
+        name: "mission-logic-convex-design",
+        description: "Design a Convex-backed mission, stakeholder, and incentive model for consequence-aware agent runs.",
+        arguments: [
+          {
+            name: "projectDir",
+            description: "Absolute path to the project root",
+            required: true,
+          },
+        ],
+      },
     ],
   };
 });
@@ -460,6 +482,80 @@ Report: DEPLOY or DO NOT DEPLOY with specific blockers to fix.`,
 Focus on: unauthorized data access, unvalidated inputs, missing error boundaries, and potential data corruption vectors.
 
 Analyst diagnostic: For each security finding, trace upstream to the ROOT CAUSE. Don't just flag the symptom — explain what system condition allowed the vulnerability to exist. Record findings with convex_record_gotcha.`,
+          },
+        },
+      ],
+    };
+  }
+
+  if (name === "execution-trace-substrate") {
+    return {
+      description: "Convex execution trace substrate design sequence",
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text",
+            text: `Design or extend a Convex-backed execution trace substrate for the project at "${projectDir}".
+
+Required design targets:
+1. Durable run lifecycle state
+2. Step receipts for meaningful actions
+3. Structured decisions without raw chain-of-thought
+4. Evidence catalog with source references and artifact links
+5. Verification records for QA and integrity checks
+6. Approval records for risky or externally visible actions
+
+Execute this sequence:
+1. convex_audit_schema â€” inspect existing tables and indexes
+2. convex_audit_functions â€” inspect current workflow and task-manager functions
+3. convex_audit_data_modeling â€” identify schema gaps for traceability
+4. convex_audit_transaction_safety â€” check whether writes should be mutations vs actions
+5. convex_audit_actions â€” validate any external-call path that should remain in actions
+6. convex_quality_gate â€” summarize whether the design is safe to ship
+
+Output requirements:
+- Propose concrete table shapes or extensions for runs, steps, decisions, evidence, verifications, and approvals
+- Distinguish what belongs in queries, mutations, actions, and httpActions
+- Call out any index requirements for live dashboards and replay views
+- Explain how the substrate supports progressive disclosure: Outcome, Why, and Full Trace`,
+          },
+        },
+      ],
+    };
+  }
+
+  if (name === "mission-logic-convex-design") {
+    return {
+      description: "Mission and incentive modeling sequence for Convex-backed agent systems",
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text",
+            text: `Design a Convex-backed mission and human-logic layer for the project at "${projectDir}".
+
+The goal is not fake human equivalence. The goal is a structured model for:
+- mission
+- success criteria
+- unacceptable outcomes
+- stakeholder graph
+- incentive graph
+- decision trace
+
+Run this sequence:
+1. convex_audit_schema
+2. convex_audit_data_modeling
+3. convex_audit_functions
+4. convex_audit_authorization
+5. convex_quality_gate
+
+Return:
+- proposed Convex entities for mission models, stakeholder graphs, and incentive interpretations
+- which fields should be durable state vs derived interpretation
+- how evidence refs should anchor every interpretation
+- how approvals and audit trails interact with mission-aware runs
+- the main credibility risks if this layer is stored as vague prose instead of structured objects`,
           },
         },
       ],
