@@ -14,6 +14,14 @@ import type { Id } from '../../../../../convex/_generated/dataModel';
 export type TaskSessionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
 export type TaskSessionType = 'manual' | 'cron' | 'scheduled' | 'agent' | 'swarm';
 export type TaskVisibility = 'public' | 'private';
+export type OracleCrossCheckStatus = 'aligned' | 'drifting' | 'violated';
+
+export interface OracleSourceRef {
+  label: string;
+  href?: string;
+  note?: string;
+  kind?: string;
+}
 
 export interface TaskSession {
   _id: Id<"agentTaskSessions">;
@@ -29,6 +37,14 @@ export interface TaskSession {
   totalTokens?: number;
   inputTokens?: number;
   outputTokens?: number;
+  estimatedCostUsd?: number;
+  goalId?: string;
+  visionSnapshot?: string;
+  successCriteria?: string[];
+  sourceRefs?: OracleSourceRef[];
+  crossCheckStatus?: OracleCrossCheckStatus;
+  deltaFromVision?: string;
+  dogfoodRunId?: Id<"dogfoodQaRuns">;
   toolsUsed?: string[];
   agentsInvolved?: string[];
   cronJobName?: string;
@@ -52,6 +68,14 @@ export interface TaskTrace {
   endedAt?: number;
   totalDurationMs?: number;
   model?: string;
+  goalId?: string;
+  visionSnapshot?: string;
+  successCriteria?: string[];
+  sourceRefs?: OracleSourceRef[];
+  crossCheckStatus?: OracleCrossCheckStatus;
+  deltaFromVision?: string;
+  dogfoodRunId?: Id<"dogfoodQaRuns">;
+  estimatedCostUsd?: number;
   tokenUsage?: {
     input: number;
     output: number;
@@ -136,5 +160,4 @@ export interface DateRange {
   from: Date | null;
   to: Date | null;
 }
-
 

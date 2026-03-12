@@ -68,10 +68,10 @@ const getPhaseColors = (phase: TemporalPhase, isActive: boolean) => {
       dot: "bg-content-muted",
     },
     present: {
-      bg: isActive ? "bg-indigo-600" : "bg-indigo-500/10 hover:bg-indigo-500/10",
-      text: isActive ? "text-white" : "text-indigo-600 dark:text-indigo-400",
-      border: isActive ? "border-indigo-500/30" : "border-indigo-500/20",
-      dot: "bg-indigo-600",
+      bg: isActive ? "bg-[var(--accent-primary)]" : "bg-surface-secondary hover:bg-surface-hover",
+      text: isActive ? "text-white" : "text-content-secondary",
+      border: isActive ? "border-indigo-500/40" : "border-edge",
+      dot: "bg-[var(--accent-primary)]",
     },
     future: {
       bg: isActive ? "bg-content" : "bg-surface-secondary hover:bg-surface-hover",
@@ -153,9 +153,11 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
   const progressInfo = useMemo(() => {
     if (visibleEvents.length === 0) return { percentage: 0, phasePercentages: { past: 0, present: 0, future: 0 } };
 
-    const activeIndex = activeEventId
-      ? visibleEvents.findIndex(e => e.id === activeEventId)
-      : visibleEvents.findIndex(e => e.phase === "present") || 0;
+    const fallbackIndex = Math.max(0, visibleEvents.findIndex((event) => event.phase === "present"));
+    const matchedActiveIndex = activeEventId
+      ? visibleEvents.findIndex((event) => event.id === activeEventId)
+      : fallbackIndex;
+    const activeIndex = matchedActiveIndex >= 0 ? matchedActiveIndex : fallbackIndex;
 
     const percentage = visibleEvents.length > 1
       ? ((activeIndex + 1) / visibleEvents.length) * 100
@@ -264,7 +266,7 @@ export const TimelineStrip: React.FC<TimelineStripProps> = ({
           </div>
           {/* Progress indicator â€” skip animation on mount to avoid initial jank */}
           <motion.div
-            className="absolute top-0 left-0 h-full bg-indigo-600 rounded-full"
+            className="absolute top-0 left-0 h-full bg-[var(--accent-primary)] rounded-full"
             initial={false}
             animate={{ width: `${progressInfo.percentage}%` }}
             transition={{ duration: 0.3, ease: "easeOut" }}
@@ -378,11 +380,13 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
   return (
     <motion.button
       onClick={() => onClick?.(event)}
+      aria-pressed={isActive}
       className={`
         flex items-center gap-1.5 px-2.5 py-1.5 rounded-full
         border transition-all duration-200
         ${colors.bg} ${colors.text} ${colors.border}
-        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500/50
+        ${isActive ? "shadow-sm ring-2 ring-indigo-500/30" : ""}
+        focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-ring
       `}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -403,4 +407,3 @@ const TimelineEventChip: React.FC<TimelineEventChipProps> = ({
 };
 
 export default TimelineStrip;
-

@@ -103,7 +103,7 @@ export default function DualEditMiniPanel({
             </div>
             <input
               type="text"
-              className="flex-1 text-xs px-2 py-1 rounded border border-edge bg-white"
+              className="flex-1 text-xs px-2 py-1 rounded border border-edge bg-surface"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Task title"
@@ -118,7 +118,7 @@ export default function DualEditMiniPanel({
             </div>
             <input
               type="text"
-              className="flex-1 text-xs px-2 py-1 rounded border border-edge bg-white"
+              className="flex-1 text-xs px-2 py-1 rounded border border-edge bg-surface"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder="Event title"
@@ -158,7 +158,7 @@ export default function DualEditMiniPanel({
               </button>
               <button
                 type="button"
-                className={`text-xs px-2.5 py-1 rounded-md ${creating ? 'opacity-60 cursor-not-allowed' : ''} border ${creating ? 'border-edge bg-surface-secondary' : 'bg-indigo-600 text-white hover:bg-indigo-700 border-transparent'}`}
+                className={`text-xs px-2.5 py-1 rounded-md ${creating ? 'opacity-60 cursor-not-allowed' : ''} border ${creating ? 'border-edge bg-surface-secondary' : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] border-transparent'}`}
                 disabled={creating}
                 onClick={() => void createBoth()}
               >

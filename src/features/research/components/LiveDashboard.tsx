@@ -161,7 +161,7 @@ export const LiveDashboard: React.FC<{
   if (snapshot === undefined) {
     return (
       <div className="w-full font-mono text-content">
-        <div className="sticky top-4 z-10 rounded-lg border border-edge bg-white shadow-sm p-3">
+        <div className="sticky top-4 z-10 rounded-lg border border-edge bg-surface shadow-sm p-3">
           <div className="flex items-center justify-center h-[400px] text-content-muted">
             <div className="flex flex-col items-center gap-2">
               <RefreshCw className="w-6 h-6 motion-safe:animate-spin" />
@@ -197,7 +197,7 @@ export const LiveDashboard: React.FC<{
 
     return (
       <div className="w-full font-mono text-content">
-        <div className="sticky top-4 z-10 rounded-lg border border-edge bg-white shadow-sm p-3">
+        <div className="sticky top-4 z-10 rounded-lg border border-edge bg-surface shadow-sm p-3">
           <div className="flex flex-col items-center justify-center h-[400px] text-content-muted gap-4">
             <AlertCircle className="w-8 h-8" />
             <div className="text-center">
@@ -209,7 +209,7 @@ export const LiveDashboard: React.FC<{
                 type="button"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm transition-colors mx-auto"
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-lg text-sm transition-colors mx-auto"
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'motion-safe:animate-spin' : ''}`} />
                 <span>{isRefreshing ? 'Generating...' : 'Generate Now'}</span>
@@ -338,8 +338,8 @@ export const LiveDashboard: React.FC<{
                 onClick={() => setSelectedDate(date === selectedDate ? null : date)}
                 className={`px-2 py-1 text-xs rounded transition-colors ${
                   date === displayDate
-                    ? 'bg-indigo-600 text-white font-medium'
-                    : 'bg-white hover:bg-surface-hover text-content-secondary border border-edge'
+                    ? 'bg-[var(--accent-primary)] text-white font-medium'
+                    : 'bg-surface hover:bg-surface-hover text-content-secondary border border-edge'
                 }`}
                 title={`View data from ${date}`}
               >

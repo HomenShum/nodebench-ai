@@ -8,7 +8,7 @@
  * - Compact/comfortable density options
  */
 
-import { type ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { useDroppable } from "@dnd-kit/core";
 
 export interface KanbanLaneProps {
@@ -17,7 +17,7 @@ export interface KanbanLaneProps {
   children: ReactNode;
 }
 
-export function KanbanLane({ laneId, density, children }: KanbanLaneProps) {
+export const KanbanLane = memo(function KanbanLane({ laneId, density, children }: KanbanLaneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: laneId });
 
   return (
@@ -34,10 +34,10 @@ export function KanbanLane({ laneId, density, children }: KanbanLaneProps) {
               : laneId === "events"
                 ? "bg-amber-500/5"
                 : "bg-slate-500/5"
-      } ${isOver ? "ring-1 ring-indigo-500/40" : ""}`}
+      } ${isOver ? "ring-1 ring-ring" : ""}`}
     >
       {children}
     </div>
   );
-}
+});
 

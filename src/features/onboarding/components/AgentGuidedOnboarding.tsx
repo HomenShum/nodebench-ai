@@ -146,7 +146,7 @@ export function AgentGuidedOnboarding({ onComplete, onSkip }: AgentGuidedOnboard
                     <p className="text-xs font-semibold text-content-secondary mb-4">{step.subtitle}</p>
 
                     {/* Description */}
-                    <p className="text-content mb-8 leading-relaxed text-lg font-light">{step.description}</p>
+                    <p className="text-content mb-8 leading-relaxed text-lg font-normal">{step.description}</p>
 
                     {/* Features */}
                     <ul className="space-y-3 mb-8">

@@ -37,7 +37,7 @@ function ActIIChangeView({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-900/10 dark:border-white/10 pb-6">
+      <div className="border-b border-edge pb-6">
         <h2 className="text-2xl font-semibold text-content tracking-tight mb-2">
           Context Graph
         </h2>
@@ -58,12 +58,12 @@ function ActIIChangeView({
           drivers.map((signal: any, i: number) => (
             <div key={signal.headline ?? i} className="group cursor-default">
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-900/40 dark:bg-gray-400/40 group-hover:bg-gray-900 dark:group-hover:bg-gray-300 transition-colors" />
+                <div className="w-1.5 h-1.5 rounded-full bg-content-muted/50 group-hover:bg-content-secondary transition-colors" />
                 <span className="text-xs font-medium text-content-muted group-hover:text-content transition-colors">
                   Node {i + 1}
                 </span>
               </div>
-              <p className="text-sm font-medium text-gray-950 dark:text-gray-200 leading-snug pl-4 border-l border-gray-900/10 dark:border-white/10 group-hover:border-content/40 dark:group-hover:border-white/30 transition-colors">
+              <p className="text-sm font-medium text-content leading-snug pl-4 border-l border-edge group-hover:border-content/40 transition-colors">
                 {signal.headline}
               </p>
             </div>
@@ -84,7 +84,7 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-900/10 dark:border-white/10 pb-6">
+      <div className="border-b border-edge pb-6">
         <h2 className="text-2xl font-semibold text-content tracking-tight mb-2">
           Signal Velocity
         </h2>
@@ -97,8 +97,8 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
       </div>
 
       {/* Velocity Big Stat */}
-      <div className="py-8 text-center bg-surface-secondary border border-edge dark:border-white/10">
-        <span className="text-6xl font-bold text-gray-950 block">{velocity}</span>
+      <div className="py-8 text-center bg-surface-secondary border border-edge">
+        <span className="text-6xl font-bold text-content block">{velocity}</span>
         <span className="text-xs font-medium text-content-muted">Nodes / Hour</span>
       </div>
 
@@ -113,7 +113,7 @@ function ActIIIVelocityView({ summary }: { summary: SourceSummary | null }) {
             <div className="flex items-center gap-2">
               <div className="w-24 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gray-900/60 group-hover:bg-gray-900 transition-all duration-500"
+                  className="h-full bg-indigo-500/50 group-hover:bg-indigo-500/70 transition-all duration-500"
                   style={{ width: `${(item.count / totalNodes) * 100}%` }}
                 />
               </div>

@@ -31,10 +31,10 @@ export const MODES: ModeConfig[] = [
   {
     id: "mission",
     label: "Mission",
-    description: "Active research, signals, and intelligence synthesis",
+    description: "Active research, signals, receipts, and passport review",
     icon: "Target",
-    views: ["research", "signals", "for-you-feed", "industry-updates"],
-    defaultView: "research",
+    views: ["research", "signals", "for-you-feed", "industry-updates", "control-plane", "receipts", "delegation"],
+    defaultView: "control-plane",
     color: "var(--hud-cyan)",
   },
   {
@@ -51,6 +51,7 @@ export const MODES: ModeConfig[] = [
       "entity",
       "footnotes",
       "showcase",
+      "investigation",
     ],
     defaultView: "github-explorer",
     color: "var(--hud-amber)",

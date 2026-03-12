@@ -112,7 +112,7 @@ export function NarrativeCard({
             </h3>
 
             {/* Thesis */}
-            <p className="text-content-secondary leading-relaxed text-lg font-light line-clamp-3">
+            <p className="text-content-secondary leading-relaxed text-lg font-normal line-clamp-3">
               {thread.thesis}
             </p>
 
@@ -215,7 +215,7 @@ export function NarrativeCard({
         </h4>
 
         {/* Thesis */}
-        <p className="text-sm text-content-secondary leading-relaxed line-clamp-2 font-light">
+        <p className="text-sm text-content-secondary leading-relaxed line-clamp-2 font-normal">
           {thread.thesis}
         </p>
 

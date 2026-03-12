@@ -166,3 +166,87 @@ export function createSpring(stiffness: number, damping: number): Transition {
   return { type: 'spring', stiffness, damping };
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// HUD / Jarvis-style animation variants
+// ═══════════════════════════════════════════════════════════════════
+
+/** Clip-path reveal from center outward — for HUD panels */
+export const hudRevealVariants: Variants = {
+  hidden: {
+    clipPath: 'inset(50% 50% 50% 50%)',
+    opacity: 0,
+  },
+  visible: {
+    clipPath: 'inset(0% 0% 0% 0%)',
+    opacity: 1,
+    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] },
+  },
+  exit: {
+    clipPath: 'inset(50% 50% 50% 50%)',
+    opacity: 0,
+    transition: { duration: 0.25 },
+  },
+};
+
+/** Data stream / number ticker — for live data displays */
+export const dataStreamVariants: Variants = {
+  hidden: { opacity: 0, y: 8, filter: 'blur(4px)' },
+  visible: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.3, ease: 'easeOut' },
+  },
+  update: {
+    opacity: [1, 0.6, 1],
+    scale: [1, 1.02, 1],
+    transition: { duration: 0.2 },
+  },
+};
+
+/** Hologram flicker — subtle opacity flicker on mount for holographic feel */
+export const hologramFlickerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: [0, 0.8, 0.4, 1, 0.9, 1],
+    transition: { duration: 0.5, times: [0, 0.1, 0.2, 0.4, 0.6, 1] },
+  },
+};
+
+/** HUD border glow pulse — for active/selected elements */
+export const hudGlowPulseVariants: Variants = {
+  idle: {
+    boxShadow: '0 0 0px rgba(99, 102, 241, 0)',
+  },
+  active: {
+    boxShadow: [
+      '0 0 8px rgba(99, 102, 241, 0.3)',
+      '0 0 20px rgba(99, 102, 241, 0.15)',
+      '0 0 8px rgba(99, 102, 241, 0.3)',
+    ],
+    transition: { duration: 2, repeat: Infinity, ease: 'easeInOut' },
+  },
+};
+
+/** HUD slide-in with blur — cinematic panel entrance */
+export const hudSlideInVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    x: 40,
+    filter: 'blur(8px)',
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    filter: 'blur(0px)',
+    transition: springs.smooth,
+  },
+  exit: {
+    opacity: 0,
+    x: -20,
+    filter: 'blur(4px)',
+    transition: { duration: 0.2 },
+  },
+};
+
+

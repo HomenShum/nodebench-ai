@@ -94,7 +94,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                     value={sectorFilter}
                     onChange={(e) => setSectorFilter(e.target.value as typeof sectorFilter)}
                     aria-label="Filter by sector"
-                    className="px-3 py-1.5 text-xs font-medium border border-edge bg-surface dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="px-3 py-1.5 text-xs font-medium border border-edge bg-surface dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     {SECTOR_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -144,7 +144,7 @@ export function DealRadar({ onDealClick }: DealRadarProps) {
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 rounded-full bg-indigo-600" />
+                            <div className="w-2 h-2 rounded-full bg-[var(--accent-primary)]" />
                             <span>High Quality (80+)</span>
                         </div>
                         <div className="flex items-center gap-1">

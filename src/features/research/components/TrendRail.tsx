@@ -63,7 +63,7 @@ export const TrendRail: React.FC<TrendRailProps> = ({
           <button 
             key={trend.id} 
             onClick={() => onTrendClick?.(trend)}
-            className="flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-edge hover:border-edge hover:bg-surface-hover transition-all whitespace-nowrap group shrink-0"
+            className="flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-edge hover:border-primary/20 hover:bg-surface-hover hover:shadow-sm transition-all duration-200 whitespace-nowrap group shrink-0"
           >
             <span className="text-sm font-medium text-content group-hover:text-content">{trend.label}</span>
             <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex items-center gap-0.5 ${getDeltaStyle(trend)}`}>

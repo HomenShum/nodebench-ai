@@ -191,7 +191,7 @@ const DigestItemCard: React.FC<DigestItemCardProps> = ({ item, onClick }) => {
       type="button"
       onClick={onClick}
       whileHover={{ scale: 1.01 }}
-      className="w-full text-left p-4 rounded-lg border border-edge hover:border-edge transition-all"
+      className="w-full text-left p-4 rounded-lg border border-edge hover:shadow-md hover:border-primary/20 transition-all duration-200"
     >
       <div className="flex items-start gap-3">
         <span className={`p-2 rounded-lg ${colors}`}>

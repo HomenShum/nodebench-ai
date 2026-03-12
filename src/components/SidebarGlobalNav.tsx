@@ -5,11 +5,11 @@
  */
 
 import React, { useState } from 'react';
-import { Home, LayoutGrid, Bookmark, ChevronRight, FileText, Loader2, Bot } from 'lucide-react';
+import { Home, LayoutGrid, Bookmark, ChevronRight, FileText, Loader2, Bot, Search, Zap } from 'lucide-react';
 import { Tooltip } from '../shared/ui/Tooltip';
 import { sanitizeDocumentTitle } from '@/lib/displayText';
 
-export type ActivePage = 'research' | 'workspace' | 'saved';
+export type ActivePage = 'research' | 'workspace' | 'saved' | 'investigation' | 'agents';
 
 export interface RecentDossier {
   id: string;
@@ -35,10 +35,24 @@ const navItems = [
     expandable: false
   },
   {
+    id: 'investigation' as const,
+    label: 'Investigation',
+    icon: Search,
+    desc: 'Evidence packs and adversarial review',
+    expandable: false
+  },
+  {
     id: 'workspace' as const,
     label: 'Workspace',
     icon: LayoutGrid,
     desc: 'Documents, tasks, and analysis',
+    expandable: false
+  },
+  {
+    id: 'agents' as const,
+    label: 'Agents',
+    icon: Zap,
+    desc: 'Workflows and automation',
     expandable: false
   },
   {

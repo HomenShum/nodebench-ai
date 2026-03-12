@@ -247,41 +247,41 @@ describe("grounding routes", () => {
     const data = await response.json();
     expect(response.status).toBe(200);
     expect(data.meta?.query).toContain("payment gateway timeout");
-    expect(data.temporal_intelligence?.forecast).toBeTruthy();
-    expect(data.causal_chain?.[0]?.evidence?.source_snapshot_hash).toBe("hash_2044");
-    expect(data.audit_proof_pack?.trace_id).toBeTruthy();
-    expect(data.audit_proof_pack?.replay_url).toMatch(/^\/v1\/replay\//);
+    expect(data.derived_signals?.forecast).toBeTruthy();
+    expect(data.evidence_catalog?.[0]?.content_hash).toBe("hash_2044");
+    expect(data.traceability?.trace_id).toBeTruthy();
+    expect(data.traceability?.replay_url).toMatch(/^\/v1\/replay\//);
 
-    const replayResponse = await fetch(`${baseUrl}${data.audit_proof_pack.replay_url}`, {
+    const replayResponse = await fetch(`${baseUrl}${data.traceability.replay_url}`, {
       headers: { Connection: "close" },
     });
     const replayData = await replayResponse.json();
     expect(replayResponse.status).toBe(200);
     expect(replayData.object).toBe("replay_manifest");
-    expect(replayData.traceId).toBe(data.audit_proof_pack.trace_id);
+    expect(replayData.traceId).toBe(data.traceability.trace_id);
     expect(replayData.responseSnapshotHash).toBeTruthy();
     expect(replayData.sourceSnapshotHashes).toContain("hash_2044");
 
-    const traceResponse = await fetch(`${baseUrl}${data.audit_proof_pack.replay_url}/trace`, {
+    const traceResponse = await fetch(`${baseUrl}${data.traceability.replay_url}/trace`, {
       headers: { Connection: "close" },
     });
     const traceData = await traceResponse.json();
     expect(traceResponse.status).toBe(200);
     expect(traceData.object).toBe("replay_trace");
-    expect(traceData.traceId).toBe(data.audit_proof_pack.trace_id);
+    expect(traceData.traceId).toBe(data.traceability.trace_id);
     expect(traceData.trace.length).toBeGreaterThanOrEqual(2);
     expect(traceData.trace[0]?.events?.[0]?.name).toBe("tool.input");
 
-    const replayRunResponse = await fetch(`${baseUrl}${data.audit_proof_pack.replay_url}`, {
+    const replayRunResponse = await fetch(`${baseUrl}${data.traceability.replay_url}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Connection: "close" },
-      body: JSON.stringify({ subset: "causal_chain_only" }),
+      body: JSON.stringify({ subset: "observed_facts_only" }),
     });
     const replayRunData = await replayRunResponse.json();
     expect(replayRunResponse.status).toBe(201);
     expect(replayRunData.object).toBe("replay_execution");
     expect(replayRunData.mode).toBe("deterministic_manifest_replay");
-    expect(replayRunData.traceId).toBe(data.audit_proof_pack.trace_id);
+    expect(replayRunData.traceId).toBe(data.traceability.trace_id);
   });
 
   it("returns a fetched document from /v1/fetch", async () => {

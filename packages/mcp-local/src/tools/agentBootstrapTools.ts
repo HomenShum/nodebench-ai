@@ -1916,53 +1916,44 @@ export const agentBootstrapTools: McpTool[] = [
     },
     handler: async (args: { command: string; cwd?: string; timeoutMs?: number }) => {
       const start = Date.now();
-      const timeout = Math.min(args.timeoutMs ?? 60000, 300000);
       const cwd = args.cwd || process.cwd();
 
-      // Safety: block obviously dangerous commands
-      const blocked = ["rm -rf /", "mkfs", "dd if=", ":(){", "fork bomb"];
-      if (blocked.some((b) => args.command.includes(b))) {
-        return { error: true, message: "Command blocked for safety", command: args.command };
-      }
-
+      // Security: use allow-list command sandbox instead of bypassable deny-list
       try {
-        const { execSync } = await import("node:child_process");
-        const stdout = execSync(args.command, {
+        const { safeExec, SecurityError } = await import("../security/index.js");
+        const result = safeExec(args.command, {
           cwd,
-          timeout,
-          encoding: "utf-8",
-          stdio: ["pipe", "pipe", "pipe"],
-          maxBuffer: 10 * 1024 * 1024, // 10MB
+          timeout: args.timeoutMs,
+          allowPipes: true,
         });
 
         return {
-          exitCode: 0,
-          stdout: stdout.slice(0, 50000), // Cap output
-          stderr: "",
+          exitCode: result.exitCode,
+          stdout: result.stdout,
+          stderr: result.stderr,
           command: args.command,
           cwd,
-          elapsedMs: Date.now() - start,
-          passed: true,
-          summary: `Command succeeded in ${Date.now() - start}ms`,
+          elapsedMs: result.durationMs,
+          passed: result.exitCode === 0,
+          timedOut: result.timedOut,
+          summary: result.exitCode === 0
+            ? `Command succeeded in ${result.durationMs}ms`
+            : result.timedOut
+              ? `Command timed out`
+              : `Command failed with exit code ${result.exitCode}`,
         };
       } catch (err: any) {
-        const exitCode = err.status ?? 1;
-        const stdout = (err.stdout ?? "").slice(0, 50000);
-        const stderr = (err.stderr ?? "").slice(0, 10000);
-        const timedOut = err.killed || err.signal === "SIGTERM";
-
+        // SecurityError = command blocked by allow-list or metachar injection
         return {
-          exitCode,
-          stdout,
-          stderr,
+          exitCode: 126,
+          stdout: "",
+          stderr: err.message ?? "Command blocked by security policy",
           command: args.command,
           cwd,
           elapsedMs: Date.now() - start,
           passed: false,
-          timedOut,
-          summary: timedOut
-            ? `Command timed out after ${timeout}ms`
-            : `Command failed with exit code ${exitCode}`,
+          timedOut: false,
+          summary: `[SECURITY] ${err.message}`,
         };
       }
     },

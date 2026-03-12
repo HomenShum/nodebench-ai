@@ -228,7 +228,7 @@ const RecentRuns = memo(function RecentRuns() {
                 </span>
                 {swarm.elapsedMs && (
                   <span className="text-xs text-content-muted">
-                    â€¢ {formatTime(swarm.elapsedMs)}
+                    • {formatTime(swarm.elapsedMs)}
                   </span>
                 )}
               </div>
@@ -292,7 +292,7 @@ const MemoryStats = memo(function MemoryStats() {
           </div>
           <div className="h-1.5 bg-surface-secondary rounded-full overflow-hidden">
             <div
-              className="h-full bg-indigo-600 rounded-full"
+              className="h-full bg-[var(--accent-primary)] rounded-full"
               style={{ width: `${(stats.tokenUsage / 50000) * 100}%` }}
             />
           </div>
@@ -464,4 +464,3 @@ export const AgentSidebar = memo(function AgentSidebar({ className }: AgentSideb
 });
 
 export default AgentSidebar;
-

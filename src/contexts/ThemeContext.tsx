@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
 import {
   ThemePreferences,
   ThemeContextValue,
   ThemeMode,
   ThemeDensity,
   BackgroundPattern,
+  LayoutMode,
   DEFAULT_THEME,
   ACCENT_COLORS,
 } from '../types/theme';
@@ -34,6 +33,7 @@ export function useThemeSafe(): ThemeContextValue {
       setFontFamily: () => {},
       setBackgroundPattern: () => {},
       setReducedMotion: () => {},
+      setLayout: () => {},
       resetToDefaults: () => {},
     };
   }
@@ -159,6 +159,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setTheme(prev => ({ ...prev, reducedMotion }));
   }, []);
 
+  const setLayout = useCallback((layout: LayoutMode) => {
+    setTheme(prev => ({ ...prev, layout }));
+  }, []);
+
   const resetToDefaults = useCallback(() => {
     setTheme(DEFAULT_THEME);
   }, []);
@@ -172,8 +176,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setFontFamily,
     setBackgroundPattern,
     setReducedMotion,
+    setLayout,
     resetToDefaults,
-  }), [theme, resolvedMode, setMode, setAccentColor, setDensity, setFontFamily, setBackgroundPattern, setReducedMotion, resetToDefaults]);
+  }), [theme, resolvedMode, setMode, setAccentColor, setDensity, setFontFamily, setBackgroundPattern, setReducedMotion, setLayout, resetToDefaults]);
 
   return (
     <ThemeContext.Provider value={value}>

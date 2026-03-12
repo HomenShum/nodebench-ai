@@ -12,7 +12,7 @@
  * - Optional micro-viz
  */
 
-import React, { useState } from "react";
+import React, { memo, useState } from "react";
 import { ChevronDown, ChevronUp, Lightbulb, LinkIcon, TrendingUp, Tag, BarChart2 } from "lucide-react";
 import type { Signal } from "../types/dailyBriefSchema";
 import { EvidenceGrid } from "./EvidenceGrid";
@@ -55,7 +55,7 @@ interface SignalCardProps {
   showMicroViz?: boolean;
 }
 
-export function SignalCard({
+export const SignalCard = memo(function SignalCard({
   signal,
   index,
   defaultExpanded = true,
@@ -69,10 +69,10 @@ export function SignalCard({
   return (
     <div
       className="group relative bg-surface border border-edge rounded-lg overflow-hidden
-                 hover:border-edge transition-all duration-200"
+                 hover:shadow-md hover:border-primary/20 transition-all duration-200"
     >
       {/* Left Accent Border */}
-      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-600" />
+      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--accent-primary)]" />
 
       {/* Header - Always Visible */}
       <button
@@ -196,7 +196,7 @@ export function SignalList({ signals, onSignalClick, className = "" }: SignalLis
       ))}
     </div>
   );
-}
+});
 
 export default SignalCard;
 

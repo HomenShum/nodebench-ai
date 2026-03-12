@@ -175,7 +175,7 @@ export function FileUpload({ threadId, onFileSubmitted }: FileUploadProps) {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="Ask a question about this file..."
-                className="flex-1 px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm"
+                className="flex-1 px-3 py-2 border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-sm"
                 disabled={isSubmitting}
               />
               <button

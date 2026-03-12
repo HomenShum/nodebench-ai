@@ -220,7 +220,8 @@ describe("isotonicCalibrate", () => {
       for (let j = 0; j < 10; j++) {
         const p = (i * 10 + j + 0.5) / 100;
         // Roughly calibrated: higher p → more "yes"
-        const outcome = Math.random() < p ? "yes" : "no";
+        const yesThreshold = i;
+        const outcome = j < yesThreshold ? "yes" : "no";
         forecasts.push({ probability: p, outcome: outcome as "yes" | "no" });
       }
     }

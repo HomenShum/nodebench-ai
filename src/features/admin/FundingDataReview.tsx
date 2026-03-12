@@ -213,7 +213,7 @@ export function FundingDataReview() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by company name..."
-                className="w-full px-4 py-2 border border-edge rounded-lg bg-surface text-content placeholder:text-content-muted focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-edge rounded-lg bg-surface text-content placeholder:text-content-muted focus:ring-2 focus:ring-ring focus:border-transparent"
               />
             </div>
             <div className="md:w-64">
@@ -223,7 +223,7 @@ export function FundingDataReview() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-edge rounded-lg bg-surface text-content focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-edge rounded-lg bg-surface text-content focus:ring-2 focus:ring-ring focus:border-transparent"
               >
                 <option value="all">All Issues ({allIssues.length})</option>
                 <option value="unknownCompany">
@@ -266,7 +266,7 @@ export function FundingDataReview() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-transparent divide-y divide-gray-200 dark:divide-white/[0.04]">
+              <tbody className="bg-surface dark:bg-transparent divide-y divide-gray-200 dark:divide-white/[0.04]">
                 {filteredIssues.map((issue) => (
                   <tr key={issue.id} className="hover:bg-surface-hover">
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -439,7 +439,7 @@ function ManualFixModal({
               type="text"
               value={correctName}
               onChange={(e) => setCorrectName(e.target.value)}
-              className="w-full px-4 py-2 border border-edge bg-surface text-content rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-edge bg-surface text-content rounded-lg focus:ring-2 focus:ring-ring"
               placeholder="Enter correct company name"
             />
           </div>
@@ -451,7 +451,7 @@ function ManualFixModal({
             <textarea
               value={reasoning}
               onChange={(e) => setReasoning(e.target.value)}
-              className="w-full px-4 py-2 border border-edge bg-surface text-content rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border border-edge bg-surface text-content rounded-lg focus:ring-2 focus:ring-ring"
               rows={3}
               placeholder="Explain why this is the correct name..."
             />

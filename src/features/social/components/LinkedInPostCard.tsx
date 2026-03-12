@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 
 interface LinkedInPostCardProps {
-  content: string;
-  postType: string;
-  persona: string;
+  content?: string | null;
+  postType?: string | null;
+  persona?: string | null;
   dateString: string;
   postedAt: number;
   postUrl?: string;
@@ -62,12 +62,16 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const typeConfig = POST_TYPE_CONFIG[postType] || POST_TYPE_CONFIG.daily_digest;
-  const personaConfig = PERSONA_CONFIG[persona] || PERSONA_CONFIG.GENERAL;
+  const safePostType = typeof postType === "string" ? postType : "";
+  const safePersona = typeof persona === "string" ? persona : "GENERAL";
+  const typeConfig = POST_TYPE_CONFIG[safePostType] || POST_TYPE_CONFIG.daily_digest;
+  const personaConfig = PERSONA_CONFIG[safePersona] || PERSONA_CONFIG.GENERAL;
   const TypeIcon = typeConfig.icon;
+  const safeContent = typeof content === "string" ? content : "";
 
-  const isLong = content.length > CONTENT_PREVIEW_LENGTH;
-  const displayContent = expanded || !isLong ? content : content.slice(0, CONTENT_PREVIEW_LENGTH) + "...";
+  const isLong = safeContent.length > CONTENT_PREVIEW_LENGTH;
+  const displayContent =
+    expanded || !isLong ? safeContent : safeContent.slice(0, CONTENT_PREVIEW_LENGTH) + "...";
 
   const formattedTime = new Date(postedAt).toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -76,7 +80,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
   });
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
+    await navigator.clipboard.writeText(safeContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -90,7 +94,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
             <TypeIcon className="w-3 h-3" />
             {typeConfig.label}
           </span>
-          {persona !== postType.toUpperCase() && persona !== "FUNDING" && (
+          {safePersona !== safePostType.toUpperCase() && safePersona !== "FUNDING" && (
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${personaConfig.color}`}>
               {personaConfig.label}
             </span>
@@ -105,7 +109,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className="text-sm text-content whitespace-pre-wrap leading-relaxed font-light">
+      <div className="text-sm text-content whitespace-pre-wrap leading-relaxed font-normal">
         {displayContent}
       </div>
 
@@ -133,7 +137,7 @@ export const LinkedInPostCard: React.FC<LinkedInPostCardProps> = ({
           {factCheckCount != null && factCheckCount > 0 && (
             <span>{factCheckCount} fact checks</span>
           )}
-          <span>{content.length > 60 ? `${Math.ceil(content.length / 200)} min read` : ''}</span>
+          <span>{safeContent.length > 60 ? `${Math.ceil(safeContent.length / 200)} min read` : ""}</span>
         </div>
         <div className="flex items-center gap-2">
           <button

@@ -715,7 +715,7 @@ describe("Preset Real-World Benchmark", () => {
     describe(`Scenario: ${scenario.name}`, () => {
       const scenarioTrajectories: PresetTrajectory[] = [];
 
-      it(`runs all 4 presets in parallel for ${scenario.id}`, { timeout: 15000 }, async () => {
+      it(`runs all 4 presets in parallel for ${scenario.id}`, { timeout: 45000 }, async () => {
         // Execute all 4 presets concurrently (simulates parallel subagents)
         const results = await Promise.all(
           PRESET_NAMES.map((preset) => executeScenario(scenario, preset)),

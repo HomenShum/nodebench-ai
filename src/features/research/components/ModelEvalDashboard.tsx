@@ -278,7 +278,7 @@ export const ModelEvalDashboard: React.FC<EvalDashboardProps> = ({
     }));
 
   return (
-    <div className="space-y-6 p-4 bg-white rounded-lg border border-edge">
+    <div className="space-y-6 p-4 bg-surface rounded-lg border border-edge">
       {/* v0.1.0 Announcement Banner */}
       <div className="bg-gradient-to-r from-indigo-500/10 to-indigo-500/10 border border-indigo-500/30 rounded-lg p-4">
         <div className="flex items-center gap-3">

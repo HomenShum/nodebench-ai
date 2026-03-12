@@ -78,7 +78,9 @@ def _compute_ssim_pair(args: tuple) -> float:
 
     except Exception as e:
         logger.error(f"SSIM computation failed for {frame_a_path} vs {frame_b_path}: {e}")
-        return 1.0
+        # Return 0.0 (worst-case / "unknown") — a failed comparison must NOT be
+        # treated as "frames identical" (1.0), which would silently hide flickers.
+        return 0.0
 
 
 class FrameAnalyzer:

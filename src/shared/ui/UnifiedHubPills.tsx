@@ -17,7 +17,7 @@ export function UnifiedHubPills({
   const navigate = useNavigate();
 
   const container = [
-    "inline-flex items-center gap-0.5 p-1 rounded-lg bg-surface-secondary/80 backdrop-blur-sm border border-edge/50 shadow-sm",
+    "inline-flex items-center gap-0.5 p-1 rounded-lg bg-surface-secondary/80 backdrop-blur-sm border border-edge/60 shadow-sm",
     className ?? "",
   ]
     .join(" ")
@@ -26,10 +26,11 @@ export function UnifiedHubPills({
   const btnCls = (name: Hub, disabled?: boolean) => {
     const isActive = active === name;
     return [
-      "px-4 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
+      "relative inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-lg border transition-all duration-150",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
       isActive
-        ? "bg-surface text-content shadow-sm"
-        : "text-content-secondary hover:text-content hover:bg-surface/60",
+        ? "border-primary/30 bg-primary/[0.08] text-content font-semibold shadow-sm ring-1 ring-primary/30 dark:ring-primary/40"
+        : "border-transparent text-content-secondary hover:text-content hover:border-edge hover:bg-surface/70",
       disabled ? "opacity-40 cursor-not-allowed" : "",
     ].join(" ");
   };
@@ -65,13 +66,16 @@ export function UnifiedHubPills({
 
   return (
     <nav className={container} role="tablist" aria-label="Primary hubs">
-      <button className={btnCls("documents")} onClick={goDocs} role="tab" aria-selected={active === "documents"}>
+      <button className={btnCls("documents")} onClick={goDocs} role="tab" aria-selected={active === "documents"} aria-current={active === "documents" ? "page" : undefined}>
+        {active === "documents" ? <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}
         Documents
       </button>
-      <button className={btnCls("calendar")} onClick={goCalendar} role="tab" aria-selected={active === "calendar"}>
+      <button className={btnCls("calendar")} onClick={goCalendar} role="tab" aria-selected={active === "calendar"} aria-current={active === "calendar" ? "page" : undefined}>
+        {active === "calendar" ? <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}
         Calendar
       </button>
-      <button className={btnCls("agents")} onClick={goAgents} role="tab" aria-selected={active === "agents"}>
+      <button className={btnCls("agents")} onClick={goAgents} role="tab" aria-selected={active === "agents"} aria-current={active === "agents" ? "page" : undefined}>
+        {active === "agents" ? <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}
         Agents
       </button>
       {showRoadmap && (
@@ -80,15 +84,15 @@ export function UnifiedHubPills({
           onClick={roadmapDisabled ? undefined : goRoadmap}
           role="tab"
           aria-selected={active === "roadmap"}
+          aria-current={active === "roadmap" ? "page" : undefined}
           aria-disabled={roadmapDisabled}
           title={roadmapDisabled ? "Coming soon" : "Open roadmap hub"}
           disabled={roadmapDisabled}
         >
+          {active === "roadmap" ? <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}
           Roadmap
         </button>
       )}
     </nav>
   );
 }
-
-

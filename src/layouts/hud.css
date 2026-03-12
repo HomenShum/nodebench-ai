@@ -1,0 +1,740 @@
+/**
+ * hud.css — Jarvis Cockpit HUD design tokens and utilities.
+ *
+ * Provides HUD-specific color tokens, typography classes, and
+ * box-drawing border utilities for the cockpit layout.
+ */
+
+/* ─── HUD Color Tokens ─── */
+:root {
+  --hud-cyan: #00bcd4;
+  --hud-amber: #ffb300;
+  --hud-green: #00c853;
+  --hud-red: #ff1744;
+  --hud-purple: #b388ff;
+  --hud-dim: rgba(0, 0, 0, 0.15);
+  --hud-surface: rgba(255, 255, 255, 0.03);
+  --hud-border: rgba(0, 0, 0, 0.08);
+  --hud-text: rgba(0, 0, 0, 0.75);
+  --hud-text-dim: rgba(0, 0, 0, 0.6); /* WCAG AA: ~5.7:1 on white */
+  --hud-text-muted: rgba(0, 0, 0, 0.32);
+}
+
+.dark {
+  --hud-cyan: #00e5ff;
+  --hud-amber: #ffc107;
+  --hud-green: #00e676;
+  --hud-red: #ff1744;
+  --hud-purple: #d1c4e9;
+  --hud-dim: rgba(255, 255, 255, 0.08);
+  --hud-surface: rgba(255, 255, 255, 0.04);
+  --hud-border: rgba(255, 255, 255, 0.08);
+  --hud-text: rgba(255, 255, 255, 0.88);
+  --hud-text-dim: rgba(255, 255, 255, 0.5);
+  --hud-text-muted: rgba(255, 255, 255, 0.28);
+}
+
+/* ─── HUD Typography ─── */
+.hud-mono {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+.hud-label {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-text-dim);
+}
+
+.hud-label-active {
+  color: var(--hud-text);
+}
+
+/* ─── HUD Borders ─── */
+.hud-border {
+  border: 1px solid var(--hud-border);
+}
+
+.hud-border-t {
+  border-top: 1px solid var(--hud-border);
+}
+
+.hud-border-b {
+  border-bottom: 1px solid var(--hud-border);
+}
+
+.hud-border-r {
+  border-right: 1px solid var(--hud-border);
+}
+
+.hud-border-l {
+  border-left: 1px solid var(--hud-border);
+}
+
+/* ─── Connection Dot Pulse ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-dot-pulse {
+    animation: hud-pulse 2s ease-in-out infinite;
+  }
+}
+
+@keyframes hud-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ─── HUD Surfaces ─── */
+.hud-surface {
+  background: var(--hud-surface);
+}
+
+/* ─── Stereo Depth — z-layer separation for chrome zones ─── */
+.hud-depth-top {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  z-index: 10;
+  position: relative;
+}
+
+.hud-depth-right {
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
+  z-index: 10;
+  position: relative;
+}
+
+.hud-depth-bottom {
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06), 0 -1px 2px rgba(0, 0, 0, 0.04);
+  z-index: 10;
+  position: relative;
+}
+
+.dark .hud-depth-top {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.dark .hud-depth-right {
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
+}
+
+.dark .hud-depth-bottom {
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.3), 0 -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Mode Acquisition Animation ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-mode-acquire {
+    animation: hud-acquire 0.35s ease-out;
+  }
+}
+
+@keyframes hud-acquire {
+  0% { opacity: 0.5; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* StatusStrip mode label flash on mode switch */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-label-acquire {
+    animation: hud-label-flash 0.4s ease-out;
+  }
+}
+
+@keyframes hud-label-flash {
+  0% { opacity: 0.4; }
+  40% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* ─── Mode Rail Icon Button ─── */
+.hud-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  color: var(--hud-text-dim);
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  position: relative; /* needed for .hud-badge absolute positioning */
+}
+
+/* ─── Urgency Badge ─── */
+.hud-badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  border-radius: 7px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 13px;
+  text-align: center;
+  color: #fff;
+  pointer-events: none;
+  /* background color set inline per-mode */
+}
+
+.dark .hud-badge {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.hud-mode-btn:hover {
+  color: var(--hud-text);
+  background: var(--hud-dim);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hud-mode-btn:active {
+    transform: scale(0.93);
+  }
+}
+
+.hud-mode-btn[data-active="true"] {
+  /* color is set inline per-mode via style prop; glow and indicator use currentColor */
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  box-shadow: inset 2px 0 0 currentColor; /* left-edge active indicator */
+}
+
+.hud-mode-btn[data-active="true"]:hover {
+  /* Brighten mode glow on hover instead of replacing it with --hud-dim */
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+/* ─── Resize Handle ─── */
+.hud-resize-handle:hover {
+  background: var(--hud-mode-color, var(--hud-cyan));
+}
+
+/* Keyboard focus rings for HUD interactive elements */
+.hud-mode-btn:focus-visible,
+.hud-tab:focus-visible,
+.hud-mobile-tab:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.hud-resize-handle:focus-visible {
+  outline: 2px solid var(--hud-mode-color, var(--hud-cyan));
+  outline-offset: 2px;
+}
+
+/* ─── StatusStrip Ticker ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-ticker {
+    animation: hud-ticker-scroll linear infinite;
+  }
+}
+
+@keyframes hud-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ─── CommandBar Tab Strip (fade mask for overflow) ─── */
+.hud-tab-strip {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+}
+
+/* ─── CommandBar Tab ─── */
+.hud-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 28px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6875rem;
+  color: var(--hud-text-dim);
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+}
+
+.hud-tab:hover {
+  color: var(--hud-text);
+  background: var(--hud-dim);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hud-tab:active {
+    transform: scale(0.96);
+  }
+}
+
+.hud-tab[data-active="true"] {
+  color: var(--hud-text);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  box-shadow: inset 0 -2px 0 currentColor;
+  font-weight: 600;
+}
+
+.hud-tab[data-active="true"]:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+/* ─── Mobile Mode Tabs ─── */
+.hud-mobile-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  padding: 4px 0;
+  border-radius: 8px;
+  position: relative; /* needed for .hud-mobile-badge */
+  color: var(--hud-text-dim);
+  transition: color 0.15s, background 0.15s;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hud-mobile-tab:hover {
+  background: var(--hud-dim);
+}
+
+.hud-mobile-tab:active {
+  background: var(--hud-dim);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hud-mobile-tab:active {
+    transform: scale(0.95);
+  }
+}
+
+.hud-mobile-tab[data-active="true"] {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.hud-mobile-tab[data-active="true"]:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+/* ─── Mobile Tab Urgency Dot ─── */
+.hud-mobile-badge {
+  position: absolute;
+  top: 5px;
+  right: calc(50% - 18px); /* offset right of the centered icon */
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  /* background color set inline per-mode */
+}
+
+/* ─── Focal Area Containment & Transition ─── */
+.hud-focal-area {
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 800px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hud-focal-enter {
+    animation: hud-focal-fade 0.12s ease-out;
+    will-change: transform;
+  }
+}
+
+@keyframes hud-focal-fade {
+  from { opacity: 0.96; transform: translateY(2px); }
+  to   { opacity: 1;    transform: translateY(0); }
+}
+
+/* ─── Glassmorphic Surfaces ─── */
+.hud-glass {
+  background: rgba(255, 255, 255, 0.04);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: blur(12px) saturate(1.2);
+  will-change: filter; /* GPU hint for backdrop-filter compositing */
+  contain: layout style; /* prevent layout thrashing from children */
+}
+
+.dark .hud-glass {
+  background: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+}
+
+/* ─── Border Beam — traveling light along edges ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-border-beam {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hud-border-beam::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--hud-cyan), transparent);
+    animation: hud-beam 6s linear infinite;
+    pointer-events: none;
+    will-change: transform;
+  }
+}
+
+@keyframes hud-beam {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+/* ─── Text Emission — glow on active labels ─── */
+.hud-text-emit {
+  text-shadow: 0 0 6px currentColor, 0 0 2px currentColor;
+}
+
+.dark .hud-text-emit {
+  text-shadow: 0 0 10px currentColor, 0 0 3px currentColor;
+}
+
+/* ─── Route Materialization — blur-to-sharp on view change ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-materialize {
+    animation: hud-materialize 0.2s ease-out both;
+  }
+  /* Identical animation on a second name — toggling class retriggers without remount */
+  .hud-materialize-alt {
+    animation: hud-materialize-alt 0.2s ease-out both;
+  }
+}
+
+@keyframes hud-materialize {
+  from { opacity: 0; filter: blur(2px); }
+  to   { opacity: 1; filter: blur(0);   }
+}
+
+@keyframes hud-materialize-alt {
+  from { opacity: 0; filter: blur(2px); }
+  to   { opacity: 1; filter: blur(0);   }
+}
+
+/* ─── HUD Prompt Glow — subtle breathing ring ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-prompt-glow {
+    animation: hud-glow-breathe 3s ease-in-out infinite;
+  }
+}
+
+@keyframes hud-glow-breathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+/* ─── HUD Scan Lines — subtle horizontal sweep ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-scan-lines {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(6, 182, 212, 0.015) 2px,
+        rgba(6, 182, 212, 0.015) 4px
+      );
+    background-size: 100% 4px;
+    pointer-events: none;
+  }
+}
+
+/* ─── HUD Rotating Rings — concentric arcs around prompt bar ─────────────
+ *
+ * PURPOSE (for other coding agents):
+ * These create the Iron Man Jarvis-style rotating ring arcs around the
+ * central prompt bar. Each ring rotates at different speeds/directions.
+ * The rings are CENTERED on the prompt bar via a wrapper with
+ * inset-0 + flex centering — NOT via translate offsets.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-ring {
+    border-radius: 50%;
+    border: 1px solid transparent;
+    pointer-events: none;
+    position: absolute;
+  }
+
+  .hud-ring-1 {
+    width: 340px;
+    height: 340px;
+    border-top-color: rgba(6, 182, 212, 0.3);
+    border-right-color: rgba(6, 182, 212, 0.1);
+    animation: hud-ring-spin 8s linear infinite;
+  }
+
+  .hud-ring-2 {
+    width: 420px;
+    height: 420px;
+    border-bottom-color: rgba(6, 182, 212, 0.2);
+    border-left-color: rgba(6, 182, 212, 0.08);
+    animation: hud-ring-spin 12s linear infinite reverse;
+  }
+
+  .hud-ring-3 {
+    width: 500px;
+    height: 500px;
+    border-top-color: rgba(6, 182, 212, 0.12);
+    border-right-color: rgba(6, 182, 212, 0.05);
+    border-style: dashed;
+    animation: hud-ring-spin 20s linear infinite;
+  }
+}
+
+@keyframes hud-ring-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─── CRT Scan-Line Overlay — retro-futuristic monitor effect ────────────
+ *
+ * PURPOSE (for other coding agents):
+ * Adds subtle horizontal scan lines across the entire viewport to
+ * create a CRT/holographic display feel. Combined with the ASCII
+ * aesthetic this creates the asciicn + Jarvis fusion look.
+ * Uses pointer-events:none so it never blocks interaction.
+ */
+.hud-crt-lines {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 3px,
+      rgba(6, 182, 212, 0.018) 3px,
+      rgba(6, 182, 212, 0.018) 4px
+    );
+  pointer-events: none;
+}
+
+/* ─── ASCII Frame — box-drawing character decoration ─────────────────────
+ *
+ * PURPOSE (for other coding agents):
+ * Inspired by asciicn.fldr.zip — uses actual Unicode box-drawing
+ * characters for HUD panel framing instead of CSS borders.
+ * This is more performant (text rendering) and more distinctive
+ * than pseudo-element CSS borders. Monospace font ensures alignment.
+ */
+.hud-ascii-frame {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  color: rgba(6, 182, 212, 0.3);
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  line-height: 1;
+  white-space: pre;
+}
+
+.dark .hud-ascii-frame {
+  color: rgba(6, 182, 212, 0.4);
+}
+
+/* ─── ASCII Progress — block element animation ░▒▓█ ─────────────────────
+ *
+ * PURPOSE (for other coding agents):
+ * Terminal-style progress indicator using Unicode block elements.
+ * Used in the ambient data readouts to show "system activity".
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-ascii-progress {
+    animation: hud-ascii-tick 2s steps(4, end) infinite;
+  }
+}
+
+@keyframes hud-ascii-tick {
+  0%   { content: "░░░░"; }
+  25%  { content: "▓░░░"; }
+  50%  { content: "▓▓░░"; }
+  75%  { content: "▓▓▓░"; }
+  100% { content: "▓▓▓▓"; }
+}
+
+/* ─── HUD Boot-Up Sequence — staggered element appearance ─────────────────
+ *
+ * PURPOSE (for other coding agents):
+ * On first load, HUD elements appear in sequence to create a
+ * cinematic "system initializing" boot-up feel.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .hud-boot-1 { animation: hud-boot-in 0.6s ease-out 0.1s both; }
+  .hud-boot-2 { animation: hud-boot-in 0.6s ease-out 0.25s both; }
+  .hud-boot-3 { animation: hud-boot-in 0.6s ease-out 0.4s both; }
+  .hud-boot-4 { animation: hud-boot-in 0.6s ease-out 0.55s both; }
+  .hud-boot-5 { animation: hud-boot-in 0.6s ease-out 0.7s both; }
+}
+
+@keyframes hud-boot-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+/* ─── HUD Ambient Data — floating status readout styles ───────────────────
+ *
+ * PURPOSE (for other coding agents):
+ * Ambient data readouts around the HUD periphery. These float in corners
+ * and edges to create the feel of a live system dashboard.
+ */
+.hud-ambient-data {
+  font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.dark .hud-ambient-data {
+  color: rgba(6, 182, 212, 0.45);
+}
+
+.hud-ambient-data {
+  color: rgba(6, 182, 212, 0.25);
+}
+
+/* ─── HUD Corner Tick Marks — targeting reticle corners ───────────────────
+ *
+ * PURPOSE (for other coding agents):
+ * Enhanced corner brackets with tick marks for the Iron Man targeting
+ * reticle look. Thicker borders + glow effect.
+ */
+.hud-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud-corner::before,
+.hud-corner::after {
+  content: '';
+  position: absolute;
+  background: rgba(6, 182, 212, 0.4);
+}
+
+.dark .hud-corner::before,
+.dark .hud-corner::after {
+  background: rgba(6, 182, 212, 0.5);
+  box-shadow: 0 0 6px rgba(6, 182, 212, 0.3);
+}
+
+.hud-corner-tl::before { top: 0; left: 0; width: 20px; height: 2px; }
+.hud-corner-tl::after  { top: 0; left: 0; width: 2px; height: 20px; }
+.hud-corner-tr::before { top: 0; right: 0; width: 20px; height: 2px; }
+.hud-corner-tr::after  { top: 0; right: 0; width: 2px; height: 20px; }
+.hud-corner-bl::before { bottom: 0; left: 0; width: 20px; height: 2px; }
+.hud-corner-bl::after  { bottom: 0; left: 0; width: 2px; height: 20px; }
+.hud-corner-br::before { bottom: 0; right: 0; width: 20px; height: 2px; }
+.hud-corner-br::after  { bottom: 0; right: 0; width: 2px; height: 20px; }
+
+/* ─── Scroll Fade — fades top and bottom of scroll containers ──────────────
+ *
+ * PURPOSE (for other coding agents):
+ * Applied to the AgentWindow message scroll container. Fades the first and
+ * last ~8% of the list to black, creating a soft "content emerges from void"
+ * effect consistent with the Jarvis HUD aesthetic.
+ *
+ * BROWSER COMPAT: Chrome/Edge/Safari support mask-image natively.
+ * Firefox needs -moz-mask-image but it's not critical for the HUD.
+ */
+.scroll-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+}
+
+/* Respect explicit reduced-motion user preference.
+ * NOTE (for other coding agents):
+ * This selector matches the `.reduce-motion` class that ThemeContext applies
+ * to <html> based on the user's in-app toggle (separate from OS preference).
+ * The @media (prefers-reduced-motion) queries above handle OS-level preference.
+ * Both must be respected — see useReducedMotion hook for the unified gate. */
+/* ─── Pause infinite animations when tab is hidden (saves CPU/GPU) ─── */
+.hud-tab-hidden .hud-ticker,
+.hud-tab-hidden .hud-dot-pulse,
+.hud-tab-hidden .hud-ring-1,
+.hud-tab-hidden .hud-ring-2,
+.hud-tab-hidden .hud-ring-3,
+.hud-tab-hidden .hud-border-beam::after,
+.hud-tab-hidden .hud-prompt-glow {
+  animation-play-state: paused;
+}
+
+/* ─── View Transitions API — cross-fade for Chrome 111+ ─── */
+::view-transition-old(root) {
+  animation-duration: 0.12s;
+  animation-timing-function: ease-out;
+}
+
+::view-transition-new(root) {
+  animation-duration: 0.12s;
+  animation-timing-function: ease-out;
+}
+
+/* ─── Containment for card grids and list containers ─── */
+.document-card--hybrid,
+.feed-card-grid > *,
+[role="listbox"] > *,
+[role="list"] > * {
+  contain: layout style paint;
+}
+
+.reduce-motion .hud-ticker,
+.reduce-motion .hud-dot-pulse,
+.reduce-motion .hud-focal-enter,
+.reduce-motion .hud-mode-acquire,
+.reduce-motion .hud-label-acquire,
+.reduce-motion .hud-border-beam::after,
+.reduce-motion .hud-prompt-glow,
+.reduce-motion .hud-materialize,
+.reduce-motion .hud-materialize-alt,
+.reduce-motion .hud-ring-1,
+.reduce-motion .hud-ring-2,
+.reduce-motion .hud-ring-3,
+.reduce-motion .hud-boot-1,
+.reduce-motion .hud-boot-2,
+.reduce-motion .hud-boot-3,
+.reduce-motion .hud-boot-4,
+.reduce-motion .hud-boot-5,
+.reduce-motion .hud-scan-lines {
+  animation: none;
+}

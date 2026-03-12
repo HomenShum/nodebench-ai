@@ -144,11 +144,11 @@ export function MemoryPreviewCard({
     return (
       <div
         className={cn(
-          "bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-3",
+          "bg-surface-secondary border border-edge rounded-lg p-3",
           className
         )}
       >
-        <div className="flex items-center gap-2 text-zinc-500">
+        <div className="flex items-center gap-2 text-content-muted">
           <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
           <span className="text-sm">Loading memory for {entityName}...</span>
         </div>
@@ -161,22 +161,22 @@ export function MemoryPreviewCard({
     return (
       <div
         className={cn(
-          "bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-3",
+          "bg-surface-secondary border border-edge rounded-lg p-3",
           className
         )}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-zinc-500" />
-            <span className="text-sm font-medium text-zinc-300">
+            <Database className="h-4 w-4 text-content-muted" />
+            <span className="text-sm font-medium text-content-secondary">
               {entityName}
             </span>
           </div>
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-zinc-700/50 text-zinc-400">
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-surface-hover text-content-muted">
             Not in Memory
           </span>
         </div>
-        <p className="mt-2 text-xs text-zinc-500">
+        <p className="mt-2 text-xs text-content-muted">
           No memory found for this entity. Research will trigger enrichment.
         </p>
       </div>
@@ -198,11 +198,11 @@ export function MemoryPreviewCard({
       )}
     >
       {/* Header */}
-      <div className="px-3 py-2 bg-zinc-900/50">
+      <div className="px-3 py-2 bg-surface-secondary">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Database className={cn("h-4 w-4", tierConfig.color)} />
-            <span className="text-sm font-medium text-zinc-200">
+            <span className="text-sm font-medium text-content">
               {summary.entityName}
             </span>
           </div>
@@ -219,12 +219,12 @@ export function MemoryPreviewCard({
             <button
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="p-1 rounded hover:bg-zinc-700/50 transition-colors"
+              className="p-1 rounded hover:bg-surface-hover transition-colors"
               title="Refresh memory"
             >
               <RefreshCw
                 className={cn(
-                  "h-3.5 w-3.5 text-zinc-500",
+                  "h-3.5 w-3.5 text-content-muted",
                   isRefreshing && "motion-safe:animate-spin"
                 )}
               />
@@ -234,14 +234,14 @@ export function MemoryPreviewCard({
       </div>
 
       {/* Stats */}
-      <div className="px-3 py-2 flex items-center gap-4 text-xs border-b border-zinc-700/30">
+      <div className="px-3 py-2 flex items-center gap-4 text-xs border-b border-edge">
         <div className="flex items-center gap-1.5">
-          <FileText className="h-3.5 w-3.5 text-zinc-500" />
-          <span className="text-zinc-300">{summary.factCount} facts</span>
+          <FileText className="h-3.5 w-3.5 text-content-muted" />
+          <span className="text-content-secondary">{summary.factCount} facts</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5 text-zinc-500" />
-          <span className="text-zinc-300">{summary.ageInDays}d old</span>
+          <Clock className="h-3.5 w-3.5 text-content-muted" />
+          <span className="text-content-secondary">{summary.ageInDays}d old</span>
         </div>
         {summary.isStale && (
           <div className="flex items-center gap-1.5 text-amber-400">
@@ -262,15 +262,15 @@ export function MemoryPreviewCard({
         <div>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center justify-between w-full px-3 py-2 hover:bg-zinc-800/30 transition-colors"
+            className="flex items-center justify-between w-full px-3 py-2 hover:bg-surface-hover transition-colors"
           >
-            <span className="text-xs text-zinc-400">
+            <span className="text-xs text-content-muted">
               {isExpanded ? "Hide" : "Show"} key facts
             </span>
             {isExpanded ? (
-              <ChevronUp className="h-3 w-3 text-zinc-500" />
+              <ChevronUp className="h-3 w-3 text-content-muted" />
             ) : (
-              <ChevronDown className="h-3 w-3 text-zinc-500" />
+              <ChevronDown className="h-3 w-3 text-content-muted" />
             )}
           </button>
 
@@ -279,9 +279,9 @@ export function MemoryPreviewCard({
               {keyFacts.map((fact, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2 text-xs text-zinc-300"
+                  className="flex items-start gap-2 text-xs text-content-secondary"
                 >
-                  <span className="text-zinc-600 shrink-0">{i + 1}.</span>
+                  <span className="text-content-muted shrink-0">{i + 1}.</span>
                   <span>{fact}</span>
                 </div>
               ))}
@@ -295,7 +295,7 @@ export function MemoryPreviewCard({
         <div className="px-3 py-2 bg-amber-500/5 border-t border-amber-500/20">
           <div className="flex items-start gap-2">
             <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-300">
+            <p className="text-xs text-amber-600 dark:text-amber-300">
               {summary.isStale
                 ? "Memory is stale. Research will trigger a refresh."
                 : "Quality is low. Consider running enrichment."}
@@ -342,7 +342,7 @@ export function MemoryBadge({
     >
       <Database className={cn("h-3 w-3", tierConfig.color)} />
       <span className={tierConfig.color}>{entityName}</span>
-      <span className="text-zinc-500">
+      <span className="text-content-muted">
         {factCount}f | {ageInDays}d
       </span>
       {isStale && <AlertTriangle className="h-3 w-3 text-amber-400" />}
@@ -371,7 +371,7 @@ export function MemoryStatusIndicator({
     return (
       <div
         className={cn(
-          "flex items-center gap-1 text-xs text-zinc-500",
+          "flex items-center gap-1 text-xs text-content-muted",
           className
         )}
         title="Entity not in memory"
@@ -420,7 +420,7 @@ export function MultiEntityMemoryPreview({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
+      <div className="flex items-center gap-2 text-xs text-content-muted">
         <Database className="h-3.5 w-3.5" />
         <span>Memory Preview ({entityNames.length} entities)</span>
       </div>

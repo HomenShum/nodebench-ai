@@ -46,7 +46,7 @@ export const RepoSignalPanel: React.FC<RepoSignalPanelProps> = ({ title, summary
   }
 
   return (
-    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Network className="w-4 h-4 text-content-secondary" />

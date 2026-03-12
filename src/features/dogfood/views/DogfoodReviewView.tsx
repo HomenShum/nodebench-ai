@@ -50,6 +50,20 @@ type WalkthroughManifest = {
   videoPath: string | null;
 };
 
+type VideoWallItem = {
+  id: string;
+  title: string;
+  description: string;
+  src: string;
+  mime?: string;
+  group?: "full" | "voice" | string;
+};
+
+type VideoWallManifest = {
+  capturedAtIso: string;
+  items: VideoWallItem[];
+};
+
 type FramesItem = {
   index: number;
   name: string;
@@ -280,12 +294,12 @@ function OverstoryStatusPanel() {
                       {agent.constraints.map((c) => (
                         <span
                           key={c}
-                          className="text-xs px-1 py-0.5 rounded bg-black/20 font-mono"
+                          className="text-xs px-1 py-0.5 rounded bg-surface-secondary font-mono"
                         >
                           {c}
                         </span>
                       ))}
-                      <span className="text-xs px-1 py-0.5 rounded bg-black/20 font-mono">
+                      <span className="text-xs px-1 py-0.5 rounded bg-surface-secondary font-mono">
                         max {agent.maxToolCalls} calls
                       </span>
                     </div>
@@ -480,6 +494,8 @@ export function DogfoodReviewView() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [walkthrough, setWalkthrough] = useState<WalkthroughManifest | null>(null);
   const [walkthroughError, setWalkthroughError] = useState<string | null>(null);
+  const [videoWall, setVideoWall] = useState<VideoWallManifest | null>(null);
+  const [videoWallError, setVideoWallError] = useState<string | null>(null);
   const [frames, setFrames] = useState<FramesManifest | null>(null);
   const [framesError, setFramesError] = useState<string | null>(null);
   const [scribe, setScribe] = useState<ScribeManifest | null>(null);
@@ -491,6 +507,16 @@ export function DogfoodReviewView() {
   const [qaError, setQaError] = useState<string | null>(null);
   const [qaLast, setQaLast] = useState<DogfoodQaRun | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copyWithFeedback = async (text: string, id: string) => {
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId(null), 1200);
+    }
+    return ok;
+  };
+  const [isRefreshingView, setIsRefreshingView] = useState(false);
   const [localQaResults, setLocalQaResults] = useState<LocalQaEntry[] | null>(null);
   const [localQaError, setLocalQaError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -617,6 +643,23 @@ export function DogfoodReviewView() {
     let cancelled = false;
     (async () => {
       try {
+        const res = await fetch("/dogfood/video-wall.json", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as VideoWallManifest;
+        if (!cancelled) setVideoWall(json);
+      } catch (e) {
+        if (!cancelled) setVideoWallError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
         const res = await fetch("/dogfood/frames.json", { cache: "no-store" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as FramesManifest;
@@ -664,6 +707,16 @@ export function DogfoodReviewView() {
   const resolvedVideoUrl = useMemo(() => {
     return resolveAbsoluteUrl(walkthrough?.videoUrl ?? walkthrough?.videoPath ?? null);
   }, [walkthrough?.videoUrl, walkthrough?.videoPath]);
+
+  const groupedVideoWall = useMemo(() => {
+    const groups: Record<string, VideoWallItem[]> = {};
+    for (const item of videoWall?.items ?? []) {
+      const key = item.group ?? "other";
+      groups[key] = groups[key] ?? [];
+      groups[key].push(item);
+    }
+    return groups;
+  }, [videoWall]);
 
   const grouped = useMemo(() => {
     const items = manifest?.items ?? [];
@@ -713,12 +766,111 @@ export function DogfoodReviewView() {
             </button>
             <button
               type="button"
-              className="btn-primary-sm inline-flex items-center gap-2"
-              onClick={() => window.location.reload()}
+              className="btn-primary-sm inline-flex items-center gap-2 min-w-[116px] justify-center"
+              onClick={() => {
+                // NOTE(coworker): brief pending state prevents "no click feedback" QA flags.
+                setIsRefreshingView(true);
+                window.setTimeout(() => window.location.reload(), 140);
+              }}
+              disabled={isRefreshingView}
             >
-              Refresh
+              {isRefreshingView ? "Refreshing..." : "Refresh"}
             </button>
           </div>
+        </div>
+
+        <div className="nb-surface-card p-5 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-foreground">Recorded sessions</div>
+              <div className="text-sm text-muted-foreground">
+                Full walkthroughs and focused voice captures, all playable side by side in one surface.
+              </div>
+              {videoWall?.capturedAtIso && (
+                <div className="text-xs text-muted-foreground">
+                  Last bundled:{" "}
+                  <span className="font-medium text-foreground">{formatDate(videoWall.capturedAtIso)}</span>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn-outline-sm inline-flex items-center gap-2"
+              onClick={async () => {
+                await copyWithFeedback(commands.fullLocalPlay, "video-wall");
+              }}
+              aria-label="Copy local playback command"
+              title="Copy local playback command"
+            >
+              {copiedId === "video-wall" ? "Copied!" : "Copy playback command"}
+            </button>
+          </div>
+
+          {videoWall === null && !videoWallError ? (
+            <div className="rounded-md border border-border/60 bg-background p-4 text-sm text-muted-foreground">
+              Loading recorded sessions...
+            </div>
+          ) : videoWall?.items?.length ? (
+            <div className="space-y-5">
+              {Object.entries(groupedVideoWall).map(([group, items]) => (
+                <section key={group} className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      {group === "full" ? "Full Sessions" : group === "voice" ? "Voice Captures" : group}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{items.length} video{items.length === 1 ? "" : "s"}</div>
+                  </div>
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    {items.map((item) => (
+                      <article
+                        key={item.id}
+                        className="overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-[0_18px_48px_rgba(15,23,42,0.12)]"
+                      >
+                        <div className="border-b border-border/50 px-4 py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="text-sm font-medium text-foreground">{item.title}</div>
+                              <div className="text-xs text-muted-foreground">{item.description}</div>
+                            </div>
+                            <a
+                              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                              href={item.src}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Open video in a new tab"
+                            >
+                              Open
+                            </a>
+                          </div>
+                        </div>
+                        <div className="bg-black">
+                          <video
+                            className="aspect-video w-full bg-black object-contain"
+                            controls
+                            preload="metadata"
+                            playsInline
+                          >
+                            <source src={item.src} type={item.mime ?? "video/mp4"} />
+                          </video>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-md border border-border/60 bg-background p-3 space-y-2">
+              <div className="text-sm text-muted-foreground">
+                No bundled recordings found yet. Publish or copy videos into <span className="font-mono">public/dogfood/videos</span>.
+              </div>
+              {videoWallError && (
+                <div className="text-xs text-muted-foreground">
+                  Video wall load error: <span className="font-mono">{videoWallError}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="nb-surface-card p-5 space-y-3">
@@ -739,16 +891,15 @@ export function DogfoodReviewView() {
               type="button"
               className="btn-outline-sm inline-flex items-center gap-2"
               onClick={async () => {
-                const ok = await copyToClipboard(
+                await copyWithFeedback(
                   `${commands.fullLocal}\n${commands.fullLocalPlay}\n${commands.record}\n${commands.recordStatic}\n${commands.scribeCmd}\n${commands.full}`,
+                  "video",
                 );
-                setCopied(ok);
-                window.setTimeout(() => setCopied(false), 1200);
               }}
               aria-label="Copy walkthrough commands"
               title="Copy walkthrough commands"
             >
-              Copy video commands
+              {copiedId === "video" ? "Copied!" : "Copy video commands"}
             </button>
           </div>
 
@@ -772,7 +923,7 @@ export function DogfoodReviewView() {
                     <button
                       key={`${c.index}-${c.startSec}`}
                       type="button"
-                      className="w-full text-left rounded-md px-2.5 py-2 hover:bg-muted/30 transition-colors"
+                      className="w-full text-left rounded-md px-2.5 py-2 hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => {
                         const v = videoRef.current;
                         if (!v) return;
@@ -833,14 +984,12 @@ export function DogfoodReviewView() {
               type="button"
               className="btn-outline-sm inline-flex items-center gap-2"
               onClick={async () => {
-                const ok = await copyToClipboard(commands.frames);
-                setCopied(ok);
-                window.setTimeout(() => setCopied(false), 1200);
+                await copyWithFeedback(commands.frames, "frames");
               }}
               aria-label="Copy frames command"
               title="Copy frames command"
             >
-              Copy frames command
+              {copiedId === "frames" ? "Copied!" : "Copy frames command"}
             </button>
           </div>
 
@@ -865,7 +1014,7 @@ export function DogfoodReviewView() {
                   <div className="p-3 space-y-1">
                     <div className="text-sm font-medium text-foreground truncate">{f.name}</div>
                     <div className="text-xs text-muted-foreground font-mono truncate">
-                      {f.startSec.toFixed(1)}s Â· {f.path}
+                      {f.startSec.toFixed(1)}s · {f.path}
                     </div>
                   </div>
                 </button>
@@ -918,23 +1067,19 @@ export function DogfoodReviewView() {
                     lines.push(`![${step.title}](${step.image})`);
                     lines.push("");
                   }
-                  const ok = await copyToClipboard(lines.join("\n"));
-                  setCopied(ok);
-                  window.setTimeout(() => setCopied(false), 1200);
+                  await copyWithFeedback(lines.join("\n"), "markdown");
                 }}
               >
-                Copy Markdown
+                {copiedId === "markdown" ? "Copied!" : "Copy Markdown"}
               </button>
               <button
                 type="button"
                 className="btn-outline-sm inline-flex items-center gap-2"
                 onClick={async () => {
-                  const ok = await copyToClipboard(`${commands.scribeCmd}\n${commands.scribeLocal}`);
-                  setCopied(ok);
-                  window.setTimeout(() => setCopied(false), 1200);
+                  await copyWithFeedback(`${commands.scribeCmd}\n${commands.scribeLocal}`, "capture");
                 }}
               >
-                Copy capture commands
+                {copiedId === "capture" ? "Copied!" : "Copy capture commands"}
               </button>
             </div>
           </div>
@@ -957,7 +1102,7 @@ export function DogfoodReviewView() {
                         Step text (editable)
                       </label>
                       <textarea
-                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+                        className="w-full min-h-[120px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         value={s.description}
                         onChange={(e) => {
                           const next = e.target.value;
@@ -1162,7 +1307,7 @@ export function DogfoodReviewView() {
               Prompt override (optional)
             </label>
             <textarea
-              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+              className="w-full min-h-[92px] rounded-md border border-border/60 bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={qaPrompt}
               onChange={(e) => setQaPrompt(e.target.value)}
               placeholder="Leave blank to use the default design + performance QA rubric."
@@ -1183,7 +1328,7 @@ export function DogfoodReviewView() {
                   {qaLast ? (
                     <span>
                       Latest: <span className="font-mono">{formatMs(qaLast.createdAt)}</span>
-                      {qaLast.source ? <span className="font-mono"> Â· {qaLast.source}</span> : null}
+                      {qaLast.source ? <span className="font-mono"> · {qaLast.source}</span> : null}
                     </span>
                   ) : null}
                 </div>
@@ -1194,7 +1339,7 @@ export function DogfoodReviewView() {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div className="text-sm font-medium text-foreground">Summary</div>
                     <div className="text-xs text-muted-foreground font-mono">
-                      {formatMs(run.createdAt)} Â· {run.provider}/{run.model}{run.source ? ` Â· ${run.source}` : ""}
+                      {formatMs(run.createdAt)} · {run.provider}/{run.model}{run.source ? ` · ${run.source}` : ""}
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground whitespace-pre-wrap">{run.summary}</div>
@@ -1238,7 +1383,7 @@ export function DogfoodReviewView() {
             </div>
           )}
 
-          {/* QA Trend â€” severity burndown over last 14 days */}
+          {/* QA Trend - severity burndown over last 14 days */}
           {qaTrending && qaTrending.length > 0 && (() => {
             const maxTotal = Math.max(...qaTrending.map((d) => d.total), 1);
             const latest = qaTrending[qaTrending.length - 1];
@@ -1292,7 +1437,7 @@ export function DogfoodReviewView() {
           })()}
 
           {qaTrending !== undefined && qaTrending.length === 0 && (
-            <div className="text-xs text-muted-foreground">No QA runs in the last 14 days â€” run a QA session above to start tracking trends.</div>
+            <div className="text-xs text-muted-foreground">No QA runs in the last 14 days - run a QA session above to start tracking trends.</div>
           )}
         </div>
 
@@ -1360,7 +1505,7 @@ export function DogfoodReviewView() {
           </div>
         )}
 
-        {/* â”€â”€ Local Script QA Score History â”€â”€ */}
+        {/* Local Script QA Score History */}
         {(localQaResults !== null || localQaError) && (
           <div className="nb-surface-card overflow-hidden">
             <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between">
@@ -1476,7 +1621,7 @@ export function DogfoodReviewView() {
                               </span>
                             )}
                             <span className="ml-auto text-xs text-muted-foreground font-mono">
-                              {e.ts ? new Date(e.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : "â€”"}
+                              {e.ts ? new Date(e.ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }) : "-"}
                             </span>
                           </div>
                         );
@@ -1495,7 +1640,7 @@ export function DogfoodReviewView() {
           <GovernancePanel entry={localQaResults[0]} />
         )}
 
-        {/* â”€â”€ Overstory QA Orchestration Panel â”€â”€ */}
+        {/* Overstory QA Orchestration Panel */}
         <OverstoryStatusPanel />
 
         <div className="nb-surface-card p-5 space-y-2">
@@ -1512,4 +1657,3 @@ export function DogfoodReviewView() {
     </div>
   );
 }
-

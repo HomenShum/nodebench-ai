@@ -123,7 +123,7 @@ function SourceItem({ artifact }: SourceItemProps) {
       className={`
         flex items-start gap-3 p-3 rounded-lg border transition-all duration-200
        
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
         ${getProviderColor(provider)}
       `}
     >
@@ -265,7 +265,7 @@ export function SourcesLibrary({
                 onChange={(e) => setGroupBy(e.target.value as GroupBy)}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Group sources by"
-                className="bg-surface-secondary border-none rounded px-2 py-1 text-xs text-content-secondary focus:ring-1 focus:ring-indigo-500/50"
+                className="bg-surface-secondary border-none rounded px-2 py-1 text-xs text-content-secondary focus:ring-1 focus:ring-ring"
               >
                 <option value="provider">By Provider</option>
                 <option value="kind">By Type</option>

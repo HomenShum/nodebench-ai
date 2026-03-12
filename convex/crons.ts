@@ -722,6 +722,46 @@ crons.weekly(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
+// BENCHMARKING & MODEL EVALUATION - Free-first strategy quality gates
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Live performance evaluation of all active free models daily at 02:00 UTC
+// Runs 13 evaluation scenarios across 4 task types, updates rankings
+crons.daily(
+  "live model performance evaluation",
+  { hourUTC: 2, minuteUTC: 0 },
+  internal.domains.models.livePerformanceEval.evaluateAllModels,
+  {}
+);
+
+// Tool health benchmark daily at 03:00 UTC (after model eval completes)
+// Checks circuit breaker states, records pass/fail into benchmarkRuns
+crons.daily(
+  "tool health benchmark suite",
+  { hourUTC: 3, minuteUTC: 0 },
+  internal.domains.evaluation.cronHandlers.tickToolHealthBenchmark,
+  {}
+);
+
+// Leaderboard snapshot daily at 04:00 UTC (after benchmarks complete)
+// Snapshots free model rankings into workbenchRuns for trending/UI
+crons.daily(
+  "leaderboard snapshot refresh",
+  { hourUTC: 4, minuteUTC: 0 },
+  internal.domains.evaluation.cronHandlers.refreshLeaderboardSnapshot,
+  {}
+);
+
+// DD calibration benchmark weekly on Sunday at 06:00 UTC
+// Runs full due diligence benchmark suite, detects scoring drift
+crons.weekly(
+  "dd calibration benchmark",
+  { dayOfWeek: "sunday", hourUTC: 6, minuteUTC: 0 },
+  internal.domains.evaluation.cronHandlers.tickCalibrationBenchmark,
+  {}
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
 // AGENT OS - Sweep undispatched proactive events to agents
 // ═══════════════════════════════════════════════════════════════════════════
 

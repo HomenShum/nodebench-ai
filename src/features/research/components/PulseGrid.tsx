@@ -72,7 +72,7 @@ function InsightCardComponent({
       className={`
         group relative w-full text-left p-4 rounded-lg 
         bg-gradient-to-br ${gradientClass}
-        border hover:border-edge
+        border hover:shadow-md hover:border-primary/20
         transition-all duration-200
         focus:outline-none focus:ring-2 focus:ring-[color:var(--text-primary)]/20
       `}

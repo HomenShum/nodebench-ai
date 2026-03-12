@@ -137,7 +137,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
         border: "border-indigo-200",
         icon: "text-indigo-500",
         badge: "bg-indigo-100 text-content-secondary",
-        ring: "ring-indigo-500/20",
+        ring: "ring-ring",
       };
     case "person":
       return {
@@ -146,7 +146,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
         border: "border-indigo-200",
         icon: "text-indigo-500",
         badge: "bg-indigo-100 text-indigo-700",
-        ring: "ring-indigo-500/20",
+        ring: "ring-ring",
       };
     case "product":
       return {
@@ -155,7 +155,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
         border: "border-blue-200",
         icon: "text-blue-500",
         badge: "bg-blue-100 text-blue-700",
-        ring: "ring-blue-500/20",
+        ring: "ring-ring",
       };
     case "technology":
       return {
@@ -192,7 +192,7 @@ const getEntityColors = (type: ExtendedEntityType) => {
         border: "border-indigo-200",
         icon: "text-indigo-500",
         badge: "bg-indigo-100 text-indigo-700",
-        ring: "ring-indigo-500/20",
+        ring: "ring-ring",
       };
     default:
       return {

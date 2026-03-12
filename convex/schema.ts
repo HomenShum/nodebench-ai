@@ -51,9 +51,26 @@ import {
   forecastUpdateHistory,
   forecastCalibrationLog,
 } from "./domains/forecasting/schema";
+import {
+  timeSeriesObservations,
+  timeSeriesSignals,
+  causalChains,
+  zeroDraftArtifacts,
+  proofPacks,
+  specDocs,
+} from "./domains/temporal/schema";
+
+// Oracle career progression schema imports
+import {
+  oraclePlayerProfiles,
+  oracleQuestLog,
+  oracleExpTransactions,
+  oracleClassAdvancementLog,
+  oracleTemporalOpportunities,
+} from "./domains/oracle/schema";
 
 /* ------------------------------------------------------------------ */
-/* 1.  DOCUMENTS  –  page/board/post level metadata                    */
+/* 1.  DOCUMENTS  â€“  page/board/post level metadata                    */
 /* ------------------------------------------------------------------ */
 const documents = defineTable({
   title: v.string(),
@@ -128,9 +145,9 @@ const documents = defineTable({
   // Idempotency key for creation (threadId + title + content hash)
   creationKey: v.optional(v.string()),
 
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // GAM: THEME MEMORY (for hashtag dossiers)
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   themeMemory: v.optional(v.object({
     topicId: v.string(),               // e.g., "theme:agent-memory"
     summary: v.string(),
@@ -161,9 +178,9 @@ const documents = defineTable({
     ),
   })),
 
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // LINKED ARTIFACTS (for citation tracking)
-  // ═══════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   linkedArtifacts: v.optional(v.array(v.object({
     artifactId: v.id("sourceArtifacts"),
     citationKey: v.string(),      // e.g., "[1]"
@@ -195,13 +212,13 @@ const documents = defineTable({
   });
 
 /* ------------------------------------------------------------------ */
-/* 2.  NODES  –  one row per ProseMirror block (GraphNode)             */
+/* 2.  NODES  â€“  one row per ProseMirror block (GraphNode)             */
 /* ------------------------------------------------------------------ */
 const nodes = defineTable({
   documentId: v.id("documents"),           // which doc/board it belongs to
-  parentId: v.optional(v.id("nodes")),   // null ⇒ root
+  parentId: v.optional(v.id("nodes")),   // null â‡’ root
   order: v.number(),                  // sibling ordering
-  type: v.string(),                  // "paragraph" | "heading" | …
+  type: v.string(),                  // "paragraph" | "heading" | â€¦
   text: v.optional(v.string()),      // plain text (for search)
   json: v.optional(v.any()),         // full PM node as JSON
   authorId: v.id("users"),               // who created this node
@@ -219,7 +236,7 @@ const nodes = defineTable({
   });
 
 /* ------------------------------------------------------------------ */
-/* 3.  RELATIONS  –  arbitrary graph edges (“child”, “relatedTo”… )    */
+/* 3.  RELATIONS  â€“  arbitrary graph edges (â€œchildâ€, â€œrelatedToâ€â€¦ )    */
 /* ------------------------------------------------------------------ */
 const relations = defineTable({
   from: v.id("nodes"),
@@ -234,10 +251,10 @@ const relations = defineTable({
   .index("by_type", ["relationTypeId"]);
 
 /* ------------------------------------------------------------------ */
-/* 4.  RELATION TYPES  –  mostly static, but editable in UI            */
+/* 4.  RELATION TYPES  â€“  mostly static, but editable in UI            */
 /* ------------------------------------------------------------------ */
 const relationTypes = defineTable({
-  id: v.string(),                           // "child", "relatedTo", "hashtag"…
+  id: v.string(),                           // "child", "relatedTo", "hashtag"â€¦
   name: v.string(),
   icon: v.optional(v.string()),
 })
@@ -245,12 +262,12 @@ const relationTypes = defineTable({
   .index("by_relationId", ["id"]);
 
 /* ------------------------------------------------------------------ */
-/* 5.  TAGS  –  domain/entity/topic keywords                           */
+/* 5.  TAGS  â€“  domain/entity/topic keywords                           */
 /* ------------------------------------------------------------------ */
 export const tags = defineTable({
   name: v.string(),                 // canonical tag text (lower-cased)
   kind: v.optional(v.string()),     // "domain" | "entity" | "topic" etc
-  importance: v.optional(v.float64()),    // 0–1 weighting when ranking context
+  importance: v.optional(v.float64()),    // 0â€“1 weighting when ranking context
   createdBy: v.id("users"),
   createdAt: v.number(),
 })
@@ -262,7 +279,7 @@ export const tags = defineTable({
   });
 
 /* ------------------------------------------------------------------ */
-/* 6.  TAG REFERENCES  –  many-to-many tag ↔ page/node                 */
+/* 6.  TAG REFERENCES  â€“  many-to-many tag â†” page/node                 */
 /* ------------------------------------------------------------------ */
 export const tagRefs = defineTable({
   tagId: v.id("tags"),
@@ -348,7 +365,7 @@ export const telegramMessages = defineTable({
 /* 8.  VECTOR CACHE  (optional)                                        */
 /* ------------------------------------------------------------------ */
 // If you want to persist your `SimpleVectorStore` so the index survives reloads
-// keep a compact cache here; leave it out if you’re only embedding client-side.
+// keep a compact cache here; leave it out if youâ€™re only embedding client-side.
 const embeddings = defineTable({
   chunkHash: v.string(),               // sha256(text)
   vector: v.array(v.float64()),     // normalised
@@ -358,7 +375,7 @@ const embeddings = defineTable({
 /* 6.  Bring it all together                                           */
 /* ------------------------------------------------------------------ */
 /* ------------------------------------------------------------------ */
-/* 9.  GRID PROJECTS  –  saved multi-document grid configurations     */
+/* 9.  GRID PROJECTS  â€“  saved multi-document grid configurations     */
 /* ------------------------------------------------------------------ */
 const gridProjects = defineTable({
   name: v.string(),                    // user-defined name for the grid project
@@ -379,7 +396,7 @@ const gridProjects = defineTable({
   .index("by_user_archived", ["createdBy", "isArchived"]);
 
 /* ------------------------------------------------------------------ */
-/* 7.  FILES  –  uploaded files for analysis                           */
+/* 7.  FILES  â€“  uploaded files for analysis                           */
 /* ------------------------------------------------------------------ */
 const files = defineTable({
   userId: v.string(),                     // user ID from auth
@@ -423,7 +440,7 @@ const files = defineTable({
   });
 
 /* ------------------------------------------------------------------ */
-/* 8.  URL ANALYSES  –  URL content analysis results                   */
+/* 8.  URL ANALYSES  â€“  URL content analysis results                   */
 /* ------------------------------------------------------------------ */
 const urlAnalyses = defineTable({
   userId: v.string(),                     // user ID from auth
@@ -437,7 +454,7 @@ const urlAnalyses = defineTable({
   .index("by_url", ["url"]);
 
 /* ------------------------------------------------------------------ */
-/* 8b. FILE CHUNKS  –  extracted chunks + embeddings per file          */
+/* 8b. FILE CHUNKS  â€“  extracted chunks + embeddings per file          */
 /* ------------------------------------------------------------------ */
 const chunks = defineTable({
   fileId: v.id("files"),
@@ -562,6 +579,77 @@ const agentRuns = defineTable({
   .index("by_user_createdAt", ["userId", "createdAt"])
   .index("by_status_availableAt", ["status", "availableAt"])
   .index("by_leaseExpiresAt", ["leaseExpiresAt"]);
+
+/* ------------------------------------------------------------------ */
+/* ACTION RECEIPTS â€” tamper-evident log of agent actions & policy      */
+/* ------------------------------------------------------------------ */
+const actionReceipts = defineTable({
+  /** Content-addressed receipt ID (SHA-256 of receipt body) */
+  receiptId: v.string(),
+  /** Which agent performed the action */
+  agentId: v.string(),
+  /** Which agent run this receipt belongs to */
+  agentRunId: v.optional(v.id("agentRuns")),
+  /** User who owns the agent */
+  userId: v.optional(v.id("users")),
+  /** MCP tool name or internal operation */
+  toolName: v.string(),
+  /** Optional OpenClaw session join key */
+  sessionKey: v.optional(v.string()),
+  /** Optional OpenClaw channel identifier */
+  channelId: v.optional(v.string()),
+  /** Which phase of the action lifecycle this receipt represents */
+  direction: v.optional(v.string()),
+  /** Optional OpenClaw session linkage */
+  openclawSessionId: v.optional(v.id("openclawSessions")),
+  /** Optional OpenClaw execution linkage */
+  openclawExecutionId: v.optional(v.id("openclawExecutions")),
+  /** Optional deployment/runtime label for the originating shell */
+  deployment: v.optional(v.string()),
+  /** Tool input parameters (redacted if sensitive) */
+  params: v.optional(v.any()),
+  /** Human-readable summary of what happened */
+  actionSummary: v.string(),
+  /** Policy that authorized or blocked this action */
+  policyId: v.string(),
+  policyRuleName: v.string(),
+  /** "allowed" | "denied" | "escalated" */
+  policyAction: v.string(),
+  /** References to evidence artifact IDs */
+  evidenceRefs: v.array(v.string()),
+  /** Result */
+  resultSuccess: v.boolean(),
+  resultSummary: v.string(),
+  resultOutputHash: v.optional(v.string()),
+  /** Reversibility */
+  canUndo: v.boolean(),
+  undoInstructions: v.optional(v.string()),
+  /** Approval state for actions that require operator review */
+  approvalState: v.optional(v.string()),
+  approvalRequestedAt: v.optional(v.number()),
+  approvalReviewedAt: v.optional(v.number()),
+  approvalReviewedBy: v.optional(v.string()),
+  approvalReviewNotes: v.optional(v.string()),
+  /** Policy violations */
+  violations: v.array(v.object({
+    ruleId: v.string(),
+    ruleName: v.string(),
+    /** "warning" | "block" | "audit_only" */
+    severity: v.string(),
+    description: v.string(),
+    resolution: v.optional(v.string()),
+  })),
+  createdAt: v.number(),
+})
+  .index("by_receiptId", ["receiptId"])
+  .index("by_agentId", ["agentId"])
+  .index("by_userId", ["userId", "createdAt"])
+  .index("by_policyAction", ["policyAction", "createdAt"])
+  .index("by_agentRunId", ["agentRunId"])
+  .index("by_approvalState", ["approvalState", "createdAt"])
+  .index("by_sessionKey", ["sessionKey", "createdAt"])
+  .index("by_channelId", ["channelId", "createdAt"])
+  .index("by_createdAt", ["createdAt"]);
 
 /* ------------------------------------------------------------------ */
 /* SOURCE ARTIFACTS - unified durable snapshots of external sources    */
@@ -1002,7 +1090,7 @@ const mcpTools = defineTable({
   createdAt: v.number(),
   updatedAt: v.number(),
   // Progressive disclosure fields (thin descriptor for search)
-  shortDescription: v.optional(v.string()), // One-line description (≤100 chars) for search
+  shortDescription: v.optional(v.string()), // One-line description (â‰¤100 chars) for search
   category: v.optional(v.string()),         // e.g., "filesystem", "database", "api", "web"
   keywords: v.optional(v.array(v.string())), // Search keywords for tool discovery
   schemaHash: v.optional(v.string()),       // FK to mcpToolSchemas.schemaHash for on-demand hydration
@@ -1370,7 +1458,7 @@ const linkedinAccounts = defineTable({
 /* ------------------------------------------------------------------ */
 /* 2-Stage Dedup System:
  *   Stage 1: Hard key match (entityId + eventKey) + semantic similarity (embedding)
- *   Stage 2: LLM-as-judge on shortlist → DUPLICATE | UPDATE | NEW | CONTRADICTS
+ *   Stage 2: LLM-as-judge on shortlist â†’ DUPLICATE | UPDATE | NEW | CONTRADICTS
  */
 const linkedinFundingPosts = defineTable({
   // Company identification (normalized to lowercase for dedup)
@@ -1404,9 +1492,9 @@ const linkedinFundingPosts = defineTable({
   postedAt: v.number(),
   fundingEventId: v.optional(v.id("fundingEvents")),
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 2-STAGE DEDUP SYSTEM - Semantic + LLM-as-judge deduplication
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   // Canonical identifiers for hard-match dedup (Stage 1a)
   entityId: v.optional(v.string()),          // Canonical entity ID (e.g., company URN)
@@ -1505,7 +1593,7 @@ const linkedinFdaPosts = defineTable({
   progressionType: v.optional(v.union(
     v.literal("new"),
     v.literal("additional-clearance"),     // Another 510(k) for same company
-    v.literal("major-upgrade"),             // 510(k) → PMA progression
+    v.literal("major-upgrade"),             // 510(k) â†’ PMA progression
     v.literal("recall-follow-up")           // Post about a recalled product
   )),
 
@@ -1561,7 +1649,7 @@ const linkedinClinicalPosts = defineTable({
   previousPhase: v.optional(v.string()),       // For phase progression tracking
   progressionType: v.optional(v.union(
     v.literal("new"),
-    v.literal("phase-advance"),               // Phase 1 → Phase 2
+    v.literal("phase-advance"),               // Phase 1 â†’ Phase 2
     v.literal("results-announced"),           // Trial results
     v.literal("regulatory-milestone"),        // Fast Track, Breakthrough, etc.
     v.literal("approval")                     // FDA/EMA approval
@@ -1678,7 +1766,7 @@ const linkedinMaPosts = defineTable({
   progressionType: v.optional(v.union(
     v.literal("new"),
     v.literal("serial-acquirer"),             // Same acquirer, another deal
-    v.literal("deal-update"),                 // Status change (announced → closed)
+    v.literal("deal-update"),                 // Status change (announced â†’ closed)
     v.literal("target-history")               // Target's journey to acquisition
   )),
 
@@ -1734,7 +1822,7 @@ const linkedinHeldPosts = defineTable({
 
 /* ------------------------------------------------------------------ */
 /* LinkedIn Content Queue - Central backlog for ALL content           */
-/* Posts flow: pending → judging → approved → scheduled → posted      */
+/* Posts flow: pending â†’ judging â†’ approved â†’ scheduled â†’ posted      */
 /* ------------------------------------------------------------------ */
 const linkedinContentQueue = defineTable({
   content: v.string(),
@@ -1960,7 +2048,7 @@ const mcpToolCallLedger = defineTable({
   .index("by_allowed_startedAt", ["allowed", "startedAt"]);
 
 /* ------------------------------------------------------------------ */
-/* DOCUMENT SNAPSHOTS – periodic snapshots to prevent step accumulation */
+/* DOCUMENT SNAPSHOTS â€“ periodic snapshots to prevent step accumulation */
 /* ------------------------------------------------------------------ */
 const documentSnapshots = defineTable({
   documentId: v.id("documents"),
@@ -1984,7 +2072,7 @@ const documentSnapshots = defineTable({
   .index("by_emergency", ["isEmergency"])      // NEW: Quick access to emergency snapshots
 
 /* ------------------------------------------------------------------ */
-/* SPREADSHEETS – sheet metadata and individual cells                  */
+/* SPREADSHEETS â€“ sheet metadata and individual cells                  */
 /* ------------------------------------------------------------------ */
 const spreadsheets = defineTable({
   name: v.string(),
@@ -2011,7 +2099,7 @@ const sheetCells = defineTable({
   .index("by_sheet_row_col", ["sheetId", "row", "col"]); // precise cell lookup
 
 /* ------------------------------------------------------------------ */
-/* TASKS – personal task management                                   */
+/* TASKS â€“ personal task management                                   */
 /* ------------------------------------------------------------------ */
 const events = defineTable({
   userId: v.id("users"),
@@ -2059,7 +2147,7 @@ const events = defineTable({
 
 
 /* ------------------------------------------------------------------ */
-/* HOLIDAYS – cached public holidays by country                        */
+/* HOLIDAYS â€“ cached public holidays by country                        */
 /* ------------------------------------------------------------------ */
 const holidays = defineTable({
   country: v.string(),                 // e.g. "US"
@@ -2076,7 +2164,7 @@ const holidays = defineTable({
   .index("by_date", ["dateMs"]);
 
 /* ------------------------------------------------------------------ */
-/* FINANCIAL EVENTS – macro releases and earnings (cached)             */
+/* FINANCIAL EVENTS â€“ macro releases and earnings (cached)             */
 /* ------------------------------------------------------------------ */
 const financialEvents = defineTable({
   market: v.string(),                  // e.g. "US"
@@ -2093,7 +2181,7 @@ const financialEvents = defineTable({
   .index("by_category_date", ["category", "dateMs"]);
 
 /* ------------------------------------------------------------------ */
-/* USER EVENTS – personal event/task management (renamed from tasks)  */
+/* USER EVENTS â€“ personal event/task management (renamed from tasks)  */
 /* ------------------------------------------------------------------ */
 const userEvents = defineTable({
   userId: v.id("users"),
@@ -2136,7 +2224,7 @@ const userEvents = defineTable({
   createdAt: v.number(),
   updatedAt: v.number(),
 
-  // ─── Encounter Capture (Slack/Email Distribution) ───────────────────────
+  // â”€â”€â”€ Encounter Capture (Slack/Email Distribution) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   sourceType: v.optional(v.union(
     v.literal("manual"),         // User created in UI
     v.literal("slack"),          // Captured from Slack
@@ -2181,7 +2269,7 @@ const userEvents = defineTable({
 
 
 /* ------------------------------------------------------------------ */
-/* AGENT TIMELINES – timeline docs + tasks + links                     */
+/* AGENT TIMELINES â€“ timeline docs + tasks + links                     */
 /* ------------------------------------------------------------------ */
 const agentTimelines = defineTable({
   // Associate a timeline with a document so it can render in DocumentView
@@ -2261,7 +2349,7 @@ const agentLinks = defineTable({
 
 
 /* ------------------------------------------------------------------ */
-/* AGENT TIMELINE RUNS – per-run history                               */
+/* AGENT TIMELINE RUNS â€“ per-run history                               */
 /* ------------------------------------------------------------------ */
 const agentTimelineRuns = defineTable({
   timelineId: v.id("agentTimelines"),
@@ -2276,7 +2364,7 @@ const agentTimelineRuns = defineTable({
   .index("by_timeline_createdAt", ["timelineId", "createdAt"]);
 
 /* ------------------------------------------------------------------ */
-/* AGENT IMAGE RESULTS – images found during agent execution          */
+/* AGENT IMAGE RESULTS â€“ images found during agent execution          */
 /* ------------------------------------------------------------------ */
 const agentImageResults = defineTable({
   timelineId: v.id("agentTimelines"),
@@ -3205,6 +3293,7 @@ export default defineSchema({
   mcpPlans,
   mcpMemoryEntries,
   agentRuns,
+  actionReceipts,
   sourceArtifacts,
   artifactChunks,
   artifactIndexJobs,
@@ -3276,6 +3365,21 @@ export default defineSchema({
   chatScheduledMessages,
   toolApprovals,
   dogfoodQaRuns,
+  timeSeriesObservations,
+  timeSeriesSignals,
+  causalChains,
+  zeroDraftArtifacts,
+  proofPacks,
+  specDocs,
+
+  /* ------------------------------------------------------------------ */
+  /* ORACLE â€” Career progression gamification                           */
+  /* ------------------------------------------------------------------ */
+  oraclePlayerProfiles,
+  oracleQuestLog,
+  oracleExpTransactions,
+  oracleClassAdvancementLog,
+  oracleTemporalOpportunities,
 
   /* ------------------------------------------------------------------ */
   /* ENTITY PROFILES - Cached Wikidata entity resolutions               */
@@ -3737,7 +3841,7 @@ export default defineSchema({
       intendedState: v.optional(v.string()),
       actualState: v.optional(v.string()),
       correctionApplied: v.optional(v.boolean()),
-      // Completion traceability — links finalize entries back to user's original ask
+      // Completion traceability â€” links finalize entries back to user's original ask
       originalRequest: v.optional(v.string()),
       deliverySummary: v.optional(v.string()),
     }),
@@ -3749,7 +3853,7 @@ export default defineSchema({
     .index("by_workflow_tag", ["workflowTag", "seq"]),
 
   /* ------------------------------------------------------------------ */
-  /* DOSSIER DOMAIN - Bidirectional focus sync for agent↔chart views    */
+  /* DOSSIER DOMAIN - Bidirectional focus sync for agentâ†”chart views    */
   /* ------------------------------------------------------------------ */
   dossierFocusState,
   dossierAnnotations,
@@ -4245,9 +4349,9 @@ export default defineSchema({
     version: v.number(),                     // Version number for cache invalidation
     isStale: v.optional(v.boolean()),        // Flag for stale data (> 7 days)
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // GAM: STRUCTURED MEMORY FIELDS
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /** Canonical key for disambiguation (e.g., "company:TSLA") */
     canonicalKey: v.optional(v.string()),
@@ -4320,9 +4424,9 @@ export default defineSchema({
       v.literal("deep")
     )),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // KNOWLEDGE GRAPH INTEGRATION
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /** Link to the entity's knowledge graph */
     knowledgeGraphId: v.optional(v.id("knowledgeGraphs")),
@@ -4336,9 +4440,9 @@ export default defineSchema({
     /** Boolean: is this entity within cluster support region? (One-Class SVM) */
     isInClusterSupport: v.optional(v.boolean()),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // ARBITRAGE AGENT FIELDS (Receipts-first research)
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /** Arbitrage-specific metrics */
     arbitrageMetadata: v.optional(v.object({
@@ -4899,9 +5003,9 @@ export default defineSchema({
     )),
     lastVerificationAt: v.optional(v.number()),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // GLOBAL RESEARCH LEDGER: Sync fields for write-through
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /** Monotonic sequence number within run (for sync cursor) */
     seq: v.optional(v.number()),
@@ -5014,11 +5118,11 @@ export default defineSchema({
     .index("by_artifact", ["artifactId"])
     .index("by_run_fact_artifact", ["runId", "factId", "artifactId"]),
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    * GLOBAL RESEARCH LEDGER
    * Shared research cache with append-only progression tracking.
    * See: convex/globalResearch/ for mutations/queries.
-   * ══════════════════════════════════════════════════════════════════════ */
+   * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
   /* ------------------------------------------------------------------ */
   /* GLOBAL ARTIFACTS - URL-deduplicated source store                    */
@@ -5862,10 +5966,10 @@ export default defineSchema({
     .index("by_date_user", ["dateString", "userId"])
     .index("by_expires_at", ["expiresAt"]),
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    * FUNDING INTELLIGENCE LAYER
    * Deep Agent + Linkup API integration for banker-grade entity enrichment
-   * ══════════════════════════════════════════════════════════════════════ */
+   * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
   /* ------------------------------------------------------------------ */
   /* FUNDING EVENTS - First-class funding round records with evidence    */
@@ -6161,7 +6265,7 @@ export default defineSchema({
 
   /* ------------------------------------------------------------------ */
   /* WORKBENCH RUNS - Cross-model benchmark on frozen app substrates     */
-  /* NBW Phase 1 schema — execution engine wired in Phase 2             */
+  /* NBW Phase 1 schema â€” execution engine wired in Phase 2             */
   /* NOTE for Codex: Phase 2 will add appSubstrateId FK once the        */
   /*   workbenchApps table is created. Keep this table minimal for now. */
   /* ------------------------------------------------------------------ */
@@ -6752,10 +6856,10 @@ export default defineSchema({
     .index("by_channel", ["channel", "status"])
     .index("by_publishing_task", ["publishingTaskId"]),
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    * FREE MODEL DISCOVERY & EVALUATION
    * Deep Agents 3.0 - Autonomous model selection for zero-cost operations
-   * ══════════════════════════════════════════════════════════════════════ */
+   * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
   /* ------------------------------------------------------------------ */
   /* FREE MODELS - Discovered free models from OpenRouter               */
@@ -6836,10 +6940,10 @@ export default defineSchema({
     .index("by_timestamp", ["timestamp"])
     .index("by_success", ["success", "timestamp"]),
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    * DISCORD INTEGRATION
    * Bot-based messaging for slash commands and notifications
-   * ══════════════════════════════════════════════════════════════════════ */
+   * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
   /* ------------------------------------------------------------------ */
   /* DISCORD USERS - Registered Discord users for notifications         */
@@ -6903,10 +7007,10 @@ export default defineSchema({
   // Scheduled PDF Reports
   scheduledReports,
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    * DUE DILIGENCE FRAMEWORK
    * Parallelized multi-front research with traditional IC memo output
-   * ══════════════════════════════════════════════════════════════════════ */
+   * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
   /* ------------------------------------------------------------------ */
   /* DUE DILIGENCE JOBS - Orchestration layer for DD research            */
@@ -7105,9 +7209,9 @@ export default defineSchema({
       v.literal("person")
     ),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // I. EXECUTIVE SUMMARY
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     executiveSummary: v.string(),
     verdict: v.union(
       v.literal("STRONG_BUY"),
@@ -7118,9 +7222,9 @@ export default defineSchema({
     ),
     verdictRationale: v.optional(v.string()),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // II. COMPANY OVERVIEW
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     companyOverview: v.object({
       description: v.string(),
       hqLocation: v.optional(v.string()),
@@ -7133,9 +7237,9 @@ export default defineSchema({
       keyProducts: v.optional(v.array(v.string())),
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // III. MARKET ANALYSIS
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     marketAnalysis: v.object({
       marketSize: v.optional(v.string()),     // TAM/SAM/SOM
       marketGrowth: v.optional(v.string()),   // CAGR
@@ -7156,9 +7260,9 @@ export default defineSchema({
       headwinds: v.optional(v.array(v.string())),
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // IV. TEAM ASSESSMENT
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     teamAnalysis: v.object({
       founders: v.array(v.any()),             // TeamMemberProfile[]
       executives: v.array(v.any()),           // TeamMemberProfile[]
@@ -7171,9 +7275,9 @@ export default defineSchema({
       founderMarketFit: v.optional(v.string()),
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // V. FINANCIALS / FUNDING HISTORY
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     fundingHistory: v.object({
       totalRaised: v.optional(v.object({
         amount: v.number(),
@@ -7202,9 +7306,9 @@ export default defineSchema({
       runway: v.optional(v.string()),
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // VI. RISKS
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     risks: v.array(v.object({
       category: v.union(
         v.literal("Market"),
@@ -7232,9 +7336,9 @@ export default defineSchema({
       timeframe: v.optional(v.string()),      // Near-term, medium-term, long-term
     })),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // VII. INVESTMENT THESIS
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     investmentThesis: v.object({
       thesisSummary: v.string(),
       keyDrivers: v.array(v.string()),        // Why this will work
@@ -7257,9 +7361,9 @@ export default defineSchema({
       }))),
     }),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // VERIFICATION & SOURCES
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     verificationSummary: v.object({
       contradictionsFound: v.number(),
       contradictionsResolved: v.number(),
@@ -7281,9 +7385,9 @@ export default defineSchema({
       section: v.optional(v.string()),        // Which memo section uses this
     })),
 
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     // PERSONA READINESS
-    // ═══════════════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     personaReadiness: v.optional(v.record(v.string(), v.object({
       ready: v.boolean(),
       missingFields: v.optional(v.array(v.string())),
@@ -8192,11 +8296,11 @@ export default defineSchema({
     .index("by_verdict", ["verdict"])
     .index("by_confidence", ["confidence"]),
 
-  /* ══════════════════════════════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    * KNOWLEDGE PRODUCT LAYER
    * Source Registry, Diff Tracking, and Skill Tree for curriculum management.
    * See: convex/domains/knowledge/ for mutations/queries.
-   * ══════════════════════════════════════════════════════════════════════ */
+   * â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
   /* ------------------------------------------------------------------ */
   /* SOURCE REGISTRY - Authoritative source curation with trust metadata */
@@ -9446,7 +9550,7 @@ export default defineSchema({
     .index("by_pinned", ["isPinned", "packageName"]),
 
   /* ------------------------------------------------------------------ */
-  /* WEBMCP ORIGINS — Approved WebMCP-enabled sites for consumer bridge  */
+  /* WEBMCP ORIGINS â€” Approved WebMCP-enabled sites for consumer bridge  */
   /* ------------------------------------------------------------------ */
   webmcpOrigins: defineTable({
     origin: v.string(),
@@ -9469,7 +9573,7 @@ export default defineSchema({
     .index("by_status", ["status", "createdAt"]),
 
   /* ------------------------------------------------------------------ */
-  /* WEBMCP TOOL INVENTORY — Cached tool manifests per origin            */
+  /* WEBMCP TOOL INVENTORY â€” Cached tool manifests per origin            */
   /* ------------------------------------------------------------------ */
   webmcpToolInventory: defineTable({
     originId: v.id("webmcpOrigins"),
@@ -9791,7 +9895,7 @@ export default defineSchema({
     sampleSize: v.number(),
 
     // Breakdown by label pair
-    confusionMatrix: v.any(),      // Label1 × Label2 confusion matrix
+    confusionMatrix: v.any(),      // Label1 Ã— Label2 confusion matrix
 
     // Annotator pairs analyzed
     annotatorPairs: v.array(v.object({
@@ -9819,7 +9923,7 @@ export default defineSchema({
     datasetVersion: v.string(),
 
     // Sample size gates
-    minSampleSizePerStratum: v.record(v.string(), v.number()), // stratum → min size
+    minSampleSizePerStratum: v.record(v.string(), v.number()), // stratum â†’ min size
     actualSampleSize: v.record(v.string(), v.number()),
     sampleSizeGatePassed: v.boolean(),
 
@@ -9923,7 +10027,7 @@ export default defineSchema({
     accuracy: v.number(),          // 0-100
 
     // Breakdown by stratum
-    byStratum: v.any(),            // stratum → {correct, incorrect, accuracy}
+    byStratum: v.any(),            // stratum â†’ {correct, incorrect, accuracy}
 
     // Pass/fail
     passThreshold: v.number(),     // e.g., 80%
@@ -9987,7 +10091,7 @@ export default defineSchema({
     snapshotDate: v.number(),
 
     // Distribution by stratum
-    stratumDistribution: v.record(v.string(), v.number()), // stratum → count
+    stratumDistribution: v.record(v.string(), v.number()), // stratum â†’ count
 
     // Topic/domain distribution
     topicDistribution: v.optional(v.record(v.string(), v.number())),
@@ -10165,8 +10269,8 @@ export default defineSchema({
 
     // Model selection
     modelStrategy: v.union(
-      v.literal("free_first"),       // devstral → gemini-flash → haiku
-      v.literal("quality_first"),    // haiku → sonnet
+      v.literal("free_first"),       // devstral â†’ gemini-flash â†’ haiku
+      v.literal("quality_first"),    // haiku â†’ sonnet
       v.literal("specific"),         // Use specified model
     ),
     preferredModel: v.optional(v.string()),
@@ -10738,6 +10842,23 @@ export default defineSchema({
     agentRunId: v.optional(v.id("agentRuns")),
     agentThreadId: v.optional(v.string()),
     swarmId: v.optional(v.string()),
+    goalId: v.optional(v.string()),
+    visionSnapshot: v.optional(v.string()),
+    successCriteria: v.optional(v.array(v.string())),
+    sourceRefs: v.optional(v.array(v.object({
+      label: v.string(),
+      href: v.optional(v.string()),
+      note: v.optional(v.string()),
+      kind: v.optional(v.string()),
+    }))),
+    crossCheckStatus: v.optional(v.union(
+      v.literal("aligned"),
+      v.literal("drifting"),
+      v.literal("violated"),
+    )),
+    deltaFromVision: v.optional(v.string()),
+    dogfoodRunId: v.optional(v.id("dogfoodQaRuns")),
+    estimatedCostUsd: v.optional(v.number()),
     toolsUsed: v.optional(v.array(v.string())),
     agentsInvolved: v.optional(v.array(v.string())),
     errorMessage: v.optional(v.string()),
@@ -10754,6 +10875,22 @@ export default defineSchema({
     traceId: v.string(),
     workflowName: v.string(),
     groupId: v.optional(v.string()),
+    goalId: v.optional(v.string()),
+    visionSnapshot: v.optional(v.string()),
+    successCriteria: v.optional(v.array(v.string())),
+    sourceRefs: v.optional(v.array(v.object({
+      label: v.string(),
+      href: v.optional(v.string()),
+      note: v.optional(v.string()),
+      kind: v.optional(v.string()),
+    }))),
+    crossCheckStatus: v.optional(v.union(
+      v.literal("aligned"),
+      v.literal("drifting"),
+      v.literal("violated"),
+    )),
+    deltaFromVision: v.optional(v.string()),
+    dogfoodRunId: v.optional(v.id("dogfoodQaRuns")),
     status: v.union(
       v.literal("running"),
       v.literal("completed"),
@@ -10767,6 +10904,7 @@ export default defineSchema({
       output: v.number(),
       total: v.number(),
     })),
+    estimatedCostUsd: v.optional(v.number()),
     model: v.optional(v.string()),
     metadata: v.optional(v.any()),
   })
@@ -10853,6 +10991,41 @@ export default defineSchema({
     .index("by_source", ["sourceName", "date"])
     .index("by_category", ["category", "date"])
     .index("by_component", ["componentType", "date"]),
+
+  /**
+   * Intent telemetry for product intelligence loops.
+   * Records normalized user intents, whether they were handled,
+   * and which channel produced them.
+   */
+  intentSignals: defineTable({
+    userId: v.optional(v.id("users")),
+    source: v.union(
+      v.literal("voice"),
+      v.literal("text"),
+      v.literal("navigation"),
+      v.literal("system"),
+      v.literal("search"),
+    ),
+    intentKey: v.string(),
+    action: v.string(),
+    status: v.union(
+      v.literal("handled"),
+      v.literal("fallback"),
+      v.literal("failed"),
+    ),
+    inputText: v.optional(v.string()),
+    route: v.optional(v.string()),
+    targetView: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+    day: v.string(),
+    occurredAt: v.number(),
+  })
+    .index("by_day", ["day"])
+    .index("by_occurredAt", ["occurredAt"])
+    .index("by_user_and_day", ["userId", "day"])
+    .index("by_user_and_occurredAt", ["userId", "occurredAt"])
+    .index("by_source_and_occurredAt", ["source", "occurredAt"])
+    .index("by_status_and_occurredAt", ["status", "occurredAt"]),
 
   /* ------------------------------------------------------------------ */
   /* RECOMMENDATION OUTCOMES - Feedback loop for recommendation system  */
@@ -11423,9 +11596,9 @@ export default defineSchema({
     .index("by_update", ["updateId"])
     .index("by_status", ["status", "createdAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // NARRATIVE OPERATING SYSTEM TABLES
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Narrative Threads - Story arcs that evolve over time
@@ -11614,7 +11787,7 @@ export default defineSchema({
         v.literal("mixed"),         // partly supported, partly interpretive
         v.literal("speculative")    // mostly interpretive, missing direct evidence
       )),
-      // Phase 7: Entailment verdict — does evidence support the claim?
+      // Phase 7: Entailment verdict â€” does evidence support the claim?
       entailmentVerdict: v.optional(v.union(
         v.literal("entailed"),      // evidence directly supports
         v.literal("neutral"),       // evidence neither supports nor contradicts
@@ -11821,9 +11994,9 @@ export default defineSchema({
     .index("by_review_status", ["reviewStatus", "createdAt"])
     .index("by_basis", ["correlationBasis", "reviewStatus"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // P0 QUALITY CONTROL TABLES
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Content Rights Policies - Per-source ToS compliance
@@ -11981,9 +12154,9 @@ export default defineSchema({
     .index("by_content", ["contentType", "contentId"])
     .index("by_author", ["authorId", "createdAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // PHASE 7: HYPOTHESIS TESTING & SIGNAL METRICS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Narrative Hypotheses - Structured testable sub-claims within a thread
@@ -12079,9 +12252,9 @@ export default defineSchema({
     .index("by_domain", ["domain", "measuredAt"])
     .index("by_thread", ["threadId", "domain", "measuredAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // GROUND TRUTH & VERIFICATION AUDIT TABLES
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
    * Ground Truth Facts - Verified facts from authoritative sources
@@ -12116,14 +12289,14 @@ export default defineSchema({
     .index("by_source", ["sourceUrl"])
     .index("by_active", ["subject", "expirationDate"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // AGENT OS — Perpetual Multi-Agent Runtime
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // AGENT OS â€” Perpetual Multi-Agent Runtime
   // First-class agent identities, communication channels, and heartbeat tracking.
   // Enables "agents as employees" pattern: always-ready, event-driven, governed.
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   /**
-   * Agent Identities — first-class agent profiles with persona, permissions, and budget.
+   * Agent Identities â€” first-class agent profiles with persona, permissions, and budget.
    * Unlike agentRuns (per-invocation execution records), this tracks the agent's
    * persistent identity, capabilities, and operational constraints across all sessions.
    */
@@ -12138,7 +12311,7 @@ export default defineSchema({
     budgetDailyTokens: v.optional(v.number()),
     budgetDailyCostUsd: v.optional(v.number()),
     maxConcurrentRuns: v.optional(v.number()),
-    // Trust integration — links to authorTrust for reputation tracking
+    // Trust integration â€” links to authorTrust for reputation tracking
     authorTrustTier: v.optional(v.union(
       v.literal("verified"),
       v.literal("established"),
@@ -12159,7 +12332,7 @@ export default defineSchema({
     .index("by_name", ["name"]),
 
   /**
-   * Agent Channels — grouping for teams/rooms.
+   * Agent Channels â€” grouping for teams/rooms.
    * narrativeThreads are content threads (research outputs);
    * agentChannels are operational communication channels (coordination).
    */
@@ -12188,7 +12361,7 @@ export default defineSchema({
     .index("by_type", ["channelType", "updatedAt"]),
 
   /**
-   * Agent Heartbeats — lightweight heartbeat log for perpetual agent runtime.
+   * Agent Heartbeats â€” lightweight heartbeat log for perpetual agent runtime.
    * Tracks each "wake up" event: what triggered it, what work was done, cost.
    * Not agentRuns (which tracks full LLM invocations); this is the scheduling layer.
    */
@@ -12226,11 +12399,11 @@ export default defineSchema({
     .index("by_agent_status", ["agentId", "status"])
     .index("by_trigger", ["triggeredBy", "startedAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MODEL ROUTER — Unified Inference Layer Audit Log
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // MODEL ROUTER â€” Unified Inference Layer Audit Log
   // Every model call routed through modelRouter.ts is logged here for
   // budget tracking, usage dashboards, cost analysis, and repro packs.
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   modelRouterCalls: defineTable({
     modelId: v.string(),
@@ -12254,11 +12427,11 @@ export default defineSchema({
     .index("by_task", ["taskCategory", "calledAt"])
     .index("by_tier", ["actualTier", "calledAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // JUDGE METRICS — Standardized Boolean + Numeric Evaluation Outputs
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // JUDGE METRICS â€” Standardized Boolean + Numeric Evaluation Outputs
   // Every LLM judge evaluation persists structured metrics here.
-  // No prose — only booleans, 0-1 numbers, and categorical decisions.
-  // ═══════════════════════════════════════════════════════════════════════════
+  // No prose â€” only booleans, 0-1 numbers, and categorical decisions.
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   judgeMetrics: defineTable({
     judgeId: v.string(),
@@ -12286,11 +12459,11 @@ export default defineSchema({
     .index("by_judge", ["judgeId", "recordedAt"])
     .index("by_critical", ["criticalPass", "recordedAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // PROMOTION APPROVALS — HITL Queue for High-Impact Writes
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // PROMOTION APPROVALS â€” HITL Queue for High-Impact Writes
   // Agents submit promotion requests; human operators approve/reject.
   // Enforces observation-vs-promotion boundary for knowledge integrity.
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   promotionApprovals: defineTable({
     agentId: v.string(),
@@ -12309,11 +12482,11 @@ export default defineSchema({
     .index("by_decision", ["decision", "requestedAt"])
     .index("by_agent", ["agentId", "requestedAt"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // AGENT NAVIGATION INTENTS — Agent-driven UI view switching
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // AGENT NAVIGATION INTENTS â€” Agent-driven UI view switching
   // Agents store navigation requests; frontend watches via useQuery and switches views.
-  // Enables "do everything from chat" — agent says "opening that for you" and UI responds.
-  // ═══════════════════════════════════════════════════════════════════════════
+  // Enables "do everything from chat" â€” agent says "opening that for you" and UI responds.
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   agentNavigationIntents: defineTable({
     navigationId: v.string(),
@@ -12327,20 +12500,20 @@ export default defineSchema({
     .index("by_threadId_and_status", ["threadId", "status"])
     .index("by_navigationId", ["navigationId"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // OPENCLAW — Sandboxed AI Agent Orchestration
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // OPENCLAW â€” Sandboxed AI Agent Orchestration
   // Workflow definitions, session lifecycle, execution audit trail, delegations
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   openclawWorkflows,
   openclawSessions,
   openclawExecutions,
   openclawDelegations,
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FORECASTING OS — Prediction Engine with Brier Scoring
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // FORECASTING OS â€” Prediction Engine with Brier Scoring
   // Forecasts, evidence ledger, resolutions, update history, calibration log
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   forecasts,
   forecastEvidence,
@@ -12348,10 +12521,10 @@ export default defineSchema({
   forecastUpdateHistory,
   forecastCalibrationLog,
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MESSAGING — Channel Provider Abstraction Layer
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // MESSAGING â€” Channel Provider Abstraction Layer
   // Multi-channel preferences, fallback chains, opt-in/out, quiet hours
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   channelPreferences: defineTable({
     userId: v.id("users"),
@@ -12383,10 +12556,10 @@ export default defineSchema({
   })
     .index("by_user", ["userId"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // OPERATOR PROFILES — User-authored agent policy (USER.md equivalent)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // OPERATOR PROFILES â€” User-authored agent policy (USER.md equivalent)
   // Governs identity, goals, permissions, budget, output preferences
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   operatorProfiles: defineTable({
     userId: v.id("users"),
@@ -12451,11 +12624,11 @@ export default defineSchema({
   })
     .index("by_user", ["userId"]),
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // BATCH AUTOPILOT — Per-user scheduled autonomy
-  // Sweep cron checks schedules → triggers batch runs → collects delta →
-  // summarizes via free models → generates personalized brief → delivers
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // BATCH AUTOPILOT â€” Per-user scheduled autonomy
+  // Sweep cron checks schedules â†’ triggers batch runs â†’ collects delta â†’
+  // summarizes via free models â†’ generates personalized brief â†’ delivers
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   batchAutopilotSchedules: defineTable({
     userId: v.id("users"),

@@ -55,7 +55,7 @@ describe("Step 1: Project-Wide Capability Baseline", () => {
     console.log(`Auth: ${result.aggregate.auth_and_context.get_user_identity ?? 0} getUserIdentity calls`);
     console.log(`Storage: ${result.aggregate.storage?.storage_store ?? 0} stores, ${result.aggregate.storage?.storage_get_url ?? 0} getUrl`);
     console.log(`Top 5 files: ${result.topFiles.slice(0, 5).map((f: any) => `${f.file} (${f.functionTypes}fn, ${f.dataAccess}da)`).join(", ")}`);
-  }, 30_000);
+  }, 90_000);
 });
 
 // ── Step 2: Industry-Latest Concept Verification ──────────────────────

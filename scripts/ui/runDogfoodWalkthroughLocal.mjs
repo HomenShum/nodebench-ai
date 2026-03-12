@@ -172,6 +172,8 @@ async function main() {
   const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
   const nodeCmd = process.execPath;
   const viteBin = path.join(repoRoot, "node_modules", "vite", "bin", "vite.js");
+  const distDir = path.join(repoRoot, "dist");
+  const staleScribeUserdataDir = path.join(repoRoot, "public", "dogfood", "scribe", "userdata");
 
   let serverProc;
   if (serverMode === "dev") {
@@ -187,16 +189,26 @@ async function main() {
     });
   } else {
     // Build + preview server (fast start, production-like behavior).
-    await removePathRobustly(path.join(repoRoot, "dist", "dogfood"));
-    // eslint-disable-next-line no-console
-    console.log(`Building: ${npmCmd} run build`);
-    const build = spawn(`${npmCmd} run build`, {
-      cwd: repoRoot,
-      stdio: "inherit",
-      env: { ...process.env },
-      shell: true,
-    });
-    const buildCode = await new Promise((resolve) => build.on("exit", resolve));
+    await removePathRobustly(staleScribeUserdataDir);
+    await removePathRobustly(distDir);
+    let buildCode = 1;
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      // eslint-disable-next-line no-console
+      console.log(`Building: ${npmCmd} run build${attempt > 0 ? ` (retry ${attempt})` : ""}`);
+      const build = spawn(`${npmCmd} run build`, {
+        cwd: repoRoot,
+        stdio: "inherit",
+        env: { ...process.env },
+        shell: true,
+      });
+      buildCode = await new Promise((resolve) => build.on("exit", resolve));
+      if (buildCode === 0) break;
+
+      await removePathRobustly(distDir);
+      await sleep(500);
+    }
+
     if (buildCode !== 0) throw new Error(`Build exited with code ${buildCode}`);
 
     // eslint-disable-next-line no-console

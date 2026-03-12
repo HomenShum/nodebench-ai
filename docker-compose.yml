@@ -1,0 +1,94 @@
+services:
+  tsfm-inference:
+    build:
+      context: ./services/tsfm-inference
+    ports:
+      - "8010:8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=5)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  ingestion-extract:
+    build:
+      context: ./services/ingestion-extract
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL:-}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+    ports:
+      - "8011:8011"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8011/health', timeout=5)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  api-headless:
+    image: node:22-bookworm
+    working_dir: /workspace/apps/api-headless
+    command: >
+      sh -lc "npm install &&
+      npm run dev"
+    environment:
+      NODE_ENV: development
+      API_PORT: 8020
+      CONVEX_URL: ${CONVEX_URL:-}
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      TSFM_BASE_URL: http://tsfm-inference:8010
+      INGESTION_BASE_URL: http://ingestion-extract:8011
+    volumes:
+      - ./:/workspace
+      - api_headless_node_modules:/workspace/apps/api-headless/node_modules
+    ports:
+      - "8020:8020"
+    depends_on:
+      tsfm-inference:
+        condition: service_healthy
+      ingestion-extract:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8020/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+
+  oracle-ui:
+    image: node:22-bookworm
+    working_dir: /workspace
+    command: >
+      sh -lc "npm ci &&
+      npx vite --host 0.0.0.0 --port 5173"
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      TSFM_BASE_URL: http://tsfm-inference:8010
+      INGESTION_BASE_URL: http://ingestion-extract:8011
+    volumes:
+      - ./:/workspace
+      - oracle_ui_node_modules:/workspace/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      tsfm-inference:
+        condition: service_healthy
+      ingestion-extract:
+        condition: service_healthy
+      api-headless:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  api_headless_node_modules:
+  oracle_ui_node_modules:

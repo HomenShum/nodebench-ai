@@ -82,7 +82,7 @@ export function ThreadLane({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className={`border-b border-edge ${index % 2 === 0 ? "bg-white dark:bg-transparent" : "bg-gray-50/30 dark:bg-white/[0.01]"}`}
+      className={`border-b border-edge ${index % 2 === 0 ? "bg-surface dark:bg-transparent" : "bg-gray-50/30 dark:bg-white/[0.01]"}`}
     >
       {/* Main Lane Row */}
       <div className="flex">
@@ -145,7 +145,7 @@ export function ThreadLane({
                 e.stopPropagation();
                 onToggleExpand();
               }}
-              className="p-1 rounded hover:bg-white/50 transition-colors"
+              className="p-1 rounded hover:bg-surface/50 transition-colors"
             >
               {isExpanded ? (
                 <ChevronUp className="w-4 h-4 text-content-muted" />

@@ -36,14 +36,14 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full bg-gray-900 no-skeleton-animation" aria-busy="true" aria-live="polite">
-        <div className="p-4 border-b border-gray-700">
-          <div className="h-8 bg-gray-700 rounded w-3/4 mb-2" />
-          <div className="h-4 bg-gray-700 rounded w-1/2" />
+      <div className="flex flex-col h-full bg-surface no-skeleton-animation" aria-busy="true" aria-live="polite">
+        <div className="p-4 border-b border-edge">
+          <div className="h-8 bg-surface-secondary rounded w-3/4 mb-2" />
+          <div className="h-4 bg-surface-secondary rounded w-1/2" />
         </div>
         <div className="p-4 space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-40 bg-gray-800 rounded-lg" />
+            <div key={i} className="h-40 bg-surface rounded-lg" />
           ))}
         </div>
       </div>
@@ -67,15 +67,15 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
   return (
     <div className="flex flex-col h-full bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-edge">
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={onBack}
-            className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 text-content-muted hover:text-content hover:bg-surface rounded-lg transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-lg font-semibold text-white flex-1 truncate">
+          <h1 className="text-lg font-semibold text-content flex-1 truncate">
             {thread.subject}
           </h1>
           <div className="flex items-center gap-2">
@@ -88,7 +88,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
 
         {/* AI Insights */}
         {(thread.aiCategory || thread.aiPriority || thread.aiSummary) && (
-          <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+          <div className="p-3 bg-surface/50 rounded-lg border border-edge">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs text-content-muted tracking-wide">AI Insights</span>
             </div>
@@ -112,7 +112,7 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
               )}
             </div>
             {thread.aiSummary && (
-              <p className="text-sm text-gray-300">{thread.aiSummary}</p>
+              <p className="text-sm text-content-secondary">{thread.aiSummary}</p>
             )}
             {thread.aiActionSuggestion && (
               <p className="text-sm text-amber-300 mt-2">
@@ -142,13 +142,13 @@ export function EmailThreadDetail({ threadId, onBack }: EmailThreadDetailProps) 
       </div>
 
       {/* Reply Bar */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-edge">
         <div className="flex gap-2">
           <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center gap-2 transition-colors">
             <Reply className="h-4 w-4" />
             Reply
           </button>
-          <button className="py-2 px-4 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg flex items-center justify-center gap-2 transition-colors">
+          <button className="py-2 px-4 bg-surface hover:bg-surface-hover text-content-secondary rounded-lg flex items-center justify-center gap-2 transition-colors">
             <Forward className="h-4 w-4" />
             Forward
           </button>
@@ -169,7 +169,7 @@ function ActionButton({
   fillColor?: string;
 }) {
   return (
-    <button className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+    <button className="p-2 text-content-muted hover:text-content hover:bg-surface rounded-lg transition-colors">
       <Icon className={`h-5 w-5 ${filled ? `${fillColor} fill-current` : ''}`} />
     </button>
   );
@@ -204,12 +204,12 @@ function EmailMessage({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden"
+      className="bg-surface/50 rounded-lg border border-edge overflow-hidden"
     >
       {/* Message Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-start gap-3 hover:bg-gray-800/80 transition-colors text-left"
+        className="w-full p-4 flex items-start gap-3 hover:bg-surface/80 transition-colors text-left"
       >
         {/* Avatar */}
         <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
@@ -219,7 +219,7 @@ function EmailMessage({
         {/* Header Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-white truncate">{extractName(message.from)}</span>
+            <span className="font-medium text-content truncate">{extractName(message.from)}</span>
             {message.date && (
               <span className="text-xs text-content-secondary ml-2 whitespace-nowrap">
                 {formatDateTime(message.date)}
@@ -247,15 +247,15 @@ function EmailMessage({
       {/* Message Body */}
       {isExpanded && (
         <div className="px-4 pb-4">
-          <div className="border-t border-gray-700 pt-4">
+          <div className="border-t border-edge pt-4">
             {/* Body Content */}
             {message.bodyHtml && !showRaw ? (
               <div
-                className="prose prose-invert prose-sm max-w-none text-gray-300"
+                className="prose prose-invert prose-sm max-w-none text-content-secondary"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.bodyHtml) }}
               />
             ) : (
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-gray-900 p-3 rounded-lg overflow-x-auto">
+              <pre className="text-sm text-content-secondary whitespace-pre-wrap font-mono bg-gray-900 p-3 rounded-lg overflow-x-auto">
                 {message.bodyText || 'No content'}
               </pre>
             )}
@@ -272,7 +272,7 @@ function EmailMessage({
 
             {/* Attachments */}
             {message.hasAttachments && message.attachments && message.attachments.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-700">
+              <div className="mt-4 pt-4 border-t border-edge">
                 <div className="flex items-center gap-2 mb-2">
                   <Paperclip className="h-4 w-4 text-content-muted" />
                   <span className="text-sm text-content-muted">
@@ -283,7 +283,7 @@ function EmailMessage({
                   {message.attachments.map((att, i) => (
                     <div
                       key={i}
-                      className="px-3 py-2 bg-gray-900 rounded-lg flex items-center gap-2 text-sm text-gray-300"
+                      className="px-3 py-2 bg-gray-900 rounded-lg flex items-center gap-2 text-sm text-content-secondary"
                     >
                       <Paperclip className="h-4 w-4 text-content-secondary" />
                       <span className="truncate max-w-[200px]">{att.filename}</span>

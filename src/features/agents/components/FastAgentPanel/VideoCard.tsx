@@ -24,7 +24,7 @@ export function VideoCard({ video, className }: VideoCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group block rounded-lg overflow-hidden border border-edge hover:border-edge",
+        "group block rounded-lg overflow-hidden border border-edge hover:shadow-md hover:border-primary/20",
         "transition-all duration-200 bg-surface",
         className
       )}
@@ -39,7 +39,7 @@ export function VideoCard({ video, className }: VideoCardProps) {
         />
         
         {/* Play button overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
+        <div className="absolute inset-0 flex items-center justify-center bg-surface-secondary group-hover:bg-black/30 transition-colors">
           <div className="w-12 h-12 rounded-full bg-red-600 group-hover:bg-red-700 flex items-center justify-center shadow-lg transition-colors">
             <Play className="h-6 w-6 text-white ml-0.5" fill="white" />
           </div>

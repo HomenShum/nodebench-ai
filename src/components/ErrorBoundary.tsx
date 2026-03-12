@@ -26,6 +26,16 @@ interface ErrorBoundaryState {
 }
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private static isRecoverableChunkError(error: unknown): boolean {
+    const message = String((error as any)?.message ?? error ?? "").toLowerCase();
+    return (
+      message.includes("failed to fetch dynamically imported module") ||
+      message.includes("loading chunk") ||
+      message.includes("chunkloaderror") ||
+      message.includes("importing a module script failed")
+    );
+  }
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -38,6 +48,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error(`[ErrorBoundary${this.props.section ? `:${this.props.section}` : ''}] Error caught:`, error, errorInfo);
     this.props.onError?.(error, errorInfo);
+
+    // Auto-refresh once per path for stale chunk-load failures after deploy
+    if (typeof window !== "undefined" && ErrorBoundary.isRecoverableChunkError(error)) {
+      const marker = `nb:chunk-reload:${window.location.pathname}`;
+      if (sessionStorage.getItem(marker) !== "1") {
+        sessionStorage.setItem(marker, "1");
+        window.setTimeout(() => window.location.reload(), 120);
+      }
+    }
   }
 
   handleRetry = () => {
@@ -87,7 +106,7 @@ export function ErrorFallback({ section, error, onRetry, className = '' }: Error
           {onRetry && (
             <button
               onClick={onRetry}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-700 bg-surface border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
               Try again

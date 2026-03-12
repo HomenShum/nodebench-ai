@@ -231,7 +231,7 @@ export const McpToolLedgerView: React.FC = () => {
                 className={`shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
                   policyAndUsage.config.enforce
                     ? "bg-red-600 text-white hover:bg-red-500"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]"
                 } ${policyActionBusy ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 {policyActionBusy
@@ -272,15 +272,15 @@ export const McpToolLedgerView: React.FC = () => {
                         <div className="flex-1">
                           <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
                             <div
-                              className="h-2 bg-indigo-600"
+                              className="h-2 bg-[var(--accent-primary)]"
                               style={{ width: `${pct ?? 0}%` }}
                             />
                           </div>
                         </div>
                         <div className="w-24 text-right text-sm text-content tabular-nums">
-                          {row.count}
+                          {typeof row.count === 'number' ? row.count.toLocaleString() : row.count}
                           {typeof row.limit === "number" ? (
-                            <span className="text-content-secondary">/{row.limit}</span>
+                            <span className="text-content-secondary">/{row.limit.toLocaleString()}</span>
                           ) : null}
                         </div>
                       </div>
@@ -318,8 +318,7 @@ export const McpToolLedgerView: React.FC = () => {
             <div className="divide-y divide-edge">
               {calls.length === 0 ? (
                 <div className="p-6 text-sm text-content-secondary">
-                  No MCP tool calls recorded yet. Generate a few by calling the MCP unified server
-                  or hitting <span className="font-mono">/api/mcpGateway</span>.
+                  No tool calls recorded yet. Activity will appear here as you interact with the AI assistant.
                 </div>
               ) : (
                 calls.map((c) => {

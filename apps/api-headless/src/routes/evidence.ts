@@ -20,8 +20,23 @@ import {
 
 const router = Router();
 
+function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
+  return (req: Request, res: Response) => {
+    fn(req, res).catch((err) => {
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "internal_error",
+          message: err instanceof Error ? err.message : "Unexpected error",
+          requestId: req.requestId,
+        });
+      }
+    });
+  };
+}
+
 // ── In-memory fallback store ───────────────────────────────────────────────
 
+const MAX_IN_MEMORY_PACKS = 500;
 const inMemoryPacks = new Map<string, ProofPack>();
 
 function computeHash(pack: Omit<ProofPack, "hash">): string {
@@ -38,7 +53,7 @@ function computeHash(pack: Omit<ProofPack, "hash">): string {
 
 // ── POST /v1/evidence — Create a proof pack ───────────────────────────────
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", asyncHandler(async (req: Request, res: Response) => {
   const parsed = proofPackCreateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -75,14 +90,18 @@ router.post("/", async (req: Request, res: Response) => {
     hash: computeHash(packData),
   };
 
+  if (inMemoryPacks.size >= MAX_IN_MEMORY_PACKS) {
+    const oldest = inMemoryPacks.keys().next().value;
+    if (oldest !== undefined) inMemoryPacks.delete(oldest);
+  }
   inMemoryPacks.set(packKey, pack);
 
   res.status(201).json(pack);
-});
+}));
 
 // ── GET /v1/evidence — List proof packs ───────────────────────────────────
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", asyncHandler(async (req: Request, res: Response) => {
   const specKey = getSingleQueryValue(req.query.specKey);
   const compliance = getSingleQueryValue(req.query.compliance);
   const limit = getIntQueryValue(req.query.limit, 50);
@@ -112,11 +131,11 @@ router.get("/", async (req: Request, res: Response) => {
     packs: packs.slice(0, limit),
     total: packs.length,
   });
-});
+}));
 
 // ── GET /v1/evidence/:packKey — Get proof pack ────────────────────────────
 
-router.get("/:packKey", async (req: Request, res: Response) => {
+router.get("/:packKey", asyncHandler(async (req: Request, res: Response) => {
   const packKey = getSinglePathValue(req.params.packKey);
   if (!packKey) {
     res.status(400).json({ error: "validation_error", message: "packKey is required" });
@@ -137,11 +156,11 @@ router.get("/:packKey", async (req: Request, res: Response) => {
   }
 
   res.json(pack);
-});
+}));
 
 // ── GET /v1/evidence/:packKey/export — Export as PDF-ready JSON ───────────
 
-router.get("/:packKey/export", async (req: Request, res: Response) => {
+router.get("/:packKey/export", asyncHandler(async (req: Request, res: Response) => {
   const packKey = getSinglePathValue(req.params.packKey);
   if (!packKey) {
     res.status(400).json({ error: "validation_error", message: "packKey is required" });
@@ -197,6 +216,6 @@ router.get("/:packKey/export", async (req: Request, res: Response) => {
     exportFormat: "pdf_ready",
     sections,
   });
-});
+}));
 
 export default router;

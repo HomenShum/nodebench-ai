@@ -283,7 +283,7 @@ export function CorrelationTooltip({ correlation, position }: CorrelationTooltip
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 5 }}
-      className="absolute z-50 bg-white rounded-lg shadow-lg border border-edge p-3 max-w-xs"
+      className="absolute z-50 bg-surface rounded-lg shadow-lg border border-edge p-3 max-w-xs"
       style={{
         left: position.x,
         top: position.y + 10,

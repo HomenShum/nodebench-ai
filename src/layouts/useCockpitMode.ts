@@ -44,9 +44,9 @@ export function useCockpitMode() {
     initRef.current = true;
     const isHomeLikePath =
       location.pathname === "/" ||
-      location.pathname === "/research" ||
-      location.pathname === "/research/overview" ||
-      location.pathname === "/hub";
+      location.pathname === "/control-plane" ||
+      location.pathname === "/home" ||
+      location.pathname === "/landing";
     if (!isHomeLikePath) return;
     const saved = localStorage.getItem(COCKPIT_MODE_KEY) as CockpitMode | null;
     if (saved && saved !== mode) {

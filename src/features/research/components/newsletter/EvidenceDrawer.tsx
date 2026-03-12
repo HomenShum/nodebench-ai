@@ -50,7 +50,7 @@ function SourceCard({ source, onSourceClick }: { source: EvidenceSource; onSourc
     return (
         <div
             onClick={() => onSourceClick?.(source)}
-            className="p-3 bg-surface rounded-lg border border-edge hover:border-edge cursor-pointer transition-all group"
+            className="p-3 bg-surface rounded-lg border border-edge hover:shadow-md hover:border-primary/20 cursor-pointer transition-all duration-200 group"
         >
             <div className="flex items-start gap-2">
                 <span className="p-1.5 bg-surface-secondary rounded border border-edge shrink-0">
@@ -188,7 +188,7 @@ export function EvidenceDrawer({
                         placeholder="Search sources..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 text-sm bg-surface-secondary border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-surface-secondary border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-blue-500"
                     />
                 </div>
                 <div className="flex gap-1.5 mt-2">

@@ -19,6 +19,11 @@ interface SidebarButtonProps {
   badge?: number;
   subtitle?: string;
   className?: string;
+  /** Agent traversability: stable ID for this button */
+  "data-agent-id"?: string;
+  "data-agent-action"?: string;
+  "data-agent-label"?: string;
+  "data-agent-target"?: string;
 }
 
 export function SidebarButton({
@@ -30,11 +35,19 @@ export function SidebarButton({
   badge,
   subtitle,
   className,
+  "data-agent-id": agentId,
+  "data-agent-action": agentAction,
+  "data-agent-label": agentLabel,
+  "data-agent-target": agentTarget,
 }: SidebarButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-agent-id={agentId}
+      data-agent-action={agentAction}
+      data-agent-label={agentLabel}
+      data-agent-target={agentTarget}
       className={cn(
         'group flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium rounded-md transition-colors duration-150 w-[calc(100%-0.5rem)] mx-1 text-left border-l-2',
         isActive
@@ -45,7 +58,7 @@ export function SidebarButton({
     >
       <span className={cn(
         'w-4 h-4 flex-shrink-0 [&>svg]:w-full [&>svg]:h-full transition-opacity',
-        isActive ? 'text-indigo-600 dark:text-indigo-400 opacity-100' : 'text-content-muted opacity-40 group-hover:opacity-100'
+        isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-content-muted opacity-60 group-hover:opacity-100'
       )}>
         {icon}
       </span>

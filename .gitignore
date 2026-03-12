@@ -29,6 +29,9 @@ package-lock.json
 *storybook.log
 storybook-static
 
+# Sentinel reports (ephemeral, regenerated on demand)
+.sentinel/
+
 # Temporary/refactoring summary files
 *_REFACTORING_SUMMARY.md
 *_COMPLETE.md
@@ -88,3 +91,7 @@ public/dogfood/scribe/userdata/
 .overstory/logs/
 .overstory/checkpoints/
 .overstory/agents/
+
+# Secrets
+.mcpregistry_github_token
+packages/mcp-local/.mcpregistry_github_token

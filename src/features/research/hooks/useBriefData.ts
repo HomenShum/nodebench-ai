@@ -12,6 +12,7 @@
 import { useMemo } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
+import { normalizeBriefDateString } from '@/lib/briefDate';
 import type { DailyBriefPayload, ExecutiveBriefRecord } from '../types';
 
 /**
@@ -181,13 +182,14 @@ interface UseBriefDataOptions {
 
 export function useBriefData(options: UseBriefDataOptions = {}) {
   const { historyDays = 7, dateString } = options;
+  const normalizedDateString = normalizeBriefDateString(dateString ?? null);
 
   // Fetch target brief memory (either by date or latest)
   const latestBriefMemory = useQuery(
-    dateString
+    normalizedDateString
       ? api.domains.research.dailyBriefMemoryQueries.getMemoryByDateString
       : api.domains.research.dailyBriefMemoryQueries.getLatestMemory,
-    dateString ? { dateString } : {}
+    normalizedDateString ? { dateString: normalizedDateString } : {}
   );
 
   // Fetch task results for the latest memory
@@ -243,13 +245,21 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
   // Available brief dates
   const availableDates = useMemo(() => {
     const snapshots = Array.isArray(dashboardHistory) ? dashboardHistory : [];
-    const unique = [...new Set(snapshots.map((s: any) => s?.dateString).filter(Boolean))] as string[];
+    // NOTE(coworker): Normalize any timestamp-like values to YYYY-MM-DD to keep
+    // selectors/query params stable and avoid downstream date-format crashes.
+    const unique = [
+      ...new Set(
+        snapshots
+          .map((s: any) => normalizeBriefDateString(s?.dateString ?? null))
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ];
     return unique.sort().reverse();
   }, [dashboardHistory]);
 
   // Current briefing date
   const briefingDateString = useMemo(() => {
-    const memoryDate = (latestBriefMemory as any)?.dateString;
+    const memoryDate = normalizeBriefDateString((latestBriefMemory as any)?.dateString ?? null);
     if (memoryDate && availableDates.includes(memoryDate)) {
       return memoryDate;
     }
@@ -317,6 +327,15 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
 
     if (!yesterday) return null;
 
+    const coerceMetricNumber = (value: unknown): number => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      if (typeof value === 'string') {
+        const parsed = parseFloat(value.replace(/[^0-9.-]/g, ''));
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+      return 0;
+    };
+
     // Calculate deltas for key metrics
     const calcDelta = (todayVal: number | undefined, yesterdayVal: number | undefined) => {
       if (todayVal === undefined || yesterdayVal === undefined) return null;
@@ -327,8 +346,8 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
       // Key stats deltas
       keyStats: today.keyStats?.map((stat: any, i: number) => {
         const yesterdayStat = yesterday.keyStats?.[i];
-        const todayValue = parseFloat(stat.value?.replace(/[^0-9.-]/g, '')) || 0;
-        const yesterdayValue = parseFloat(yesterdayStat?.value?.replace(/[^0-9.-]/g, '')) || 0;
+        const todayValue = coerceMetricNumber(stat?.value);
+        const yesterdayValue = coerceMetricNumber(yesterdayStat?.value);
         return {
           label: stat.label,
           delta: todayValue - yesterdayValue
@@ -343,9 +362,11 @@ export function useBriefData(options: UseBriefDataOptions = {}) {
       // Capabilities deltas
       capabilities: today.capabilities?.map((cap: any, i: number) => {
         const yesterdayCap = yesterday.capabilities?.[i];
+        const todayScore = coerceMetricNumber(cap?.score);
+        const yesterdayScore = coerceMetricNumber(yesterdayCap?.score);
         return {
           label: cap.label,
-          delta: calcDelta(cap.score, yesterdayCap?.score)
+          delta: calcDelta(todayScore, yesterdayScore)
         };
       }) ?? []
     };

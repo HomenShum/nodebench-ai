@@ -983,7 +983,10 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
   // Then use slices if provided, otherwise fall back to mock data
   const data = slices ?? mockData;
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const suppressObserverUntilRef = useRef(0);
+  const manualNavLockUntilRef = useRef(0);
   const [activeSection, setActiveSection] = useState<string>(roadmapNav[0]?.target ?? "roadmap-overview");
+  const [manualActiveSection, setManualActiveSection] = useState<string | null>(null);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
 
   // Fetch analytics data
@@ -1031,24 +1034,42 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
 
     const observer = new IntersectionObserver(
       (entries) => {
+        const now = Date.now();
+        if (now < suppressObserverUntilRef.current) {
+          return;
+        }
+
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => {
-            const aRootTop = a.rootBounds?.top ?? 0;
-            const bRootTop = b.rootBounds?.top ?? 0;
-            const aDistanceToTop = Math.abs(a.boundingClientRect.top - aRootTop);
-            const bDistanceToTop = Math.abs(b.boundingClientRect.top - bRootTop);
-
-            if (aDistanceToTop !== bDistanceToTop) {
-              return aDistanceToTop - bDistanceToTop;
+            if (a.intersectionRatio !== b.intersectionRatio) {
+              return b.intersectionRatio - a.intersectionRatio;
             }
-
-            return b.intersectionRatio - a.intersectionRatio;
+            const rootTop = a.rootBounds?.top ?? 0;
+            const aDistanceToTop = Math.abs(a.boundingClientRect.top - rootTop);
+            const bDistanceToTop = Math.abs(b.boundingClientRect.top - rootTop);
+            return aDistanceToTop - bDistanceToTop;
           });
 
-        if (visible.length > 0) {
-          setActiveSection(visible[0].target.id);
+        if (visible.length === 0) {
+          return;
         }
+
+        if (manualActiveSection) {
+          const manualInView = visible.some((entry) => entry.target.id === manualActiveSection);
+          if (manualInView) {
+            setActiveSection(manualActiveSection);
+            setManualActiveSection(null);
+            manualNavLockUntilRef.current = 0;
+            return;
+          }
+          if (now < manualNavLockUntilRef.current) {
+            return;
+          }
+          setManualActiveSection(null);
+        }
+
+        setActiveSection(visible[0].target.id);
       },
       {
         root: container,
@@ -1063,17 +1084,19 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [manualActiveSection]);
+
+  const navActiveSection = manualActiveSection ?? activeSection;
 
   const activeIndex = Math.max(
     0,
-    roadmapNav.findIndex((item) => item.target === activeSection),
+    roadmapNav.findIndex((item) => item.target === navActiveSection),
   );
 
   return (
     <div ref={scrollRef} className="nb-page-shell">
       <div className="nb-page-inner">
-        <div className="nb-page-frame flex gap-6">
+        <div className="nb-page-frame flex flex-col 2xl:flex-row gap-6">
           <div className="flex-1 min-w-0 space-y-6">
             {/* Top Divider Bar and Header */}
             <div id="floating-main-dock" className="">
@@ -1084,7 +1107,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               />
 
               <PageHeroHeader
-                icon={"ðŸ—ºï¸"}
+                icon={"🗺️"}
                 title={"Roadmap Hub"}
                 date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 accent
@@ -1105,7 +1128,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
               />
             </div>
 
-            <section className="sticky top-4 z-20">
+            <section className="sticky top-4 z-sticky">
               <div className="nb-surface-card bg-surface/95 backdrop-blur p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -1117,7 +1140,7 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   <button
                     type="button"
                     onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-secondary px-2 py-1 text-xs text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50"
+                    className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-secondary px-2 py-1 text-xs text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <ChevronUp className="h-3 w-3" />
                     Back to top
@@ -1128,7 +1151,15 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                     <RoadmapNavButton
                       key={item.target}
                       item={item}
-                      isActive={activeSection === item.target}
+                      isActive={navActiveSection === item.target}
+                      scrollContainerRef={scrollRef}
+                      onActivate={(target) => {
+                        // NOTE(coworker): Keep clicked tab visibly active while smooth-scroll catches up.
+                        setManualActiveSection(target);
+                        manualNavLockUntilRef.current = Date.now() + 2400;
+                        setActiveSection(target);
+                        suppressObserverUntilRef.current = Date.now() + 900;
+                      }}
                     />
                   ))}
                 </div>
@@ -1307,7 +1338,18 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
                   <div className="text-xs tracking-wide text-content-secondary">Jump to</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {roadmapNav.map((item) => (
-                      <RoadmapNavButton key={item.target} item={item} />
+                      <RoadmapNavButton
+                        key={item.target}
+                        item={item}
+                        isActive={navActiveSection === item.target}
+                        scrollContainerRef={scrollRef}
+                        onActivate={(target) => {
+                          setManualActiveSection(target);
+                          manualNavLockUntilRef.current = Date.now() + 2400;
+                          setActiveSection(target);
+                          suppressObserverUntilRef.current = Date.now() + 900;
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -1556,13 +1598,13 @@ export function TimelineRoadmapView({ slices }: { slices?: Array<RoadmapSlice> }
           </div>
 
           {/* Sidebar column */}
-          <aside className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-edge bg-surface relative z-20`}>
+          <aside className={`${sidebarOpen ? "w-full 2xl:w-[320px] 2xl:md:w-[360px] p-3" : "w-full h-[18px] 2xl:w-[18px] 2xl:h-auto p-0"} shrink-0 border-t 2xl:border-t-0 2xl:border-l border-edge bg-surface relative z-20`}>
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
               aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-              className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-edge bg-surface text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 flex items-center justify-center shadow-sm"
+              className="absolute left-3 -top-2 2xl:left-auto 2xl:-left-2 2xl:top-3 w-6 h-4 2xl:w-4 2xl:h-6 rounded-sm border border-edge bg-surface text-content-secondary transition-all duration-200 hover:bg-surface-hover hover:text-content active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex items-center justify-center shadow-sm"
             >
               {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>
@@ -1773,29 +1815,53 @@ function TagPill({ label, tone = "default" }: { label: string; tone?: "default" 
     warning: "border-amber-500/30 bg-amber-500/10 text-amber-600",
   };
   return (
-    <span className={`px-2 py-0.5 text-xs rounded-md border ${toneClasses[tone]}`}>
+    <span className={`px-2 py-0.5 text-xs rounded-md border max-w-full whitespace-normal break-words ${toneClasses[tone]}`}>
       {label}
     </span>
   );
 }
 
-function RoadmapNavButton({ item, isActive }: { item: { label: string; target: string }; isActive?: boolean }) {
+function RoadmapNavButton({
+  item,
+  isActive,
+  scrollContainerRef,
+  onActivate,
+}: {
+  item: { label: string; target: string };
+  isActive?: boolean;
+  scrollContainerRef: { current: HTMLDivElement | null };
+  onActivate: (target: string) => void;
+}) {
   const activeClasses = isActive
-    ? "border-indigo-500/30/40 bg-indigo-500/10 text-content ring-1 ring-indigo-500/50/20"
+    ? "border-primary/55 bg-primary text-primary-foreground font-semibold shadow-sm ring-2 ring-primary/25"
     : "border-edge bg-surface-secondary text-content-secondary";
   return (
     <button
       type="button"
       aria-current={isActive ? "page" : undefined}
-      className={`px-2.5 py-1 text-xs rounded-md border transition-all duration-200 hover:bg-surface-hover hover:border-indigo-500/30/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 ${activeClasses}`}
+      aria-pressed={Boolean(isActive)}
+      className={`px-2.5 py-1 text-xs rounded-md border transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isActive ? "" : "hover:bg-surface-hover hover:border-primary/30 hover:text-content "}${activeClasses}`}
       onClick={() => {
+        onActivate(item.target);
         const element = document.getElementById(item.target);
+        const container = scrollContainerRef.current;
+        if (element && container) {
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = element.getBoundingClientRect();
+          const stickyCompensation = 132;
+          const nextTop = container.scrollTop + (elementRect.top - containerRect.top) - stickyCompensation;
+          container.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+          return;
+        }
         if (element) {
           element.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       }}
     >
-      {item.label}
+      <span className="inline-flex items-center gap-1.5">
+        {isActive && <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground/90" />}
+        {item.label}
+      </span>
     </button>
   );
 }
@@ -1926,7 +1992,7 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
   };
   const tone = priorityStyles[priorityTone];
   return (
-    <div className="relative rounded-lg border border-edge bg-surface p-4 space-y-3 overflow-hidden transition-shadow">
+    <div className="relative min-w-0 rounded-lg border border-edge bg-surface p-4 space-y-3 overflow-hidden transition-shadow">
       <div className={`absolute inset-x-0 top-0 h-0.5 ${tone.bar}`} />
       <div className="flex items-center justify-between">
         <span className={`px-2 py-0.5 text-xs font-semibold rounded-md border ${tone.pill}`}>
@@ -1934,12 +2000,12 @@ function PriorityColumn({ group }: { group: PriorityGroup }) {
         </span>
         <div className="text-xs text-content-secondary">{group.label}</div>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-3 min-w-0">
         {group.items.map((item) => (
-          <div key={item.title} className="rounded-md border border-edge bg-surface-secondary p-3 space-y-2 transition-shadow">
+          <div key={item.title} className="min-w-0 rounded-md border border-edge bg-surface-secondary p-3 space-y-2 transition-shadow">
             <div>
-              <div className="text-xs font-semibold text-content">{item.title}</div>
-              <div className="text-xs text-content-secondary mt-1">{item.summary}</div>
+              <div className="text-xs font-semibold text-content break-words">{item.title}</div>
+              <div className="text-xs text-content-secondary mt-1 break-words">{item.summary}</div>
             </div>
             <div>
               <div className="text-xs tracking-wide text-content-secondary">Personas</div>
@@ -2279,8 +2345,3 @@ function AgentCoverageCard({ item }: { item: AgentCoverage }) {
     </div>
   );
 }
-
-
-
-
-

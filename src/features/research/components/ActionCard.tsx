@@ -76,13 +76,13 @@ export function ActionCard({
     (action.status === "proposed" && action.content && action.content.length > 50);
 
   return (
-    <div className="group relative bg-surface border border-edge rounded-lg overflow-hidden hover:border-edge transition-all duration-200">
+    <div className="group relative bg-surface border border-edge rounded-lg overflow-hidden hover:shadow-md hover:border-primary/20 transition-all duration-200">
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-slate-900 to-slate-400" />
 
       <button
         type="button"
         onClick={() => setIsExpanded((v) => !v)}
-        className="w-full text-left pl-5 pr-4 py-4 flex items-start gap-3"
+        className="w-full text-left pl-5 pr-4 py-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded"
       >
         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-surface-secondary text-content-secondary flex items-center justify-center text-xs font-bold mt-0.5">
           {index + 1}

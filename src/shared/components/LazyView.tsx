@@ -34,12 +34,12 @@ export function LazyView({ children, title, className, fallback, resetKey, onRet
     onRetry?.();
   }, [onRetry]);
 
-  const innerClass = className ? className : "h-full";
+  const innerClass = className ? className : "h-full bg-surface";
 
   return (
     <ErrorBoundary key={boundaryKey} title={title || "Something went wrong"} onRetry={handleRetry}>
       <Suspense fallback={fallback ?? null}>
-        <div className={innerClass}>{children}</div>
+        <div className={`${innerClass} nb-lazy-view`}>{children}</div>
       </Suspense>
     </ErrorBoundary>
   );

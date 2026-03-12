@@ -293,6 +293,16 @@ export function DocumentsHomeHub({
 
 
   const isDocsLoading = documents === undefined;
+  const [showDocsLoadingFallback, setShowDocsLoadingFallback] = useState(false);
+
+  useEffect(() => {
+    if (!isDocsLoading) {
+      setShowDocsLoadingFallback(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowDocsLoadingFallback(true), 7000);
+    return () => window.clearTimeout(timer);
+  }, [isDocsLoading]);
 
   const documentsNorm: Array<DocumentCardData> = useMemo(
     () => (documents ?? []).map(normalizeDocument),
@@ -1580,7 +1590,7 @@ export function DocumentsHomeHub({
 
       el.classList.add(
         "ring-2",
-        "ring-indigo-500/50",
+        "ring-ring",
         "ring-offset-1",
         "ring-offset-surface-secondary",
       );
@@ -1588,7 +1598,7 @@ export function DocumentsHomeHub({
       setTimeout(() => {
         el.classList.remove(
           "ring-2",
-          "ring-indigo-500/50",
+          "ring-ring",
           "ring-offset-1",
           "ring-offset-surface-secondary",
         );
@@ -1746,6 +1756,29 @@ export function DocumentsHomeHub({
 
     defaultAllDay?: boolean;
   } | null>(null);
+
+  useEffect(() => {
+    const openTaskCreate = () => {
+      setInlineCreate({
+        dateMs: Date.now(),
+        defaultKind: "task",
+      });
+    };
+
+    const openEventCreate = () => {
+      setInlineCreate({
+        dateMs: Date.now(),
+        defaultKind: "event",
+      });
+    };
+
+    window.addEventListener("voice:create-task", openTaskCreate);
+    window.addEventListener("voice:create-event", openEventCreate);
+    return () => {
+      window.removeEventListener("voice:create-task", openTaskCreate);
+      window.removeEventListener("voice:create-event", openEventCreate);
+    };
+  }, []);
 
   const prevFocusRef = useRef<HTMLElement | null>(null);
 
@@ -3269,7 +3302,7 @@ export function DocumentsHomeHub({
     },
 
     {
-      label: "Brain dump â†’ tasks",
+      label: "Brain dump -> tasks",
       text: "Turn my braindump into actionable tasks with due dates and priorities.",
     },
   ];
@@ -4250,7 +4283,7 @@ export function DocumentsHomeHub({
             </label>
 
             <select
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={listRange}
               onChange={(e) => {
                 const v = e.target.value;
@@ -4263,7 +4296,7 @@ export function DocumentsHomeHub({
 
               <option value="month">This Month</option>
 
-              <option value="custom">Customâ€¦</option>
+              <option value="custom">Custom...</option>
             </select>
 
             {listRange === "custom" && (
@@ -4288,7 +4321,7 @@ export function DocumentsHomeHub({
           {/* Quick task input */}
 
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 focus-within:ring-2 focus-within:ring-indigo-500/50">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface flex-1 focus-within:ring-2 focus-within:ring-ring">
               <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
 
               <input
@@ -4301,14 +4334,14 @@ export function DocumentsHomeHub({
                     void handleCreateQuickTask();
                   }
                 }}
-                placeholder="Quick add a taskâ€¦"
+                placeholder="Quick add a task..."
                 className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
               />
             </div>
 
             <button
               onClick={() => void handleCreateQuickTask()}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="btn-primary-sm px-3 py-2 text-sm"
               title="Add task"
               disabled={!loggedInUser}
             >
@@ -4331,7 +4364,7 @@ export function DocumentsHomeHub({
                     void _handleCreateQuickEvent();
                   }
                 }}
-                placeholder="Quick add an event (title)â€¦"
+                placeholder="Quick add an event (title)..."
                 className="w-full bg-transparent outline-none text-sm text-content placeholder-content-muted"
               />
             </div>
@@ -4381,7 +4414,7 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void _handleCreateQuickEvent()}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="btn-primary-sm px-3 py-2 text-sm"
               title="Add event"
               disabled={
                 !loggedInUser ||
@@ -5357,19 +5390,19 @@ export function DocumentsHomeHub({
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface focus-within:ring-2 focus-within:ring-indigo-500/50">
+            <div className="flex items-center gap-2 px-2 py-1.5 rounded-md border border-edge bg-surface focus-within:ring-2 focus-within:ring-ring">
               <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
 
               <input
                 value={kanbanQuickTitle}
                 onChange={(e) => setKanbanQuickTitle(e.target.value)}
-                placeholder="Quick task titleâ€¦"
+                placeholder="Quick task title..."
                 className="w-48 bg-transparent outline-none text-sm text-content placeholder-content-muted"
               />
             </div>
 
             <select
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={kanbanQuickStatus}
               onChange={(e) => setKanbanQuickStatus(e.target.value as Status)}
             >
@@ -5386,12 +5419,12 @@ export function DocumentsHomeHub({
               type="datetime-local"
               value={kanbanQuickDue}
               onChange={(e) => setKanbanQuickDue(e.target.value)}
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Due date"
             />
 
             <select
-              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="text-xs border border-edge rounded-md bg-surface px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               value={kanbanQuickPriority}
               onChange={(e) => setKanbanQuickPriority(e.target.value)}
             >
@@ -5408,7 +5441,7 @@ export function DocumentsHomeHub({
 
             <button
               onClick={() => void handleCreateQuickTaskKanban()}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              className="btn-primary-sm px-3 py-2 text-sm"
               title="Add task"
               disabled={!loggedInUser}
             >
@@ -5682,7 +5715,7 @@ export function DocumentsHomeHub({
           <button
             onClick={onAddTask}
             title="Add item"
-            className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover text-content-muted opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 ring-indigo-500/50"
+            className="w-6 h-6 flex items-center justify-center rounded-md bg-surface-hover text-content-muted opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus:outline-none focus:ring-2 ring-ring"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -6920,7 +6953,7 @@ export function DocumentsHomeHub({
         {/* Premium SaaS layout */}
 
         <div className="nb-page-inner">
-          <div className="nb-page-frame flex gap-8 lg:gap-10">
+          <div className="nb-page-frame flex flex-col 2xl:flex-row gap-8 lg:gap-10">
             {/* Main column */}
 
             <div className="flex-1 min-w-0 space-y-6">
@@ -6967,7 +7000,7 @@ export function DocumentsHomeHub({
                         <button
                           key={String(s._id)}
                           type="button"
-                          className="text-left rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          className="text-left rounded-lg border border-edge bg-surface-secondary hover:bg-surface-hover p-3 focus:outline-none focus:ring-2 focus:ring-ring"
                           onClick={() => {
                             navigate(`/spreadsheets/${String(s._id)}`);
                           }}
@@ -6994,6 +7027,38 @@ export function DocumentsHomeHub({
 
                 {/* Documents grid */}
 
+                {isDocsLoading && !showDocsLoadingFallback && (
+                  <div className="mt-6 nb-surface-card px-6 py-12 text-center">
+                    <div className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full border border-edge bg-surface-secondary">
+                      <Loader2 className="h-4 w-4 text-content-muted motion-safe:animate-spin" />
+                    </div>
+                    <p className="text-sm font-semibold text-content">Loading documents</p>
+                    <p className="mt-1 text-xs text-content-secondary">
+                      Preparing your workspace, calendar context, and recent files.
+                    </p>
+                  </div>
+                )}
+
+                {isDocsLoading && showDocsLoadingFallback && (
+                  <div className="mt-6 nb-surface-card px-6 py-6">
+                    <p className="text-sm font-semibold text-content">Documents are taking longer than expected</p>
+                    <p className="mt-1 text-xs text-content-secondary">
+                      This view will continue with the current cache. You can retry if your network just changed.
+                    </p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => window.location.reload()}
+                        className="btn-primary-sm"
+                      >
+                        Retry
+                      </button>
+                      <span className="text-xs text-content-muted">Showing available content below.</span>
+                    </div>
+                  </div>
+                )}
+
+                {(!isDocsLoading || showDocsLoadingFallback) && (
                 <section
                   id="documents-grid"
                   aria-label="Documents grid"
@@ -7695,6 +7760,7 @@ export function DocumentsHomeHub({
                     )}
                   </div>
                 </section>
+                )}
               </div>
             </div>
 
@@ -7702,13 +7768,13 @@ export function DocumentsHomeHub({
 
             {/* Sidebar column */}
 
-            <aside className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-edge bg-surface relative transition-all duration-300`}>
+            <aside className={`${sidebarOpen ? "w-full 2xl:w-[320px] 2xl:md:w-[360px] p-3" : "w-full h-[18px] 2xl:w-[18px] 2xl:h-auto p-0"} shrink-0 border-t 2xl:border-t-0 2xl:border-l border-edge bg-surface relative transition-all duration-300`}>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
                 aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-                className="absolute -left-2 top-3 w-4 h-6 rounded-sm border border-edge bg-surface text-content-secondary hover:bg-surface-hover flex items-center justify-center shadow-sm"
+                className="absolute left-3 -top-2 2xl:left-auto 2xl:-left-2 2xl:top-3 w-6 h-4 2xl:w-4 2xl:h-6 rounded-sm border border-edge bg-surface text-content-secondary hover:bg-surface-hover flex items-center justify-center shadow-sm"
               >
                 {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
               </button>
@@ -7790,7 +7856,7 @@ export function DocumentsHomeHub({
                   value={newTaskModalTitle}
                   onChange={(e) => setNewTaskModalTitle(e.target.value)}
                   placeholder="e.g., Follow up with design team"
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
 
@@ -7804,7 +7870,7 @@ export function DocumentsHomeHub({
                   onChange={(e) => setNewTaskModalDescription(e.target.value)}
                   placeholder="Add a few details to provide context..."
                   rows={3}
-                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-indigo-500/50 resize-y"
+                  className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content placeholder:text-content-muted focus:outline-none focus:ring-1 focus:ring-ring resize-y"
                 />
               </div>
 
@@ -7818,7 +7884,7 @@ export function DocumentsHomeHub({
                     type="date"
                     value={newTaskModalDue}
                     onChange={(e) => setNewTaskModalDue(e.target.value)}
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
 
@@ -7830,7 +7896,7 @@ export function DocumentsHomeHub({
                   <select
                     value={newTaskModalPriority}
                     onChange={(e) => setNewTaskModalPriority(e.target.value)}
-                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                    className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">None</option>
 
@@ -7860,7 +7926,7 @@ export function DocumentsHomeHub({
                   disabled={
                     !newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask
                   }
-                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-surface-secondary text-content-muted border border-edge cursor-not-allowed" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
+                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${!newTaskModalTitle.trim() || !loggedInUser || isSubmittingTask ? "bg-surface-secondary text-content-muted border border-edge cursor-not-allowed" : "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]"}`}
                   title={!loggedInUser ? "Please sign in to create tasks" : undefined}
                 >
                   {isSubmittingTask ? "Creating..." : "Create Task"}
@@ -7998,4 +8064,3 @@ export function DocumentsHomeHub({
     </>
   );
 }
-

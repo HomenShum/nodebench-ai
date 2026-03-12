@@ -49,7 +49,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
   }
 
   return (
-    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs font-bold text-content-muted">Model Comparison</div>
@@ -105,7 +105,7 @@ export const ModelComparisonTable: React.FC<ModelComparisonTableProps> = ({ mode
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-16 rounded-full bg-surface-secondary overflow-hidden">
                         <div
-                          className="h-full bg-indigo-600"
+                          className="h-full bg-[var(--accent-primary)]"
                           style={{ width: `${Math.min(100, Math.max(0, row.reliabilityScore))}%` }}
                         />
                       </div>

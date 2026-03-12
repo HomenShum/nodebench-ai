@@ -36,6 +36,35 @@ function msToSec(ms) {
   return Math.round((ms / 1000) * 10) / 10;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function removePathRobustly(targetPath) {
+  if (!existsSync(targetPath)) return;
+
+  const attempts = 5;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      await rm(targetPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 150 });
+      return;
+    } catch (error) {
+      if (attempt === attempts - 1) {
+        const quarantinePath = `${targetPath}.stale-${Date.now()}`;
+        try {
+          const fs = await import("node:fs/promises");
+          await fs.rename(targetPath, quarantinePath);
+          await rm(quarantinePath, { recursive: true, force: true, maxRetries: 3, retryDelay: 150 });
+          return;
+        } catch {
+          throw error;
+        }
+      }
+      await sleep(300 * (attempt + 1));
+    }
+  }
+}
+
 async function maybeTranscodeToMp4(inputPath, outputPath) {
   let ffmpegPath;
   try {
@@ -168,13 +197,14 @@ async function main() {
   const baseURL = args.get("baseURL") ?? "http://127.0.0.1:5173";
   const outDir = args.get("outDir") ?? path.resolve(process.cwd(), ".tmp", "dogfood-video");
   const publish = args.get("publish") ?? "blob"; // blob | static | none
+  const showOverlay = (args.get("overlay") ?? "0") === "1";
   const settleMs = Number(args.get("settleMs") ?? 2000);
   const headless = (args.get("headless") ?? "true") !== "false";
 
   const stamp = nowStamp();
   await mkdir(outDir, { recursive: true });
-  const userDataDir = path.join(outDir, "userdata");
-  await rm(userDataDir, { recursive: true, force: true });
+  const userDataDir = path.join(outDir, `userdata-${stamp}`);
+  await removePathRobustly(userDataDir);
   await mkdir(userDataDir, { recursive: true });
 
   const routes = [
@@ -198,7 +228,7 @@ async function main() {
     { path: "/funding", name: "Funding Brief" },
     { path: "/activity", name: "Activity" },
     { path: "/review-queue", name: "Review Queue" },
-    { path: "/analytics/components", name: "Usage & Costs" },
+    { path: "/analytics/components", name: "Performance Analytics" },
     { path: "/analytics/recommendations", name: "Feedback" },
     { path: "/cost", name: "Usage & Costs" },
     { path: "/industry", name: "Industry News" },
@@ -234,7 +264,7 @@ async function main() {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await maybeSignIn(page);
   await waitForAppReady(page);
-  await installOverlay(page);
+  if (showOverlay) await installOverlay(page);
   await page.waitForTimeout(700);
 
   const startedAt = Date.now();
@@ -253,7 +283,7 @@ async function main() {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        await setOverlay(page, `Dogfood ${idx + 1}/${routes.length}`, `${r.name} — ${r.path}`);
+        if (showOverlay) await setOverlay(page, `Dogfood ${idx + 1}/${routes.length}`, `${r.name} — ${r.path}`);
         break;
       } catch (err) {
         const msg = String(err?.message ?? err ?? "");
@@ -287,7 +317,7 @@ async function main() {
     path: "(interaction)",
     startSec: msToSec(interactStartMs),
   });
-  await setOverlay(page, "Interaction", "Command Palette (Cmd/Ctrl+K)");
+  if (showOverlay) await setOverlay(page, "Interaction", "Command Palette (Cmd/Ctrl+K)");
   const isMac = isMacPlatform();
   await page.keyboard.press(isMac ? "Meta+K" : "Control+K");
   await page.waitForTimeout(800);
@@ -301,7 +331,7 @@ async function main() {
     path: "(interaction)",
     startSec: msToSec(settingsStartMs),
   });
-  await setOverlay(page, "Interaction", "Settings Modal (tabs)");
+  if (showOverlay) await setOverlay(page, "Interaction", "Settings Modal (tabs)");
   const settingsTrigger = page.getByTestId("open-settings");
   if (await settingsTrigger.count()) {
     await settingsTrigger.click();
@@ -325,12 +355,13 @@ async function main() {
     path: "(end)",
     startSec: msToSec(doneMs),
   });
-  await setOverlay(page, "Done", "Walkthrough complete");
+  if (showOverlay) await setOverlay(page, "Done", "Walkthrough complete");
   await page.waitForTimeout(700);
 
   const video = page.video();
   await page.close();
   await context.close();
+  await removePathRobustly(userDataDir);
 
   if (!video) throw new Error("Video capture not enabled (Playwright recordVideo missing)");
   const webmPath = await video.path();

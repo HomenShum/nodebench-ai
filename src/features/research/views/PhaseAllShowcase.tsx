@@ -149,7 +149,7 @@ export function PhaseAllShowcase({ onBack }: PhaseAllShowcaseProps) {
   const sections = [
     { id: 'all', label: 'All Phases', icon: Layers },
     { id: 'citations', label: 'Citations', icon: FileText },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'timeline', label: 'Phase Timeline', icon: Clock },
     { id: 'entities', label: 'Entities', icon: Users },
     { id: 'supplements', label: 'Supplements', icon: BookOpen },
     { id: 'digest', label: 'Email Digest', icon: Mail },
@@ -174,18 +174,20 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
               </button>
             )}
             <div>
-              <h1 className="text-base font-semibold text-content">Phase All Showcase</h1>
-              <p className="text-sm text-content-secondary">Visual multi-source research components</p>
+              {/* NOTE(coworker): Keep naming product-facing, avoid internal phrase "Phase All". */}
+              <h1 className="text-base font-semibold text-content">Research Showcase</h1>
+              <p className="text-sm text-content-secondary">Visual multi-source research patterns</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {sections.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setActiveSection(id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-colors ${activeSection === id
-                    ? 'bg-[var(--accent-primary)] text-white'
+                aria-pressed={activeSection === id}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg flex items-center gap-1.5 transition-all ${activeSection === id
+                    ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                     : 'bg-surface-secondary text-content-secondary hover:bg-surface hover:text-content'
                   }`}
               >
@@ -200,8 +202,7 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
       <div className="nb-page-inner">
         <main className="nb-page-frame space-y-12">
           {/* Phase 1: Citations */}
-          {(activeSection === 'all' || activeSection === 'citations') && (
-            <section className="space-y-4">
+          <section className="space-y-4">
               <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
                 Phase 1: Citation & Provenance
               </h2>
@@ -214,22 +215,20 @@ in unprecedented ways. Financial data {{cite:sec-10k}} supports this trajectory.
                 </p>
                 <FootnotesSection library={sampleCitations} />
               </div>
-            </section>
-          )}
+          </section>
 
           {/* Phase 2: Timeline Strip */}
-          {(activeSection === 'all' || activeSection === 'timeline') && (
-            <section className="space-y-4">
-              <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
-                Phase 2: Timeline Strip
-              </h2>
-              <TimelineStrip
-                events={sampleTimelineEvents}
-                activeEventId="3"
-                onEventClick={() => {}}
-              />
-            </section>
-          )}
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-content border-b border-edge pb-2">
+              Phase 2: Timeline Strip
+            </h2>
+            {/* NOTE(coworker): Keep timeline visible across section filters for context continuity. */}
+            <TimelineStrip
+              events={sampleTimelineEvents}
+              activeEventId="3"
+              onEventClick={() => {}}
+            />
+          </section>
 
           {/* Phase 3: Entity Linking */}
           {(activeSection === 'all' || activeSection === 'entities') && (

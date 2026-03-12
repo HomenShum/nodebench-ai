@@ -27,11 +27,11 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-gray-900 text-white hover:bg-gray-800 shadow-sm',
-  secondary: 'bg-surface-secondary text-content-secondary hover:bg-surface-secondary border border-edge/60',
-  ghost: 'bg-transparent text-content-secondary hover:bg-surface-hover hover:text-content-secondary',
-  danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
-  success: 'bg-green-600 text-white hover:bg-green-700 shadow-sm',
+  primary: 'bg-content text-surface hover:bg-content/90 shadow-sm hud-ripple',
+  secondary: 'bg-surface-secondary text-content-secondary hover:bg-surface-secondary border border-edge/60 hud-ripple',
+  ghost: 'bg-transparent text-content-secondary hover:bg-surface-hover hover:text-content-secondary hud-ripple',
+  danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm hud-ripple',
+  success: 'bg-green-600 text-white hover:bg-green-700 shadow-sm hud-ripple',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -66,8 +66,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         transition={{ type: 'tween', duration: 0.1 }}
         className={cn(
           'inline-flex items-center justify-center font-medium transition-colors will-change-transform',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:saturate-50',
           variantStyles[variant],
           sizeStyles[size],
           fullWidth && 'w-full',
@@ -131,8 +131,8 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         transition={{ type: 'spring', stiffness: 400, damping: 17 }}
         className={cn(
           'inline-flex items-center justify-center transition-colors will-change-transform',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:saturate-50',
           variantStyles[variant],
           iconSizeStyles[size],
           className

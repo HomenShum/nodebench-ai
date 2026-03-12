@@ -95,7 +95,7 @@ function FeedSectionInner({
             placeholder="Search feed..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-500/50/20 focus:border-indigo-500/30"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-ring focus:border-indigo-500/30"
           />
         </div>
 
@@ -107,7 +107,7 @@ function FeedSectionInner({
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
                 selectedCategory === cat.id
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-[var(--accent-primary)] text-white'
                   : 'bg-surface-secondary text-content hover:bg-surface-hover'
               }`}
             >
@@ -121,7 +121,7 @@ function FeedSectionInner({
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500/50/20"
+            className="appearance-none pl-3 pr-8 py-2 text-xs font-medium border border-edge rounded-lg bg-surface text-content focus:outline-none focus:ring-2 focus:ring-ring"
           >
             {sourceFilters.map((filter) => (
               <option key={filter.id} value={filter.id}>

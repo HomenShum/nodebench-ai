@@ -58,10 +58,11 @@ describe("buildEnterpriseInvestigation", () => {
         executionTimeMs: 820,
       });
 
-      expect(result.causal_chain).toHaveLength(1);
-      expect(result.causal_chain[0]?.event).toContain("Oracle joins Stargate");
-      expect(result.causal_chain[0]?.evidence?.source_snapshot_hash).toBe("hash_stargate");
-      expect(result.audit_proof_pack.source_snapshot_hashes).toEqual(["hash_stargate"]);
+      expect(result.observed_facts.length).toBeGreaterThanOrEqual(1);
+      expect(result.observed_facts[0]?.statement).toContain("Oracle joins Stargate");
+      expect(result.evidence_catalog[0]?.content_hash).toBe("hash_stargate");
+      expect(result.traceability.artifact_integrity).toBe("verified_for_captured_items");
+      expect(result.limitations.length).toBeGreaterThan(0);
     } finally {
       globalThis.fetch = originalFetch;
     }

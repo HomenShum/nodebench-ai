@@ -1,11 +1,11 @@
 {
-  "capturedAtIso": "2026-03-09T19:56:02.790Z",
+  "capturedAtIso": "2026-03-12T08:22:10.848Z",
   "basePath": "/dogfood/screenshots",
   "variants": {
-    "darkDesktop": 46,
-    "lightDesktop": 33,
-    "darkMobile": 33,
-    "lightMobile": 33
+    "darkDesktop": 52,
+    "lightDesktop": 38,
+    "darkMobile": 38,
+    "lightMobile": 38
   },
   "items": [
     {
@@ -261,6 +261,34 @@
       "viewport": "mobile"
     },
     {
+      "file": "delegation.png",
+      "kind": "route",
+      "label": "Delegation",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "delegation-light.png",
+      "kind": "route",
+      "label": "Delegation",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "delegation-mobile.png",
+      "kind": "route",
+      "label": "Delegation",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "delegation-mobile-light.png",
+      "kind": "route",
+      "label": "Delegation",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
       "file": "document-recommendations.png",
       "kind": "route",
       "label": "Document Recommendations",
@@ -341,6 +369,34 @@
       "file": "dogfood-mobile-light.png",
       "kind": "route",
       "label": "Dogfood",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
+      "file": "execution-trace.png",
+      "kind": "route",
+      "label": "Execution Trace",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "execution-trace-light.png",
+      "kind": "route",
+      "label": "Execution Trace",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "execution-trace-mobile.png",
+      "kind": "route",
+      "label": "Execution Trace",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "execution-trace-mobile-light.png",
+      "kind": "route",
+      "label": "Execution Trace",
       "theme": "light",
       "viewport": "mobile"
     },
@@ -548,6 +604,13 @@
       "viewport": "desktop"
     },
     {
+      "file": "interaction-document-hover.png",
+      "kind": "route",
+      "label": "Interaction Document Hover",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
       "file": "interaction-dogfood-frame-selected.png",
       "kind": "route",
       "label": "Interaction Dogfood Frame Selected",
@@ -574,6 +637,34 @@
       "label": "Interaction Swarm Lanes",
       "theme": "dark",
       "viewport": "desktop"
+    },
+    {
+      "file": "investigation.png",
+      "kind": "route",
+      "label": "Investigation",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "investigation-light.png",
+      "kind": "route",
+      "label": "Investigation",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "investigation-mobile.png",
+      "kind": "route",
+      "label": "Investigation",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "investigation-mobile-light.png",
+      "kind": "route",
+      "label": "Investigation",
+      "theme": "light",
+      "viewport": "mobile"
     },
     {
       "file": "linkedin-posts.png",
@@ -660,6 +751,34 @@
       "viewport": "mobile"
     },
     {
+      "file": "product-direction.png",
+      "kind": "route",
+      "label": "Product Direction",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "product-direction-light.png",
+      "kind": "route",
+      "label": "Product Direction",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "product-direction-mobile.png",
+      "kind": "route",
+      "label": "Product Direction",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "product-direction-mobile-light.png",
+      "kind": "route",
+      "label": "Product Direction",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
       "file": "public-docs.png",
       "kind": "route",
       "label": "Public Docs",
@@ -684,6 +803,34 @@
       "file": "public-docs-mobile-light.png",
       "kind": "route",
       "label": "Public Docs",
+      "theme": "light",
+      "viewport": "mobile"
+    },
+    {
+      "file": "receipts.png",
+      "kind": "route",
+      "label": "Receipts",
+      "theme": "dark",
+      "viewport": "desktop"
+    },
+    {
+      "file": "receipts-light.png",
+      "kind": "route",
+      "label": "Receipts",
+      "theme": "light",
+      "viewport": "desktop"
+    },
+    {
+      "file": "receipts-mobile.png",
+      "kind": "route",
+      "label": "Receipts",
+      "theme": "dark",
+      "viewport": "mobile"
+    },
+    {
+      "file": "receipts-mobile-light.png",
+      "kind": "route",
+      "label": "Receipts",
       "theme": "light",
       "viewport": "mobile"
     },

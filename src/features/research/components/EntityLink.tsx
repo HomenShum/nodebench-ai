@@ -302,7 +302,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
           font-medium text-sm
           border-b-2 border-dashed
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500/50
+          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-ring
           ${colors.text} ${colors.border}
           hover:${colors.bg}
           ${className}
@@ -396,7 +396,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                     e.stopPropagation();
                     window.location.href = `/documents/${entity.dossierId}`;
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/10 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/10 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                 >
                   <FileText className="w-3 h-3" />
                   <span>View Dossier</span>
@@ -412,7 +412,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                       detail: { entity }
                     }));
                   }}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-content-secondary bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-content-secondary bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                 >
                   <FileText className="w-3 h-3" />
                   <span>Create Dossier</span>
@@ -424,7 +424,7 @@ export const EntityLink: React.FC<EntityLinkProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1 px-2 py-1 text-xs text-content bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1"
+                  className="flex items-center gap-1 px-2 py-1 text-xs text-content bg-surface-secondary hover:bg-surface-hover rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 >
                   <ExternalLink className="w-3 h-3" />
                   <span className="truncate max-w-[80px]">

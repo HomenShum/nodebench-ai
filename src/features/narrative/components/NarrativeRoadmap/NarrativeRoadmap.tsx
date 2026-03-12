@@ -103,7 +103,7 @@ export function NarrativeRoadmap({
         <div className="flex items-center justify-center h-48">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-edge dark:border-white/[0.12] border-t-gray-700 dark:border-t-gray-300 rounded-full motion-safe:animate-spin mx-auto mb-4" />
-            <p className="text-content-secondary text-sm font-light">Loading stories...</p>
+            <p className="text-content-secondary text-sm font-normal">Loading stories...</p>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@ export function NarrativeRoadmap({
           <h3 className="text-lg font-semibold text-content mb-2">
             No stories yet
           </h3>
-          <p className="text-content-secondary text-sm font-light max-w-md mx-auto">
+          <p className="text-content-secondary text-sm font-normal max-w-md mx-auto">
             Start tracking topics to build evolving story threads.
             New developments are discovered weekly.
           </p>
@@ -138,7 +138,7 @@ export function NarrativeRoadmap({
               <h2 className="text-lg font-bold text-content">
                 Story Timeline
               </h2>
-              <p className="text-xs text-content-secondary font-light">
+              <p className="text-xs text-content-secondary font-normal">
                 {threads.length} threads · {weekCount} weeks
               </p>
             </div>
@@ -174,7 +174,7 @@ export function NarrativeRoadmap({
         <button
           type="button"
           onClick={() => scroll("left")}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 dark:bg-white/[0.08] shadow-md hover:bg-white dark:hover:bg-white/[0.12] transition-colors"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-surface/90 dark:bg-white/[0.08] shadow-md hover:bg-surface dark:hover:bg-white/[0.12] transition-colors"
           aria-label="Scroll left"
         >
           <ChevronLeft className="w-4 h-4 text-content-secondary" />
@@ -182,7 +182,7 @@ export function NarrativeRoadmap({
         <button
           type="button"
           onClick={() => scroll("right")}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-white/90 dark:bg-white/[0.08] shadow-md hover:bg-white dark:hover:bg-white/[0.12] transition-colors"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-surface/90 dark:bg-white/[0.08] shadow-md hover:bg-surface dark:hover:bg-white/[0.12] transition-colors"
           aria-label="Scroll right"
         >
           <ChevronRight className="w-4 h-4 text-content-secondary" />

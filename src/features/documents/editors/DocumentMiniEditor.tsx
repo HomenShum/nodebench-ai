@@ -127,7 +127,7 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
             type="button"
             onClick={() => { void handleSave(); }}
             disabled={saveHint !== "unsaved" || isSaving}
-            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-indigo-600 text-white border-indigo-500/30 hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-3 rounded-md flex items-center justify-center border text-[12px] ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-transparent hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title="Save changes"
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
@@ -149,7 +149,7 @@ export default function DocumentMiniEditor({ documentId, onClose }: { documentId
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+          className="w-full text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
           placeholder="Untitled document"
         />
 

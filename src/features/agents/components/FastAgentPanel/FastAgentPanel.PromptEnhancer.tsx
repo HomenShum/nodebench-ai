@@ -212,7 +212,7 @@ export function PromptEnhancer({
           "hover:bg-purple-500/20 active:scale-95",
           isEnhancing
             ? "text-purple-400 bg-purple-500/10"
-            : "text-zinc-400 hover:text-purple-400",
+            : "text-content-muted hover:text-purple-400",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         title="Enhance prompt with context (Ctrl+P)"
@@ -228,12 +228,12 @@ export function PromptEnhancer({
       {/* Preview modal */}
       {showPreview && preview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-surface-secondary border border-edge rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-purple-400" />
-                <h3 className="font-medium text-zinc-100">Enhanced Prompt</h3>
+                <h3 className="font-medium text-content">Enhanced Prompt</h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -245,7 +245,7 @@ export function PromptEnhancer({
                 </button>
                 <button
                   onClick={handleReject}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-surface-hover text-content-secondary hover:bg-surface-hover transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                   Cancel
@@ -313,7 +313,7 @@ export function PromptEnhancer({
                       {preview.injectedContext.suggestedTools.map((tool, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded text-xs font-mono bg-zinc-700/50 text-zinc-300"
+                          className="px-2 py-0.5 rounded text-xs font-mono bg-surface-hover text-content-secondary"
                         >
                           {tool}
                         </span>
@@ -330,7 +330,7 @@ export function PromptEnhancer({
                     expanded={expandedSections.has("files")}
                     onToggle={() => toggleSection("files")}
                   >
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-content-muted">
                       {attachedFileIds.length} file(s) attached
                     </span>
                   </ContextSection>
@@ -339,23 +339,23 @@ export function PromptEnhancer({
 
               {/* Diff View */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-zinc-300">
+                <h4 className="text-sm font-medium text-content-secondary">
                   Context Injections
                 </h4>
-                <div className="space-y-1 bg-zinc-800/50 rounded-md p-3 border border-zinc-700/50">
+                <div className="space-y-1 bg-surface-hover rounded-md p-3 border border-edge">
                   {preview.diff.map((d, i) => (
                     <div
                       key={i}
                       className="flex items-start gap-2 text-xs font-mono"
                     >
-                      <span className="text-zinc-500 shrink-0">
+                      <span className="text-content-muted shrink-0">
                         [{d.source}]
                       </span>
                       <span className="text-green-400">{d.content}</span>
                     </div>
                   ))}
                   {preview.diff.length === 0 && (
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-content-muted">
                       No context additions detected
                     </span>
                   )}
@@ -364,11 +364,11 @@ export function PromptEnhancer({
 
               {/* Original Prompt */}
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-zinc-300">
+                <h4 className="text-sm font-medium text-content-secondary">
                   Your Prompt
                 </h4>
-                <div className="bg-zinc-800/50 rounded-md p-3 border border-zinc-700/50">
-                  <p className="text-sm text-zinc-200 whitespace-pre-wrap">
+                <div className="bg-surface-hover rounded-md p-3 border border-edge">
+                  <p className="text-sm text-content whitespace-pre-wrap">
                     {preview.original}
                   </p>
                 </div>
@@ -376,11 +376,11 @@ export function PromptEnhancer({
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-zinc-700 bg-zinc-800/50">
-              <p className="text-xs text-zinc-500">
-                Press <kbd className="px-1 py-0.5 rounded bg-zinc-700">Enter</kbd> to
+            <div className="px-4 py-3 border-t border-edge bg-surface-hover">
+              <p className="text-xs text-content-muted">
+                Press <kbd className="px-1 py-0.5 rounded bg-surface-hover">Enter</kbd> to
                 accept or{" "}
-                <kbd className="px-1 py-0.5 rounded bg-zinc-700">Esc</kbd> to
+                <kbd className="px-1 py-0.5 rounded bg-surface-hover">Esc</kbd> to
                 cancel
               </p>
             </div>
@@ -411,19 +411,19 @@ function ContextSection({
   children,
 }: ContextSectionProps) {
   return (
-    <div className="border border-zinc-700/50 rounded-md overflow-hidden">
+    <div className="border border-edge rounded-md overflow-hidden">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full px-3 py-2 bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+        className="flex items-center justify-between w-full px-3 py-2 bg-surface-hover hover:bg-surface-hover transition-colors"
       >
-        <div className="flex items-center gap-2 text-zinc-300">
+        <div className="flex items-center gap-2 text-content-secondary">
           {icon}
           <span className="text-sm font-medium">{title}</span>
         </div>
         {expanded ? (
-          <ChevronUp className="h-4 w-4 text-zinc-500" />
+          <ChevronUp className="h-4 w-4 text-content-muted" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-zinc-500" />
+          <ChevronDown className="h-4 w-4 text-content-muted" />
         )}
       </button>
       {expanded && <div className="px-3 py-2">{children}</div>}
@@ -480,7 +480,7 @@ export function InlineEnhancer({
         "hover:bg-purple-500/20 active:scale-95",
         isEnhancing
           ? "text-purple-400 bg-purple-500/10"
-          : "text-zinc-500 hover:text-purple-400",
+          : "text-content-muted hover:text-purple-400",
         disabled && "opacity-50 cursor-not-allowed"
       )}
       title="Enhance prompt with context (Ctrl+P)"

@@ -1,1 +1,1 @@
-export * from "./coordinatorWorkflow";
+export * from "../../operations/tasks/workflows/index";

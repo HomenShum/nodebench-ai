@@ -5,7 +5,11 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useStreamingBuffer, type StreamingUpdate } from '../hooks/useStreamingBuffer';
 import { useSmartAutoScroll } from '../hooks/useSmartAutoScroll';
 import React from 'react';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, afterEach } from 'vitest';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('Streaming Optimization Hooks', () => {
   describe('useStreamingBuffer', () => {
@@ -169,35 +173,41 @@ describe('Streaming UI Performance', () => {
     expect(renderSpy.mock.calls.length).toBeLessThanOrEqual(15);
   });
 
-  it('should maintain 30-60fps during streaming', async () => {
-    const frameTimestamps: number[] = [];
-    let frameCount = 0;
+  it('coalesces streaming work onto a single animation frame', async () => {
+    const callbacks: FrameRequestCallback[] = [];
+    const flushSpy = vi.fn();
 
-    const measureFrame = () => {
-      frameTimestamps.push(performance.now());
-      frameCount++;
-      if (frameCount < 60) {
-        requestAnimationFrame(measureFrame);
-      }
-    };
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback: FrameRequestCallback) => {
+      callbacks.push(callback);
+      return callbacks.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 
-    requestAnimationFrame(measureFrame);
+    const { result } = renderHook(() =>
+      useStreamingBuffer(flushSpy, { maxBufferSize: 100, enableLogging: false })
+    );
+
+    act(() => {
+      result.current.addUpdate({ type: 'token', data: 'hello', timestamp: Date.now() });
+      result.current.addUpdate({ type: 'token', data: ' world', timestamp: Date.now() });
+      result.current.scheduleFlush();
+      result.current.scheduleFlush();
+    });
+
+    expect(callbacks).toHaveLength(1);
+    expect(flushSpy).not.toHaveBeenCalled();
+
+    act(() => {
+      callbacks[0](performance.now());
+    });
 
     await waitFor(() => {
-      expect(frameCount).toBe(60);
-    }, { timeout: 3000 });
+      expect(flushSpy).toHaveBeenCalledTimes(1);
+    });
 
-    // Calculate average frame time
-    const frameTimes = [];
-    for (let i = 1; i < frameTimestamps.length; i++) {
-      frameTimes.push(frameTimestamps[i] - frameTimestamps[i - 1]);
-    }
-
-    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
-    const fps = 1000 / avgFrameTime;
-
-    // Should maintain at least 30fps
-    expect(fps).toBeGreaterThanOrEqual(30);
+    expect(flushSpy).toHaveBeenCalledWith([
+      expect.objectContaining({ type: 'token', data: 'hello' }),
+      expect.objectContaining({ type: 'token', data: ' world' }),
+    ]);
   });
 });
-

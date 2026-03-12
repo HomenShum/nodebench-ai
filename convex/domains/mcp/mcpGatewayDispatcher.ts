@@ -200,6 +200,11 @@ const ALLOWLIST: Record<string, AllowlistEntry> = {
     type: "query",
     injectUserId: true,
   },
+  mcpStartExecutionRun: {
+    ref: internal.domains.mcp.mcpExecutionTraceEndpoints.mcpStartExecutionRun,
+    type: "mutation",
+    injectUserId: true,
+  },
 
   // ── GROUP C: Document internal endpoints — already accept userId ─────────
 
@@ -300,6 +305,38 @@ const ALLOWLIST: Record<string, AllowlistEntry> = {
     ref: internal.domains.documents.mcpDocumentEndpoints.mcpListFiles,
     type: "query",
     injectUserId: true,
+  },
+  updateSessionStatus: {
+    ref: api.domains.operations.taskManager.mutations.updateSessionStatus,
+    type: "mutation",
+  },
+  updateSessionMetrics: {
+    ref: api.domains.operations.taskManager.mutations.updateSessionMetrics,
+    type: "mutation",
+  },
+  completeTrace: {
+    ref: api.domains.operations.taskManager.mutations.completeTrace,
+    type: "mutation",
+  },
+  recordStep: {
+    ref: api.domains.operations.taskManager.mutations.recordStep,
+    type: "mutation",
+  },
+  recordDecision: {
+    ref: api.domains.operations.taskManager.mutations.recordDecision,
+    type: "mutation",
+  },
+  recordVerification: {
+    ref: api.domains.operations.taskManager.mutations.recordVerification,
+    type: "mutation",
+  },
+  attachEvidence: {
+    ref: api.domains.operations.taskManager.mutations.attachEvidence,
+    type: "mutation",
+  },
+  requestTraceApproval: {
+    ref: api.domains.operations.taskManager.mutations.requestTraceApproval,
+    type: "mutation",
   },
 
   // ── GROUP D: Agent Planning ─────────────────────────────────────────────────

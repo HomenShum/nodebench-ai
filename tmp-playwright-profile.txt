@@ -1,0 +1,24 @@
+﻿
+Name                           Length LastWriteTime        
+----                           ------ -------------        
+BrowserMetrics                        3/11/2026 1:37:12 AM 
+component_crx_cache                   11/2/2025 11:01:50 PM
+Crashpad                              11/2/2025 11:01:40 PM
+Default                               3/11/2026 4:31:44 AM 
+DeferredBrowserMetrics                3/11/2026 4:31:34 AM 
+extensions_crx_cache                  11/2/2025 11:01:52 PM
+first_party_sets.db            49152  3/11/2026 1:20:57 AM 
+first_party_sets.db-journal    0      3/11/2026 1:20:57 AM 
+GraphiteDawnCache                     11/2/2025 11:01:40 PM
+GrShaderCache                         3/10/2026 4:47:21 PM 
+Last Browser                   106    3/11/2026 1:20:57 AM 
+Last Version                   14     3/11/2026 1:20:54 AM 
+Local State                    6757   3/11/2026 4:31:44 AM 
+lockfile                       0      3/11/2026 1:20:54 AM 
+optimization_guide_model_store        11/2/2025 11:01:52 PM
+Safe Browsing                         11/2/2025 11:01:40 PM
+segmentation_platform                 11/2/2025 11:01:40 PM
+ShaderCache                           11/2/2025 11:01:40 PM
+Variations                     87     3/11/2026 1:20:54 AM 
+
+

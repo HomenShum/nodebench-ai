@@ -12,6 +12,7 @@
 
 import { v } from "convex/values";
 import { action, internalAction } from "../../_generated/server";
+import { internal } from "../../_generated/api";
 import {
   ALL_BENCHMARK_CASES,
   FRAUD_CASES,
@@ -239,6 +240,51 @@ export const testCompanyRisk = action({
         evidence: p.evidence,
       })),
       recommendations,
+    };
+  },
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INTERNAL: Cron-schedulable calibration check wrapper
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Internal wrapper for runCalibrationCheck, callable by cron scheduler.
+ * Runs all DD benchmark cases and returns calibration results.
+ */
+export const runCalibrationCheckInternal = internalAction({
+  args: {},
+  handler: async (): Promise<{
+    benchmarkPassed: boolean;
+    passRate: number;
+    categoryBreakdown: Record<string, { passed: number; total: number; accuracy: number }>;
+    driftWarnings: string[];
+    recommendations: string[];
+  }> => {
+    const results = runBenchmarkSuite(ALL_BENCHMARK_CASES);
+
+    const driftWarnings: string[] = [];
+
+    for (const [category, metrics] of Object.entries(results.resultsByCategory)) {
+      if (metrics.total >= 2 && metrics.accuracy < 0.7) {
+        driftWarnings.push(`${category} accuracy dropped to ${(metrics.accuracy * 100).toFixed(0)}%`);
+      }
+    }
+
+    if (results.escalationAccuracy < 0.8) {
+      driftWarnings.push(`Escalation accuracy dropped to ${(results.escalationAccuracy * 100).toFixed(0)}%`);
+    }
+
+    if (results.falseNegativeRate > 0.15) {
+      driftWarnings.push(`CRITICAL: False negative rate is ${(results.falseNegativeRate * 100).toFixed(0)}% - missing escalations`);
+    }
+
+    return {
+      benchmarkPassed: results.passedCases === results.totalCases,
+      passRate: results.passedCases / results.totalCases,
+      categoryBreakdown: results.resultsByCategory,
+      driftWarnings,
+      recommendations: results.recommendations,
     };
   },
 });

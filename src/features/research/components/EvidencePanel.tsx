@@ -43,7 +43,7 @@ export function EvidencePanel({
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <FileText className="w-3 h-3 text-gray-900/50" />
-                    <h4 className="text-xs font-black text-content">
+                    <h4 className="text-xs font-bold text-content">
                         {title}
                     </h4>
                     <span className="text-xs font-mono text-content-muted bg-surface-secondary px-1.5 py-0.5 rounded">

@@ -15,6 +15,7 @@ import { api } from "../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../convex/_generated/dataModel";
 import { Calendar, Star, Trash2, MessageCircle, Loader2, Sparkles, Edit3, Share2 } from "lucide-react";
 import { FileTypeIcon } from "@/shared/components/FileTypeIcon";
+import { sanitizeDocumentTitle } from "@/lib/displayText";
 import { inferFileType, type FileType } from "@/lib/fileTypes";
 import { getThemeForFileType } from "@/lib/documentThemes";
 import type { DocumentCardData } from "../utils/documentHelpers";
@@ -270,7 +271,7 @@ export function DocumentRow({
         </div>
         <div className="flex flex-col min-w-0">
           <span className="text-sm font-medium text-content truncate">
-            {doc.title}
+            {sanitizeDocumentTitle(doc.title)}
           </span>
           <span className="text-xs text-content-muted truncate">
             {typeGuess.toUpperCase()} {fileSize ? `• ${formatFileSize(fileSize)}` : ""}
@@ -396,4 +397,3 @@ export function DocumentRow({
     </div>
   );
 }
-

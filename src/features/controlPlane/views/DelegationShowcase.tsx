@@ -15,7 +15,7 @@ import type { ActionReceipt } from "../types/actionReceipt";
 import type { TrustTier } from "../types/agentPassport";
 
 const TIER_STYLES: Record<TrustTier, { label: string; className: string }> = {
-  sandbox: { label: "Sandbox", className: "border-zinc-500/20 bg-zinc-500/10 text-zinc-400" },
+  sandbox: { label: "Sandbox", className: "border-edge bg-surface-secondary/50 text-content-muted" },
   supervised: { label: "Supervised", className: "border-amber-500/20 bg-amber-500/10 text-amber-400" },
   autonomous: { label: "Autonomous", className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" },
 };
@@ -50,10 +50,11 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <KeyRound className="h-5 w-5 text-emerald-400" />
-          <h1 className="text-xl font-semibold tracking-tight text-content">Delegation</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-content">Passport &amp; Delegation</h1>
         </div>
         <p className="text-sm text-content-muted">
-          Scope tools, approvals, and authority before an agent acts. Every permission gets a passport.
+          Scope tools, approvals, and authority before an agent acts. This passport can read public filings
+          and create briefs, but it cannot execute trades and must request approval before external sharing.
         </p>
       </div>
 
@@ -92,7 +93,7 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
                 <ShieldAlert className="h-3.5 w-3.5" />
                 <span className="text-lg font-semibold">{passport.escalatedTools.length}</span>
               </div>
-              <div className="text-[11px] font-medium text-content-muted">Escalated</div>
+              <div className="text-[11px] font-medium text-content-muted">Needs approval</div>
             </div>
             <div className="rounded-lg border border-edge bg-surface-secondary/50 px-3 py-2 text-center">
               <div className="flex items-center justify-center gap-1 text-content-muted">
@@ -134,10 +135,10 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
 
       <section aria-labelledby="escalation-heading" className="space-y-3">
         <h2 id="escalation-heading" className="text-sm font-medium text-content-secondary">
-          Escalation Log
+          Needs Approval Log
         </h2>
         <p className="text-xs text-content-muted">
-          Recent actions that triggered escalation, held for approval, or flagged for review.
+          Recent actions that required approval, were held for review, or crossed delegation boundaries.
         </p>
         <div className="space-y-2">
           {escalatedReceipts.map((receipt) => (
@@ -149,13 +150,13 @@ export const DelegationShowcase = memo(function DelegationShowcase() {
             />
           ))}
           {escalatedReceipts.length === 0 && (
-            <div className="py-8 text-center text-sm text-content-muted">No escalated actions in the current dataset.</div>
+            <div className="py-8 text-center text-sm text-content-muted">No approval-gated actions in the current dataset.</div>
           )}
         </div>
       </section>
 
       <div className="border-t border-edge/30 pt-4 text-center text-[11px] text-content-muted">
-        Demo mode. Showing the golden dataset passport and escalation log.
+        Demo mode. Showing the golden dataset passport and approval log.
       </div>
     </div>
   );

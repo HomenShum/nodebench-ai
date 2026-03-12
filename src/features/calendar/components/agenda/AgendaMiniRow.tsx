@@ -231,7 +231,7 @@ export const AgendaMiniRow: React.FC<AgendaMiniRowProps> = ({ item, kind, onSele
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={String(item?.status ?? 'todo') === 'done' ? 'Mark task as not done' : 'Mark task as done'}
-              className="h-3.5 w-3.5 rounded border-edge text-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/50 bg-white dark:bg-surface"
+              className="h-3.5 w-3.5 rounded border-edge text-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/50 bg-surface dark:bg-surface"
             />
           ) : null}
           <span

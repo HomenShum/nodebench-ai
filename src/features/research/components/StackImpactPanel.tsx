@@ -49,7 +49,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
   // Early returns after all hooks are called
   if (!hasValidTechStack) {
     return (
-      <div className="rounded-lg border border-edge bg-white p-4 space-y-2">
+      <div className="rounded-lg border border-edge bg-surface p-4 space-y-2">
         <div className="text-xs font-bold text-content-muted">Stack Impact</div>
         <div className="text-sm font-semibold text-content">Set your tech stack</div>
         <div className="text-xs text-content-secondary">
@@ -68,7 +68,7 @@ export const StackImpactPanel: React.FC<StackImpactPanelProps> = ({
   }
 
   return (
-    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs font-bold text-content-muted">Stack Impact</div>

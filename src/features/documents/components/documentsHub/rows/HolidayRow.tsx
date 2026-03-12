@@ -8,13 +8,14 @@
  * - Consistent styling with TaskRow
  */
 
+import { memo } from "react";
 import { CalendarDays } from "lucide-react";
 
 export interface HolidayRowProps {
   h: any;
 }
 
-export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
+export const HolidayRowGlobal = memo(({ h }: HolidayRowProps) => {
   const title = String(h?.name ?? h?.title ?? "Holiday");
 
   const toLocalDate = (): string | null => {
@@ -48,7 +49,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
           "bg-surface-secondary border border-edge " +
           "transition-all duration-200 hover:bg-surface-hover " +
           "flex items-center justify-between " +
-          "focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-500/50 hover:ring-2 ring-1 ring-indigo-500/50/10"
+          "focus-within:outline-none focus-within:ring-2 focus-within:ring-ring hover:ring-2 ring-1 ring-ring"
         }
         role="button"
         tabIndex={0}
@@ -74,7 +75,7 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
             checked
             readOnly
             aria-label="All-day"
-            className="h-4 w-4 rounded border-edge text-indigo-600 bg-white dark:bg-surface"
+            className="h-4 w-4 rounded border-edge text-indigo-600 bg-surface dark:bg-surface"
           />
 
           <div className="w-7 h-7 rounded-md bg-surface border border-edge text-content-secondary flex items-center justify-center shrink-0">
@@ -109,5 +110,5 @@ export const HolidayRowGlobal = ({ h }: HolidayRowProps) => {
       </div>
     </div>
   );
-};
+});
 

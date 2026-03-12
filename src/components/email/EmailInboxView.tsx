@@ -56,20 +56,20 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
   return (
     <div className="flex flex-col h-full bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-edge">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/20 rounded-lg">
               <Inbox className="h-6 w-6 text-blue-400" />
             </div>
             <div>
-              <h1 className="text-base font-semibold text-white">Email Inbox</h1>
+              <h1 className="text-base font-semibold text-content">Email Inbox</h1>
               <p className="text-sm text-content-muted">
                 {stats?.unreadCount || 0} unread • {stats?.totalThreads || 0} total
               </p>
             </div>
           </div>
-          <button className="p-2 text-content-muted hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+          <button className="p-2 text-content-muted hover:text-content hover:bg-surface rounded-lg transition-colors">
             <RefreshCw className="h-5 w-5" />
           </button>
         </div>
@@ -82,7 +82,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
             placeholder="Search emails..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+            className="w-full pl-10 pr-4 py-2 bg-surface border border-edge rounded-lg text-content placeholder-slate-400 focus:outline-none focus:border-blue-500"
           />
         </div>
 
@@ -100,7 +100,7 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 filter === key
                   ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-content-muted hover:text-white'
+                  : 'bg-surface text-content-muted hover:text-content'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -116,8 +116,8 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
               onClick={() => setSelectedCategory(null)}
               className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                 !selectedCategory
-                  ? 'bg-gray-600 text-white'
-                  : 'bg-gray-800 text-content-muted hover:text-white'
+                  ? 'bg-surface-hover text-content'
+                  : 'bg-surface text-content-muted hover:text-content'
               }`}
             >
               All Categories
@@ -128,8 +128,8 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
                 onClick={() => setSelectedCategory(cat.name)}
                 className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
                   selectedCategory === cat.name
-                    ? 'bg-gray-600 text-white'
-                    : 'bg-gray-800 text-content-muted hover:text-white'
+                    ? 'bg-surface-hover text-content'
+                    : 'bg-surface text-content-muted hover:text-content'
                 }`}
               >
                 {cat.name} ({cat.count})
@@ -144,9 +144,9 @@ export function EmailInboxView({ onSelectThread, selectedThreadId }: EmailInboxV
         {isLoading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="p-4 bg-gray-800/50 rounded-lg motion-safe:animate-pulse">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2" />
-                <div className="h-3 bg-gray-700 rounded w-1/2" />
+              <div key={i} className="p-4 bg-surface/50 rounded-lg motion-safe:animate-pulse">
+                <div className="h-4 bg-surface-secondary rounded w-3/4 mb-2" />
+                <div className="h-3 bg-surface-secondary rounded w-1/2" />
               </div>
             ))}
           </div>
@@ -221,12 +221,12 @@ function EmailThreadRow({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03 }}
       onClick={onClick}
-      className={`p-4 border-b border-gray-800 cursor-pointer transition-colors ${
+      className={`p-4 border-b border-edge cursor-pointer transition-colors ${
         isSelected
           ? 'bg-blue-900/30 border-l-2 border-l-blue-500'
           : thread.isRead
-            ? 'hover:bg-gray-800/50'
-            : 'bg-gray-800/30 hover:bg-gray-800/50'
+            ? 'hover:bg-surface/50'
+            : 'bg-surface/30 hover:bg-surface/50'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -242,7 +242,7 @@ function EmailThreadRow({
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <span className={`text-sm truncate ${!thread.isRead ? 'font-semibold text-white' : 'text-gray-300'}`}>
+            <span className={`text-sm truncate ${!thread.isRead ? 'font-semibold text-content' : 'text-content-secondary'}`}>
               {thread.latestFrom || 'Unknown'}
             </span>
             <div className="flex items-center gap-2 ml-2">
@@ -255,7 +255,7 @@ function EmailThreadRow({
             </div>
           </div>
 
-          <p className={`text-sm truncate mb-1 ${!thread.isRead ? 'text-white' : 'text-content-muted'}`}>
+          <p className={`text-sm truncate mb-1 ${!thread.isRead ? 'text-content' : 'text-content-muted'}`}>
             {thread.subject}
           </p>
 
@@ -279,7 +279,7 @@ function EmailThreadRow({
               </span>
             )}
             {thread.aiCategory && (
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded flex items-center gap-1">
+              <span className="px-2 py-0.5 bg-surface-secondary text-content-secondary text-xs rounded flex items-center gap-1">
                 <Tag className="h-3 w-3" />
                 {thread.aiCategory}
               </span>

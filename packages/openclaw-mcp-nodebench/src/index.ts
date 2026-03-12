@@ -33,6 +33,7 @@ import { scaffoldTools } from "./tools/scaffoldTools.js";
 import { gotchaTools } from "./tools/gotchaTools.js";
 import { OPENCLAW_GOTCHAS } from "./gotchaSeed.js";
 import { REGISTRY, WORKFLOW_CHAINS } from "./tools/toolRegistry.js";
+import { deeptraceSkills, SKILL_MANIFEST } from "./skills/index.js";
 import type { McpTool } from "./types.js";
 
 // ── CLI flags ────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ const ALL_TOOLS: McpTool[] = [
   ...workflowAuditTools,
   ...scaffoldTools,
   ...gotchaTools,
+  ...deeptraceSkills,
 ];
 
 const toolMap = new Map<string, McpTool>();
@@ -61,7 +63,7 @@ for (const tool of ALL_TOOLS) {
 const server = new Server(
   {
     name: "openclaw-mcp-nodebench",
-    version: "0.1.0",
+    version: "0.2.0",
   },
   {
     capabilities: {
@@ -188,6 +190,13 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
           "All stored OpenClaw pitfalls (built-in + user-recorded) with categories and severity",
         mimeType: "application/json",
       },
+      {
+        uri: "deeptrace://skills",
+        name: "DeepTrace Skills",
+        description:
+          "Published DeepTrace ClawHub skills — receipts, evidence packs, and delegation checks",
+        mimeType: "application/json",
+      },
     ],
   };
 });
@@ -278,6 +287,26 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
                 user: gotchas.filter((g: any) => g.source === "user").length,
               },
               gotchas,
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+
+  if (uri === "deeptrace://skills") {
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "application/json",
+          text: JSON.stringify(
+            {
+              totalSkills: SKILL_MANIFEST.length,
+              totalTools: deeptraceSkills.length,
+              skills: SKILL_MANIFEST,
             },
             null,
             2

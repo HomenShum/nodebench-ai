@@ -37,8 +37,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 max-h-96 overflow-auto bg-gray-900 text-gray-100 rounded-lg shadow-xl border border-gray-700 z-50">
-      <div className="flex items-center justify-between p-3 border-b border-gray-700">
+    <div className="fixed bottom-4 right-4 w-96 max-h-96 overflow-auto bg-content text-surface rounded-lg shadow-xl border border-edge z-50">
+      <div className="flex items-center justify-between p-3 border-b border-edge">
         <h3 className="text-sm font-semibold">Editor Inspector</h3>
         <button
           onClick={onClose}

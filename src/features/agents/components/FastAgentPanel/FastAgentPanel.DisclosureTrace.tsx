@@ -784,7 +784,7 @@ export function PendingConfirmation({
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={onConfirm}
-                className="px-3 py-1.5 text-sm font-medium bg-indigo-600 hover:bg-gray-700 text-white rounded transition-colors"
+                className="px-3 py-1.5 text-sm font-medium bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded transition-colors"
               >
                 Confirm
               </button>

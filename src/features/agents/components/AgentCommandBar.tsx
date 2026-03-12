@@ -318,7 +318,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
         <div
           className={cn(
             "flex flex-col bg-surface rounded-lg border border-edge",
-            "focus-within:ring-2 focus-within:ring-indigo-500/50/20",
+            "focus-within:ring-2 focus-within:ring-ring",
             "focus-within:border-indigo-500/30/50 transition-all"
           )}
         >
@@ -345,7 +345,7 @@ export const AgentCommandBar = memo(function AgentCommandBar({
               aria-label="Send message"
               className={cn(
                 "flex items-center justify-center w-8 h-8 rounded-lg",
-                "bg-indigo-600 text-white",
+                "bg-[var(--accent-primary)] text-white",
                 "hover:opacity-90 transition-opacity",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}

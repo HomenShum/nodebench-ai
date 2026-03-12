@@ -82,7 +82,7 @@ function EvidenceCard({ evidence, index }: EvidenceCardProps) {
         hover:border-indigo-300
         hover:bg-gradient-to-br hover:from-indigo-50/50 hover:to-white
         ${isHighlighted
-          ? "border-indigo-500 shadow-lg shadow-indigo-200/50 ring-2 ring-indigo-300 motion-safe:animate-pulse"
+          ? "border-indigo-500 shadow-lg shadow-indigo-200/50 ring-2 ring-ring motion-safe:animate-pulse"
           : "border-edge"
         }
       `}

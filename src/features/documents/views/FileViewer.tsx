@@ -482,7 +482,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
       <div className="w-full h-full min-h-0">
         <iframe
           src={storageUrl}
-          className="w-full h-full border border-edge rounded-lg bg-white"
+          className="w-full h-full border border-edge rounded-lg bg-surface"
           title={file.fileName}
         />
       </div>
@@ -654,7 +654,7 @@ Return concise Markdown with sections and bullet lists. Avoid verbosity.`;
                         </label>
                         <div className="flex items-center gap-2">
                           <button type="button" onClick={handleCloseAnalysisPopover} className="px-2 py-1 text-xs rounded border border-edge hover:bg-surface-hover">Cancel</button>
-                          <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-indigo-600 text-white hover:bg-indigo-600/90">Analyze</button>
+                          <button type="button" onClick={() => void handleRunAnalysis()} className="px-2 py-1 text-xs rounded bg-[var(--accent-primary)] text-white hover:opacity-90">Analyze</button>
                         </div>
                       </div>
                     </div>

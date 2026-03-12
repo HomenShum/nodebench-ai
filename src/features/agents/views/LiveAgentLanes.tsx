@@ -85,12 +85,12 @@ function LaneCard({ delegation }: LaneCardProps) {
     <div
       className={`
         relative overflow-hidden rounded-lg border transition-all duration-300
-        ${isActive ? 'border-indigo-500/30 shadow-lg shadow-[rgb(79, 70, 229)]/10' : 'border-white/10'}
+        ${isActive ? 'border-indigo-500/30 shadow-lg shadow-[rgb(79, 70, 229)]/10' : 'border-edge'}
         bg-gradient-to-br from-surface/80 to-surface-secondary/80 backdrop-blur-sm
       `}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 p-3 border-b border-white/5">
+      <div className="flex items-center gap-3 p-3 border-b border-edge">
         {/* Agent Icon */}
         <div className={`
           relative w-8 h-8 rounded-lg border flex items-center justify-center
@@ -124,7 +124,7 @@ function LaneCard({ delegation }: LaneCardProps) {
 
       {/* Tools Used */}
       {toolsUsed.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-white/5">
+        <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-edge">
           {toolsUsed.slice(0, 4).map((tool) => (
             <span
               key={tool}

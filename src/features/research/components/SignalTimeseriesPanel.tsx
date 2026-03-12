@@ -60,7 +60,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
   if (!keyword) return null;
 
   return (
-    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Activity className="w-4 h-4 text-content-secondary" />
         <div>
@@ -130,7 +130,7 @@ export const SignalTimeseriesPanel: React.FC<SignalTimeseriesPanelProps> = ({ ke
             {ledgerRows.map((row: any, idx: number) => (
               <div
                 key={`${row.date}-${idx}`}
-                className="flex items-center justify-between rounded-md border border-edge bg-white px-2 py-1"
+                className="flex items-center justify-between rounded-md border border-edge bg-surface px-2 py-1"
               >
                 <span className="text-content-secondary">{row.date}</span>
                 <span className="text-content-secondary">{row.count} hits</span>

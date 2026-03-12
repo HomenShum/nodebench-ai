@@ -89,7 +89,7 @@ export function MemoryStatusHeader({
                 className={cn(
                     "w-full flex items-center justify-between px-3 py-1.5",
                     "hover:bg-surface-secondary transition-colors",
-                    "focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                    "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 )}
             >
                 <div className="flex items-center gap-2 min-w-0">

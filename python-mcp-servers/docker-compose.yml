@@ -135,6 +135,32 @@ services:
       retries: 3
       start_period: 40s
 
+  scrapling_bridge:
+    build:
+      context: ./scrapling_bridge
+      dockerfile: Dockerfile
+    container_name: scrapling-bridge-mcp-server
+    ports:
+      - "8008:8008"
+    environment:
+      - SCRAPLING_PORT=8008
+      - SCRAPLING_HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    env_file:
+      - .env
+    volumes:
+      - ./scrapling_bridge:/app
+      - ./shared:/app/shared
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8008/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   default:
     name: mcp-servers-network

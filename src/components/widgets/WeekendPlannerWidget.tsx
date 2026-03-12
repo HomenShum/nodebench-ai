@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Coffee, ListTodo, Sparkles, ArrowRight, Calendar } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { sanitizeDocumentTitle } from '@/lib/displayText';
 
 interface WeekendPlannerWidgetProps {
   onNavigate?: (path: string) => void;
@@ -54,7 +55,7 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
             {pendingTasks.map((task) => (
               <li
                 key={task._id}
-                className="flex items-center gap-2 text-sm text-content-secondary bg-white/50 p-2 rounded-lg"
+                className="flex items-center gap-2 text-sm text-content-secondary bg-surface/50 p-2 rounded-lg"
               >
                 <input
                   type="checkbox"
@@ -88,9 +89,9 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
             {recentDocs.map((doc) => (
               <div
                 key={doc._id}
-                className="text-sm border-l-2 border-green-500 pl-3 py-1 text-content-secondary bg-white/50 rounded-r-lg"
+                className="text-sm border-l-2 border-green-500 pl-3 py-1 text-content-secondary bg-surface/50 rounded-r-lg"
               >
-                {doc.title || 'Untitled Document'}
+                {sanitizeDocumentTitle(doc.title, 'Untitled Document')}
               </div>
             ))}
           </div>
@@ -108,25 +109,25 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onNavigate?.('/research')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
+            className="p-3 bg-surface/70 rounded-lg text-sm text-content-secondary hover:bg-surface transition-colors text-left"
           >
             🔍 Explore new topics
           </button>
           <button
             onClick={() => onNavigate?.('/documents/new')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
+            className="p-3 bg-surface/70 rounded-lg text-sm text-content-secondary hover:bg-surface transition-colors text-left"
           >
             ✍️ Start a new project
           </button>
           <button
             onClick={() => onNavigate?.('/calendar')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
+            className="p-3 bg-surface/70 rounded-lg text-sm text-content-secondary hover:bg-surface transition-colors text-left"
           >
             📅 Review calendar
           </button>
           <button
             onClick={() => onNavigate?.('/settings')}
-            className="p-3 bg-white/70 rounded-lg text-sm text-content-secondary hover:bg-white transition-colors text-left"
+            className="p-3 bg-surface/70 rounded-lg text-sm text-content-secondary hover:bg-surface transition-colors text-left"
           >
             ⚙️ Organize workspace
           </button>
@@ -137,4 +138,3 @@ export function WeekendPlannerWidget({ onNavigate }: WeekendPlannerWidgetProps) 
 }
 
 export default WeekendPlannerWidget;
-

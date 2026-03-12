@@ -658,7 +658,7 @@ export function DocumentGrid({ openTabs, onCloseTab, onReorderTabs, selectedTabI
             </div> 
             <h3 className="text-lg font-semibold text-content">Maximum Tabs Reached</h3> 
             <p className="mt-2 text-sm text-content-secondary"> You have {openTabs.length} tabs open, but a single grid can only display 16. Please create a new grid panel to open more. </p> 
-            <button onClick={() => setMaxDocsWarningDismissed(true)} className="mt-6 w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity" > OK </button> 
+            <button onClick={() => setMaxDocsWarningDismissed(true)} className="btn-primary-sm mt-6 w-full py-2 px-4" > OK </button> 
           </div> 
         </div> 
       )}

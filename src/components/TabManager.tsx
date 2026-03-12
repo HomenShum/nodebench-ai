@@ -5,6 +5,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { DocumentGrid, type GridTab } from "@/features/documents/components/DocumentGrid";
 import { DocumentView } from "@/features/documents/views/DocumentView";
 import { X } from "lucide-react";
+import { sanitizeDocumentTitle } from "@/lib/displayText";
 
 const CalendarHomeHub = lazy(() =>
   import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({
@@ -82,7 +83,7 @@ export function TabManager({
         const newTab: GridTab = {
           kind: "document",
           id: documentId,
-          title: doc?.title ?? "Document",
+          title: sanitizeDocumentTitle(doc?.title, "Document"),
           color: `color-${index % 12}`,
           position: index,
         };
@@ -113,9 +114,10 @@ export function TabManager({
       const updated = prev.map((t) => {
         if (t.kind !== "document") return t;
         const doc = documents.find((d: any) => d._id === t.id);
-        if (doc && t.title !== doc.title) {
+        const nextTitle = sanitizeDocumentTitle(doc?.title, "Document");
+        if (doc && t.title !== nextTitle) {
           changed = true;
-          return { ...t, title: doc.title };
+          return { ...t, title: nextTitle };
         }
         return t;
       });
@@ -166,7 +168,7 @@ export function TabManager({
               newTabs.push({
                 kind: "document",
                 id: pinId,
-                title: doc?.title ?? "Document",
+                title: sanitizeDocumentTitle(doc?.title, "Document"),
                 color: `color-${index % 12}`,
                 position: index,
               });
@@ -352,7 +354,7 @@ export function TabManager({
                   const baseGap = iconOnly ? "gap-1" : compact ? "gap-1.5" : "gap-2";
                   const baseText = iconOnly ? "text-xs" : compact ? "text-xs" : "text-sm";
                   const baseMinW = iconOnly ? "min-w-[30px]" : compact ? "min-w-[44px]" : "min-w-[64px]";
-                  const selRing = selectedDocumentId === tab.id ? "ring-2 ring-indigo-500/40" : "";
+                  const selRing = selectedDocumentId === tab.id ? "ring-2 ring-ring" : "";
 
                   return (
                     <button
@@ -363,7 +365,7 @@ export function TabManager({
                         "flex items-center rounded-lg border font-medium cursor-pointer transition-all duration-200 shrink-0 whitespace-nowrap",
                         colorClasses[colorIndex],
                         basePad, baseGap, baseText, baseMinW, selRing,
-                        "focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50",
+                        "focus:outline-none focus:ring-2 focus:ring-ring",
                       ].join(" ")}
                       onClick={() => onDocumentSelect(tab.id)}
                       title={tab.title}
@@ -437,4 +439,3 @@ export function TabManager({
     </div>
   );
 }
-

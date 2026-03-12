@@ -67,7 +67,7 @@ export function ForecastCockpit() {
         </h3>
         <p className="text-sm text-content-secondary max-w-md mb-6">
           Track predictions with calibration scoring, evidence timelines, and
-          full provenance. Forecasts are created via MCP tools and refreshed
+          full provenance. Forecasts are created via AI tools and refreshed
           daily before the LinkedIn digest.
         </p>
         <div className="rounded-lg border border-dashed border-edge dark:border-gray-600 bg-surface-secondary p-4 max-w-sm w-full text-left">

@@ -535,6 +535,35 @@ npm run mcp:dataset:bench:all
   - `## 6-Phase Iterative Deep-Dive Verification Process`
   - `## How the Two Loops Compose: The AI Flywheel (Verification × Eval)`
 
+### MCP execution trace plane
+
+Purpose: make multi-step agent workflows traceable without exposing raw chain-of-thought.
+
+- Default local MCP preset now includes the `execution_trace` toolset.
+- Core tools:
+  - `start_execution_run`
+  - `complete_execution_run`
+  - `record_execution_step`
+  - `record_execution_decision`
+  - `record_execution_verification`
+  - `attach_execution_evidence`
+  - `request_execution_approval`
+- Workflow rule:
+  1. Start the run first.
+  2. Record meaningful steps, evidence, decisions, and verifications as the work happens.
+  3. Request approval before risky or externally visible actions.
+  4. Complete the run with final status and drift summary if applicable.
+- Protocol-native MCP prompts are available for reusable workflow shaping:
+  - `execution-trace-workflow`
+  - `spreadsheet-enrichment-trace`
+  - `company-direction-analysis-trace`
+  - `agent-delegation-with-approval-trace`
+- Convex backing:
+  - `domains/mcp/mcpExecutionTraceEndpoints:mcpStartExecutionRun`
+  - `domains/operations/taskManager/mutations:*`
+- Live UI surface:
+  - `/execution-trace`
+
 ## Self maintenance (nightly, autonomous)
 
 Purpose: run invariant audits, persist a boolean-gated report, attach an optional LLM explanation.
@@ -594,6 +623,15 @@ Cron:
 ## Flywheel mode (UI dogfood + Gemini QA)
 
 Purpose: continuous UI verification until issues stop reproducing and the dogfood artifacts show stability.
+
+Scoring and release policy:
+- Follow `docs/architecture/APP_SCORING_AND_DOGFOOD_INSTRUCTIONS.md` for the standing product rule:
+  - dogfood every workflow
+  - grade every output
+  - freeze every recommendation
+  - compare against reality later when outcomes exist
+  - trace every UI and backend step
+- Treat that document as the default operator standard for visual quality, design clarity, usage value, and alignment scoring.
 
 Rules:
 - Poll every 60 seconds for new issues (logs, console, visual regressions).
@@ -1573,6 +1611,7 @@ The **6-Phase Verification** and **Eval-Driven Development Loop** are not separa
 ### Mandatory: AI Flywheel testing after any update or change
 
 For a concise, repo-root reference, see `AI_FLYWHEEL.md`.
+For the next execution-model architecture, see `docs/architecture/plans/2026-03-12-hierarchical-mission-harness-plan.md`.
 
 After any non-trivial code change, feature addition, or bug fix, the AI Flywheel verification process **must** be run before considering the work done. This is not optional.
 

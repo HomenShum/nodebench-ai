@@ -90,8 +90,9 @@ export function CrossLinkedText({ text, entities = {}, onAskAI, onEntityClick, c
                                 }
                             }}
                             className={`
-                inline-flex items-center px-1.5 py-0.5 rounded-sm border-b border-dashed 
+                inline-flex items-center px-1.5 py-0.5 rounded-sm border-b border-dashed
                 transition-all duration-300 font-bold tracking-tight cursor-pointer
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1
                 ${type === 'company' ? 'text-content border-gray-900/30 hover:bg-indigo-50' :
                                     type === 'person' ? 'text-indigo-900 border-indigo-900/30 hover:bg-indigo-50' :
                                         type === 'topic' ? 'text-content border-gray-900/30 hover:bg-surface-hover' :

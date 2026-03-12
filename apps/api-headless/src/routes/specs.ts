@@ -24,9 +24,23 @@ import {
 
 const router = Router();
 
+function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
+  return (req: Request, res: Response) => {
+    fn(req, res).catch((err) => {
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "internal_error",
+          message: err instanceof Error ? err.message : "Unexpected error",
+          requestId: req.requestId,
+        });
+      }
+    });
+  };
+}
+
 // ── POST /v1/specs — Create a new SpecDoc ──────────────────────────────────
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", asyncHandler(async (req: Request, res: Response) => {
   const parsed = specDocCreateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -74,14 +88,18 @@ router.post("/", async (req: Request, res: Response) => {
   }
 
   // Fallback: store in-memory (dev mode)
+  if (inMemorySpecs.size >= MAX_IN_MEMORY_SPECS) {
+    const oldest = inMemorySpecs.keys().next().value;
+    if (oldest !== undefined) inMemorySpecs.delete(oldest);
+  }
   inMemorySpecs.set(specKey, specDoc);
 
   res.status(201).json(specDoc);
-});
+}));
 
 // ── GET /v1/specs/dashboard — Aggregate stats (must be before :specKey) ────
 
-router.get("/dashboard", async (req: Request, res: Response) => {
+router.get("/dashboard", asyncHandler(async (req: Request, res: Response) => {
   const convexResult = await getDashboardStats(req.clientOrg);
   if (convexResult.ok && convexResult.data) {
     res.json(convexResult.data);
@@ -124,11 +142,11 @@ router.get("/dashboard", async (req: Request, res: Response) => {
         updatedAt: s.updatedAt,
       })),
   });
-});
+}));
 
 // ── GET /v1/specs — List SpecDocs ──────────────────────────────────────────
 
-router.get("/", async (req: Request, res: Response) => {
+router.get("/", asyncHandler(async (req: Request, res: Response) => {
   const status = getSingleQueryValue(req.query.status);
   const clientOrg = getSingleQueryValue(req.query.clientOrg);
   const limit = getIntQueryValue(req.query.limit, 50);
@@ -155,11 +173,11 @@ router.get("/", async (req: Request, res: Response) => {
     specs: specs.slice(0, limit),
     total: specs.length,
   });
-});
+}));
 
 // ── GET /v1/specs/:specKey — Get specific SpecDoc ──────────────────────────
 
-router.get("/:specKey", async (req: Request, res: Response) => {
+router.get("/:specKey", asyncHandler(async (req: Request, res: Response) => {
   const specKey = getSinglePathValue(req.params.specKey);
   if (!specKey) {
     res.status(400).json({ error: "validation_error", message: "specKey is required" });
@@ -180,11 +198,11 @@ router.get("/:specKey", async (req: Request, res: Response) => {
   }
 
   res.json(spec);
-});
+}));
 
 // ── PATCH /v1/specs/:specKey/checks/:checkId — Update check result ─────────
 
-router.patch("/:specKey/checks/:checkId", async (req: Request, res: Response) => {
+router.patch("/:specKey/checks/:checkId", asyncHandler(async (req: Request, res: Response) => {
   const specKey = getSinglePathValue(req.params.specKey);
   const checkId = getSinglePathValue(req.params.checkId);
   if (!specKey || !checkId) {
@@ -244,11 +262,11 @@ router.patch("/:specKey/checks/:checkId", async (req: Request, res: Response) =>
   }
 
   res.json(spec);
-});
+}));
 
 // ── POST /v1/specs/:specKey/finalize — Finalize with proof pack ────────────
 
-router.post("/:specKey/finalize", async (req: Request, res: Response) => {
+router.post("/:specKey/finalize", asyncHandler(async (req: Request, res: Response) => {
   const specKey = getSinglePathValue(req.params.specKey);
   if (!specKey) {
     res.status(400).json({ error: "validation_error", message: "specKey is required" });
@@ -288,10 +306,11 @@ router.post("/:specKey/finalize", async (req: Request, res: Response) => {
   spec.updatedAt = new Date().toISOString();
 
   res.json(spec);
-});
+}));
 
 // ── In-memory fallback store ───────────────────────────────────────────────
 
+const MAX_IN_MEMORY_SPECS = 500;
 const inMemorySpecs = new Map<string, SpecDoc>();
 
 export default router;

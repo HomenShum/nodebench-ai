@@ -18,6 +18,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     // Playwright tests live under `tests/` and should run via Playwright, not Vitest.
-    exclude: [...configDefaults.exclude, "tests/**"],
+    exclude: [
+      ...configDefaults.exclude,
+      "tests/**",
+      ".overstory/**",
+    ],
   },
 });

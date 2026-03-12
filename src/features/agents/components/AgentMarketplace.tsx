@@ -14,10 +14,21 @@ export function AgentMarketplace() {
     category: selectedCategory,
     limit: 20,
   });
+  const fallbackAgents = useQuery(api.domains.agents.agentMarketplace.getRankedAgents, {
+    category: undefined,
+    limit: 6,
+  });
 
   const categories = ["research", "synthesis", "publishing", "validation", "agentLoop"];
+  const showingFallbackAgents =
+    !!selectedCategory &&
+    Array.isArray(rankedAgents) &&
+    rankedAgents.length === 0 &&
+    Array.isArray(fallbackAgents) &&
+    fallbackAgents.length > 0;
+  const displayedAgents = showingFallbackAgents ? fallbackAgents : rankedAgents;
 
-  if (!rankedAgents) {
+  if (!rankedAgents || !fallbackAgents) {
     return (
       <div className="p-6 text-center text-content-secondary">
         Loading agent marketplace...
@@ -43,9 +54,9 @@ export function AgentMarketplace() {
         <button
           type="button"
           onClick={() => setSelectedCategory(undefined)}
-          className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+          className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
             selectedCategory === undefined
-              ? "bg-indigo-600 text-white shadow-sm"
+              ? "bg-[var(--accent-primary)] text-white shadow-sm"
               : "bg-surface text-content-secondary border border-edge hover:bg-surface-hover hover:text-content"
           }`}
         >
@@ -56,9 +67,9 @@ export function AgentMarketplace() {
             key={category}
             type="button"
             onClick={() => setSelectedCategory(category)}
-            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-200 capitalize active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+            className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-all duration-150 capitalize active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               selectedCategory === category
-                ? "bg-indigo-600 text-white shadow-sm"
+                ? "bg-[var(--accent-primary)] text-white shadow-sm"
                 : "bg-surface text-content-secondary border border-edge hover:bg-surface-hover hover:text-content"
             }`}
           >
@@ -68,14 +79,25 @@ export function AgentMarketplace() {
       </div>
 
       {/* Agent List */}
-      {rankedAgents.length === 0 ? (
+      {displayedAgents.length === 0 ? (
         <div className="p-6 text-center text-content-secondary">
           <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No agents found for this category</p>
+          <p>No ranked workflows are available yet.</p>
+          {selectedCategory ? (
+            <p className="mt-2 text-xs text-content-muted">
+              Try another category or return to All Categories while ranking data catches up.
+            </p>
+          ) : null}
         </div>
       ) : (
         <div className="space-y-3">
-          {rankedAgents.map((agent: any, index: number) => (
+          {showingFallbackAgents ? (
+            <div className="rounded-lg border border-edge bg-surface-secondary/60 px-4 py-3 text-sm text-content-secondary">
+              No dedicated workflows are ranked under <span className="font-semibold text-content capitalize">{selectedCategory}</span> yet.
+              Showing the strongest automations instead.
+            </div>
+          ) : null}
+          {displayedAgents.map((agent: any, index: number) => (
             <AgentCard key={agent._id} agent={agent} rank={index + 1} />
           ))}
         </div>

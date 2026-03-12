@@ -64,7 +64,7 @@ export default function ProductChangelogPanel() {
     <div className="w-full">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
-          <h2 className="text-[14px] font-black text-content">Changelog</h2>
+          <h2 className="text-[14px] font-bold text-content">Changelog</h2>
           <p className="text-sm text-content-secondary">Product updates and release notes.</p>
         </div>
         <div className="text-xs text-content-secondary">
@@ -81,7 +81,7 @@ export default function ProductChangelogPanel() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search releases..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-edge rounded-md bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-edge rounded-md bg-surface text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -125,7 +125,7 @@ export default function ProductChangelogPanel() {
               className="bg-surface border border-edge rounded-lg p-5"
             >
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <div className="text-xs font-black text-content">{e.version}</div>
+                <div className="text-xs font-bold text-content">{e.version}</div>
                 <div className="text-xs text-content-secondary">{e.dateLabel}</div>
                 {e.id === latestId ? (
                   <span className="text-xs font-bold px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/30 text-content border border-indigo-200 dark:border-indigo-900/50">

@@ -27,15 +27,18 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import Database from "better-sqlite3";
 import { getDb, genId } from "./db.js";
+import { redactSecrets, auditLog, SecurityError, flushAuditLog } from "./security/index.js";
 import { startDashboardServer, getDashboardUrl, stopDashboardServer } from "./dashboard/server.js";
+import { startEngineServer, getEngineUrl } from "./engine/server.js";
 import { getAnalyticsDb, closeAnalyticsDb, clearOldRecords } from "./analytics/index.js";
 import { AnalyticsTracker } from "./analytics/toolTracker.js";
 import { generateSmartPreset, formatPresetRecommendation, listPresets } from "./analytics/index.js";
 import { getProjectUsageSummary, exportUsageStats, formatStatsDisplay } from "./analytics/index.js";
 import { TOOLSET_MAP, TOOL_TO_TOOLSET } from "./toolsetRegistry.js";
+import { initObservability, startWatchdog, stopWatchdog } from "./tools/observabilityTools.js";
 import { createMetaTools } from "./tools/metaTools.js";
 import { createProgressiveDiscoveryTools } from "./tools/progressiveDiscoveryTools.js";
-import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, _setDbAccessor, hybridSearch } from "./tools/toolRegistry.js";
+import { getQuickRef, ALL_REGISTRY_ENTRIES, TOOL_REGISTRY, getToolComplexity, getToolAnnotations, _setDbAccessor, hybridSearch, WORKFLOW_CHAINS } from "./tools/toolRegistry.js";
 import type { McpTool } from "./types.js";
 
 // TOON format — ~40% token savings on tool responses
@@ -52,34 +55,44 @@ import { initEmbeddingIndex } from "./tools/embeddingProvider.js";
  const exportStats = cliArgs.includes("--export-stats");
  const resetStats = cliArgs.includes("--reset-stats");
  const listPresetsFlag = cliArgs.includes("--list-presets");
+ const healthFlag = cliArgs.includes("--health");
+ const statusFlag = cliArgs.includes("--status");
+ const diagnoseFlag = cliArgs.includes("--diagnose");
+ const autoPresetFlag = cliArgs.includes("--auto-preset");
+ const syncConfigsFlag = cliArgs.includes("--sync-configs");
+ const useEngine = cliArgs.includes("--engine");
+ const engineSecret = (() => {
+   const idx = cliArgs.indexOf("--engine-secret");
+   return idx >= 0 && idx + 1 < cliArgs.length ? cliArgs[idx + 1] : process.env.ENGINE_SECRET;
+ })();
 
 export { TOOLSET_MAP };
 
-const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update"];
+const DEFAULT_TOOLSETS = ["verification", "eval", "quality_gate", "learning", "flywheel", "recon", "security", "boilerplate", "skill_update", "context_sandbox", "observability", "execution_trace", "mission_harness"];
 
 const PRESETS: Record<string, string[]> = {
   default: DEFAULT_TOOLSETS,
   // Themed presets — bridge between default (50 tools) and full (175 tools)
-  web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance"],
-  research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs"],
-  data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web"],
+  web_dev:      [...DEFAULT_TOOLSETS, "ui_capture", "vision", "web", "seo", "git_workflow", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "qa_orchestration", "visual_qa", "design_governance", "web_scraping"],
+  research:     [...DEFAULT_TOOLSETS, "web", "llm", "rss", "email", "docs", "research_optimizer", "web_scraping", "temporal_intelligence"],
+  data:         [...DEFAULT_TOOLSETS, "local_file", "llm", "web", "research_optimizer", "web_scraping", "temporal_intelligence"],
   devops:       [...DEFAULT_TOOLSETS, "git_workflow", "session_memory", "benchmark", "pattern"],
   mobile:       [...DEFAULT_TOOLSETS, "ui_capture", "vision", "flicker_detection", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "visual_qa"],
   academic:     [...DEFAULT_TOOLSETS, "research_writing", "llm", "web", "local_file"],
-  multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration"],
-  content:      [...DEFAULT_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard"],
+  multi_agent:  [...DEFAULT_TOOLSETS, "parallel", "self_eval", "session_memory", "pattern", "toon", "qa_orchestration", "agent_traverse", "engine_context", "research_optimizer", "web_scraping"],
+  content:      [...DEFAULT_TOOLSETS, "llm", "critter", "email", "rss", "platform", "architect", "local_dashboard", "engine_context", "thompson_protocol"],
   full: Object.keys(TOOLSET_MAP),
 };
 
 const PRESET_DESCRIPTIONS: Record<string, string> = {
-  default:     "Core AI Flywheel — verification, eval, quality gates, learning, recon",
+  default:     "Core AI Flywheel — verification, eval, quality gates, learning, recon, mission harness",
   web_dev:     "Web projects — adds visual QA, SEO audit, git workflow, code architecture",
   research:    "Research workflows — adds web search, LLM calls, RSS feeds, email, docs",
   data:        "Data analysis — adds CSV/XLSX/PDF/JSON parsing, LLM extraction, web fetch",
   devops:      "CI/CD & ops — adds git compliance, session memory, benchmarks, pattern mining",
   mobile:      "Mobile apps — adds screenshot capture, vision analysis, flicker detection",
   academic:    "Academic papers — adds polish, review, translate, logic check, data analysis",
-  multi_agent: "Multi-agent teams — adds task locking, messaging, roles, oracle testing",
+  multi_agent: "Multi-agent teams — adds task locking, messaging, roles, oracle testing, frontend traversal",
   content:     "Content & publishing — adds LLM, accountability, email, RSS, platform queue",
   full:        "Everything — all toolsets for maximum coverage",
 };
@@ -87,7 +100,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
    function parseToolsets(): McpTool[] {
     if (cliArgs.includes("--help")) {
       const lines = [
-        "nodebench-mcp v2.29.0 — Development Methodology MCP Server",
+        "nodebench-mcp v2.30.0 — Development Methodology MCP Server",
         "",
         "Usage: nodebench-mcp [options]",
         "",
@@ -96,6 +109,7 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         "  --exclude <list>    Comma-separated toolsets to exclude",
         "  --preset <name>     Use a preset: default or full",
         "  --smart-preset      Generate smart preset recommendation based on project type and usage history",
+        "  --auto-preset       Detect project type from package.json/pyproject.toml and recommend a preset",
         "  --stats             Show usage statistics for current project",
         "  --export-stats      Export usage statistics to JSON",
         "  --reset-stats       Clear all usage analytics data",
@@ -103,6 +117,13 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
         "  --dynamic           Enable dynamic toolset loading (Search+Load pattern from arxiv 2509.20386)",
         "  --no-toon           Disable TOON encoding (TOON is on by default for ~40% token savings)",
         "  --no-embedding      Disable neural embedding search (uses local HuggingFace model or API keys)",
+        "  --engine            Start headless API engine server on port 6276",
+        "  --engine-secret <s> Require Bearer token for engine API (or set ENGINE_SECRET env var)",
+        "  --explain <tool>    Show plain-English explanation of a tool and exit",
+        "  --health            Run diagnostic health check and exit",
+        "  --status            Show live system pulse (uptime, errors, call rates) and exit",
+        "  --diagnose          Run drift detection + auto-heal and exit",
+        "  --sync-configs      Write MCP config to Claude Code, Cursor, and Windsurf IDE locations",
         "  --help              Show this help and exit",
         "",
         "Available toolsets:",
@@ -203,6 +224,736 @@ if (resetStats || useSmartPreset || showStats || exportStats) {
   } finally {
     closeAnalyticsDb(aDb);
   }
+  process.exit(0);
+}
+
+// ── Explain CLI handler (run-and-exit) ────────────────────────────────
+const explainIdx = cliArgs.indexOf("--explain");
+if (explainIdx !== -1) {
+  const toolName = cliArgs[explainIdx + 1];
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const D = USE_COLOR ? "\x1b[2m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  if (!toolName || toolName.startsWith("--")) {
+    console.error("Usage: nodebench-mcp --explain <tool_name>");
+    console.error("Example: nodebench-mcp --explain start_verification_cycle");
+    process.exit(1);
+  }
+
+  const entry = TOOL_REGISTRY.get(toolName);
+  if (!entry) {
+    // Fuzzy match: find closest tool names
+    const candidates = ALL_REGISTRY_ENTRIES
+      .filter(e => e.name.includes(toolName) || toolName.split("_").some(w => e.name.includes(w)))
+      .slice(0, 5);
+    console.error(`Tool "${toolName}" not found in registry.`);
+    if (candidates.length > 0) {
+      console.error(`\nDid you mean:`);
+      for (const c of candidates) console.error(`  --explain ${c.name}`);
+    }
+    process.exit(1);
+  }
+
+  // Find the actual McpTool for description + inputSchema
+  const allDomainTools = Object.values(TOOLSET_MAP).flat();
+  const mcpTool = allDomainTools.find(t => t.name === toolName);
+
+  const complexity = getToolComplexity(toolName);
+  const complexityLabel: Record<string, string> = { low: "Haiku (fast, cheap)", medium: "Sonnet (balanced)", high: "Opus (deep reasoning)" };
+  const toolset = TOOL_TO_TOOLSET.get(toolName) ?? "unknown";
+
+  const lines: string[] = [];
+  lines.push(`${B}${entry.name}${X}`);
+  lines.push("");
+
+  // Thompson-style "what problem does this solve" section
+  if (mcpTool?.description) {
+    lines.push(`${C}What it does${X}`);
+    lines.push(`  ${mcpTool.description}`);
+    lines.push("");
+  }
+
+  // Category + phase + complexity
+  lines.push(`${C}At a glance${X}`);
+  lines.push(`  Category:   ${entry.category}`);
+  lines.push(`  Phase:      ${entry.phase}`);
+  lines.push(`  Toolset:    ${toolset}`);
+  lines.push(`  Complexity: ${complexity} — ${complexityLabel[complexity] ?? complexity}`);
+  lines.push(`  Tags:       ${entry.tags.join(", ")}`);
+  lines.push("");
+
+  // QuickRef — what to do next (the actionable guidance)
+  lines.push(`${C}What to do next${X}  ${D}(Thompson: intuition before mechanics)${X}`);
+  lines.push(`  ${entry.quickRef.nextAction}`);
+  if (entry.quickRef.tip) {
+    lines.push(`  ${Y}Tip:${X} ${entry.quickRef.tip}`);
+  }
+  if (entry.quickRef.methodology) {
+    lines.push(`  ${D}Methodology: ${entry.quickRef.methodology}${X}`);
+  }
+  lines.push("");
+
+  // Next tools — the chain
+  if (entry.quickRef.nextTools.length > 0) {
+    lines.push(`${C}Commonly used after this${X}`);
+    for (const nt of entry.quickRef.nextTools) {
+      const ntEntry = TOOL_REGISTRY.get(nt);
+      lines.push(`  ${G}→${X} ${nt}${ntEntry ? `  ${D}(${ntEntry.category}, ${ntEntry.phase})${X}` : ""}`);
+    }
+    lines.push("");
+  }
+
+  // Input schema (if available)
+  if (mcpTool?.inputSchema?.properties) {
+    lines.push(`${C}Parameters${X}`);
+    const props = mcpTool.inputSchema.properties as Record<string, any>;
+    const required = new Set((mcpTool.inputSchema.required as string[]) ?? []);
+    for (const [key, schema] of Object.entries(props)) {
+      const req = required.has(key) ? `${Y}*${X}` : " ";
+      const type = schema.type ?? "any";
+      const desc = schema.description ? `  ${D}${schema.description.slice(0, 80)}${X}` : "";
+      lines.push(`  ${req} ${key.padEnd(24)} ${type.padEnd(10)}${desc}`);
+    }
+    lines.push(`  ${D}(* = required)${X}`);
+    lines.push("");
+  }
+
+  // Analogy — Thompson protocol
+  lines.push(`${C}Think of it like...${X}`);
+  const analogies: Record<string, string> = {
+    verification: "A pre-flight checklist — you wouldn't fly without checking every system first.",
+    eval: "A lab experiment — you set up controlled conditions, run the test, and measure what actually happened.",
+    quality_gate: "A bouncer at a club — it checks if your code meets the standards before letting it through.",
+    learning: "A journal — you write down what worked and what didn't so you don't repeat mistakes.",
+    flywheel: "A spinning wheel that gains momentum — each iteration makes the next one faster and better.",
+    recon: "A detective gathering clues — you survey the scene before making any moves.",
+    security: "A locksmith checking every door and window — systematic, thorough, nothing left unlocked.",
+    boilerplate: "A cookie cutter — it stamps out a proven shape so you can focus on the filling.",
+    research_writing: "A research assistant — it helps you find, cite, and structure knowledge.",
+    web: "A web browser for your AI — it can fetch pages, search the internet, and extract information.",
+    github: "Your Git assistant — it handles PRs, issues, and repo operations without you leaving the terminal.",
+    email: "A mailroom worker — it can send, receive, and organize emails programmatically.",
+    llm: "A phone that can call other AI models — sometimes you need a specialist for a specific question.",
+    vision: "Eyes for your AI — it can look at screenshots, images, and visual content.",
+    ui_capture: "A camera pointed at your app — it takes screenshots so you can see what users see.",
+    parallel: "A team of workers — instead of one person doing everything, you split the work and do it simultaneously.",
+    documentation: "A technical writer — it reads code and produces human-friendly explanations.",
+    agent_bootstrap: "A setup wizard — it configures a new agent with everything it needs to start working.",
+    self_eval: "A mirror — the agent looks at its own work and grades it honestly.",
+    platform: "A Swiss Army knife for your OS — file operations, system info, environment checks.",
+    skill_update: "A teacher's gradebook — it tracks which skills are fresh and which need a refresher.",
+    local_file: "A file parser — it can read PDFs, spreadsheets, images, and documents without external services.",
+    seo: "A search engine consultant — it checks how visible and crawlable your site is.",
+    rss: "A news aggregator — it monitors feeds and brings you the latest updates.",
+    thompson_protocol: "A writing coach — it makes sure your content is clear, uses analogies, and never talks down to the reader.",
+  };
+  const analogy = analogies[entry.category] ?? `A specialized tool in the ${entry.category} category — it does one thing well so you can focus on the bigger picture.`;
+  lines.push(`  ${analogy}`);
+
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
+// ── Auto-preset detection (run-and-exit) ──────────────────────────────
+if (autoPresetFlag) {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const cwd = process.cwd();
+  const USE_COLOR = process.stderr.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const signals: string[] = [];
+  let recommended = "default";
+
+  // Check package.json
+  const pkgPath = path.join(cwd, "package.json");
+  if (fs.existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+      const allDeps = { ...pkg.dependencies, ...pkg.devDependencies };
+      const depNames = Object.keys(allDeps);
+
+      // Web frameworks
+      const webSignals = ["react", "vue", "svelte", "next", "nuxt", "angular", "@angular/core", "vite", "webpack", "gatsby", "remix", "astro"];
+      const webHits = depNames.filter(d => webSignals.includes(d));
+      if (webHits.length > 0) { signals.push(`web: ${webHits.join(", ")}`); recommended = "web_dev"; }
+
+      // Mobile
+      const mobileSignals = ["react-native", "expo", "@capacitor/core", "ionic", "@ionic/react", "@ionic/vue", "nativescript"];
+      const mobileHits = depNames.filter(d => mobileSignals.includes(d));
+      if (mobileHits.length > 0) { signals.push(`mobile: ${mobileHits.join(", ")}`); recommended = "mobile"; }
+
+      // Data/ML
+      const dataSignals = ["@tensorflow/tfjs", "onnxruntime-node", "ml5", "brain.js", "d3", "chart.js", "recharts", "plotly.js"];
+      const dataHits = depNames.filter(d => dataSignals.includes(d));
+      if (dataHits.length > 0) { signals.push(`data: ${dataHits.join(", ")}`); recommended = "data"; }
+
+      // DevOps
+      const devopsSignals = ["aws-sdk", "@aws-sdk/client-s3", "docker-compose", "pulumi", "@pulumi/aws", "serverless"];
+      const devopsHits = depNames.filter(d => devopsSignals.includes(d));
+      if (devopsHits.length > 0) { signals.push(`devops: ${devopsHits.join(", ")}`); recommended = "devops"; }
+
+      // Research / content
+      const researchSignals = ["@anthropic-ai/sdk", "openai", "langchain", "@langchain/core", "llamaindex"];
+      const researchHits = depNames.filter(d => researchSignals.includes(d));
+      if (researchHits.length > 0) { signals.push(`research/AI: ${researchHits.join(", ")}`); recommended = "research"; }
+
+      // Multi-agent
+      const agentSignals = ["@modelcontextprotocol/sdk", "autogen", "crewai"];
+      const agentHits = depNames.filter(d => agentSignals.includes(d));
+      if (agentHits.length > 0) { signals.push(`multi-agent: ${agentHits.join(", ")}`); recommended = "multi_agent"; }
+
+      // Content
+      const contentSignals = ["marked", "remark", "rehype", "contentful", "sanity", "@sanity/client", "strapi"];
+      const contentHits = depNames.filter(d => contentSignals.includes(d));
+      if (contentHits.length > 0 && !webHits.length) { signals.push(`content: ${contentHits.join(", ")}`); recommended = "content"; }
+
+    } catch { /* malformed package.json */ }
+  }
+
+  // Check pyproject.toml
+  const pyPath = path.join(cwd, "pyproject.toml");
+  if (fs.existsSync(pyPath)) {
+    try {
+      const content = fs.readFileSync(pyPath, "utf-8");
+      if (/torch|tensorflow|scikit|pandas|numpy|scipy/i.test(content)) {
+        signals.push("python: ML/data libraries detected");
+        recommended = "data";
+      } else if (/fastapi|flask|django/i.test(content)) {
+        signals.push("python: web framework detected");
+        recommended = "web_dev";
+      } else if (/langchain|openai|anthropic/i.test(content)) {
+        signals.push("python: AI/research libraries detected");
+        recommended = "research";
+      }
+    } catch { /* malformed */ }
+  }
+
+  // Check for academic markers
+  const hasLatex = fs.existsSync(path.join(cwd, "main.tex")) || fs.existsSync(path.join(cwd, "paper.tex"));
+  if (hasLatex) { signals.push("academic: LaTeX files found"); recommended = "academic"; }
+
+  // Output
+  const presetToolsets = (PRESETS as Record<string, string[]>)[recommended];
+  const toolCount = presetToolsets
+    ? presetToolsets.reduce((s: number, k: string) => s + (TOOLSET_MAP[k]?.length ?? 0), 0) + 12
+    : 0;
+
+  console.error(`${B}Auto-Preset Detection${X}  (${cwd})`);
+  console.error("");
+  if (signals.length > 0) {
+    console.error(`${C}Signals${X}`);
+    for (const s of signals) console.error(`  - ${s}`);
+    console.error("");
+  }
+  console.error(`${B}Recommended:${X}  --preset ${recommended}  (${toolCount} tools)`);
+  if (signals.length === 0) {
+    console.error("  No project markers found — using default preset.");
+  }
+  console.error("");
+  console.error(`Run: npx nodebench-mcp --preset ${recommended}`);
+
+  // Also output just the preset name to stdout (composable)
+  console.log(recommended);
+  process.exit(0);
+}
+
+// ── Health CLI handler (run-and-exit) ─────────────────────────────────
+if (healthFlag) {
+  const USE_COLOR = process.stdout.isTTY;
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const R = USE_COLOR ? "\x1b[31m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+  const ok = `${G}OK${X}`;
+  const warn = `${Y}WARN${X}`;
+  const fail = `${R}FAIL${X}`;
+
+  const lines: string[] = [];
+  lines.push(`${B}NodeBench MCP v2.30.0 — Health Check${X}`);
+  lines.push("");
+
+  // 1. Tool count + preset
+  const presetIdx = cliArgs.indexOf("--preset");
+  const activePreset = presetIdx !== -1 && cliArgs[presetIdx + 1] ? cliArgs[presetIdx + 1] : "default";
+  const domainCount = Object.keys(TOOLSET_MAP).length;
+  const totalTools = Object.values(TOOLSET_MAP).reduce((s, v) => s + v.length, 0);
+  const presetToolsets = (PRESETS as Record<string, string[]>)[activePreset];
+  const presetToolCount = presetToolsets
+    ? presetToolsets.reduce((s: number, k: string) => s + (TOOLSET_MAP[k]?.length ?? 0), 0) + 12
+    : totalTools;
+  lines.push(`${C}Tools${X}       ${presetToolCount} loaded (preset: ${activePreset}) | ${totalTools} total across ${domainCount} domains`);
+
+  // 2. TOON + Embedding
+  lines.push(`${C}TOON${X}        ${useToon ? ok : `${warn} disabled (--no-toon)`}`);
+  lines.push(`${C}Embedding${X}   ${useEmbedding ? ok : `${warn} disabled (--no-embedding)`}`);
+
+  // 3. Database
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const fs = await import("node:fs");
+  const dbDir = path.join(os.homedir(), ".nodebench");
+  const dbPath = path.join(dbDir, "nodebench.db");
+  const dbExists = fs.existsSync(dbPath);
+  let dbSize = "";
+  if (dbExists) {
+    const stat = fs.statSync(dbPath);
+    dbSize = ` (${(stat.size / 1024).toFixed(0)} KB)`;
+  }
+  lines.push(`${C}Database${X}    ${dbExists ? `${ok}${dbSize}` : `${warn} not initialized (will create on first run)`}`);
+
+  // 4. Analytics DB
+  const analyticsPath = path.join(dbDir, "analytics.db");
+  const analyticsExists = fs.existsSync(analyticsPath);
+  lines.push(`${C}Analytics${X}   ${analyticsExists ? ok : `${warn} no usage data yet`}`);
+
+  // 5. Embedding cache
+  const cachePath = path.join(dbDir, "embedding_cache.json");
+  const cacheExists = fs.existsSync(cachePath);
+  let cacheInfo = "";
+  if (cacheExists) {
+    const stat = fs.statSync(cachePath);
+    cacheInfo = ` (${(stat.size / 1024).toFixed(0)} KB)`;
+  }
+  lines.push(`${C}Emb Cache${X}  ${cacheExists ? `${ok}${cacheInfo}` : `${warn} not built yet`}`);
+
+  // 6. Environment variables
+  lines.push("");
+  lines.push(`${B}Environment${X}`);
+  const envChecks: [string, string, string][] = [
+    ["ANTHROPIC_API_KEY", "Claude LLM tools", "llm"],
+    ["OPENAI_API_KEY", "OpenAI + embeddings", "llm"],
+    ["GEMINI_API_KEY", "Gemini + embeddings", "llm"],
+    ["GITHUB_TOKEN", "GitHub tools", "github"],
+    ["BROWSERBASE_API_KEY", "Web scraping", "web"],
+    ["FIRECRAWL_API_KEY", "Web crawling", "web"],
+    ["SMTP_HOST", "Email sending", "email"],
+    ["IMAP_HOST", "Email reading", "email"],
+  ];
+  for (const [key, desc, _domain] of envChecks) {
+    const set = !!process.env[key];
+    const val = set ? process.env[key]!.slice(0, 4) + "..." : "";
+    lines.push(`  ${set ? ok : `${Y}--${X}`}  ${key.padEnd(22)} ${desc}${set ? ` ${C}${val}${X}` : ""}`);
+  }
+
+  // 7. Optional npm packages
+  lines.push("");
+  lines.push(`${B}Optional Packages${X}`);
+  const { createRequire } = await import("node:module");
+  const _require = createRequire(import.meta.url);
+  const _isInstalled = (pkg: string) => { try { _require.resolve(pkg); return true; } catch { return false; } };
+  const pkgChecks: [string, string][] = [
+    ["playwright", "UI capture + screenshots"],
+    ["sharp", "Image processing"],
+    ["@huggingface/transformers", "Local embeddings (384-dim)"],
+    ["tesseract.js", "OCR text extraction"],
+    ["pdf-parse", "PDF parsing"],
+    ["mammoth", "DOCX parsing"],
+    ["xlsx", "Spreadsheet parsing"],
+  ];
+  for (const [pkg, desc] of pkgChecks) {
+    const installed = _isInstalled(pkg);
+    lines.push(`  ${installed ? ok : `${Y}--${X}`}  ${pkg.padEnd(30)} ${desc}`);
+  }
+
+  // 8. Python servers
+  lines.push("");
+  lines.push(`${B}Python Servers${X}`);
+  const serverChecks: [string, number][] = [
+    ["Flicker Detection", 8006],
+    ["Figma Flow", 8007],
+  ];
+  for (const [name, port] of serverChecks) {
+    let reachable = false;
+    try {
+      const resp = await fetch(`http://127.0.0.1:${port}/health`, { signal: AbortSignal.timeout(2000) });
+      reachable = resp.ok;
+    } catch { /* not running */ }
+    lines.push(`  ${reachable ? ok : `${Y}--${X}`}  ${name.padEnd(22)} :${port}${reachable ? "" : " (not running)"}`);
+  }
+
+  // Summary
+  lines.push("");
+  const allEnvSet = envChecks.filter(([k]) => !!process.env[k]).length;
+  const allPkgSet = pkgChecks.filter(([p]) => _isInstalled(p)).length;
+  lines.push(`${B}Summary${X}  ${allEnvSet}/${envChecks.length} env vars | ${allPkgSet}/${pkgChecks.length} packages | ${dbExists ? "DB ready" : "DB pending"}`);
+
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
+// ── Status CLI handler (run-and-exit) ─────────────────────────────────
+if (statusFlag) {
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const fs = await import("node:fs");
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const R = USE_COLOR ? "\x1b[31m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const dir = path.join(os.homedir(), ".nodebench");
+  const dbPath = path.join(dir, "nodebench.db");
+
+  if (!fs.existsSync(dbPath)) {
+    console.error("No database found. Run the MCP server first to initialize.");
+    process.exit(1);
+  }
+
+  // Open DB directly for status query
+  const Database = (await import("better-sqlite3")).default;
+  const db = new Database(dbPath, { readonly: true });
+
+  const lines: string[] = [];
+  lines.push(`${B}NodeBench MCP — System Status${X}`);
+  lines.push("");
+
+  // Uptime info from DB (last tool call as proxy for when server was active)
+  try {
+    const recent = db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE created_at > datetime('now', '-1 hour')`).get() as any;
+    const today = db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE created_at > datetime('now', '-24 hours')`).get() as any;
+    const week = db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE created_at > datetime('now', '-7 days')`).get() as any;
+    const errors1h = db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE result_status = 'error' AND created_at > datetime('now', '-1 hour')`).get() as any;
+    const errors24h = db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE result_status = 'error' AND created_at > datetime('now', '-24 hours')`).get() as any;
+
+    lines.push(`${C}Call Volume${X}`);
+    lines.push(`  Last 1h:   ${recent.cnt} calls  (${errors1h.cnt} errors)`);
+    lines.push(`  Last 24h:  ${today.cnt} calls  (${errors24h.cnt} errors)`);
+    lines.push(`  Last 7d:   ${week.cnt} calls`);
+
+    const rate1h = recent.cnt > 0 ? ((recent.cnt - errors1h.cnt) / recent.cnt * 100).toFixed(1) : "N/A";
+    const rate24h = today.cnt > 0 ? ((today.cnt - errors24h.cnt) / today.cnt * 100).toFixed(1) : "N/A";
+    lines.push(`  Success:   ${rate1h}% (1h) / ${rate24h}% (24h)`);
+    lines.push("");
+
+    // Top 5 tools
+    const topTools = db.prepare(
+      `SELECT tool_name, COUNT(*) as calls, SUM(CASE WHEN result_status='error' THEN 1 ELSE 0 END) as errs, ROUND(AVG(duration_ms)) as avg_ms
+       FROM tool_call_log WHERE created_at > datetime('now', '-24 hours')
+       GROUP BY tool_name ORDER BY calls DESC LIMIT 5`
+    ).all() as any[];
+
+    if (topTools.length > 0) {
+      lines.push(`${C}Top Tools (24h)${X}`);
+      for (const t of topTools) {
+        const errTag = t.errs > 0 ? `  ${R}${t.errs} err${X}` : "";
+        lines.push(`  ${t.calls.toString().padStart(4)} ${t.tool_name.padEnd(30)} ${t.avg_ms}ms avg${errTag}`);
+      }
+      lines.push("");
+    }
+
+    // Error trend
+    const errPrevHour = db.prepare(
+      `SELECT COUNT(*) as cnt FROM tool_call_log WHERE result_status='error' AND created_at > datetime('now', '-2 hours') AND created_at <= datetime('now', '-1 hour')`
+    ).get() as any;
+    const direction = errors1h.cnt > errPrevHour.cnt ? `${R}increasing${X}` : errors1h.cnt < errPrevHour.cnt ? `${G}decreasing${X}` : `${G}stable${X}`;
+    lines.push(`${C}Error Trend${X}  ${direction} (${errPrevHour.cnt} prev hour → ${errors1h.cnt} this hour)`);
+
+    // Active verification cycles
+    const activeCycles = db.prepare(`SELECT COUNT(*) as cnt FROM verification_cycles WHERE status IN ('active', 'in_progress')`).get() as any;
+    if (activeCycles.cnt > 0) {
+      lines.push(`${C}Active Cycles${X}  ${Y}${activeCycles.cnt} verification cycle(s) in progress${X}`);
+    }
+  } catch (e: any) {
+    lines.push(`${R}Error querying DB: ${e.message}${X}`);
+  }
+
+  db.close();
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
+// ── Diagnose CLI handler (run-and-exit) ───────────────────────────────
+if (diagnoseFlag) {
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const fs = await import("node:fs");
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const R = USE_COLOR ? "\x1b[31m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  const dir = path.join(os.homedir(), ".nodebench");
+  const dbPath = path.join(dir, "nodebench.db");
+
+  if (!fs.existsSync(dbPath)) {
+    console.error("No database found. Run the MCP server first to initialize.");
+    process.exit(1);
+  }
+
+  const Database = (await import("better-sqlite3")).default;
+  const db = new Database(dbPath);
+
+  const lines: string[] = [];
+  lines.push(`${B}NodeBench MCP — Diagnose & Heal${X}`);
+  lines.push("");
+
+  let issueCount = 0;
+  let healedCount = 0;
+
+  // 1. Orphaned verification cycles
+  try {
+    const orphanedCount = (db.prepare(
+      `SELECT COUNT(*) as cnt FROM verification_cycles WHERE status IN ('active', 'in_progress') AND created_at < datetime('now', '-48 hours')`
+    ).get() as any).cnt;
+    if (orphanedCount > 0) {
+      lines.push(`${Y}DRIFT${X}  ${orphanedCount} orphaned verification cycle(s) (>48h old)`);
+      const result = db.prepare(
+        `UPDATE verification_cycles SET status = 'abandoned', updated_at = datetime('now') WHERE status IN ('active', 'in_progress') AND created_at < datetime('now', '-48 hours')`
+      ).run();
+      lines.push(`  ${G}HEALED${X}  Abandoned ${result.changes} cycles in batch`);
+      healedCount += result.changes;
+      issueCount += orphanedCount;
+    } else {
+      lines.push(`${G}OK${X}     No orphaned verification cycles`);
+    }
+  } catch { lines.push(`${Y}SKIP${X}   Could not check verification cycles`); }
+
+  // 2. Stale eval runs
+  try {
+    const staleCount = (db.prepare(
+      `SELECT COUNT(*) as cnt FROM eval_runs WHERE status IN ('running', 'pending') AND created_at < datetime('now', '-24 hours')`
+    ).get() as any).cnt;
+    if (staleCount > 0) {
+      lines.push(`${Y}DRIFT${X}  ${staleCount} stale eval run(s) (>24h old)`);
+      const result = db.prepare(
+        `UPDATE eval_runs SET status = 'failed', completed_at = datetime('now') WHERE status IN ('running', 'pending') AND created_at < datetime('now', '-24 hours')`
+      ).run();
+      lines.push(`  ${G}HEALED${X}  Marked ${result.changes} eval runs as failed`);
+      healedCount += result.changes;
+      issueCount += staleCount;
+    } else {
+      lines.push(`${G}OK${X}     No stale eval runs`);
+    }
+  } catch { lines.push(`${Y}SKIP${X}   Could not check eval runs`); }
+
+  // 3. DB size
+  const dbInfo = fs.statSync(dbPath);
+  const dbSizeMb = dbInfo.size / (1024 * 1024);
+  if (dbSizeMb > 500) {
+    lines.push(`${Y}DRIFT${X}  Database is ${dbSizeMb.toFixed(1)} MB`);
+    try {
+      const cutoff = new Date(Date.now() - 90 * 24 * 3_600_000).toISOString();
+      const deleted = db.prepare(`DELETE FROM tool_call_log WHERE created_at < ?`).run(cutoff);
+      if (deleted.changes > 0) {
+        lines.push(`  ${G}HEALED${X}  Pruned ${deleted.changes} tool_call_log entries older than 90 days`);
+        healedCount++;
+      }
+      db.pragma("wal_checkpoint(TRUNCATE)");
+      lines.push(`  ${G}HEALED${X}  Ran WAL checkpoint`);
+      healedCount++;
+    } catch { /* skip */ }
+    issueCount++;
+  } else {
+    lines.push(`${G}OK${X}     Database size: ${dbSizeMb.toFixed(1)} MB`);
+  }
+
+  // 4. Error rate
+  try {
+    const calls1h = (db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE created_at > datetime('now', '-1 hour')`).get() as any).cnt;
+    const errors1h = (db.prepare(`SELECT COUNT(*) as cnt FROM tool_call_log WHERE result_status='error' AND created_at > datetime('now', '-1 hour')`).get() as any).cnt;
+    const rate = calls1h > 0 ? (errors1h / calls1h * 100) : 0;
+    if (rate > 20 && calls1h > 5) {
+      lines.push(`${R}ALERT${X}  Error rate ${rate.toFixed(1)}% in last hour (${errors1h}/${calls1h})`);
+      issueCount++;
+    } else {
+      lines.push(`${G}OK${X}     Error rate: ${rate.toFixed(1)}% (${errors1h}/${calls1h} in last hour)`);
+    }
+  } catch { lines.push(`${Y}SKIP${X}   Could not check error rates`); }
+
+  // 5. Embedding cache
+  const cachePath = path.join(dir, "embedding_cache.json");
+  if (fs.existsSync(cachePath)) {
+    const cacheAge = Math.round((Date.now() - fs.statSync(cachePath).mtimeMs) / 3_600_000);
+    if (cacheAge > 168) {
+      lines.push(`${Y}DRIFT${X}  Embedding cache is ${cacheAge}h old (>7 days) — will refresh on next server start`);
+      issueCount++;
+    } else {
+      lines.push(`${G}OK${X}     Embedding cache: ${cacheAge}h old`);
+    }
+  } else {
+    lines.push(`${Y}INFO${X}   No embedding cache found (will build on first server start)`);
+  }
+
+  // Summary
+  lines.push("");
+  if (issueCount === 0) {
+    lines.push(`${G}${B}All clear${X} — no drift detected`);
+  } else {
+    lines.push(`${B}Found ${issueCount} issue(s), healed ${healedCount}${X}`);
+    const remaining = issueCount - healedCount;
+    if (remaining > 0) lines.push(`${Y}${remaining} issue(s) require manual attention${X}`);
+  }
+
+  db.close();
+  console.log(lines.join("\n"));
+  process.exit(0);
+}
+
+// ── Sync Configs CLI handler (run-and-exit) ─────────────────────────────
+if (syncConfigsFlag) {
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const fs = await import("node:fs");
+  const USE_COLOR = process.stdout.isTTY;
+  const B = USE_COLOR ? "\x1b[1m" : "";
+  const C = USE_COLOR ? "\x1b[36m" : "";
+  const G = USE_COLOR ? "\x1b[32m" : "";
+  const Y = USE_COLOR ? "\x1b[33m" : "";
+  const X = USE_COLOR ? "\x1b[0m" : "";
+
+  // Detect the nodebench-mcp entry point path
+  const entryPath = path.resolve(
+    new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, "$1") // fix Windows drive letter
+  );
+
+  // Build args array from current CLI flags (exclude --sync-configs and other run-and-exit flags)
+  const forwardArgs: string[] = [];
+  const skipNext = new Set(["--preset", "--toolsets", "--exclude", "--engine-secret"]);
+  const runAndExitFlags = new Set([
+    "--sync-configs", "--health", "--status", "--diagnose", "--stats",
+    "--export-stats", "--reset-stats", "--list-presets", "--smart-preset",
+    "--auto-preset", "--help",
+  ]);
+  for (let i = 0; i < cliArgs.length; i++) {
+    if (runAndExitFlags.has(cliArgs[i])) continue;
+    if (cliArgs[i].startsWith("--explain")) continue;
+    if (skipNext.has(cliArgs[i])) {
+      forwardArgs.push(cliArgs[i], cliArgs[i + 1] ?? "");
+      i++; // skip the value
+      continue;
+    }
+    forwardArgs.push(cliArgs[i]);
+  }
+
+  // Collect env vars that are currently set
+  const ENV_KEYS = [
+    "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY",
+    "GITHUB_TOKEN", "BROWSERBASE_API_KEY", "FIRECRAWL_API_KEY",
+    "SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS",
+    "IMAP_HOST", "IMAP_PORT", "IMAP_USER", "IMAP_PASS",
+    "ENGINE_SECRET",
+  ];
+  const envObj: Record<string, string> = {};
+  for (const key of ENV_KEYS) {
+    if (process.env[key]) envObj[key] = process.env[key]!;
+  }
+
+  // Build the MCP server config entry
+  const nodePath = process.execPath; // path to node binary
+  const serverEntry: Record<string, unknown> = {
+    command: nodePath,
+    args: [entryPath, ...forwardArgs],
+    ...(Object.keys(envObj).length > 0 ? { env: envObj } : {}),
+  };
+
+  // Helper: merge into existing config file (preserves other servers)
+  function mergeConfig(filePath: string, serverKey: string): { action: string; path: string } {
+    let existing: Record<string, unknown> = {};
+    if (fs.existsSync(filePath)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      } catch {
+        // If file exists but is invalid JSON, back it up and start fresh
+        const backupPath = filePath + ".bak";
+        fs.copyFileSync(filePath, backupPath);
+        existing = {};
+      }
+    }
+
+    // Ensure mcpServers key exists
+    if (!existing.mcpServers || typeof existing.mcpServers !== "object") {
+      existing.mcpServers = {};
+    }
+
+    const servers = existing.mcpServers as Record<string, unknown>;
+    const hadExisting = !!servers[serverKey];
+    servers[serverKey] = serverEntry;
+
+    // Ensure parent directory exists
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
+    return { action: hadExisting ? "updated" : "created", path: filePath };
+  }
+
+  const lines: string[] = [];
+  lines.push(`${B}NodeBench MCP — Sync IDE Configs${X}`);
+  lines.push("");
+
+  const results: { name: string; action: string; path: string; error?: string }[] = [];
+
+  // 1. Claude Code: ~/.claude/claude_desktop_config.json
+  try {
+    const claudeConfigPath = path.join(os.homedir(), ".claude", "claude_desktop_config.json");
+    const r = mergeConfig(claudeConfigPath, "nodebench-mcp");
+    results.push({ name: "Claude Code", ...r });
+  } catch (e: any) {
+    results.push({ name: "Claude Code", action: "failed", path: "", error: e.message });
+  }
+
+  // 2. Cursor: <project>/.cursor/mcp.json
+  try {
+    const cursorConfigPath = path.join(process.cwd(), ".cursor", "mcp.json");
+    const r = mergeConfig(cursorConfigPath, "nodebench-mcp");
+    results.push({ name: "Cursor", ...r });
+  } catch (e: any) {
+    results.push({ name: "Cursor", action: "failed", path: "", error: e.message });
+  }
+
+  // 3. Windsurf: <project>/.windsurf/mcp.json
+  try {
+    const windsurfConfigPath = path.join(process.cwd(), ".windsurf", "mcp.json");
+    const r = mergeConfig(windsurfConfigPath, "nodebench-mcp");
+    results.push({ name: "Windsurf", ...r });
+  } catch (e: any) {
+    results.push({ name: "Windsurf", action: "failed", path: "", error: e.message });
+  }
+
+  // Print results
+  for (const r of results) {
+    if (r.action === "failed") {
+      lines.push(`${Y}FAIL${X}  ${r.name}: ${r.error}`);
+    } else {
+      const icon = r.action === "created" ? `${G}NEW${X} ` : `${G}UPD${X} `;
+      lines.push(`${icon} ${r.name}: ${r.path}`);
+    }
+  }
+
+  // Print config summary
+  lines.push("");
+  lines.push(`${C}Config entry:${X}`);
+  lines.push(`  command: ${nodePath}`);
+  lines.push(`  args:    [${[entryPath, ...forwardArgs].map(a => `"${a}"`).join(", ")}]`);
+  if (Object.keys(envObj).length > 0) {
+    lines.push(`  env:     ${Object.keys(envObj).join(", ")}`);
+  } else {
+    lines.push(`  env:     ${Y}(none set)${X}`);
+  }
+
+  lines.push("");
+  const successCount = results.filter(r => r.action !== "failed").length;
+  lines.push(`${B}Written to ${successCount}/${results.length} locations${X}`);
+
+  console.log(lines.join("\n"));
   process.exit(0);
 }
 
@@ -815,6 +1566,62 @@ const _hookState = {
   lastRefreshReminder: 0, // totalCalls at last reminder
 };
 const WEB_TOOL_NAMES = new Set(["web_search", "fetch_url"]);
+
+// ── Intent-based auto-expansion ─────────────────────────────────────────
+// On the first tool call, classify intent from tool name + args keywords
+// and auto-load relevant toolsets if running on the default preset.
+// Zero-latency: pure keyword matching, no LLM calls. Runs once per session.
+let _intentClassified = false;
+
+const INTENT_PATTERNS: Array<{ pattern: RegExp; toolsets: string[] }> = [
+  { pattern: /web|css|html|dom|seo|browser|page|viewport|screenshot|ui_capture|ui_ux/i, toolsets: ["ui_capture", "vision", "web", "seo", "git_workflow", "architect"] },
+  { pattern: /research|paper|arxiv|scholar|literature|digest|brief|rss|feed/i,          toolsets: ["web", "llm", "rss", "email", "docs"] },
+  { pattern: /data|csv|sql|pandas|xlsx|json_parse|spreadsheet|parquet|parse/i,           toolsets: ["local_file", "llm", "web"] },
+  { pattern: /deploy|docker|k8s|kubernetes|ci|cd|pipeline|terraform|helm|infra/i,        toolsets: ["git_workflow", "session_memory", "benchmark", "pattern"] },
+  { pattern: /agent|swarm|orchestr|parallel|multi.?agent|spawn|coordinat/i,              toolsets: ["parallel", "self_eval", "session_memory", "pattern", "toon"] },
+  { pattern: /mobile|ios|android|react.?native|flutter|swift|kotlin/i,                   toolsets: ["ui_capture", "vision", "flicker_detection"] },
+  { pattern: /academic|thesis|review|cite|biblio|latex|peer/i,                           toolsets: ["research_writing", "llm", "web", "local_file"] },
+  { pattern: /content|publish|post|newsletter|email|campaign|linkedin/i,                 toolsets: ["llm", "critter", "email", "rss", "platform", "architect"] },
+];
+
+function classifyAndExpand(toolName: string, args: Record<string, unknown> | undefined): string[] | null {
+  // Only expand if on default preset — user explicitly chose a preset, respect it
+  if (currentPreset !== "default") return null;
+
+  // Build a single haystack from tool name + stringified arg keys/values
+  const argStr = args ? Object.entries(args).map(([k, v]) => `${k} ${typeof v === "string" ? v : ""}`).join(" ") : "";
+  const haystack = `${toolName} ${argStr}`;
+
+  // Collect all matching toolsets (deduplicated)
+  const toLoad = new Set<string>();
+  for (const { pattern, toolsets } of INTENT_PATTERNS) {
+    if (pattern.test(haystack)) {
+      for (const ts of toolsets) {
+        if (TOOLSET_MAP[ts] && !activeToolsets.has(ts)) {
+          toLoad.add(ts);
+        }
+      }
+    }
+  }
+
+  if (toLoad.size === 0) return null;
+
+  // Load matched toolsets
+  for (const ts of toLoad) {
+    activeToolsets.add(ts);
+  }
+
+  // Rebuild tool arrays
+  domainTools = [...activeToolsets].flatMap(k => TOOLSET_MAP[k] ?? []);
+  const newMetaTools = createMetaTools(domainTools);
+  allToolsWithoutDiscovery = [...domainTools, ...newMetaTools];
+  rebuildAllTools();
+
+  // Notify client of tool list change
+  server.notification({ method: "notifications/tools/list_changed" }).catch(() => {});
+
+  return [...toLoad];
+}
 const SAVE_TOOL_NAMES = new Set(["save_session_note", "record_learning"]);
 const REFRESH_INTERVAL = 30; // remind after every 30 calls
 
@@ -892,6 +1699,58 @@ PARALLEL AGENTS? If using Claude Code subagents or multiple terminals:
     ],
   },
   {
+    name: "execution-trace-workflow",
+    description:
+      "Start and maintain a traceable execution run. Use this for any workflow that needs receipts, evidence, decisions, verification, approvals, and a durable audit trail.",
+    arguments: [
+      {
+        name: "workflowTitle",
+        description: "Human-readable title for the run",
+        required: true,
+      },
+      {
+        name: "workflowGoal",
+        description: "What the workflow must accomplish",
+        required: true,
+      },
+      {
+        name: "workflowType",
+        description: "Optional workflow label such as spreadsheet_enrichment or company_direction_analysis",
+        required: false,
+      },
+    ],
+    messages: (args: Record<string, string>) => [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Run this task as a fully traceable execution workflow.
+
+Title: ${args.workflowTitle}
+Goal: ${args.workflowGoal}
+Workflow type: ${args.workflowType || "execution_trace"}
+
+Required operating loop:
+1. Call start_execution_run first. Create one durable run before doing substantive work.
+2. Record every meaningful action with record_execution_step. Do this for inspect, research, edit, verify, export, and issue-fix steps.
+3. Attach evidence as you go with attach_execution_evidence. Store URLs, uploaded files, renders, screenshots, logs, and notes.
+4. Record explicit choices with record_execution_decision. Capture alternatives considered, evidence basis, confidence, and limitations. Do not expose raw chain-of-thought.
+5. Record QA checks with record_execution_verification. Use this for render checks, formula checks, diff checks, replay checks, or artifact integrity checks.
+6. If a risky action needs human sign-off, call request_execution_approval before proceeding.
+7. Finish with complete_execution_run and set the final status plus any drift summary if applicable.
+
+Trace standard:
+- Facts and outputs must be evidence-grounded.
+- Decisions must separate verified evidence from inference.
+- Verification must explain what was checked and what passed or failed.
+- Limitations must be explicit instead of implied.
+
+Do not treat the trace as optional. The run should be inspectable after completion by an operator who was not present during execution.`,
+        },
+      },
+    ],
+  },
+  {
     name: "project-setup",
     description:
       "Guided project bootstrapping. Walks you through registering project context so the MCP has full project awareness.",
@@ -918,6 +1777,140 @@ Please gather and record the following using the bootstrap_project tool:
 6. Repository structure highlights
 
 After bootstrapping, run a reconnaissance session with run_recon to check for latest updates on the project's key frameworks and SDKs.`,
+        },
+      },
+    ],
+  },
+  {
+    name: "spreadsheet-enrichment-trace",
+    description:
+      "Traceable workflow for spreadsheet enrichment: inspect workbook, research supporting evidence, edit cells, verify render/calculation quality, and export with receipts.",
+    arguments: [
+      {
+        name: "fileUri",
+        description: "Input spreadsheet path or URI",
+        required: true,
+      },
+      {
+        name: "goal",
+        description: "What the spreadsheet workflow should achieve",
+        required: true,
+      },
+    ],
+    messages: (args: Record<string, string>) => [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Run a traceable spreadsheet-enrichment workflow.
+
+Input spreadsheet: ${args.fileUri}
+Goal: ${args.goal}
+
+Workflow:
+1. Start a run with start_execution_run using workflowName="spreadsheet_enrichment".
+2. Inspect workbook structure, layout, formulas, and formatting. Record this with record_execution_step.
+3. Attach the workbook and any rendered images as evidence with attach_execution_evidence.
+4. If public research is needed, attach source URLs and record the evidence boundary.
+5. Record major ranking or editing choices with record_execution_decision. Include alternatives considered and any unsupported claims.
+6. Perform edits. Record the edit step and attach output artifacts or before/after references.
+7. Verify the workbook. Record calculation checks, render checks, formatting checks, link cleanup, and export checks with record_execution_verification.
+8. Complete the run only after the workbook is exported and the final verification state is known.
+
+Required output discipline:
+- Make changed cells traceable.
+- Distinguish verified facts from inferred recommendations.
+- Record any formatting or hyperlink cleanup as explicit fix steps.
+- Leave behind enough evidence for another operator to replay what happened.`,
+        },
+      },
+    ],
+  },
+  {
+    name: "company-direction-analysis-trace",
+    description:
+      "Traceable workflow for capability-to-product-direction analysis grounded in public evidence, credibility filters, and phased recommendations.",
+    arguments: [
+      {
+        name: "subjectCompany",
+        description: "Company being evaluated",
+        required: true,
+      },
+      {
+        name: "strategicQuestion",
+        description: "The product-direction or capability question being answered",
+        required: true,
+      },
+    ],
+    messages: (args: Record<string, string>) => [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Run a traceable company-direction analysis.
+
+Subject company: ${args.subjectCompany}
+Strategic question: ${args.strategicQuestion}
+
+Required method:
+1. Start a run with start_execution_run using workflowName="company_direction_analysis".
+2. Gather public evidence first. Attach company pages, press, resumes, hiring signals, papers, and adjacent market references as evidence.
+3. Record a decision boundary between:
+   - publicly supported facts
+   - supported but incomplete claims
+   - not established by public evidence
+4. Build a credibility filter. Record explicit decisions for high-credibility, medium-credibility, and low-credibility directions.
+5. Record the final recommendation as a structured decision with alternatives considered, evidence basis, confidence, and limitations.
+6. Record at least one verification step that checks the final memo still reflects the truth boundary and does not overclaim pedigree.
+7. Complete the run after the recommendation, limitations, and evidence links are all attached.
+
+Output rules:
+- Recommendations must stay adjacent to reputation and public proof.
+- Unsupported claims must be clearly labeled as unsupported.
+- The trace should let another operator audit why a direction was recommended or rejected.`,
+        },
+      },
+    ],
+  },
+  {
+    name: "agent-delegation-with-approval-trace",
+    description:
+      "Traceable workflow for delegated agent work with approval gates. Use this when a capable agent can operate, but risky actions still need scoped human sign-off.",
+    arguments: [
+      {
+        name: "task",
+        description: "Delegated task description",
+        required: true,
+      },
+      {
+        name: "riskLevel",
+        description: "Expected risk level: low, medium, or high",
+        required: true,
+      },
+    ],
+    messages: (args: Record<string, string>) => [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `Run a delegated agent workflow with explicit approval boundaries.
+
+Task: ${args.task}
+Risk level: ${args.riskLevel}
+
+Required process:
+1. Start a run with start_execution_run using workflowName="agent_delegation".
+2. Record the initial scope, intended tools, and expected outputs with record_execution_step.
+3. Attach inputs, policies, and constraints as evidence.
+4. Record any material choice or plan update with record_execution_decision.
+5. Before any externally visible, destructive, or high-risk action, call request_execution_approval.
+6. Only continue after the approval state is known, and record the resulting step explicitly.
+7. Record verification that the final output stayed inside scope and honored the approval boundary.
+8. Complete the run with the final status and limitations.
+
+Trust requirements:
+- The operator must be able to see what was attempted, what required approval, and what evidence justified the action.
+- Do not hide uncertainty or skipped approvals inside prose summaries.`,
         },
       },
     ],
@@ -1585,6 +2578,84 @@ Teammate({ operation: "cleanup" })
       },
     ],
   },
+  {
+    name: "thompson-protocol",
+    description:
+      "The Thompson Protocol — 'Calculus Made Easy' approach to content creation. 4-agent pipeline that transforms complex topics into accessible, jargon-free content with analogies, visual metaphors, and anti-elitism safeguards. Use this prompt to instruct an agent on how to run the full Thompson content pipeline.",
+    messages: [
+      {
+        role: "user" as const,
+        content: {
+          type: "text" as const,
+          text: `# The Thompson Protocol — "Calculus Made Easy" for AI Content
+
+You are running the Thompson Protocol content pipeline. This is a multi-agent system
+that transforms complex topics into content that makes the reader feel smart.
+
+Named after Silvanus P. Thompson, who wrote "Calculus Made Easy" (1910) by attacking
+the "preliminary terrors" — the intimidating jargon and elitist gatekeeping — before
+teaching any mechanics.
+
+## Pipeline (execute in order)
+
+### Step 1: Initialize
+\`\`\`
+thompson_pipeline({ topic: "<your topic>", target_audience: "<audience>", output_format: "script|article|thread|explainer" })
+\`\`\`
+This returns the full execution plan with system prompts for each agent.
+
+### Step 2: Write (Thompson Writer)
+\`\`\`
+thompson_write({ topic: "<topic>", target_audience: "<audience>" })
+\`\`\`
+Then use \`call_llm\` with the returned system_prompt to generate plain-English content.
+Every technical term MUST have an "in other words..." analogy.
+
+### Step 3: Edit (Feynman Editor — max 3 cycles)
+\`\`\`
+thompson_feynman_edit({ sections: "<writer output>", rewrite_cycle: 1 })
+\`\`\`
+The Skeptical Beginner reviews against 8 rejection criteria.
+If any section gets REWRITE → send back to thompson_write with fix instructions.
+Loop max 3 times. After 3, escalate stuck sections.
+
+### Step 4: Visual Map
+\`\`\`
+thompson_visual_map({ sections: "<approved sections>", visual_style: "line_art" })
+\`\`\`
+Generates image prompts that map 1:1 with text analogies. No generic b-roll.
+
+### Step 5: Anti-Elitism Lint
+\`\`\`
+thompson_anti_elitism_lint({ content: "<full text>" })
+\`\`\`
+Deterministic scan: 22 banned phrases, readability metrics, jargon density.
+Zero LLM cost — pure regex + math.
+
+### Step 6: Quality Gate
+\`\`\`
+thompson_quality_gate({ writer_output: "...", feynman_verdict: "...", lint_result: "..." })
+\`\`\`
+10-point boolean checklist → grade (exemplary/passing/needs_work/failing).
+Only distribute if passing or exemplary.
+
+## Core Principles (non-negotiable)
+1. **Plain English Mandate**: Every jargon term gets an "in other words..." with a household analogy
+2. **Intuition Before Mechanics**: Explain WHY before HOW
+3. **Acknowledge Difficulty**: Validate reader confusion ("This sounds terrifying, but...")
+4. **No Elitism**: Ban "it is obvious", "as we all know", "simply put", "just do X"
+5. **Progressive Complexity**: Start with simplest true statement, layer up
+6. **Visual = Analogy**: Every visual reinforces a specific text metaphor, 1:1
+7. **12-Year-Old Bar**: If a 12-year-old can't understand it, rewrite it
+
+## After Pipeline
+- \`save_session_note\` — persist Thompson-processed content
+- \`record_learning\` — log which analogies and styles worked best
+- Use \`content_publish\` workflow chain for distribution`,
+        },
+      },
+    ],
+  },
 ];
 
 // Server instructions — tells Claude Code Tool Search (and other clients) when to search
@@ -1606,7 +2677,7 @@ Use NodeBench tools when you need to:
 Start with discover_tools("<your task>") to find the right tool.`;
 
 const server = new Server(
-  { name: "nodebench-mcp-methodology", version: "2.29.0" },
+  { name: "nodebench-mcp-methodology", version: "2.30.0" },
   {
     capabilities: { tools: { listChanged: true }, prompts: {} },
     instructions: SERVER_INSTRUCTIONS,
@@ -1624,10 +2695,12 @@ try {
 
 // Handle tools/list — return all tools with their JSON Schema inputSchemas
 // Includes MCP 2025-11-25 spec annotations: category, phase, complexity (model tier hint)
+// + MCP security annotations: readOnlyHint, destructiveHint, openWorldHint
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: allTools.map((t) => {
       const entry = TOOL_REGISTRY.get(t.name);
+      const securityAnnotations = getToolAnnotations(t.name);
       return {
         name: t.name,
         description: t.description,
@@ -1638,8 +2711,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             category: entry.category,
             phase: entry.phase,
             complexity: getToolComplexity(t.name),
+            ...securityAnnotations,
           },
-        } : {}),
+        } : {
+          annotations: {
+            ...securityAnnotations,
+          },
+        }),
       };
     }),
   };
@@ -1650,6 +2728,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   _abToolCallCount++;
   if (name === "load_toolset" || name === "unload_toolset") _abLoadEventCount++;
+
+  // Intent-based auto-expansion: on first call, classify and load relevant toolsets
+  if (!_intentClassified) {
+    _intentClassified = true;
+    const expanded = classifyAndExpand(name, args as Record<string, unknown> | undefined);
+    if (expanded) {
+      console.error(`[intent-classify] Auto-loaded toolsets: ${expanded.join(", ")} (from tool: ${name})`);
+    }
+  }
 
   const tool = toolMap.get(name);
   if (!tool) {
@@ -1725,18 +2812,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       serialized = JSON.stringify(enrichedResult, null, 2);
     }
 
+    // Security: redact credentials from all tool outputs (single enforcement point)
+    const sanitized = redactSecrets(serialized);
+
     const contentBlocks: Array<{ type: "text"; text: string }> = [
-      { type: "text" as const, text: serialized },
+      { type: "text" as const, text: sanitized },
     ];
     if (hookHint) {
       contentBlocks.push({ type: "text" as const, text: hookHint });
     }
+
+    // Audit log: successful tool call
+    auditLog("tool_call", name, JSON.stringify(args ?? {}).substring(0, 200), true);
 
     return {
       content: contentBlocks,
       isError: false,
     };
   } catch (err: any) {
+    // Security errors get a clean response (not a stack trace)
+    if (err instanceof SecurityError) {
+      auditLog("tool_call", name, JSON.stringify(args ?? {}).substring(0, 200), false, err.message);
+      return {
+        content: [{ type: "text" as const, text: `[SECURITY] ${err.message}` }],
+        isError: true,
+      };
+    }
+
     resultStatus = "error";
     errorMsg = err?.message || "Internal error";
 
@@ -1830,8 +2932,35 @@ try {
   dashboardPort = await startDashboardServer(getDb(), 6274);
 } catch { /* dashboard is optional — don't block MCP */ }
 
+// Start engine API server (non-blocking, best-effort)
+let enginePort = 0;
+if (useEngine) {
+  try {
+    enginePort = await startEngineServer({
+      toolMap,
+      allTools,
+      workflowChains: WORKFLOW_CHAINS,
+      presets: PRESETS,
+      toolsetMap: TOOLSET_MAP,
+      toolToToolset: TOOL_TO_TOOLSET,
+      secret: engineSecret,
+    }, 6276);
+  } catch { /* engine is optional — don't block MCP */ }
+}
+
+// Start observability watchdog (non-blocking, best-effort)
+try {
+  initObservability(getDb);
+  startWatchdog(getDb());
+} catch { /* observability is optional — don't block MCP */ }
+
+// Graceful shutdown
+process.on("SIGINT", () => { stopWatchdog(); process.exit(0); });
+process.on("SIGTERM", () => { stopWatchdog(); process.exit(0); });
+
 const toolsetInfo = cliArgs.includes("--toolsets") || cliArgs.includes("--exclude") || cliArgs.includes("--preset")
   ? ` [gated: ${domainTools.length} domain + 2 meta]`
   : "";
 const dashInfo = dashboardPort ? ` dashboard at http://127.0.0.1:${dashboardPort}` : "";
-console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo})`);
+const engineInfo = enginePort ? ` engine at http://127.0.0.1:${enginePort}` : "";
+console.error(`nodebench-mcp ready (${allTools.length} tools, ${PROMPTS.length} prompts${toolsetInfo}, SQLite at ~/.nodebench/${dashInfo}${engineInfo})`);

@@ -142,7 +142,7 @@ export const RelatedFeedsGrid: React.FC<RelatedFeedsGridProps> = ({
             <button
               key={`${item.itemId}-${idx}`}
               onClick={() => onItemClick?.(item)}
-              className="group text-left p-3 bg-white rounded-lg border border-edge hover:border-indigo-300 transition-all duration-200"
+              className="group text-left p-3 bg-surface rounded-lg border border-edge hover:border-indigo-300 transition-all duration-200"
             >
               {/* Match Indicator */}
               <div className="flex items-center gap-2 mb-2">

@@ -146,6 +146,19 @@ async function signInIfPrompted(page: Page) {
   }
 }
 
+async function navigateWithinApp(page: Page, targetPath: string) {
+  if (targetPath === "/") {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+  } else {
+    await page.evaluate((path) => {
+      history.pushState({}, "", path);
+      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    }, targetPath);
+  }
+  await page.waitForSelector("#main-content", { state: "visible", timeout: 60_000 });
+  await page.waitForTimeout(900);
+}
+
 async function ensureNoBlockingModal(page: Page) {
   const overlay = page.locator("div.fixed.inset-0.z-50");
   for (let i = 0; i < 6; i++) {
@@ -270,8 +283,8 @@ test.describe("Full UI Dogfood", () => {
       for (const route of selectedRoutes) {
         console.log(`  Route: ${route.path}`);
         activeRoute = route.path;
-        await page.goto(route.path, { waitUntil: "networkidle" });
-        await page.waitForTimeout(1500); // Wait for animations
+        await navigateWithinApp(page, route.path);
+        await page.waitForTimeout(600); // Wait for animations
         await expect(page.getByText("Something went wrong")).toHaveCount(0);
         await page.screenshot({
           path: `test-results/full-ui-dogfood/${route.name}${variant.suffix}.png`,
@@ -289,8 +302,7 @@ test.describe("Full UI Dogfood", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await setTheme(page, "dark");
     activeRoute = "/";
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(600);
+    await navigateWithinApp(page, "/");
 
     await ensureNoBlockingModal(page);
 
@@ -354,8 +366,7 @@ test.describe("Full UI Dogfood", () => {
 
     // Assistant panel
     activeRoute = "/";
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(600);
+    await navigateWithinApp(page, "/");
     const assistantBtn = page.getByRole("button", { name: "Assistant" }).first();
     if (await assistantBtn.count()) {
       await assistantBtn.click({ force: true });
@@ -376,8 +387,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 1. Agent panel — open, type a message, capture thread view
     activeRoute = "/agents";
-    await page.goto("/agents", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/agents");
+    await page.waitForTimeout(300);
     const agentInput = page.locator("input[placeholder*='Ask anything'], textarea[placeholder*='Ask anything']").first();
     if (await agentInput.count()) {
       await agentInput.click();
@@ -391,8 +402,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 2. Calendar — click a date to open event popover/editor
     activeRoute = "/calendar";
-    await page.goto("/calendar", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/calendar");
+    await page.waitForTimeout(300);
     const calendarDay = page.locator("div[role='button'][aria-pressed]").first();
     if (await calendarDay.count()) {
       await calendarDay.click();
@@ -407,8 +418,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 3. Research Hub — hover on entity links to trigger hover preview
     activeRoute = "/research";
-    await page.goto("/research", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/research");
+    await page.waitForTimeout(300);
     const entityLink = page.locator("button.border-b-2.border-dashed").first();
     if (await entityLink.count()) {
       await entityLink.hover();
@@ -421,8 +432,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 4. Research Briefing — click a signal card to expand details
     activeRoute = "/research/briefing";
-    await page.goto("/research/briefing", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/research/briefing");
+    await page.waitForTimeout(300);
     const signalCard = page.locator("button[aria-expanded][type='button']").first();
     if (await signalCard.count()) {
       await signalCard.click();
@@ -435,8 +446,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 5. Documents — hover a document card for preview
     activeRoute = "/documents";
-    await page.goto("/documents", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/documents");
+    await page.waitForTimeout(300);
     const docCard = page.locator("div[draggable='true']").first();
     if (await docCard.count()) {
       await docCard.hover();
@@ -449,8 +460,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 6. GitHub Explorer — click a repo link
     activeRoute = "/github";
-    await page.goto("/github", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/github");
+    await page.waitForTimeout(300);
     const repoLink = page.locator("a[href*='github.com'][target='_blank']").first();
     if (await repoLink.count()) {
       await repoLink.hover();
@@ -463,8 +474,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 7. Funding Brief — click a deal entry in list panel
     activeRoute = "/funding";
-    await page.goto("/funding", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/funding");
+    await page.waitForTimeout(300);
     const dealBtn = page.locator("button[type='button'].w-full.text-left").first();
     if (await dealBtn.count()) {
       await dealBtn.click();
@@ -477,8 +488,7 @@ test.describe("Full UI Dogfood", () => {
 
     // 8. Search input on home — type and see suggestions
     activeRoute = "/";
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(600);
+    await navigateWithinApp(page, "/");
     const searchInput = page.locator("input[placeholder*='Ask anything']").first();
     if (await searchInput.count()) {
       await searchInput.click();
@@ -506,8 +516,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 10. FastAgentPanel — full chat interaction flow
     activeRoute = "/agents";
-    await page.goto("/agents", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1000);
+    await navigateWithinApp(page, "/agents");
+    await page.waitForTimeout(400);
     // Try to open the FastAgent panel via FAB or inline trigger
     const fabBtn = page.locator("button[aria-label*='Agent'], button[aria-label*='agent']").first();
     if (await fabBtn.count()) {
@@ -560,8 +570,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 13. Swarm lanes / live agent lanes — observe multi-agent execution
     activeRoute = "/agents/live";
-    await page.goto("/agents/live", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1000);
+    await navigateWithinApp(page, "/agents/live");
+    await page.waitForTimeout(400);
     const laneCard = page.locator("[class*='lane'], [class*='agent-card'], [class*='rounded-xl'][class*='border']").first();
     if (await laneCard.count()) {
       await laneCard.hover();
@@ -574,8 +584,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 14. Dogfood review gallery — navigate frames and video
     activeRoute = "/dogfood";
-    await page.goto("/dogfood", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(1000);
+    await navigateWithinApp(page, "/dogfood");
+    await page.waitForTimeout(400);
     // Click a frame thumbnail to select it
     const frameThumbnail = page.locator("button:has(img), [class*='aspect-'][class*='rounded']").first();
     if (await frameThumbnail.count()) {
@@ -598,8 +608,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 16. Task manager — hover task card for details
     activeRoute = "/activity";
-    await page.goto("/activity", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/activity");
+    await page.waitForTimeout(300);
     const taskCard = page.locator("[class*='task-card'], [class*='session-card'], div[class*='rounded-lg border'][class*='p-4']").first();
     if (await taskCard.count()) {
       await taskCard.hover();
@@ -618,8 +628,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 17. Analytics — hover chart data points for tooltips
     activeRoute = "/analytics/recommendations";
-    await page.goto("/analytics/recommendations", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/analytics/recommendations");
+    await page.waitForTimeout(300);
     const chartArea = page.locator("svg .recharts-bar-rectangle, svg rect[class*='recharts'], svg .recharts-line-dot").first();
     if (await chartArea.count()) {
       await chartArea.hover();
@@ -632,8 +642,8 @@ test.describe("Full UI Dogfood", () => {
 
     // 18. MCP Ledger — expand a tool row for details
     activeRoute = "/mcp/ledger";
-    await page.goto("/mcp/ledger", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(800);
+    await navigateWithinApp(page, "/mcp/ledger");
+    await page.waitForTimeout(300);
     const toolRow = page.locator("tr[role='row'], div[role='row']").first();
     if (await toolRow.count()) {
       await toolRow.click();
@@ -646,8 +656,7 @@ test.describe("Full UI Dogfood", () => {
 
     // 19. Keyboard shortcut discovery — press ? to show shortcuts overlay
     activeRoute = "/";
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(600);
+    await navigateWithinApp(page, "/");
     await page.keyboard.press("?");
     await page.waitForTimeout(500);
     const shortcutsOverlay = page.locator("[role='dialog'], [class*='shortcuts'], [class*='overlay']").first();

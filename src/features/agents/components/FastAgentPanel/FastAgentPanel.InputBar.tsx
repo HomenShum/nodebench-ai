@@ -179,6 +179,8 @@ interface FastAgentInputBarProps {
   // Response length control
   responseLength?: 'brief' | 'detailed' | 'exhaustive';
   onResponseLengthChange?: (length: 'brief' | 'detailed' | 'exhaustive') => void;
+  /** Voice intent router — intercepts UI commands before agent send. Return true if handled. */
+  onVoiceIntent?: (text: string, source?: 'voice' | 'text') => boolean;
 }
 
 /**
@@ -209,6 +211,7 @@ export function FastAgentInputBar({
   onSpawn,
   responseLength = 'detailed',
   onResponseLengthChange,
+  onVoiceIntent,
 }: FastAgentInputBarProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null);
@@ -223,16 +226,37 @@ export function FastAgentInputBar({
   const [showMentions, setShowMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const MENTION_OPTIONS = [
-    { label: '@web', description: 'Search the web', icon: 'ðŸŒ' },
-    { label: '@docs', description: 'Search documents', icon: 'ðŸ“„' },
-    { label: '@code', description: 'Analyze code', icon: 'ðŸ’»' },
-    { label: '@data', description: 'Query data sources', icon: 'ðŸ“Š' },
-    { label: '@deep', description: 'Deep research mode', icon: 'ðŸ”¬' },
+    { label: '@web', description: 'Search the web', icon: 'WEB' },
+    { label: '@docs', description: 'Search documents', icon: 'DOC' },
+    { label: '@code', description: 'Analyze code', icon: 'DEV' },
+    { label: '@data', description: 'Query data sources', icon: 'DB' },
+    { label: '@deep', description: 'Deep research mode', icon: 'R&D' },
   ];
 
   // Speech-to-text state
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const sendTextRef = useRef<(content?: string) => void>(() => {});
+  const [voiceConfirmation, setVoiceConfirmation] = useState<string | null>(null);
+  const voiceConfirmationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashVoiceConfirmation = useCallback((text: string) => {
+    setVoiceConfirmation(`Voice command: ${text}`);
+    if (voiceConfirmationTimerRef.current) {
+      clearTimeout(voiceConfirmationTimerRef.current);
+    }
+    voiceConfirmationTimerRef.current = setTimeout(() => {
+      setVoiceConfirmation(null);
+    }, 1500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (voiceConfirmationTimerRef.current) {
+        clearTimeout(voiceConfirmationTimerRef.current);
+      }
+    };
+  }, []);
 
   const toggleSpeechToText = useCallback(() => {
     if (isListening && recognitionRef.current) {
@@ -262,11 +286,21 @@ export function FastAgentInputBar({
       setInput(finalTranscript + interim);
     };
     recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      const finalText = finalTranscript.trim();
+      if (!finalText) return;
+      if (onVoiceIntent?.(finalText, 'voice')) {
+        flashVoiceConfirmation(finalText);
+        setInput('');
+        return;
+      }
+      sendTextRef.current(finalText);
+    };
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
-  }, [isListening, input, setInput]);
+  }, [flashVoiceConfirmation, input, isListening, onVoiceIntent, setInput]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -467,11 +501,19 @@ export function FastAgentInputBar({
     }
   }, [isStreaming]);
 
-  const handleSend = () => {
-    const trimmed = input.trim();
+  const handleSend = useCallback((content?: string) => {
+    const trimmed = (content ?? input).trim();
     const hasSelection = selection !== null;
     const hasCalendarEvents = contextCalendarEvents.length > 0;
     if ((!trimmed && attachedFiles.length === 0 && !hasSelection && !hasCalendarEvents) || isStreaming) return;
+
+    // Voice intent router — intercept UI commands before agent send
+    if (trimmed && onVoiceIntent?.(trimmed, 'text')) {
+      flashVoiceConfirmation(trimmed);
+      setInput('');
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      return;
+    }
 
     // Check for /spawn command
     if (trimmed.toLowerCase().startsWith('/spawn ') && onSpawn) {
@@ -513,14 +555,16 @@ export function FastAgentInputBar({
       onSend(messageWithContext);
       if (hasSelection) clearSelection();
     } else {
-      onSend();
+      onSend(trimmed || undefined);
     }
 
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-  };
+  }, [attachedFiles.length, clearSelection, contextCalendarEvents, contextCalendarEvents.length, flashVoiceConfirmation, input, isStreaming, onSend, onSpawn, onVoiceIntent, selection, setInput]);
+
+  sendTextRef.current = handleSend;
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Handle slash command navigation
@@ -728,7 +772,7 @@ export function FastAgentInputBar({
 
       {/* Recording Modal */}
       {isRecording && recordingMode && (
-        <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-black/20 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[1001] flex items-center justify-center bg-surface-secondary backdrop-blur-sm">
           <MediaRecorderComponent
             mode={recordingMode}
             onRecordingComplete={handleRecordingComplete}
@@ -743,7 +787,7 @@ export function FastAgentInputBar({
       {/* Main Input Card */}
       <div className={cn(
         "bg-surface rounded-lg border border-edge shadow-sm transition-all duration-200 glass-surface",
-        "focus-within:shadow-md focus-within:border-indigo-500/30 focus-within:ring-2 focus-within:ring-indigo-500/10",
+        "focus-within:shadow-md focus-within:border-indigo-500/30 focus-within:ring-2 focus-within:ring-ring",
         isDragOver && dragFeedback.border
       )}>
 
@@ -977,6 +1021,16 @@ export function FastAgentInputBar({
           </div>
         )}
 
+        {voiceConfirmation && (
+          <div
+            className="mx-3 mb-1 rounded-md border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-[11px] text-violet-200"
+            aria-live="polite"
+            role="status"
+          >
+            {voiceConfirmation}
+          </div>
+        )}
+
         {/* Input Area */}
         <div className="p-3 flex items-end gap-1.5">
           {/* Attachment Button */}
@@ -996,6 +1050,13 @@ export function FastAgentInputBar({
             type="button"
             onClick={toggleSpeechToText}
             disabled={isStreaming || isRecording}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && isListening && recognitionRef.current) {
+                event.preventDefault();
+                recognitionRef.current.stop();
+                setIsListening(false);
+              }
+            }}
             className={cn(
               "p-2 rounded-lg transition-all duration-200",
               isListening
@@ -1003,6 +1064,7 @@ export function FastAgentInputBar({
                 : "text-content-muted hover:text-content hover:bg-surface-secondary"
             )}
             title={isListening ? "Stop listening" : "Voice input (speech-to-text)"}
+            aria-label={isListening ? "Stop listening" : "Voice input using speech recognition"}
           >
             <Mic className="w-4.5 h-4.5" />
           </button>
@@ -1168,7 +1230,7 @@ export function FastAgentInputBar({
             </button>
           ) : (
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!canSend}
               className={cn(
                 "press-scale p-2.5 rounded-lg",
@@ -1201,4 +1263,3 @@ export function FastAgentInputBar({
     </div>
   );
 }
-

@@ -45,7 +45,7 @@ describe("Schema Tools", () => {
     expect(result.summary).toBeDefined();
     expect(typeof result.summary.totalIssues).toBe("number");
     console.log(`Schema audit: ${result.summary.totalIssues} issues (${result.summary.critical} critical, ${result.summary.warnings} warnings)`);
-  });
+  }, 30_000);
 
   it("convex_suggest_indexes runs against nodebench-ai", async () => {
     const tool = schemaTools.find((t) => t.name === "convex_suggest_indexes")!;

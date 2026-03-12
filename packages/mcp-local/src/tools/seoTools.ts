@@ -18,6 +18,39 @@ import type { McpTool } from "../types.js";
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+const MAX_RESPONSE_BYTES = 5_242_880; // 5 MB
+
+// SSRF blocklist — block private/internal network ranges
+const SSRF_BLOCKED_PATTERNS = [
+  /^https?:\/\/localhost/i,
+  /^https?:\/\/127\./,
+  /^https?:\/\/0\./,
+  /^https?:\/\/10\./,
+  /^https?:\/\/172\.(1[6-9]|2\d|3[01])\./,
+  /^https?:\/\/192\.168\./,
+  /^https?:\/\/169\.254\./,
+  /^https?:\/\/\[::1\]/,
+  /^https?:\/\/\[fd/i,
+  /^https?:\/\/\[fe80:/i,
+  /^https?:\/\/metadata\./i,
+];
+
+function validateSeoUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return "Only http/https URLs are allowed";
+    }
+    for (const pattern of SSRF_BLOCKED_PATTERNS) {
+      if (pattern.test(url)) {
+        return "URL points to a blocked internal/private network address";
+      }
+    }
+    return null;
+  } catch {
+    return "Invalid URL";
+  }
+}
 
 function createAbortSignal(timeoutMs: number): AbortSignal {
   const controller = new AbortController();
@@ -25,11 +58,47 @@ function createAbortSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
+async function readBoundedText(response: Response, maxBytes: number): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return await response.text();
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel();
+      break;
+    }
+    chunks.push(value);
+  }
+
+  const merged = new Uint8Array(Math.min(totalBytes, maxBytes));
+  let offset = 0;
+  for (const chunk of chunks) {
+    const toCopy = Math.min(chunk.byteLength, maxBytes - offset);
+    merged.set(chunk.subarray(0, toCopy), offset);
+    offset += toCopy;
+    if (offset >= maxBytes) break;
+  }
+
+  return new TextDecoder().decode(merged);
+}
+
 async function safeFetch(
   url: string,
   timeoutMs: number = DEFAULT_TIMEOUT_MS,
   options: RequestInit = {},
 ): Promise<{ ok: boolean; status: number; headers: Headers; text: string; error?: string }> {
+  // SSRF validation
+  const ssrfError = validateSeoUrl(url);
+  if (ssrfError) {
+    return { ok: false, status: 0, headers: new Headers(), text: "", error: ssrfError };
+  }
+
   try {
     const res = await fetch(url, {
       signal: createAbortSignal(timeoutMs),
@@ -40,7 +109,7 @@ async function safeFetch(
       redirect: "follow",
       ...options,
     });
-    const text = await res.text();
+    const text = await readBoundedText(res, MAX_RESPONSE_BYTES);
     return { ok: res.ok, status: res.status, headers: res.headers, text };
   } catch (e: any) {
     return {

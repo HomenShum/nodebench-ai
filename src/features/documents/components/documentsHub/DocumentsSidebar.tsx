@@ -1,5 +1,6 @@
 import { Plus, Sparkles, FileText, Grid3X3, Edit3 } from "lucide-react";
 import type { Id } from "../../../../../convex/_generated/dataModel";
+import { sanitizeDocumentTitle } from "@/lib/displayText";
 import { TaskRowGlobal } from "./rows";
 
 interface DocumentsSidebarProps {
@@ -49,7 +50,7 @@ export function DocumentsSidebar({
             <button
               type="button"
               onClick={onAddTask}
-              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
+              className="btn-primary-sm flex items-center gap-2 text-sm"
               disabled={!loggedInUser}
               title={!loggedInUser ? "Please sign in to create tasks" : undefined}
             >
@@ -68,7 +69,7 @@ export function DocumentsSidebar({
               <button
                 type="button"
                 onClick={onAddTask}
-                className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                className="btn-primary-sm"
                 disabled={!loggedInUser}
               >
                 Create your first task
@@ -121,16 +122,16 @@ export function DocumentsSidebar({
         {(recentDocuments?.length ?? 0) === 0 ? (
           <p className="text-sm text-content-secondary">No recent documents</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2 pb-24 lg:pb-12">
             {recentDocuments?.slice(0, 5).map((doc: any) => (
               <li key={doc._id}>
                 <button
                   type="button"
                   className="w-full text-left text-sm px-3 py-2 rounded-md border border-edge bg-surface-secondary hover:bg-surface-hover text-content transition-colors"
                   onClick={() => onSelectDocument(doc._id as Id<"documents">)}
-                  title={doc.title ?? "Untitled"}
+                  title={sanitizeDocumentTitle(doc.title, "Untitled")}
                 >
-                  <span className="line-clamp-1">{doc.title ?? "Untitled"}</span>
+                  <span className="line-clamp-1">{sanitizeDocumentTitle(doc.title, "Untitled")}</span>
                 </button>
               </li>
             ))}
@@ -150,7 +151,7 @@ export function DocumentsSidebar({
           <button
             type="button"
             onClick={() => onCreateDocument("text")}
-            className="text-xs px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            className="btn-primary-sm px-3 py-2"
           >
             New Doc
           </button>

@@ -721,6 +721,133 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "research",
   },
 
+  // ═══ RESEARCH OPTIMIZER ═══
+  {
+    name: "merge_research_results",
+    category: "research_optimizer",
+    tags: ["merge", "aggregate", "parallel", "sub-agent", "research", "join", "dataset", "coordinator"],
+    quickRef: {
+      nextAction: "Results merged. Use multi_criteria_score to rank options, or compare_options for a side-by-side table.",
+      nextTools: ["multi_criteria_score", "compare_options"],
+      methodology: "agent_contract",
+      tip: "Pass a join_key that exists in all sub-agent records (e.g., 'hotel_name'). Use conflict_resolution to handle overlapping fields.",
+    },
+    phase: "utility",
+  },
+  {
+    name: "multi_criteria_score",
+    category: "research_optimizer",
+    tags: ["score", "optimize", "rank", "criteria", "weight", "MCDM", "decision", "compare", "valuation", "points"],
+    quickRef: {
+      nextAction: "Options scored and ranked. Use compare_options for a formatted report, or run_quality_gate to validate thresholds.",
+      nextTools: ["compare_options", "run_quality_gate", "save_session_note"],
+      methodology: "agent_contract",
+      tip: "Weights must sum to 1.0. Use direction 'minimize' for costs/distances, 'maximize' for value/scores. classify_field adds tier labels (e.g., cpp_value → poor/acceptable/good/excellent).",
+    },
+    phase: "utility",
+  },
+  {
+    name: "compare_options",
+    category: "research_optimizer",
+    tags: ["compare", "table", "report", "side-by-side", "recommendation", "present", "markdown", "format"],
+    quickRef: {
+      nextAction: "Comparison generated. Present to user or save with save_session_note for persistence.",
+      nextTools: ["save_session_note", "send_email", "record_learning"],
+      methodology: "agent_contract",
+      tip: "Pass score_id from multi_criteria_score to auto-load ranked results. Use highlight_fields to control column order.",
+    },
+    phase: "utility",
+  },
+
+  // ═══ WEB SCRAPING (Scrapling) ═══
+  {
+    name: "scrapling_fetch",
+    category: "web_scraping",
+    tags: ["scrape", "fetch", "stealth", "anti-bot", "cloudflare", "tls", "fingerprint", "crawl", "http"],
+    quickRef: {
+      nextAction: "Page fetched. Use scrapling_extract for structured data, or merge_research_results to combine with other sources.",
+      nextTools: ["scrapling_extract", "extract_structured_data", "merge_research_results"],
+      methodology: "agent_contract",
+      tip: "Use tier 'stealth' for Cloudflare-protected sites, 'dynamic' for JS-rendered pages. Default 'http' works for most public pages.",
+    },
+    phase: "research",
+  },
+  {
+    name: "scrapling_extract",
+    category: "web_scraping",
+    tags: ["extract", "css", "xpath", "selector", "structured", "parse", "scrape", "deterministic"],
+    quickRef: {
+      nextAction: "Data extracted. Use merge_research_results to combine sources, or multi_criteria_score to rank options.",
+      nextTools: ["merge_research_results", "multi_criteria_score", "save_session_note"],
+      methodology: "agent_contract",
+      tip: "Zero LLM tokens — deterministic CSS/XPath extraction. Use '::text' suffix for text content, '::attr(href)' for attributes.",
+    },
+    phase: "research",
+  },
+  {
+    name: "scrapling_batch_fetch",
+    category: "web_scraping",
+    tags: ["batch", "parallel", "multi-url", "concurrent", "bulk", "competitive", "comparison"],
+    quickRef: {
+      nextAction: "Batch complete. Use merge_research_results to join results by key, or scrapling_extract on individual pages.",
+      nextTools: ["merge_research_results", "scrapling_extract", "multi_criteria_score"],
+      methodology: "agent_contract",
+      tip: "Up to 20 URLs with 1-10 concurrency. All URLs share the same tier and extraction config.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "scrapling_track_element",
+    category: "web_scraping",
+    tags: ["track", "monitor", "element", "change", "adaptive", "price", "watch", "dom"],
+    quickRef: {
+      nextAction: "Element tracked. Compare with previous snapshots or set up monitoring with save_session_note.",
+      nextTools: ["save_session_note", "scrapling_fetch", "multi_criteria_score"],
+      methodology: "agent_contract",
+      tip: "Scrapling's adaptive tracking survives CSS class renames and DOM restructuring. Great for price monitoring.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "scrapling_crawl",
+    category: "web_scraping",
+    tags: ["crawl", "spider", "multi-page", "sitemap", "deep", "sec", "edgar", "news"],
+    quickRef: {
+      nextAction: "Crawl started. Poll with scrapling_crawl_status to check progress and get items.",
+      nextTools: ["scrapling_crawl_status", "scrapling_crawl_stop"],
+      methodology: "agent_contract",
+      tip: "Returns a session_id. Set domain_whitelist to prevent crawling external sites. Max 500 pages.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "scrapling_crawl_status",
+    category: "web_scraping",
+    tags: ["crawl", "status", "progress", "poll", "items", "results"],
+    quickRef: {
+      nextAction: "Check if crawl is complete. If so, use merge_research_results on the items.",
+      nextTools: ["merge_research_results", "scrapling_crawl_stop", "multi_criteria_score"],
+      methodology: "agent_contract",
+      tip: "Poll periodically until status is 'completed'. Items are available incrementally.",
+    },
+    phase: "research",
+  },
+  {
+    name: "scrapling_crawl_stop",
+    category: "web_scraping",
+    tags: ["crawl", "stop", "abort", "pause", "cancel"],
+    quickRef: {
+      nextAction: "Crawl stopped. Items collected so far are preserved. Process with merge_research_results.",
+      nextTools: ["merge_research_results", "scrapling_crawl_status"],
+      methodology: "agent_contract",
+      tip: "Use when you have enough data or need to abort. Collected items are not lost.",
+    },
+    phase: "research",
+  },
+
   // ═══ GITHUB ═══
   {
     name: "search_github",
@@ -1251,6 +1378,97 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
   },
 
   // ═══ RESEARCH WRITING ═══
+  {
+    name: "start_execution_run",
+    category: "platform",
+    tags: ["execution-trace", "run", "start", "session", "receipt", "workflow", "traceable", "begin"],
+    quickRef: {
+      nextAction: "Execution run started. Record the first meaningful step immediately so the trace has a visible timeline.",
+      nextTools: ["record_execution_step", "attach_execution_evidence", "record_execution_decision"],
+      methodology: "agent_bootstrap",
+      tip: "Use one run per user-visible workflow. Keep the title operator-friendly because it appears in the UI.",
+    },
+    phase: "implement",
+    complexity: "low",
+  },
+  {
+    name: "complete_execution_run",
+    category: "platform",
+    tags: ["execution-trace", "run", "complete", "finish", "close", "status", "traceable", "ship"],
+    quickRef: {
+      nextAction: "Execution run closed. Review the resulting Execution Trace tabs to confirm evidence, decisions, and verification all landed correctly.",
+      nextTools: ["record_learning", "save_session_note"],
+      methodology: "closed_loop",
+      tip: "Pass token usage and toolsUsed when available so the run is useful for later benchmarking.",
+    },
+    phase: "ship",
+    complexity: "low",
+  },
+  {
+    name: "record_execution_step",
+    category: "platform",
+    tags: ["execution-trace", "receipt", "step", "timeline", "workflow", "action", "traceable", "span"],
+    quickRef: {
+      nextAction: "Step recorded. Add evidence for supporting facts and record a decision if the step changed direction or selected an option.",
+      nextTools: ["attach_execution_evidence", "record_execution_decision", "record_execution_verification"],
+      methodology: "closed_loop",
+      tip: "Use this for meaningful transitions only. Good traces read like operator receipts, not noisy debug logs.",
+    },
+    phase: "implement",
+    complexity: "low",
+  },
+  {
+    name: "record_execution_decision",
+    category: "platform",
+    tags: ["execution-trace", "decision", "ranking", "selection", "basis", "alternatives", "confidence", "traceable"],
+    quickRef: {
+      nextAction: "Decision recorded. Attach the evidence that supports it and add a limitation note if the choice depends on incomplete information.",
+      nextTools: ["attach_execution_evidence", "record_execution_verification", "complete_execution_run"],
+      methodology: "verification",
+      tip: "Record the basis and alternatives considered. That gives explainability without exposing raw hidden reasoning.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "record_execution_verification",
+    category: "platform",
+    tags: ["execution-trace", "verification", "qa", "check", "render", "formula", "artifact", "traceable"],
+    quickRef: {
+      nextAction: "Verification recorded. If it failed, fix the issue and record a follow-up verification so the trace shows the correction loop clearly.",
+      nextTools: ["record_execution_step", "complete_execution_run", "record_learning"],
+      methodology: "closed_loop",
+      tip: "Use warnings for incomplete checks, failed for blocking issues, and fixed when the trace should show a successful repair.",
+    },
+    phase: "test",
+    complexity: "low",
+  },
+  {
+    name: "attach_execution_evidence",
+    category: "platform",
+    tags: ["execution-trace", "evidence", "sources", "truth-boundary", "urls", "files", "support", "claims"],
+    quickRef: {
+      nextAction: "Evidence attached. Cross-check that unsupported claims are listed explicitly before you finalize the run.",
+      nextTools: ["record_execution_decision", "record_execution_verification", "complete_execution_run"],
+      methodology: "reconnaissance",
+      tip: "Use supportedClaims and unsupportedClaims to make the truth boundary visible in the run, not just in the final answer.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "request_execution_approval",
+    category: "platform",
+    tags: ["execution-trace", "approval", "human-in-the-loop", "risk", "gate", "policy", "handoff", "traceable"],
+    quickRef: {
+      nextAction: "Approval requested. Pause risky execution and let the operator resolve the pending gate before continuing.",
+      nextTools: ["record_execution_step", "record_execution_verification", "complete_execution_run"],
+      methodology: "quality_gates",
+      tip: "Use for externally visible writes, destructive edits, or any action you would want an operator to justify later.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
   {
     name: "polish_academic_text",
     category: "research_writing",
@@ -2733,6 +2951,597 @@ const REGISTRY_ENTRIES: ToolRegistryEntry[] = [
     phase: "research",
     complexity: "low",
   },
+
+  // AGENT TRAVERSAL — Frontend view navigation for OpenClaw agents
+  // ═══════════════════════════════════════════
+  {
+    name: "list_available_views",
+    category: "agent_traverse",
+    tags: ["views", "manifest", "discover", "navigate", "frontend", "agent", "traversal", "sitemap"],
+    quickRef: {
+      nextAction: "Pick a view from the manifest and navigate to it with navigate_to_view.",
+      nextTools: ["navigate_to_view", "get_view_capabilities"],
+      methodology: "agent_traversal",
+      tip: "Use search parameter to filter by keyword. Returns 27 views with actions, data endpoints, and tags.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_view_capabilities",
+    category: "agent_traverse",
+    tags: ["view", "capabilities", "actions", "tools", "endpoints", "agent", "traversal", "inspect"],
+    quickRef: {
+      nextAction: "Now navigate to the view or invoke its per-view tools with invoke_view_tool.",
+      nextTools: ["navigate_to_view", "invoke_view_tool", "query_view_data"],
+      methodology: "agent_traversal",
+      tip: "Returns full view metadata including per-view WebMCP tools. Call before interacting with a view.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "navigate_to_view",
+    category: "agent_traverse",
+    tags: ["navigate", "view", "route", "go", "switch", "frontend", "agent", "session"],
+    quickRef: {
+      nextAction: "You're on the target view. Use invoke_view_tool for actions or query_view_data for reading.",
+      nextTools: ["invoke_view_tool", "query_view_data", "get_view_state"],
+      methodology: "agent_traversal",
+      tip: "Tracks navigation in session history for audit. Returns target view capabilities.",
+    },
+    phase: "implement",
+    complexity: "low",
+  },
+  {
+    name: "invoke_view_tool",
+    category: "agent_traverse",
+    tags: ["invoke", "tool", "view", "action", "interact", "agent", "per-view", "webmcp"],
+    quickRef: {
+      nextAction: "Check results. Navigate to another view or invoke more tools.",
+      nextTools: ["invoke_view_tool", "navigate_to_view", "get_view_state"],
+      methodology: "agent_traversal",
+      tip: "Auto-detects current view from session. Use get_view_capabilities to see available tools first.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "query_view_data",
+    category: "agent_traverse",
+    tags: ["query", "data", "endpoint", "read", "fetch", "view", "agent", "api"],
+    quickRef: {
+      nextAction: "Process the data. Navigate to another view or invoke view tools.",
+      nextTools: ["invoke_view_tool", "navigate_to_view", "traverse_feed"],
+      methodology: "agent_traversal",
+      tip: "Use get_view_capabilities to see available data endpoints for a view.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "traverse_feed",
+    category: "agent_traverse",
+    tags: ["feed", "traverse", "hot", "new", "top", "rising", "paginate", "moltbook", "discovery"],
+    quickRef: {
+      nextAction: "Process items. Use cursor for next page, or switch feed type.",
+      nextTools: ["traverse_feed", "navigate_to_view", "invoke_view_tool"],
+      methodology: "agent_traversal",
+      tip: "Supports hot/new/top/rising sort across 6 feed types. Cursor-based pagination.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_view_state",
+    category: "agent_traverse",
+    tags: ["state", "session", "history", "audit", "introspect", "agent", "traversal"],
+    quickRef: {
+      nextAction: "Review session state. Continue navigating or end session.",
+      nextTools: ["navigate_to_view", "list_available_views"],
+      methodology: "agent_traversal",
+      tip: "Returns navigation history, interaction log, and session duration for self-awareness.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "get_traversal_plan",
+    category: "agent_traverse",
+    tags: ["plan", "goal", "multi-view", "journey", "strategy", "agent", "traversal", "optimize"],
+    quickRef: {
+      nextAction: "Follow the plan step by step: navigate_to_view for each step, then invoke_view_tool or query_view_data.",
+      nextTools: ["navigate_to_view", "invoke_view_tool", "query_view_data"],
+      methodology: "agent_traversal",
+      tip: "Describe your goal in natural language. Returns ranked views with suggested actions and tools.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+
+  // ENGINE CONTEXT — Accumulated knowledge and content archive
+  // ═══════════════════════════════════════════
+  {
+    name: "get_engine_context_health",
+    category: "engine_context",
+    tags: ["context", "health", "learnings", "trend", "conformance", "knowledge", "accumulated", "engine"],
+    quickRef: {
+      nextAction: "Review context health. If learnings are low, run more workflows. If trend is regressing, investigate failing steps.",
+      nextTools: ["get_workflow_history", "search_content_archive", "search_all_knowledge"],
+      methodology: "ai_flywheel",
+      tip: "Call at session start to understand how much accumulated knowledge is available.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "get_workflow_history",
+    category: "engine_context",
+    tags: ["workflow", "history", "runs", "scores", "grades", "trend", "conformance", "engine"],
+    quickRef: {
+      nextAction: "Compare scores across runs. If regressing, check failed steps. If improving, document what changed.",
+      nextTools: ["get_engine_context_health", "search_all_knowledge", "record_learning"],
+      methodology: "ai_flywheel",
+      tip: "Track conformance scores over time to detect quality drift.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "archive_content",
+    category: "engine_context",
+    tags: ["archive", "content", "save", "digest", "post", "report", "dedup", "themes"],
+    quickRef: {
+      nextAction: "Content archived. Use search_content_archive before next generation to avoid repetition.",
+      nextTools: ["search_content_archive", "get_engine_context_health"],
+      methodology: "ai_flywheel",
+      tip: "Archive every generated digest/post to prevent theme repetition in future runs.",
+    },
+    phase: "ship",
+    complexity: "low",
+  },
+  {
+    name: "search_content_archive",
+    category: "engine_context",
+    tags: ["search", "content", "archive", "fts5", "themes", "dedup", "topics", "covered"],
+    quickRef: {
+      nextAction: "Review results. Adjust new content to cover gaps, not repeat existing themes.",
+      nextTools: ["archive_content", "get_engine_context_health", "search_all_knowledge"],
+      methodology: "ai_flywheel",
+      tip: "Call before generating content to check what's already been covered.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+
+  // ═══ CONTEXT SANDBOX — Context window protection via FTS5 indexing ═══
+  {
+    name: "sandbox_ingest",
+    category: "context_sandbox",
+    tags: ["sandbox", "ingest", "index", "context", "fts5", "chunk", "store", "compress"],
+    quickRef: {
+      nextAction: "Content indexed. Use sandbox_search to query it without pulling raw data into context.",
+      nextTools: ["sandbox_search", "sandbox_stats"],
+      methodology: "context_management",
+      tip: "Use for large API responses, file contents, or any data you want searchable without flooding context.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "sandbox_search",
+    category: "context_sandbox",
+    tags: ["sandbox", "search", "bm25", "fts5", "query", "context", "retrieve", "snippet"],
+    quickRef: {
+      nextAction: "Review search results. Follow up with more specific queries or use sandbox_ingest for new content.",
+      nextTools: ["sandbox_ingest", "sandbox_execute", "sandbox_stats"],
+      methodology: "context_management",
+      tip: "Pass multiple queries as an array to batch all questions in one call.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "sandbox_execute",
+    category: "context_sandbox",
+    tags: ["sandbox", "execute", "shell", "command", "index", "output", "compress", "context"],
+    quickRef: {
+      nextAction: "Output indexed. Use sandbox_search to find specific details. Check exitCode for errors.",
+      nextTools: ["sandbox_search", "sandbox_batch", "sandbox_stats"],
+      methodology: "context_management",
+      tip: "Use instead of raw shell execution for commands producing >20 lines. Pass queries param for immediate search.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "sandbox_batch",
+    category: "context_sandbox",
+    tags: ["sandbox", "batch", "execute", "search", "multi", "efficient", "context", "compress"],
+    quickRef: {
+      nextAction: "Batch complete. Review search results. Use sandbox_search for follow-up queries.",
+      nextTools: ["sandbox_search", "sandbox_stats"],
+      methodology: "context_management",
+      tip: "One sandbox_batch replaces N sandbox_execute + M sandbox_search calls. Use for research phases.",
+    },
+    phase: "utility",
+    complexity: "medium",
+  },
+  {
+    name: "sandbox_stats",
+    category: "context_sandbox",
+    tags: ["sandbox", "stats", "token", "savings", "context", "metrics", "session", "compression"],
+    quickRef: {
+      nextAction: "Review savings ratio. If low, route more heavy outputs through sandbox_execute or sandbox_ingest.",
+      nextTools: ["sandbox_ingest", "sandbox_execute", "sandbox_batch"],
+      methodology: "context_management",
+    },
+    phase: "meta",
+    complexity: "low",
+  },
+  // ── Thompson Protocol (6 tools) ─────────────────────────────────────────
+  {
+    name: "thompson_write",
+    category: "thompson_protocol",
+    tags: ["content", "writing", "plain-english", "analogy", "jargon", "translation", "accessibility", "thompson", "calculus-made-easy"],
+    quickRef: {
+      nextAction: "Content written. Send sections to thompson_feynman_edit for skeptical beginner review.",
+      nextTools: ["thompson_feynman_edit", "call_llm"],
+      methodology: "thompson_protocol",
+      tip: "Use call_llm with the system_prompt from this tool's output to generate the actual content. The tool provides constraints, the LLM does the creative work.",
+    },
+    phase: "implement",
+    complexity: "high",
+  },
+  {
+    name: "thompson_feynman_edit",
+    category: "thompson_protocol",
+    tags: ["editing", "review", "rejection", "readability", "feynman", "skeptical-beginner", "quality", "rewrite"],
+    quickRef: {
+      nextAction: "Review complete. If REWRITE sections exist, send back to thompson_write. If all PASS, proceed to thompson_visual_map.",
+      nextTools: ["thompson_write", "thompson_visual_map"],
+      methodology: "thompson_protocol",
+      tip: "Max 3 rewrite cycles. After 3 consecutive failures on same criterion, escalate to user.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "thompson_visual_map",
+    category: "thompson_protocol",
+    tags: ["visual", "metaphor", "image", "prompt", "analogy", "illustration", "accessibility", "alt-text"],
+    quickRef: {
+      nextAction: "Visual prompts generated. Send content + visuals to thompson_anti_elitism_lint for final scan.",
+      nextTools: ["thompson_anti_elitism_lint"],
+      methodology: "thompson_protocol",
+      tip: "Each visual maps 1:1 with a text analogy. No generic b-roll. Include alt-text for accessibility.",
+    },
+    phase: "implement",
+    complexity: "medium",
+  },
+  {
+    name: "thompson_anti_elitism_lint",
+    category: "thompson_protocol",
+    tags: ["lint", "elitism", "gatekeeping", "banned-phrases", "readability", "inclusivity", "passive-voice", "jargon"],
+    quickRef: {
+      nextAction: "Lint complete. If CLEAN, proceed to thompson_quality_gate. If FLAGGED, fix banned phrases and re-lint.",
+      nextTools: ["thompson_quality_gate", "thompson_write"],
+      methodology: "thompson_protocol",
+      tip: "Fully deterministic — no LLM needed. 22 banned phrase patterns + readability metrics.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "thompson_quality_gate",
+    category: "thompson_protocol",
+    tags: ["quality", "gate", "checklist", "grade", "content", "verification", "thompson"],
+    quickRef: {
+      nextAction: "Quality gate scored. If passing/exemplary, content is ready for distribution. If needs_work/failing, review failing_checks and restart.",
+      nextTools: ["save_session_note", "record_learning", "send_email"],
+      methodology: "thompson_protocol",
+      tip: "10-point boolean checklist. Grade thresholds: exemplary (9-10), passing (7-8), needs_work (5-6), failing (0-4).",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "thompson_pipeline",
+    category: "thompson_protocol",
+    tags: ["pipeline", "orchestrator", "content", "end-to-end", "thompson", "workflow", "multi-agent"],
+    quickRef: {
+      nextAction: "Pipeline plan generated. Execute steps sequentially: thompson_write → thompson_feynman_edit (loop) → thompson_visual_map → thompson_anti_elitism_lint → thompson_quality_gate.",
+      nextTools: ["thompson_write", "call_llm"],
+      methodology: "thompson_protocol",
+      tip: "This is the orchestrator. Start here for end-to-end content transformation. Each step's output feeds the next.",
+    },
+    phase: "meta",
+    complexity: "low",
+  },
+  // ═══ OBSERVABILITY ═══
+  {
+    name: "get_system_pulse",
+    category: "observability",
+    tags: ["health", "status", "pulse", "monitoring", "dashboard", "uptime", "errors", "diagnostics"],
+    quickRef: {
+      nextAction: "Pulse captured. If healthScore < 70, run get_drift_report for details. If critical, run run_self_heal.",
+      nextTools: ["get_drift_report", "run_self_heal", "get_uptime_stats"],
+      tip: "Call this first when investigating system issues — it gives you the full picture in one shot.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "get_drift_report",
+    category: "observability",
+    tags: ["drift", "detection", "orphaned", "stale", "bloat", "maintenance", "audit", "cleanup"],
+    quickRef: {
+      nextAction: "Drift detected. Review healable issues, then call run_self_heal with targets to auto-fix.",
+      nextTools: ["run_self_heal", "get_system_pulse", "cleanup_stale_runs"],
+      tip: "Include include_history=true to see trend over time — one-off spikes are different from sustained degradation.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "run_self_heal",
+    category: "observability",
+    tags: ["heal", "repair", "fix", "autonomous", "maintenance", "cleanup", "self-healing", "auto-fix"],
+    quickRef: {
+      nextAction: "Healing complete. Re-run get_drift_report to verify fixes took effect.",
+      nextTools: ["get_drift_report", "get_system_pulse"],
+      tip: "Use dry_run=true first to preview what would be fixed without actually changing anything.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "get_uptime_stats",
+    category: "observability",
+    tags: ["uptime", "metrics", "calls", "errors", "trends", "rate", "performance", "statistics"],
+    quickRef: {
+      nextAction: "Stats captured. Check error trend direction — if 'increasing', investigate with get_drift_report.",
+      nextTools: ["get_drift_report", "get_system_pulse", "get_trajectory_analysis"],
+      tip: "Compare 1hr vs 24hr error rates — a recent spike in an otherwise stable system needs different treatment than chronic errors.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "set_watchdog_config",
+    category: "observability",
+    tags: ["watchdog", "config", "interval", "thresholds", "monitoring", "background", "schedule"],
+    quickRef: {
+      nextAction: "Watchdog reconfigured. Changes take effect immediately. Check get_watchdog_log after one cycle to verify.",
+      nextTools: ["get_watchdog_log", "get_system_pulse"],
+      tip: "Set interval_minutes=1 for debugging, then raise to 5-10 for normal operation to reduce overhead.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "get_watchdog_log",
+    category: "observability",
+    tags: ["watchdog", "log", "history", "trend", "background", "audit", "timeline"],
+    quickRef: {
+      nextAction: "Log reviewed. If trend is 'degrading', investigate the most common issue type with get_drift_report.",
+      nextTools: ["get_drift_report", "set_watchdog_config", "get_system_pulse"],
+      tip: "Use only_issues=true to filter noise and focus on entries where something actually went wrong.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+  {
+    name: "get_sentinel_report",
+    category: "observability",
+    tags: ["sentinel", "probes", "quality", "testing", "build", "e2e", "voice", "a11y", "visual", "performance"],
+    quickRef: {
+      nextAction: "Report reviewed. For failing probes, check diagnosis root causes and apply suggested fixes.",
+      nextTools: ["get_drift_report", "get_system_pulse", "run_self_heal"],
+      tip: "Use probe_filter to focus on specific areas like 'build,e2e' instead of reviewing all 9 probes.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "get_observability_summary",
+    category: "observability",
+    tags: ["summary", "unified", "health", "sentinel", "watchdog", "quick-check", "overview"],
+    quickRef: {
+      nextAction: "Summary reviewed. Follow nextActions recommendations for highest-impact improvements.",
+      nextTools: ["get_drift_report", "run_self_heal", "get_sentinel_report", "get_uptime_stats"],
+      tip: "Best starting point for any session — gives you MCP health, sentinel status, and watchdog state in one call.",
+    },
+    phase: "utility",
+    complexity: "low",
+  },
+
+  // ═══ TEMPORAL INTELLIGENCE (Unified Temporal Agentic OS) ═══
+  {
+    name: "ingest_temporal_observation",
+    category: "temporal_intelligence",
+    tags: ["temporal", "observation", "ingest", "time-series", "stream", "signal", "data", "event"],
+    quickRef: {
+      nextAction: "Observation ingested. Run detect_temporal_signal on the same streamKey to find patterns, or ingest more observations to build a richer time series.",
+      nextTools: ["detect_temporal_signal", "build_causal_chain", "query_temporal_signals"],
+      methodology: "temporal_agentic_os",
+      tip: "Use consistent streamKey naming (e.g. 'github/commits/repo', 'jira/velocity/team') for clean signal detection.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "detect_temporal_signal",
+    category: "temporal_intelligence",
+    tags: ["temporal", "signal", "detect", "anomaly", "momentum", "regime-shift", "trend", "analysis", "statistics"],
+    quickRef: {
+      nextAction: "Signals detected. Build a causal_chain to explain significant signals, or generate a zero_draft to communicate findings. Use query_temporal_signals to retrieve stored signals.",
+      nextTools: ["build_causal_chain", "generate_zero_draft", "query_temporal_signals", "forecast_temporal_trend"],
+      methodology: "temporal_agentic_os",
+      tip: "Need 5+ numeric observations for momentum, 10+ for regime shift detection. Use lookbackDays to control analysis window.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "build_causal_chain",
+    category: "temporal_intelligence",
+    tags: ["temporal", "causal", "chain", "causality", "root-cause", "analysis", "timeline", "explanation"],
+    quickRef: {
+      nextAction: "Causal chain built. Generate a zero_draft to communicate the analysis, or create a proof_pack to verify the chain's conclusions.",
+      nextTools: ["generate_zero_draft", "create_proof_pack", "detect_temporal_signal"],
+      methodology: "temporal_agentic_os",
+      tip: "Nodes must be chronological. Link evidenceObservationIds to ground each causal step in data.",
+    },
+    phase: "research",
+    complexity: "medium",
+  },
+  {
+    name: "generate_zero_draft",
+    category: "temporal_intelligence",
+    tags: ["temporal", "draft", "artifact", "generate", "email", "slack", "spec", "pr", "content", "auto-draft"],
+    quickRef: {
+      nextAction: "Draft generated. Review the bodyMarkdown, edit as needed, then approve or create a proof_pack before sending.",
+      nextTools: ["create_proof_pack", "detect_temporal_signal", "build_causal_chain"],
+      methodology: "temporal_agentic_os",
+      tip: "Link signal IDs and chain IDs to auto-populate the draft with evidence. Always review before approving.",
+    },
+    phase: "implement",
+    complexity: "high",
+  },
+  {
+    name: "create_proof_pack",
+    category: "temporal_intelligence",
+    tags: ["temporal", "proof", "pack", "verification", "checklist", "metrics", "dogfood", "immutable", "audit"],
+    quickRef: {
+      nextAction: "Proof pack created. If pass rate is 100%, status is 'ready' for approval. Otherwise, address failing items and create a new pack.",
+      nextTools: ["query_temporal_signals", "generate_zero_draft", "detect_temporal_signal"],
+      methodology: "temporal_agentic_os",
+      tip: "100% pass rate auto-sets status to 'ready'. Include metrics for cost/performance tracking.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "query_temporal_signals",
+    category: "temporal_intelligence",
+    tags: ["temporal", "signal", "query", "search", "filter", "retrieve", "list", "status"],
+    quickRef: {
+      nextAction: "Signals retrieved. Investigate high-confidence signals with build_causal_chain, or forecast trends with forecast_temporal_trend.",
+      nextTools: ["build_causal_chain", "forecast_temporal_trend", "detect_temporal_signal", "generate_zero_draft"],
+      methodology: "temporal_agentic_os",
+      tip: "Filter by status='open' to focus on unresolved signals. Use date range to scope analysis.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
+  {
+    name: "forecast_temporal_trend",
+    category: "temporal_intelligence",
+    tags: ["temporal", "forecast", "trend", "prediction", "time-series", "regression", "smoothing", "statistics"],
+    quickRef: {
+      nextAction: "Forecast generated. Compare predictions with actual observations as they arrive. Use detect_temporal_signal to monitor for deviations from forecast.",
+      nextTools: ["detect_temporal_signal", "ingest_temporal_observation", "query_temporal_signals", "generate_zero_draft"],
+      methodology: "temporal_agentic_os",
+      tip: "Linear method works best with clear trends. Exponential smoothing handles noisy data better. Naive is a baseline.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+
+  // ── Mission Harness (Hierarchical execution) ──────────────────────────
+
+  {
+    name: "plan_decompose_mission",
+    category: "mission_harness",
+    tags: ["mission", "planner", "decompose", "subtask", "verifiability", "orchestration", "hierarchy", "execution"],
+    quickRef: {
+      nextAction: "Mission decomposed. Assign agents to subtasks, then use judge_verify_subtask as each completes.",
+      nextTools: ["judge_verify_subtask", "harness_get_mission_status", "harness_list_runs"],
+      methodology: "mission_execution_harness",
+      tip: "Every subtask needs verifiabilityTier + outputContract. Tier 1 = machine-checkable, Tier 2 = expert-checkable.",
+    },
+    phase: "research",
+    complexity: "high",
+  },
+  {
+    name: "judge_verify_subtask",
+    category: "mission_harness",
+    tags: ["judge", "verify", "review", "evidence", "artifact", "verdict", "quality", "gate"],
+    quickRef: {
+      nextAction: "Subtask verified. If passed and requiresSniffCheck, use sniff_record_human_review. If failed, use judge_request_retry.",
+      nextTools: ["sniff_record_human_review", "judge_request_retry", "merge_compose_output", "harness_get_mission_status"],
+      methodology: "mission_execution_harness",
+      tip: "No hardcoded score floors — 0 means 0. Evidence refs create the traceability chain.",
+    },
+    phase: "verify",
+    complexity: "high",
+  },
+  {
+    name: "judge_request_retry",
+    category: "mission_harness",
+    tags: ["retry", "escalate", "replan", "budget", "failure", "recovery", "resilience"],
+    quickRef: {
+      nextAction: "Retry requested. Worker should re-attempt with newInstructions. If budget exhausted, auto-escalates.",
+      nextTools: ["judge_verify_subtask", "harness_get_mission_status", "plan_decompose_mission"],
+      methodology: "mission_execution_harness",
+      tip: "Retry budget enforced — exhausted budget auto-escalates. Use 'stop' only for unverifiable subtasks.",
+    },
+    phase: "verify",
+    complexity: "medium",
+  },
+  {
+    name: "merge_compose_output",
+    category: "mission_harness",
+    tags: ["merge", "compose", "output", "artifact", "boundary", "orchestration", "finalize"],
+    quickRef: {
+      nextAction: "Output merged. If requiresJudgeReview, run judge_verify_subtask on the merge. Otherwise check mission status.",
+      nextTools: ["judge_verify_subtask", "sniff_record_human_review", "harness_get_mission_status"],
+      methodology: "mission_execution_harness",
+      tip: "Judge-gated: all subtasks must be 'passed' before merge. No shared free-for-all editing.",
+    },
+    phase: "ship",
+    complexity: "high",
+  },
+  {
+    name: "sniff_record_human_review",
+    category: "mission_harness",
+    tags: ["human", "review", "sniff", "check", "approval", "block", "concern", "quality"],
+    quickRef: {
+      nextAction: "Sniff-check recorded. If 'block', subtask enters force-retry. If 'pass', proceed to merge.",
+      nextTools: ["merge_compose_output", "judge_request_retry", "harness_get_mission_status"],
+      methodology: "mission_execution_harness",
+      tip: "Issue tags: unsupported_claim, weak_evidence, not_credible, too_risky, scope_drift, missing_source, contradictory, stale_data.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "harness_get_mission_status",
+    category: "mission_harness",
+    tags: ["status", "mission", "dashboard", "trace", "receipt", "progress", "overview"],
+    quickRef: {
+      nextAction: "Review subtask states and decide next action: verify pending subtasks, merge passed ones, or record sniff-checks.",
+      nextTools: ["judge_verify_subtask", "merge_compose_output", "sniff_record_human_review", "harness_list_runs"],
+      methodology: "mission_execution_harness",
+      tip: "Use includeEvidence=true for full traceability audit. Default omits evidence for performance.",
+    },
+    phase: "verify",
+    complexity: "low",
+  },
+  {
+    name: "harness_list_runs",
+    category: "mission_harness",
+    tags: ["list", "runs", "missions", "history", "discovery", "overview"],
+    quickRef: {
+      nextAction: "Pick a run to inspect with harness_get_mission_status, or create a new mission with plan_decompose_mission.",
+      nextTools: ["harness_get_mission_status", "plan_decompose_mission"],
+      methodology: "mission_execution_harness",
+      tip: "Filter by status to find active, failed, or completed runs.",
+    },
+    phase: "research",
+    complexity: "low",
+  },
 ];
 
 // ── Exported lookup structures ───────────────────────────────────────────
@@ -2804,6 +3613,8 @@ const CATEGORY_COMPLEXITY: Record<string, "low" | "medium" | "high"> = {
   visual_qa: "medium",
   local_dashboard: "low",
   design_governance: "low",
+  agent_traverse: "low",
+  engine_context: "low",
 };
 
 /** Per-tool complexity overrides (when category default is wrong) */
@@ -2851,6 +3662,18 @@ const TOOL_COMPLEXITY_OVERRIDES: Record<string, "low" | "medium" | "high"> = {
   solve_storage_upgrade_cost_per_file_from_image: "high",
   // Web
   fetch_url: "low",
+  // Research Optimizer
+  merge_research_results: "low",
+  multi_criteria_score: "low",
+  compare_options: "low",
+  // Web Scraping
+  scrapling_fetch: "low",
+  scrapling_extract: "low",
+  scrapling_batch_fetch: "medium",
+  scrapling_track_element: "medium",
+  scrapling_crawl: "high",
+  scrapling_crawl_status: "low",
+  scrapling_crawl_stop: "low",
   // GitHub
   search_github: "low",
   // Boilerplate
@@ -2869,6 +3692,148 @@ export function getToolComplexity(toolName: string): "low" | "medium" | "high" {
   // 3. Fall back to category default
   if (entry) return CATEGORY_COMPLEXITY[entry.category] ?? "medium";
   return "medium";
+}
+
+// ── MCP security annotations (readOnlyHint, destructiveHint, openWorldHint) ──
+
+import type { McpToolAnnotations } from "../types.js";
+
+/**
+ * Category-level annotation defaults.
+ * Every tool inherits its category's annotations unless overridden per-tool.
+ *
+ * Classification logic:
+ * - readOnlyHint: true  → category only reads/analyzes, no mutations
+ * - destructiveHint: true → category creates, writes, deletes, or sends data
+ * - openWorldHint: true  → category hits external services (network, APIs)
+ */
+const CATEGORY_ANNOTATIONS: Record<string, McpToolAnnotations> = {
+  // ── Read-only categories (no side effects, no network) ──
+  reconnaissance:        { readOnlyHint: true },
+  progressive_discovery: { readOnlyHint: true },
+  meta:                  { readOnlyHint: true },
+  toon:                  { readOnlyHint: true },
+  pattern:               { readOnlyHint: true },
+  local_file:            { readOnlyHint: true },
+  architect:             { readOnlyHint: true },
+  local_dashboard:       { readOnlyHint: true },
+  design_governance:     { readOnlyHint: true },
+  agent_traverse:        { readOnlyHint: true },
+  observability:         { readOnlyHint: true },
+  research_optimizer:    { readOnlyHint: true },
+  documentation:         { readOnlyHint: true },
+  security:              { readOnlyHint: true },
+  gaia_solvers:          { readOnlyHint: true },
+  ui_ux_dive:            { readOnlyHint: true },
+  ui_ux_dive_v2:         { readOnlyHint: true },
+
+  // ── Stateful but non-destructive categories (write to local DB/state) ──
+  verification:          { readOnlyHint: false, destructiveHint: false },
+  eval:                  { readOnlyHint: false, destructiveHint: false },
+  quality_gate:          { readOnlyHint: false, destructiveHint: false },
+  learning:              { readOnlyHint: false, destructiveHint: false },
+  flywheel:              { readOnlyHint: false, destructiveHint: false },
+  session_memory:        { readOnlyHint: false, destructiveHint: false },
+  self_eval:             { readOnlyHint: false, destructiveHint: false },
+  critter:               { readOnlyHint: false, destructiveHint: false },
+  engine_context:        { readOnlyHint: false, destructiveHint: false },
+  qa_orchestration:      { readOnlyHint: false, destructiveHint: false },
+  skill_update:          { readOnlyHint: false, destructiveHint: false },
+  benchmark:             { readOnlyHint: false, destructiveHint: false },
+  thompson_protocol:     { readOnlyHint: false, destructiveHint: false },
+  parallel_agents:       { readOnlyHint: false, destructiveHint: false },
+  research_writing:      { readOnlyHint: false, destructiveHint: false },
+  platform:              { readOnlyHint: false, destructiveHint: false },
+
+  // ── Destructive categories (create, write, delete, execute) ──
+  boilerplate:           { destructiveHint: true },
+  bootstrap:             { destructiveHint: true },
+  git_workflow:          { destructiveHint: true },
+  context_sandbox:       { destructiveHint: true },
+
+  // ── Open-world categories (external network access) ──
+  web:                   { openWorldHint: true },
+  web_scraping:          { openWorldHint: true },
+  github:                { openWorldHint: true },
+  llm:                   { openWorldHint: true },
+  email:                 { openWorldHint: true, destructiveHint: true },
+  rss:                   { openWorldHint: true },
+  voice_bridge:          { openWorldHint: true },
+  mcp_bridge:            { openWorldHint: true },
+  flicker_detection:     { openWorldHint: true },
+  figma_flow:            { openWorldHint: true },
+  seo:                   { readOnlyHint: true, openWorldHint: true },
+  visual_qa:             { readOnlyHint: true, openWorldHint: true },
+  ui_capture:            { readOnlyHint: false, openWorldHint: true },
+  vision:                { readOnlyHint: true, openWorldHint: true },
+};
+
+/**
+ * Per-tool annotation overrides (when category default is wrong).
+ * Sparse — only tools that deviate from their category.
+ */
+const TOOL_ANNOTATION_OVERRIDES: Record<string, McpToolAnnotations> = {
+  // ── Explicitly destructive tools ──
+  send_email:                        { destructiveHint: true, openWorldHint: true },
+  execute_shell_command:             { destructiveHint: true },
+  sandbox_execute:                   { destructiveHint: true },
+  scaffold_nodebench_project:        { destructiveHint: true },
+  scaffold_research_pipeline:        { destructiveHint: true },
+  git_create_branch:                 { destructiveHint: true },
+  git_commit_changes:                { destructiveHint: true },
+  git_push_branch:                   { destructiveHint: true, openWorldHint: true },
+  create_visual_pr:                  { destructiveHint: true, openWorldHint: true },
+  cleanup_stale_runs:                { destructiveHint: true },
+
+  // ── Explicitly read-only tools in otherwise mutable categories ──
+  get_verification_status:           { readOnlyHint: true },
+  list_verification_cycles:          { readOnlyHint: true },
+  list_eval_runs:                    { readOnlyHint: true },
+  compare_eval_runs:                 { readOnlyHint: true },
+  get_gate_history:                  { readOnlyHint: true },
+  get_gate_preset:                   { readOnlyHint: true },
+  get_flywheel_status:               { readOnlyHint: true },
+  get_parallel_status:               { readOnlyHint: true },
+  get_agent_role:                    { readOnlyHint: true },
+  list_agent_tasks:                  { readOnlyHint: true },
+  get_project_context:               { readOnlyHint: true },
+  get_boilerplate_status:            { readOnlyHint: true },
+  load_session_notes:                { readOnlyHint: true },
+  refresh_task_context:              { readOnlyHint: true },
+  get_engine_context_health:         { readOnlyHint: true },
+  get_workflow_history:              { readOnlyHint: true },
+  search_content_archive:            { readOnlyHint: true },
+  search_all_knowledge:              { readOnlyHint: true },
+  get_recon_summary:                 { readOnlyHint: true },
+  save_session_note:                 { destructiveHint: false },
+
+  // ── Open-world overrides for specific tools ──
+  fetch_url:                         { openWorldHint: true, readOnlyHint: true },
+  web_search:                        { openWorldHint: true, readOnlyHint: true },
+  search_github:                     { openWorldHint: true, readOnlyHint: true },
+  check_mcp_setup:                   { readOnlyHint: true, openWorldHint: true },
+  scrapling_crawl_stop:              { destructiveHint: false, openWorldHint: true },
+
+  // ── Discovery tools are always read-only ──
+  discover_tools:                    { readOnlyHint: true },
+  get_tool_quick_ref:                { readOnlyHint: true },
+  get_workflow_chain:                { readOnlyHint: true },
+  findTools:                         { readOnlyHint: true },
+  getMethodology:                    { readOnlyHint: true },
+};
+
+/**
+ * Get MCP security annotations for a tool.
+ * Resolution: per-tool override merged ON TOP of category default → empty (no hints).
+ */
+export function getToolAnnotations(toolName: string): McpToolAnnotations {
+  const entry = TOOL_REGISTRY.get(toolName);
+  const categoryDefaults = entry ? (CATEGORY_ANNOTATIONS[entry.category] ?? {}) : {};
+  const overrides = TOOL_ANNOTATION_OVERRIDES[toolName];
+  if (overrides) {
+    return { ...categoryDefaults, ...overrides };
+  }
+  return categoryDefaults;
 }
 
 // ── Multi-modal search engine ─────────────────────────────────────────────
@@ -3737,7 +4702,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   security_audit: {
     name: "Security Audit",
-    description: "Comprehensive security assessment of dependencies, code, and terminal history",
+    description: "Security audit of dependencies, code, and terminal history",
     steps: [
       { tool: "search_all_knowledge", action: "Check past security findings" },
       { tool: "scan_dependencies", action: "Check npm/pip packages for known CVEs" },
@@ -3752,7 +4717,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   code_review: {
     name: "Code Review",
-    description: "Structured code review with quality gates and learning capture",
+    description: "Code review with quality gates and learning capture",
     steps: [
       { tool: "search_all_knowledge", action: "Check for relevant past patterns and gotchas" },
       { tool: "run_closed_loop", action: "Verify code compiles and tests pass" },
@@ -3796,7 +4761,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   coordinator_spawn: {
     name: "Coordinator → Subagent Spawn",
-    description: "Spawn and coordinate parallel subagents with task locks, roles, and gates",
+    description: "Coordinate parallel subagents with task locks and gates",
     steps: [
       { tool: "search_all_knowledge", action: "Check prior coordination patterns" },
       { tool: "get_parallel_status", action: "Check current agent activity" },
@@ -3812,7 +4777,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   self_setup: {
     name: "Self-Setup / Capability Escalation",
-    description: "Detect and resolve missing capabilities before starting work",
+    description: "Detect and resolve missing capabilities before work",
     steps: [
       { tool: "discover_tools", action: "Search for needed capability" },
       { tool: "get_tool_quick_ref", action: "Check if tool exists but needs configuration" },
@@ -3826,7 +4791,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   flicker_detection: {
     name: "Android Flicker Detection",
-    description: "Detect and analyze Android UI flicker using 4-layer pipeline",
+    description: "Detect Android UI flicker via 4-layer pipeline",
     steps: [
       { tool: "search_all_knowledge", action: "Check past flicker patterns and known issues" },
       { tool: "capture_surface_stats", action: "L0: Capture SurfaceFlinger jank metrics" },
@@ -3839,7 +4804,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   figma_flow_analysis: {
     name: "Figma Flow Analysis",
-    description: "Extract, cluster, and visualize Figma design flows",
+    description: "Extract, cluster, and visualize Figma flows",
     steps: [
       { tool: "search_all_knowledge", action: "Check past design flow analysis patterns" },
       { tool: "extract_figma_frames", action: "Phase 1: Depth-3 tree traversal for frames" },
@@ -3851,7 +4816,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   agent_eval: {
     name: "Agent Evaluation Pipeline",
-    description: "Measure, observe, and improve agent performance using NodeBench MCP. Combines contract compliance scoring, trajectory analysis, eval runs, and self-reinforced learning to create a closed loop: run agent → score → identify gaps → fix → re-score.",
+    description: "Measure and improve agent performance via closed-loop eval",
     steps: [
       { tool: "check_contract_compliance", action: "Score the agent session against the 6-dimension contract (front-door, self-setup, pre-impl, parallel, ship-gates, efficiency)" },
       { tool: "get_trajectory_analysis", action: "Analyze tool usage patterns — frequency, errors, sequential bigrams, phase distribution" },
@@ -3866,7 +4831,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   contract_compliance: {
     name: "Contract Compliance Audit",
-    description: "Verify that an agent session followed the NodeBench Agent Contract. Quick check after any agent task completes.",
+    description: "Verify agent session followed the NodeBench contract",
     steps: [
       { tool: "log_tool_call", action: "Ensure all tool calls in the session are logged (auto-instrumented or manual)" },
       { tool: "check_contract_compliance", action: "Score the session across 6 dimensions (25 front-door + 10 self-setup + 15 pre-impl + 10 parallel + 30 ship-gates + 10 efficiency = 100)" },
@@ -3877,7 +4842,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   ablation_eval: {
     name: "Ablation Evaluation (Prove NodeBench MCP Value)",
-    description: "Run controlled experiments comparing agent performance with vs without NodeBench MCP. Based on Anthropic's eval harness methodology. Tests 5 conditions (bare/lite/full/cold_kb/no_gates) across a fixed task bank with multi-trial statistics.",
+    description: "A/B test agent performance across 5 conditions with eval stats",
     steps: [
       { tool: "create_task_bank", action: "Step 1: Define tasks with deterministic success criteria, forbidden behaviors, and budgets. Target 30-200 tasks." },
       { tool: "get_gate_preset", action: "Step 2: Load agent_comparison gate preset — 10 boolean rules covering outcome + process quality" },
@@ -3893,7 +4858,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   session_recovery: {
     name: "Session Recovery (Post-Compaction)",
-    description: "Recover state after context compaction, /clear, or session resume. Loads filesystem notes, refreshes task context, and continues where you left off.",
+    description: "Recover state after compaction, /clear, or session resume",
     steps: [
       { tool: "load_session_notes", action: "Step 1: Load today's session notes from filesystem" },
       { tool: "refresh_task_context", action: "Step 2: Re-inject active verification cycle, open gaps, and recent learnings" },
@@ -3905,7 +4870,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   attention_refresh: {
     name: "Attention Refresh (Mid-Session)",
-    description: "Combat attention drift after 30+ tool calls. Re-injects original goals, checks for drift, and re-anchors focus. Based on Manus 'Manipulate Attention Through Recitation' principle.",
+    description: "Re-inject goals and re-anchor focus after 30+ tool calls",
     steps: [
       { tool: "refresh_task_context", action: "Step 1: Re-inject current goals, open gaps, and session stats" },
       { tool: "save_session_note", action: "Step 2: Save progress checkpoint before continuing" },
@@ -3915,7 +4880,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   task_bank_setup: {
     name: "Task Bank Setup (50-Task Starter Kit)",
-    description: "Build a statistically meaningful task bank for agent evaluation. Covers 7 categories (bugfix/refactor/integration/ui/security/performance/migration) × 4 difficulty levels with deterministic grading criteria.",
+    description: "Build a task bank for agent eval across 7 categories",
     steps: [
       { tool: "search_all_knowledge", action: "Step 1: Search past learnings and recon findings for real bugs/tasks to include" },
       { tool: "create_task_bank", action: "Step 2: Add 10 bugfix tasks (easy→expert) with test-based success criteria" },
@@ -3930,7 +4895,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   pr_review: {
     name: "Pull Request Review",
-    description: "Structured PR review with git compliance, verification cross-reference, and merge gate",
+    description: "PR review with git compliance and merge gate",
     steps: [
       { tool: "check_git_compliance", action: "Verify branch state and commit conventions" },
       { tool: "review_pr_checklist", action: "Run structured PR checklist with verification cross-reference" },
@@ -3941,7 +4906,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   seo_audit: {
     name: "Full SEO Audit",
-    description: "End-to-end SEO audit: technical SEO, content analysis, performance, WordPress security",
+    description: "SEO audit: technical, content, performance, WordPress",
     steps: [
       { tool: "seo_audit_url", action: "Analyze meta tags, headings, images, structured data" },
       { tool: "analyze_seo_content", action: "Check readability, keyword density, link ratios" },
@@ -3965,7 +4930,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   intentionality_check: {
     name: "Intentionality Check (Critter)",
-    description: "Pause before action — articulate why and who, then proceed with clarity",
+    description: "Articulate why and who before acting, then proceed",
     steps: [
       { tool: "critter_check", action: "Answer: Why are you doing this? Who is it for? Score your intentionality" },
       { tool: "save_session_note", action: "Persist the critter check so it survives context compaction" },
@@ -3974,7 +4939,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   research_digest: {
     name: "Automated Research Digest",
-    description: "Subscribe to RSS/Atom feeds, fetch new articles, build a digest, and optionally email it",
+    description: "Subscribe to RSS/Atom feeds, build digest, email it",
     steps: [
       { tool: "add_rss_source", action: "Register RSS/Atom feed URLs for topics of interest (arXiv, blogs, news)" },
       { tool: "fetch_rss_feeds", action: "Pull latest articles from all registered sources — new items stored in SQLite" },
@@ -3986,7 +4951,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   email_assistant: {
     name: "Email Draft Assistant",
-    description: "Read inbox, draft professional replies, review, and send — all from the agent",
+    description: "Read inbox, draft replies, review, and send via agent",
     steps: [
       { tool: "read_emails", action: "Fetch recent/unread emails from IMAP inbox to understand what needs attention" },
       { tool: "draft_email_reply", action: "Generate a professional reply draft from original email context and your instructions" },
@@ -3996,7 +4961,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   webmcp_discovery: {
     name: "WebMCP Origin Discovery",
-    description: "Connect to a WebMCP-enabled origin, discover its tools, and invoke them from the agent",
+    description: "Connect to WebMCP origin, discover and invoke tools",
     steps: [
       { tool: "connect_webmcp_origin", action: "Connect to the target origin URL and establish a WebMCP session" },
       { tool: "list_webmcp_tools", action: "List all tools exposed by the origin with schemas and annotations" },
@@ -4006,7 +4971,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   batch_autopilot: {
     name: "Batch Autopilot Run",
-    description: "Set up an operator profile and run a batch autopilot session for autonomous agent tasks",
+    description: "Set up operator profile and run batch autopilot session",
     steps: [
       { tool: "setup_operator_profile", action: "Create or update USER.md and operator profile for autopilot context" },
       { tool: "get_autopilot_status", action: "Check current autopilot readiness, profile completeness, and last run status" },
@@ -4017,7 +4982,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   daily_review: {
     name: "Daily Brief Review",
-    description: "Pull the latest daily brief, review narrative threads, check ops dashboard, and sync to local storage",
+    description: "Pull daily brief, review narratives, check ops dashboard",
     steps: [
       { tool: "sync_daily_brief", action: "Pull today's brief and narrative from Convex into local SQLite" },
       { tool: "get_daily_brief_summary", action: "Get the full brief summary with key signals and insights" },
@@ -4028,7 +4993,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   deep_interaction: {
     name: "Deep Interaction Discovery & Capture",
-    description: "Systematically discover, capture, and verify interactive UI behaviors — popups, drawers, streaming responses, hover states, agent conversations, thread management, keyboard shortcuts. Goes beyond static screenshot routes to test real user behavior flows.",
+    description: "Discover, capture, and verify interactive UI behaviors",
     steps: [
       { tool: "dive_auto_discover", action: "Auto-discover interactive components (buttons, drawers, modals, expandable rows) across all routes" },
       { tool: "start_ui_dive", action: "Start a structured UI dive session to track interaction coverage" },
@@ -4044,7 +5009,7 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
   },
   gemini_qa: {
     name: "Gemini Vision QA Loop",
-    description: "Automated UI/UX quality gate — capture screenshots (dark/light × desktop/mobile), send to Gemini Flash for Jony Ive product design review, fix issues, loop until 100/100",
+    description: "Gemini vision QA loop: capture, score, fix, repeat",
     steps: [
       { tool: "check_mcp_setup", action: "Verify Gemini API key (GOOGLE_AI_KEY) and vision domain are ready" },
       { tool: "start_verification_cycle", action: "Open a verification cycle titled 'Gemini QA Loop' to track progress" },
@@ -4055,6 +5020,144 @@ export const WORKFLOW_CHAINS: Record<string, WorkflowChain> = {
       { tool: "save_session_note", action: "Fix P1 issues (6pts each) then P2 (2pts) then P3 (1pt) — root-cause each before fixing" },
       { tool: "get_overstory_qa_gate", action: "Check QA gate for per-route stability grades and issue counts" },
       { tool: "record_learning", action: "Record QA trajectory and Gemini finding patterns for regression tracking" },
+    ],
+  },
+  content_pipeline: {
+    name: "Daily Content Pipeline",
+    description: "Gather signals, build digest, generate 3-post thread, publish",
+    steps: [
+      { tool: "fetch_rss_feeds", action: "Pull latest articles from all registered RSS/Atom sources — new items stored in SQLite" },
+      { tool: "web_search", action: "Search for breaking developments in target topics (AI, infrastructure, security) to supplement RSS" },
+      { tool: "build_research_digest", action: "Generate a categorized digest of new articles — groups by topic, highlights key signals" },
+      { tool: "call_llm", action: "Generate Post 1 (The Signal): narrative framing, numbered signals with hard numbers + URLs, competing explanations" },
+      { tool: "call_llm", action: "Generate Post 2 (The Analysis): fact-checks with badges (VERIFIED/PARTIAL/UNVERIFIED), evidence breakdown per explanation" },
+      { tool: "call_llm", action: "Generate Post 3 (The Agency): actionable steps, stress-test each explanation with score badge, engagement hook" },
+      { tool: "run_quality_gate", action: "Quality-gate all 3 posts: check source attribution, evidence scores, character limits, no hallucinated claims" },
+      { tool: "save_session_note", action: "Persist the final 3-post thread and digest to session notes — survives context compaction" },
+      { tool: "record_learning", action: "Record which signals resonated, content patterns, and quality gate pass/fail reasons for future runs" },
+    ],
+  },
+  content_publish: {
+    name: "Content Publish & Distribute",
+    description: "Distribute content across email, LinkedIn, and archive",
+    steps: [
+      { tool: "search_all_knowledge", action: "Load the latest content pipeline output from session notes or knowledge base" },
+      { tool: "call_llm", action: "Format content for target platform (LinkedIn character limits, email HTML, markdown archive)" },
+      { tool: "run_quality_gate", action: "Final quality gate before publish — verify formatting, links, attribution, no sensitive data" },
+      { tool: "send_email", action: "Email the formatted content digest to distribution list" },
+      { tool: "save_session_note", action: "Archive the published content with timestamp and distribution metadata" },
+      { tool: "record_learning", action: "Record distribution outcomes and engagement signals for optimization" },
+    ],
+  },
+  agent_traversal: {
+    name: "Agent Frontend Traversal",
+    description: "Navigate frontend views, invoke per-view tools, traverse feeds",
+    steps: [
+      { tool: "list_available_views", action: "Discover all 27 views with capabilities and available tools" },
+      { tool: "get_traversal_plan", action: "Generate a goal-based traversal plan ranking views by relevance" },
+      { tool: "navigate_to_view", action: "Navigate to the first target view (creates session)" },
+      { tool: "get_view_capabilities", action: "Inspect the view's actions, data endpoints, and per-view tools" },
+      { tool: "invoke_view_tool", action: "Call a per-view tool (e.g., nb_search_research, nb_list_deals)" },
+      { tool: "query_view_data", action: "Query data from view endpoints" },
+      { tool: "traverse_feed", action: "Browse content feeds with hot/new/top/rising sort" },
+      { tool: "get_view_state", action: "Audit session — navigation history, interactions, duration" },
+    ],
+  },
+  research_optimizer: {
+    name: "Research Optimization Pipeline",
+    description: "Deep research, extract, score, and rank multi-attribute options",
+    steps: [
+      { tool: "web_search", action: "Search for options and pricing across multiple queries (hotels, flights, products)" },
+      { tool: "fetch_url", action: "Fetch detailed pages for top search results — extract pricing, reviews, specs" },
+      { tool: "extract_structured_data", action: "Convert fetched content into structured records with consistent fields" },
+      { tool: "save_session_note", action: "Persist extracted data so it survives context compaction" },
+      { tool: "multi_criteria_score", action: "Score all options against weighted criteria (cost, distance, value, risk)" },
+      { tool: "compare_options", action: "Generate formatted comparison table with rankings and decision explanation" },
+      { tool: "run_quality_gate", action: "Validate recommendation meets minimum thresholds before presenting" },
+    ],
+  },
+  parallel_research: {
+    name: "Parallel Multi-Agent Research",
+    description: "Spawn parallel sub-agents for research, merge and score results",
+    steps: [
+      { tool: "bootstrap_parallel_agents", action: "Scaffold parallel agent infrastructure — define roles for each research domain" },
+      { tool: "claim_task", action: "Each sub-agent claims a research domain (pricing, reviews, logistics, availability)" },
+      { tool: "web_search", action: "Sub-agents search their domain in parallel — each focuses on specific queries" },
+      { tool: "fetch_url", action: "Sub-agents fetch and extract data from their search results" },
+      { tool: "extract_structured_data", action: "Each sub-agent extracts structured records with domain-specific fields" },
+      { tool: "save_session_note", action: "Sub-agents persist findings to shared knowledge base" },
+      { tool: "merge_research_results", action: "Coordinator merges all sub-agent results by join key into unified dataset" },
+      { tool: "multi_criteria_score", action: "Coordinator scores merged options against weighted optimization criteria" },
+      { tool: "compare_options", action: "Generate final ranked comparison with decision explanation" },
+      { tool: "run_quality_gate", action: "Final validation — check data completeness, scoring sanity, recommendation quality" },
+    ],
+  },
+  competitive_intel: {
+    name: "Competitive Intelligence Pipeline",
+    description: "Stealth-fetch competitor pages, extract and rank data",
+    steps: [
+      { tool: "web_search", action: "Identify competitor URLs and market landscape" },
+      { tool: "scrapling_batch_fetch", action: "Stealth-fetch 5-10 competitor pages in parallel with anti-bot bypass" },
+      { tool: "scrapling_extract", action: "Extract pricing, features, positioning data with CSS/XPath selectors" },
+      { tool: "merge_research_results", action: "Join competitor data by company name into unified comparison dataset" },
+      { tool: "call_llm", action: "Analyze competitive positioning, strengths/weaknesses, market gaps" },
+      { tool: "multi_criteria_score", action: "Score competitors against weighted criteria (price, features, market share)" },
+      { tool: "compare_options", action: "Generate ranked comparison table with strategic recommendations" },
+    ],
+  },
+  price_monitor: {
+    name: "Price Monitoring Pipeline",
+    description: "Crawl product pages, track prices, alert on changes",
+    steps: [
+      { tool: "scrapling_crawl", action: "Start multi-page crawl of product catalog or competitor pricing pages" },
+      { tool: "scrapling_crawl_status", action: "Poll crawl progress and collect extracted items" },
+      { tool: "scrapling_extract", action: "Extract price, availability, and product details with CSS selectors" },
+      { tool: "scrapling_track_element", action: "Set up adaptive element tracking for key price elements" },
+      { tool: "merge_research_results", action: "Merge multi-source pricing data by product identifier" },
+      { tool: "multi_criteria_score", action: "Score products against price/value/availability criteria" },
+      { tool: "save_session_note", action: "Persist price snapshot for historical comparison" },
+      { tool: "send_email", action: "Alert on significant price changes or threshold breaches" },
+    ],
+  },
+  thompson_protocol: {
+    name: "Thompson Protocol Content Pipeline",
+    description: "Transform complex topics into plain-English content via 4 agents",
+    steps: [
+      { tool: "thompson_pipeline", action: "Initialize the full pipeline — generates execution plan with all agent prompts and handoff points" },
+      { tool: "thompson_write", action: "Transform the complex topic into plain-English sections with jargon translations, analogies, and difficulty acknowledgments" },
+      { tool: "call_llm", action: "Execute the Thompson Writer system prompt against the topic — LLM does the creative writing, tool provides constraints" },
+      { tool: "thompson_feynman_edit", action: "Run Skeptical Beginner review — 8 rejection criteria, deterministic readability checks, max 3 rewrite cycles" },
+      { tool: "thompson_write", action: "(Loop) Rewrite any REWRITE-flagged sections with specific fix instructions from Feynman Editor" },
+      { tool: "thompson_visual_map", action: "Generate visual prompts for each analogy — literal 1:1 mapping, consistent style, accessibility alt-text" },
+      { tool: "thompson_anti_elitism_lint", action: "Scan for banned phrases (22 patterns), passive voice, readability, jargon density — fully deterministic" },
+      { tool: "thompson_quality_gate", action: "10-point boolean checklist → grade (exemplary/passing/needs_work/failing). Gate before distribution." },
+      { tool: "save_session_note", action: "Persist the Thompson-processed content for distribution via content_publish workflow" },
+      { tool: "record_learning", action: "Record which analogies, styles, and audience levels produced the best engagement" },
+    ],
+  },
+  system_observability: {
+    name: "system_observability",
+    description: "System health check, drift detection, and auto-maintenance",
+    steps: [
+      { tool: "get_system_pulse", action: "Capture real-time health snapshot — DB, dashboards, errors, embedding cache, health score" },
+      { tool: "get_drift_report", action: "Detect configuration and state drift — orphaned cycles, stale runs, DB bloat, error spikes" },
+      { tool: "run_self_heal", action: "Auto-fix healable drift issues — abandoned cycles, stale runs, log pruning (use dry_run first)" },
+      { tool: "get_uptime_stats", action: "Review call rates, error trends, and top tools across time windows" },
+      { tool: "get_watchdog_log", action: "Check background watchdog history — health score trend, auto-healed actions" },
+      { tool: "save_session_note", action: "Record health findings and any manual interventions for future reference" },
+    ],
+  },
+  mission_execution: {
+    name: "Mission Execution Harness",
+    description: "Hierarchical Planner → Worker → Judge → Human Sniff-Check → Merge pipeline for verifiable work",
+    steps: [
+      { tool: "plan_decompose_mission", action: "Decompose mission into subtasks with verifiability tiers, judge methods, retry budgets, and output contracts" },
+      { tool: "harness_get_mission_status", action: "Check execution board — which subtasks are pending, assigned, or blocked" },
+      { tool: "judge_verify_subtask", action: "Judge reviews subtask output against output contract — verdict + evidence + artifacts" },
+      { tool: "judge_request_retry", action: "If failed: retry (with new instructions), replan, escalate, or stop if unverifiable" },
+      { tool: "sniff_record_human_review", action: "Human sniff-check: pass / concern / block with issue tags (weak_evidence, unsupported_claim, etc.)" },
+      { tool: "merge_compose_output", action: "Judge-gated merge of passed subtask artifacts into composed output" },
+      { tool: "harness_get_mission_status", action: "Final traceability audit — receipts, evidence refs, decisions, verifications, diffs, approvals" },
     ],
   },
 };

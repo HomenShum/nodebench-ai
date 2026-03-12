@@ -6,7 +6,9 @@
 /**
  * Get all focusable elements within a container
  */
-export function getFocusableElements(container: HTMLElement): HTMLElement[] {
+export function getFocusableElements(container: HTMLElement | null | undefined): HTMLElement[] {
+  if (!container) return [];
+
   const focusableSelectors = [
     'a[href]',
     'button:not([disabled])',
@@ -28,7 +30,7 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
 /**
  * Get the first focusable element in a container
  */
-export function getFirstFocusable(container: HTMLElement): HTMLElement | null {
+export function getFirstFocusable(container: HTMLElement | null | undefined): HTMLElement | null {
   const elements = getFocusableElements(container);
   return elements[0] || null;
 }
@@ -36,7 +38,7 @@ export function getFirstFocusable(container: HTMLElement): HTMLElement | null {
 /**
  * Get the last focusable element in a container
  */
-export function getLastFocusable(container: HTMLElement): HTMLElement | null {
+export function getLastFocusable(container: HTMLElement | null | undefined): HTMLElement | null {
   const elements = getFocusableElements(container);
   return elements[elements.length - 1] || null;
 }
@@ -108,7 +110,7 @@ export function prefersHighContrast(): boolean {
 /**
  * Trap focus within a container (for modals, dialogs)
  */
-export function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
+export function trapFocus(container: HTMLElement | null | undefined, event: KeyboardEvent): void {
   if (event.key !== 'Tab') return;
 
   const focusableElements = getFocusableElements(container);
@@ -184,4 +186,3 @@ export function createListKeyboardHandler(
     items[newIndex]?.focus();
   };
 }
-

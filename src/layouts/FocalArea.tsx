@@ -5,14 +5,18 @@
  * Each view component stays identical — this is a pure extraction.
  */
 
-import { lazy, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { VIEW_PATH_MAP, VIEW_TITLES } from "./cockpitModes";
-import { VIEW_MAP } from "@/lib/viewRegistry";
+import { lazy, useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Id } from "../../convex/_generated/dataModel";
 import { LazyView } from "@/shared/components/LazyView";
 import { ViewSkeleton } from "@/components/skeletons";
-import type { MainView, ResearchTab } from "../hooks/useMainLayoutRouting";
+import {
+  VIEW_MAP,
+  VIEW_PATH_MAP,
+  VIEW_TITLES,
+  type MainView,
+  type ResearchTab,
+} from "@/lib/viewRegistry";
 
 // ─── Lazy imports: only views with custom rendering (props/callbacks) ────────
 // Simple views (no props) use the registry component via the fallback at the
@@ -65,6 +69,7 @@ const EMPTY_FOOTNOTES_LIBRARY = {
 
 export interface FocalAreaProps {
   currentView: MainView;
+  routeView?: MainView;
   viewResetKey: string;
   // Research
   showResearchDossier: boolean;
@@ -97,6 +102,7 @@ export interface FocalAreaProps {
 
 export function FocalArea({
   currentView,
+  routeView,
   viewResetKey,
   showResearchDossier,
   setShowResearchDossier,
@@ -120,7 +126,46 @@ export function FocalArea({
   onOpenFastAgent,
   onOpenFastAgentWithPrompt,
 }: FocalAreaProps) {
+  const location = useLocation();
   const navigate = useNavigate();
+
+  const navigateToView = useCallback(
+    (view: MainView, path?: string) => {
+      setCurrentView(view);
+      const targetPath = path ?? VIEW_PATH_MAP[view];
+      if (targetPath && location.pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    },
+    [location.pathname, navigate, setCurrentView],
+  );
+
+  const goToResearchHome = useCallback(() => {
+    setCurrentView("research");
+    setShowResearchDossier(false);
+    const targetPath = VIEW_PATH_MAP.research ?? "/research";
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
+    }
+  }, [location.pathname, navigate, setCurrentView, setShowResearchDossier]);
+
+  const goToResearchHub = useCallback(
+    (tab: ResearchTab = "overview") => {
+      setCurrentView("research");
+      setResearchHubInitialTab(tab);
+      setShowResearchDossier(true);
+      const targetPath = tab === "overview" ? "/research/overview" : `/research/${tab}`;
+      if (location.pathname !== targetPath) {
+        navigate(targetPath);
+      }
+    },
+    [location.pathname, navigate, setCurrentView, setResearchHubInitialTab, setShowResearchDossier],
+  );
+
+  const goToWorkspaceRoot = useCallback(() => {
+    onDocumentSelect(null);
+    navigateToView("documents");
+  }, [navigateToView, onDocumentSelect]);
 
   // Retrigger hud-materialize animation on view change WITHOUT remounting the tree.
   // Toggling a CSS class forces the browser to restart the animation — no DOM teardown.
@@ -136,42 +181,30 @@ export function FocalArea({
   return (
     <div
       className={`relative flex-1 overflow-hidden font-sans hud-focal-area ${animKey ? "hud-materialize" : "hud-materialize-alt"}`}
+      data-main-content
       data-agent-id={`view:${currentView}:content`}
       data-agent-label={VIEW_TITLES[currentView] ?? currentView}
+      data-current-view={currentView}
+      data-route-view={routeView ?? currentView}
     >
       {currentView === "research" ? (
         <LazyView title="Research Hub failed to load" resetKey={viewResetKey} fallback={viewFallbackDashboard}>
           {!showResearchDossier ? (
             <CinematicHome
-              onEnterHub={(tab) => {
-                setResearchHubInitialTab(tab ?? "overview");
-                setShowResearchDossier(true);
-              }}
-              onEnterWorkspace={() => {
-                navigate(VIEW_PATH_MAP["documents"] ?? "/documents");
-                setCurrentView("documents");
-              }}
+              onEnterHub={(tab) => goToResearchHub(tab ?? "overview")}
+              onEnterWorkspace={goToWorkspaceRoot}
               onOpenFastAgent={onOpenFastAgent}
               onOpenFastAgentWithPrompt={onOpenFastAgentWithPrompt}
-              onOpenAgents={() => {
-                navigate(VIEW_PATH_MAP["agents"] ?? "/agents");
-                setCurrentView("agents");
-              }}
-              onOpenWorkbench={() => {
-                navigate(VIEW_PATH_MAP["benchmarks"] ?? "/benchmarks");
-                setCurrentView("benchmarks");
-              }}
+              onOpenAgents={() => navigateToView("agents")}
+              onOpenWorkbench={() => navigateToView("benchmarks")}
             />
           ) : (
             <ResearchHub
               embedded
               initialTab={researchHubInitialTab}
-              onGoHome={() => setShowResearchDossier(false)}
+              onGoHome={goToResearchHome}
               onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
-              onEnterWorkspace={() => {
-                navigate(VIEW_PATH_MAP["documents"] ?? "/documents");
-                setCurrentView("documents");
-              }}
+              onEnterWorkspace={goToWorkspaceRoot}
               activeSources={activeSources}
               onToggleSource={(sourceId) =>
                 setActiveSources((prev) =>
@@ -217,28 +250,23 @@ export function FocalArea({
         </LazyView>
       ) : currentView === "showcase" ? (
         <LazyView title="Showcase failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-          <PhaseAllShowcase onBack={() => {
-            navigate(VIEW_PATH_MAP["research"] ?? "/");
-            setCurrentView("research");
-          }} />
+          <PhaseAllShowcase onBack={goToResearchHome} />
         </LazyView>
       ) : currentView === "footnotes" ? (
         <LazyView title="Sources failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
           <FootnotesPage
             library={EMPTY_FOOTNOTES_LIBRARY}
             briefTitle="Latest Daily Brief"
-            onBack={() => {
-              navigate(VIEW_PATH_MAP["research"] ?? "/");
-              setCurrentView("research");
-            }}
+            onBack={goToResearchHome}
           />
         </LazyView>
       ) : currentView === "control-plane" ? (
         <LazyView title="Landing failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-          <ControlPlaneLanding onNavigate={(view) => {
-            navigate(VIEW_PATH_MAP[view as MainView] ?? `/${view}`);
-            setCurrentView(view as MainView);
-          }} />
+          <ControlPlaneLanding
+            onNavigate={navigateToView}
+            onOpenFastAgent={onOpenFastAgent}
+            onOpenFastAgentWithPrompt={onOpenFastAgentWithPrompt}
+          />
         </LazyView>
       ) : currentView === "entity" && entityName ? (
         <LazyView title="Entity profile failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
@@ -246,8 +274,7 @@ export function FocalArea({
             entityName={entityName}
             onBack={() => {
               setEntityName(null);
-              setCurrentView("research");
-              navigate("/");
+              goToResearchHome();
             }}
           />
         </LazyView>

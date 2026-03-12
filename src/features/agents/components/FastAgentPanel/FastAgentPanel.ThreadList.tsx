@@ -190,7 +190,7 @@ export function FastAgentThreadList({
             onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(-1); }}
             onKeyDown={handleKeyNav}
             aria-label="Search conversations"
-            className="w-full pl-8 pr-8 py-1.5 bg-surface border border-edge/60 rounded-lg text-xs text-content placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/20 focus:border-indigo-500/30/50 transition-all"
+            className="w-full pl-8 pr-8 py-1.5 bg-surface border border-edge/60 rounded-lg text-xs text-content placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-ring focus:border-indigo-500/30/50 transition-all"
           />
           {searchQuery && (
             <button

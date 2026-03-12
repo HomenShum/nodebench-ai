@@ -179,8 +179,8 @@ export const AgentStatusCard = memo(function AgentStatusCard({
     <div
       className={cn(
         "group bg-surface rounded-container border border-edge",
-        "transition-all duration-200 hover:shadow-hover hover:bg-surface-secondary",
-        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-indigo-500/40"
+        "transition-all duration-200 hover:shadow-hover hover:bg-surface-secondary focus-within:ring-1 focus-within:ring-ring focus-within:ring-offset-1 focus-within:ring-offset-surface",
+        isActive && "ring-1 ring-offset-1 ring-offset-surface ring-ring"
       )}
     >
       {/* Header */}
@@ -252,7 +252,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
           className={cn(
             "flex-1 flex items-center justify-center gap-2 px-3 py-2",
             "text-xs font-medium rounded-lg border border-edge",
-            "hover:bg-surface-hover transition-colors"
+            "hover:bg-surface-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
           )}
         >
           {isActive ? (
@@ -272,7 +272,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
           onClick={onConfigure}
           className={cn(
             "flex items-center justify-center p-2 rounded-lg",
-            "border border-edge hover:bg-surface-hover transition-colors"
+            "border border-edge hover:bg-surface-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
           )}
           aria-label="Configure agent"
         >
@@ -284,7 +284,7 @@ export const AgentStatusCard = memo(function AgentStatusCard({
             onClick={onToggleExpand}
             className={cn(
               "flex items-center justify-center p-2 rounded-lg",
-              "border border-edge hover:bg-surface-hover transition-colors"
+              "border border-edge hover:bg-surface-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface"
             )}
             aria-label={isExpanded ? "Collapse details" : "Expand details"}
           >
@@ -323,4 +323,3 @@ export const AgentStatusCard = memo(function AgentStatusCard({
 });
 
 export default AgentStatusCard;
-

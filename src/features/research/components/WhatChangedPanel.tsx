@@ -82,7 +82,7 @@ function FilterBar({
         <select
           value={severity}
           onChange={(e) => onSeverityChange(e.target.value as Severity | "all")}
-          className="text-xs bg-surface-secondary border border-edge rounded px-2 py-1 text-content-secondary focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="text-xs bg-surface-secondary border border-edge rounded px-2 py-1 text-content-secondary focus:outline-none focus:ring-1 focus:ring-ring"
         >
           <option value="all">All Severities</option>
           <option value="critical">Critical</option>
@@ -98,7 +98,7 @@ function FilterBar({
         <select
           value={daysBack}
           onChange={(e) => onDaysBackChange(parseInt(e.target.value))}
-          className="text-xs bg-surface-secondary border border-edge rounded px-2 py-1 text-content-secondary focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="text-xs bg-surface-secondary border border-edge rounded px-2 py-1 text-content-secondary focus:outline-none focus:ring-1 focus:ring-ring"
         >
           <option value={1}>Last 24 hours</option>
           <option value={7}>Last 7 days</option>
@@ -383,7 +383,7 @@ export function WhatChangedPanel({
                   onClick={handleAskAgentClick}
                   disabled={!selectedDiff}
                   className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg
-                           bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                           bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   Ask agent

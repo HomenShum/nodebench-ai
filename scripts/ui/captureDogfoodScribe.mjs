@@ -144,9 +144,11 @@ function describeStep(step) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const baseURL = args.get("baseURL") ?? "http://127.0.0.1:5173";
+  const showOverlay = (args.get("overlay") ?? process.env.DOGFOOD_OVERLAY ?? "0") === "1";
   const settleMs = Number(args.get("settleMs") ?? 1000);
   const headless = (args.get("headless") ?? "true") !== "false";
   const outRoot = path.resolve(process.cwd(), "public", "dogfood", "scribe");
+  await rm(outRoot, { recursive: true, force: true });
   await mkdir(outRoot, { recursive: true });
   const capturedAtIso = new Date().toISOString();
   const userDataDir = path.resolve(process.cwd(), ".tmp", "dogfood-scribe-userdata");
@@ -174,7 +176,7 @@ async function main() {
     { kind: "route", path: "/funding", name: "Funding Brief" },
     { kind: "route", path: "/activity", name: "Activity" },
     { kind: "route", path: "/analytics/hitl", name: "Review Queue" },
-    { kind: "route", path: "/analytics/components", name: "Usage Stats" },
+    { kind: "route", path: "/analytics/components", name: "Performance Analytics" },
     { kind: "route", path: "/analytics/recommendations", name: "Feedback" },
     { kind: "route", path: "/cost", name: "Usage & Costs" },
     { kind: "route", path: "/industry", name: "Industry News" },
@@ -204,7 +206,7 @@ async function main() {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await maybeSignIn(page);
   await waitForAppReady(page);
-  await installOverlay(page);
+  if (showOverlay) await installOverlay(page);
   await page.waitForTimeout(500);
 
   const publishedSteps = [];
@@ -216,7 +218,7 @@ async function main() {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         // eslint-disable-next-line no-await-in-loop
-        await setOverlay(page, `Step ${stepNum}/${steps.length}`, `${step.name} — ${step.path}`);
+        if (showOverlay) await setOverlay(page, `Step ${stepNum}/${steps.length}`, `${step.name} — ${step.path}`);
         break;
       } catch (err) {
         const msg = String(err?.message ?? err ?? "");
@@ -228,7 +230,14 @@ async function main() {
 
     if (step.kind === "route") {
       await ensureNoModal(page);
-      await page.goto(step.path, { waitUntil: "domcontentloaded" });
+      if (step.path === "/") {
+        await page.goto("/", { waitUntil: "domcontentloaded" });
+      } else {
+        await page.evaluate((targetPath) => {
+          history.pushState({}, "", targetPath);
+          window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+        }, step.path);
+      }
       await waitForAppReady(page);
       await page.waitForTimeout(settleMs);
     } else if (/command palette/i.test(step.name)) {

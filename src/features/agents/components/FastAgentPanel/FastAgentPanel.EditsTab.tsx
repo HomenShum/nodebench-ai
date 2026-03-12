@@ -178,7 +178,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
             >
               {f.label}
               {f.count !== undefined && f.count > 0 && (
-                <span className="px-1 bg-white/50 rounded text-xs">{f.count}</span>
+                <span className="px-1 bg-surface/50 rounded text-xs">{f.count}</span>
               )}
             </button>
           ))}
@@ -238,7 +238,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                       <span className={cn(
                         "px-1.5 py-0.5 text-xs font-medium rounded",
                         config.color,
-                        "bg-white/50"
+                        "bg-surface/50"
                       )}>
                         {config.label}
                       </span>
@@ -274,7 +274,7 @@ export function EditsTab({ activeThreadId }: EditsTabProps) {
                         <div className="flex gap-2 mt-3">
                           <button
                             onClick={() => handleApprove(edit)}
-                            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded transition-colors"
+                            className="btn-primary-sm flex-1 flex items-center justify-center gap-1"
                           >
                             <Check className="w-3 h-3" />
                             Apply

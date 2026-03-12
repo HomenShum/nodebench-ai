@@ -1,0 +1,168 @@
+{
+  "suiteId": "drane_golden_set_example",
+  "version": "1.0.0",
+  "createdAt": "2026-01-27T00:00:00Z",
+  "description": "Starter examples for authoring DRANE golden sets (deterministic mode).",
+  "defaults": {
+    "run": {
+      "weekNumber": "2026-W04",
+      "pipelineMode": "deterministic",
+      "scout": {
+        "targetEntityKeys": ["company:ACME"],
+        "injectedNewsItems": [
+          {
+            "headline": "ACME announces Project Nova launch",
+            "url": "https://example.com/acme-nova-launch",
+            "publishedAt": 1769385600000,
+            "snippet": "ACME says Project Nova will ship in Q2.",
+            "sourceName": "example.com",
+            "entityKeys": ["company:ACME"],
+            "topicTags": ["product_launch"],
+            "relevanceScore": 0.95
+          }
+        ],
+        "recencyDays": 7,
+        "maxItemsPerEntity": 15,
+        "searchMode": "fast"
+      },
+      "analyst": { "useHeuristicOnly": true },
+      "publisher": { "enableDedup": true, "minCitationCoverage": 0.8 }
+    },
+    "assertions": {
+      "metrics": {
+        "citationCoverageMin": 0.8,
+        "claimCoverageMin": 0.8,
+        "unsupportedClaimRateMax": 0.2,
+        "hasSearchLogs": true
+      },
+      "dedup": { "requireStableEventIds": true, "requireDeterministicDedupDecisions": true },
+      "claims": { "requireEvidenceBinding": true, "minEvidenceArtifactsPerClaim": 1 }
+    }
+  },
+  "cases": [
+    {
+      "caseId": "example_new_thread",
+      "name": "New thread creation from injected news",
+      "tags": ["product_launch", "happy_path"],
+      "run": {
+        "weekNumber": "2026-W04",
+        "pipelineMode": "deterministic",
+        "scout": {
+          "targetEntityKeys": ["company:ACME"],
+          "injectedNewsItems": [
+            {
+              "headline": "ACME announces Project Nova launch",
+              "url": "https://example.com/acme-nova-launch",
+              "publishedAt": 1769385600000,
+              "snippet": "ACME says Project Nova will ship in Q2.",
+              "sourceName": "example.com",
+              "entityKeys": ["company:ACME"],
+              "topicTags": ["product_launch"],
+              "relevanceScore": 0.95
+            }
+          ],
+          "recencyDays": 7,
+          "maxItemsPerEntity": 15,
+          "searchMode": "fast"
+        },
+        "analyst": { "useHeuristicOnly": true },
+        "publisher": { "enableDedup": true, "minCitationCoverage": 0.8 }
+      },
+      "expected": {
+        "threads": { "count": { "gte": 1, "lte": 3 } },
+        "events": { "count": { "gte": 1 } },
+        "evidenceArtifacts": { "count": { "gte": 1 } },
+        "searchLogs": { "count": { "gte": 1 } },
+        "workflowTrace": { "requireWorkflowId": true, "requireConfigHash": true, "requireReplayDigest": true }
+      }
+    },
+    {
+      "caseId": "example_exact_duplicate",
+      "name": "Exact duplicate URL should skip second create",
+      "tags": ["dedup", "canonical_url"],
+      "run": {
+        "weekNumber": "2026-W04",
+        "pipelineMode": "deterministic",
+        "scout": {
+          "targetEntityKeys": ["company:ACME"],
+          "injectedNewsItems": [
+            {
+              "headline": "ACME announces Project Nova launch",
+              "url": "https://example.com/acme-nova-launch",
+              "publishedAt": 1769385600000,
+              "snippet": "ACME says Project Nova will ship in Q2.",
+              "sourceName": "example.com",
+              "entityKeys": ["company:ACME"],
+              "topicTags": ["product_launch"],
+              "relevanceScore": 0.95
+            },
+            {
+              "headline": "ACME: Project Nova launch (repost)",
+              "url": "https://example.com/acme-nova-launch",
+              "publishedAt": 1769389200000,
+              "snippet": "Repost of the same launch announcement.",
+              "sourceName": "example.com",
+              "entityKeys": ["company:ACME"],
+              "topicTags": ["product_launch"],
+              "relevanceScore": 0.8
+            }
+          ],
+          "recencyDays": 7,
+          "maxItemsPerEntity": 15,
+          "searchMode": "fast"
+        },
+        "analyst": { "useHeuristicOnly": true },
+        "publisher": { "enableDedup": true, "minCitationCoverage": 0.8 }
+      },
+      "expected": {
+        "events": { "count": { "gte": 1, "lte": 2 } },
+        "workflowTrace": { "requireWorkflowId": true, "requireConfigHash": true, "requireReplayDigest": true }
+      }
+    },
+    {
+      "caseId": "example_linked_update",
+      "name": "Same story, material delta should link update (deterministic policy)",
+      "tags": ["dedup", "linked_update"],
+      "run": {
+        "weekNumber": "2026-W04",
+        "pipelineMode": "deterministic",
+        "scout": {
+          "targetEntityKeys": ["company:ACME"],
+          "injectedNewsItems": [
+            {
+              "headline": "ACME announces Project Nova launch",
+              "url": "https://example.com/acme-nova-launch",
+              "publishedAt": 1769385600000,
+              "snippet": "ACME says Project Nova will ship in Q2.",
+              "sourceName": "example.com",
+              "entityKeys": ["company:ACME"],
+              "topicTags": ["product_launch"],
+              "relevanceScore": 0.95
+            },
+            {
+              "headline": "ACME updates Project Nova timeline",
+              "url": "https://another.example.com/acme-nova-update",
+              "publishedAt": 1769392800000,
+              "snippet": "ACME now says Project Nova will ship in Q3, citing supply constraints.",
+              "sourceName": "another.example.com",
+              "entityKeys": ["company:ACME"],
+              "topicTags": ["product_launch", "timeline_change"],
+              "relevanceScore": 0.9
+            }
+          ],
+          "recencyDays": 7,
+          "maxItemsPerEntity": 15,
+          "searchMode": "fast"
+        },
+        "analyst": { "useHeuristicOnly": true },
+        "publisher": { "enableDedup": true, "minCitationCoverage": 0.8 }
+      },
+      "expected": {
+        "events": { "count": { "gte": 1 } },
+        "evidenceArtifacts": { "count": { "gte": 1 } },
+        "workflowTrace": { "requireWorkflowId": true, "requireConfigHash": true, "requireReplayDigest": true }
+      }
+    }
+  ]
+}
+

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Github, ArrowUpRight, MessageSquare } from "lucide-react";
 import clsx from "clsx";
 import type { FeedItem } from "./FeedCard";
+import { normalizeSourceLabel, sanitizeReadableText } from "@/lib/displayText";
 
 type SourceFilter = { id: string; label: string; icon?: React.ElementType };
 
@@ -24,8 +25,8 @@ const defaultIcons: Record<string, React.ElementType> = {
 export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSource, onSelectSource }) => {
   const filteredItems = useMemo(() => {
     if (activeSource === "all") return items;
-    const target = activeSource.toLowerCase();
-    return items.filter((item) => (item.source || "").toLowerCase() === target);
+    const target = normalizeSourceLabel(activeSource, activeSource).toLowerCase();
+    return items.filter((item) => normalizeSourceLabel(item.source || "", "").toLowerCase() === target);
   }, [items, activeSource]);
 
   return (
@@ -41,8 +42,8 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
               className={clsx(
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
                 isActive
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "bg-white text-content-secondary border border-edge hover:border-edge hover:bg-surface-hover"
+                  ? "bg-content text-surface shadow-sm"
+                  : "bg-surface text-content-secondary border border-edge hover:border-primary/20 hover:bg-surface-hover hover:shadow-sm"
               )}
             >
               {Icon && <Icon className="w-3.5 h-3.5" />}
@@ -68,14 +69,19 @@ export const SourceFeed: React.FC<SourceFeedProps> = ({ items, sources, activeSo
 };
 
 const FeedCard = ({ item }: { item: FeedItem }) => {
+  const normalizedSource = normalizeSourceLabel(item.source || "News", "News");
+  const normalizedTitle = sanitizeReadableText(item.title);
+  const normalizedSubtitle = sanitizeReadableText(item.subtitle || item.type);
+  const normalizedTimestamp = sanitizeReadableText(item.timestamp);
+  const normalizedTags = (item.tags || []).map((tag) => sanitizeReadableText(tag));
   const badgeColor =
-    (item.source || "").toLowerCase() === "github"
+    normalizedSource.toLowerCase() === "github"
       ? "bg-surface-secondary text-content-secondary"
-      : (item.source || "").toLowerCase() === "ycombinator" || (item.source || "").toLowerCase() === "hackernews"
+      : normalizedSource.toLowerCase() === "hacker news"
         ? "bg-orange-50 text-orange-700"
-        : (item.source || "").toLowerCase() === "techcrunch"
+        : normalizedSource.toLowerCase() === "techcrunch"
           ? "bg-green-50 text-green-700"
-          : (item.source || "").toLowerCase() === "reddit"
+          : normalizedSource.toLowerCase().startsWith("reddit")
             ? "bg-red-50 text-red-600"
             : "bg-surface-secondary text-content";
 
@@ -86,21 +92,21 @@ const FeedCard = ({ item }: { item: FeedItem }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.15 }}
-      className="group relative flex flex-col justify-between rounded-lg border border-edge bg-white p-4 hover:border-indigo-200 transition-all"
+      className="group relative flex flex-col justify-between rounded-lg border border-edge bg-surface p-4 hover:border-indigo-200 transition-all"
     >
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className={clsx("text-xs font-bold px-1.5 py-0.5 rounded", badgeColor)}>
-            {item.source || "News"}
+            {normalizedSource}
           </span>
           <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-indigo-400" />
         </div>
-        <h4 className="text-sm font-semibold text-content leading-snug mb-2 line-clamp-2">{item.title}</h4>
-        <p className="text-xs text-content-secondary line-clamp-2 mb-3">{item.subtitle || item.type}</p>
+        <h4 className="text-sm font-semibold text-content leading-snug mb-2 line-clamp-2">{normalizedTitle}</h4>
+        <p className="text-xs text-content-secondary line-clamp-2 mb-3">{normalizedSubtitle}</p>
       </div>
       <div className="flex items-center gap-3 border-t border-gray-50 pt-3 text-xs text-content-secondary">
-        {item.timestamp && <span>{item.timestamp}</span>}
-        {item.tags?.length ? <span className="truncate">#{item.tags.slice(0, 2).join(" #")}</span> : null}
+        {item.timestamp && <span>{normalizedTimestamp}</span>}
+        {normalizedTags.length ? <span className="truncate">#{normalizedTags.slice(0, 2).join(" #")}</span> : null}
         {typeof item.relevanceScore === "number" && (
           <span className="ml-auto font-mono text-xs text-content-secondary">Relevance {item.relevanceScore}</span>
         )}

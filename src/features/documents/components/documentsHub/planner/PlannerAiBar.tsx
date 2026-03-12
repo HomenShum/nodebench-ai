@@ -52,7 +52,7 @@ export function PlannerAiBar({
         <button
           type="button"
           onClick={onSend}
-          className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm flex items-center gap-2"
+          className="btn-primary-sm px-3 py-2 text-sm flex items-center gap-2"
           title="Send"
           aria-label="Send message to AI assistant"
         >

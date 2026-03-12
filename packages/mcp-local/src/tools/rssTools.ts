@@ -6,6 +6,7 @@
  */
 
 import { getDb } from "../db.js";
+import { safeUrl } from "../security/index.js";
 import type { McpTool } from "../types.js";
 
 // ── SQLite schema ────────────────────────────────────────────────────────────
@@ -75,6 +76,9 @@ function stripHtml(html: string): string {
 
 /** Fetch and parse an RSS 2.0 or Atom feed */
 async function parseFeed(url: string): Promise<{ title: string; items: FeedItem[] }> {
+  // SSRF protection — block private IPs, cloud metadata, file:// scheme
+  safeUrl(url);
+
   const response = await fetch(url, {
     headers: { "User-Agent": "NodeBench-MCP RSS Reader" },
     signal: AbortSignal.timeout(15000),

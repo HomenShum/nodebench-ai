@@ -89,7 +89,7 @@ function TaskCard({
                 className={cn(
                   "ml-auto text-xs px-1.5 py-0.5 rounded border",
                   isNextUp
-                    ? "bg-indigo-600 text-white border-indigo-600"
+                    ? "bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]"
                     : "bg-surface text-content-secondary border-edge",
                 )}
               >
@@ -540,7 +540,7 @@ export function BriefTab() {
                   className={cn(
                     "px-2 py-1 text-xs rounded transition-colors border",
                     date === displayDate
-                      ? "bg-indigo-600 text-white font-medium border-indigo-600"
+                      ? "bg-[var(--accent-primary)] text-white font-medium border-[var(--accent-primary)]"
                       : "bg-surface hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-400 border-slate-200",
                   )}
                   title={`View brief from ${date}`}

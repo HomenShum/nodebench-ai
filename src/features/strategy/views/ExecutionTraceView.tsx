@@ -77,8 +77,8 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-black/20 p-5">
-      <div className="mb-4 flex items-center gap-2 text-sm font-medium text-zinc-100">
+    <section className="rounded-2xl border border-edge bg-surface-secondary p-5">
+      <div className="mb-4 flex items-center gap-2 text-sm font-medium text-content">
         {icon}
         {title}
       </div>
@@ -91,8 +91,8 @@ function BulletList({ items }: { items: string[] }) {
   return (
     <ul className="space-y-2">
       {items.map((item) => (
-        <li key={item} className="flex items-start gap-2 text-sm leading-relaxed text-zinc-300">
-          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-indigo-400" aria-hidden="true" />
+        <li key={item} className="flex items-start gap-2 text-sm leading-relaxed text-content-secondary">
+          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400" aria-hidden="true" />
           <span>{item}</span>
         </li>
       ))}
@@ -103,12 +103,12 @@ function BulletList({ items }: { items: string[] }) {
 function StatusBadge({ value }: { value: "passed" | "warning" | "failed" | "fixed" }) {
   const tone =
     value === "passed"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
       : value === "fixed"
-        ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-300"
+        ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-300"
         : value === "warning"
-          ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-          : "border-rose-500/30 bg-rose-500/10 text-rose-300";
+          ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300"
+          : "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300";
   return (
     <span className={cn("rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide", tone)}>
       {value}
@@ -127,14 +127,14 @@ function SourceChips({ sourceRefs }: { sourceRefs?: Array<{ label: string; url?:
             href={source.url}
             target="_blank"
             rel="noreferrer"
-            className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-zinc-300 transition hover:border-white/20 hover:bg-white/[0.07]"
+            className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-secondary transition hover:border-primary/30 hover:bg-surface-hover"
           >
             {source.label}
           </a>
         ) : (
           <span
             key={source.label}
-            className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-zinc-400"
+            className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-muted"
           >
             {source.label}
           </span>
@@ -239,20 +239,20 @@ export function ExecutionTraceView() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-6xl flex-col gap-6 px-6 py-8" data-testid="execution-trace-view">
-      <header className="rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_36%),rgba(5,5,5,0.92)] p-6">
+      <header className="rounded-[28px] border border-edge bg-surface-secondary dark:bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_36%),rgba(5,5,5,0.92)] p-6">
         <div className="mb-3 flex flex-wrap items-center gap-3">
-          <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+          <span className="rounded-full border border-edge bg-surface-secondary/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
             Execution Trace
           </span>
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300">
             {trace.meta.status}
           </span>
           <span
             className={cn(
               "rounded-full border px-2 py-1 text-[11px] font-semibold uppercase tracking-wide",
               usingLiveRun
-                ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-200"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-200",
+                ? "border-cyan-400/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-200"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-200",
             )}
           >
             {usingLiveRun ? "Live saved run" : "Seeded example"}
@@ -260,15 +260,15 @@ export function ExecutionTraceView() {
         </div>
         <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-100">{headline}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-300">{trace.run.user_goal}</p>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-500">
+            <h1 className="text-3xl font-semibold tracking-tight text-content">{headline}</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-content-secondary">{trace.run.user_goal}</p>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-content-secondary/70">
               This surface stores action receipts, evidence, diffs, decisions, verification checks, and final artifacts.
               It does not depend on hidden chain-of-thought to make the workflow auditable.
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">Run source</div>
+          <div className="rounded-2xl border border-edge bg-surface-secondary dark:bg-black/20 p-4">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Run source</div>
             {sessions.length ? (
               <div className="mt-2">
                 <label className="sr-only" htmlFor="execution-trace-run-select">
@@ -281,7 +281,7 @@ export function ExecutionTraceView() {
                   onChange={(event) =>
                     setSelectedSessionId(event.target.value as Id<"agentTaskSessions">)
                   }
-                  className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-cyan-400/40"
+                  className="w-full rounded-xl border border-edge bg-surface px-3 py-2 text-sm text-content outline-none transition focus:border-primary/40"
                 >
                   {sessions.map((session) => (
                     <option key={session._id} value={session._id}>
@@ -289,45 +289,45 @@ export function ExecutionTraceView() {
                     </option>
                   ))}
                 </select>
-                <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-                  <DatabaseZap className="h-3.5 w-3.5 text-cyan-300" />
+                <div className="mt-2 flex items-center gap-2 text-xs text-content-muted">
+                  <DatabaseZap className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-300" />
                   {usingLiveRun
                     ? `${sessionDetail?.traceCount ?? 0} trace${sessionDetail?.traceCount === 1 ? "" : "s"} reconstructed from saved runs`
                     : "No compatible saved runs found. Showing the seeded spreadsheet trace."}
                 </div>
               </div>
             ) : (
-              <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+              <p className="mt-2 text-sm leading-relaxed text-content-secondary">
                 No saved task runs are available yet. The seeded spreadsheet trace remains visible so the surface still demonstrates the contract.
               </p>
             )}
 
-            <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">Run summary</div>
-            <div className="mt-2 space-y-2 text-sm text-zinc-300">
+            <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Run summary</div>
+            <div className="mt-2 space-y-2 text-sm text-content-secondary">
               <div>{trace.steps.length} recorded steps</div>
               <div>{trace.evidence_catalog.length} evidence bundles</div>
               <div>{trace.verification_checks.length} verification checks</div>
               <div>{trace.outputs.length} exported artifacts</div>
             </div>
-            <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">Truth boundary</div>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-300">{truthBoundary}</p>
+            <div className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Truth boundary</div>
+            <p className="mt-2 text-sm leading-relaxed text-content-secondary">{truthBoundary}</p>
           </div>
         </div>
       </header>
 
       {(isLoadingSessions || isLoadingDetail) && !usingLiveRun ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-400">
+        <div className="rounded-2xl border border-edge bg-surface/50 px-4 py-3 text-sm text-content-muted">
           Loading saved execution runs…
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <section className="rounded-2xl border border-edge bg-surface/50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
               Progressive disclosure
             </div>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-300">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-content-secondary">
               Start with the level of detail you actually need, then drill down only when the workflow outcome needs explanation or a full audit trail.
             </p>
           </div>
@@ -342,8 +342,8 @@ export function ExecutionTraceView() {
                 className={cn(
                   "rounded-full border px-3 py-1.5 text-sm transition",
                   disclosureLevel === level.id
-                    ? "border-cyan-400/40 bg-cyan-500/10 text-cyan-100"
-                    : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
+                    ? "border-cyan-400/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-100"
+                    : "border-edge bg-surface/50 text-content-muted hover:border-primary/30 hover:text-content",
                 )}
               >
                 {level.label}
@@ -351,7 +351,7 @@ export function ExecutionTraceView() {
             ))}
           </div>
         </div>
-        <div className="mt-3 text-sm text-zinc-400">
+        <div className="mt-3 text-sm text-content-muted">
           {DISCLOSURE_LEVELS.find((level) => level.id === disclosureLevel)?.description}
         </div>
       </section>
@@ -367,8 +367,8 @@ export function ExecutionTraceView() {
             className={cn(
               "rounded-full border px-3 py-1.5 text-sm transition",
               activeTab === tab.id
-                ? "border-cyan-400/40 bg-cyan-500/10 text-cyan-100"
-                : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
+                ? "border-cyan-400/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-100"
+                : "border-edge bg-surface/50 text-content-muted hover:border-primary/30 hover:text-content",
             )}
           >
             {tab.label}
@@ -380,43 +380,44 @@ export function ExecutionTraceView() {
         <>
           {disclosureLevel === "outcome" ? (
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <SectionCard title="Outcome" icon={<BadgeCheck className="h-4 w-4 text-emerald-300" />}>
+              <SectionCard title="Outcome" icon={<BadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                 <div className="space-y-4">
-                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Primary result</div>
-                    <div className="mt-2 text-sm font-medium text-zinc-100">
+                  <div className="rounded-xl border border-edge bg-surface/50 p-4">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Primary result</div>
+                    <div className="mt-2 text-sm font-medium text-content">
                       {primaryDecision?.statement ?? "This run completed with a traceable outcome."}
                     </div>
-                    <p className="mt-2 text-sm leading-relaxed text-zinc-300">{trace.run.user_goal}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-content-secondary">{trace.run.user_goal}</p>
                   </div>
                   {primaryOutput ? (
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Primary artifact</div>
-                      <div className="mt-2 text-sm font-medium text-zinc-100">{primaryOutput.label}</div>
-                      <div className="mt-1 text-xs uppercase tracking-wide text-zinc-500">{primaryOutput.kind}</div>
-                      <div className="mt-2 break-all text-xs text-zinc-400">{primaryOutput.path}</div>
-                      <p className="mt-2 text-sm leading-relaxed text-zinc-300">{primaryOutput.summary}</p>
+                    <div className="rounded-xl border border-edge bg-surface/50 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Primary artifact</div>
+                      <div className="mt-2 text-sm font-medium text-content">{primaryOutput.label}</div>
+                      <div className="mt-1 text-xs uppercase tracking-wide text-content-muted">{primaryOutput.kind}</div>
+                      <div className="mt-2 break-all text-xs text-content-muted">{primaryOutput.path}</div>
+                      <p className="mt-2 text-sm leading-relaxed text-content-secondary">{primaryOutput.summary}</p>
                     </div>
                   ) : null}
                 </div>
               </SectionCard>
 
               <div className="space-y-6">
-                <SectionCard title="Trust Boundary" icon={<SearchCheck className="h-4 w-4 text-amber-300" />}>
+                <SectionCard title="Trust Boundary" icon={<SearchCheck className="h-4 w-4 text-amber-600 dark:text-amber-300" />}>
                   <BulletList items={trace.limitations} />
                 </SectionCard>
 
-                <SectionCard title="Verification Snapshot" icon={<ShieldCheck className="h-4 w-4 text-emerald-300" />}>
+                <SectionCard title="Verification Snapshot" icon={<ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Passed</div>
-                      <div className="mt-2 text-2xl font-semibold text-zinc-100">{verificationCounts.passed}</div>
+                    <div className="rounded-xl border border-edge bg-surface/50 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Passed</div>
+                      <div className="mt-2 text-2xl font-semibold text-content">{verificationCounts.passed}</div>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Warnings / fixes</div>
-                      <div className="mt-2 text-2xl font-semibold text-zinc-100">
+                    <div className="rounded-xl border border-edge bg-surface/50 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Warnings / fixes</div>
+                      <div className="mt-2 text-2xl font-semibold text-content">
                         {verificationCounts.warning + verificationCounts.fixed}
                       </div>
+
                     </div>
                   </div>
                 </SectionCard>
@@ -426,11 +427,11 @@ export function ExecutionTraceView() {
 
           {disclosureLevel === "why" ? (
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <SectionCard title="Why this outcome" icon={<BadgeCheck className="h-4 w-4 text-emerald-300" />}>
+              <SectionCard title="Why this outcome" icon={<BadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                 <div className="space-y-4">
                   {trace.decisions.map((decision) => (
-                    <div key={decision.decision_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                      <div className="text-sm font-medium text-zinc-100">{decision.statement}</div>
+                    <div key={decision.decision_id} className="rounded-xl border border-edge bg-surface/50 p-4">
+                      <div className="text-sm font-medium text-content">{decision.statement}</div>
                       <div className="mt-2">
                         <BulletList items={decision.basis} />
                       </div>
@@ -440,19 +441,19 @@ export function ExecutionTraceView() {
               </SectionCard>
 
               <div className="space-y-6">
-                <SectionCard title="Evidence boundary" icon={<Files className="h-4 w-4 text-indigo-300" />}>
+                <SectionCard title="Evidence boundary" icon={<Files className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
                   <div className="space-y-4">
                     {trace.evidence_catalog.slice(0, 3).map((evidence) => (
-                      <div key={evidence.evidence_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                        <div className="text-sm font-medium text-zinc-100">{evidence.title}</div>
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-300">{evidence.summary}</p>
+                      <div key={evidence.evidence_id} className="rounded-xl border border-edge bg-surface/50 p-4">
+                        <div className="text-sm font-medium text-content">{evidence.title}</div>
+                        <p className="mt-2 text-sm leading-relaxed text-content-secondary">{evidence.summary}</p>
                         <SourceChips sourceRefs={evidence.source_refs} />
                       </div>
                     ))}
                   </div>
                 </SectionCard>
 
-                <SectionCard title="Verification Snapshot" icon={<ShieldCheck className="h-4 w-4 text-emerald-300" />}>
+                <SectionCard title="Verification Snapshot" icon={<ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                   <BulletList
                     items={[
                       `${verificationCounts.passed} checks passed`,
@@ -468,22 +469,22 @@ export function ExecutionTraceView() {
 
           {disclosureLevel === "full" ? (
             <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-              <SectionCard title="Workflow Template" icon={<Waypoints className="h-4 w-4 text-cyan-300" />}>
+              <SectionCard title="Workflow Template" icon={<Waypoints className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
                 <div className="space-y-4">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Inputs</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Inputs</div>
                     <div className="mt-2">
                       <BulletList items={trace.inputs.uploaded_files} />
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Instructions</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Instructions</div>
                     <div className="mt-2">
                       <BulletList items={trace.inputs.instructions} />
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Stored as receipts</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">Stored as receipts</div>
                     <div className="mt-2">
                       <BulletList
                         items={[
@@ -500,11 +501,11 @@ export function ExecutionTraceView() {
               </SectionCard>
 
               <div className="space-y-6">
-                <SectionCard title="Structured Decisions" icon={<BadgeCheck className="h-4 w-4 text-emerald-300" />}>
+                <SectionCard title="Structured Decisions" icon={<BadgeCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
                   <div className="space-y-4">
                     {trace.decisions.map((decision) => (
-                      <div key={decision.decision_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                        <div className="text-sm font-medium text-zinc-100">{decision.statement}</div>
+                      <div key={decision.decision_id} className="rounded-xl border border-edge bg-surface/50 p-4">
+                        <div className="text-sm font-medium text-content">{decision.statement}</div>
                         <div className="mt-2">
                           <BulletList items={decision.basis} />
                         </div>
@@ -513,14 +514,14 @@ export function ExecutionTraceView() {
                   </div>
                 </SectionCard>
 
-                <SectionCard title="Outputs" icon={<FileSpreadsheet className="h-4 w-4 text-indigo-300" />}>
+                <SectionCard title="Outputs" icon={<FileSpreadsheet className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
                   <div className="space-y-3">
                     {trace.outputs.map((output) => (
-                      <div key={output.output_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                        <div className="text-sm font-medium text-zinc-100">{output.label}</div>
-                        <div className="mt-1 text-xs uppercase tracking-wide text-zinc-500">{output.kind}</div>
-                        <div className="mt-2 break-all text-xs text-zinc-400">{output.path}</div>
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-300">{output.summary}</p>
+                      <div key={output.output_id} className="rounded-xl border border-edge bg-surface/50 p-4">
+                        <div className="text-sm font-medium text-content">{output.label}</div>
+                        <div className="mt-1 text-xs uppercase tracking-wide text-content-muted">{output.kind}</div>
+                        <div className="mt-2 break-all text-xs text-content-muted">{output.path}</div>
+                        <p className="mt-2 text-sm leading-relaxed text-content-secondary">{output.summary}</p>
                       </div>
                     ))}
                   </div>
@@ -532,23 +533,23 @@ export function ExecutionTraceView() {
       ) : null}
 
       {activeTab === "timeline" ? (
-        <SectionCard title="Step Timeline" icon={<Waypoints className="h-4 w-4 text-cyan-300" />}>
+        <SectionCard title="Step Timeline" icon={<Waypoints className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
           <div className="space-y-4">
             {trace.steps.map((step, index) => (
-              <div key={step.step_id} className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 lg:grid-cols-[120px_1fr]">
+              <div key={step.step_id} className="grid gap-3 rounded-2xl border border-edge bg-surface/50 p-4 lg:grid-cols-[120px_1fr]">
                 <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">{step.stage}</div>
-                  <div className="mt-1 text-xs text-zinc-400">Step {index + 1}</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">{step.stage}</div>
+                  <div className="mt-1 text-xs text-content-muted">Step {index + 1}</div>
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="text-sm font-medium text-zinc-100">{step.title}</div>
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] uppercase tracking-wide text-zinc-500">
+                    <div className="text-sm font-medium text-content">{step.title}</div>
+                    <span className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[10px] uppercase tracking-wide text-content-muted">
                       {step.tool}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-300">{step.result_summary}</p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-zinc-500">
+                  <p className="mt-2 text-sm leading-relaxed text-content-secondary">{step.result_summary}</p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-content-muted">
                     <span>action: {step.action}</span>
                     <span>target: {step.target}</span>
                     {typeof step.confidence === "number" ? (
@@ -556,8 +557,8 @@ export function ExecutionTraceView() {
                     ) : null}
                   </div>
                   {step.verification.length ? (
-                    <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                    <div className="mt-3 rounded-xl border border-edge bg-surface-secondary p-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
                         Verification notes
                       </div>
                       <div className="mt-2">
@@ -574,16 +575,16 @@ export function ExecutionTraceView() {
 
       {activeTab === "evidence" ? (
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          <SectionCard title="Evidence Catalog" icon={<Files className="h-4 w-4 text-indigo-300" />}>
+          <SectionCard title="Evidence Catalog" icon={<Files className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
             <div className="space-y-4">
               {trace.evidence_catalog.map((evidence) => (
-                <div key={evidence.evidence_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="text-sm font-medium text-zinc-100">{evidence.title}</div>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-300">{evidence.summary}</p>
+                <div key={evidence.evidence_id} className="rounded-xl border border-edge bg-surface/50 p-4">
+                  <div className="text-sm font-medium text-content">{evidence.title}</div>
+                  <p className="mt-2 text-sm leading-relaxed text-content-secondary">{evidence.summary}</p>
                   <SourceChips sourceRefs={evidence.source_refs} />
                   {evidence.supported_claims.length ? (
                     <div className="mt-3">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
                         Supported claims
                       </div>
                       <div className="mt-2">
@@ -593,7 +594,7 @@ export function ExecutionTraceView() {
                   ) : null}
                   {evidence.unsupported_claims.length ? (
                     <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-300">
                         Not established
                       </div>
                       <div className="mt-2">
@@ -606,7 +607,7 @@ export function ExecutionTraceView() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Limitations" icon={<SearchCheck className="h-4 w-4 text-amber-300" />}>
+          <SectionCard title="Limitations" icon={<SearchCheck className="h-4 w-4 text-amber-600 dark:text-amber-300" />}>
             <BulletList items={trace.limitations} />
           </SectionCard>
         </div>
@@ -615,12 +616,12 @@ export function ExecutionTraceView() {
       {activeTab === "diffs" ? (
         <div className="space-y-6">
           {trace.diffs.map((diff) => (
-            <SectionCard key={diff.diff_id} title={diff.target} icon={<GitCompareArrows className="h-4 w-4 text-cyan-300" />}>
-              <p className="text-sm leading-relaxed text-zinc-300">{diff.summary}</p>
+            <SectionCard key={diff.diff_id} title={diff.target} icon={<GitCompareArrows className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
+              <p className="text-sm leading-relaxed text-content-secondary">{diff.summary}</p>
               {diff.cell_changes.length ? (
-                <div className="mt-4 overflow-hidden rounded-xl border border-white/10">
+                <div className="mt-4 overflow-hidden rounded-xl border border-edge">
                   <table className="w-full border-collapse text-left text-sm">
-                    <thead className="bg-white/[0.04] text-zinc-400">
+                    <thead className="bg-surface-secondary text-content-muted">
                       <tr>
                         <th className="px-3 py-2 font-medium">Cell</th>
                         <th className="px-3 py-2 font-medium">Before</th>
@@ -629,10 +630,10 @@ export function ExecutionTraceView() {
                     </thead>
                     <tbody>
                       {diff.cell_changes.map((change) => (
-                        <tr key={`${diff.diff_id}-${change.cell}`} className="border-t border-white/10 align-top">
-                          <td className="px-3 py-2 font-mono text-xs text-zinc-400">{change.cell}</td>
-                          <td className="px-3 py-2 text-zinc-500">{change.before ?? "blank"}</td>
-                          <td className="px-3 py-2 text-zinc-200">{change.after ?? "blank"}</td>
+                        <tr key={`${diff.diff_id}-${change.cell}`} className="border-t border-edge align-top">
+                          <td className="px-3 py-2 font-mono text-xs text-content-muted">{change.cell}</td>
+                          <td className="px-3 py-2 text-content-muted">{change.before ?? "blank"}</td>
+                          <td className="px-3 py-2 text-content">{change.after ?? "blank"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -641,7 +642,7 @@ export function ExecutionTraceView() {
               ) : null}
               {diff.structural_changes.length ? (
                 <div className="mt-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
                     Structural changes
                   </div>
                   <div className="mt-2">
@@ -655,21 +656,21 @@ export function ExecutionTraceView() {
       ) : null}
 
       {activeTab === "verification" ? (
-        <SectionCard title="Verification Loop" icon={<ShieldCheck className="h-4 w-4 text-emerald-300" />}>
+        <SectionCard title="Verification Loop" icon={<ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}>
           <div className="space-y-4">
             {trace.verification_checks.map((check) => (
-              <div key={check.check_id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <div key={check.check_id} className="rounded-xl border border-edge bg-surface/50 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-zinc-100">{check.label}</div>
+                  <div className="text-sm font-medium text-content">{check.label}</div>
                   <StatusBadge value={check.status} />
                 </div>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-300">{check.details}</p>
+                <p className="mt-2 text-sm leading-relaxed text-content-secondary">{check.details}</p>
                 {check.related_artifact_ids.length ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {check.related_artifact_ids.map((artifactId) => (
                       <span
                         key={artifactId}
-                        className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[11px] text-zinc-400"
+                        className="rounded-full border border-edge bg-surface-secondary/50 px-2 py-1 text-[11px] text-content-muted"
                       >
                         {artifactId}
                       </span>
@@ -684,10 +685,10 @@ export function ExecutionTraceView() {
 
       {activeTab === "json" ? (
         <div className="grid gap-6 lg:grid-cols-2">
-          <SectionCard title="Typed Output" icon={<FileJson2 className="h-4 w-4 text-cyan-300" />}>
+          <SectionCard title="Typed Output" icon={<FileJson2 className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />}>
             <LazyCodeBlock code={formattedJson} language="json" />
           </SectionCard>
-          <SectionCard title="Schema Contract" icon={<ClipboardCheck className="h-4 w-4 text-indigo-300" />}>
+          <SectionCard title="Schema Contract" icon={<ClipboardCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-300" />}>
             <LazyCodeBlock code={schemaJson} language="json" />
           </SectionCard>
         </div>

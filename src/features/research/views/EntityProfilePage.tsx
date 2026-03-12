@@ -521,7 +521,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                 <div className="relative pl-4 border-l-2 border-edge space-y-4">
                   {adaptiveProfile.timeline.map((event: any, idx: number) => (
                     <div key={event.id || idx} className="relative">
-                      <div className="absolute -left-[21px] w-4 h-4 rounded-full bg-white border-2 border-edge" />
+                      <div className="absolute -left-[21px] w-4 h-4 rounded-full bg-surface border-2 border-edge" />
                       <div className="pl-4">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-bold text-content-secondary">{event.date}</span>
@@ -930,7 +930,7 @@ export const EntityProfilePage: React.FC<EntityProfilePageProps> = ({
                       href={source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start gap-3 p-3 rounded-lg border border-edge bg-background hover:bg-white transition-colors group"
+                      className="flex items-start gap-3 p-3 rounded-lg border border-edge bg-background hover:bg-surface transition-colors group"
                     >
                       <ExternalLink className="w-4 h-4 text-content-muted mt-0.5 flex-shrink-0 group-hover:text-[var(--accent-primary)]" />
                       <div className="flex-1 min-w-0">

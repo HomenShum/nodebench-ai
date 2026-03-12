@@ -189,7 +189,7 @@ export function TasksTab({ agentThreadId }: TasksTabProps) {
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder={scope === 'thread' ? "Add task to this thread..." : "Add a task..."}
-            className="flex-1 px-3 py-1.5 text-xs bg-surface-secondary border border-edge rounded-lg text-content placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            className="flex-1 px-3 py-1.5 text-xs bg-surface-secondary border border-edge rounded-lg text-content placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <button
             type="submit"

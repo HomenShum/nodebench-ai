@@ -65,7 +65,7 @@ export const RepoStatsPanel: React.FC<RepoStatsPanelProps> = ({ repoUrl, initial
   }
 
   return (
-    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xs font-bold text-content-muted">Repo Momentum</div>

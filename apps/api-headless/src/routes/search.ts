@@ -201,9 +201,12 @@ router.post("/", async (req: Request, res: Response) => {
       object: "enterprise_investigation",
       ...investigation,
     };
+    const sourceSnapshotHashes = investigation.evidence_catalog
+      .map((e) => e.content_hash)
+      .filter((h) => !h.includes("unverified"));
     const replayManifest = registerReplayManifest(
       buildEnterpriseReplayManifest({
-        traceId: investigation.audit_proof_pack.trace_id,
+        traceId: investigation.traceability.trace_id,
         query: parsed.data.query,
         generatedAt: filteredPayload.generatedAt,
         request: {
@@ -215,7 +218,7 @@ router.post("/", async (req: Request, res: Response) => {
           excludeDomains: parsed.data.excludeDomains,
         },
         response: investigationWithObject,
-        sourceSnapshotHashes: investigation.audit_proof_pack.source_snapshot_hashes,
+        sourceSnapshotHashes,
         searchTelemetry: normalized.telemetry,
         fetchedDocuments: documents.map((document, index) => ({
           finalUrl: document.finalUrl,
@@ -232,8 +235,8 @@ router.post("/", async (req: Request, res: Response) => {
       depth: parsed.data.depth,
       outputType: parsed.data.outputType,
       ...investigationWithObject,
-      audit_proof_pack: {
-        ...investigation.audit_proof_pack,
+      traceability: {
+        ...investigation.traceability,
         replay_url: `/v1/replay/${replayManifest.replayId}`,
       },
     });

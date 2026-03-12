@@ -10,7 +10,7 @@
 
 import { getDb, genId } from "../db.js";
 import type { McpTool } from "../types.js";
-import { execSync } from "node:child_process";
+import { safeExec } from "../security/index.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -19,24 +19,20 @@ const PROTECTED_BRANCHES = ["main", "master", "production", "release"];
 const CONVENTIONAL_COMMIT_RE =
   /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?:\s.+/;
 
-interface GitExecOptions {
-  cwd: string;
-  encoding: "utf8";
-  timeout: number;
-  stdio: ["pipe", "pipe", "pipe"];
-}
-
-function gitExecOptions(repoPath?: string): GitExecOptions {
-  return {
-    cwd: repoPath || process.cwd(),
-    encoding: "utf8" as const,
-    timeout: 10000,
-    stdio: ["pipe", "pipe", "pipe"] as ["pipe", "pipe", "pipe"],
-  };
-}
-
 function runGit(command: string, repoPath?: string): string {
-  return execSync(command, gitExecOptions(repoPath)).toString().trim();
+  // All git commands go through the security sandbox (allow-listed, no metachar injection)
+  const result = safeExec(command, {
+    cwd: repoPath || process.cwd(),
+    timeout: 10_000,
+  });
+  if (result.exitCode !== 0) {
+    const err = new Error(result.stderr || `git command failed: ${command}`);
+    (err as any).status = result.exitCode;
+    (err as any).stdout = result.stdout;
+    (err as any).stderr = result.stderr;
+    throw err;
+  }
+  return result.stdout.trim();
 }
 
 // ─── Tools ────────────────────────────────────────────────────────────────────

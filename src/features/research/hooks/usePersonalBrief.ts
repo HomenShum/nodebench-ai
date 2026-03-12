@@ -47,7 +47,8 @@ export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
     // Aggregate results - prioritize FRESH signals
     const personalizedContext = useMemo(() => {
         // Map overlay features to Act-level implications
-        const features = (personalOverlay as any)?.features || [];
+        const rawFeatures = (personalOverlay as any)?.features;
+        const features = Array.isArray(rawFeatures) ? rawFeatures : [];
         const passingFeatures = features.filter((f: any) => f.status === 'passing');
 
         // If we have passing features from the overlay, use them
@@ -65,15 +66,17 @@ export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
         // Use FRESH critical signals (recency-first approach like LinkedIn posts)
         // INCREASED: Show up to 10 signals in PersonalPulse (up from 3)
         const liveFeatures: Array<{ id: string; name: string; resultMarkdown: string; type: string; timestamp?: number; category?: string }> = [];
+        const signalRows = Array.isArray((freshSignals as any)?.signals) ? (freshSignals as any).signals : [];
 
-        if (freshSignals?.signals && freshSignals.signals.length > 0) {
+        if (signalRows.length > 0) {
             // Sort by timestamp (freshest first) and take top 10 for display
-            const sortedSignals = [...freshSignals.signals]
-                .sort((a, b) => b.timestamp - a.timestamp)
+            const sortedSignals = [...signalRows]
+                .sort((a, b) => Number(b?.timestamp ?? 0) - Number(a?.timestamp ?? 0))
                 .slice(0, 10);
 
             sortedSignals.forEach((signal, idx) => {
-                const ageHours = Math.round((Date.now() - signal.timestamp) / (60 * 60 * 1000));
+                const signalTimestamp = Number(signal?.timestamp ?? Date.now());
+                const ageHours = Math.round((Date.now() - signalTimestamp) / (60 * 60 * 1000));
                 const ageLabel = ageHours < 1 ? 'Just now' : ageHours === 1 ? '1h ago' : `${ageHours}h ago`;
 
                 let featureType = 'market_signal';
@@ -110,7 +113,7 @@ export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
                     featureName = 'Security';
                     emoji = '🔒';
                 } else if (/reddit|r\//i.test(signal.source || '')) {
-                    featureName = signal.source || 'Reddit';
+                    featureName = 'Reddit';
                     emoji = '💬';
                 } else if (/github/i.test(signal.source || '')) {
                     featureName = 'GitHub';
@@ -130,7 +133,7 @@ export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
                         ? `**${signal.title}** — ${signal.summary}`
                         : signal.title,
                     type: featureType,
-                    timestamp: signal.timestamp,
+                    timestamp: signalTimestamp,
                     category: signal.category,
                     // Enhanced data for richer cards
                     summary: signal.summary,
@@ -142,8 +145,9 @@ export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
         }
 
         // Fallback to legacy digest data if no fresh signals
-        if (liveFeatures.length === 0 && digestData?.marketMovers) {
-            const topMover = digestData.marketMovers[0];
+        const marketMovers = Array.isArray((digestData as any)?.marketMovers) ? (digestData as any).marketMovers : [];
+        if (liveFeatures.length === 0 && marketMovers.length > 0) {
+            const topMover = marketMovers[0];
             if (topMover) {
                 liveFeatures.push({
                     id: 'M1',
@@ -161,7 +165,7 @@ export function usePersonalBrief(options: UsePersonalBriefOptions = {}) {
             passingFeatures: liveFeatures,
             isLiveData: liveFeatures.length > 0,
             freshestAgeHours: freshSignals?.freshestAgeHours ?? null,
-            totalFreshSignals: freshSignals?.signals?.length ?? 0,
+            totalFreshSignals: signalRows.length,
             freshSignals,
             digestData,
         };

@@ -48,18 +48,18 @@ const useCalendarDocument = () => {
       const now = new Date();
       const currentMonth = now.toLocaleDateString('en-US', { month: 'long' });
       const currentYear = now.getFullYear();
-      const monthSpecificTitle = `ðŸ“… ${currentMonth} ${currentYear} Calendar`;
+      const monthSpecificTitle = `${currentMonth} ${currentYear} Calendar`;
 
       // Look for existing calendar document
       let calendarDoc = documents.find((doc: any) =>
         doc.title === monthSpecificTitle ||
-        doc.title.startsWith(`ðŸ“… ${currentMonth} ${currentYear}`)
+        doc.title.startsWith(`${currentMonth} ${currentYear}`)
       );
 
       // Fallback to any calendar from current month
       if (!calendarDoc) {
         calendarDoc = documents.find((doc: any) =>
-          doc.title.includes('ðŸ“…') &&
+          doc.title.toLowerCase().includes('calendar') &&
           doc.title.includes(currentMonth) &&
           doc.title.includes(currentYear.toString())
         );
@@ -534,7 +534,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 return (
                   <div
                     key={`allday-${String(e._id)}`}
-                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-indigo-500/10 border border-indigo-500/20 text-content hover:ring-2 hover:ring-indigo-500/50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/50 cursor-grab active:cursor-grabbing"
+                    className="relative m-0.5 rounded-md text-xs px-2 py-1 shadow-sm bg-indigo-500/10 border border-indigo-500/20 text-content hover:ring-2 hover:ring-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-grab active:cursor-grabbing"
                     style={{ gridColumn: `${colStart} / ${colEnd}`, gridRow: rIdx + 1 }}
                     role="button"
                     tabIndex={0}
@@ -583,7 +583,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           }
                           setEditingId(null);
                         }}
-                        className="w-full text-xs bg-surface/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        className="w-full text-xs bg-surface/70 rounded px-1 py-0.5 outline-none focus:ring-2 focus:ring-ring"
                       />
                     ) : (
                       <>
@@ -594,7 +594,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                           title="Delete"
                           aria-label={`Delete event ${e.title}`}
                         >
-                          Ã—
+                          ×
                         </button>
                       </>
                     )}
@@ -801,7 +801,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
               <div
                 key={dayIdx}
                 ref={(el) => { dayRefs.current[dayIdx] = el; }}
-                className="relative border-l border-edge cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 overflow-hidden"
+                className="relative border-l border-edge cursor-crosshair focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring overflow-hidden"
                 style={{ height: collapseEmpty ? totalDisplayHeight : hourHeightLocal * (showWorkHoursOnly ? (visibleEndHour - visibleStartHour) : 24) }}
                 role="gridcell"
                 tabIndex={0}
@@ -906,7 +906,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                 {/* Hovered slot highlight (15-min granularity) - off in collapsed mode */}
                 {!collapseEmpty && hoverSlot && hoverSlot.dayIdx === dayIdx && (
                   <div
-                    className="absolute left-0 right-0 bg-indigo-500/10 ring-1 ring-indigo-500/50/30 pointer-events-none"
+                    className="absolute left-0 right-0 bg-indigo-500/10 ring-1 ring-ring pointer-events-none"
                     style={{ top: hoverSlot.slotIdx * slotHeight, height: slotHeight }}
                   />
                 )}
@@ -932,7 +932,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     >
                       <input
                         autoFocus
-                        placeholder="Add event title Â· Enter to save Â· Esc to cancel"
+                        placeholder="Add event title · Enter to save · Esc to cancel"
                         value={draft.title}
                         aria-label={`New event title input for ${d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}`}
                         onChange={(ev) => setDraft({ ...draft, title: ev.target.value })}
@@ -1025,7 +1025,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                     <div
                       key={e._id}
                       ref={(el) => { if (el) eventRefs.current[String(e._id)] = el; }}
-                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:ring-2 hover:ring-indigo-500/50/70 hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50/70 cursor-grab active:cursor-grabbing"
+                      className="absolute rounded-md text-xs p-2 shadow-sm transition-shadow duration-150 hover:ring-2 hover:ring-ring hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-grab active:cursor-grabbing"
                       style={{
                         top: pe.top,
                         height: pe.height,
@@ -1093,14 +1093,14 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
                               </span>
                             </div>
                           )}
-                          <button
-                            className="absolute top-1 right-1 w-5 h-5 rounded hover:bg-surface-hover text-content-secondary flex items-center justify-center"
-                            onClick={(ev) => { ev.stopPropagation(); void onDelete(e._id); }}
-                            title="Delete"
-                            aria-label={`Delete event ${e.title}`}
-                          >
-                            Ã—
-                          </button>
+                        <button
+                          className="absolute top-1 right-1 w-5 h-5 rounded hover:bg-surface-hover text-content-secondary flex items-center justify-center"
+                          onClick={(ev) => { ev.stopPropagation(); void onDelete(e._id); }}
+                          title="Delete"
+                          aria-label={`Delete event ${e.title}`}
+                        >
+                          ×
+                        </button>
                         </>
                       )}
                     </div>
@@ -1187,7 +1187,7 @@ export function CalendarView({ focusedDateMs, onSelectDate: _onSelectDate, onVie
           <div className="relative">
             {/* Header */}
             <PageHeroHeader
-              icon={"ðŸ“…"}
+              icon={<CalendarIcon className="h-5 w-5" />}
               title={"Calendar Hub"}
               date={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               presets={

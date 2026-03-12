@@ -3,7 +3,7 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const setCurrentView = vi.fn();
-let mockCurrentView: "oracle" | "research" = "oracle";
+let mockCurrentView: "oracle" | "research" | "control-plane" = "oracle";
 
 vi.mock("../hooks/useMainLayoutRouting", () => ({
   useMainLayoutRouting: () => ({
@@ -46,7 +46,7 @@ describe("useCockpitMode", () => {
   });
 
   it("restores the saved cockpit mode on home-like routes", () => {
-    mockCurrentView = "research";
+    mockCurrentView = "control-plane";
     window.localStorage.setItem("nodebench-cockpit-mode", "system");
 
     renderHook(() => useCockpitMode(), {

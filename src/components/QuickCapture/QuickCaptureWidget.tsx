@@ -103,19 +103,19 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
   ];
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+    <div className={`fixed z-50 nb-fab-safe ${className}`}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="absolute bottom-16 right-0 w-80 bg-white dark:bg-gray-900 rounded-lg shadow-2xl border border-edge overflow-hidden"
+            className="absolute bottom-14 sm:bottom-16 right-0 w-80 bg-surface rounded-xl shadow-xl border border-edge overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
               <span className="text-sm font-semibold text-content">Quick Capture</span>
-              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-surface-hover rounded transition-colors active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50">
+              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-surface-hover rounded transition-colors active:scale-[0.95] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                 <X className="h-4 w-4 text-content-secondary" />
               </button>
             </div>
@@ -126,9 +126,9 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
                     mode === m
-                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'
+                      ? 'bg-primary/10 text-primary'
                       : 'text-content-secondary hover:bg-surface-hover hover:text-content'
                   }`}
                 >
@@ -145,7 +145,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder={mode === 'task' ? 'What needs to be done?' : 'Capture a thought...'}
-                  className="w-full h-24 px-3 py-2 text-sm border border-edge rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-24 px-3 py-2 text-sm border border-edge bg-surface rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
                   autoFocus
                 />
               )}
@@ -160,7 +160,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                       <span className="text-lg font-mono">{formatDuration(duration)}</span>
                       <button
                         onClick={stopRecording}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                        className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         Stop Recording
                       </button>
@@ -175,9 +175,9 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   ) : (
                     <button
                       onClick={startRecording}
-                      className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                      className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/15 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
-                      <Mic className="h-8 w-8 text-blue-600" />
+                      <Mic className="h-8 w-8 text-primary" />
                     </button>
                   )}
                 </div>
@@ -195,9 +195,9 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
                   ) : (
                     <button
                       onClick={captureScreen}
-                      className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center hover:bg-purple-200 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                      className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/15 transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
-                      <Camera className="h-8 w-8 text-purple-600" />
+                      <Camera className="h-8 w-8 text-primary" />
                     </button>
                   )}
                 </div>
@@ -209,7 +209,7 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
               <button
                 onClick={handleSave}
                 disabled={isSaving || (!content.trim() && !audioBlob && !screenshotData)}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 shadow-sm"
               >
                 <Send className="h-4 w-4" />
                 {isSaving ? 'Saving...' : 'Save'}
@@ -225,9 +225,9 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         aria-label={isOpen ? 'Close quick capture' : 'Open quick capture'}
-        title={isOpen ? 'Close quick capture' : 'Quick capture — add note, task, or voice memo'}
-        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
-          isOpen ? 'bg-gray-800 dark:bg-gray-700 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-500/20'
+        title={isOpen ? 'Close quick capture' : 'Quick capture - add note, task, or voice memo'}
+        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-lg border border-edge/60 flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${
+          isOpen ? 'bg-surface-secondary text-content' : 'bg-primary text-primary-foreground hover:opacity-90 shadow-primary/20'
         }`}
       >
         <motion.div animate={{ rotate: isOpen ? 45 : 0 }} className="flex items-center justify-center">
@@ -239,4 +239,3 @@ export function QuickCaptureWidget({ className = '' }: QuickCaptureWidgetProps) 
 }
 
 export default QuickCaptureWidget;
-

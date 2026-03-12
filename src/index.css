@@ -1,5 +1,5 @@
 /* Fonts: Inter for UI, JetBrains Mono for code */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=optional');
 
 @tailwind base;
 @tailwind components;
@@ -48,6 +48,9 @@
     --accent-secondary: #818CF8;
     --accent-primary-bg: rgba(94, 106, 210, 0.08);
     --accent-primary-hover: #4F5BC0;
+    --text-disabled: #9CA3AF;
+    --text-tertiary: #9CA3AF;
+    --text-placeholder: #9CA3AF;
   }
 
   .dark {
@@ -87,6 +90,9 @@
     --accent-secondary: #818CF8;
     --accent-primary-bg: rgba(124, 138, 228, 0.1);
     --accent-primary-hover: #8B97E8;
+    --text-disabled: #6B7280;
+    --text-tertiary: #A1A1AA;
+    --text-placeholder: #71717A;
   }
 }
 
@@ -127,42 +133,60 @@
 
 /* ───── Type Scale (Linear/Vercel consistency) ───── */
 @layer components {
-  .type-page-title { @apply text-2xl font-semibold tracking-tight; }
-  .type-section-title { @apply text-base font-semibold tracking-tight; }
-  .type-card-title { @apply text-sm font-medium; }
-  .type-body { @apply text-sm leading-relaxed; }
+  .type-page-title { @apply text-[1.95rem] leading-tight font-bold tracking-[-0.02em]; }
+  .type-section-title { @apply text-[1.02rem] leading-tight font-semibold tracking-tight; }
+  .type-card-title { @apply text-sm font-semibold tracking-tight; }
+  .type-body { @apply text-sm leading-6; }
   .type-caption { @apply text-xs text-content-muted; }
   .type-label { @apply text-xs font-medium uppercase tracking-wider text-content-muted; }
 
   /* Inline button standards — match Button component primitives */
   .btn-primary-xs {
-    @apply px-2.5 py-1 text-xs font-medium rounded-md bg-indigo-600 text-white
-           hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+    @apply px-2.5 py-1 text-xs font-medium rounded-md bg-[var(--accent-primary)] text-white
+           hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
+           focus-visible:ring-ring focus-visible:ring-offset-1;
   }
   .btn-primary-sm {
-    @apply px-3 py-1.5 text-xs font-medium rounded-md bg-indigo-600 text-white
-           hover:bg-indigo-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
+    @apply px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--accent-primary)] text-white
+           hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
+           focus-visible:ring-ring focus-visible:ring-offset-1;
   }
   .btn-ghost-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md text-content-secondary
-           hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-50
+           hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
+           focus-visible:ring-ring focus-visible:ring-offset-1;
   }
   .btn-outline-sm {
     @apply px-3 py-1.5 text-xs font-medium rounded-md border border-edge text-content-secondary
-           hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-50
+           hover:bg-surface-hover hover:text-content active:scale-[0.98] disabled:opacity-60 disabled:saturate-50 disabled:cursor-not-allowed
            transition-all duration-150 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1;
+           focus-visible:ring-ring focus-visible:ring-offset-1;
+  }
+
+  /* Shared search shell for topbar + hero inputs */
+  .nb-search-surface {
+    @apply flex items-center gap-2 rounded-xl border border-edge bg-surface-secondary shadow-sm
+           transition-colors duration-150
+           hover:border-edge hover:bg-surface
+           focus-within:border-primary/35 focus-within:bg-surface
+           focus-within:ring-2 focus-within:ring-primary/25;
+  }
+  .nb-search-input {
+    @apply flex-1 bg-transparent text-sm text-content placeholder:text-content-muted
+           outline-none;
+  }
+
+  /* Lazy-view space reservation — prevents layout shift during Suspense fallback → content swap */
+  .nb-lazy-view {
+    contain-intrinsic-block-size: auto 600px;
   }
 
   /* Route-level shell primitives to keep page rhythm/color consistent */
   .nb-page-shell {
-    @apply h-full w-full bg-surface overflow-y-auto relative pb-24 lg:pb-0;
+    @apply h-full min-h-0 w-full bg-surface overflow-y-auto overflow-x-hidden relative isolate pb-24 lg:pb-0;
   }
   .nb-page-inner {
     @apply flex-1 px-6 sm:px-8 lg:px-10 py-8 relative z-10;
@@ -174,7 +198,40 @@
     @apply w-full max-w-5xl mx-auto;
   }
   .nb-surface-card {
-    @apply rounded-lg border border-edge bg-surface shadow-sm;
+    @apply rounded-xl border border-edge bg-surface shadow-sm transition-all duration-150
+           hover:shadow;
+  }
+  .nb-surface-card-interactive {
+    @apply rounded-xl border border-edge bg-surface shadow-sm transition-all duration-150
+           hover:shadow-md hover:border-primary/20;
+  }
+
+  /* Long list affordance + FAB-safe scroll padding */
+  .nb-scroll-region {
+    @apply min-h-0 overflow-y-auto pb-24 lg:pb-16;
+  }
+
+  /* Floating action button safe-area anchor */
+  .nb-fab-safe {
+    bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+    right: max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.75rem));
+  }
+  @media (min-width: 640px) {
+    .nb-fab-safe {
+      bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
+      right: max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1.25rem));
+    }
+  }
+
+  /* Markdown text that stays readable in both themes */
+  .nb-prose {
+    @apply prose prose-sm max-w-none
+           prose-headings:text-content prose-p:text-content-secondary prose-strong:text-content
+           prose-li:text-content-secondary prose-a:text-primary prose-a:font-medium
+           prose-code:text-content prose-code:bg-surface-secondary prose-code:border-edge;
+  }
+  .dark .nb-prose {
+    @apply prose-invert;
   }
 }
 
@@ -789,15 +846,6 @@
   }
 }
 
-/* View transition fade-in — softens route change without harsh opacity-0 flash */
-@keyframes view-fade-in {
-  from { opacity: 0.96; }
-  to   { opacity: 1; }
-}
-.view-enter {
-  animation: view-fade-in 0.15s ease-out both;
-}
-
 /* Screen-reader only utility */
 .sr-only {
   position: absolute;
@@ -810,3 +858,70 @@
   white-space: nowrap;
   border-width: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   HUD / JARVIS-STYLE EFFECTS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Ripple effect on buttons — CSS-only, triggered by :active */
+.hud-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.hud-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: none;
+}
+
+.hud-ripple:active::after {
+  transform: scale(2.5);
+  opacity: 1;
+  animation: hud-ripple-out 0.4s ease-out forwards;
+}
+
+@keyframes hud-ripple-out {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Grid drift animation for GridOverlay */
+@keyframes hud-grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 60px 60px; }
+}
+
+/* Reduced motion: disable all HUD effects */
+.reduce-motion .hud-ripple::after,
+.reduce-motion .hud-ripple:active::after {
+  animation: none !important;
+  transform: none !important;
+  opacity: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-ripple::after,
+  .hud-ripple:active::after {
+    animation: none !important;
+    transform: none !important;
+    opacity: 0 !important;
+  }
+
+  @keyframes hud-grid-drift {
+    from { background-position: 0 0; }
+    to { background-position: 0 0; }
+  }
+}
+

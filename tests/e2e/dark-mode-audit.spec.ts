@@ -44,6 +44,19 @@ const ROUTES = [
   { path: '/public', name: 'public-docs' },
 ];
 
+async function navigateWithinApp(page, targetPath: string) {
+  if (targetPath === '/') {
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+  } else {
+    await page.evaluate((path) => {
+      history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    }, targetPath);
+  }
+  await page.waitForSelector('#main-content', { state: 'visible', timeout: 60000 });
+  await page.waitForTimeout(900);
+}
+
 test.describe('Dark Mode Visual Audit', () => {
   test.beforeEach(async ({ page }) => {
     // Force dark mode BEFORE navigating
@@ -80,9 +93,8 @@ test.describe('Dark Mode Visual Audit', () => {
   // Screenshot every route
   for (const route of ROUTES) {
     test(`screenshot: ${route.name} (${route.path})`, async ({ page }) => {
-      await page.goto(route.path);
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(1500); // Let animations settle
+      await navigateWithinApp(page, route.path);
+      await page.waitForTimeout(600); // Let animations settle
 
       await page.screenshot({
         path: `test-results/dark-mode/${route.name}.png`,

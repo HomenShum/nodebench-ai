@@ -158,7 +158,7 @@ export function ArtifactCard({
             {artifact.title}
           </span>
           {artifact.language && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-white/50 dark:bg-black/20 text-content-secondary dark:text-content-muted">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-surface/50 dark:bg-black/20 text-content-secondary dark:text-content-muted">
               {artifact.language}
             </span>
           )}
@@ -170,7 +170,7 @@ export function ArtifactCard({
           <button
             type="button"
             onClick={handleCopy}
-            className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface/50 dark:hover:bg-black/20 transition-colors"
             title="Copy to clipboard"
           >
             {copied ? (
@@ -184,7 +184,7 @@ export function ArtifactCard({
           <button
             type="button"
             onClick={handleDownload}
-            className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-surface/50 dark:hover:bg-black/20 transition-colors"
             title="Download"
           >
             <Download className="w-3.5 h-3.5 text-content-secondary" />
@@ -195,7 +195,7 @@ export function ArtifactCard({
             <button
               type="button"
               onClick={() => onExpand(artifact)}
-              className="p-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-black/20 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-surface/50 dark:hover:bg-black/20 transition-colors"
               title="Expand"
             >
               <Maximize2 className="w-3.5 h-3.5 text-content-secondary" />

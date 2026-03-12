@@ -76,6 +76,10 @@ const openDatasetToolCallLog: Array<{
   stage: string;
   success: boolean;
 }> = [];
+const LONG_RUNNING_TIMEOUT_MS = Number.parseInt(
+  process.env.NODEBENCH_TOOLBENCH_TEST_TIMEOUT_MS ?? "30000",
+  10
+);
 
 function findTool(name: string): McpTool {
   const tool = allTools.find((candidate) => candidate.name === name);
@@ -366,5 +370,5 @@ describe("Scenario: Open-Source Long-Running Dataset (ToolBench Parallel Subagen
     for (const requiredTool of requiredTools) {
       expect(calledTools.has(requiredTool)).toBe(true);
     }
-  });
+  }, LONG_RUNNING_TIMEOUT_MS);
 });

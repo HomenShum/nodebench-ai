@@ -1,0 +1,30 @@
+{
+  "name": "nodebench-mcp",
+  "version": "2.30.0",
+  "description": "NodeBench MCP — 244-tool development methodology server with context sandbox, progressive discovery, agent-as-a-graph embeddings, and toolset gating presets.",
+  "author": {
+    "name": "Homen Shum",
+    "url": "https://github.com/homenshum"
+  },
+  "homepage": "https://github.com/homenshum/nodebench-ai#readme",
+  "repository": "https://github.com/homenshum/nodebench-ai",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "context-sandbox",
+    "fts5",
+    "bm25",
+    "progressive-discovery",
+    "agent-graph",
+    "embedding",
+    "toolset-gating",
+    "methodology"
+  ],
+  "mcpServers": {
+    "nodebench-mcp": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/index.js"]
+    }
+  },
+  "skills": "./skills/"
+}

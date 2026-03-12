@@ -59,8 +59,8 @@ const intentColors: Record<string, string> = {
   "news-lookup": "bg-green-500/20 text-green-400 border-green-500/30",
   "sec-lookup": "bg-amber-500/20 text-amber-400 border-amber-500/30",
   "outreach-prep": "bg-pink-500/20 text-pink-400 border-pink-500/30",
-  "general-query": "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
-  unknown: "bg-zinc-600/20 text-zinc-500 border-zinc-600/30",
+  "general-query": "bg-surface-secondary/50 text-content-muted border-edge",
+  unknown: "bg-surface-secondary/50 text-content-muted border-edge",
 };
 
 // ============================================================================
@@ -101,11 +101,11 @@ export function ScratchpadView({
     return (
       <div
         className={cn(
-          "bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-3",
+          "bg-surface-secondary border border-edge rounded-lg p-3",
           className
         )}
       >
-        <div className="flex items-center gap-2 text-zinc-500">
+        <div className="flex items-center gap-2 text-content-muted">
           <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
           <span className="text-sm">Loading scratchpad...</span>
         </div>
@@ -118,11 +118,11 @@ export function ScratchpadView({
     return (
       <div
         className={cn(
-          "bg-zinc-900/50 border border-zinc-700/50 rounded-lg p-3",
+          "bg-surface-secondary border border-edge rounded-lg p-3",
           className
         )}
       >
-        <div className="flex items-center gap-2 text-zinc-500">
+        <div className="flex items-center gap-2 text-content-muted">
           <Brain className="h-4 w-4" />
           <span className="text-sm">No active scratchpad</span>
         </div>
@@ -146,7 +146,7 @@ export function ScratchpadView({
             ? "bg-red-500/10 border-red-500/30 text-red-400"
             : isNearLimit
               ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-              : "bg-zinc-900/50 border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/50",
+              : "bg-surface-secondary border-edge text-content-muted hover:bg-surface-hover",
           className
         )}
       >
@@ -164,18 +164,18 @@ export function ScratchpadView({
   return (
     <div
       className={cn(
-        "bg-zinc-900/50 border border-zinc-700/50 rounded-lg overflow-hidden",
+        "bg-surface-secondary border border-edge rounded-lg overflow-hidden",
         className
       )}
     >
       {/* Header */}
       <button
         onClick={onToggleCollapse}
-        className="flex items-center justify-between w-full px-3 py-2 bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+        className="flex items-center justify-between w-full px-3 py-2 bg-surface-hover hover:bg-surface-hover transition-colors"
       >
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-purple-400" />
-          <span className="text-sm font-medium text-zinc-200">Scratchpad</span>
+          <span className="text-sm font-medium text-content">Scratchpad</span>
           {isAtLimit && (
             <AlertTriangle className="h-3.5 w-3.5 text-red-400" />
           )}
@@ -183,7 +183,7 @@ export function ScratchpadView({
             <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
           )}
         </div>
-        <ChevronUp className="h-4 w-4 text-zinc-500" />
+        <ChevronUp className="h-4 w-4 text-content-muted" />
       </button>
 
       {/* Content */}
@@ -201,13 +201,13 @@ export function ScratchpadView({
               scratchpad.activeEntities.map((entity, i) => (
                 <span
                   key={i}
-                  className="px-2 py-0.5 rounded text-xs font-medium bg-zinc-700/50 text-zinc-300 border border-zinc-600/50"
+                  className="px-2 py-0.5 rounded text-xs font-medium bg-surface-hover text-content-secondary border border-edge"
                 >
                   {entity}
                 </span>
               ))
             ) : (
-              <span className="text-xs text-zinc-500">No entities tracked</span>
+              <span className="text-xs text-content-muted">No entities tracked</span>
             )}
           </div>
         </ScratchpadSection>
@@ -280,7 +280,7 @@ export function ScratchpadView({
 
         {/* Last Tool Call */}
         {scratchpad.lastToolCall && (
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-2 text-xs text-content-muted">
             <Clock className="h-3 w-3" />
             <span>Last tool: {scratchpad.lastToolCall}</span>
           </div>
@@ -337,22 +337,22 @@ function ScratchpadSection({
   children,
 }: ScratchpadSectionProps) {
   return (
-    <div className="border border-zinc-700/50 rounded-md overflow-hidden">
+    <div className="border border-edge rounded-md overflow-hidden">
       <button
         onClick={onToggle}
-        className="flex items-center justify-between w-full px-2 py-1.5 bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors"
+        className="flex items-center justify-between w-full px-2 py-1.5 bg-surface-hover/30 hover:bg-surface-hover transition-colors"
       >
-        <div className="flex items-center gap-2 text-zinc-300">
+        <div className="flex items-center gap-2 text-content-secondary">
           {icon}
           <span className="text-xs font-medium">{title}</span>
           {count !== undefined && (
-            <span className="text-xs text-zinc-500">({count})</span>
+            <span className="text-xs text-content-muted">({count})</span>
           )}
         </div>
         {expanded ? (
-          <ChevronUp className="h-3 w-3 text-zinc-500" />
+          <ChevronUp className="h-3 w-3 text-content-muted" />
         ) : (
-          <ChevronDown className="h-3 w-3 text-zinc-500" />
+          <ChevronDown className="h-3 w-3 text-content-muted" />
         )}
       </button>
       {expanded && <div className="px-2 py-2">{children}</div>}
@@ -374,7 +374,7 @@ function CounterBar({ label, current, max }: CounterBarProps) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-zinc-400">{label}</span>
+        <span className="text-content-muted">{label}</span>
         <span
           className={cn(
             "font-mono",
@@ -382,13 +382,13 @@ function CounterBar({ label, current, max }: CounterBarProps) {
               ? "text-red-400"
               : isWarning
                 ? "text-amber-400"
-                : "text-zinc-300"
+                : "text-content-secondary"
           )}
         >
           {current}/{max}
         </span>
       </div>
-      <div className="h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-surface-hover rounded-full overflow-hidden">
         <div
           className={cn(
             "h-full rounded-full transition-all",
@@ -439,7 +439,7 @@ export function CompactScratchpad({
           ? "bg-red-500/10 text-red-400"
           : isWarning
             ? "bg-amber-500/10 text-amber-400"
-            : "bg-zinc-800/50 text-zinc-400",
+            : "bg-surface-hover text-content-muted",
         className
       )}
     >

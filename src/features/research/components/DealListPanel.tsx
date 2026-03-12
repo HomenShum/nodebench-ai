@@ -65,7 +65,7 @@ export function DealListPanel({ deals, onOpenDeal }: DealListPanelProps) {
   const sectors = Array.from(new Set(deals.map((d) => d.sector.toLowerCase())));
 
   return (
-    <div className="rounded-lg border border-edge bg-surface shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-edge bg-surface shadow-sm overflow-hidden transition-shadow duration-200 hover:shadow-md">
       <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
@@ -181,7 +181,7 @@ export function DealFlyout({
 
   return (
     <div className="fixed inset-0 z-[130] flex items-start justify-end pointer-events-none">
-      <div className="absolute inset-0 bg-black/10 pointer-events-auto" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/10 pointer-events-auto cursor-pointer" role="button" tabIndex={-1} aria-label="Close panel" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }} />
       <div className="relative pointer-events-auto mt-10 mr-6 w-[420px] max-w-[94vw] bg-surface border border-edge shadow-2xl rounded-lg overflow-hidden">
         <div className="flex items-start justify-between px-4 py-3 border-b border-edge">
           <div>

@@ -14,6 +14,7 @@ import { useEffect, useCallback } from 'react';
 import { X, Download, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 import type { DocumentCardData } from './documentsHub/utils/documentHelpers';
 import { inferFileType, type FileType } from '@/lib/fileTypes';
+import { sanitizeDocumentTitle } from '@/lib/displayText';
 
 /** Infer FileType for media detection - mirrors DocumentCard logic */
 function inferDocFileType(doc: DocumentCardData): FileType {
@@ -102,7 +103,7 @@ export function MediaCinemaViewer({
             <button
               type="button"
               onClick={handleDownload}
-              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-white/10"
+              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-edge"
               title="Download"
               aria-label="Download media"
             >
@@ -112,7 +113,7 @@ export function MediaCinemaViewer({
           <button
             type="button"
             onClick={onClose}
-            className="p-2.5 rounded-full bg-white/10 hover:bg-red-500/30 text-white hover:text-red-300 transition-all duration-200 backdrop-blur-sm border border-white/10"
+            className="p-2.5 rounded-full bg-white/10 hover:bg-red-500/30 text-white hover:text-red-300 transition-all duration-200 backdrop-blur-sm border border-edge"
             title="Close (Esc)"
             aria-label="Close media viewer"
           >
@@ -125,7 +126,7 @@ export function MediaCinemaViewer({
           <button
             type="button"
             onClick={onPrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-white/10 z-20"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-edge z-20"
             title="Previous"
             aria-label="Previous media"
           >
@@ -136,7 +137,7 @@ export function MediaCinemaViewer({
           <button
             type="button"
             onClick={onNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-white/10 z-20"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 backdrop-blur-sm border border-edge z-20"
             title="Next"
             aria-label="Next media"
           >
@@ -172,8 +173,8 @@ export function MediaCinemaViewer({
         </div>
 
         {/* Caption / Title Bar */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-white flex items-center gap-3 max-w-[80%]">
-          <span className="font-medium truncate">{doc.title}</span>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-black/60 backdrop-blur-md rounded-full border border-edge text-white flex items-center gap-3 max-w-[80%]">
+          <span className="font-medium truncate">{sanitizeDocumentTitle(doc.title)}</span>
           <span className="text-white/40">|</span>
           <span className="text-sm text-white/70 flex-shrink-0">
             {doc.fileType || 'media'}
@@ -183,4 +184,3 @@ export function MediaCinemaViewer({
     </div>
   );
 }
-

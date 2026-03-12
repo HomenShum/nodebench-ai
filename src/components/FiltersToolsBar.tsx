@@ -7,7 +7,7 @@
  * - Subtle bulk selection actions
  */
 
-import React from "react";
+import React, { memo } from "react";
 import { Star, Trash2, X, Plus, Loader2, Sparkles } from "lucide-react";
 
 export type DocumentType = {
@@ -48,7 +48,7 @@ type Props = {
   onCleanupEmptyFiles?: () => void;
 };
 
-export default function FiltersToolsBar(props: Props) {
+const FiltersToolsBar = memo(function FiltersToolsBar(props: Props) {
   const {
     documentTypes,
     filter,
@@ -91,8 +91,8 @@ export default function FiltersToolsBar(props: Props) {
               onClick={() => setFilter(t.id)}
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium border transition-all duration-200 ${
                 isActive
-                  ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                  : "bg-surface text-content-secondary border-edge hover:border-edge dark:hover:border-white/[0.1] hover:text-content dark:hover:text-gray-200"
+                  ? "bg-content text-surface border-content shadow-sm"
+                  : "bg-surface text-content-secondary border-edge hover:border-content-muted/30 hover:text-content"
               }`}
               role="tab"
               aria-selected={isActive}
@@ -101,8 +101,8 @@ export default function FiltersToolsBar(props: Props) {
               <span className={isActive ? "opacity-90" : "opacity-70"}>{t.icon}</span>
               <span>{t.label}</span>
               {count > 0 && (
-                <span className={`ml-0.5 tabular-nums ${isActive ? 'text-white/70' : 'text-content-muted'}`}>
-                  {count}
+                <span className={`ml-0.5 tabular-nums ${isActive ? 'text-surface/80' : 'text-content-muted'}`}>
+                  ({count})
                 </span>
               )}
             </button>
@@ -113,22 +113,22 @@ export default function FiltersToolsBar(props: Props) {
       {/* Right: View toggle + Actions */}
       <div className="flex items-center gap-3">
         {/* View mode toggle */}
-        <div className="flex gap-0.5 bg-surface-secondary backdrop-blur-sm p-1 rounded-lg border border-edge/50 shadow-sm">
+        <div className="flex gap-0.5 bg-surface-secondary p-1 rounded-lg border border-edge shadow-sm">
           <button
             onClick={() => setViewMode("cards")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-content bg-white dark:bg-white/[0.1] shadow-sm" : "text-content-secondary hover:text-content-secondary hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "cards" ? "text-content bg-surface border border-edge shadow-sm" : "text-content-secondary hover:text-content hover:bg-surface"}`}
           >
             Cards
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "list" ? "text-content bg-white dark:bg-white/[0.1] shadow-sm" : "text-content-secondary hover:text-content-secondary hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "list" ? "text-content bg-surface border border-edge shadow-sm" : "text-content-secondary hover:text-content hover:bg-surface"}`}
           >
             List
           </button>
           <button
             onClick={() => setViewMode("segmented")}
-            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-content bg-white dark:bg-white/[0.1] shadow-sm" : "text-content-secondary hover:text-content-secondary hover:bg-white/60"}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${viewMode === "segmented" ? "text-content bg-surface border border-edge shadow-sm" : "text-content-secondary hover:text-content hover:bg-surface"}`}
             title="Show grouped sections"
           >
             Grouped
@@ -141,7 +141,7 @@ export default function FiltersToolsBar(props: Props) {
           disabled={!loggedInUser || isUploading}
           aria-label={isUploading ? 'Uploading document...' : 'Upload document'}
           title={isUploading ? 'Uploading...' : 'Upload a document'}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ring-1 ring-indigo-500/50"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           <Plus className="h-4 w-4" />
           <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
@@ -201,4 +201,6 @@ export default function FiltersToolsBar(props: Props) {
       </div>
     </div>
   );
-}
+});
+
+export default FiltersToolsBar;

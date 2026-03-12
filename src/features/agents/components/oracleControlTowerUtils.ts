@@ -25,7 +25,7 @@ export function getCrossCheckPresentation(status?: OracleCrossCheckStatus) {
   return {
     label: "Untracked",
     questLabel: "Needs telemetry",
-    className: "border-zinc-500/20 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
+    className: "border-edge bg-surface-secondary/50 text-content-muted",
   };
 }
 
@@ -50,7 +50,7 @@ export function getDogfoodPresentation(verdict?: "missing" | "watch" | "fail" | 
   }
   return {
     label: "No dogfood evidence",
-    className: "border-zinc-500/20 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
+    className: "border-edge bg-surface-secondary/50 text-content-muted",
   };
 }
 

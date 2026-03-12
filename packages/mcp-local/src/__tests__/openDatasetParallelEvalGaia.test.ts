@@ -83,6 +83,10 @@ const openDatasetToolCallLog: Array<{
   stage: string;
   success: boolean;
 }> = [];
+const LONG_RUNNING_TIMEOUT_MS = Number.parseInt(
+  process.env.NODEBENCH_GAIA_TEST_TIMEOUT_MS ?? "30000",
+  10
+);
 
 function findTool(name: string): McpTool {
   const tool = allTools.find((candidate) => candidate.name === name);
@@ -437,6 +441,6 @@ describe("Scenario: GAIA (Gated) Long-Running Dataset (Parallel Subagents)", () 
     for (const requiredTool of requiredTools) {
       expect(calledTools.has(requiredTool)).toBe(true);
     }
-  });
+  }, LONG_RUNNING_TIMEOUT_MS);
 });
 

@@ -292,17 +292,24 @@ export function CodePreview() {
 // ============================================================================
 export function MarkdownPreview({ hasContent = false }: { hasContent?: boolean }) {
   return (
-    <div className="w-full h-full bg-surface p-2.5 flex flex-col gap-1.5 overflow-hidden">
-      {/* H1 Title */}
-      <div className="w-3/4 h-2 bg-content rounded-[1px]" />
-      {/* Paragraph lines */}
-      <div className="mt-1 w-full h-1 bg-[var(--border-color)] rounded-[1px]" />
-      <div className="w-5/6 h-1 bg-[var(--border-color)] rounded-[1px]" />
-      <div className="w-full h-1 bg-[var(--border-color)] rounded-[1px]" />
-      <div className="w-1/2 h-1 bg-[var(--border-color)] rounded-[1px]" />
-      {/* Second paragraph */}
-      <div className="mt-1 w-full h-1 bg-surface-hover rounded-[1px]" />
-      <div className="w-4/5 h-1 bg-surface-hover rounded-[1px]" />
+    <div className="w-full h-full overflow-hidden rounded-lg border border-edge/70 bg-gradient-to-br from-surface to-surface-secondary p-2">
+      <div className="flex h-full flex-col rounded-md border border-edge/60 bg-white/[0.04] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="h-1.5 w-16 rounded-full bg-content/90" />
+          <div className="h-4 w-4 rounded-sm border border-edge/60 bg-surface-secondary/80" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="h-1.5 w-full rounded-full bg-content-secondary/35" />
+          <div className="h-1.5 w-5/6 rounded-full bg-content-secondary/30" />
+          <div className="h-1.5 w-full rounded-full bg-content-secondary/28" />
+          <div className="h-1.5 w-2/3 rounded-full bg-content-secondary/28" />
+        </div>
+        <div className="mt-auto">
+          <div className="rounded-md border border-edge/60 bg-surface-secondary/80 px-2 py-1.5">
+            <div className={`h-1.5 rounded-full ${hasContent ? "w-3/4 bg-primary/35" : "w-1/2 bg-content-secondary/20"}`} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -385,4 +392,3 @@ export function ImageFallback() {
     </div>
   );
 }
-

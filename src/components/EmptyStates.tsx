@@ -34,7 +34,7 @@ interface EmptyStateProps {
 export function EmptyState({ title, description, icon: Icon = Inbox, action, className = '' }: EmptyStateProps) {
   return (
     <motion.div
-      className={`flex flex-col items-center justify-center py-12 px-6 text-center ${className}`}
+      className={`flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center ${className}`}
       variants={scaleFadeVariants}
       initial="hidden"
       animate="visible"
@@ -43,11 +43,11 @@ export function EmptyState({ title, description, icon: Icon = Inbox, action, cla
         <Icon className="h-8 w-8 text-content-muted" />
       </div>
       <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
-      <p className="text-sm text-content-secondary max-w-sm mb-6">{description}</p>
+      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words mb-6">{description}</p>
       {action && (
         <button
           onClick={action.onClick}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] text-white rounded-lg text-sm font-medium hover:bg-[var(--accent-primary-hover)] transition-colors"
         >
           <Plus className="h-4 w-4" />
           {action.label}
@@ -132,7 +132,7 @@ interface ErrorStateProps {
 export function ErrorState({ title = 'Something went wrong', message = 'An unexpected error occurred. Please try again.', onRetry, className = '' }: ErrorStateProps) {
   return (
     <motion.div
-      className={`flex flex-col items-center justify-center py-12 px-6 text-center ${className}`}
+      className={`flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center ${className}`}
       variants={scaleFadeVariants}
       initial="hidden"
       animate="visible"
@@ -141,7 +141,7 @@ export function ErrorState({ title = 'Something went wrong', message = 'An unexp
         <AlertCircle className="h-8 w-8 text-red-500" />
       </div>
       <h3 className="text-lg font-semibold text-content mb-2">{title}</h3>
-      <p className="text-sm text-content-secondary max-w-sm mb-6">{message}</p>
+      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words mb-6">{message}</p>
       {onRetry && (
         <button onClick={onRetry} className="flex items-center gap-2 px-4 py-2 bg-surface-secondary text-content-secondary rounded-lg text-sm font-medium hover:bg-surface-secondary transition-colors">
           <RefreshCw className="h-4 w-4" />
@@ -155,7 +155,7 @@ export function ErrorState({ title = 'Something went wrong', message = 'An unexp
 export function OfflineState() {
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-12 px-6 text-center"
+      className="flex flex-col items-center justify-center py-6 sm:py-12 px-4 sm:px-6 text-center"
       variants={scaleFadeVariants}
       initial="hidden"
       animate="visible"
@@ -164,7 +164,7 @@ export function OfflineState() {
         <WifiOff className="h-8 w-8 text-amber-500" />
       </div>
       <h3 className="text-lg font-semibold text-content mb-2">You're offline</h3>
-      <p className="text-sm text-content-secondary max-w-sm">Check your internet connection and try again.</p>
+      <p className="text-sm text-content-secondary max-w-[min(100%-2rem,24rem)] break-words">Check your internet connection and try again.</p>
     </motion.div>
   );
 }

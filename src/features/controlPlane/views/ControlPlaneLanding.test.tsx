@@ -16,9 +16,15 @@ describe("ControlPlaneLanding", () => {
     render(<ControlPlaneLanding onNavigate={vi.fn()} />);
 
     expect(screen.getByText("Choose your path")).toBeInTheDocument();
-    expect(screen.getByText("Review agent actions")).toBeInTheDocument();
-    expect(screen.getByText("Review passport & approvals")).toBeInTheDocument();
-    expect(screen.getByText("Investigate a run")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /review agent actions/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /review passport & approvals/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /investigate a run/i }).length,
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText("Read today's brief").length).toBeGreaterThan(0);
     expect(screen.getByText("Debug evals and replay proof")).toBeInTheDocument();
     expect(screen.getByText("Inspect tool activity")).toBeInTheDocument();

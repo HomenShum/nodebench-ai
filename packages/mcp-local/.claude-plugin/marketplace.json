@@ -1,0 +1,32 @@
+{
+  "name": "nodebench-mcp",
+  "owner": {
+    "name": "Homen Shum",
+    "email": "homen.shum@gmail.com"
+  },
+  "metadata": {
+    "description": "NodeBench MCP — development methodology server with context sandbox",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "nodebench-mcp",
+      "source": "./",
+      "description": "244-tool MCP server with context sandbox (FTS5/BM25), progressive discovery, agent-as-a-graph embeddings, and 10 toolset presets. Context sandbox saves 95%+ of context window on heavy outputs.",
+      "version": "2.30.0",
+      "author": {
+        "name": "Homen Shum"
+      },
+      "category": "development",
+      "keywords": [
+        "mcp",
+        "context-sandbox",
+        "fts5",
+        "progressive-discovery",
+        "agent-graph",
+        "methodology",
+        "toolset-gating"
+      ]
+    }
+  ]
+}

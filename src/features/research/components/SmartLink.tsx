@@ -47,7 +47,7 @@ export const SmartLink: React.FC<SmartLinkProps> = ({ children, summary, source 
     >
       <button
         type="button"
-        className="cursor-help font-medium text-indigo-600 dark:text-indigo-400 decoration-[rgb(79, 70, 229)] decoration-2 underline underline-offset-4 transition-colors hover:bg-indigo-500/10 hover:text-indigo-700 dark:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:ring-offset-1 rounded-sm px-0.5"
+        className="cursor-help font-medium text-indigo-600 dark:text-indigo-400 decoration-[rgb(79, 70, 229)] decoration-2 underline underline-offset-4 transition-colors hover:bg-indigo-500/10 hover:text-indigo-700 dark:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 rounded-sm px-0.5"
         aria-describedby={tooltipId}
         aria-expanded={isOpen}
         tabIndex={0}

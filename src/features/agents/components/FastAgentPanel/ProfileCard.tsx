@@ -35,7 +35,7 @@ export function ProfileCard({ profile, className, citationNumber }: ProfileCardP
     <div
       id={citationNumber ? `profile-${citationNumber}` : undefined}
       className={cn(
-        "group rounded-lg border border-edge hover:border-edge",
+        "group rounded-lg border border-edge hover:shadow-md hover:border-primary/20",
         "transition-all duration-200 bg-surface overflow-hidden scroll-mt-4",
         className
       )}

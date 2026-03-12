@@ -173,7 +173,7 @@ export function InstantSearchBar({
         <button
           type="button"
           onClick={handleStartFresh}
-          className="absolute right-2 p-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
+          className="absolute right-2 p-2.5 bg-content text-surface rounded-lg hover:bg-content/90 transition-colors shadow-sm"
           title="Start research (Enter for Quick, Cmd/Ctrl+Enter for Deep)"
         >
           <ArrowRight className="w-4 h-4" />

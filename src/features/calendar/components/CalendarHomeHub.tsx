@@ -105,7 +105,7 @@ export function CalendarHomeHub({
               onQuickAddTask={handleAddTaskForDate}
             />
           </div>
-          <aside ref={sidebarRef} className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-3" : "w-[18px] p-0"} shrink-0 border-l border-edge bg-surface relative z-20`}>
+          <aside ref={sidebarRef} className={`${sidebarOpen ? "w-[320px] md:w-[360px] p-4" : "w-[18px] p-0"} shrink-0 border-l border-edge bg-surface relative z-sidebar hidden lg:block`}>
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -116,7 +116,7 @@ export function CalendarHomeHub({
               {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
             </button>
             {sidebarOpen && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <SidebarMiniCalendar
                   onSelectDate={(ms) => handleViewWeek(ms)}
                   onViewDay={(ms) => handleViewDay(ms)}

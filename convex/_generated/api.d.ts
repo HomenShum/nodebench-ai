@@ -596,6 +596,7 @@ import type * as domains_mcp_mcpAuth from "../domains/mcp/mcpAuth.js";
 import type * as domains_mcp_mcpBridgeHttp from "../domains/mcp/mcpBridgeHttp.js";
 import type * as domains_mcp_mcpBridgeQueries from "../domains/mcp/mcpBridgeQueries.js";
 import type * as domains_mcp_mcpClient from "../domains/mcp/mcpClient.js";
+import type * as domains_mcp_mcpExecutionTraceEndpoints from "../domains/mcp/mcpExecutionTraceEndpoints.js";
 import type * as domains_mcp_mcpGatewayDispatcher from "../domains/mcp/mcpGatewayDispatcher.js";
 import type * as domains_mcp_mcpHttpAuth from "../domains/mcp/mcpHttpAuth.js";
 import type * as domains_mcp_mcpHybridSearch from "../domains/mcp/mcpHybridSearch.js";
@@ -1868,6 +1869,7 @@ declare const fullApi: ApiFromModules<{
   "domains/mcp/mcpBridgeHttp": typeof domains_mcp_mcpBridgeHttp;
   "domains/mcp/mcpBridgeQueries": typeof domains_mcp_mcpBridgeQueries;
   "domains/mcp/mcpClient": typeof domains_mcp_mcpClient;
+  "domains/mcp/mcpExecutionTraceEndpoints": typeof domains_mcp_mcpExecutionTraceEndpoints;
   "domains/mcp/mcpGatewayDispatcher": typeof domains_mcp_mcpGatewayDispatcher;
   "domains/mcp/mcpHttpAuth": typeof domains_mcp_mcpHttpAuth;
   "domains/mcp/mcpHybridSearch": typeof domains_mcp_mcpHybridSearch;

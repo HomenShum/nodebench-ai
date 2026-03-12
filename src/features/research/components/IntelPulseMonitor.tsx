@@ -26,7 +26,7 @@ export function IntelPulseMonitor({ taskResults }: IntelPulseMonitorProps) {
         >
             <div className="flex items-center gap-4 shrink-0 pr-8 border-r border-edge mr-8">
                 <Activity className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-xs font-black text-content">Live Intelligence Flow</span>
+                <span className="text-xs font-bold text-content">Live Intelligence Flow</span>
             </div>
 
             <div className="flex-1 flex items-center gap-12 overflow-hidden whitespace-nowrap">

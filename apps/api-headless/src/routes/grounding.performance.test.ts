@@ -280,11 +280,11 @@ describe("grounding route performance guards", () => {
     const p95BudgetMs = readThreshold("NODEBENCH_API_ENTERPRISE_INVESTIGATION_P95_MS", 450);
     expect(metrics.p95Ms).toBeLessThanOrEqual(p95BudgetMs);
     expect(metrics.lastJson.object).toBe("enterprise_investigation");
-    expect(metrics.lastJson.causal_chain.length).toBeGreaterThanOrEqual(2);
-    expect(metrics.lastJson.audit_proof_pack.source_snapshot_hashes).toEqual(
+    expect(metrics.lastJson.observed_facts.length).toBeGreaterThanOrEqual(2);
+    expect(metrics.lastJson.evidence_catalog.map((e: { content_hash: string }) => e.content_hash)).toEqual(
       expect.arrayContaining(["hash_2044", "hash_slack"])
     );
-    expect(metrics.lastJson.zero_friction_execution?.proposed_action).toBeTruthy();
-    expect(metrics.lastJson.audit_proof_pack?.replay_url).toMatch(/^\/v1\/replay\//);
+    expect(metrics.lastJson.recommended_actions?.[0]?.action).toBeTruthy();
+    expect(metrics.lastJson.traceability?.replay_url).toMatch(/^\/v1\/replay\//);
   });
 });

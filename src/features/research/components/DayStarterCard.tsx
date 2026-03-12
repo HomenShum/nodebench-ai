@@ -64,10 +64,10 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
   const filteredPresets = PRESETS.filter((p) => p.persona === activePersona);
 
   return (
-    <div className="rounded-lg border border-edge bg-surface shadow-sm overflow-hidden">
+    <div className="rounded-lg border border-edge bg-surface shadow-sm overflow-hidden transition-shadow duration-200 hover:shadow-md">
       <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-gray-900 text-white flex items-center justify-center shadow-sm">
+          <div className="h-9 w-9 rounded-lg bg-content text-white flex items-center justify-center shadow-sm">
             <Zap className="w-4 h-4" />
           </div>
           <div>
@@ -83,7 +83,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
               onClick={() => onPersonaChange(persona)}
               className={`px-2 py-1 rounded-full text-xs font-semibold border ${
                 activePersona === persona
-                  ? "bg-gray-900 text-white border-gray-900"
+                  ? "bg-content text-white border-content"
                   : "bg-surface text-content border-edge hover:bg-surface-hover"
               }`}
             >
@@ -111,7 +111,7 @@ export function DayStarterCard({ onRunPreset, activePersona, onPersonaChange, is
               <button
                 type="button"
                 onClick={() => onRunPreset(preset.prompt, preset.persona)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 text-white text-xs font-semibold px-3 py-2 hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-content text-white text-xs font-semibold px-3 py-2 hover:bg-content/80 transition-colors"
               >
                 <Play className="w-3.5 h-3.5" />
                 Run

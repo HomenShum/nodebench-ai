@@ -27,16 +27,33 @@ function getHeaders(): Record<string, string> {
   return headers;
 }
 
+const GITHUB_TIMEOUT_MS = 15_000;
+
 async function githubFetch(endpoint: string): Promise<any> {
   const url = endpoint.startsWith("http")
     ? endpoint
     : `https://api.github.com${endpoint}`;
 
-  const response = await fetch(url, { headers: getHeaders() });
+  // SSRF: Only allow requests to api.github.com and wpscan.com
+  try {
+    const parsed = new URL(url);
+    const allowedHosts = ["api.github.com", "github.com"];
+    if (!allowedHosts.includes(parsed.hostname)) {
+      throw new Error(`SSRF blocked: hostname "${parsed.hostname}" not in allowlist`);
+    }
+  } catch (e: any) {
+    if (e.message.startsWith("SSRF")) throw e;
+    throw new Error(`Invalid URL: ${url}`);
+  }
+
+  const response = await fetch(url, {
+    headers: getHeaders(),
+    signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`GitHub API error ${response.status}: ${error}`);
+    throw new Error(`GitHub API error ${response.status}: ${error.slice(0, 500)}`);
   }
 
   return response.json();

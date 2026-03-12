@@ -9,6 +9,8 @@ export type ThemeDensity = 'comfortable' | 'compact' | 'spacious';
 
 export type BackgroundPattern = 'none' | 'dots' | 'grid' | 'lines' | 'noise';
 
+export type LayoutMode = 'classic' | 'cockpit';
+
 export interface ThemeAccentColor {
   name: string;
   value: string;
@@ -41,6 +43,7 @@ export interface ThemePreferences {
   fontFamily: string;
   backgroundPattern: BackgroundPattern;
   reducedMotion: boolean;
+  layout: LayoutMode;
 }
 
 export const DEFAULT_THEME: ThemePreferences = {
@@ -50,6 +53,7 @@ export const DEFAULT_THEME: ThemePreferences = {
   fontFamily: 'System',
   backgroundPattern: 'none',
   reducedMotion: false,
+  layout: 'classic',
 };
 
 export interface ThemeContextValue {
@@ -61,6 +65,7 @@ export interface ThemeContextValue {
   setFontFamily: (font: string) => void;
   setBackgroundPattern: (pattern: BackgroundPattern) => void;
   setReducedMotion: (reduced: boolean) => void;
+  setLayout: (layout: LayoutMode) => void;
   resetToDefaults: () => void;
 }
 

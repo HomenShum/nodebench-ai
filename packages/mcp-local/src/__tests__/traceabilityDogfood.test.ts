@@ -11,7 +11,13 @@
  */
 
 import { describe, it, expect } from "vitest";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { McpTool } from "../types.js";
+
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const MCP_LOCAL_ROOT = path.resolve(TEST_DIR, "..", "..");
+const REPO_ROOT = path.resolve(TEST_DIR, "..", "..", "..", "..");
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 1. save_session_note: citedFrom field
@@ -185,9 +191,8 @@ describe("Traceability: selfEval ship_gates", () => {
   it("check_contract_compliance source code includes save_session_note traceability check", async () => {
     // Read the source to verify the traceability check exists in the ship_gates dimension
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
-      path.resolve(process.cwd(), "src", "tools", "selfEvalTools.ts"),
+      path.resolve(MCP_LOCAL_ROOT, "src", "tools", "selfEvalTools.ts"),
       "utf-8"
     );
 
@@ -199,9 +204,8 @@ describe("Traceability: selfEval ship_gates", () => {
 
   it("ship_gates description mentions traceability", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
-      path.resolve(process.cwd(), "src", "tools", "selfEvalTools.ts"),
+      path.resolve(MCP_LOCAL_ROOT, "src", "tools", "selfEvalTools.ts"),
       "utf-8"
     );
 
@@ -219,9 +223,8 @@ describe("Traceability: selfEval ship_gates", () => {
 describe("Traceability: documentation", () => {
   it("AI_FLYWHEEL.md includes Step 8 completion traceability", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const flywheel = fs.readFileSync(
-      path.resolve(process.cwd(), "..", "..", "AI_FLYWHEEL.md"),
+      path.resolve(REPO_ROOT, "AI_FLYWHEEL.md"),
       "utf-8"
     );
     expect(flywheel).toContain("Completion traceability");
@@ -230,9 +233,8 @@ describe("Traceability: documentation", () => {
 
   it("AGENTS.md includes traceability in post-implementation audit", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const agents = fs.readFileSync(
-      path.resolve(process.cwd(), "..", "..", "AGENTS.md"),
+      path.resolve(REPO_ROOT, "AGENTS.md"),
       "utf-8"
     );
     expect(agents).toContain("Completion traceability");
@@ -240,9 +242,8 @@ describe("Traceability: documentation", () => {
 
   it("completion_traceability rule exists in .claude/rules/", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const rulePath = path.resolve(
-      process.cwd(), "..", "..", ".claude", "rules", "completion_traceability.md"
+      REPO_ROOT, ".claude", "rules", "completion_traceability.md"
     );
     expect(fs.existsSync(rulePath)).toBe(true);
     const content = fs.readFileSync(rulePath, "utf-8");
@@ -258,9 +259,8 @@ describe("Traceability: documentation", () => {
 describe("Traceability: TRACE audit metadata fields", () => {
   it("convex schema includes originalRequest and deliverySummary in traceAuditEntries", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const schema = fs.readFileSync(
-      path.resolve(process.cwd(), "..", "..", "convex", "schema.ts"),
+      path.resolve(REPO_ROOT, "convex", "schema.ts"),
       "utf-8"
     );
 
@@ -270,10 +270,9 @@ describe("Traceability: TRACE audit metadata fields", () => {
 
   it("traceAuditLog.ts includes the new fields in all validators", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
       path.resolve(
-        process.cwd(), "..", "..", "convex", "domains", "agents", "traceAuditLog.ts"
+        REPO_ROOT, "convex", "domains", "agents", "traceAuditLog.ts"
       ),
       "utf-8"
     );
@@ -286,10 +285,9 @@ describe("Traceability: TRACE audit metadata fields", () => {
 
   it("traceOrchestrator finalize step includes originalRequest", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
       path.resolve(
-        process.cwd(), "..", "..", "convex", "domains", "agents", "traceOrchestrator.ts"
+        REPO_ROOT, "convex", "domains", "agents", "traceOrchestrator.ts"
       ),
       "utf-8"
     );
@@ -306,10 +304,9 @@ describe("Traceability: TRACE audit metadata fields", () => {
 describe("Traceability: frontend components", () => {
   it("TraceAuditPanel renders originalRequest for finalize entries", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
       path.resolve(
-        process.cwd(), "..", "..", "src", "features", "agents", "components",
+        REPO_ROOT, "src", "features", "agents", "components",
         "FastAgentPanel", "FastAgentPanel.TraceAuditPanel.tsx"
       ),
       "utf-8"
@@ -322,10 +319,9 @@ describe("Traceability: frontend components", () => {
 
   it("ExportMenu includes originalRequest in exports", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
       path.resolve(
-        process.cwd(), "..", "..", "src", "features", "agents", "components",
+        REPO_ROOT, "src", "features", "agents", "components",
         "FastAgentPanel", "FastAgentPanel.ExportMenu.tsx"
       ),
       "utf-8"
@@ -337,10 +333,9 @@ describe("Traceability: frontend components", () => {
 
   it("MessageStream shows completion traceability citation", async () => {
     const fs = await import("fs");
-    const path = await import("path");
     const src = fs.readFileSync(
       path.resolve(
-        process.cwd(), "..", "..", "src", "features", "agents", "components",
+        REPO_ROOT, "src", "features", "agents", "components",
         "FastAgentPanel", "FastAgentPanel.MessageStream.tsx"
       ),
       "utf-8"

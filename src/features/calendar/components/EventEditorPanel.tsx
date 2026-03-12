@@ -221,7 +221,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-ring"
             placeholder="Event title"
           />
         </div>
@@ -231,8 +231,8 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Write detailsâ€¦"
-            className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
+            placeholder="Write details…"
+            className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-ring resize-y"
           />
         </div>
 
@@ -287,7 +287,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             title="Set location"
             aria-expanded={showLocation}
           >
-            <MapPin className="w-3 h-3 opacity-70" /> {location ? (location.length > 24 ? `${location.slice(0, 24)}â€¦` : location) : "Location"}
+            <MapPin className="w-3 h-3 opacity-70" /> {location ? (location.length > 24 ? `${location.slice(0, 24)}…` : location) : "Location"}
           </button>
 
           {/* Color chip */}
@@ -321,7 +321,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={startStr}
                 onChange={(e) => setStartStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
               />
             )}
             {showEndPicker && (
@@ -330,7 +330,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={endStr}
                 onChange={(e) => setEndStr(e.target.value)}
                 disabled={allDay}
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
               />
             )}
           </div>
@@ -343,7 +343,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Where is this event?"
-              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+              className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
             />
           </div>
         )}
@@ -355,9 +355,9 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-indigo-500/50 ${
+                className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-ring ${
                   eventColorSwatchClasses[c]
-                } ${color === c ? "ring-2 ring-offset-1 ring-indigo-500/50" : ""}`}
+                } ${color === c ? "ring-2 ring-offset-1 ring-ring" : ""}`}
                 title={c}
               />
             ))}
@@ -383,14 +383,14 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   className="text-xs opacity-70 hover:opacity-100"
                   title="Remove tag"
                 >
-                  Ã—
+                  ×
                 </button>
               </span>
             ))}
             <input
               type="text"
-              placeholder="Add tagâ€¦"
-              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+              placeholder="Add tag…"
+              className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
               onKeyDown={(e) => {
                 const el = e.currentTarget;
                 if (e.key === "Enter" || e.key === ",") {
@@ -406,7 +406,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
         {/* Location moved to chip with inline input */}
 
-        <div className="text-xs text-content-muted">Created {event.createdAt ? timeAgo(event.createdAt) : "â€”"} Â· Updated {event.updatedAt ? timeAgo(event.updatedAt) : "â€”"}</div>
+        <div className="text-xs text-content-muted">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
       </div>
 
       {/* Footer */}
@@ -464,7 +464,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+              className="w-full text-sm bg-surface border border-edge rounded-md p-2 text-content focus:outline-none focus:ring-1 focus:ring-ring"
               placeholder="Event title"
             />
           </div>
@@ -474,8 +474,8 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Write detailsâ€¦"
-              className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
+              placeholder="Write details…"
+              className="w-full min-h-[80px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-ring resize-y"
             />
           </div>
 
@@ -530,7 +530,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
               title="Set location"
               aria-expanded={showLocation}
             >
-              <MapPin className="w-3 h-3 opacity-70" /> {location ? (location.length > 24 ? `${location.slice(0, 24)}â€¦` : location) : "Location"}
+              <MapPin className="w-3 h-3 opacity-70" /> {location ? (location.length > 24 ? `${location.slice(0, 24)}…` : location) : "Location"}
             </button>
 
             {/* Color chip */}
@@ -565,7 +565,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   onChange={(e) => setStartStr(e.target.value)}
                   disabled={allDay}
                   aria-label="Event start time"
-                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
                 />
               )}
               {showEndPicker && (
@@ -575,7 +575,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   onChange={(e) => setEndStr(e.target.value)}
                   disabled={allDay}
                   aria-label="Event end time"
-                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+                  className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
                 />
               )}
             </div>
@@ -588,7 +588,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Where is this event?"
-                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+                className="text-sm bg-transparent border border-transparent rounded-md px-0 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
               />
             </div>
           )}
@@ -600,9 +600,9 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-indigo-500/50 ${
+                  className={`h-5 w-5 rounded-full border border-edge focus:outline-none focus:ring-1 focus:ring-ring ${
                     eventColorSwatchClasses[c]
-                  } ${color === c ? "ring-2 ring-offset-1 ring-indigo-500/50" : ""}`}
+                  } ${color === c ? "ring-2 ring-offset-1 ring-ring" : ""}`}
                   title={c}
                   aria-label={`Set color to ${c}`}
                 />
@@ -630,14 +630,14 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
                     title="Remove tag"
                     aria-label={`Remove tag ${t}`}
                   >
-                    Ã—
+                    ×
                   </button>
                 </span>
               ))}
               <input
                 type="text"
-                placeholder="Add tagâ€¦"
-                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+                placeholder="Add tag…"
+                className="text-xs bg-transparent border border-transparent rounded-md px-1.5 py-0.5 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
                 onKeyDown={(e) => {
                   const el = e.currentTarget;
                   if (e.key === "Enter" || e.key === ",") {
@@ -653,7 +653,7 @@ export default function EventEditorPanel({ eventId, onClose, documentIdForAssoci
 
           {/* Location moved to chip with inline input */}
 
-          <div className="text-xs text-content-muted">Created {event.createdAt ? timeAgo(event.createdAt) : "â€”"} Â· Updated {event.updatedAt ? timeAgo(event.updatedAt) : "â€”"}</div>
+          <div className="text-xs text-content-muted">Created {event.createdAt ? timeAgo(event.createdAt) : "—"} · Updated {event.updatedAt ? timeAgo(event.updatedAt) : "—"}</div>
         </div>
 
         {/* Footer */}

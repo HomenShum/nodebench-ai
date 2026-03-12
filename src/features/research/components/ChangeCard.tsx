@@ -300,7 +300,7 @@ export function ChangeCard({
   return (
     <div
       className="group relative bg-surface border border-edge rounded-lg overflow-hidden
-                 hover:border-edge transition-all duration-200"
+                 hover:shadow-md hover:border-primary/20 transition-all duration-200"
     >
       {/* Left Accent Border */}
       <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${accentColors[diff.severity]}`} />
@@ -309,7 +309,7 @@ export function ChangeCard({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full text-left pl-5 pr-4 py-4 flex items-start gap-3"
+        className="w-full text-left pl-5 pr-4 py-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded"
       >
         {/* Change Type Icon */}
         <div className="flex-shrink-0 mt-0.5">

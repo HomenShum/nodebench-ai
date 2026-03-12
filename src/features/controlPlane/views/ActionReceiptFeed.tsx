@@ -13,7 +13,7 @@ import { ReceiptApprovalQueue } from "../components/ReceiptApprovalQueue";
 import { ReceiptCard } from "../components/ReceiptCard";
 import { toActionReceipt } from "../lib/receiptPresentation";
 
-type FilterMode = "all" | "allowed" | "escalated" | "denied";
+type FilterMode = "all" | "allowed" | "needs-approval" | "denied" | "reversible";
 
 export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -29,16 +29,21 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
 
   const filteredReceipts = useMemo(() => {
     if (filter === "all") return receipts;
+    if (filter === "reversible") {
+      return receipts.filter((receipt) => receipt.reversible.canUndo);
+    }
+    if (filter === "needs-approval") {
+      return receipts.filter((receipt) => receipt.approval?.state === "pending");
+    }
     return receipts.filter((receipt) => receipt.policyRef.action === filter);
   }, [filter, receipts]);
 
   const stats = useMemo(() => {
     const allowed = receipts.filter((receipt) => receipt.policyRef.action === "allowed").length;
-    const escalated = receipts.filter((receipt) => receipt.policyRef.action === "escalated").length;
     const denied = receipts.filter((receipt) => receipt.policyRef.action === "denied").length;
     const pending = receipts.filter((receipt) => receipt.approval?.state === "pending").length;
-    const violations = receipts.reduce((acc, receipt) => acc + receipt.violations.length, 0);
-    return { allowed, escalated, denied, pending, total: receipts.length, violations };
+    const reversible = receipts.filter((receipt) => receipt.reversible.canUndo).length;
+    return { allowed, denied, pending, reversible, total: receipts.length };
   }, [receipts]);
 
   const toggleExpand = (id: string) => {
@@ -52,9 +57,10 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
 
   const filterButtons: { mode: FilterMode; label: string; count: number }[] = [
     { mode: "all", label: "All", count: stats.total },
-    { mode: "allowed", label: "Allowed", count: stats.allowed },
-    { mode: "escalated", label: "Escalated", count: stats.escalated },
+    { mode: "needs-approval", label: "Needs approval", count: stats.pending },
     { mode: "denied", label: "Denied", count: stats.denied },
+    { mode: "reversible", label: "Reversible", count: stats.reversible },
+    { mode: "allowed", label: "Allowed", count: stats.allowed },
   ];
 
   return (
@@ -62,20 +68,21 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-indigo-400" />
-          <h1 className="text-xl font-semibold tracking-tight text-content">Receipts</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-content">Action Receipts</h1>
         </div>
         <p className="text-sm text-content-muted">
-          Tamper-evident records of what agents saw, did, and were allowed to do. Every receipt is content-addressed.
+          Tamper-evident records of what agents saw, did, and were allowed to do. Review denied actions,
+          approval-gated steps, and reversible changes without leaving the feed.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
           { label: "Total", value: stats.total, color: "text-content" },
-          { label: "Allowed", value: stats.allowed, color: "text-emerald-400" },
-          { label: "Escalated", value: stats.escalated, color: "text-amber-400" },
-          { label: "Pending", value: stats.pending, color: "text-indigo-300" },
+          { label: "Needs approval", value: stats.pending, color: "text-amber-400" },
+          { label: "Reversible", value: stats.reversible, color: "text-indigo-300" },
           { label: "Denied", value: stats.denied, color: "text-red-400" },
+          { label: "Allowed", value: stats.allowed, color: "text-emerald-400" },
         ].map((stat) => (
           <div key={stat.label} className="rounded-lg border border-edge bg-surface-secondary/50 px-3 py-2 text-center">
             <div className={cn("text-lg font-semibold", stat.color)}>{stat.value}</div>
@@ -84,7 +91,7 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2" role="group" aria-label="Filter receipts by policy action">
+      <div className="flex items-center gap-2" role="group" aria-label="Filter receipts by policy status">
         <Filter className="h-3.5 w-3.5 text-content-muted" aria-hidden="true" />
         <div className="flex gap-1">
           {filterButtons.map((button) => (
@@ -115,7 +122,7 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
           </h2>
         </div>
         <p className="text-xs text-content-muted">
-          Outbound OpenClaw actions pause here before execution. Approvals update the receipt itself rather than a shadow log.
+          Outbound OpenClaw actions pause here before execution. Approvals update the receipt itself instead of a shadow log.
         </p>
         <ReceiptApprovalQueue compact />
       </section>
@@ -130,13 +137,13 @@ export const ActionReceiptFeed = memo(function ActionReceiptFeed() {
           />
         ))}
         {filteredReceipts.length === 0 && (
-          <div className="py-12 text-center text-sm text-content-muted">No receipts match the current filter.</div>
+          <div className="py-12 text-center text-sm text-content-muted">No receipts match this trust filter.</div>
         )}
       </div>
 
       <div className="border-t border-edge/30 pt-4 text-center text-[11px] text-content-muted">
         {isDemo
-          ? "Demo mode. Showing golden dataset receipts until live runtime data is available."
+          ? "Demo mode. Showing the golden action-receipt dataset until live runtime data is available."
           : `Live. Showing ${receipts.length} receipts from Convex.`}
       </div>
     </div>

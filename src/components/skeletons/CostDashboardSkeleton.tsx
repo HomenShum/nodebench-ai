@@ -36,7 +36,7 @@ export function CostDashboardSkeleton() {
       </div>
 
       {/* Cache Stats */}
-      <div className="rounded-lg border border-edge bg-white p-5">
+      <div className="rounded-lg border border-edge bg-surface p-5">
         <div className="flex items-center gap-2 mb-4">
           <Skeleton className="w-5 h-5" rounded="md" />
           <Skeleton className="h-5 w-32" />
@@ -56,7 +56,7 @@ export function CostDashboardSkeleton() {
 
 function MetricCardSkeleton() {
   return (
-    <div className="rounded-lg border border-edge bg-white p-4 space-y-3">
+    <div className="rounded-lg border border-edge bg-surface p-4 space-y-3">
       <div className="flex items-center gap-3">
         <Skeleton className="w-10 h-10" rounded="lg" />
         <div className="flex-1 space-y-2">
@@ -71,7 +71,7 @@ function MetricCardSkeleton() {
 
 function ChartSkeleton({ title }: { title: string }) {
   return (
-    <div className="rounded-lg border border-edge bg-white p-5">
+    <div className="rounded-lg border border-edge bg-surface p-5">
       <div className="flex items-center justify-between mb-4">
         <Skeleton className="h-5 w-28" />
         <Skeleton className="h-4 w-16" />

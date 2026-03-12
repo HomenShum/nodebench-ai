@@ -23,7 +23,7 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1 text-xs font-semibold text-content border border-edge"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 motion-safe:animate-pulse"></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-primary)] motion-safe:animate-pulse"></span>
             {data.phaseLabel}
           </motion.div>
           <div className="text-xs font-bold text-content-secondary">
@@ -39,7 +39,7 @@ export const DashboardPanel: React.FC<DashboardProps> = ({ data }) => {
           </div>
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-surface-secondary shadow-inner">
             <motion.div
-              className="absolute inset-y-0 left-0 rounded-full bg-indigo-600"
+              className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent-primary)]"
               initial={{ width: 0 }}
               animate={{ width: `${data.marketSentiment}%` }}
               transition={{ type: "spring", stiffness: 40, damping: 15 }}

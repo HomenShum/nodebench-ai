@@ -4,6 +4,7 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import { Globe } from "lucide-react";
 import { DocumentCard } from "@features/documents/components/documentsHub";
 import { PageHeroHeader } from "@shared/ui/PageHeroHeader";
+import { sanitizeDocumentTitle, sanitizeReadableText } from "@/lib/displayText";
 
 
 interface PublicDocumentsProps {
@@ -12,6 +13,23 @@ interface PublicDocumentsProps {
 
 export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
   const publicDocuments = useQuery(api.domains.documents.documents.getPublic);
+
+  const buildPreviewText = (doc: Record<string, unknown>): string | null => {
+    const candidates = [
+      doc.contentPreview,
+      doc.preview,
+      doc.summary,
+      doc.description,
+      doc.excerpt,
+      doc.snippet,
+    ];
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim()) {
+        return sanitizeReadableText(candidate).trim();
+      }
+    }
+    return null;
+  };
 
   if (publicDocuments === undefined) {
     return (
@@ -52,7 +70,7 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
             {publicDocuments.map((doc) => {
               const cardDoc = {
                 _id: doc._id as Id<"documents">,
-                title: doc.title,
+                title: sanitizeDocumentTitle(doc.title),
                 documentType: (doc as any).documentType,
                 fileType: (doc as any).fileType,
                 fileId: (doc as any).fileId,
@@ -62,7 +80,7 @@ export function PublicDocuments({ onDocumentSelect }: PublicDocumentsProps) {
                 isFavorite: (doc as any).isFavorite,
                 coverImage: (doc as any).coverImage,
                 icon: (doc as any).icon,
-                contentPreview: null,
+                contentPreview: buildPreviewText(doc as Record<string, unknown>),
               };
 
               return (

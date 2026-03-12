@@ -153,7 +153,7 @@ function DashboardSectionInner({
             <button
               type="button"
               onClick={handleReturnToLatest}
-              className="flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded transition-colors"
               title="Return to latest data"
             >
               <RotateCcw className="w-3 h-3" />
@@ -225,7 +225,7 @@ function DashboardSectionInner({
                 type="button"
                 onClick={() => setSelectedDate(date === selectedDate ? null : date)}
                 className={`px-2 py-1 text-xs rounded transition-colors ${date === displayDate
-                    ? "bg-indigo-600 text-white font-medium"
+                    ? "bg-[var(--accent-primary)] text-white font-medium"
                     : "bg-surface hover:bg-surface-hover text-content-secondary border border-edge"
                   }`}
                 title={`View data from ${date}`}

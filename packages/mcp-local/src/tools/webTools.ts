@@ -10,6 +10,7 @@
  */
 
 import type { McpTool } from "../types.js";
+import { safeUrl } from "../security/index.js";
 
 // ─── Dynamic import helpers ───────────────────────────────────────────────────
 
@@ -524,7 +525,7 @@ export const webTools: McpTool[] = [
       const extractMode = (args.extractMode as string) ?? "markdown";
       const maxLength = (args.maxLength as number) ?? 50000;
 
-      // Validate URL
+      // Validate URL format
       let parsedUrl: URL;
       try {
         parsedUrl = new URL(url);
@@ -534,6 +535,18 @@ export const webTools: McpTool[] = [
           url,
           message: "Invalid URL format",
           suggestion: "Provide a valid URL starting with http:// or https://",
+        };
+      }
+
+      // SSRF protection — block private IPs, cloud metadata, file:// scheme
+      try {
+        safeUrl(url);
+      } catch (err: any) {
+        return {
+          error: true,
+          url,
+          message: `URL blocked by security policy: ${err.message}`,
+          suggestion: "Only public HTTP/HTTPS URLs are allowed.",
         };
       }
 

@@ -31,7 +31,7 @@ export const POLICY_STYLES: Record<PolicyAction, { icon: typeof ShieldCheck; lab
   },
   escalated: {
     icon: ShieldAlert,
-    label: "Escalated",
+    label: "Needs approval",
     className: "border-amber-500/20 bg-amber-500/10 text-amber-500",
   },
   denied: {
@@ -44,11 +44,11 @@ export const POLICY_STYLES: Record<PolicyAction, { icon: typeof ShieldCheck; lab
 export const SEVERITY_STYLES: Record<ViolationSeverity, { className: string; icon: typeof AlertTriangle }> = {
   warning: { className: "bg-amber-500/10 text-amber-400", icon: AlertTriangle },
   block: { className: "bg-red-500/10 text-red-400", icon: XCircle },
-  audit_only: { className: "bg-zinc-500/10 text-zinc-400", icon: Eye },
+  audit_only: { className: "bg-surface-secondary/50 text-content-muted", icon: Eye },
 };
 
 const APPROVAL_STYLES: Record<ApprovalState, string> = {
-  not_required: "border-zinc-500/20 bg-zinc-500/10 text-zinc-400",
+  not_required: "border-edge bg-surface-secondary/50 text-content-muted",
   pending: "border-amber-500/20 bg-amber-500/10 text-amber-400",
   approved: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
   denied: "border-red-500/20 bg-red-500/10 text-red-400",

@@ -1,65 +1,138 @@
-﻿/**
- * SignatureOrb â€” Central visual identity element
- *
- * The orb is NodeBench's brand mark. It appears across the app in different
- * forms â€” never the same way twice, but always recognizable:
- *
- *   hero      â†’ Full rotating rings + pulsing core (landing page)
- *   loading   â†’ Medium spinning ring (replaces generic spinners)
- *   ambient   â†’ Soft background glow (page header decoration)
- *   indicator â†’ Tiny pulsing dot with ring (live status)
- *   empty     â†’ Static orb with message (empty states)
- */
-
 import React, { useMemo } from "react";
 import { prefersReducedMotion } from "../../utils/a11y";
 
-export type OrbVariant = "hero" | "loading" | "ambient" | "indicator" | "empty";
+export type OrbVariant = "hero" | "signature" | "loading" | "ambient" | "indicator" | "empty";
+export type OrbSize = "xs" | "sm" | "md" | "lg";
 
 export interface SignatureOrbProps {
   variant?: OrbVariant;
-  /** Optional message for empty variant */
   message?: string;
-  /** Additional className */
   className?: string;
+  size?: OrbSize;
+}
+
+const SIGNATURE_POINTS: Array<{ id: string; x: number; y: number }> = [
+  { id: "n1", x: 50, y: 8 },
+  { id: "n2", x: 82, y: 18 },
+  { id: "n3", x: 92, y: 50 },
+  { id: "n4", x: 78, y: 80 },
+  { id: "n5", x: 50, y: 92 },
+  { id: "n6", x: 20, y: 78 },
+  { id: "n7", x: 8, y: 50 },
+  { id: "n8", x: 22, y: 20 },
+];
+
+function getSignatureSizeClass(size: OrbSize): string {
+  switch (size) {
+    case "xs":
+      return "h-9 w-9";
+    case "sm":
+      return "h-20 w-20";
+    case "lg":
+      return "h-48 w-48 md:h-56 md:w-56";
+    default:
+      return "h-36 w-36 md:h-44 md:w-44";
+  }
 }
 
 export function SignatureOrb({
   variant = "loading",
   message,
   className = "",
+  size = "md",
 }: SignatureOrbProps) {
   const reduceMotion = useMemo(() => prefersReducedMotion(), []);
+  const signatureSizeClass = getSignatureSizeClass(size);
 
   switch (variant) {
-    // â”€â”€â”€ HERO: Full-size rotating rings + pulsing core â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "hero":
       return (
         <div className={`relative flex items-center justify-center ${className}`}>
           <div className="w-44 h-44 md:w-56 md:h-56 relative flex items-center justify-center">
-            {/* Rotating outer rings */}
             <div
               className={`absolute inset-0 will-change-transform ${reduceMotion ? "" : "motion-safe:animate-spin-slow"}`}
             >
               <div className="absolute inset-0 rounded-full border border-edge scale-100" />
-              <div className="absolute inset-0 rounded-full border border-indigo-500/20 scale-[1.3]" />
+              <div className="absolute inset-0 rounded-full border border-primary/25 scale-[1.3]" />
             </div>
-            {/* Glow halo */}
-            <div className="absolute inset-0 rounded-full bg-indigo-600/[0.06] blur-2xl scale-[1.3]" />
-            {/* Pulsing core */}
+            <div className="absolute inset-0 rounded-full bg-primary/10 blur-2xl scale-[1.3]" />
             <div
               className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-surface border border-edge overflow-hidden shadow-sm ${reduceMotion ? "" : "motion-safe:animate-pulse-subtle"}`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[rgb(79, 70, 229)]/[0.08] via-transparent to-[rgb(79, 70, 229)]/[0.04] rounded-full" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-primary/10 rounded-full" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-indigo-600/60 shadow-[0_0_20px_rgb(79, 70, 229)]" />
+                <div className="w-3 h-3 rounded-full bg-primary shadow-[0_0_16px_rgba(94,106,210,0.55)]" />
               </div>
             </div>
           </div>
         </div>
       );
 
-    // â”€â”€â”€ LOADING: Medium spinning ring for page transitions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    case "signature":
+      return (
+        <div className={`relative flex items-center justify-center ${className}`}>
+          <div className={`${signatureSizeClass} relative flex items-center justify-center`}>
+            <svg
+              className="absolute inset-0 h-full w-full text-primary/20"
+              viewBox="0 0 100 100"
+              aria-hidden="true"
+            >
+              <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="1" />
+              <circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" strokeWidth="1" />
+              <circle cx="50" cy="50" r="22" fill="none" stroke="currentColor" strokeWidth="1" />
+              {SIGNATURE_POINTS.map((point) => (
+                <line
+                  key={`line-${point.id}`}
+                  x1="50"
+                  y1="50"
+                  x2={point.x}
+                  y2={point.y}
+                  stroke="currentColor"
+                  strokeWidth="0.8"
+                  strokeLinecap="round"
+                />
+              ))}
+            </svg>
+
+            <div className="absolute inset-0 rounded-full bg-primary/10 blur-[32px]" aria-hidden="true" />
+            <div
+              className={`absolute inset-[2px] rounded-full border border-edge ${reduceMotion ? "" : "motion-safe:animate-spin-slow"}`}
+              style={reduceMotion ? undefined : { animationDuration: "24s" }}
+            />
+            <div
+              className={`absolute inset-[14%] rounded-full border border-primary/25 ${reduceMotion ? "" : "motion-safe:animate-spin-slow"}`}
+              style={
+                reduceMotion
+                  ? undefined
+                  : {
+                      animationDirection: "reverse",
+                      animationDuration: "18s",
+                    }
+              }
+            />
+
+            <div className="relative h-[48%] w-[48%] rounded-full border border-edge bg-surface shadow-sm flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 via-transparent to-primary/10" />
+              <div className={`h-2.5 w-2.5 rounded-full bg-primary ${reduceMotion ? "" : "motion-safe:animate-pulse-subtle"}`} />
+            </div>
+
+            {SIGNATURE_POINTS.map((point, index) => (
+              <span
+                key={point.id}
+                className={`absolute h-2.5 w-2.5 rounded-full bg-primary/75 border border-primary/30 ${reduceMotion ? "" : "motion-safe:animate-pulse-subtle"}`}
+                style={{
+                  left: `${point.x}%`,
+                  top: `${point.y}%`,
+                  transform: "translate(-50%, -50%)",
+                  animationDelay: `${index * 140}ms`,
+                }}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
+        </div>
+      );
+
     case "loading":
       return (
         <div
@@ -68,29 +141,25 @@ export function SignatureOrb({
           aria-label="Loading"
         >
           <div className="w-16 h-16 relative flex items-center justify-center">
-            {/* Spinning ring */}
             <div
-              className={`absolute inset-0 rounded-full border-2 border-edge border-t-[rgb(79, 70, 229)] ${reduceMotion ? "" : "motion-safe:animate-spin"}`}
+              className={`absolute inset-0 rounded-full border-2 border-edge border-t-primary ${reduceMotion ? "" : "motion-safe:animate-spin"}`}
               style={reduceMotion ? undefined : { animationDuration: "1.2s" }}
             />
-            {/* Static inner dot */}
-            <div className="w-2 h-2 rounded-full bg-indigo-600/50" />
+            <div className="w-2 h-2 rounded-full bg-primary/70" />
           </div>
         </div>
       );
 
-    // â”€â”€â”€ AMBIENT: Soft glow for page headers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "ambient":
       return (
         <div
           className={`absolute pointer-events-none ${className}`}
           aria-hidden="true"
         >
-          <div className="w-[300px] h-[300px] rounded-full bg-indigo-600/[0.04] blur-[80px]" />
+          <div className="w-[300px] h-[300px] rounded-full bg-primary/10 blur-[80px]" />
         </div>
       );
 
-    // â”€â”€â”€ INDICATOR: Tiny pulsing dot for live status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "indicator":
       return (
         <span
@@ -98,28 +167,23 @@ export function SignatureOrb({
           role="status"
           aria-label="Active"
         >
-          {/* Ping ring */}
           {!reduceMotion && (
-            <span className="absolute w-3 h-3 rounded-full bg-indigo-600/30 motion-safe:animate-ping" />
+            <span className="absolute w-3 h-3 rounded-full bg-primary/35 motion-safe:animate-ping" />
           )}
-          {/* Static dot */}
-          <span className="relative w-2 h-2 rounded-full bg-indigo-600" />
+          <span className="relative w-2 h-2 rounded-full bg-primary" />
         </span>
       );
 
-    // â”€â”€â”€ EMPTY: Static orb with message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     case "empty":
       return (
         <div
           className={`flex flex-col items-center justify-center gap-4 py-8 ${className}`}
         >
           <div className="w-24 h-24 relative flex items-center justify-center">
-            {/* Static rings */}
             <div className="absolute inset-0 rounded-full border border-edge scale-100 opacity-60" />
-            <div className="absolute inset-0 rounded-full border border-edge scale-[1.25] opacity-30" />
-            {/* Core */}
+            <div className="absolute inset-0 rounded-full border border-primary/20 scale-[1.25] opacity-40" />
             <div className="w-14 h-14 rounded-full bg-surface-secondary border border-edge flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-content-muted/40" />
+              <div className="w-2 h-2 rounded-full bg-primary/45" />
             </div>
           </div>
           {message && (
@@ -136,4 +200,3 @@ export function SignatureOrb({
 }
 
 export default SignatureOrb;
-

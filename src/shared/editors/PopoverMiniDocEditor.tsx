@@ -109,7 +109,7 @@ export default function PopoverMiniDocEditor({
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Write details…"
-        className="w-full min-h-[100px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-indigo-500/50/30 resize-y"
+        className="w-full min-h-[100px] px-3 py-2 text-sm border border-edge/60 rounded-md bg-surface-secondary text-content placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-ring resize-y"
       />
     </div>
   );

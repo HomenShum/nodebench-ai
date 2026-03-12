@@ -26,6 +26,7 @@ import { FootnotesSection } from './FootnotesSection';
 import type { CitationLibrary } from '../types/citationSchema';
 import type { EntityLibrary } from '../types/entitySchema';
 import type { EntityHoverData } from './EntityHoverPreview';
+import { sanitizeReadableText } from '@/lib/displayText';
 
 interface DigestSection {
   id: string;
@@ -132,9 +133,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['markets', 'watchlist']));
+  const [selectedDigestSection, setSelectedDigestSection] = useState<string | null>('markets');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedSummary, setGeneratedSummary] = useState<string | null>(null);
-  const [isFromCache, setIsFromCache] = useState(false);
 
   // Track if we've already attempted to generate
   const hasAttemptedGeneration = useRef(false);
@@ -158,8 +159,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   // Use cached summary if available
   useEffect(() => {
     if (cachedSummary?.summary && !generatedSummary) {
-      setGeneratedSummary(cachedSummary.summary);
-      setIsFromCache(true);
+      setGeneratedSummary(sanitizeReadableText(cachedSummary.summary));
     }
   }, [cachedSummary, generatedSummary]);
 
@@ -194,9 +194,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     // Market Movers section
     if (marketMovers.length > 0) {
       const items = marketMovers.map(item => ({
-        text: item.title,
+        text: sanitizeReadableText(item.title),
         relevance: 'high' as const,
-        linkedEntity: extractEntity(item.title),
+        linkedEntity: extractEntity(sanitizeReadableText(item.title)),
       }));
       const overallSentiment = detectSentimentLocal(items.map(i => i.text).join(' '));
       sections.push({
@@ -211,9 +211,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     // Watchlist Relevant section
     if (watchlistRelevant.length > 0) {
       const items = watchlistRelevant.map(item => ({
-        text: item.title,
+        text: sanitizeReadableText(item.title),
         relevance: 'high' as const,
-        linkedEntity: extractEntity(item.title),
+        linkedEntity: extractEntity(sanitizeReadableText(item.title)),
       }));
       const overallSentiment = detectSentimentLocal(items.map(i => i.text).join(' '));
       sections.push({
@@ -240,9 +240,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     // Risk Alerts section
     if (riskAlerts.length > 0) {
       const items = riskAlerts.map(item => ({
-        text: item.title,
+        text: sanitizeReadableText(item.title),
         relevance: 'high' as const,
-        linkedEntity: extractEntity(item.title),
+        linkedEntity: extractEntity(sanitizeReadableText(item.title)),
       }));
       sections.push({
         id: 'alerts',
@@ -313,7 +313,6 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     });
 
     setIsLoading(true);
-    setIsFromCache(false);
 
     generateSummary({
       marketMovers: marketMovers.map(m => ({
@@ -335,11 +334,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       userName,
     })
       .then(async (result) => {
-        setGeneratedSummary(result.summary);
+        const sanitizedSummary = sanitizeReadableText(result.summary);
+        setGeneratedSummary(sanitizedSummary);
         // Cache the generated summary for future mounts
         try {
           await cacheSummary({
-            summary: result.summary,
+            summary: sanitizedSummary,
             dataHash,
           });
         } catch (cacheErr) {
@@ -353,10 +353,12 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   }, [digestData, generatedSummary, isLoading, cachedSummary, generateSummary, cacheSummary, userName]);
 
   // Fallback summary if AI generation fails
-  const fullSummary = generatedSummary ||
-    (digestData
-      ? `${(digestData.marketMovers ?? []).length} market update${(digestData.marketMovers ?? []).length !== 1 ? 's' : ''} and ${(digestData.watchlistRelevant ?? []).length} item${(digestData.watchlistRelevant ?? []).length !== 1 ? 's' : ''} matching your tracked topics. ${(digestData.riskAlerts ?? []).length > 0 ? `${(digestData.riskAlerts ?? []).length} risk alert${(digestData.riskAlerts ?? []).length !== 1 ? 's' : ''} to monitor.` : ''}`
-      : 'Loading your personalized morning briefing...');
+  const fullSummary = sanitizeReadableText(
+    generatedSummary ||
+      (digestData
+        ? `${(digestData.marketMovers ?? []).length} market update${(digestData.marketMovers ?? []).length !== 1 ? 's' : ''} and ${(digestData.watchlistRelevant ?? []).length} item${(digestData.watchlistRelevant ?? []).length !== 1 ? 's' : ''} matching your tracked topics. ${(digestData.riskAlerts ?? []).length > 0 ? `${(digestData.riskAlerts ?? []).length} risk alert${(digestData.riskAlerts ?? []).length !== 1 ? 's' : ''} to monitor.` : ''}`
+        : 'Loading your personalized morning briefing...'),
+  );
 
   // Build citation library from digest data sources
   const citationLibrary: CitationLibrary = useMemo(() => {
@@ -413,7 +415,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           id,
           name: entity,
           type: 'company',
-          description: item.summary || item.title,
+          description: sanitizeReadableText(item.summary || item.title),
         };
         nameIndex[entity.toLowerCase()] = id;
       }
@@ -467,7 +469,6 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   const handleRefresh = async () => {
     setIsLoading(true);
     setGeneratedSummary(null); // Reset to trigger regeneration
-    setIsFromCache(false);
     hasAttemptedGeneration.current = false; // Allow regeneration
     try {
       await onRefresh?.();
@@ -491,7 +492,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     if (cachedSummary?.generatedAt) {
       const mins = Math.round((Date.now() - cachedSummary.generatedAt) / 60000);
       const age = formatAge(mins);
-      return `Summary updated ${age}${isFromCache ? " Â· cached" : ""}`;
+      return `Summary updated ${age}`;
     }
     if (digestData?.lastUpdated) {
       // Clamp negative values to avoid showing "Updated -1 min ago" when clocks are slightly out of sync
@@ -499,8 +500,8 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       const mins = Math.max(0, Math.round((Date.now() - digestData.lastUpdated) / 60000));
       return `Updated ${formatAge(mins)}`;
     }
-    return 'Fetching latestâ€¦';
-  }, [digestData?.lastUpdated, cachedSummary?.generatedAt, isFromCache]);
+    return 'Fetching latest...';
+  }, [digestData?.lastUpdated, cachedSummary?.generatedAt]);
 
   const digestStats = useMemo(() => {
     const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
@@ -517,6 +518,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   }, [digestData, digestSections, isUsingSampleData, sampleDigestData]);
 
   const primarySentiment = digestStats.find((stat) => stat.sentiment)?.sentiment || 'neutral';
+
+  useEffect(() => {
+    if (digestStats.length === 0) {
+      setSelectedDigestSection(null);
+      return;
+    }
+    if (!selectedDigestSection || !digestStats.some((stat) => stat.id === selectedDigestSection)) {
+      setSelectedDigestSection(digestStats[0]?.id ?? null);
+    }
+  }, [digestStats, selectedDigestSection]);
 
   const digestTotals = useMemo(() => {
     const dataToUse = isUsingSampleData ? sampleDigestData : digestData;
@@ -698,6 +709,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   ];
 
   const toggleSection = (id: string) => {
+    setSelectedDigestSection(id);
     setExpandedSections(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -705,6 +717,16 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
       } else {
         next.add(id);
       }
+      return next;
+    });
+  };
+
+  const focusDigestSection = (id: string) => {
+    setSelectedDigestSection(id);
+    setExpandedSections((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
       return next;
     });
   };
@@ -725,11 +747,13 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     }
   };
 
+  const formatCount = (value: number) => new Intl.NumberFormat().format(value);
+
   const densityStats = [
     { id: 'signals', label: 'Signals', value: digestTotals.totalSignals, hint: 'market + topics + alerts' },
     { id: 'sources', label: 'Sources', value: digestTotals.sourceCount, hint: 'linked citations' },
-    { id: 'entities', label: 'Entities', value: digestTotals.entityCount, hint: 'detected names' },
-    { id: 'topics', label: 'Topics', value: digestTotals.trackedCount, hint: 'tracked hashtags' },
+    { id: 'entities', label: 'Entities', value: digestTotals.entityCount, hint: 'mentioned by name' },
+    { id: 'topics', label: 'Topics', value: digestTotals.trackedCount, hint: 'watchlist themes' },
     { id: 'alerts', label: 'Alerts', value: digestTotals.alertCount, hint: 'risk flags' },
     { id: 'priority', label: 'Priority', value: digestTotals.priorityCount, hint: 'internal focus' },
   ];
@@ -737,15 +761,15 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
   return (
     <div className="relative rounded-lg border border-edge bg-surface  overflow-hidden">
       {/* Elegant gradient accent bar - warm black/amber */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-gray-900 via-[rgb(79, 70, 229)]/40 to-gray-800 opacity-90" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-content via-[rgb(79, 70, 229)]/40 to-content opacity-90" />
 
       {/* Premium glass header */}
-      <div className="relative flex items-center justify-between px-6 py-6 border-b border-edge/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-gray-100/30 dark:via-gray-800/30 to-transparent">
+      <div className="relative flex items-center justify-between px-6 py-6 border-b border-edge/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-surface-secondary/30 dark:via-gray-800/30 to-transparent">
         <div className="flex items-center gap-5">
           {/* Animated icon container - black/beige */}
           <div className="relative group">
-            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-gray-700 to-gray-900 blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
-            <div className="relative h-14 w-14 rounded-lg bg-gray-900 text-indigo-600 dark:text-indigo-400 flex items-center justify-center transform transition-all duration-300">
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-content-secondary to-content blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
+            <div className="relative h-14 w-14 rounded-lg bg-content text-indigo-600 dark:text-indigo-400 flex items-center justify-center transform transition-all duration-300">
               <Sparkles className="w-6 h-6" />
             </div>
           </div>
@@ -774,16 +798,24 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
           {digestStats.length > 0 && (
             <div className="hidden md:flex items-center gap-2">
               {digestStats.map((stat, idx) => (
-                <div
+                <button
                   key={stat.id}
-                  className={`group relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 cursor-default ${stat.sentiment === 'bullish'
-                    ? 'bg-gradient-to-r from-gray-100 to-amber-50 border border-amber-300/50 hover:border-amber-400'
-                    : stat.sentiment === 'bearish'
-                      ? 'bg-gradient-to-r from-gray-100 to-rose-50 border border-rose-300/50 hover:border-rose-400'
-                      : 'bg-gray-100/50 border border-edge hover:border-gray-400'
-                    } dark:border-white/[0.08] dark:hover:border-white/[0.14]`}
+                  type="button"
+                  onClick={() => focusDigestSection(stat.id)}
+                  aria-pressed={selectedDigestSection === stat.id}
+                  className={`group relative flex items-center gap-2 rounded-lg px-4 py-2 text-left transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 ${selectedDigestSection === stat.id
+                    ? 'border-primary/35 bg-primary/[0.08] text-content shadow-sm ring-1 ring-primary/25'
+                    : stat.sentiment === 'bullish'
+                      ? 'bg-gradient-to-r from-surface-secondary to-amber-50 border border-amber-300/50 hover:border-amber-400'
+                      : stat.sentiment === 'bearish'
+                        ? 'bg-gradient-to-r from-surface-secondary to-rose-50 border border-rose-300/50 hover:border-rose-400'
+                        : 'bg-surface-secondary/50 border border-edge hover:border-surface-hover'
+                    } dark:border-edge dark:hover:border-edge`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
+                  {selectedDigestSection === stat.id ? (
+                    <span className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary" aria-hidden="true" />
+                  ) : null}
                   <span className={`text-lg font-bold ${stat.sentiment === 'bullish' ? 'text-indigo-600 dark:text-indigo-400'
                     : stat.sentiment === 'bearish' ? 'text-rose-600'
                       : 'text-content'
@@ -796,7 +828,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <span className="text-xs font-semibold tracking-wide text-content-secondary">
                     {stat.label}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -804,7 +836,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={handleRefresh}
-              className="p-2.5 rounded-lg text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
+              className="p-2.5 rounded-lg text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-surface-hover/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
               title="Refresh digest"
               aria-label="Refresh digest"
             >
@@ -813,7 +845,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-2.5 rounded-lg text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
+              className="p-2.5 rounded-lg text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-surface-hover/50 dark:hover:bg-gray-700/50 transition-all duration-200 active:scale-95"
               title={isExpanded ? 'Collapse' : 'Expand'}
               aria-expanded={isExpanded}
               aria-label={isExpanded ? 'Collapse digest' : 'Expand digest'}
@@ -839,10 +871,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   </div>
                   <div>
                     <span className="text-xs font-bold text-content-secondary">AI Research Brief</span>
-                    <p className="text-xs text-content-secondary mt-0.5">Synthesized from {digestTotals.sourceCount} sources</p>
+                    <p className="text-xs text-content-secondary mt-0.5">Synthesized from {formatCount(digestTotals.sourceCount)} sources</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100/50 dark:bg-gray-800/50 border border-edge">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-secondary/50 dark:bg-gray-800/50 border border-edge">
                   <Shield className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                   <span className="text-xs font-medium text-content-secondary">Verified</span>
                 </div>
@@ -865,11 +897,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {densityStats.slice(0, 4).map((stat, idx) => (
               <div
                 key={stat.id}
-                className="group relative rounded-lg border border-edge bg-background hover:bg-surface-hover px-4 py-3 transition-all duration-300 hover:border-gray-400/50 dark:hover:border-white/[0.12] cursor-default"
+                className="group relative rounded-lg border border-edge bg-background hover:bg-surface-hover hover:shadow-sm px-4 py-3 transition-all duration-300 hover:border-primary/20 dark:hover:border-edge cursor-default"
                 style={{ animationDelay: `${idx * 50}ms` }}
               >
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold text-content leading-none">{stat.value}</span>
+                  <span className="text-2xl font-bold text-content leading-none">{formatCount(stat.value)}</span>
                   {stat.value > 0 && (
                     <ArrowUpRight className="w-3 h-3 text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
@@ -885,7 +917,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {/* Left: Signals + Sources */}
             <div className="space-y-4">
               {/* Top Signals - Premium card */}
-              <div className="rounded-lg border border-edge bg-background p-4transition-colors duration-150">
+              <div className="rounded-lg border border-edge bg-background p-4 transition-colors duration-150">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="p-1.5 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-800/30">
@@ -899,7 +931,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   {signalHighlights.slice(0, 3).map((item, idx) => (
                     <div
                       key={`${item.label}-${idx}`}
-                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-edge dark:hover:border-white/[0.08] hover:bg-surface-hover/50 dark:hover:bg-white/[0.04] transition-all duration-200"
+                      className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:border-edge dark:hover:border-edge hover:bg-surface-hover/50 dark:hover:bg-surface-hover/50 transition-all duration-200"
                     >
                       <button
                         type="button"
@@ -918,7 +950,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         <button
                           type="button"
                           onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                          className="shrink-0 px-2 py-1 text-xs font-mono font-medium text-content-secondary hover:text-content dark:hover:text-gray-200 bg-surface-secondary rounded-md border border-edge hover:border-gray-400 dark:hover:border-white/20 transition-all"
+                          className="shrink-0 px-2 py-1 text-xs font-mono font-medium text-content-secondary hover:text-content dark:hover:text-gray-200 bg-surface-secondary rounded-md border border-edge hover:border-edge dark:hover:border-edge transition-all"
                           title={`Open entity: ${item.linkedEntity}`}
                         >
                           {item.linkedEntity}
@@ -930,21 +962,21 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </div>
 
               {/* Sources - Enhanced with visual bars */}
-              <div className="rounded-lg border border-edge bg-background p-4transition-colors duration-150">
+              <div className="rounded-lg border border-edge bg-background p-4 transition-colors duration-150">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-surface-secondary border border-gray-300/50">
+                    <div className="p-1.5 rounded-lg bg-surface-secondary border border-edge">
                       <Globe2 className="w-3.5 h-3.5 text-content-secondary" />
                     </div>
                     <span className="text-xs font-bold text-content-secondary">Sources</span>
                   </div>
-                  <span className="text-xs text-content-secondary">{totalSourceCount} items</span>
+                  <span className="text-xs text-content-secondary">{formatCount(totalSourceCount)} items</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {topSources.slice(0, 6).map((source, idx) => (
                     <div
                       key={source.name}
-                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100/50 border border-edge hover:border-gray-400 dark:hover:border-white/20 transition-all duration-200"
+                      className="group relative flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-secondary/50 border border-edge hover:border-edge dark:hover:border-edge transition-all duration-200"
                     >
                       {/* Visual bar indicator - warm amber */}
                       <div
@@ -952,11 +984,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                         style={{ width: `${(source.count / maxSourceCount) * 100}%` }}
                       />
                       <span className="text-xs font-medium text-content-secondary">{source.name}</span>
-                      <span className="text-xs font-bold text-content">{source.count}</span>
+                      <span className="text-xs font-bold text-content">{formatCount(source.count)}</span>
                     </div>
                   ))}
                   {topSources.length > 6 && (
-                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-gray-100/30 text-xs text-content-secondary">
+                    <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-surface-secondary/30 text-xs text-content-secondary">
                       +{topSources.length - 6} more
                     </span>
                   )}
@@ -967,10 +999,10 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {/* Right: Tags + Entities + Actions */}
             <div className="space-y-4">
               {/* Tags - Enhanced with hover effects */}
-              <div className="rounded-lg border border-edge bg-background p-4transition-colors duration-150">
+              <div className="rounded-lg border border-edge bg-background p-4 transition-colors duration-150">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-surface-secondary border border-gray-300/50">
+                    <div className="p-1.5 rounded-lg bg-surface-secondary border border-edge">
                       <TrendingUp className="w-3.5 h-3.5 text-content-secondary" />
                     </div>
                     <span className="text-xs font-bold text-content-secondary">Trending</span>
@@ -983,7 +1015,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={tag.tag}
                       type="button"
                       onClick={() => onItemClick?.({ text: `Track #${tag.tag} and summarize the latest movement.`, relevance: 'medium', linkedEntity: tag.tag })}
-                      className="group px-3 py-1.5 text-xs font-medium border border-edge bg-background text-content-secondary hover:text-content hover:border-gray-400 dark:hover:border-white/20 hover:bg-surface-hover rounded-lg transition-all duration-200"
+                      className="group px-3 py-1.5 text-xs font-medium border border-edge bg-background text-content-secondary hover:text-content hover:border-edge dark:hover:border-edge hover:bg-surface-hover rounded-lg transition-all duration-200"
                     >
                       <span className="text-amber-700 dark:text-amber-400">#</span>{tag.tag}
                       <span className="ml-1.5 text-content-secondary group-hover:text-content-secondary dark:group-hover:text-gray-300">({tag.count})</span>
@@ -993,9 +1025,9 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               </div>
 
               {/* Entities - Enhanced with better visual treatment */}
-              <div className="rounded-lg border border-edge bg-background p-4transition-colors duration-150">
+              <div className="rounded-lg border border-edge bg-background p-4 transition-colors duration-150">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-lg bg-surface-secondary border border-gray-300/50">
+                  <div className="p-1.5 rounded-lg bg-surface-secondary border border-edge">
                     <Building2 className="w-3.5 h-3.5 text-content-secondary" />
                   </div>
                   <span className="text-xs font-bold text-content-secondary">Key Topics</span>
@@ -1006,7 +1038,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={entity}
                       type="button"
                       onClick={() => onEntityClick?.(entity, "company")}
-                      className="group px-3 py-1.5 text-xs font-semibold border border-edge bg-surface text-content-secondary hover:border-gray-400 dark:hover:border-white/20 hover:text-content rounded-lg transition-all duration-200"
+                      className="group px-3 py-1.5 text-xs font-semibold border border-edge bg-surface text-content-secondary hover:border-edge dark:hover:border-edge hover:text-content rounded-lg transition-all duration-200"
                     >
                       {entity}
                       <ArrowUpRight className="inline-block ml-1 w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -1018,7 +1050,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
               {/* Agent Shortcuts - Premium CTA buttons */}
               <div className="rounded-lg border border-edge bg-gradient-to-br from-background to-amber-50/30 dark:to-amber-950/10 p-4 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="p-1.5 rounded-lg bg-surface-secondary border border-gray-300/50">
+                  <div className="p-1.5 rounded-lg bg-surface-secondary border border-edge">
                     <Zap className="w-3.5 h-3.5 text-content-secondary" />
                   </div>
                   <span className="text-xs font-bold text-content-secondary">Quick Actions</span>
@@ -1029,7 +1061,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                       key={item.label}
                       type="button"
                       onClick={() => onItemClick?.({ text: item.prompt, relevance: 'high' })}
-                      className="group flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-edge dark:border-white/[0.1] bg-gradient-to-r from-gray-100 dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/20 text-content-secondary hover:from-gray-200 dark:hover:from-white/[0.08] hover:to-amber-100/50 hover:border-gray-400 dark:hover:border-white/20 rounded-lg transition-all duration-200"
+                      className="group flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-edge dark:border-edge bg-gradient-to-r from-surface-secondary dark:from-surface-secondary to-amber-50/50 dark:to-amber-950/20 text-content-secondary hover:from-surface-hover dark:hover:from-surface-hover hover:to-amber-100/50 hover:border-edge dark:hover:border-edge rounded-lg transition-all duration-200"
                     >
                       <Sparkles className="w-3 h-3" />
                       {item.label.replace('Deep agent: ', '')}
@@ -1042,7 +1074,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
           {/* Sample Data Banner - Enhanced */}
           {isUsingSampleData && digestSections.length > 0 && (
-            <div className="p-4 bg-gradient-to-r from-gray-100 dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/10 border border-edge rounded-lg flex items-center gap-4">
+            <div className="p-4 bg-gradient-to-r from-surface-secondary dark:from-white/[0.04] to-amber-50/50 dark:to-amber-950/10 border border-edge rounded-lg flex items-center gap-4">
               <div className="p-2 rounded-lg bg-surface-secondary">
                 <Sparkles className="w-4 h-4 text-content-secondary" />
               </div>
@@ -1079,7 +1111,11 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             {digestSections.map((section, sectionIdx) => (
               <div
                 key={section.id}
-                className="group rounded-lg border border-edge bg-background transition-all duration-300 overflow-hidden"
+                className={`group overflow-hidden rounded-lg border bg-background transition-all duration-300 ${
+                  selectedDigestSection === section.id
+                    ? 'border-primary/30 shadow-[0_0_0_1px_rgba(99,102,241,0.12)]'
+                    : 'border-edge'
+                }`}
                 style={{ animationDelay: `${sectionIdx * 100}ms` }}
               >
                 {/* Section Header */}
@@ -1108,7 +1144,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
-                    className="p-2.5 rounded-lg text-content-secondary hover:text-content dark:hover:text-gray-200 hover:bg-surface-hover transition-all duration-200"
+                    className="p-2.5 rounded-lg text-content-secondary hover:text-content hover:bg-surface-hover transition-all duration-200"
                     aria-expanded={expandedSections.has(section.id)}
                     aria-label={`${expandedSections.has(section.id) ? 'Collapse' : 'Expand'} ${section.title}`}
                   >
@@ -1118,7 +1154,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
 
                 {/* Section Items */}
                 {expandedSections.has(section.id) && (
-                  <div className="divide-y divide-gray-200/50 dark:divide-white/10">
+                  <div className="divide-y divide-edge/50 dark:divide-white/10">
                     {section.items.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
@@ -1146,7 +1182,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
                             <button
                               type="button"
                               onClick={() => onEntityClick?.(item.linkedEntity, "company")}
-                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold font-mono text-content-secondary bg-surface-secondary border border-edge tracking-tight hover:text-content hover:border-gray-400 transition-all"
+                              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold font-mono text-content-secondary bg-surface-secondary border border-edge tracking-tight hover:text-content hover:border-edge transition-all"
                               title={`Open topic: ${item.linkedEntity}`}
                             >
                               {item.linkedEntity}
@@ -1190,7 +1226,7 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
             <button
               type="button"
               onClick={() => onItemClick?.({ text: "Prepare the full market report for me", relevance: 'medium', linkedEntity: 'market report' })}
-              className="group relative flex items-center justify-center gap-3 rounded-lg border border-edge bg-background px-5 py-4 text-sm font-bold text-content-secondary hover:border-gray-400 hover:bg-surface-hover transition-all duration-300 active:scale-[0.98] overflow-hidden"
+              className="group relative flex items-center justify-center gap-3 rounded-lg border border-edge bg-background px-5 py-4 text-sm font-bold text-content-secondary hover:border-primary/20 hover:bg-surface-hover hover:shadow-sm transition-all duration-300 active:scale-[0.98] overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-gray-400/0 via-gray-400/10 to-gray-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               <Newspaper className="w-5 h-5" />
@@ -1202,4 +1238,3 @@ export const MorningDigest: React.FC<MorningDigestProps> = ({
     </div>
   );
 };
-

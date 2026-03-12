@@ -378,10 +378,10 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
         className="absolute inset-0 bg-black/30"
         aria-label="Close entity drawer"
       />
-      <div className="ml-auto w-full max-w-md h-full bg-white shadow-2xl border-l border-edge flex flex-col relative">
+      <div className="ml-auto w-full max-w-md h-full bg-surface shadow-2xl border-l border-edge flex flex-col relative">
         <div className="flex items-center justify-between px-5 py-4 border-b border-edge">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-content text-white flex items-center justify-center">
               <Building2 className="w-4 h-4" />
             </div>
             <div>
@@ -733,14 +733,14 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               </div>
 
               {crm.foundersBackground && (
-                <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary">
+                <div className="rounded-md border border-edge bg-surface p-3 text-xs text-content-secondary">
                   <div className="text-xs font-medium text-content-muted">Founder background</div>
                   <div className="mt-1 text-sm text-content">{crm.foundersBackground}</div>
                 </div>
               )}
 
               {crm.keyPeople?.length > 0 && (
-                <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary space-y-2">
+                <div className="rounded-md border border-edge bg-surface p-3 text-xs text-content-secondary space-y-2">
                   <div className="text-xs font-medium text-content-muted">Key people</div>
                   <ul className="space-y-1">
                     {crm.keyPeople.slice(0, 3).map((person: any, idx: number) => (
@@ -753,14 +753,14 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
               )}
 
               {crm.investors?.length > 0 && (
-                <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary">
+                <div className="rounded-md border border-edge bg-surface p-3 text-xs text-content-secondary">
                   <div className="text-xs font-medium text-content-muted">Investors</div>
                   <div className="mt-1 text-sm text-content">{crm.investors.slice(0, 4).join(", ")}</div>
                 </div>
               )}
 
               {crm.competitors?.length > 0 && (
-                <div className="rounded-md border border-edge bg-white p-3 text-xs text-content-secondary">
+                <div className="rounded-md border border-edge bg-surface p-3 text-xs text-content-secondary">
                   <div className="text-xs font-medium text-content-muted">Competitors</div>
                   <div className="mt-1 text-sm text-content">{crm.competitors.slice(0, 4).join(", ")}</div>
                 </div>
@@ -830,7 +830,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                             window.open(item.url, "_blank", "noopener,noreferrer");
                           }
                         }}
-                        className="w-full text-left rounded-md border border-edge bg-surface-secondary px-3 py-2 hover:bg-white transition-colors"
+                        className="w-full text-left rounded-md border border-edge bg-surface-secondary px-3 py-2 hover:bg-surface transition-colors"
                       >
                         <div className="flex items-center justify-between text-xs text-content-muted">
                           <span>{item.source || "Source"}</span>
@@ -864,7 +864,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                             window.open(source.url, "_blank", "noopener,noreferrer");
                           }
                         }}
-                        className="w-full text-left rounded-md border border-edge bg-white px-3 py-2 hover:border-content transition-colors"
+                        className="w-full text-left rounded-md border border-edge bg-surface px-3 py-2 hover:border-content transition-colors"
                       >
                         <div className="flex items-center justify-between text-xs font-semibold text-content-secondary">
                           <span>{source.name || "Source"}</span>
@@ -893,7 +893,7 @@ export const EntityContextDrawer: React.FC<EntityContextDrawerProps> = ({
                 contextWebUrls: (sources || []).map((s) => s.url).filter(Boolean),
               });
             }}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gray-900 hover:bg-black transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-content hover:bg-black transition-colors"
           >
             Ask agent
           </button>

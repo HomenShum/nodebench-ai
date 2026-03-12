@@ -143,11 +143,11 @@ const ThreadTab = memo(function ThreadTab({
       onClick={onSelect}
       className={cn(
         "group flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0",
-        "hover:bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
+        "hover:bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-ring",
         isActive
           ? "bg-surface-secondary text-content shadow-sm border border-edge"
           : "text-content-secondary hover:text-content border border-transparent",
-        isSwarmActive && "ring-1 ring-indigo-500/40 bg-indigo-500/10"
+        isSwarmActive && "ring-1 ring-ring bg-indigo-500/10"
       )}
     >
       {/* Icon */}
@@ -283,7 +283,7 @@ export function ThreadTabBar({
         className={cn(
           "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
           "hover:bg-surface-hover text-content-secondary hover:text-content",
-          "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
+          "focus:outline-none focus:ring-2 focus:ring-ring",
           !activeThreadId && "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
         )}
         title="New chat (âŒ˜1)"
@@ -301,7 +301,7 @@ export function ThreadTabBar({
             className={cn(
               "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all duration-200 flex-shrink-0",
               "hover:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300",
-              "focus:outline-none focus:ring-2 focus:ring-indigo-500/40",
+              "focus:outline-none focus:ring-2 focus:ring-ring",
               showSwarmMenu && "bg-indigo-500/10 border border-indigo-500/20"
             )}
             title="Spawn parallel agents"
@@ -324,7 +324,7 @@ export function ThreadTabBar({
                   value={swarmQuery}
                   onChange={(e) => setSwarmQuery(e.target.value)}
                   placeholder="e.g., Tesla competitors analysis"
-                  className="w-full px-3 py-2 text-sm bg-surface-secondary border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50 text-content placeholder:text-content-muted"
+                  className="w-full px-3 py-2 text-sm bg-surface-secondary border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-content placeholder:text-content-muted"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && swarmQuery.trim()) {
@@ -379,7 +379,7 @@ export function ThreadTabBar({
               {/* Quick tip */}
               <div className="px-3 py-2 border-t border-edge bg-surface-secondary">
                 <div className="text-xs text-content-muted">
-                  ðŸ’¡ Or type <code className="px-1 py-0.5 bg-surface rounded">/spawn "query"</code> in chat
+                  Tip: type <code className="px-1 py-0.5 bg-surface rounded">/spawn "query"</code> in chat
                 </div>
               </div>
             </div>
@@ -434,4 +434,3 @@ export function ThreadTabBar({
 }
 
 export default ThreadTabBar;
-

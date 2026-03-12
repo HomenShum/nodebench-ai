@@ -148,7 +148,7 @@ export function QuickCreateBar({
                 <button
                     type="button"
                     onClick={() => void handleCreateTask()}
-                    className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:opacity-50"
+                    className="btn-primary-sm text-sm"
                     title="Add task"
                     disabled={!isLoggedIn || isCreatingTask || !newTaskTitle.trim()}
                 >
@@ -207,7 +207,7 @@ export function QuickCreateBar({
                     <button
                         type="button"
                         onClick={() => void handleCreateEvent()}
-                        className="px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:opacity-90 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 disabled:opacity-50 whitespace-nowrap"
+                        className="btn-primary-sm text-sm whitespace-nowrap"
                         title="Add event"
                         disabled={
                             !isLoggedIn ||

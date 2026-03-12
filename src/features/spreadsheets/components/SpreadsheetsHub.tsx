@@ -33,7 +33,7 @@ export function SpreadsheetsHub({
             <div className="w-16 h-16 bg-indigo-500/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <FileSpreadsheet className="w-8 h-8 text-indigo-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">No spreadsheets yet</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Create your first spreadsheet</h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
               Create your first spreadsheet to start organizing and analyzing data.
             </p>
@@ -44,7 +44,7 @@ export function SpreadsheetsHub({
               <button
                 key={String(s._id)}
                 type="button"
-                className="text-left rounded-lg border border-border/60 bg-card hover:bg-muted/20 p-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                className="text-left rounded-lg border border-border/60 bg-card hover:bg-muted/20 p-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 onClick={() => onOpenSheet(s._id as Id<"spreadsheets">)}
               >
                 <div className="text-sm font-medium text-foreground truncate">

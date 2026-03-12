@@ -85,6 +85,7 @@ async function convexCall<T>(
         args,
         format: "json",
       }),
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!res.ok) {

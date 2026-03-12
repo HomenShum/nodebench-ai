@@ -138,20 +138,16 @@ function scoreCausalChain(
   investigation: EnterpriseInvestigation,
   expectations: EnterpriseEvalExpectations,
 ) {
-  const matches = expectations.requiredMoments.map((moment) => {
-    const matched = investigation.causal_chain.some((event) => {
-      const eventText = `${event.timeframe} ${event.event} ${event.evidence.exact_quote}`;
-      const eventKeywordsHit = containsAny(eventText, moment.eventContains);
-      const timeframeHit =
-        !moment.timeframeContains || moment.timeframeContains.length === 0
-          ? true
-          : containsAny(event.timeframe, moment.timeframeContains);
-      const sourceHit =
-        !moment.sourceType || event.evidence.source_type === moment.sourceType;
-      return eventKeywordsHit && timeframeHit && sourceHit;
-    });
+  // V2: observed_facts + evidence_catalog replace causal_chain
+  const factsText = investigation.observed_facts.map((f) => f.statement).join(" ");
+  const evidenceText = investigation.evidence_catalog.map((e) => `${e.source_type} ${e.source_uri}`).join(" ");
+  const combinedText = `${factsText} ${evidenceText}`;
 
-    return { matched };
+  const matches = expectations.requiredMoments.map((moment) => {
+    const eventKeywordsHit = containsAny(combinedText, moment.eventContains);
+    const sourceHit =
+      !moment.sourceType || investigation.evidence_catalog.some((e) => e.source_type === moment.sourceType);
+    return { matched: eventKeywordsHit && sourceHit };
   });
 
   const matchedCount = matches.filter((item) => item.matched).length;
@@ -168,12 +164,12 @@ function scoreTemporalEvidence(
   investigation: EnterpriseInvestigation,
   expectations: EnterpriseEvalExpectations,
 ) {
-  const anomalies = investigation.temporal_intelligence.anomalies_detected.length;
+  const anomalies = investigation.derived_signals.anomalies.length;
   const hasForecast =
-    !normalizeText(investigation.temporal_intelligence.forecast.prediction).includes(
+    !normalizeText(investigation.derived_signals.forecast.summary).includes(
       "insufficient numeric evidence",
     );
-  const confidence = investigation.meta.confidence_score;
+  const confidence = investigation.meta.overall_confidence;
 
   let score = 0;
   if (anomalies >= expectations.minimumAnomalies) score += 40;
@@ -190,32 +186,25 @@ function scoreTemporalEvidence(
 function scoreTraceability(
   investigation: EnterpriseInvestigation,
   expectations: EnterpriseEvalExpectations,
-  documents: ExtractedDocumentLike[],
+  _documents: ExtractedDocumentLike[],
 ) {
-  const sourceHashes = investigation.audit_proof_pack.source_snapshot_hashes.length;
-  const allEvidenceAnchored = investigation.causal_chain.every(
-    (event) =>
-      Boolean(event.evidence.artifact_id) &&
-      Boolean(event.evidence.exact_quote) &&
-      Boolean(event.evidence.url),
+  const verifiedHashes = investigation.evidence_catalog
+    .filter((e) => !e.content_hash.includes("unverified"))
+    .length;
+  const allEvidenceAnchored = investigation.observed_facts.every(
+    (fact) => fact.evidence_refs.length > 0,
   );
-  const quotesBacked = investigation.causal_chain.every((event) =>
-    documents.some(
-      (document) =>
-        document.citations.some((citation) => citation.id === event.evidence.artifact_id) &&
-        normalizeText(document.text).includes(normalizeText(event.evidence.exact_quote)),
-    ),
-  );
+  const hasOtelSpans = investigation.traceability.otel_spans_recorded;
 
   let score = 0;
-  if (sourceHashes >= expectations.minimumSourceHashes) score += 40;
+  if (verifiedHashes >= expectations.minimumSourceHashes) score += 40;
   if (allEvidenceAnchored) score += 30;
-  if (quotesBacked) score += 30;
+  if (hasOtelSpans) score += 30;
 
   return makeDimension(
     score,
     80,
-    `sourceHashes=${sourceHashes}, anchored=${allEvidenceAnchored}, quotesBacked=${quotesBacked}`,
+    `verifiedHashes=${verifiedHashes}, anchored=${allEvidenceAnchored}, otelSpans=${hasOtelSpans}`,
   );
 }
 
@@ -223,9 +212,11 @@ function scoreGameTheory(
   investigation: EnterpriseInvestigation,
   expectations: EnterpriseEvalExpectations,
 ) {
+  // V2: counter_analysis replaces game_theory_analysis
   const haystack = [
-    investigation.game_theory_analysis.organizational_friction,
-    ...investigation.game_theory_analysis.pressure_points,
+    investigation.counter_analysis.result,
+    ...investigation.counter_analysis.questions_tested,
+    ...investigation.hypotheses.map((h) => h.statement),
   ].join(" ");
   const hits = expectations.requiredFrictionTerms.filter((term) => containsAny(haystack, [term])).length;
   const ratio =
@@ -244,14 +235,15 @@ function scoreZeroDraft(
   investigation: EnterpriseInvestigation,
   expectations: EnterpriseEvalExpectations,
 ) {
-  const action = investigation.zero_friction_execution.proposed_action;
-  const hits = expectations.requiredActionTerms.filter((term) => containsAny(action, [term])).length;
+  // V2: recommended_actions replaces zero_friction_execution
+  const actionsText = investigation.recommended_actions.map((a) => a.action).join(" ");
+  const hits = expectations.requiredActionTerms.filter((term) => containsAny(actionsText, [term])).length;
   const ratio =
     expectations.requiredActionTerms.length === 0
       ? 1
       : hits / expectations.requiredActionTerms.length;
-  const approveGate = normalizeText(investigation.zero_friction_execution.action_potential).includes(
-    "approve",
+  const approveGate = investigation.recommended_actions.every(
+    (a) => a.human_gate === "APPROVE_REQUIRED",
   );
 
   return makeDimension(
@@ -264,18 +256,26 @@ function scoreZeroDraft(
 export function serializeInvestigationForJudge(investigation: EnterpriseInvestigation) {
   return [
     `Query: ${investigation.meta.query}`,
-    `Confidence: ${investigation.meta.confidence_score}`,
-    `Forecast: ${investigation.temporal_intelligence.forecast.prediction}`,
-    "Causal chain:",
-    ...investigation.causal_chain.map(
-      (event, index) =>
-        `${index + 1}. ${event.timeframe} | ${event.regime_state} | ${event.event} | ${event.evidence.source_type} | ${event.evidence.exact_quote}`,
+    `Confidence: ${investigation.meta.overall_confidence}`,
+    `Forecast: ${investigation.derived_signals.forecast.summary}`,
+    "Observed facts:",
+    ...investigation.observed_facts.map(
+      (fact, index) =>
+        `${index + 1}. [${fact.fact_id}] ${fact.statement} (confidence: ${fact.confidence.toFixed(2)}, refs: ${fact.evidence_refs.join(", ")})`,
     ),
-    `Game theory: ${investigation.game_theory_analysis.organizational_friction}`,
-    `Pressure points: ${investigation.game_theory_analysis.pressure_points.join(" | ") || "none"}`,
-    `Proposed action: ${investigation.zero_friction_execution.proposed_action}`,
-    `Replay URL: ${investigation.audit_proof_pack.replay_url ?? "missing"}`,
-    `Source hashes: ${investigation.audit_proof_pack.source_snapshot_hashes.join(", ") || "missing"}`,
+    "Hypotheses:",
+    ...investigation.hypotheses.map(
+      (h) => `- [${h.status}] ${h.statement} (confidence: ${h.confidence.toFixed(2)})`,
+    ),
+    `Counter-analysis: ${investigation.counter_analysis.result}`,
+    `Questions tested: ${investigation.counter_analysis.questions_tested.join(" | ")}`,
+    "Recommended actions:",
+    ...investigation.recommended_actions.map(
+      (a) => `- [${a.priority}] ${a.action} (gate: ${a.human_gate})`,
+    ),
+    `Replay URL: ${investigation.traceability.replay_url ?? "missing"}`,
+    `Evidence catalog: ${investigation.evidence_catalog.map((e) => e.content_hash).join(", ") || "empty"}`,
+    `Limitations: ${investigation.limitations.join(" | ")}`,
   ].join("\n");
 }
 

@@ -243,13 +243,21 @@ test.describe('Scenario: Dogfood artifacts ingestion — UI loads screenshots, s
     await expect(scribeImgs.first()).toBeVisible({ timeout: 30_000 });
 
     for (let i = 0; i < Math.min(3, frames.items.length); i++) {
-      const w = await frameImgs.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth);
-      expect(w, `frame image ${i} failed to load (naturalWidth=0)`).toBeGreaterThan(0);
+      await expect
+        .poll(
+          async () => frameImgs.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth),
+          { timeout: 15_000, message: `frame image ${i} failed to load (naturalWidth=0)` },
+        )
+        .toBeGreaterThan(0);
     }
 
     for (let i = 0; i < Math.min(3, scribe.steps.length); i++) {
-      const w = await scribeImgs.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth);
-      expect(w, `scribe image ${i} failed to load (naturalWidth=0)`).toBeGreaterThan(0);
+      await expect
+        .poll(
+          async () => scribeImgs.nth(i).evaluate((img: HTMLImageElement) => img.naturalWidth),
+          { timeout: 15_000, message: `scribe image ${i} failed to load (naturalWidth=0)` },
+        )
+        .toBeGreaterThan(0);
     }
 
     await page.waitForFunction(() => {

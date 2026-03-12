@@ -157,7 +157,7 @@ export function ExportBriefButton({ brief, className = "" }: ExportBriefButtonPr
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-700 bg-surface border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
       >
         <Share2 className="w-4 h-4" />
         Export
@@ -165,7 +165,7 @@ export function ExportBriefButton({ brief, className = "" }: ExportBriefButtonPr
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1">
+        <div className="absolute right-0 top-full mt-1 w-48 bg-surface border border-slate-200 rounded-lg shadow-lg z-50 py-1">
           <button
             type="button"
             onClick={() => {

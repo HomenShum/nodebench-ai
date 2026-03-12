@@ -130,13 +130,13 @@ function SourceBadge({ source, count, active, onClick }: {
       aria-label={`Filter by ${config.label} source (${count} result${count !== 1 ? 's' : ''})`}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all",
-        "focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1",
+        "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
         active ? config.color : "bg-surface-hover text-content-muted border-edge opacity-50"
       )}
     >
       <Icon className="w-3.5 h-3.5" aria-hidden="true" />
       <span>{config.label}</span>
-      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-white/50 text-xs" aria-label={`${count} results`}>{count}</span>
+      <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-surface/50 text-xs" aria-label={`${count} results`}>{count}</span>
     </button>
   );
 }
@@ -160,7 +160,7 @@ function PartialFailureWarning({ errors }: { errors: SourceError[] }) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1 rounded"
+        className="w-full flex items-center gap-2 text-left focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 rounded"
         aria-expanded={expanded}
         aria-controls="source-error-details"
       >
@@ -200,7 +200,7 @@ function ResultCard({ result, citationNumber }: { result: FusedResult; citationN
       target="_blank"
       rel="noopener noreferrer"
       aria-label={ariaLabel}
-      className="group block p-3 rounded-lg border border-edge hover:border-edge transition-all bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1"
+      className="group block p-3 rounded-lg border border-edge hover:shadow-md hover:border-primary/20 transition-all bg-surface focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
     >
       <div className="flex items-start gap-3">
         {/* Source icon */}
@@ -363,7 +363,7 @@ export function FusedSearchResults({
         <button
           type="button"
           onClick={() => setShowAll(!showAll)}
-          className="w-full py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-1 rounded"
+          className="w-full py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:text-indigo-300 font-medium flex items-center justify-center gap-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 rounded"
           aria-expanded={showAll}
           aria-label={showAll ? "Show fewer results" : `Show ${filteredResults.length - INITIAL_COUNT} more results`}
         >

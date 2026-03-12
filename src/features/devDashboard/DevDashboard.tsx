@@ -166,7 +166,7 @@ function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+      className="rounded-xl border border-edge bg-white/[0.02] p-4"
     >
       <div className="flex items-center gap-2 mb-1">
         <Icon size={14} className={accent} />
@@ -309,7 +309,7 @@ function EpochRow({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="ml-[34px] border-l border-white/[0.06] pl-4 pb-3 space-y-1">
+            <div className="ml-[34px] border-l border-edge pl-4 pb-3 space-y-1">
               {filteredCommits.map((c) => (
                 <CommitRow key={c.hash} commit={c} />
               ))}
@@ -453,7 +453,7 @@ export default function DevDashboard() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="shrink-0 px-6 pt-6 pb-4 border-b border-white/[0.06]"
+        className="shrink-0 px-6 pt-6 pb-4 border-b border-edge"
       >
         <div className="flex items-center gap-3 mb-4">
           <GitBranch size={20} className="text-blue-400" />
@@ -489,7 +489,7 @@ export default function DevDashboard() {
           initial={{ opacity: 0, x: -16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.15 }}
-          className="w-52 shrink-0 border-r border-white/[0.06] overflow-y-auto p-3 space-y-0.5 hidden md:block"
+          className="w-52 shrink-0 border-r border-edge overflow-y-auto p-3 space-y-0.5 hidden md:block"
         >
           <div className="text-[10px] uppercase tracking-widest text-white/30 px-3 py-2">
             Branches
@@ -517,7 +517,7 @@ export default function DevDashboard() {
             />
           ))}
 
-          <div className="pt-3 border-t border-white/[0.06] mt-3">
+          <div className="pt-3 border-t border-edge mt-3">
             <button
               onClick={() => setShowMilestones(!showMilestones)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
@@ -536,7 +536,7 @@ export default function DevDashboard() {
         {/* Main timeline */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Search + filter bar */}
-          <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-3">
+          <div className="px-4 py-3 border-b border-edge flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
               <input
@@ -544,7 +544,7 @@ export default function DevDashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search commits, scopes, domains..."
-                className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:border-blue-500/30"
+                className="w-full pl-8 pr-8 py-1.5 rounded-lg bg-white/[0.04] border border-edge text-sm text-white/80 placeholder:text-white/25 focus:outline-none focus:border-blue-500/30"
               />
               {searchQuery && (
                 <button
@@ -561,7 +561,7 @@ export default function DevDashboard() {
               <select
                 value={domainFilter || ""}
                 onChange={(e) => setDomainFilter(e.target.value || null)}
-                className="px-2 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-white/70"
+                className="px-2 py-1.5 rounded-lg bg-white/[0.04] border border-edge text-sm text-white/70"
               >
                 <option value="">All domains</option>
                 {sortedDomains.map(([d]) => (

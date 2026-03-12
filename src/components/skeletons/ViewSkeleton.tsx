@@ -47,15 +47,38 @@ export function ViewSkeleton({ variant = 'default' }: ViewSkeletonProps) {
 
 function DefaultViewSkeleton() {
   return (
-    <div className="p-6 flex flex-col items-center justify-center min-h-[400px]">
-      <SignatureOrb variant="loading" />
-    </div>
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-44" rounded="lg" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <Skeleton className="h-9 w-28" rounded="md" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonCard key={i} className="p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <SkeletonCircle size={30} />
+              <div className="space-y-2 flex-1">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+            <SkeletonText lines={2} />
+          </SkeletonCard>
+        ))}
+      </div>
+      <div className="rounded-lg border border-edge bg-surface p-8 flex items-center justify-center min-h-[220px]">
+        <SignatureOrb variant="loading" />
+      </div>
+    </div></div></div>
   );
 }
 
 function DocumentsViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
       {/* Header with tabs */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
@@ -82,7 +105,7 @@ function DocumentsViewSkeleton() {
           <DocumentCardSkeleton key={i} />
         ))}
       </div>
-    </div>
+    </div></div></div>
   );
 }
 
@@ -107,7 +130,7 @@ function DocumentCardSkeleton() {
 
 function CalendarViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -135,13 +158,13 @@ function CalendarViewSkeleton() {
           <Skeleton key={i} className="h-20 w-full" rounded="lg" />
         ))}
       </div>
-    </div>
+    </div></div></div>
   );
 }
 
 function AgentsViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -156,7 +179,7 @@ function AgentsViewSkeleton() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-edge dark:border-border/60 bg-white dark:bg-card p-4 space-y-2">
+          <div key={i} className="rounded-lg border border-edge dark:border-border/60 bg-surface dark:bg-card p-4 space-y-2">
             <Skeleton className="h-8 w-12" rounded="lg" />
             <Skeleton className="h-3 w-20" />
           </div>
@@ -176,7 +199,7 @@ function AgentsViewSkeleton() {
           <AgentCardSkeleton key={i} />
         ))}
       </div>
-    </div>
+    </div></div></div>
   );
 }
 
@@ -204,7 +227,7 @@ function AgentCardSkeleton() {
 
 function SettingsViewSkeleton() {
   return (
-    <div className="p-6 space-y-6 max-w-2xl mx-auto">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame-narrow space-y-6">
       {/* Header */}
       <Skeleton className="h-7 w-32" rounded="lg" />
 
@@ -225,13 +248,13 @@ function SettingsViewSkeleton() {
           </div>
         </div>
       ))}
-    </div>
+    </div></div></div>
   );
 }
 
 function DashboardViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -261,13 +284,13 @@ function DashboardViewSkeleton() {
         <Skeleton className="h-5 w-32 mb-4" />
         <Skeleton className="h-64 w-full" rounded="lg" />
       </div>
-    </div>
+    </div></div></div>
   );
 }
 
 function CostDashboardViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <Skeleton className="h-7 w-44" rounded="lg" />
@@ -312,13 +335,13 @@ function CostDashboardViewSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </div></div></div>
   );
 }
 
 function IndustryUpdatesViewSkeleton() {
   return (
-    <div className="p-6 space-y-6">
+    <div className="nb-page-shell"><div className="nb-page-inner"><div className="nb-page-frame space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -365,7 +388,7 @@ function IndustryUpdatesViewSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </div></div></div>
   );
 }
 

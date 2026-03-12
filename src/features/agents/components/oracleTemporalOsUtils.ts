@@ -15,7 +15,7 @@ export function getTemporalPhasePresentation(status: OracleTemporalPhaseStatus) 
   }
   return {
     label: "Pending",
-    className: "border-zinc-500/20 bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
+    className: "border-edge bg-surface-secondary/50 text-content-muted",
   };
 }
 

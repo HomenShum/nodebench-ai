@@ -48,13 +48,13 @@ export function DealTable({ deals, onDealClick }: DealTableProps) {
             <table className="w-full border-collapse">
                 <thead>
                     <tr className="border-b border-edge">
-                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">Company</th>
-                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">Sector</th>
-                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">Stage</th>
-                        <th className="text-right py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">Amount</th>
-                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">Lead</th>
-                        <th className="text-left py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">Date</th>
-                        <th className="text-center py-3 px-4 text-xs font-black uppercase tracking-[0.2em] text-content-muted">
+                        <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">Company</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">Sector</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">Stage</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">Amount</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">Lead</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">Date</th>
+                        <th className="text-center py-3 px-4 text-xs font-bold uppercase tracking-wider text-content-muted">
                             <div className="flex items-center justify-center gap-1">
                                 <TrendingUp className="w-3 h-3" />
                                 <span>Score</span>
@@ -108,7 +108,7 @@ export function DealTable({ deals, onDealClick }: DealTableProps) {
                                         </span>
                                         <div className="w-16 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
                                             <div
-                                                className={`h-full ${deal.bankerScore >= 80 ? 'bg-indigo-600' : deal.bankerScore >= 60 ? 'bg-blue-600' : 'bg-amber-500'}`}
+                                                className={`h-full ${deal.bankerScore >= 80 ? 'bg-[var(--accent-primary)]' : deal.bankerScore >= 60 ? 'bg-blue-600' : 'bg-amber-500'}`}
                                                 style={{ width: `${deal.bankerScore}%` }}
                                             />
                                         </div>

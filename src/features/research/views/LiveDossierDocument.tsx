@@ -69,7 +69,7 @@ function SuggestedFollowUps({ onSelectFollowUp, contentContext = "" }: Suggested
     const isPerson = /\b(founder|CEO|CTO|executive|director)\b/i.test(contentContext);
 
     // Extract entity name from content (simple heuristic)
-    const entityMatch = contentContext.match(/(?:^|\n)(?:First â€” to make sure.*?â€” )?(?:\*\*)?([A-Z][a-zA-Z0-9\s&]+(?:LLC|Inc|Corporation)?)/);
+    const entityMatch = contentContext.match(/(?:^|\n)(?:First — to make sure.*?— )?(?:\*\*)?([A-Z][a-zA-Z0-9\s&]+(?:LLC|Inc|Corporation)?)/);
     const entityName = entityMatch ? entityMatch[1].trim() : "";
 
     // Generate contextual follow-ups
@@ -632,14 +632,14 @@ function LiveDossierDocumentInner({
                     </div>
 
                     {/* Masthead Title - Serif font for newspaper feel */}
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground text-center mb-4">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground text-center mb-4">
                         Today's Report
                     </h1>
 
                     {/* Decorative divider */}
                     <div className="flex items-center gap-4 my-5">
                         <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-surface-secondary" />
-                        <span className="text-content-secondary dark:text-content-secondary">âœ¦</span>
+                        <span className="text-content-secondary dark:text-content-secondary">✦</span>
                         <div className="flex-1 h-px bg-[color:var(--border-color)] dark:bg-surface-secondary" />
                     </div>
 
@@ -806,7 +806,7 @@ function LiveDossierDocumentInner({
                             type="button"
                             onClick={() => handleFollowUp("Synthesize all the above information into a single, comprehensive, and well-structured final report. Remove redundancies and organize logically.")}
                             disabled={isAppending}
-                            className={`group flex items-center gap-3 px-8 py-4 bg-indigo-600 dark:bg-indigo-600 text-white rounded-full font-semibold text-base shadow-xl hover:bg-indigo-700 dark:hover:bg-indigo-700 transition-all duration-200 ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
+                            className={`btn-primary-sm group flex items-center gap-3 px-8 py-4 rounded-full font-semibold text-base shadow-xl ${isAppending ? 'opacity-80 cursor-not-allowed scale-100' : ''}`}
                         >
                             {isAppending ? (
                                 <Loader2 className="w-5 h-5 motion-safe:animate-spin text-white/80" />
@@ -833,7 +833,7 @@ function LiveDossierDocumentInner({
                 {/* Footer */}
                 <footer className="mt-12 pt-4 border-t border-edge dark:border-edge text-center">
                     <p className="text-sm text-content-secondary dark:text-content-secondary">
-                        AI Assistant â€¢ {new Date().toLocaleTimeString()}
+                        AI Assistant • {new Date().toLocaleTimeString()}
                     </p>
                 </footer>
             </div>
@@ -943,11 +943,11 @@ function CollapsibleMediaSection({ media, defaultExpanded = false }: Collapsible
                         <h3 className="text-sm font-semibold text-foreground">Media & Evidence</h3>
                         <p className="text-xs text-content dark:text-content-secondary">
                             {counts.videos > 0 && `${counts.videos} videos`}
-                            {counts.videos > 0 && counts.images > 0 && ' Â· '}
+                            {counts.videos > 0 && counts.images > 0 && " · "}
                             {counts.images > 0 && `${counts.images} images`}
-                            {(counts.videos > 0 || counts.images > 0) && counts.sources > 0 && ' Â· '}
+                            {(counts.videos > 0 || counts.images > 0) && counts.sources > 0 && " · "}
                             {counts.sources > 0 && `${counts.sources} sources`}
-                            {(counts.videos > 0 || counts.images > 0 || counts.sources > 0) && counts.profiles > 0 && ' Â· '}
+                            {(counts.videos > 0 || counts.images > 0 || counts.sources > 0) && counts.profiles > 0 && " · "}
                             {counts.profiles > 0 && `${counts.profiles} people`}
                         </p>
                     </div>
@@ -1005,7 +1005,7 @@ function CollapsibleDocumentsSection({ documents, onDocumentSelect, defaultExpan
                         <h3 className="text-sm font-semibold text-foreground">Generated Documents</h3>
                         <p className="text-xs text-content dark:text-content-secondary">
                             {createdCount > 0 && `${createdCount} created`}
-                            {createdCount > 0 && updatedCount > 0 && ' Â· '}
+                            {createdCount > 0 && updatedCount > 0 && " · "}
                             {updatedCount > 0 && `${updatedCount} updated`}
                         </p>
                     </div>
@@ -1234,7 +1234,7 @@ function LiveAgentTicker({
                                         <AgentIcon role={role || "coordinator"} status={status} />
                                         {/* Tooltip */}
                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-surface border border-edge rounded text-xs text-content whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                            {roleLabels[role || "coordinator"]} â€¢ {status}
+                                            {roleLabels[role || "coordinator"]} • {status}
                                         </div>
                                     </div>
                                 ))
@@ -1249,7 +1249,7 @@ function LiveAgentTicker({
 
                     {/* Tool Timeline - Horizontal Scroll */}
                     {recentSteps.length > 0 && (
-                        <div className="relative mt-4 pt-4 border-t border-white/5">
+                        <div className="relative mt-4 pt-4 border-t border-edge">
                             <div className="flex items-center gap-2 mb-3">
                                 <Activity className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                                 <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
@@ -1269,14 +1269,14 @@ function LiveAgentTicker({
 
                     {/* Live Output Preview */}
                     {isActive && liveOutput && (
-                        <div className="mt-4 pt-4 border-t border-white/5">
+                        <div className="mt-4 pt-4 border-t border-edge">
                             <div className="flex items-center gap-2 mb-2">
                                 <Zap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                                 <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                                     Live Output
                                 </span>
                             </div>
-                            <div className="bg-black/20 rounded-lg p-3 border border-white/5">
+                            <div className="bg-black/20 rounded-lg p-3 border border-edge">
                                 <p className="text-xs text-white/80 font-mono leading-relaxed">
                                     {truncateText(liveOutput, 200)}
                                     <span className="typewriter-cursor text-indigo-600 dark:text-indigo-400" />

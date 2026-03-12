@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-03-09T19:58:27.203Z",
+  "capturedAtIso": "2026-03-12T08:24:38.947Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -54,7 +54,7 @@
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 12.6,
+      "startSec": 12.5,
       "file": "07-research-changes.jpg",
       "image": "/dogfood/frames/07-research-changes.jpg"
     },
@@ -62,7 +62,7 @@
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 14.7,
+      "startSec": 14.6,
       "file": "08-workspace-documents.jpg",
       "image": "/dogfood/frames/08-workspace-documents.jpg"
     },
@@ -126,7 +126,7 @@
       "index": 16,
       "name": "Signals Log",
       "path": "/signals",
-      "startSec": 31.6,
+      "startSec": 31.5,
       "file": "16-signals-log.jpg",
       "image": "/dogfood/frames/16-signals-log.jpg"
     },
@@ -206,7 +206,7 @@
       "index": 26,
       "name": "Recommendations",
       "path": "/recommendations",
-      "startSec": 52.7,
+      "startSec": 52.6,
       "file": "26-recommendations.jpg",
       "image": "/dogfood/frames/26-recommendations.jpg"
     },

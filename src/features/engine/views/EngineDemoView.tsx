@@ -92,7 +92,7 @@ function genId(): string {
 
 const PanelHeader = memo(({ title, actions }: { title: string; actions?: React.ReactNode }) => (
   <div className="flex items-center justify-between mb-4">
-    <span className="text-[10px] tracking-[0.12em] text-zinc-500 uppercase">{title}</span>
+    <span className="text-[10px] tracking-[0.12em] text-content-muted uppercase">{title}</span>
     {actions && <div className="flex items-center gap-3">{actions}</div>}
   </div>
 ));
@@ -105,9 +105,9 @@ const TextButton = memo(({ label, onClick, disabled, active }: {
     onClick={onClick}
     disabled={disabled}
     className={`text-xs font-mono transition-colors ${
-      disabled ? "text-zinc-700 cursor-not-allowed"
+      disabled ? "text-content-muted/60 cursor-not-allowed"
       : active ? "text-primary underline underline-offset-4"
-      : "text-zinc-400 hover:text-zinc-200 hover:underline hover:underline-offset-4"
+      : "text-content-muted hover:text-content hover:underline hover:underline-offset-4"
     }`}
   >
     {label}
@@ -147,7 +147,7 @@ function SpecPanel({
       {/* Spec List */}
       <div className="flex-1 overflow-auto space-y-1 min-h-0">
         {specs.length === 0 && (
-          <div className="text-zinc-600 text-xs py-8 text-center">
+          <div className="text-content-muted text-xs py-8 text-center">
             No specs yet. Click + NEW to create one.
           </div>
         )}
@@ -157,8 +157,8 @@ function SpecPanel({
             onClick={() => onSelect(spec.id)}
             className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono transition-colors ${
               selected === spec.id
-                ? "bg-zinc-800/50 text-zinc-200"
-                : "text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/50"
+                ? "bg-surface-hover text-content"
+                : "text-content-muted hover:text-content-secondary hover:bg-surface-secondary/50"
             }`}
           >
             <div className="flex items-center justify-between">
@@ -167,12 +167,12 @@ function SpecPanel({
                 spec.status === "completed" ? "text-primary"
                 : spec.status === "running" ? "text-amber-500"
                 : spec.status === "failed" ? "text-red-500"
-                : "text-zinc-600"
+                : "text-content-muted"
               }`}>
                 {STATUS_CHAR[spec.status]} {spec.status}
               </span>
             </div>
-            <div className="text-[10px] text-zinc-600 mt-0.5">
+            <div className="text-[10px] text-content-muted mt-0.5">
               {spec.workflow} {"\u00B7"} {spec.preset}
             </div>
           </button>
@@ -181,19 +181,19 @@ function SpecPanel({
 
       {/* Spec Editor */}
       {active && (
-        <div className="border-t border-zinc-800/50 pt-3 mt-3 space-y-2">
+        <div className="border-t border-edge/50 pt-3 mt-3 space-y-2">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-zinc-600 w-16">Name</label>
+            <label className="text-[10px] text-content-muted w-16">Name</label>
             <input
-              className="flex-1 bg-transparent border-b border-zinc-800 text-xs text-zinc-300 px-1 py-0.5 font-mono focus:border-zinc-600 focus:outline-none"
+              className="flex-1 bg-transparent border-b border-edge text-xs text-content-secondary px-1 py-0.5 font-mono focus:border-content-muted focus:outline-none"
               value={active.name}
               onChange={(e) => onUpdate(active.id, { name: e.target.value })}
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-zinc-600 w-16">Workflow</label>
+            <label className="text-[10px] text-content-muted w-16">Workflow</label>
             <select
-              className="flex-1 bg-transparent border-b border-zinc-800 text-xs text-zinc-300 px-1 py-0.5 font-mono focus:border-zinc-600 focus:outline-none"
+              className="flex-1 bg-transparent border-b border-edge text-xs text-content-secondary px-1 py-0.5 font-mono focus:border-content-muted focus:outline-none"
               value={active.workflow}
               onChange={(e) => onUpdate(active.id, { workflow: e.target.value })}
             >
@@ -201,9 +201,9 @@ function SpecPanel({
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[10px] text-zinc-600 w-16">Preset</label>
+            <label className="text-[10px] text-content-muted w-16">Preset</label>
             <select
-              className="flex-1 bg-transparent border-b border-zinc-800 text-xs text-zinc-300 px-1 py-0.5 font-mono focus:border-zinc-600 focus:outline-none"
+              className="flex-1 bg-transparent border-b border-edge text-xs text-content-secondary px-1 py-0.5 font-mono focus:border-content-muted focus:outline-none"
               value={active.preset}
               onChange={(e) => onUpdate(active.id, { preset: e.target.value })}
             >
@@ -230,7 +230,7 @@ function TracePanel({ events }: { events: TraceEvent[] }) {
       <PanelHeader title="Trace" />
       <div className="flex-1 overflow-auto min-h-0 space-y-px">
         {events.length === 0 && (
-          <div className="text-zinc-600 text-xs py-8 text-center">
+          <div className="text-content-muted text-xs py-8 text-center">
             Run a spec to see the execution trace.
           </div>
         )}
@@ -240,16 +240,16 @@ function TracePanel({ events }: { events: TraceEvent[] }) {
               evt.status === "complete" ? "text-primary"
               : evt.status === "running" ? "text-amber-500"
               : evt.status === "error" ? "text-red-500"
-              : "text-zinc-600"
+              : "text-content-muted"
             }`}>
               {evt.status === "complete" ? "\u2713"
                : evt.status === "running" ? "\u25CF"
                : evt.status === "error" ? "\u2717"
                : "\u00B7"}
             </span>
-            <span className="text-zinc-500">{evt.stepIndex !== undefined ? `#${evt.stepIndex}` : ""}</span>
-            <span className="text-zinc-300 truncate">{evt.toolName ?? evt.kind}</span>
-            <span className="text-zinc-600 ml-auto flex-shrink-0">
+            <span className="text-content-muted">{evt.stepIndex !== undefined ? `#${evt.stepIndex}` : ""}</span>
+            <span className="text-content-secondary truncate">{evt.toolName ?? evt.kind}</span>
+            <span className="text-content-muted ml-auto flex-shrink-0">
               {new Date(evt.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
             </span>
           </div>
@@ -267,7 +267,7 @@ function ScoreboardPanel({ report }: { report: ConformanceReport | null }) {
     return (
       <div className="flex flex-col h-full">
         <PanelHeader title="Scoreboard" />
-        <div className="text-zinc-600 text-xs py-8 text-center">
+        <div className="text-content-muted text-xs py-8 text-center">
           Conformance report will appear after execution.
         </div>
       </div>
@@ -288,22 +288,22 @@ function ScoreboardPanel({ report }: { report: ConformanceReport | null }) {
         {/* Grade */}
         <div className="flex items-baseline gap-3">
           <span className={`text-3xl font-bold ${gradeColor}`}>{report.grade}</span>
-          <span className="text-zinc-400">{report.score}/100</span>
+          <span className="text-content-muted">{report.score}/100</span>
         </div>
 
         {/* Steps */}
-        <div className="text-zinc-400">
+        <div className="text-content-muted">
           {report.successfulSteps}/{report.totalSteps} steps
           {report.failedSteps > 0 && <span className="text-red-400 ml-2">{report.failedSteps} failed</span>}
-          <span className="text-zinc-600 ml-2">{report.totalDurationMs}ms</span>
+          <span className="text-content-muted ml-2">{report.totalDurationMs}ms</span>
         </div>
 
         {/* Breakdown */}
-        <div className="border-t border-zinc-800/50 pt-2 space-y-1">
+        <div className="border-t border-edge/50 pt-2 space-y-1">
           {Object.entries(report.breakdown).map(([key, passed]) => (
             <div key={key} className="flex items-center justify-between">
-              <span className="text-zinc-500">{key.replace(/([A-Z])/g, " $1").toLowerCase()}</span>
-              <span className={passed ? "text-primary" : "text-zinc-700"}>
+              <span className="text-content-muted">{key.replace(/([A-Z])/g, " $1").toLowerCase()}</span>
+              <span className={passed ? "text-primary" : "text-content-muted/60"}>
                 {passed ? "\u2713" : "\u25CB"}
               </span>
             </div>
@@ -324,7 +324,7 @@ function TimelinePanel({ steps }: { steps: StepResult[] }) {
       <PanelHeader title="Timeline" />
       <div className="flex-1 overflow-auto min-h-0 space-y-1.5">
         {steps.length === 0 && (
-          <div className="text-zinc-600 text-xs py-8 text-center">
+          <div className="text-content-muted text-xs py-8 text-center">
             Execution timeline will appear here.
           </div>
         )}
@@ -338,12 +338,12 @@ function TimelinePanel({ steps }: { steps: StepResult[] }) {
           return (
             <div key={step.stepIndex} className="space-y-0.5">
               <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-zinc-400 truncate">{step.tool}</span>
-                <span className="text-zinc-600 ml-2 flex-shrink-0">
+                <span className="text-content-muted truncate">{step.tool}</span>
+                <span className="text-content-muted ml-2 flex-shrink-0">
                   {step.durationMs !== undefined ? `${step.durationMs}ms` : "..."}
                 </span>
               </div>
-              <div className="h-px bg-zinc-800/50 relative">
+              <div className="h-px bg-surface-hover relative">
                 <div
                   className={`absolute top-0 left-0 h-full ${barColor} transition-all duration-300`}
                   style={{ width: `${Math.max(2, pct)}%` }}
@@ -406,18 +406,18 @@ function PublishPanel({
         }
       />
       {!spec ? (
-        <div className="text-zinc-600 text-xs text-center">
+        <div className="text-content-muted text-xs text-center">
           Select a spec to see publish options.
         </div>
       ) : (
         <div className="space-y-3">
           {/* Curl preview */}
-          <pre className="text-[10px] font-mono text-zinc-500 bg-zinc-900/30 p-2 rounded overflow-x-auto whitespace-pre-wrap">
+          <pre className="text-[10px] font-mono text-content-muted bg-surface-secondary/30 p-2 rounded overflow-x-auto whitespace-pre-wrap">
             {curlCmd}
           </pre>
           {/* Session info */}
           {sessionId && (
-            <div className="text-[10px] text-zinc-600 font-mono">
+            <div className="text-[10px] text-content-muted font-mono">
               session {sessionId}
             </div>
           )}
@@ -447,9 +447,9 @@ const TREND_ICONS: Record<string, string> = {
 
 const TREND_COLORS: Record<string, string> = {
   improving: "text-primary",
-  stable: "text-zinc-400",
+  stable: "text-content-muted",
   regressing: "text-red-400",
-  insufficient_data: "text-zinc-600",
+  insufficient_data: "text-content-muted",
 };
 
 function ContextPanel({ engineOnline, refreshKey }: { engineOnline: boolean | null; refreshKey: number }) {
@@ -480,32 +480,32 @@ function ContextPanel({ engineOnline, refreshKey }: { engineOnline: boolean | nu
       <PanelHeader title="Context" />
 
       {!health ? (
-        <div className="text-zinc-600 text-xs py-8 text-center">
+        <div className="text-content-muted text-xs py-8 text-center">
           {engineOnline ? "Loading context..." : "Engine offline."}
         </div>
       ) : (
         <div className="space-y-3 text-xs font-mono">
           {/* Learnings + Freshness */}
           <div className="flex items-baseline justify-between">
-            <span className="text-zinc-400">
+            <span className="text-content-muted">
               {health.learningsCount} learnings
             </span>
-            <span className="text-zinc-600 text-[10px]">
+            <span className="text-content-muted text-[10px]">
               last {freshness}
             </span>
           </div>
 
           {/* Trend */}
           <div className="flex items-center gap-2">
-            <span className={TREND_COLORS[health.trendDirection] ?? "text-zinc-600"}>
+            <span className={TREND_COLORS[health.trendDirection] ?? "text-content-muted"}>
               {TREND_ICONS[health.trendDirection] ?? "\u2014"} {health.trendDirection}
             </span>
           </div>
 
           {/* Score Sparkline */}
           {health.recentRunScores.length > 0 && (
-            <div className="border-t border-zinc-800/50 pt-2">
-              <div className="text-[10px] text-zinc-600 mb-1">Recent scores</div>
+            <div className="border-t border-edge/50 pt-2">
+              <div className="text-[10px] text-content-muted mb-1">Recent scores</div>
               <div className="flex items-end gap-px h-6">
                 {[...health.recentRunScores].reverse().map((score, i) => {
                   const pct = (score / maxScore) * 100;
@@ -523,19 +523,19 @@ function ContextPanel({ engineOnline, refreshKey }: { engineOnline: boolean | nu
           )}
 
           {/* Content Archive */}
-          <div className="flex items-baseline justify-between border-t border-zinc-800/50 pt-2">
-            <span className="text-zinc-500">archive</span>
-            <span className="text-zinc-400">{health.contentArchiveSize} items</span>
+          <div className="flex items-baseline justify-between border-t border-edge/50 pt-2">
+            <span className="text-content-muted">archive</span>
+            <span className="text-content-muted">{health.contentArchiveSize} items</span>
           </div>
 
           {/* Workflow Coverage */}
           {coverageEntries.length > 0 && (
-            <div className="border-t border-zinc-800/50 pt-2 space-y-1">
-              <div className="text-[10px] text-zinc-600">Workflow coverage</div>
+            <div className="border-t border-edge/50 pt-2 space-y-1">
+              <div className="text-[10px] text-content-muted">Workflow coverage</div>
               {coverageEntries.map(([name, count]) => (
                 <div key={name} className="flex items-center justify-between text-[10px]">
-                  <span className="text-zinc-500 truncate">{name}</span>
-                  <span className="text-zinc-400 ml-2">{count}</span>
+                  <span className="text-content-muted truncate">{name}</span>
+                  <span className="text-content-muted ml-2">{count}</span>
                 </div>
               ))}
             </div>
@@ -723,10 +723,10 @@ export function EngineDemoView() {
   return (
     <div className="h-full bg-surface text-content font-mono flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-800/40">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-edge/40">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-zinc-200">Engine</span>
-          <span className="text-[10px] text-zinc-600">v1.0.0</span>
+          <span className="text-sm text-content">Engine</span>
+          <span className="text-[10px] text-content-muted">v1.0.0</span>
         </div>
         <div className="flex items-center gap-4">
           <span className={`text-[10px] ${engineOnline ? "text-emerald-500" : "text-content-muted"}`}>
@@ -738,7 +738,7 @@ export function EngineDemoView() {
       {/* Grid: 3×2 */}
       <div className="flex-1 grid grid-cols-3 grid-rows-2 min-h-0">
         {/* Row 1: Spec / Trace / Context */}
-        <div className="p-5 border-r border-b border-zinc-800/30 overflow-hidden">
+        <div className="p-5 border-r border-b border-edge/30 overflow-hidden">
           <SpecPanel
             specs={specs}
             selected={selectedId}
@@ -750,20 +750,20 @@ export function EngineDemoView() {
           />
         </div>
 
-        <div className="p-5 border-r border-b border-zinc-800/30 overflow-hidden">
+        <div className="p-5 border-r border-b border-edge/30 overflow-hidden">
           <TracePanel events={traceEvents} />
         </div>
 
-        <div className="p-5 border-b border-zinc-800/30 overflow-hidden">
+        <div className="p-5 border-b border-edge/30 overflow-hidden">
           <ContextPanel engineOnline={engineOnline} refreshKey={contextRefreshKey} />
         </div>
 
         {/* Row 2: Scoreboard / Timeline / Publish */}
-        <div className="p-5 border-r border-zinc-800/30 overflow-hidden">
+        <div className="p-5 border-r border-edge/30 overflow-hidden">
           <ScoreboardPanel report={report} />
         </div>
 
-        <div className="p-5 border-r border-zinc-800/30 overflow-hidden">
+        <div className="p-5 border-r border-edge/30 overflow-hidden">
           <TimelinePanel steps={stepResults} />
         </div>
 

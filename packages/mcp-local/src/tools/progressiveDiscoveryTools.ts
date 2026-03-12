@@ -54,7 +54,8 @@ export function createProgressiveDiscoveryTools(
               "research_writing", "flicker_detection", "figma_flow",
               "boilerplate", "benchmark", "session_memory", "gaia_solvers",
               "toon", "pattern", "git_workflow", "seo", "voice_bridge",
-              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "visual_qa", "local_dashboard", "design_governance", "progressive_discovery", "meta", "openclaw", "webmcp",
+              "critter", "email", "rss", "architect", "ui_ux_dive", "ui_ux_dive_v2", "mcp_bridge", "skill_update", "qa_orchestration", "visual_qa", "local_dashboard", "design_governance", "agent_traverse", "engine_context", "context_sandbox", "progressive_discovery", "meta", "openclaw", "webmcp", "research_optimizer", "web_scraping", "thompson_protocol", "observability",
+              "temporal_intelligence", "mission_harness",
             ],
             description: "Filter by tool category (optional)",
           },
@@ -333,7 +334,7 @@ export function createProgressiveDiscoveryTools(
     {
       name: "get_workflow_chain",
       description:
-        'Get a recommended tool sequence for a common workflow. Returns step-by-step tool chain with actions for each step. 25 chains available covering feature dev, debugging, security, deployment, research, academic writing, CI/CD, multi-agent coordination, and more. Call with chain="list" to see all.',
+        'Get a recommended tool sequence for a common workflow. Returns step-by-step tool chain with actions for each step. 35 chains available covering feature dev, debugging, security, deployment, research, academic writing, CI/CD, multi-agent coordination, content production, and more. Call with chain="list" to see all.',
       inputSchema: {
         type: "object",
         properties: {
@@ -348,7 +349,7 @@ export function createProgressiveDiscoveryTools(
               "ablation_eval", "session_recovery", "attention_refresh",
               "task_bank_setup", "pr_review", "seo_audit", "voice_pipeline",
               "intentionality_check", "research_digest", "email_assistant",
-              "webmcp_discovery", "batch_autopilot", "daily_review", "deep_interaction", "gemini_qa", "list",
+              "webmcp_discovery", "batch_autopilot", "daily_review", "deep_interaction", "gemini_qa", "agent_traversal", "content_pipeline", "content_publish", "research_optimizer", "parallel_research", "competitive_intel", "price_monitor", "thompson_protocol", "system_observability", "mission_execution", "list",
             ],
             description: 'Which workflow chain to retrieve. Use "list" to see all available chains with descriptions.',
           },

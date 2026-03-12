@@ -52,6 +52,19 @@ const resolveSourceName = (source: unknown): string | null => {
   return null;
 };
 
+const NUMBER_FORMATTER = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+
+const formatMetricDisplay = (value: string | number): string => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return NUMBER_FORMATTER.format(value);
+  }
+  if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim())) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return NUMBER_FORMATTER.format(parsed);
+  }
+  return String(value);
+};
+
 const resolveMetricValue = (value: unknown, fallback: string | number = 'N/A'): string | number => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -369,8 +382,8 @@ function BriefingSectionInner({
         </div>
         <div className="flex items-center gap-2">
           {sourceSummary?.totalItems && (
-            <span className="px-3 py-1 bg-gray-900 text-white text-xs font-bold rounded-full tracking-tighter">
-              {sourceSummary.totalItems} Intelligence Nodes
+            <span className="px-3 py-1 bg-content text-white text-xs font-bold rounded-full tracking-tighter">
+              {formatMetricDisplay(sourceSummary.totalItems)} Intelligence Nodes
             </span>
           )}
         </div>
@@ -386,7 +399,7 @@ function BriefingSectionInner({
             {briefingStats.map((stat) => (
               <div key={stat.label} className="rounded-md border border-edge bg-background p-3">
                 <div className="text-xs font-bold text-content-muted">{stat.label}</div>
-                <div className="text-2xl font-semibold text-content">{stat.value}</div>
+                <div className="text-2xl font-semibold text-content">{formatMetricDisplay(stat.value)}</div>
                 <div className="text-xs text-content-muted">{stat.hint}</div>
               </div>
             ))}
@@ -409,7 +422,7 @@ function BriefingSectionInner({
               topSources.map((source, idx) => (
                 <div key={`${source.name}-${idx}`} className="flex items-center justify-between text-xs text-content-secondary border-b border-edge pb-2">
                   <span className="font-medium">{source.name}</span>
-                  <span className="text-content-muted">{source.count ?? '-'}</span>
+                  <span className="text-content-muted">{source.count === null ? '-' : formatMetricDisplay(source.count)}</span>
                 </div>
               ))
             ) : (
@@ -621,7 +634,7 @@ function BriefingSectionInner({
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-xs font-bold text-content-muted">Signal {index + 1}</div>
                       {signal.label && (
-                        <span className="text-xs font-bold text-content border border-gray-900/20 px-2 py-0.5">
+                        <span className="text-xs font-bold text-content border border-edge px-2 py-0.5">
                           {signal.label}
                         </span>
                       )}
@@ -712,7 +725,7 @@ function BriefingSectionInner({
                   <div key={`${entry.source}-${idx}`} className="text-xs text-content-secondary">
                     <span className="font-semibold text-content-secondary">{entry.source}</span>
                     {entry.count !== null && <span className="text-content-muted"> ({entry.count})</span>}
-                    <span className="text-content-secondary"> â€” {entry.summary}</span>
+                    <span className="text-content-secondary"> — {entry.summary}</span>
                   </div>
                 ))}
               </div>
@@ -740,7 +753,7 @@ function BriefingSectionInner({
                 <div key={`${item.title}-${idx}`} className="rounded-md border border-edge bg-background px-4 py-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-content-muted">
                     <span>{item.source ?? 'Source'}</span>
-                    {item.category && <span className="text-gray-300">â€¢ {item.category}</span>}
+                    {item.category && <span className="text-content-muted">• {item.category}</span>}
                   </div>
                   {item.url ? (
                     <button
@@ -785,19 +798,19 @@ function BriefingSectionInner({
               onClick={() => handleActChange(act.id as ActiveAct)}
               className={`group flex flex-col items-start gap-1.5 min-w-[160px] p-0 transition-opacity duration-300 ${activeAct === act.id
                 ? 'opacity-100'
-                : 'opacity-40 hover:opacity-70'
+                : 'opacity-60 hover:opacity-80'
                 }`}
             >
               <div className="flex items-center gap-2 mb-2">
-                <div className={`w-2 h-2 rounded-full ${activeAct === act.id ? 'bg-gray-900' : 'bg-gray-300'}`} />
-                <span className="text-xs font-black text-content">{act.label}</span>
+                <div className={`w-2 h-2 rounded-full ${activeAct === act.id ? 'bg-content' : 'bg-surface-hover'}`} />
+                <span className="text-xs font-bold text-content">{act.label}</span>
               </div>
-              <span className="text-2xl font-medium text-gray-950 leading-none italic">{act.subtitle}</span>
+              <span className="text-2xl font-medium text-content leading-none italic">{act.subtitle}</span>
 
               {activeAct === act.id && (
                 <motion.div
                   layoutId="act-underline"
-                  className="h-0.5 w-full bg-gray-900 mt-3"
+                  className="h-0.5 w-full bg-content mt-3"
                 />
               )}
             </button>
@@ -839,7 +852,7 @@ function formatBriefSectionTitle(rawTitle: unknown, fallback: string) {
   if (!raw) return fallback;
 
   let t = raw;
-  // Remove narrative prefixes like "Act I â€” Setup:" to avoid internal/judgy phrasing in the UI.
+  // Remove narrative prefixes like "Act I — Setup:" to avoid internal/judgy phrasing in the UI.
   t = t.replace(/^act\s*[ivx0-9]+\s*[\u2014\u2013:-]\s*/i, "");
   t = t.replace(/^(setup|rising action|deep dives)\s*[\u2014\u2013:-]\s*/i, "");
   // If a colon remains, prefer the most specific suffix.
@@ -860,20 +873,20 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
   return (
     <div className="p-10 border-y border-edge bg-transparent transition-all duration-500 group">
       <div className="flex items-center gap-4 mb-8">
-        <div className="w-1.5 h-12 bg-gray-900" />
-        <h3 className="text-4xl font-medium text-gray-950 tracking-tight">{data.headline || 'Market Foundation'}</h3>
+        <div className="w-1.5 h-12 bg-content" />
+        <h3 className="text-4xl font-medium text-content tracking-tight">{data.headline || 'Market Foundation'}</h3>
       </div>
-      <p className="text-xl font-medium text-gray-950 mb-12 leading-relaxed italic border-l-2 border-gray-900/10 pl-8">
+      <p className="text-xl font-medium text-content mb-12 leading-relaxed italic border-l-2 border-edge pl-8">
         "<CrossLinkedText text={data.synthesis || data.summary || 'Establishing the baseline for today\'s market movements...'} onAskAI={onAskAI} />"
       </p>
 
       {/* Stats */}
       {data.stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-y border-edge mb-10 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 border-y border-edge mb-10 divide-y sm:divide-y-0 sm:divide-x divide-edge">
           {Object.entries(data.stats).slice(0, 3).map(([key, value]) => (
             <div key={key} className="p-6 flex flex-col items-center text-center group hover:bg-surface-hover transition-colors">
               <p className="text-xs font-medium text-content-muted mb-3">{key.replace(/_/g, ' ')}</p>
-              <p className="text-4xl font-medium text-gray-950">{String(value)}</p>
+              <p className="text-4xl font-medium text-content">{String(value)}</p>
             </div>
           ))}
         </div>
@@ -883,7 +896,7 @@ function ActIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string) 
       {actTopSources.length > 0 && (
         <div className="pt-2">
           <div className="flex items-center justify-between mb-6">
-            <p className="text-xs font-black text-content-muted">Primary Signal Sources</p>
+            <p className="text-xs font-bold text-content-muted">Primary Signal Sources</p>
           </div>
           <div className="flex flex-wrap gap-3">
             {actTopSources.map((source, idx: number) => (
@@ -932,14 +945,14 @@ function ActIIContent({
             <div className="flex items-start justify-between gap-12">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="text-xs font-black text-content border border-gray-900/20 px-3 py-1">Signal {idx + 1}</span>
+                  <span className="text-xs font-bold text-content border border-edge px-3 py-1">Signal {idx + 1}</span>
                   {signal.label && (
                     <span className="text-xs font-bold text-content-secondary border border-edge px-3 py-1">
                       {signal.label}
                     </span>
                   )}
                 </div>
-                <h4 className="text-3xl font-medium text-gray-950 mb-6 tracking-tight group-hover:text-content transition-colors italic">{signal.headline}</h4>
+                <h4 className="text-3xl font-medium text-content mb-6 tracking-tight group-hover:text-content transition-colors italic">{signal.headline}</h4>
                 {signal.deltaSummary && (
                   <div className="mb-4 text-sm text-content-secondary">
                     <span className="text-xs font-bold text-content-muted">Delta</span>
@@ -954,7 +967,7 @@ function ActIIContent({
               {onAskAI && (
                 <button
                   onClick={() => onAskAI(`Tell me more about: ${signal.headline}`)}
-                  className="shrink-0 px-6 py-3 text-xs font-black text-content border border-gray-900 hover:bg-gray-900 hover:text-background transition-all"
+                  className="shrink-0 px-6 py-3 text-xs font-bold text-content border border-content hover:bg-content hover:text-background transition-all"
                 >
                   Analyze
                 </button>
@@ -964,7 +977,7 @@ function ActIIContent({
             {/* Evidence links */}
             {signal.evidence && signal.evidence.length > 0 && (
               <div className="mt-10 flex flex-wrap gap-4 items-center pt-8 border-t border-edge/60">
-                <span className="text-xs font-black text-content-muted">Citations</span>
+                <span className="text-xs font-bold text-content-muted">Citations</span>
                 {signal.evidence.slice(0, 4).map((ev: any, evIdx: number) => (
                   <button
                     key={evIdx}
@@ -987,7 +1000,7 @@ function ActIIContent({
                     }}
                     className="flex items-center gap-2 group/link"
                   >
-                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-surface-secondary text-xs font-bold text-content-secondary group-hover/link:bg-gray-900 group-hover/link:text-white transition-colors">{evIdx + 1}</span>
+                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-surface-secondary text-xs font-bold text-content-secondary group-hover/link:bg-content group-hover/link:text-white transition-colors">{evIdx + 1}</span>
                     <span className="text-xs font-medium text-content-secondary hover:text-content border-b border-transparent hover:border-content transition-all font-mono">
                       {ev.source || ev.title?.slice(0, 20) || `Node ${evIdx + 1}`}
                     </span>
@@ -1014,17 +1027,17 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
         </div>
       ) : (
         actions.map((action: any, idx: number) => (
-          <div key={idx} className="p-8 border border-edge rounded-lg bg-surface hover:shadow-xl transition-all border-l-4 border-l-gray-900">
+          <div key={idx} className="p-8 border border-edge rounded-lg bg-surface hover:shadow-xl transition-all border-l-4 border-l-content">
             <div className="flex items-start gap-6">
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg ${action.priority === 'high' ? 'bg-red-600 text-white' :
                 action.priority === 'medium' ? 'bg-amber-500 text-white' :
-                  'bg-gray-900 text-white'
+                  'bg-content text-white'
                 }`}>
-                <span className="text-lg font-black">{idx + 1}</span>
+                <span className="text-lg font-bold">{idx + 1}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs font-black ${action.priority === 'high' ? 'text-red-500' : 'text-content-secondary'
+                  <span className={`text-xs font-bold ${action.priority === 'high' ? 'text-red-500' : 'text-content-secondary'
                     }`}>
                     {action.priority || 'Standard'} Priority
                   </span>
@@ -1072,7 +1085,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
                 {/* Attribution UI */}
                 {(action.linkedSignalIds && action.linkedSignalIds.length > 0) && (
                   <div className="mt-8 pt-6 border-t border-edge flex flex-col gap-3">
-                    <span className="text-xs font-black text-content-muted">Triggered By Signals</span>
+                    <span className="text-xs font-bold text-content-muted">Triggered By Signals</span>
                     <div className="flex flex-wrap gap-2">
                       {action.linkedSignalIds.map((sigId: string) => (
                         <div key={sigId} className="px-2 py-1 bg-indigo-500/10 text-content text-xs font-bold border border-indigo-500/20 flex items-center gap-2">
@@ -1087,7 +1100,7 @@ function ActIIIContent({ data, onAskAI }: { data: any; onAskAI?: (prompt: string
               {onAskAI && (
                 <button
                   onClick={() => onAskAI(`Implementation strategy for: ${action.title || action.headline}`)}
-                  className="shrink-0 px-8 py-4 text-xs font-black text-background bg-gray-950 hover:bg-black transition-all shadow-xl"
+                  className="shrink-0 px-8 py-4 text-xs font-bold text-background bg-content hover:bg-black transition-all shadow-xl"
                 >
                   Execute
                 </button>

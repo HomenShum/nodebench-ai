@@ -87,6 +87,91 @@ interface ForecastCard {
   traceSteps?: string[];       // compact TRACE breadcrumb (tool names)
 }
 
+// ── Thompson Protocol — deterministic anti-elitism lint ─────────────────────
+// Inlined from packages/mcp-local/src/tools/thompsonProtocolTools.ts
+// These are pure functions with zero dependencies.
+
+const THOMPSON_BANNED_PHRASES: Array<{ phrase: string; category: string; replacement: string }> = [
+  { phrase: "it is obvious that", category: "assumed_knowledge", replacement: "Here's what's happening:" },
+  { phrase: "as we all know", category: "assumed_knowledge", replacement: "Here's the background:" },
+  { phrase: "clearly", category: "assumed_knowledge", replacement: "" },
+  { phrase: "of course", category: "assumed_knowledge", replacement: "" },
+  { phrase: "trivially", category: "assumed_knowledge", replacement: "" },
+  { phrase: "it goes without saying", category: "assumed_knowledge", replacement: "" },
+  { phrase: "any competent", category: "assumed_knowledge", replacement: "" },
+  { phrase: "this is basic", category: "assumed_knowledge", replacement: "" },
+  { phrase: "simply put", category: "false_simplification", replacement: "Here's one way to think about it:" },
+  { phrase: "all you have to do is", category: "false_simplification", replacement: "Here are the steps:" },
+  { phrase: "it's easy", category: "false_simplification", replacement: "" },
+  { phrase: "this is straightforward", category: "false_simplification", replacement: "Here's how it works:" },
+  { phrase: "real engineers know", category: "exclusionary", replacement: "" },
+  { phrase: "if you don't understand", category: "exclusionary", replacement: "Let me break this down:" },
+  { phrase: "you should already know", category: "exclusionary", replacement: "Quick background:" },
+  { phrase: "as i mentioned before", category: "passive_aggressive", replacement: "" },
+  { phrase: "for those who missed it", category: "passive_aggressive", replacement: "" },
+];
+
+function thompsonLintBannedPhrases(text: string): Array<{ phrase: string; category: string; replacement: string; position: number }> {
+  const lower = text.toLowerCase();
+  const hits: Array<{ phrase: string; category: string; replacement: string; position: number }> = [];
+  for (const entry of THOMPSON_BANNED_PHRASES) {
+    let pos = 0;
+    while ((pos = lower.indexOf(entry.phrase, pos)) !== -1) {
+      hits.push({ ...entry, position: pos });
+      pos += entry.phrase.length;
+    }
+  }
+  return hits;
+}
+
+function thompsonCountSyllables(word: string): number {
+  const w = word.toLowerCase().replace(/[^a-z]/g, "");
+  if (w.length <= 3) return 1;
+  let count = 0;
+  const vowels = "aeiouy";
+  let prevVowel = false;
+  for (const ch of w) {
+    const isVowel = vowels.includes(ch);
+    if (isVowel && !prevVowel) count++;
+    prevVowel = isVowel;
+  }
+  if (w.endsWith("e") && count > 1) count--;
+  return Math.max(1, count);
+}
+
+function thompsonAnalogyDensity(text: string): { score: number; analogyCount: number; translationCount: number; wordCount: number } {
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  const wordCount = words.length;
+  const analogyPatterns = /\b(like a|think of|imagine|picture this|it's as if|similar to|the same way|just as a|works like|acts like|equivalent of)\b/gi;
+  const analogyCount = (text.match(analogyPatterns) || []).length;
+  const translationPatterns = /\b(in other words|put differently|meaning|that means|which means|in plain english|in simple terms)\b/gi;
+  const translationCount = (text.match(translationPatterns) || []).length;
+  const analogyDensity = wordCount > 0 ? (analogyCount / wordCount) * 200 : 0;
+  const translationDensity = wordCount > 0 ? (translationCount / wordCount) * 300 : 0;
+  const score = Math.min(100, Math.round((Math.min(analogyDensity, 2) * 30) + (Math.min(translationDensity, 2) * 10)));
+  return { score, analogyCount, translationCount, wordCount };
+}
+
+function thompsonReadabilityMetrics(text: string): { fleschKincaidGrade: number; passiveVoicePct: number; avgSentenceLength: number; jargonDensity: number } {
+  const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 0);
+  const words = text.split(/\s+/).filter((w) => w.length > 0);
+  const syllableCount = words.reduce((sum, w) => sum + thompsonCountSyllables(w), 0);
+  const avgSentenceLength = sentences.length > 0 ? words.length / sentences.length : 0;
+  const avgSyllablesPerWord = words.length > 0 ? syllableCount / words.length : 0;
+  const fkGrade = 0.39 * avgSentenceLength + 11.8 * avgSyllablesPerWord - 15.59;
+  const passivePatterns = /\b(is|was|were|been|being|are)\s+\w+ed\b/gi;
+  const passiveMatches = text.match(passivePatterns) || [];
+  const passiveVoicePct = sentences.length > 0 ? (passiveMatches.length / sentences.length) * 100 : 0;
+  const complexWords = words.filter((w) => thompsonCountSyllables(w) > 3).length;
+  const jargonDensity = words.length > 0 ? (complexWords / words.length) * 100 : 0;
+  return {
+    fleschKincaidGrade: Math.max(0, Math.round(fkGrade * 10) / 10),
+    passiveVoicePct: Math.round(passiveVoicePct * 10) / 10,
+    avgSentenceLength: Math.round(avgSentenceLength * 10) / 10,
+    jargonDensity: Math.round(jargonDensity * 10) / 10,
+  };
+}
+
 function formatDigestForLinkedIn(
   digest: AgentDigestOutput,
   _options: {
@@ -368,9 +453,9 @@ function formatDigestForLinkedIn(
 }
 
 /**
- * Render a concise per-explanation evidence line from the checklist.
- * E.g. "Regulatory Shift (5/6): gov source, corroborated, quantitative, attributed, verifiable"
- * Falls back to the old generic label when checklist isn't available.
+ * Render a human-readable evidence summary for each competing explanation.
+ * Thompson Protocol: prose over shorthand. The reader should understand the
+ * evidence strength without decoding comma-separated labels.
  */
 function renderEvidenceLine(e: {
   title: string;
@@ -387,29 +472,44 @@ function renderEvidenceLine(e: {
   checksTotal?: number;
 }): string {
   const cl = e.evidenceChecklist;
+  const title = truncateAtSentenceBoundary(e.title, 40);
+
   if (!cl || e.checksPassing == null || e.checksTotal == null) {
     // Fallback: no checklist data (legacy digests)
-    const label = e.evidenceLevel === "grounded" ? "backed by official sources"
-      : e.evidenceLevel === "mixed" ? "partly supported"
-      : "limited evidence";
-    return `- ${truncateAtSentenceBoundary(e.title, 40)}: ${label}`;
+    if (e.evidenceLevel === "grounded") return `- ${title}: This take has strong backing from official sources.`;
+    if (e.evidenceLevel === "mixed") return `- ${title}: Some evidence supports this, but gaps remain.`;
+    return `- ${title}: Limited evidence so far — worth watching, not betting on.`;
   }
 
-  const passing: string[] = [];
-  const gaps: string[] = [];
-  if (cl.hasPrimarySource) passing.push("official source"); else gaps.push("official source");
-  if (cl.hasCorroboration) passing.push("confirmed by others"); else gaps.push("independent confirmation");
-  if (cl.hasQuantitativeData) passing.push("specific numbers"); else gaps.push("specific numbers");
-  if (cl.hasNamedAttribution) passing.push("named source"); else gaps.push("named source");
-  if (cl.isReproducible) passing.push("source links"); else gaps.push("source links");
-  if (cl.hasFalsifiableClaim) passing.push("testable"); else gaps.push("testability");
-
-  // Grounded: show strengths. Mixed/speculative: show what's missing.
   const score = `${e.checksPassing}/${e.checksTotal}`;
+
   if (e.evidenceLevel === "grounded") {
-    return `- ${truncateAtSentenceBoundary(e.title, 40)} [${score}]: ${passing.join(", ")}`;
+    // Strong evidence — tell the reader what makes it credible
+    const strengths: string[] = [];
+    if (cl.hasPrimarySource) strengths.push("traced to an official source");
+    if (cl.hasCorroboration) strengths.push("confirmed by multiple outlets");
+    if (cl.hasQuantitativeData) strengths.push("backed by hard numbers");
+    if (cl.hasNamedAttribution) strengths.push("attributed to named sources");
+    if (cl.isReproducible) strengths.push("you can verify the links yourself");
+    if (cl.hasFalsifiableClaim) strengths.push("makes a testable claim");
+    const prose = strengths.length > 0
+      ? strengths.slice(0, 3).join(", ")
+      : "multiple checks passed";
+    return `- ${title} [${score}]: ${prose}.`;
   }
-  return `- ${truncateAtSentenceBoundary(e.title, 40)} [${score}]: needs ${gaps.join(", ")}`;
+
+  // Weak/mixed evidence — tell the reader what's missing
+  const gaps: string[] = [];
+  if (!cl.hasPrimarySource) gaps.push("no official source yet");
+  if (!cl.hasCorroboration) gaps.push("only one outlet reporting");
+  if (!cl.hasQuantitativeData) gaps.push("no hard numbers");
+  if (!cl.hasNamedAttribution) gaps.push("no one is on the record");
+  if (!cl.isReproducible) gaps.push("no verifiable links");
+  if (!cl.hasFalsifiableClaim) gaps.push("hard to disprove");
+  const prose = gaps.length > 0
+    ? gaps.slice(0, 3).join(", ")
+    : "several checks didn't pass";
+  return `- ${title} [${score}]: Watch out — ${prose}.`;
 }
 
 /**
@@ -782,16 +882,56 @@ export const postDailyDigestToLinkedIn = internalAction({
     });
     linkedInPosts[0] = didYouKnow.content;
 
+    // Thompson Protocol lint gate — deterministic anti-elitism + readability + analogy density
+    const thompsonLintResults = linkedInPosts.map((post, i) => {
+      const hits = thompsonLintBannedPhrases(post);
+      const metrics = thompsonReadabilityMetrics(post);
+      const density = thompsonAnalogyDensity(post);
+      if (hits.length > 0 || metrics.fleschKincaidGrade > 12) {
+        console.warn(
+          `[thompsonLint] Post ${i + 1}: ${hits.length} banned phrase(s), FK grade ${metrics.fleschKincaidGrade}`,
+          hits.map((h) => `"${h.phrase}" (${h.category})`).join(", "),
+        );
+      }
+      if (density.wordCount > 200 && density.analogyCount === 0) {
+        console.warn(`[thompsonLint] Post ${i + 1}: No analogies detected in ${density.wordCount} words (density score: ${density.score}/100)`);
+      }
+      return { postIndex: i, hits, metrics, density };
+    });
+
+    // Auto-fix: replace banned phrases with their Thompson-approved alternatives
+    for (const { postIndex, hits } of thompsonLintResults) {
+      for (const hit of hits) {
+        // Case-insensitive replacement preserving surrounding context
+        const regex = new RegExp(hit.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+        linkedInPosts[postIndex] = linkedInPosts[postIndex].replace(regex, hit.replacement);
+      }
+    }
+
+    const totalThompsonHits = thompsonLintResults.reduce((sum, r) => sum + r.hits.length, 0);
+    if (totalThompsonHits > 0) {
+      console.log(`[thompsonLint] Auto-fixed ${totalThompsonHits} banned phrase(s) across ${linkedInPosts.length} posts`);
+    }
+
     const totalContent = linkedInPosts.join("\n\n---\n\n");
-    console.log(`[dailyLinkedInPost] Formatted ${linkedInPosts.length} posts (total ${totalContent.length} chars)`);
+    // Thompson readability summary across all posts
+    const avgFk = thompsonLintResults.length > 0
+      ? Math.round(thompsonLintResults.reduce((sum, r) => sum + r.metrics.fleschKincaidGrade, 0) / thompsonLintResults.length * 10) / 10
+      : 0;
+    const totalAnalogies = thompsonLintResults.reduce((sum, r) => sum + r.density.analogyCount, 0);
+    const avgAnalogyScore = thompsonLintResults.length > 0
+      ? Math.round(thompsonLintResults.reduce((sum, r) => sum + r.density.score, 0) / thompsonLintResults.length)
+      : 0;
+    console.log(`[dailyLinkedInPost] Formatted ${linkedInPosts.length} posts (${totalContent.length} chars, avg FK ${avgFk}, ${totalAnalogies} analogies, density score ${avgAnalogyScore}/100)`);
     await appendTraceEntry({
       seq: traceSeq++,
       choiceType: "execute_output",
       toolName: "formatPosts",
-      description: `Formatted ${linkedInPosts.length}-post thread (${totalContent.length} chars, ${signalMatches.length} \u0394 badges, ${findingMatches.length} evidence links)`,
+      description: `Formatted ${linkedInPosts.length}-post thread (${totalContent.length} chars, ${signalMatches.length} \u0394 badges, ${findingMatches.length} evidence links, ${totalThompsonHits} Thompson fixes, FK avg ${avgFk}, ${totalAnalogies} analogies, density ${avgAnalogyScore}/100)`,
       metadata: {
         charCount: totalContent.length,
         rowCount: linkedInPosts.length,
+        wordCount: totalThompsonHits, // Thompson fixes count (repurposed field)
         durationMs: Date.now() - traceStart,
         success: true,
       },
@@ -1093,6 +1233,120 @@ export const testLinkedInWorkflow = internalAction({
 // SEPARATE FUNDING POST - Posted at different time than main digest
 // ═══════════════════════════════════════════════════════════════════════════
 
+type LinkedInFundingRound = NonNullable<AgentDigestOutput["fundingRounds"]>[number] & {
+  sourceUrls?: string[];
+  sourceNames?: string[];
+  sourceCount?: number;
+  verificationStatus?: string;
+  fundingEventId?: string;
+  description?: string;
+  location?: string;
+  valuation?: string;
+};
+
+function isGenericFundingCompanyName(companyName: string | undefined | null): boolean {
+  if (!companyName) return true;
+  const normalized = companyName.trim().toLowerCase();
+  if (!normalized) return true;
+  return (
+    normalized === "unknown" ||
+    normalized === "company" ||
+    normalized.startsWith("unknown company") ||
+    /^unknown\s*\(/i.test(normalized)
+  );
+}
+
+function normalizeFundingCompanyName(companyName: string | undefined | null): string | null {
+  if (isGenericFundingCompanyName(companyName)) return null;
+  return String(companyName).trim().replace(/\s+/g, " ");
+}
+
+function sanitizeFundingRoundsForLinkedIn(
+  fundingRounds: LinkedInFundingRound[]
+): LinkedInFundingRound[] {
+  const sanitized: LinkedInFundingRound[] = [];
+  for (const round of fundingRounds) {
+    const normalizedCompanyName = normalizeFundingCompanyName(round.companyName);
+    if (!normalizedCompanyName) continue;
+    sanitized.push({
+      ...round,
+      rank: sanitized.length + 1,
+      companyName: normalizedCompanyName,
+    });
+  }
+  return sanitized;
+}
+
+function formatFundingUsdCompact(amountUsd: number): string {
+  if (amountUsd >= 1_000_000_000) return `$${(amountUsd / 1_000_000_000).toFixed(1)}B`;
+  if (amountUsd >= 1_000_000) return `$${(amountUsd / 1_000_000).toFixed(1)}M`;
+  if (amountUsd >= 1_000) return `$${(amountUsd / 1_000).toFixed(1)}K`;
+  return `$${Math.round(amountUsd).toLocaleString()}`;
+}
+
+function normalizeRoundTypeForDisplay(roundType: string | undefined | null): {
+  phrase: string;
+  label: string;
+} {
+  const normalized = typeof roundType === "string" ? roundType.trim().toLowerCase() : "";
+  if (!normalized || normalized === "unknown") {
+    return { phrase: "an undisclosed round", label: "Undisclosed" };
+  }
+  const pretty = normalized.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const article = /^[aeiou]/i.test(pretty) ? "an" : "a";
+  return { phrase: `${article} ${pretty} round`, label: pretty };
+}
+
+function truncateFundingDetail(text: string | undefined | null, max = 90): string | undefined {
+  if (!text) return undefined;
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (!cleaned) return undefined;
+  if (cleaned.length <= max) return cleaned;
+  return `${cleaned.slice(0, max - 1).trimEnd()}…`;
+}
+
+function inferAudience(round: LinkedInFundingRound): string {
+  const sector = (round.sector || "").toLowerCase();
+  if (/(ai|ml|chip|semiconductor|compute|infrastructure)/i.test(sector)) {
+    return "CTOs, AI product teams, infra buyers, and deep-tech investors";
+  }
+  if (/(fintech|payments|bank|insur)/i.test(sector)) {
+    return "CFOs, fintech operators, bank innovation teams, and growth investors";
+  }
+  if (/(health|bio|med|pharma|clinical)/i.test(sector)) {
+    return "healthcare operators, payers, medtech builders, and specialist funds";
+  }
+  return "operators in adjacent markets, enterprise buyers, and venture investors";
+}
+
+function inferOpportunity(round: LinkedInFundingRound): string {
+  const amount = round.amountUsd || 0;
+  const stage = (round.roundType || "").toLowerCase();
+  const lead = round.leadInvestors?.[0];
+  const leadSuffix = lead ? ` with ${lead} at the table` : "";
+
+  if (amount >= 500_000_000) {
+    return `Category consolidation and faster enterprise go-to-market${leadSuffix}.`;
+  }
+  if (stage === "seed" || stage === "pre-seed" || stage === "series-a") {
+    return `Early partnership and design-win window before category pricing resets${leadSuffix}.`;
+  }
+  return `Execution runway to expand product footprint and channel distribution${leadSuffix}.`;
+}
+
+function inferRisk(round: LinkedInFundingRound): string {
+  const stage = (round.roundType || "").toLowerCase();
+  const verification = (round.verificationStatus || "unverified").toLowerCase();
+
+  if (verification === "single-source" || verification === "unverified") {
+    return `Source reliability risk: ${verification}; confirm secondary coverage before committing.`;
+  }
+  if (!stage || stage === "unknown") {
+    return "Disclosure risk: terms are not fully public, so valuation and dilution are harder to benchmark.";
+  }
+  return "Execution risk: hiring and GTM expansion can outpace unit economics if demand lags.";
+}
+
 /**
  * Format funding rounds for a dedicated LinkedIn post.
  *
@@ -1103,66 +1357,164 @@ export const testLinkedInWorkflow = internalAction({
  * - Use content-specific hashtags
  */
 function formatFundingForLinkedIn(
-  fundingRounds: NonNullable<AgentDigestOutput["fundingRounds"]>,
+  fundingRounds: LinkedInFundingRound[],
   _dateString: string
 ): string {
   const maxLength = 1450;
   const parts: string[] = [];
-  const topRounds = fundingRounds.slice(0, 3);
+  const topRounds = sanitizeFundingRoundsForLinkedIn(fundingRounds).slice(0, 3);
+  const totalRaised = topRounds.reduce((sum, f) => sum + (f.amountUsd || 0), 0);
 
-  // 1. Hook: lead with the biggest raise as a claim
+  const sourceCitationUrls = [...new Set(topRounds
+    .flatMap((round) => {
+      const urls: string[] = [];
+      if (typeof round.sourceUrl === "string" && round.sourceUrl.trim()) urls.push(round.sourceUrl.trim());
+      if (Array.isArray(round.sourceUrls)) {
+        for (const url of round.sourceUrls) {
+          if (typeof url === "string" && url.trim()) urls.push(url.trim());
+        }
+      }
+      return urls;
+    })
+    .filter((url) => /^https?:\/\//i.test(url)))];
+
+  const investorCounts = new Map<string, number>();
+  for (const round of topRounds) {
+    for (const investor of round.leadInvestors || []) {
+      const name = investor.trim();
+      if (!name) continue;
+      investorCounts.set(name, (investorCounts.get(name) || 0) + 1);
+    }
+  }
+
+  const repeatInvestor = [...investorCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .find((entry) => entry[1] >= 2)?.[0];
+
+  const topSectors = [...new Set(topRounds
+    .map((round) => (round.sector || "").trim())
+    .filter(Boolean))]
+    .slice(0, 2);
+
+  const sectorTags = topSectors
+    .map((sector) => `#${sector.replace(/[^a-zA-Z0-9]/g, "")}`)
+    .filter((tag) => tag.length >= 4 && tag.length <= 30);
+
+  // 1. Hook: lead with the biggest raise + Thompson analogy for funding stage
   const biggest = topRounds[0];
   if (biggest) {
-    const roundLabel = (biggest.roundType || "").replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "Undisclosed";
-    parts.push(`${biggest.companyName} just raised ${biggest.amountRaw} in a ${roundLabel} round.`);
+    const roundDisplay = normalizeRoundTypeForDisplay(biggest.roundType);
+    const biggestAmount = biggest.amountRaw || (biggest.amountUsd ? formatFundingUsdCompact(biggest.amountUsd) : "an undisclosed amount");
+    const totalLabel = totalRaised > 0 ? formatFundingUsdCompact(totalRaised) : "significant capital";
+    parts.push(`${biggest.companyName} just raised ${biggestAmount} in ${roundDisplay.phrase}, and today's top ${topRounds.length} raises add up to ${totalLabel}.`);
+
+    // Thompson Protocol: analogy for the funding stage to make it accessible
+    const roundType = (biggest.roundType || "").toLowerCase();
+    if (roundType.includes("seed")) {
+      parts.push(`Think of a Seed round like planting a garden — investors are betting the soil is good before anything has bloomed.`);
+    } else if (roundType.includes("series a")) {
+      parts.push(`A Series A is like a restaurant getting its first real review — the food is good, now it's time to fill every table.`);
+    } else if (roundType.includes("series b")) {
+      parts.push(`Series B is the growth spurt — the company proved it works, now it's scaling fast, like a food truck chain opening real locations.`);
+    } else if (roundType.includes("series c") || roundType.includes("series d") || roundType.includes("late")) {
+      parts.push(`At this stage, the company is like a restaurant chain — the model works everywhere, now it's about dominating the market.`);
+    }
   } else {
     parts.push("New startup funding rounds dropped today.");
   }
   parts.push("");
 
+  if (totalRaised > 0) {
+    parts.push(`Funding snapshot: ${topRounds.length} notable rounds and ${formatFundingUsdCompact(totalRaised)} in disclosed capital.`);
+    parts.push("");
+  }
+
   // 2. Compact list of top raises
   for (const funding of topRounds) {
-    const roundTypeRaw = typeof funding.roundType === "string" ? funding.roundType.trim() : "";
-    const roundLabel =
-      !roundTypeRaw || roundTypeRaw.toLowerCase() === "unknown"
-        ? "Undisclosed"
-        : roundTypeRaw.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const roundDisplay = normalizeRoundTypeForDisplay(funding.roundType);
+    const roundLabel = roundDisplay.label;
+    const amountLabel = funding.amountRaw || (funding.amountUsd ? formatFundingUsdCompact(funding.amountUsd) : "Undisclosed amount");
 
-    let line = `${funding.rank}. ${funding.companyName} -- ${funding.amountRaw} [${roundLabel}]`;
+    let line = `${funding.rank}. ${funding.companyName} -- ${amountLabel} [${roundLabel}]`;
     if (funding.sector) line += ` -- ${funding.sector}`;
     parts.push(line);
 
     if (funding.leadInvestors && funding.leadInvestors.length > 0) {
-      parts.push(`   Lead: ${funding.leadInvestors.slice(0, 2).join(", ")}`);
+      parts.push(`   Lead investors: ${funding.leadInvestors.slice(0, 2).join(", ")}`);
     }
+
+    const traceSourceCount = typeof funding.sourceCount === "number"
+      ? funding.sourceCount
+      : Array.isArray(funding.sourceUrls)
+        ? funding.sourceUrls.length
+        : funding.sourceUrl
+          ? 1
+          : 0;
+    const traceVerification = typeof funding.verificationStatus === "string" && funding.verificationStatus.trim()
+      ? funding.verificationStatus
+      : "unverified";
+    const traceConfidence = Number.isFinite(funding.confidence) ? `${Math.round(funding.confidence * 100)}%` : "n/a";
+    const traceEvent = typeof funding.fundingEventId === "string" ? funding.fundingEventId.slice(0, 8) : undefined;
+    const tracePieces = [
+      `Trace: ${traceVerification}`,
+      `${traceSourceCount} sources`,
+      `confidence ${traceConfidence}`,
+      traceEvent ? `event ${traceEvent}` : undefined,
+    ].filter(Boolean) as string[];
+    parts.push(`   ${tracePieces.join(" | ")}`);
   }
   parts.push("");
 
-  // 3. Total raised summary
-  const totalRaised = topRounds.reduce((sum, f) => sum + (f.amountUsd || 0), 0);
-  if (totalRaised > 0) {
-    const formattedTotal = totalRaised >= 1_000_000_000
-      ? `$${(totalRaised / 1_000_000_000).toFixed(1)}B`
-      : totalRaised >= 1_000_000
-        ? `$${(totalRaised / 1_000_000).toFixed(1)}M`
-        : `$${totalRaised.toLocaleString()}`;
-    parts.push(`${formattedTotal} raised across these rounds today.`);
+  const deepDiveRounds = topRounds.slice(0, 2);
+  if (deepDiveRounds.length > 0) {
+    parts.push("Deeper breakdown:");
+    for (const round of deepDiveRounds) {
+      const industry = truncateFundingDetail(round.sector, 24) || "General tech";
+      const product =
+        truncateFundingDetail(round.productDescription, 70)
+        || truncateFundingDetail(round.description, 70)
+        || "Product details are limited in current source coverage.";
+      const founder =
+        truncateFundingDetail(round.founderBackground, 58)
+        || "Founder background not captured in this ingestion path.";
+
+      parts.push(`${round.rank}) ${round.companyName} | Industry: ${industry}`);
+      parts.push(`   Product: ${product}`);
+      parts.push(`   Founder lens: ${founder}`);
+      parts.push(`   Opportunity: ${inferOpportunity(round)}`);
+      parts.push(`   Audience: ${inferAudience(round)}`);
+      parts.push(`   Risk: ${inferRisk(round)}`);
+    }
     parts.push("");
   }
 
-  // 4. Opinion + question (required by engagement gate)
-  parts.push(`Watch for follow-on rounds from these companies -- early traction here signals sector momentum.`);
+  if (sourceCitationUrls.length > 0) {
+    parts.push("Sources:");
+    sourceCitationUrls.slice(0, 3).forEach((url, index) => {
+      parts.push(`${index + 1}) ${url}`);
+    });
+    parts.push("");
+  }
+
+  // 3. Opinion + question (required by engagement gate)
+  if (repeatInvestor) {
+    parts.push(`This signals capital concentration around repeat lead investors like ${repeatInvestor}, which usually precedes faster follow-on rounds.`);
+  } else if (topSectors.length > 0) {
+    parts.push(`This signals investors are still paying up for traction in ${topSectors.join(" and ")} themes.`);
+  } else {
+    parts.push(`This signals teams with clear GTM traction can still command strong pricing in this market.`);
+  }
   parts.push("");
-  parts.push(`Which of these raises caught your attention?`);
+  parts.push(`Which of these rounds do you think sets up the strongest Series B pipeline over the next 12 months?`);
   parts.push("");
 
-  // 5. Content-specific hashtags
+  // 4. Content-specific hashtags
   const tags: string[] = [];
   for (const f of topRounds.slice(0, 2)) {
     const tag = f.companyName.replace(/[^a-zA-Z0-9]/g, "");
     if (tag.length >= 3 && tag.length <= 30) tags.push(`#${tag}`);
   }
-  tags.push("#StartupFunding", "#VentureCapital");
+  tags.push(...sectorTags, "#StartupFunding", "#VentureCapital");
   parts.push([...new Set(tags)].slice(0, 5).join(" "));
 
   let content = parts.join("\n");
@@ -1193,7 +1545,7 @@ export const postDailyFundingToLinkedIn = internalAction({
     console.log(`[dailyFundingPost] Starting funding post, hoursBack=${hoursBack}, dryRun=${dryRun}, forcePost=${forcePost}`);
 
     // 1. Fetch funding rounds
-    let fundingRounds: NonNullable<AgentDigestOutput["fundingRounds"]> = [];
+    let fundingRounds: LinkedInFundingRound[] = [];
     try {
       const fundingData = await ctx.runQuery(
         internal.domains.enrichment.fundingQueries.getFundingDigestSections,
@@ -1221,7 +1573,19 @@ export const postDailyFundingToLinkedIn = internalAction({
         sector: f.sector,
         productDescription: undefined,
         founderBackground: undefined,
-        sourceUrl: undefined,
+        sourceUrl: Array.isArray(f.sourceUrls) ? f.sourceUrls[0] : undefined,
+        sourceUrls: Array.isArray(f.sourceUrls) ? f.sourceUrls.slice(0, 5) : [],
+        sourceNames: Array.isArray(f.sourceNames) ? f.sourceNames.slice(0, 5) : [],
+        sourceCount: typeof f.sourceCount === "number"
+          ? f.sourceCount
+          : Array.isArray(f.sourceUrls)
+            ? f.sourceUrls.length
+            : 0,
+        verificationStatus: typeof f.verificationStatus === "string" ? f.verificationStatus : undefined,
+        fundingEventId: typeof f.eventId === "string" ? f.eventId : undefined,
+        description: typeof f.description === "string" ? f.description : undefined,
+        location: typeof f.location === "string" ? f.location : undefined,
+        valuation: typeof f.valuation === "string" ? f.valuation : undefined,
         announcedAt: Date.now(),
         confidence: f.confidence || 0.5,
       }));
@@ -1231,22 +1595,33 @@ export const postDailyFundingToLinkedIn = internalAction({
       console.warn("[dailyFundingPost] Failed to fetch funding rounds:", e instanceof Error ? e.message : String(e));
     }
 
-    // 2. Check if we have funding to post
+    // 2. Remove generic/placeholder company names before formatting or posting
+    const rawFundingCount = fundingRounds.length;
+    fundingRounds = sanitizeFundingRoundsForLinkedIn(fundingRounds);
+    const filteredUnknownCompanyCount = rawFundingCount - fundingRounds.length;
+    if (filteredUnknownCompanyCount > 0) {
+      console.warn(
+        `[dailyFundingPost] Filtered ${filteredUnknownCompanyCount} funding rows with unresolved company names before posting`
+      );
+    }
+
+    // 3. Check if we have funding to post
     if (fundingRounds.length === 0) {
       console.log("[dailyFundingPost] No funding rounds to post today");
       return {
         success: true,
         posted: false,
-        reason: "No funding rounds found",
+        reason: "No funding rounds with resolved company names",
         fundingCount: 0,
+        filteredUnknownCompanyCount,
       };
     }
 
-    // 3. Format for LinkedIn
+    // 4. Format for LinkedIn
     const linkedInContent = formatFundingForLinkedIn(fundingRounds, dateString);
     console.log(`[dailyFundingPost] LinkedIn content formatted (${linkedInContent.length} chars)`);
 
-    // 4. Post to LinkedIn (unless dry run)
+    // 5. Post to LinkedIn (unless dry run)
     if (dryRun) {
       console.log(`[dailyFundingPost] DRY RUN - would post:\n${linkedInContent}`);
       return {
@@ -1255,6 +1630,7 @@ export const postDailyFundingToLinkedIn = internalAction({
         dryRun: true,
         content: linkedInContent,
         fundingCount: fundingRounds.length,
+        filteredUnknownCompanyCount,
       };
     }
 
@@ -1277,6 +1653,7 @@ export const postDailyFundingToLinkedIn = internalAction({
           reason: match.exactMatchId ? "duplicate_content" : "already_posted_today",
           content: linkedInContent,
           fundingCount: fundingRounds.length,
+          filteredUnknownCompanyCount,
         };
       }
     }
@@ -1301,6 +1678,7 @@ export const postDailyFundingToLinkedIn = internalAction({
         error: `LinkedIn post failed: ${errorMsg}`,
         posted: false,
         content: linkedInContent,
+        filteredUnknownCompanyCount,
       };
     }
 
@@ -1311,6 +1689,7 @@ export const postDailyFundingToLinkedIn = internalAction({
         error: postResult.error,
         posted: false,
         content: linkedInContent,
+        filteredUnknownCompanyCount,
       };
     }
 
@@ -1336,6 +1715,7 @@ export const postDailyFundingToLinkedIn = internalAction({
       postUrl: postResult.postUrl,
       content: linkedInContent,
       fundingCount: fundingRounds.length,
+      filteredUnknownCompanyCount,
     };
   },
 });

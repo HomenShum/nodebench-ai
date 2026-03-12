@@ -47,6 +47,16 @@ import { overstoryTools } from "./tools/overstoryTools.js";
 import { visualQaTools } from "./tools/visualQaTools.js";
 import { localDashboardTools } from "./tools/localDashboardTools.js";
 import { designGovernanceTools } from "./tools/designGovernanceTools.js";
+import { agentTraverseTools } from "./tools/openclawTools.js";
+import { contextTools } from "./tools/contextTools.js";
+import { contextSandboxTools } from "./tools/contextSandboxTools.js";
+import { researchOptimizerTools } from "./tools/researchOptimizerTools.js";
+import { scraplingTools } from "./tools/scraplingTools.js";
+import { createThompsonProtocolTools } from "./tools/thompsonProtocolTools.js";
+import { observabilityTools } from "./tools/observabilityTools.js";
+import { temporalIntelligenceTools } from "./tools/temporalIntelligenceTools.js";
+import { executionTraceTools } from "./tools/executionTraceTools.js";
+import { missionHarnessTools } from "./tools/missionHarnessTools.js";
 import type { McpTool } from "./types.js";
 
 export const TOOLSET_MAP: Record<string, McpTool[]> = {
@@ -92,6 +102,16 @@ export const TOOLSET_MAP: Record<string, McpTool[]> = {
   visual_qa: visualQaTools,
   local_dashboard: localDashboardTools,
   design_governance: designGovernanceTools,
+  agent_traverse: agentTraverseTools,
+  engine_context: contextTools,
+  context_sandbox: contextSandboxTools,
+  research_optimizer: researchOptimizerTools,
+  web_scraping: scraplingTools,
+  thompson_protocol: createThompsonProtocolTools(),
+  observability: observabilityTools,
+  temporal_intelligence: temporalIntelligenceTools,
+  execution_trace: executionTraceTools,
+  mission_harness: missionHarnessTools,
 };
 
 // Pre-computed tool name → toolset name lookup

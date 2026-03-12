@@ -197,9 +197,9 @@ function TaskStepItem({ step, isLast, formatDuration }: TaskStepItemProps) {
         <div className={cn(
           "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300",
           isComplete ? "bg-green-500 border-green-500" :
-          isActive ? "bg-white border-indigo-500/30 ring-4 ring-[var(--accent-primary-bg)]" :
+          isActive ? "bg-surface border-indigo-500/30 ring-4 ring-[var(--accent-primary-bg)]" :
           isError ? "bg-red-500 border-red-500" :
-          "bg-white border-edge"
+          "bg-surface border-edge"
         )}>
           {isComplete ? (
             <CheckCircle2 className="w-4 h-4 text-white" />

@@ -148,8 +148,8 @@ interface MetricPillProps {
 const colorClasses = {
   blue: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
   purple: 'bg-surface-secondary text-content-secondary border-edge',
-  green: 'bg-green-50 text-green-700 border-green-200',
-  amber: 'bg-surface-secondary text-content border-edge',
+  green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  amber: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
   gray: 'bg-surface-hover text-content-secondary border-edge',
 };
 
@@ -185,9 +185,9 @@ export function InlineMetrics({
   return (
     <div className={cn("flex items-center gap-1 text-xs text-content-secondary", className)}>
       <span>{metrics.sourcesExplored} sources</span>
-      <span>â€¢</span>
+      <span>•</span>
       <span>{uniqueTools.length} tools</span>
-      <span>â€¢</span>
+      <span>•</span>
       <span>{uniqueAgents.length} agents</span>
     </div>
   );

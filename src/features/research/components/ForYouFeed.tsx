@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PageHeroHeader } from "@/shared/ui/PageHeroHeader";
+import { sanitizeReadableText } from "@/lib/displayText";
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
@@ -179,6 +180,9 @@ export function ForYouFeed() {
                 onClick={() => toggleDateCollapse(group.dateString)}
                 aria-label={isCollapsed ? `Expand ${group.displayLabel} section` : `Collapse ${group.displayLabel} section`}
                 className="w-full group"
+                data-agent-id={`view:feed:date:${group.dateString}`}
+                data-agent-action="toggle"
+                data-agent-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${group.displayLabel}`}
               >
                 <div className="flex items-center gap-4 mb-6">
                   <div className="flex items-center gap-2 text-content-muted hover:text-content-secondary transition-colors">
@@ -192,7 +196,7 @@ export function ForYouFeed() {
                     {group.displayLabel}
                   </h2>
                   <div className="flex-1 h-px bg-edge" />
-                  <span className="text-xs text-content-muted font-light">
+                  <span className="text-xs text-content-muted font-normal">
                     {group.items.length} {group.items.length === 1 ? 'story' : 'stories'}
                   </span>
                 </div>
@@ -253,7 +257,7 @@ export function ForYouFeed() {
 
               {/* Footer */}
               <footer className="mt-16 pt-8 border-t border-edge text-center">
-                <p className="text-sm text-content-muted font-light">
+                <p className="text-sm text-content-muted font-normal">
                   End of feed · {displayFeed.totalCandidates} {displayFeed.totalCandidates === 1 ? "source" : "sources"} analyzed
                 </p>
               </footer>
@@ -324,6 +328,9 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
     <article
       onClick={handleOpen}
       className="group cursor-pointer nb-surface-card p-6 hover:border-content-muted/30 transition-colors"
+      data-agent-id={`view:feed:item:${item.itemId}`}
+      data-agent-action="navigate"
+      data-agent-label={item.title}
     >
       <div className="flex flex-col md:flex-row gap-6">
         {/* Text Content */}
@@ -343,12 +350,12 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
 
           {/* Headline */}
           <h3 className="text-2xl md:text-[1.75rem] font-semibold text-content leading-tight group-hover:text-content-secondary transition-colors">
-            {decodeHtmlEntities(item.title)}
+            {sanitizeReadableText(decodeHtmlEntities(item.title))}
           </h3>
 
           {/* Excerpt */}
           {item.snippet && (
-            <p className="text-content-muted leading-relaxed text-base font-light line-clamp-3">
+            <p className="text-content-muted leading-relaxed text-base font-normal line-clamp-3">
               {cleanSnippet(item.snippet)}
             </p>
           )}
@@ -371,6 +378,9 @@ const HeroCard = React.memo(function HeroCard({ item, onEngagement }: CardProps)
                 }`}
               title={saved ? "Saved" : "Save for later"}
               aria-label={saved ? "Saved" : "Save for later"}
+              data-agent-id={`view:feed:save:${item.itemId}`}
+              data-agent-action="toggle"
+              data-agent-label={saved ? "Unsave item" : "Save for later"}
             >
               <Bookmark className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
             </button>
@@ -402,6 +412,9 @@ const StoryCard = React.memo(function StoryCard({ item, onEngagement }: CardProp
     <article
       onClick={handleOpen}
       className="group cursor-pointer nb-surface-card p-4 hover:border-content-muted/30 transition-colors"
+      data-agent-id={`view:feed:item:${item.itemId}`}
+      data-agent-action="navigate"
+      data-agent-label={item.title}
     >
       <div className="space-y-2">
         {/* Category */}
@@ -411,12 +424,12 @@ const StoryCard = React.memo(function StoryCard({ item, onEngagement }: CardProp
 
         {/* Headline */}
         <h4 className="text-lg font-semibold text-content leading-snug group-hover:text-content-secondary transition-colors line-clamp-2">
-          {decodeHtmlEntities(item.title)}
+          {sanitizeReadableText(decodeHtmlEntities(item.title))}
         </h4>
 
         {/* Excerpt */}
         {item.snippet && (
-          <p className="text-sm text-content-muted leading-relaxed line-clamp-2 font-light">
+          <p className="text-sm text-content-muted leading-relaxed line-clamp-2 font-normal">
             {cleanSnippet(item.snippet)}
           </p>
         )}
@@ -476,7 +489,12 @@ function cleanSnippet(snippet: string): string {
     return 'Read more →';
   }
   // Strip markdown bold/italic syntax that leaks into preview text
-  let clean = decodeHtmlEntities(snippet);
+  let clean = sanitizeReadableText(decodeHtmlEntities(snippet));
+  // NOTE(coworker): Keep number formatting in presentation layer so data stays raw.
+  clean = clean.replace(
+    /\b(\d{4,})\b(?=\s+(?:points?|comments?|upvotes?|likes?|views?|items?|stories?|sources?|stars?|forks?)\b)/gi,
+    (_full, digits) => Number(digits).toLocaleString("en-US"),
+  );
   // Fix common singular/plural glitches that leak from upstream sources (keeps UI polished).
   clean = clean.replace(/\b1\s+comments\b/gi, "1 comment");
   clean = clean.replace(/\b1\s+points\b/gi, "1 point");

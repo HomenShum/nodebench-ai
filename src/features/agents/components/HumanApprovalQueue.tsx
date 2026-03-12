@@ -171,7 +171,7 @@ const RequestCard = memo(function RequestCard({
                   "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
                   "bg-surface-secondary border border-edge",
                   "text-content placeholder:text-content-muted",
-                  "focus:outline-none focus:ring-1 focus:ring-indigo-500/50/30"
+                  "focus:outline-none focus:ring-1 focus:ring-ring"
                 )}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -186,7 +186,7 @@ const RequestCard = memo(function RequestCard({
                 aria-label="Submit response"
                 className={cn(
                   "p-1.5 rounded-lg",
-                  "bg-indigo-600 text-white",
+                  "bg-[var(--accent-primary)] text-white",
                   "hover:opacity-90 transition-opacity",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
@@ -221,7 +221,7 @@ const RequestCard = memo(function RequestCard({
                 "flex-1 px-2.5 py-1.5 rounded-lg text-xs",
                 "bg-surface-secondary border border-edge",
                 "text-content placeholder:text-content-muted",
-                "focus:outline-none focus:ring-1 focus:ring-indigo-500/50/30"
+                "focus:outline-none focus:ring-1 focus:ring-ring"
               )}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -236,7 +236,7 @@ const RequestCard = memo(function RequestCard({
               aria-label="Submit response"
               className={cn(
                 "p-1.5 rounded-lg",
-                "bg-indigo-600 text-white",
+                "bg-[var(--accent-primary)] text-white",
                 "hover:opacity-90 transition-opacity",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
               )}

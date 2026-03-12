@@ -387,9 +387,9 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
   if (isCinemaMode) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div className="bg-surface/95 backdrop-blur-xl rounded-lg shadow-2xl border border-white/10 flex flex-col overflow-hidden w-[90vw] h-[85vh] max-w-6xl">
+        <div className="bg-surface/95 backdrop-blur-xl rounded-lg shadow-2xl border border-edge flex flex-col overflow-hidden w-[90vw] h-[85vh] max-w-6xl">
           {/* Glassy Header */}
-          <div className="flex-shrink-0 px-6 py-4 bg-gradient-to-r from-surface-secondary/80 to-surface/80 backdrop-blur-md border-b border-white/10">
+          <div className="flex-shrink-0 px-6 py-4 bg-gradient-to-r from-surface-secondary/80 to-surface/80 backdrop-blur-md border-b border-edge">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="flex-1 min-w-0">
@@ -421,7 +421,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
                 </button>
                 <button type="button" onClick={() => { void handleSaveSubset({ headers: subsetHeaders, rows: subsetRows }); }} className="p-2 rounded-lg bg-surface-secondary hover:bg-surface-hover text-content-secondary border border-edge transition-colors" title="Download"><Download className="w-4 h-4" /></button>
                 <button type="button" onClick={() => setIsCinemaMode(false)} className="p-2 rounded-lg bg-surface-secondary hover:bg-surface-hover text-content-secondary border border-edge transition-colors" title="Exit Cinema Mode"><Minimize2 className="w-4 h-4" /></button>
-                <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${saveHint === "unsaved" && !isSaving ? "bg-indigo-600 text-white hover:opacity-90" : "bg-surface-secondary text-content-muted border border-edge cursor-not-allowed"}`}><Save className="w-4 h-4" />Save</button>
+                <button type="button" onClick={() => void handleSave()} disabled={saveHint !== "unsaved" || isSaving} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white hover:opacity-90" : "bg-surface-secondary text-content-muted border border-edge cursor-not-allowed"}`}><Save className="w-4 h-4" />Save</button>
                 <button type="button" onClick={onClose} className="p-2 rounded-lg bg-surface-secondary hover:bg-red-500/20 hover:text-red-500 text-content-secondary border border-edge transition-colors" title="Close"><X className="w-4 h-4" /></button>
               </div>
             </div>
@@ -431,7 +431,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           {isExcel && workbookSheets.length > 1 && (
             <div className="flex-shrink-0 px-4 py-2 bg-surface-secondary/50 border-b border-edge flex items-center gap-1 overflow-x-auto">
               {workbookSheets.map((s, i) => (
-                <button key={`cinema-${s.name}-${i}`} type="button" onClick={() => { setActiveSheetIndex(i); setSubsetHeaders(workbookSheets[i].csv.headers); setSubsetRows(workbookSheets[i].csv.rows); }} className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors ${i === activeSheetIndex ? 'bg-indigo-600 text-white' : 'bg-surface hover:bg-surface-hover text-content-secondary border border-edge'}`}>{s.name}</button>
+                <button key={`cinema-${s.name}-${i}`} type="button" onClick={() => { setActiveSheetIndex(i); setSubsetHeaders(workbookSheets[i].csv.headers); setSubsetRows(workbookSheets[i].csv.rows); }} className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors ${i === activeSheetIndex ? 'bg-[var(--accent-primary)] text-white' : 'bg-surface hover:bg-surface-hover text-content-secondary border border-edge'}`}>{s.name}</button>
               ))}
             </div>
           )}
@@ -498,7 +498,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
             type="button"
             onClick={() => { void handleSave(); }}
             disabled={saveHint !== "unsaved" || isSaving}
-            className={`h-7 px-2 rounded-md flex items-center justify-center border text-xs ${saveHint === "unsaved" && !isSaving ? "bg-indigo-600 text-white border-indigo-500/30 hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-2 rounded-md flex items-center justify-center border text-xs ${saveHint === "unsaved" && !isSaving ? "bg-[var(--accent-primary)] text-white border-transparent hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title="Save changes"
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> Save</span>
@@ -507,7 +507,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
             type="button"
             onClick={() => { void handleSaveSubset({ headers: subsetHeaders, rows: subsetRows }); }}
             disabled={subsetHeaders.length === 0}
-            className={`h-7 px-2 rounded-md flex items-center justify-center border text-xs ${subsetHeaders.length > 0 ? "bg-indigo-600 text-white border-indigo-500/30 hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
+            className={`h-7 px-2 rounded-md flex items-center justify-center border text-xs ${subsetHeaders.length > 0 ? "bg-[var(--accent-primary)] text-white border-transparent hover:opacity-90" : "bg-surface-secondary text-content-secondary border-edge opacity-70 cursor-not-allowed"}`}
             title={isExcel ? "Save sheet to workbook" : "Export CSV"}
           >
             <span className="inline-flex items-center gap-1"><Save className="w-3.5 h-3.5" /> {isExcel ? "Save Sheet" : "Export CSV"}</span>
@@ -530,7 +530,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-7 text-xs bg-transparent border border-edge/60 rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+            className="w-full h-7 text-xs bg-transparent border border-edge/60 rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
             placeholder="Title"
           />
         </div>
@@ -539,7 +539,7 @@ export default function SpreadsheetMiniEditor({ documentId, onClose }: { documen
           <input
             value={fileName}
             onChange={(e) => setFileName(e.target.value)}
-            className="w-full h-7 text-xs bg-transparent border border-edge/60 rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/30"
+            className="w-full h-7 text-xs bg-transparent border border-edge/60 rounded-md px-2 py-1 text-content focus:outline-none focus:ring-1 focus:ring-ring focus:border-indigo-500/30"
             placeholder="File name"
           />
         </div>

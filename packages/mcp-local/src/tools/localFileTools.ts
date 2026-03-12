@@ -19,18 +19,32 @@ import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { McpTool } from "../types.js";
+import { safePath } from "../security/index.js";
 
-function expandTilde(p: string): string {
-  if (!p) return p;
-  if (p === "~") return os.homedir();
-  if (p.startsWith("~/") || p.startsWith("~\\")) return path.join(os.homedir(), p.slice(2));
-  return p;
+/**
+ * resolveLocalPath — validates and resolves file paths through the security sandbox.
+ *
+ * Allows: cwd, home dir (for GAIA tasks), temp dir, and monorepo root.
+ * Blocks: ~/.ssh, ~/.aws, ~/.ethereum, .env, symlink escape.
+ */
+function findMonorepoRoot(): string {
+  let dir = process.cwd();
+  for (let i = 0; i < 10; i++) {
+    if (existsSync(path.join(dir, "package.json")) && existsSync(path.join(dir, ".git"))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return process.cwd();
 }
+const _monorepoRoot = findMonorepoRoot();
 
 function resolveLocalPath(inputPath: string): string {
-  const expanded = expandTilde(String(inputPath ?? "").trim());
-  if (!expanded) throw new Error("path is required");
-  return path.isAbsolute(expanded) ? expanded : path.resolve(process.cwd(), expanded);
+  return safePath(inputPath, {
+    allowHome: true,
+    allowTemp: true,
+    allowedRoots: [process.cwd(), _monorepoRoot],
+  });
 }
 
 function clampInt(value: unknown, fallback: number, min: number, max: number): number {

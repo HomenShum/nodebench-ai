@@ -1,19 +1,24 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useQuery } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 import {
   ThumbsUp,
   ThumbsDown,
   Eye,
   EyeOff,
-  X,
+  AlertTriangle,
   TrendingUp,
   Clock,
   BarChart3,
   PieChart,
   Activity,
+  Compass,
+  Mic,
+  Sparkles,
+  Bot,
+  CheckCircle2,
 } from 'lucide-react';
 import { SignatureOrb } from '../../../shared/ui/SignatureOrb';
 
@@ -33,7 +38,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
   const dotColor = {
     green: 'bg-green-500',
     red: 'bg-red-500',
-    blue: 'bg-indigo-600',
+    blue: 'bg-[var(--accent-primary)]',
     yellow: 'bg-yellow-500',
     gray: 'bg-content-muted',
   };
@@ -47,7 +52,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
         </div>
         <div className="text-content-muted">{icon}</div>
       </div>
-      <div className="text-2xl font-bold text-content mb-1">{value}</div>
+      <div className="text-2xl font-bold text-content mb-1">{typeof value === 'number' ? value.toLocaleString() : value}</div>
       {subtitle && <div className="text-xs text-content-muted">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
@@ -89,8 +94,80 @@ function RejectionReasonBar({ reason, count, maxCount }: RejectionReasonBarProps
   );
 }
 
+interface IntentSignalRowProps {
+  label: string;
+  attempts: number;
+  rateLabel: string;
+  rateValue: number;
+  tone: 'blue' | 'yellow' | 'red';
+  subtitle?: string | null;
+}
+
+type IntentHotspotCard = {
+  id: string;
+  title: string;
+  status: string;
+  startedAt: number;
+  updatedAt?: number;
+  signature: string;
+  column: string;
+  intentKey: string;
+  action: string;
+  attempts: number;
+  handledRate: number;
+  fallbackRate: number;
+  failureRate: number;
+  hotnessScore: number;
+  frictionScore: number;
+  lastSeenAt: number;
+  sampleInput?: string;
+  sources: string[];
+  targetViews: string[];
+  investigationArtifactId?: string;
+  investigationTitle?: string;
+  investigationPreview?: string;
+  investigationModelUsed?: string;
+  investigationRanAt?: number;
+};
+
+function formatRelativeHours(timestamp: number) {
+  const deltaHours = Math.max(0, (Date.now() - timestamp) / (60 * 60 * 1000));
+  if (deltaHours < 1) return '<1h ago';
+  if (deltaHours < 24) return `${deltaHours.toFixed(1)}h ago`;
+  return `${(deltaHours / 24).toFixed(1)}d ago`;
+}
+
+function IntentSignalRow({ label, attempts, rateLabel, rateValue, tone, subtitle }: IntentSignalRowProps) {
+  const toneClass = {
+    blue: 'bg-[var(--accent-primary)]/70',
+    yellow: 'bg-yellow-500/70',
+    red: 'bg-red-500/70',
+  }[tone];
+
+  const width = Math.max(8, Math.min(100, rateValue));
+
+  return (
+    <div className="py-2 border-b border-edge last:border-0">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-content truncate">{label}</div>
+          {subtitle ? <div className="text-xs text-content-muted truncate">{subtitle}</div> : null}
+        </div>
+        <div className="text-right text-xs text-content-secondary shrink-0">
+          <div>{attempts} attempts</div>
+          <div>{rateLabel}</div>
+        </div>
+      </div>
+      <div className="mt-2 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-500 ${toneClass}`} style={{ width: `${width}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export default function RecommendationAnalyticsDashboard() {
   const [dateRange, setDateRange] = useState<{ start?: number; end?: number }>({});
+  const [hotspotActionId, setHotspotActionId] = useState<string | null>(null);
 
   // Get acceptance rate data
   const acceptanceData = useQuery(
@@ -112,6 +189,26 @@ export default function RecommendationAnalyticsDashboard() {
   const avgTimeData = useQuery(
     api.domains.recomm.feedback.getAverageTimeToAction,
     {}
+  );
+
+  const intentRadar = useQuery(
+    api.domains.analytics.intentSignals.getIntentRadar,
+    {
+      startMs: dateRange.start,
+      endMs: dateRange.end,
+      limit: 6,
+    }
+  );
+
+  const intentHotspotCards = useQuery(
+    api.domains.analytics.intentSignals.listIntentHotspotCards,
+    {
+      limit: 6,
+    },
+  ) as IntentHotspotCard[] | undefined;
+
+  const moveIntentHotspotCard = useMutation(
+    api.domains.analytics.intentSignals.moveIntentHotspotCard,
   );
 
   // Calculate metrics
@@ -152,7 +249,12 @@ export default function RecommendationAnalyticsDashboard() {
     ? Math.max(...rejectionReasons.map(r => r.count))
     : 0;
 
-  const isLoading = acceptanceData === undefined || rejectionReasons === undefined;
+  const intentSummary = intentRadar?.summary;
+  const isLoading =
+    acceptanceData === undefined ||
+    rejectionReasons === undefined ||
+    intentRadar === undefined ||
+    intentHotspotCards === undefined;
 
   return (
     <div className="nb-page-shell">
@@ -189,7 +291,7 @@ export default function RecommendationAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge rounded-lg text-sm bg-surface text-content focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50"
+              className="px-3 py-2 border border-edge rounded-lg text-sm bg-surface text-content focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -270,6 +372,327 @@ export default function RecommendationAnalyticsDashboard() {
               />
             </div>
 
+            <div className="bg-surface border border-edge rounded-lg p-6">
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-content flex items-center gap-2">
+                    <Compass size={18} />
+                    Intent Loop
+                  </h2>
+                  <p className="text-sm text-content-secondary mt-1">
+                    What users are trying to do, what is getting handled, and where the UI still leaks to fallback.
+                  </p>
+                </div>
+                <div className="text-xs text-content-muted text-right">
+                  {intentSummary?.lastSignalAgeHours !== null && intentSummary?.lastSignalAgeHours !== undefined
+                    ? `Last signal ${intentSummary.lastSignalAgeHours.toFixed(1)}h ago`
+                    : 'No recent intent data'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <MetricCard
+                  title="Intent Signals"
+                  value={intentSummary?.totalSignals ?? 0}
+                  subtitle="Tracked voice, text, and navigation attempts"
+                  icon={<Activity size={20} />}
+                  color="blue"
+                />
+                <MetricCard
+                  title="Handled Rate"
+                  value={`${intentSummary?.handledRate?.toFixed?.(1) ?? '0.0'}%`}
+                  subtitle={`${intentSummary?.handled ?? 0} commands completed directly`}
+                  icon={<TrendingUp size={20} />}
+                  color="green"
+                />
+                <MetricCard
+                  title="Fallback Rate"
+                  value={`${intentSummary?.fallbackRate?.toFixed?.(1) ?? '0.0'}%`}
+                  subtitle={`${intentSummary?.fallback ?? 0} requests spilled into agent chat`}
+                  icon={<Mic size={20} />}
+                  color="yellow"
+                />
+                <MetricCard
+                  title="Unique Intents"
+                  value={intentSummary?.uniqueIntents ?? 0}
+                  subtitle={`${intentSummary?.daysCovered ?? 0} day coverage`}
+                  icon={<BarChart3 size={20} />}
+                  color="blue"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mt-6">
+                <div className="bg-surface-secondary/60 border border-edge rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-content">Hot Now</h3>
+                    <span className="text-xs text-content-muted">{intentRadar?.hottest?.length ?? 0} intents</span>
+                  </div>
+                  {!intentRadar?.hottest?.length ? (
+                    <div className="text-sm text-content-secondary py-6">No ranked intents yet.</div>
+                  ) : (
+                    <div className="space-y-1">
+                      {intentRadar.hottest.map((item: any) => (
+                        <IntentSignalRow
+                          key={item.intentKey}
+                          label={item.label}
+                          attempts={item.attempts}
+                          rateLabel={`Hotness ${item.hotnessScore.toFixed(1)}`}
+                          rateValue={Math.min(100, item.hotnessScore * 4)}
+                          tone="blue"
+                          subtitle={item.sampleInput ? `Example: "${item.sampleInput}"` : null}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-surface-secondary/60 border border-edge rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-content flex items-center gap-2">
+                      <AlertTriangle size={16} />
+                      Friction Radar
+                    </h3>
+                    <span className="text-xs text-content-muted">{intentRadar?.friction?.length ?? 0} hotspots</span>
+                  </div>
+                  {!intentRadar?.friction?.length ? (
+                    <div className="text-sm text-content-secondary py-6">No fallback or failure hotspots in range.</div>
+                  ) : (
+                    <div className="space-y-1">
+                      {intentRadar.friction.map((item: any) => (
+                        <IntentSignalRow
+                          key={item.intentKey}
+                          label={item.label}
+                          attempts={item.attempts}
+                          rateLabel={`${item.fallbackRate.toFixed(1)}% fallback, ${item.failureRate.toFixed(1)}% failed`}
+                          rateValue={Math.min(100, item.frictionScore * 8)}
+                          tone={item.failed > 0 ? 'red' : 'yellow'}
+                          subtitle={item.sources?.length ? `Sources: ${item.sources.join(', ')}` : null}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-surface-secondary/60 border border-edge rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-content flex items-center gap-2">
+                      <Sparkles size={16} />
+                      Simplify Next
+                    </h3>
+                    <span className="text-xs text-content-muted">{intentRadar?.opportunities?.length ?? 0} ideas</span>
+                  </div>
+                  {!intentRadar?.opportunities?.length ? (
+                    <div className="text-sm text-content-secondary py-6">
+                      No automatic simplification prompts yet. More usage data will populate this.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {intentRadar.opportunities.map((item: any, index: number) => (
+                        <div key={`${item.title}-${index}`} className="rounded-lg border border-edge bg-surface px-3 py-3">
+                          <div className="text-sm font-medium text-content">{item.title}</div>
+                          <div className="text-xs text-content-secondary mt-1">{item.detail}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
+                <div className="bg-surface-secondary/60 border border-edge rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-content">Channel Mix</h3>
+                    <span className="text-xs text-content-muted">{intentRadar?.sourceBreakdown?.length ?? 0} sources</span>
+                  </div>
+                  {!intentRadar?.sourceBreakdown?.length ? (
+                    <div className="text-sm text-content-secondary py-6">No channel breakdown yet.</div>
+                  ) : (
+                    <div className="space-y-1">
+                      {intentRadar.sourceBreakdown.map((item: any) => (
+                        <IntentSignalRow
+                          key={item.source}
+                          label={item.source}
+                          attempts={item.attempts}
+                          rateLabel={`${item.handledRate.toFixed(1)}% handled`}
+                          rateValue={item.handledRate}
+                          tone="blue"
+                          subtitle={`${item.fallbackRate.toFixed(1)}% fallback, ${item.failureRate.toFixed(1)}% failed`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-surface-secondary/60 border border-edge rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-content">Recent Signals</h3>
+                    <span className="text-xs text-content-muted">{intentRadar?.recentSignals?.length ?? 0} events</span>
+                  </div>
+                  {!intentRadar?.recentSignals?.length ? (
+                    <div className="text-sm text-content-secondary py-6">No recent intent events yet.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {intentRadar.recentSignals.map((item: any, index: number) => (
+                        <div key={`${item.intentKey}-${item.occurredAt}-${index}`} className="rounded-lg border border-edge bg-surface px-3 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-content truncate">{item.label}</div>
+                              <div className="text-xs text-content-secondary truncate">
+                                {item.source} · {item.status} · {item.route || 'unknown route'}
+                              </div>
+                            </div>
+                            <div className="text-[11px] text-content-muted shrink-0">
+                              {new Date(item.occurredAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          {item.inputText ? (
+                            <div className="mt-2 text-xs text-content-muted truncate">
+                              "{item.inputText}"
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-surface-secondary/60 border border-edge rounded-lg p-4 mt-4">
+                <div className="flex items-center justify-between mb-3 gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-content flex items-center gap-2">
+                      <Bot size={16} />
+                      Escalated Hotspots
+                    </h3>
+                    <p className="text-xs text-content-secondary mt-1">
+                      Severe friction cards promoted from telemetry into the operator loop.
+                    </p>
+                  </div>
+                  <span className="text-xs text-content-muted">{intentHotspotCards?.length ?? 0} cards</span>
+                </div>
+                {!intentHotspotCards?.length ? (
+                  <div className="text-sm text-content-secondary py-6">No escalated hotspot cards yet.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {intentHotspotCards.map((card) => {
+                      const isBusy = hotspotActionId === card.id;
+                      const canInvestigate = card.column === 'inbox';
+                      const canComplete = card.column === 'human_review';
+                      return (
+                        <div key={card.id} className="rounded-lg border border-edge bg-surface px-4 py-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-content truncate">{card.title}</div>
+                              <div className="text-xs text-content-secondary mt-1">
+                                {card.column} / {card.status} / last seen {formatRelativeHours(card.lastSeenAt)}
+                              </div>
+                            </div>
+                            <div className="text-right text-xs text-content-muted shrink-0">
+                              <div>{card.attempts} attempts</div>
+                              <div>{card.fallbackRate.toFixed(1)}% fallback</div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3 text-xs text-content-secondary">
+                            <div className="rounded-md bg-surface-secondary px-3 py-2 border border-edge">
+                              Hotness {card.hotnessScore.toFixed(1)}
+                            </div>
+                            <div className="rounded-md bg-surface-secondary px-3 py-2 border border-edge">
+                              Friction {card.frictionScore.toFixed(1)}
+                            </div>
+                            <div className="rounded-md bg-surface-secondary px-3 py-2 border border-edge">
+                              Failure {card.failureRate.toFixed(1)}%
+                            </div>
+                          </div>
+
+                          {card.sampleInput ? (
+                            <div className="mt-3 text-xs text-content-muted">
+                              Example: "{card.sampleInput}"
+                            </div>
+                          ) : null}
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-content-muted">
+                            <span>Sources: {card.sources.length ? card.sources.join(', ') : 'n/a'}</span>
+                            <span>Views: {card.targetViews.length ? card.targetViews.join(', ') : 'n/a'}</span>
+                            {card.investigationRanAt ? (
+                              <span>Investigation {formatRelativeHours(card.investigationRanAt)}</span>
+                            ) : null}
+                          </div>
+
+                          {card.investigationPreview ? (
+                            <div className="mt-3 rounded-md border border-edge bg-surface-secondary px-3 py-3">
+                              <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-content-muted">
+                                {card.investigationTitle || 'Investigation Brief'}
+                              </div>
+                              <div className="mt-2 text-xs leading-5 text-content-secondary whitespace-pre-wrap">
+                                {card.investigationPreview}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            {canInvestigate ? (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={async () => {
+                                  try {
+                                    setHotspotActionId(card.id);
+                                    await moveIntentHotspotCard({
+                                      sessionId: card.id as any,
+                                      toColumn: 'ralph_investigate',
+                                    });
+                                  } finally {
+                                    setHotspotActionId(null);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-2 rounded-md border border-edge bg-[var(--accent-primary)] px-3 py-2 text-xs font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Bot size={14} />
+                                {isBusy ? 'Investigating...' : 'Investigate'}
+                              </button>
+                            ) : null}
+                            {canComplete ? (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={async () => {
+                                  try {
+                                    setHotspotActionId(card.id);
+                                    await moveIntentHotspotCard({
+                                      sessionId: card.id as any,
+                                      toColumn: 'done',
+                                    });
+                                  } finally {
+                                    setHotspotActionId(null);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-2 rounded-md border border-edge bg-green-600 px-3 py-2 text-xs font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <CheckCircle2 size={14} />
+                                {isBusy ? 'Saving...' : 'Mark Done'}
+                              </button>
+                            ) : null}
+                            {!canInvestigate && !canComplete ? (
+                              <div className="text-xs text-content-muted">
+                                {card.column === 'ralph_investigate'
+                                  ? 'Investigation is queued.'
+                                  : card.investigationPreview
+                                    ? 'Investigation brief is attached below.'
+                                    : card.investigationArtifactId
+                                      ? `Investigation artifact ${card.investigationArtifactId}`
+                                    : 'Awaiting next operator action.'}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Action Breakdown */}
             <div className="bg-surface border border-edge rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
@@ -287,7 +710,7 @@ export default function RecommendationAnalyticsDashboard() {
                   { label: 'Rejected', value: metrics.rejected, dot: 'bg-red-500' },
                   { label: 'Ignored', value: metrics.ignored, dot: 'bg-yellow-500' },
                   { label: 'Dismissed', value: metrics.dismissed, dot: 'bg-content-muted' },
-                  { label: 'Snoozed', value: metrics.snoozed, dot: 'bg-indigo-600' },
+                  { label: 'Snoozed', value: metrics.snoozed, dot: 'bg-[var(--accent-primary)]' },
                 ].map(({ label, value: v, dot }) => (
                   <div key={label} className="text-center p-3 bg-surface-secondary rounded-lg border border-edge">
                     <div className="text-2xl font-bold text-content">{v}</div>

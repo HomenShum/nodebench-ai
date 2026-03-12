@@ -99,8 +99,8 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
       const footnoteEl = document.getElementById(`footnote-${citation.id}`);
       if (footnoteEl) {
         footnoteEl.scrollIntoView({ behavior: "smooth", block: "center" });
-        footnoteEl.classList.add("ring-2", "ring-indigo-500/50");
-        setTimeout(() => footnoteEl.classList.remove("ring-2", "ring-indigo-500/50"), 2000);
+        footnoteEl.classList.add("ring-2", "ring-ring");
+        setTimeout(() => footnoteEl.classList.remove("ring-2", "ring-ring"), 2000);
       }
     }
   };
@@ -124,13 +124,13 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
           rounded border
           transition-all duration-150
           cursor-pointer
-          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500/50
+          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-ring
           ${colorClasses}
           ${className}
         `}
         aria-describedby={showPreview ? tooltipId : undefined}
         aria-label={`Citation ${citation.number}: ${citation.label}`}
-        title={`[${citation.number}] ${citation.type} â€” ${citation.label}`}
+        title={`[${citation.number}] ${citation.type} — ${citation.label}`}
       >
         [{citation.number}]
       </button>
@@ -169,13 +169,13 @@ export const FootnoteMarker: React.FC<FootnoteMarkerProps> = ({
             {(citation.author || citation.publishedAt || citation.pageIndex != null) && (
               <span className="flex items-center gap-2 text-xs text-content-secondary border-t border-edge pt-2">
                 {citation.author && <span>{citation.author}</span>}
-                {citation.author && citation.publishedAt && <span>â€¢</span>}
+                {citation.author && citation.publishedAt && <span>•</span>}
                 {citation.publishedAt && (
                   <span>{new Date(citation.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 )}
                 {citation.pageIndex != null && (
                   <>
-                    {(citation.author || citation.publishedAt) && <span>â€¢</span>}
+                    {(citation.author || citation.publishedAt) && <span>•</span>}
                     <span className="px-1 py-0 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded font-medium">
                       p. {citation.pageIndex}
                     </span>

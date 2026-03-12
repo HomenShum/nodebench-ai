@@ -6,6 +6,20 @@ import { getSinglePathValue } from "../lib/request-values.js";
 
 const router = Router();
 
+function asyncHandler(fn: (req: Request, res: Response) => Promise<void>) {
+  return (req: Request, res: Response) => {
+    fn(req, res).catch((err) => {
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: "internal_error",
+          message: err instanceof Error ? err.message : "Unexpected error",
+          requestId: req.requestId,
+        });
+      }
+    });
+  };
+}
+
 // ── In-memory run store (fallback) ─────────────────────────────────────────
 
 interface InMemoryRun {
@@ -21,10 +35,12 @@ interface InMemoryRun {
   completedAt?: string;
 }
 
+const MAX_IN_MEMORY_RUNS = 500;
 const inMemoryRuns = new Map<string, InMemoryRun>();
 
 // ── SSE connections for live streaming ─────────────────────────────────────
 
+const MAX_SSE_CONNECTIONS = 100;
 const sseConnections = new Map<string, Set<Response>>();
 
 function broadcastEvent(runId: string, event: RunEvent): void {
@@ -39,7 +55,7 @@ function broadcastEvent(runId: string, event: RunEvent): void {
 
 // ── POST /v1/runs — Start a verification run ──────────────────────────────
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", asyncHandler(async (req: Request, res: Response) => {
   const parsed = runCreateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({
@@ -84,6 +100,10 @@ router.post("/", async (req: Request, res: Response) => {
     startedAt: now,
   };
 
+  if (inMemoryRuns.size >= MAX_IN_MEMORY_RUNS) {
+    const oldest = inMemoryRuns.keys().next().value;
+    if (oldest !== undefined) inMemoryRuns.delete(oldest);
+  }
   inMemoryRuns.set(runId, run);
 
   // Simulate async start
@@ -98,11 +118,11 @@ router.post("/", async (req: Request, res: Response) => {
     environment: run.environment,
     startedAt: run.startedAt,
   });
-});
+}));
 
 // ── GET /v1/runs/:runId — Get run status ──────────────────────────────────
 
-router.get("/:runId", async (req: Request, res: Response) => {
+router.get("/:runId", asyncHandler(async (req: Request, res: Response) => {
   const runId = getSinglePathValue(req.params.runId);
   if (!runId) {
     res.status(400).json({ error: "validation_error", message: "runId is required" });
@@ -132,11 +152,11 @@ router.get("/:runId", async (req: Request, res: Response) => {
     startedAt: run.startedAt,
     completedAt: run.completedAt,
   });
-});
+}));
 
 // ── GET /v1/runs/:runId/events — SSE stream ───────────────────────────────
 
-router.get("/:runId/events", async (req: Request, res: Response) => {
+router.get("/:runId/events", asyncHandler(async (req: Request, res: Response) => {
   const runId = getSinglePathValue(req.params.runId);
   if (!runId) {
     res.status(400).json({ error: "validation_error", message: "runId is required" });
@@ -166,8 +186,12 @@ router.get("/:runId/events", async (req: Request, res: Response) => {
     res.write(`data: ${JSON.stringify(event)}\n\n`);
   }
 
-  // Register for future events
+  // Register for future events (with cap)
   if (!sseConnections.has(runId)) {
+    if (sseConnections.size >= MAX_SSE_CONNECTIONS) {
+      const oldestKey = sseConnections.keys().next().value;
+      if (oldestKey !== undefined) sseConnections.delete(oldestKey);
+    }
     sseConnections.set(runId, new Set());
   }
   sseConnections.get(runId)!.add(res);
@@ -185,11 +209,11 @@ router.get("/:runId/events", async (req: Request, res: Response) => {
       sseConnections.delete(runId);
     }
   });
-});
+}));
 
 // ── POST /v1/runs/:runId/cancel — Cancel a run ───────────────────────────
 
-router.post("/:runId/cancel", async (req: Request, res: Response) => {
+router.post("/:runId/cancel", asyncHandler(async (req: Request, res: Response) => {
   const runId = getSinglePathValue(req.params.runId);
   if (!runId) {
     res.status(400).json({ error: "validation_error", message: "runId is required" });
@@ -230,6 +254,6 @@ router.post("/:runId/cancel", async (req: Request, res: Response) => {
   broadcastEvent(runId, cancelEvent);
 
   res.json({ runId, status: run.status });
-});
+}));
 
 export default router;

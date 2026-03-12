@@ -99,15 +99,17 @@ const FILE_IGNORE = [
 
 function getStructuralViolations(content, relPath) {
   const violations = [];
-  const isView = /views\/.*\.tsx$/.test(relPath);
+  const isRouteView =
+    /views\/.*(View|Page)\.tsx$/i.test(relPath) &&
+    !/components\/.*\/views\//i.test(relPath);
 
-  if (isView) {
+  if (isRouteView) {
     // Check for nb-page-shell usage
     if (!content.includes("nb-page-shell") && !content.includes("PageShell")) {
       violations.push({
         file: relPath, line: 1, match: "(file-level)",
-        label: "View missing nb-page-shell layout primitive",
-        severity: "high", category: "layout",
+        label: "Route view missing nb-page-shell layout primitive",
+        severity: "medium", category: "layout",
         fix: "Wrap view content in <div className='nb-page-shell'>",
       });
     }

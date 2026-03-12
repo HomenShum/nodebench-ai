@@ -63,7 +63,7 @@ export default function MagicInputContainer({ onRun, onDeepRun, compact = false,
                     <button
                         type="button"
                         onClick={() => onRun(prompt, { mode })}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 bg-gray-900 hover:bg-black text-white rounded-md transition-all shadow-sm hover:shadow disabled:opacity-50"
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1.5 bg-content hover:bg-content/90 text-surface rounded-md transition-all shadow-sm hover:shadow disabled:opacity-50"
                         title="Generate (Enter for Quick, Cmd/Ctrl+Enter for Deep)"
                     >
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -96,7 +96,7 @@ export default function MagicInputContainer({ onRun, onDeepRun, compact = false,
                     <button
                         type="button"
                         onClick={() => onRun(prompt, { mode })}
-                        className="p-2 bg-gray-900 hover:bg-black text-white rounded-lg transition-all shadow active:scale-95 flex items-center justify-center"
+                        className="p-2 bg-content hover:bg-content/90 text-surface rounded-lg transition-all shadow active:scale-95 flex items-center justify-center"
                         title="Run research (Enter for Quick, Cmd/Ctrl+Enter for Deep)"
                     >
                         <ArrowRight className="w-4 h-4" />

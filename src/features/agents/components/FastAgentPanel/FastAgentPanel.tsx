@@ -1,7 +1,7 @@
 // src/components/FastAgentPanel/FastAgentPanel.tsx
 // Main container component for the new ChatGPT-like AI chat sidebar
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { memo, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useConvex, usePaginatedQuery, useQuery, useMutation, useAction, useConvexAuth } from 'convex/react';
 import { api } from '../../../../../convex/_generated/api';
@@ -49,6 +49,8 @@ import { DossierModeIndicator } from '@/features/agents/components/DossierModeIn
 import { DEFAULT_MODEL, MODEL_UI_INFO, type ApprovedModel } from '@shared/llm/approvedModels';
 import { useAnonymousSession } from '../../hooks/useAnonymousSession';
 import { useAgentNavigation } from '../../hooks/useAgentNavigation';
+import { useIntentTelemetry } from '@/lib/hooks/useIntentTelemetry';
+import { useOracleSessionContext } from '@/contexts/OracleSessionContext';
 
 import type {
   Message,
@@ -69,6 +71,8 @@ interface FastAgentPanelProps {
   openOptions?: AgentOpenOptions | null;
   /** Called after openOptions has been applied (prevents duplicate processing). */
   onOptionsConsumed?: () => void;
+  /** Voice intent router — intercepts UI commands before agent send. Return true if handled. */
+  onVoiceIntent?: (text: string, source?: 'voice' | 'text') => boolean;
 }
 
 function DossierFocusSubscription({
@@ -117,7 +121,7 @@ function DossierFocusSubscription({
  * - Live thinking/tool visualization
  * - Clean, minimal interface
  */
-export function FastAgentPanel({
+export const FastAgentPanel = memo(function FastAgentPanel({
   isOpen,
   onClose,
   selectedDocumentId: _selectedDocumentId,
@@ -126,14 +130,19 @@ export function FastAgentPanel({
   variant = 'overlay',
   openOptions = null,
   onOptionsConsumed,
+  onVoiceIntent,
 }: FastAgentPanelProps) {
   // ========== AUTH ==========
   const { isAuthenticated } = useConvexAuth();
   const convex = useConvex();
   const navigate = useNavigate();
+  const trackIntentEvent = useIntentTelemetry();
 
   // ========== ANONYMOUS SESSION (5 free messages/day for unauthenticated users) ==========
   const anonymousSession = useAnonymousSession();
+
+  // ========== ORACLE SESSION (auto-track agent threads as Oracle sessions) ==========
+  const oracleSession = useOracleSessionContext();
 
   // ========== STATE ==========
   // Agent component uses string threadIds, not Id<"chatThreads">
@@ -212,9 +221,27 @@ export function FastAgentPanel({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMatchIndex, setSearchMatchIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchWasOpenRef = useRef(false);
 
   // Response length control
   const [responseLength, setResponseLength] = useState<'brief' | 'detailed' | 'exhaustive'>('detailed');
+
+  useEffect(() => {
+    if (showSearch && !searchWasOpenRef.current) {
+      trackIntentEvent({
+        source: 'search',
+        intentKey: 'agent.searchMessages',
+        action: 'openMessageSearch',
+        status: 'handled',
+        route: window.location.pathname,
+        metadata: {
+          threadId: activeThreadId,
+          variant,
+        },
+      });
+    }
+    searchWasOpenRef.current = showSearch;
+  }, [activeThreadId, showSearch, trackIntentEvent, variant]);
 
   // Command palette (Ctrl+K)
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -894,8 +921,18 @@ export function FastAgentPanel({
     }
   }, [initialThreadId, activeThreadId]);
 
+  // In desktop layouts both sidebar and overlay variants can be mounted simultaneously
+  // (one hidden via CSS). Only the viewport-active variant should consume contextual
+  // openOptions to avoid duplicate autosend requests.
+  const isViewportActiveVariant = useCallback(() => {
+    if (typeof window === "undefined") return true;
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    return variant === "sidebar" ? isDesktop : !isDesktop;
+  }, [variant]);
+
   // Apply openOptions once per requestId, and optionally auto-send.
   useEffect(() => {
+    if (!isViewportActiveVariant()) return;
     if (!isOpen) return;
     const requestId = openOptions?.requestId;
     if (!requestId) return;
@@ -945,7 +982,7 @@ export function FastAgentPanel({
     setInput(message);
     setChatMode("agent-streaming");
     setPendingAutoSend({ requestId, message });
-  }, [isOpen, openOptions, onOptionsConsumed]);
+  }, [isOpen, openOptions, onOptionsConsumed, isViewportActiveVariant]);
 
   // Persist dossier context so it remains available after openOptions is consumed/cleared.
   useEffect(() => {
@@ -1027,6 +1064,7 @@ export function FastAgentPanel({
   useEffect(() => {
     if (streamError) {
       console.error('[FastAgentPanel] Stream error:', streamError);
+      setIsStreaming(false);
       // Don't show toast for timeout errors - they're handled by SafeImage component
       if (!streamError.message?.includes('Timeout while downloading')) {
         toast.error(`Stream error: ${streamError.message}`);
@@ -1036,11 +1074,23 @@ export function FastAgentPanel({
 
   const isGenerating = useMemo(() => {
     if (chatMode !== "agent-streaming") return false;
+    const runStatus = streamingThread?.runStatus;
+    if (runStatus && runStatus !== "running" && runStatus !== "scheduled") {
+      return false;
+    }
     if (!streamingMessages || streamingMessages.length === 0) return false;
     return streamingMessages.some(
       (m: any) => m?.role === "assistant" && (m?.status === "streaming" || m?.status === "pending")
     );
-  }, [chatMode, streamingMessages]);
+  }, [chatMode, streamingMessages, streamingThread?.runStatus]);
+
+  useEffect(() => {
+    const runStatus = streamingThread?.runStatus;
+    if (!runStatus) return;
+    if (runStatus === "completed" || runStatus === "failed" || runStatus === "cancelled") {
+      setIsStreaming(false);
+    }
+  }, [streamingThread?.runStatus]);
 
   const isBusy = isStreaming || isGenerating;
 
@@ -1288,6 +1338,37 @@ export function FastAgentPanel({
   const loadMoreThreads = chatMode === 'agent' ? agentThreadsPagination.loadMore : streamingThreadsPagination.loadMore;
   const hasMoreThreads = threadsStatus === "CanLoadMore";
   const isLoadingMoreThreads = threadsStatus === "LoadingMore";
+
+  useEffect(() => {
+    const handleVoiceThreadSelect = (event: Event) => {
+      const index = (event as CustomEvent<{ index?: number }>).detail?.index;
+      if (!index || index < 1) return;
+      const thread = threads?.[index - 1];
+      if (thread?._id) {
+        setActiveThreadId(thread._id);
+      }
+    };
+
+    window.addEventListener("voice:select-thread", handleVoiceThreadSelect as EventListener);
+    return () => {
+      window.removeEventListener("voice:select-thread", handleVoiceThreadSelect as EventListener);
+    };
+  }, [threads]);
+
+  useEffect(() => {
+    const handleVoiceSearch = (event: Event) => {
+      const query = (event as CustomEvent<{ query?: string }>).detail?.query?.trim();
+      if (!query) return;
+      setShowSearch(true);
+      setSearchQuery(query);
+      window.setTimeout(() => searchInputRef.current?.focus(), 0);
+    };
+
+    window.addEventListener("voice:search", handleVoiceSearch as EventListener);
+    return () => {
+      window.removeEventListener("voice:search", handleVoiceSearch as EventListener);
+    };
+  }, []);
 
   // For agent mode, use the regular messages
   // For streaming mode, we use streamingMessages directly (UIMessage format)
@@ -1584,6 +1665,16 @@ export function FastAgentPanel({
             anonymousSessionId: anonymousSession.sessionId ?? undefined,
           });
           setActiveThreadId(threadId);
+
+          // Auto-start Oracle session for new agent threads
+          if (oracleSession && !oracleSession.hasActiveSession) {
+            oracleSession.startSession({
+              title: messageContent.substring(0, 80),
+              type: "agent",
+              goalId: threadId,
+              visionSnapshot: messageContent.substring(0, 200),
+            }).catch(() => { /* Oracle session is best-effort */ });
+          }
         }
 
         // Send message with optimistic updates using the mutation
@@ -1653,6 +1744,7 @@ export function FastAgentPanel({
     autoNameThread,
     isAuthenticated,
     anonymousSession,
+    oracleSession,
   ]);
 
   // Update ref for stable callback reference
@@ -1666,10 +1758,24 @@ export function FastAgentPanel({
 
   // Auto-send contextual open prompt once streaming mode is active.
   useEffect(() => {
+    if (!isViewportActiveVariant()) return;
     if (!isOpen) return;
     if (!pendingAutoSend) return;
     if (chatMode !== "agent-streaming") return;
     if (isBusy) return;
+    if (anonymousSession.isAnonymous && anonymousSession.isLoading) return;
+
+    if (anonymousSession.isAnonymous && !anonymousSession.canSendMessage) {
+      toast.error(
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">Daily limit reached</div>
+          <div className="text-xs">Sign in for unlimited access!</div>
+        </div>
+      );
+      setPendingAutoSend(null);
+      onOptionsConsumed?.();
+      return;
+    }
 
     const { message, requestId } = pendingAutoSend;
     if (openOptions?.requestId && openOptions.requestId !== requestId) return;
@@ -1683,7 +1789,19 @@ export function FastAgentPanel({
     stableSendMessage(message);
     setPendingAutoSend(null);
     onOptionsConsumed?.();
-  }, [isOpen, pendingAutoSend, chatMode, isBusy, openOptions?.requestId, stableSendMessage, onOptionsConsumed]);
+  }, [
+    isOpen,
+    pendingAutoSend,
+    chatMode,
+    isBusy,
+    openOptions?.requestId,
+    stableSendMessage,
+    onOptionsConsumed,
+    isViewportActiveVariant,
+    anonymousSession.isAnonymous,
+    anonymousSession.isLoading,
+    anonymousSession.canSendMessage,
+  ]);
 
   // No client heuristics; coordinator-only routing
 
@@ -2089,7 +2207,7 @@ export function FastAgentPanel({
       {/* Backdrop for mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm z-[999] lg:hidden"
+          className="fixed inset-0 bg-surface-secondary dark:bg-black/50 backdrop-blur-sm z-[999] lg:hidden"
           onClick={onClose}
         />
       )}
@@ -2403,7 +2521,7 @@ export function FastAgentPanel({
 
         {/* Conversation Search Bar */}
         {showSearch && (
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-edge bg-surface-secondary" role="search">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-edge bg-surface-secondary focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:border-[var(--accent-primary)]/50 transition-colors" role="search">
             <Search className="w-3.5 h-3.5 text-content-muted flex-shrink-0" aria-hidden="true" />
             <input
               ref={searchInputRef}
@@ -3071,7 +3189,7 @@ export function FastAgentPanel({
                   </div>
                   <a
                     href="/sign-in"
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-gray-700 transition-colors shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] transition-colors shadow-sm"
                   >
                     <LogIn className="w-3 h-3" />
                     Sign in
@@ -3285,6 +3403,7 @@ export function FastAgentPanel({
                 onRemoveCalendarEvent={handleRemoveCalendarEvent}
                 responseLength={responseLength}
                 onResponseLengthChange={setResponseLength}
+                onVoiceIntent={onVoiceIntent}
                 onSpawn={async (query, agents) => {
                   try {
                     toast.info(`Starting team with ${agents.length} agents...`);
@@ -3426,7 +3545,7 @@ export function FastAgentPanel({
                 onChange={(e) => setSystemPrompt(e.target.value)}
                 placeholder="Enter a custom system prompt for this thread (e.g., 'You are a financial analyst specializing in tech stocks...')"
                 aria-label="Custom system prompt"
-                className="flex-1 bg-surface-secondary border border-edge rounded-lg p-3 text-xs text-content placeholder:text-content-muted resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50/20"
+                className="flex-1 bg-surface-secondary border border-edge rounded-lg p-3 text-xs text-content placeholder:text-content-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                 rows={5}
               />
               <div className="flex items-center justify-between mt-3">
@@ -3494,7 +3613,7 @@ export function FastAgentPanel({
           <>
             <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm" onClick={() => setShowCommandPalette(false)} />
             <div className="absolute inset-x-4 top-16 z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden max-h-[400px] flex flex-col">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-edge">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-edge focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/30 focus-within:border-[var(--accent-primary)]/50 transition-colors">
                 <Search className="w-4 h-4 text-content-muted" aria-hidden="true" />
                 <input
                   ref={commandInputRef}
@@ -3660,7 +3779,7 @@ export function FastAgentPanel({
         {/* Artifacts/Canvas Panel */}
         {showArtifacts && artifactContent && (
           <>
-            <div className="absolute inset-0 z-40 bg-black/20" onClick={() => setShowArtifacts(false)} />
+            <div className="absolute inset-0 z-40 bg-surface-secondary" onClick={() => setShowArtifacts(false)} />
             <div className="absolute inset-y-2 right-2 w-[45%] min-w-[300px] z-50 bg-surface border border-edge rounded-lg shadow-2xl overflow-hidden flex flex-col">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-edge glass-header">
                 <div className="flex items-center gap-2">
@@ -3688,7 +3807,7 @@ export function FastAgentPanel({
                     srcDoc={artifactContent.type === 'svg'
                       ? `<!DOCTYPE html><html><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f9fafb">${artifactContent.content}</body></html>`
                       : artifactContent.content}
-                    className="w-full h-full border-none bg-white"
+                    className="w-full h-full border-none bg-surface"
                     sandbox="allow-scripts"
                     title="Artifact Preview"
                   />
@@ -3919,12 +4038,12 @@ export function FastAgentPanel({
               <div className="p-4 space-y-3">
                 <p className="text-xs text-content-muted">Paste a ChatGPT or Claude conversation export (JSON format)</p>
                 <textarea
-                  className="w-full h-[120px] p-2 text-xs font-mono bg-surface-secondary border border-edge rounded-lg text-content resize-none focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                  className="w-full h-[120px] p-2 text-xs font-mono bg-surface-secondary border border-edge rounded-lg text-content resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   placeholder='{"messages": [{"role": "user", "content": "..."}, ...]}'
                 />
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => setShowImport(false)} className="text-xs px-3 py-1.5 rounded-lg bg-surface-secondary text-content-muted">Cancel</button>
-                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 text-white">Import</button>
+                  <button type="button" onClick={() => { toast.info('Import feature coming soon'); setShowImport(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white">Import</button>
                 </div>
               </div>
             </div>
@@ -3976,7 +4095,7 @@ export function FastAgentPanel({
       </div>
     </>
   );
-}
+});
 
 interface ArtifactsTabProps {
   media: ExtractedMedia;

@@ -500,7 +500,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             {/* Masthead */}
             <div className="border-b-4 border-black px-8 pt-6 pb-3">
               <div className="text-center border-b border-edge pb-3 mb-2">
-                <h1 className="text-5xl font-black tracking-tight text-black mb-1">
+                <h1 className="text-5xl font-bold tracking-tight text-black mb-1">
                   TODAY'S REPORT
                 </h1>
                 <p className="text-xs text-content">Research Report</p>
@@ -622,7 +622,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 type="button"
                 onClick={() => setViewMode('split')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'split'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                   : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                   }`}
                 title="Classic view"
@@ -635,7 +635,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 type="button"
                 onClick={() => setViewMode('unified')}
                 className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs rounded-md transition-all duration-200 ${viewMode === 'unified'
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                   : 'text-content-secondary hover:text-content hover:bg-surface-hover'
                   }`}
                 title="Edit mode"
@@ -670,7 +670,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
                 placeholder="Search media..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent transition-all placeholder:text-content-muted"
+                className="w-full pl-9 pr-3 py-2 text-sm bg-surface border border-edge rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all placeholder:text-content-muted"
                 aria-label="Search media"
               />
             </div>
@@ -679,7 +679,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="relative hidden sm:block">
               <button
                 type="button"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-edge rounded-lg hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-edge rounded-lg hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap"
                 title="Filter by type"
                 aria-label={`Filter by ${filterType}`}
               >
@@ -693,7 +693,7 @@ export function DossierViewer({ documentId, isGridMode = false, isFullscreen = f
             <div className="relative hidden sm:block">
               <button
                 type="button"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-edge rounded-lg hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm bg-surface border border-edge rounded-lg hover:bg-surface-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring whitespace-nowrap"
                 title="Sort by"
                 aria-label={`Sort by ${sortBy}`}
               >
@@ -1059,7 +1059,7 @@ function AnalysisPopover({
             <textarea
               value={analysisPrompt}
               onChange={(e) => onPromptChange(e.target.value)}
-              className="w-full h-32 p-3 border border-edge rounded-lg bg-surface text-content resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full h-32 p-3 border border-edge rounded-lg bg-surface text-content resize-none focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Enter your analysis prompt..."
             />
           </div>
@@ -1088,7 +1088,7 @@ function AnalysisPopover({
               </div>
               <div className="w-full bg-surface rounded-full h-2">
                 <div
-                  className="bg-indigo-600 h-2 rounded-full transition-all"
+                  className="bg-[var(--accent-primary)] h-2 rounded-full transition-all"
                   style={{ width: `${(progress.current / progress.total) * 100}%` }}
                 />
               </div>
@@ -1110,7 +1110,7 @@ function AnalysisPopover({
             type="button"
             onClick={onAnalyze}
             disabled={isAnalyzing || selectedFiles.size === 0}
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-600/90 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] hover:opacity-90 text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isAnalyzing ? (
               <>

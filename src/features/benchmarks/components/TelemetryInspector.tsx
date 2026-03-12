@@ -57,18 +57,18 @@ const STATUS_META: Record<
 > = {
   success: {
     label: "Success",
-    badgeClassName: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+    badgeClassName: "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     iconClassName: "text-emerald-400",
   },
   warning: {
     label: "Warning",
-    badgeClassName: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    badgeClassName: "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-300",
     iconClassName: "text-amber-400",
   },
   error: {
     label: "Error",
-    badgeClassName: "border-rose-500/20 bg-rose-500/10 text-rose-300",
-    iconClassName: "text-rose-300",
+    badgeClassName: "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-300",
+    iconClassName: "text-rose-600 dark:text-rose-300",
   },
   running: {
     label: "Running",
@@ -146,7 +146,7 @@ function stepBorderClass(selected: boolean, status: InspectorStepStatus) {
   if (status === "error") return "border-rose-500/20";
   if (status === "warning") return "border-amber-500/20";
   if (status === "pending") return "border-sky-500/20";
-  return "border-white/10";
+  return "border-edge";
 }
 
 function MetricPill({
@@ -159,7 +159,7 @@ function MetricPill({
   hint: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-3">
+    <div className="rounded-xl border border-edge bg-[#111111] px-3 py-3">
       <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-content-muted">{label}</div>
       <div className="mt-2 text-xl font-semibold text-white">{value}</div>
       <div className="mt-1 text-xs text-content-muted">{hint}</div>
@@ -175,8 +175,8 @@ function JsonBlock({ label, payload }: { label: string; payload: Record<string, 
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-[#0B0F19]">
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+    <div className="rounded-xl border border-edge bg-[#0B0F19]">
+      <div className="flex items-center justify-between border-b border-edge px-3 py-2">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">{label}</div>
         <button type="button" onClick={copyToClipboard} className="text-content-muted hover:text-white" aria-label={`Copy ${label} JSON`}>
           <Copy className="h-3.5 w-3.5" />
@@ -304,9 +304,9 @@ function FeedbackModal({ run, step }: { run: InspectorRun | null; step: Inspecto
       isOpen={feedbackOpen}
       onClose={closeFeedback}
       ariaLabel="Report UI issue"
-      contentClassName="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0A0A0A] shadow-2xl"
+      contentClassName="w-full max-w-lg rounded-2xl border border-edge bg-[#0A0A0A] shadow-2xl"
     >
-      <div className="border-b border-white/10 px-5 py-4">
+      <div className="border-b border-edge px-5 py-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="text-sm font-semibold text-white">Report UI issue</div>
@@ -317,7 +317,7 @@ function FeedbackModal({ run, step }: { run: InspectorRun | null; step: Inspecto
           <button
             type="button"
             onClick={closeFeedback}
-            className="rounded-lg border border-white/10 p-2 text-content-muted hover:text-white"
+            className="rounded-lg border border-edge p-2 text-content-muted hover:text-white"
             aria-label="Close issue reporter"
           >
             <X className="h-4 w-4" />
@@ -326,16 +326,16 @@ function FeedbackModal({ run, step }: { run: InspectorRun | null; step: Inspecto
       </div>
       <div className="space-y-4 px-5 py-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-3">
+          <div className="rounded-xl border border-edge bg-[#111111] px-3 py-3">
             <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-content-muted">Run</div>
             <div className="mt-2 font-mono text-sm text-white">{run?.id ?? "none selected"}</div>
           </div>
-          <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-3">
+          <div className="rounded-xl border border-edge bg-[#111111] px-3 py-3">
             <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-content-muted">Step</div>
             <div className="mt-2 font-mono text-sm text-white">{step?.id ?? "none selected"}</div>
           </div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-3 text-xs text-content-muted">
+        <div className="rounded-xl border border-edge bg-[#111111] px-3 py-3 text-xs text-content-muted">
           {typeof window !== "undefined"
             ? `Viewport ${window.innerWidth} × ${window.innerHeight} · DPR ${window.devicePixelRatio}`
             : "Viewport unavailable"}
@@ -348,15 +348,15 @@ function FeedbackModal({ run, step }: { run: InspectorRun | null; step: Inspecto
             value={feedbackDraft}
             onChange={(event) => setFeedbackDraft(event.target.value)}
             placeholder="Example: the JSON block clips on smaller laptop widths, and the warning state blends into the background."
-            className="mt-2 min-h-[140px] w-full rounded-xl border border-white/10 bg-[#111111] px-3 py-3 text-sm text-white outline-none transition focus:border-primary/40"
+            className="mt-2 min-h-[140px] w-full rounded-xl border border-edge bg-[#111111] px-3 py-3 text-sm text-white outline-none transition focus:border-primary/40"
           />
         </label>
       </div>
-      <div className="flex items-center justify-end gap-3 border-t border-white/10 px-5 py-4">
+      <div className="flex items-center justify-end gap-3 border-t border-edge px-5 py-4">
         <button
           type="button"
           onClick={closeFeedback}
-          className="rounded-lg border border-white/10 px-3 py-2 text-sm text-content-muted hover:text-white"
+          className="rounded-lg border border-edge px-3 py-2 text-sm text-content-muted hover:text-white"
         >
           Cancel
         </button>
@@ -395,12 +395,12 @@ function RunExplorer({ runs, loading }: { runs: InspectorRun[]; loading: boolean
 
   return (
     <div className="flex h-full flex-col bg-[#0B0B0B]">
-      <div className="border-b border-white/10 px-4 py-4">
+      <div className="border-b border-edge px-4 py-4">
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
           <Search className="h-3.5 w-3.5" />
           Run Explorer
         </div>
-        <div className="mt-3 rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
+        <div className="mt-3 rounded-xl border border-edge bg-[#111111] px-3 py-2">
           <div className="flex items-center gap-2 text-content-muted">
             <Search className="h-4 w-4" />
             <input
@@ -423,7 +423,7 @@ function RunExplorer({ runs, loading }: { runs: InspectorRun[]; loading: boolean
                   "rounded-full border px-2.5 py-1 text-[11px] font-medium transition",
                   active
                     ? "border-primary/40 bg-primary/15 text-white"
-                    : "border-white/10 bg-[#111111] text-content-muted hover:text-white",
+                    : "border-edge bg-[#111111] text-content-muted hover:text-white",
                 )}
               >
                 {status}
@@ -437,7 +437,7 @@ function RunExplorer({ runs, loading }: { runs: InspectorRun[]; loading: boolean
           ? Array.from({ length: 4 }, (_, index) => (
               <div
                 key={`run-skeleton-${index}`}
-                className="mb-2 rounded-2xl border border-white/10 bg-[#0F0F0F] px-3 py-3"
+                className="mb-2 rounded-2xl border border-edge bg-[#0F0F0F] px-3 py-3"
               >
                 <div className="h-3 w-28 rounded bg-white/10" />
                 <div className="mt-3 h-4 w-3/4 rounded bg-white/10" />
@@ -458,7 +458,7 @@ function RunExplorer({ runs, loading }: { runs: InspectorRun[]; loading: boolean
                 "mb-2 w-full rounded-2xl border px-3 py-3 text-left transition",
                 selected
                   ? "border-primary/40 bg-[#111111]"
-                  : "border-white/10 bg-[#0F0F0F] hover:border-white/20 hover:bg-[#111111]",
+                  : "border-edge bg-[#0F0F0F] hover:border-edge hover:bg-[#111111]",
               )}
             >
               <div className="flex items-start justify-between gap-3">
@@ -492,7 +492,7 @@ function OverviewTab({ run, step }: { run: InspectorRun; step: InspectorTraceSte
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Operator summary</div>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-content-secondary">{run.summary}</p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -501,7 +501,7 @@ function OverviewTab({ run, step }: { run: InspectorRun; step: InspectorTraceSte
           <MetricPill label="Evidence" value={String(evidenceCount)} hint="Screenshots aligned to steps" />
         </div>
       </div>
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Current focal step</div>
         {step ? (
           <>
@@ -520,7 +520,7 @@ function OverviewTab({ run, step }: { run: InspectorRun; step: InspectorTraceSte
         ) : (
           <div className="mt-3 text-sm text-content-muted">Pick a step to inspect the current focus.</div>
         )}
-        <div className="mt-4 rounded-xl border border-white/10 bg-[#0B0F19] px-3 py-3 text-xs text-content-muted">
+        <div className="mt-4 rounded-xl border border-edge bg-[#0B0F19] px-3 py-3 text-xs text-content-muted">
           {anomalyCount > 0
             ? `${anomalyCount} anomaly-detection step${anomalyCount === 1 ? "" : "s"} is present in this run.`
             : "No anomaly-detection steps are present in this run."}
@@ -611,7 +611,7 @@ function TraceDetailsTab({
                       transition={{ duration: 0.2, ease: "easeOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="border-t border-white/10 px-4 py-4">
+                      <div className="border-t border-edge px-4 py-4">
                         <div className="grid gap-4 xl:grid-cols-[1.2fr,1fr]">
                           <div>
                             <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">
@@ -629,10 +629,10 @@ function TraceDetailsTab({
                               <button
                                 type="button"
                                 onClick={() => selectStep(step.id)}
-                                className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-[#0A0A0A] text-left"
+                                className="mt-4 overflow-hidden rounded-2xl border border-edge bg-[#0A0A0A] text-left"
                               >
                                 <img src={frame.imageUrl} alt={frame.caption} className="aspect-video w-full object-cover" />
-                                <div className="border-t border-white/10 px-3 py-2">
+                                <div className="border-t border-edge px-3 py-2">
                                   <div className="text-xs font-medium text-white">{frame.label}</div>
                                   <div className="mt-1 text-[11px] text-content-muted">{frame.caption}</div>
                                 </div>
@@ -666,7 +666,7 @@ function MetricsTab({ run }: { run: InspectorRun }) {
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Latency bottlenecks</div>
         <div className="mt-4 h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -692,7 +692,7 @@ function MetricsTab({ run }: { run: InspectorRun }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Token burn per step</div>
         <div className="mt-4 h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -727,7 +727,7 @@ function EvidenceTab({ run, selectedStepId }: { run: InspectorRun; selectedStepI
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.25fr,0.95fr]">
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Published evidence reel</div>
@@ -740,7 +740,7 @@ function EvidenceTab({ run, selectedStepId }: { run: InspectorRun; selectedStepI
               href={run.videoUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0B0B0B] px-3 py-1.5 text-xs font-medium text-white hover:border-primary/30"
+              className="inline-flex items-center gap-2 rounded-full border border-edge bg-[#0B0B0B] px-3 py-1.5 text-xs font-medium text-white hover:border-primary/30"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Open video
@@ -748,15 +748,15 @@ function EvidenceTab({ run, selectedStepId }: { run: InspectorRun; selectedStepI
           ) : null}
         </div>
         {run.videoUrl ? (
-          <video ref={videoRef} className="mt-4 aspect-video w-full rounded-2xl border border-white/10 bg-black" controls preload="metadata" src={run.videoUrl} />
+          <video ref={videoRef} className="mt-4 aspect-video w-full rounded-2xl border border-edge bg-black" controls preload="metadata" src={run.videoUrl} />
         ) : (
-          <div className="mt-4 rounded-2xl border border-dashed border-white/10 bg-[#0A0A0A] px-4 py-8 text-sm text-content-muted">
+          <div className="mt-4 rounded-2xl border border-dashed border-edge bg-[#0A0A0A] px-4 py-8 text-sm text-content-muted">
             No published video is attached to this run yet.
           </div>
         )}
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-[#111111] p-4">
+      <div className="rounded-2xl border border-edge bg-[#111111] p-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Synced screenshot filmstrip</div>
         <div className="mt-3 space-y-3">
           {run.evidenceFrames.map((frame) => {
@@ -773,11 +773,11 @@ function EvidenceTab({ run, selectedStepId }: { run: InspectorRun; selectedStepI
                 }}
                 className={cn(
                   "w-full overflow-hidden rounded-2xl border text-left transition",
-                  selected ? "border-primary/50 bg-[#0B0F19]" : "border-white/10 bg-[#0B0B0B] hover:border-white/20",
+                  selected ? "border-primary/50 bg-[#0B0F19]" : "border-edge bg-[#0B0B0B] hover:border-edge",
                 )}
               >
                 <img src={frame.imageUrl} alt={frame.caption} className="aspect-video w-full object-cover" />
-                <div className="border-t border-white/10 px-3 py-3">
+                <div className="border-t border-edge px-3 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="text-sm font-medium text-white">{frame.label}</div>
                     <div className="text-[11px] text-content-muted">{formatDuration(frame.timestampMs)}</div>
@@ -945,7 +945,7 @@ export function TelemetryInspector() {
   return (
     <section
       id="telemetry-inspector"
-      className="relative rounded-[28px] border border-white/10 bg-[#070707] p-3 sm:p-4"
+      className="relative rounded-[28px] border border-edge bg-[#070707] p-3 sm:p-4"
       data-testid="telemetry-inspector"
     >
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -979,7 +979,7 @@ export function TelemetryInspector() {
               e.preventDefault();
               document.getElementById("telemetry-inspector")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#111111] px-3 py-2 text-xs font-medium text-white hover:border-primary/30"
+            className="inline-flex items-center gap-2 rounded-full border border-edge bg-[#111111] px-3 py-2 text-xs font-medium text-white hover:border-primary/30"
           >
             <Film className="h-3.5 w-3.5" />
             Focus inspector
@@ -1004,10 +1004,10 @@ export function TelemetryInspector() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-[24px] border border-white/10 bg-[#050505] h-[780px] xl:h-[860px]">
+      <div className="overflow-hidden rounded-[24px] border border-edge bg-[#050505] h-[780px] xl:h-[860px]">
         {loading ? (
           <div className="flex h-full animate-pulse">
-            <div className="w-[30%] border-r border-white/10 bg-[#0B0B0B] p-4">
+            <div className="w-[30%] border-r border-edge bg-[#0B0B0B] p-4">
               <div className="mb-4 h-4 w-24 rounded bg-white/5" />
               <div className="mb-3 h-10 rounded-xl bg-white/5" />
               <div className="space-y-3">
@@ -1044,7 +1044,7 @@ export function TelemetryInspector() {
             <div className="flex h-full flex-col bg-[#090909]">
               {activeRun ? (
                 <>
-                  <div className="border-b border-white/10 px-5 py-5">
+                  <div className="border-b border-edge px-5 py-5">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
@@ -1052,14 +1052,14 @@ export function TelemetryInspector() {
                             {statusIcon(activeRun.status)}
                             {STATUS_META[activeRun.status].label}
                           </div>
-                          <div className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+                          <div className="rounded-full border border-edge px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
                             {activeRun.dataset}
                           </div>
                         </div>
                         <h3 className="mt-3 text-2xl font-semibold tracking-tight text-white">{activeRun.title}</h3>
                         <p className="mt-2 max-w-4xl text-sm leading-7 text-content-secondary">{activeRun.goal}</p>
                       </div>
-                      <div className="rounded-2xl border border-white/10 bg-[#111111] px-4 py-3 text-right">
+                      <div className="rounded-2xl border border-edge bg-[#111111] px-4 py-3 text-right">
                         <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-content-muted">Overall verdict</div>
                         <div className="mt-2 text-sm font-semibold text-white">{activeRun.verdict}</div>
                         <div className="mt-1 text-xs text-content-muted">{relativeStartedAt(activeRun.startedAt)}</div>
@@ -1074,7 +1074,7 @@ export function TelemetryInspector() {
                     </div>
                   </div>
 
-                  <div className="border-b border-white/10 px-5">
+                  <div className="border-b border-edge px-5">
                     <div className="flex flex-wrap gap-2 py-3">
                       {TAB_ORDER.map((tab) => {
                         const Icon = tab.icon;
@@ -1086,7 +1086,7 @@ export function TelemetryInspector() {
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
                               "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-medium transition",
-                              active ? "border-primary/40 bg-primary/15 text-white" : "border-white/10 bg-[#111111] text-content-muted hover:text-white",
+                              active ? "border-primary/40 bg-primary/15 text-white" : "border-edge bg-[#111111] text-content-muted hover:text-white",
                             )}
                           >
                             <Icon className="h-3.5 w-3.5" />

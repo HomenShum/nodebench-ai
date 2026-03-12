@@ -654,6 +654,75 @@ CREATE TABLE IF NOT EXISTS skill_sync_history (
 CREATE INDEX IF NOT EXISTS idx_skills_skill_id ON skills(skill_id);
 CREATE INDEX IF NOT EXISTS idx_skills_status ON skills(status);
 CREATE INDEX IF NOT EXISTS idx_skill_sync_history_skill ON skill_sync_history(skill_id);
+
+-- ═══════════════════════════════════════════
+-- ENGINE CONTEXT PERSISTENCE
+-- Conformance reports, workflow runs, content archive
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS engine_reports (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL,
+  workflow        TEXT NOT NULL,
+  preset          TEXT NOT NULL,
+  score           REAL NOT NULL,
+  grade           TEXT NOT NULL,
+  breakdown       TEXT NOT NULL,
+  summary         TEXT NOT NULL,
+  total_steps     INTEGER NOT NULL,
+  successful_steps INTEGER NOT NULL,
+  failed_steps    INTEGER NOT NULL,
+  total_duration_ms INTEGER NOT NULL,
+  generated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_engine_reports_workflow ON engine_reports(workflow);
+CREATE INDEX IF NOT EXISTS idx_engine_reports_generated ON engine_reports(generated_at);
+
+CREATE TABLE IF NOT EXISTS engine_workflow_runs (
+  id              TEXT PRIMARY KEY,
+  session_id      TEXT NOT NULL,
+  workflow        TEXT NOT NULL,
+  preset          TEXT NOT NULL,
+  step_count      INTEGER NOT NULL,
+  success_count   INTEGER NOT NULL DEFAULT 0,
+  failed_count    INTEGER NOT NULL DEFAULT 0,
+  duration_ms     INTEGER NOT NULL DEFAULT 0,
+  context_loaded  TEXT,
+  outcome_summary TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_engine_runs_workflow ON engine_workflow_runs(workflow);
+CREATE INDEX IF NOT EXISTS idx_engine_runs_created ON engine_workflow_runs(created_at);
+
+CREATE TABLE IF NOT EXISTS content_archive (
+  id              TEXT PRIMARY KEY,
+  title           TEXT NOT NULL,
+  content_type    TEXT NOT NULL,
+  digest          TEXT,
+  full_content    TEXT,
+  themes          TEXT,
+  workflow        TEXT,
+  published_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  engagement      TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_content_archive_type ON content_archive(content_type);
+CREATE INDEX IF NOT EXISTS idx_content_archive_published ON content_archive(published_at);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS content_archive_fts USING fts5(
+  title,
+  digest,
+  themes,
+  content='content_archive',
+  content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS content_archive_fts_insert AFTER INSERT ON content_archive BEGIN
+  INSERT INTO content_archive_fts(rowid, title, digest, themes)
+  VALUES (new.rowid, new.title, COALESCE(new.digest, ''), COALESCE(new.themes, ''));
+END;
 `;
 
 export function getDb(): Database.Database {

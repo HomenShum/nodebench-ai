@@ -107,7 +107,7 @@ function ProbabilityBar({
         </linearGradient>
       </defs>
       {/* Background track */}
-      <rect x="0" y="0" width="100" height="8" rx="4" className="fill-gray-200 dark:fill-gray-700" />
+      <rect x="0" y="0" width="100" height="8" rx="4" className="fill-surface-hover" />
       {/* Confidence interval range */}
       {confidenceInterval && (
         <rect
@@ -170,13 +170,13 @@ function DeltaBadge({
 const DIRECTION_STYLES: Record<string, string> = {
   supporting: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
   disconfirming: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-  neutral: "bg-surface-secondary text-content-secondary dark:bg-gray-800 dark:text-gray-300",
+  neutral: "bg-surface-secondary text-content-secondary",
 };
 
 const DIRECTION_DOT: Record<string, string> = {
   supporting: "bg-green-500",
   disconfirming: "bg-red-500",
-  neutral: "bg-gray-400",
+  neutral: "bg-content-muted",
 };
 
 function EvidenceTimeline({
@@ -258,7 +258,7 @@ function TraceBreadcrumb({
         return (
           <React.Fragment key={i}>
             {i > 0 && (
-              <span className="text-gray-300 dark:text-content-secondary mx-0.5">
+              <span className="text-content-muted mx-0.5">
                 {"\u2192"}
               </span>
             )}
@@ -299,9 +299,9 @@ export function ForecastCard({
   return (
     <div
       className={cn(
-        "relative rounded-lg border shadow-sm overflow-hidden transition-all",
-        "border-edge/50",
-        "bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/30",
+        "relative rounded-lg border shadow-sm overflow-hidden transition-all duration-200",
+        "border-edge/50 hover:shadow-md hover:border-primary/20",
+        "bg-gradient-to-br from-surface to-surface-secondary/50",
         isVoided && "opacity-50"
       )}
     >
@@ -324,7 +324,7 @@ export function ForecastCard({
                   "w-2 h-2 rounded-full",
                   status === "active"
                     ? "bg-blue-500 motion-safe:animate-pulse"
-                    : "bg-gray-400"
+                    : "bg-content-muted"
                 )}
               />
             )}

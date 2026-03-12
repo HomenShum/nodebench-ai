@@ -168,7 +168,7 @@ const SynthesisLane = memo(function SynthesisLane({
       className={cn(
         "flex flex-col gap-1 p-2 rounded-lg border transition-all col-span-full",
         "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
-        isSynthesizing && "ring-1 ring-indigo-500/30"
+        isSynthesizing && "ring-1 ring-ring"
       )}
     >
       <div className="flex items-center justify-between gap-2">

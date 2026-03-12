@@ -10,11 +10,11 @@
  * 1. Receive query + agent results (as METADATA summaries, NOT raw text)
  * 2. Loop:
  *    a. Ask LLM: "Given these metadata summaries, what's your next choice?"
- *       → LLM returns one of: gather_info, execute_data_op, execute_output, finalize
+ *       â†’ LLM returns one of: gather_info, execute_data_op, execute_output, finalize
  *    b. Execute the chosen tool DETERMINISTICALLY
  *    c. Record audit entry (CODE-generated, not LLM)
  *    d. Return ONLY metadata to LLM (row counts, column names, errors)
- *    e. If finalize → break
+ *    e. If finalize â†’ break
  * 3. Produce three outputs:
  *    - Raw data reference (from data store)
  *    - Audit log (from traceAuditEntries)
@@ -33,6 +33,7 @@ import { internalAction } from "../../_generated/server";
 import { internal, api } from "../../_generated/api";
 import { generateText } from "ai";
 import { getLanguageModelSafe } from "./mcp_tools/models";
+import { emitWithReceipt } from "./receipts/emitWithReceipt";
 import {
   extractMetadataSummary,
   formatMetadataSummary,
@@ -50,7 +51,7 @@ const MAX_TRACE_ITERATIONS = 10;
 const TRACE_MODEL = "qwen3-coder-free"; // FREE model for orchestration decisions
 
 // ============================================================================
-// TRACE Decision Loop — Core Engine
+// TRACE Decision Loop â€” Core Engine
 // ============================================================================
 
 /**
@@ -96,7 +97,7 @@ export const executeTraceFinalization = internalAction({
 
     let seq = 0;
 
-    // ── Step 1: Extract metadata from agent results DETERMINISTICALLY ──
+    // â”€â”€ Step 1: Extract metadata from agent results DETERMINISTICALLY â”€â”€
     // The LLM NEVER sees the raw results. Only these metadata summaries.
     const agentMetadata = agentResults.map((r) => {
       const meta = extractMetadataSummary(r.result);
@@ -110,8 +111,10 @@ export const executeTraceFinalization = internalAction({
     });
 
     // Record the initial gather_info step (deterministic metadata extraction)
-    await ctx.runMutation(
-      api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+    // emitWithReceipt logs both the TRACE audit entry AND a tamper-evident action receipt
+    const receiptCtx = { agentId: `trace-${executionType}-${executionId.slice(0, 8)}` };
+    await emitWithReceipt(
+      ctx,
       {
         executionId,
         executionType,
@@ -133,10 +136,11 @@ export const executeTraceFinalization = internalAction({
           success: true,
         },
         description: `Extracted deterministic metadata from ${agentResults.length} agent results. Total chars: ${agentResults.reduce((s, r) => s + r.result.length, 0)}. LLM will see metadata only, not raw data.`,
-      }
+      },
+      receiptCtx,
     );
 
-    // ── Step 2: Self-correction check (intended vs actual) ──
+    // â”€â”€ Step 2: Self-correction check (intended vs actual) â”€â”€
     // Detect any mismatches between what was requested and what was returned
     const expectedAgentCount = agentResults.length;
     const successfulAgents = agentResults.filter(
@@ -145,8 +149,8 @@ export const executeTraceFinalization = internalAction({
 
     if (successfulAgents.length < expectedAgentCount) {
       // Self-correction detected: some agents returned empty/minimal results
-      await ctx.runMutation(
-        api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+      await emitWithReceipt(
+        ctx,
         {
           executionId,
           executionType,
@@ -161,11 +165,12 @@ export const executeTraceFinalization = internalAction({
             correctionApplied: true,
           },
           description: `Self-correction: ${expectedAgentCount - successfulAgents.length} agent(s) returned minimal results. Proceeding with ${successfulAgents.length} substantial results.`,
-        }
+        },
+        receiptCtx,
       );
     }
 
-    // ── Step 3: Deterministic merge of agent results ──
+    // â”€â”€ Step 3: Deterministic merge of agent results â”€â”€
     // This is the key TRACE principle: merge is done by CODE, not by LLM.
     // We concatenate results with clear provenance markers.
     const mergedRawData = agentResults
@@ -177,8 +182,8 @@ export const executeTraceFinalization = internalAction({
       .join("\n\n---\n\n");
 
     // Record the data operation
-    await ctx.runMutation(
-      api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+    await emitWithReceipt(
+      ctx,
       {
         executionId,
         executionType,
@@ -197,18 +202,19 @@ export const executeTraceFinalization = internalAction({
           success: true,
         },
         description: `Merged ${successfulAgents.length} agent results with provenance markers. Total: ${mergedRawData.length} chars. Each section labeled with source agent.`,
-      }
+      },
+      receiptCtx,
     );
 
-    // ── Step 4: Detect cross-agent agreement/disagreement deterministically ──
+    // â”€â”€ Step 4: Detect cross-agent agreement/disagreement deterministically â”€â”€
     // Use simple text analysis to find overlapping and unique topics per agent
-    const topicsByAgent = agentMetadata.map((m) => ({
+    const topicsByAgent: Array<{ agent: string; topics: Set<string> }> = agentMetadata.map((m) => ({
       agent: m.agentName,
-      topics: new Set(m.metadata.keyTopics || []),
+      topics: new Set((m.metadata.keyTopics || []) as string[]),
     }));
 
-    const allTopics = new Set(topicsByAgent.flatMap((a) => [...a.topics]));
-    const sharedTopics = [...allTopics].filter((topic) =>
+    const allTopics = new Set<string>(topicsByAgent.flatMap((a) => [...a.topics]));
+    const sharedTopics: string[] = [...allTopics].filter((topic) =>
       topicsByAgent.filter((a) => a.topics.has(topic)).length > 1
     );
     const uniqueTopicsByAgent = topicsByAgent.map((a) => ({
@@ -216,8 +222,8 @@ export const executeTraceFinalization = internalAction({
       uniqueTopics: [...a.topics].filter((t) => !sharedTopics.includes(t)),
     }));
 
-    await ctx.runMutation(
-      api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+    await emitWithReceipt(
+      ctx,
       {
         executionId,
         executionType,
@@ -230,15 +236,16 @@ export const executeTraceFinalization = internalAction({
         },
         metadata: {
           rowCount: topicsByAgent.length,
-          keyTopics: sharedTopics.slice(0, 5),
+          keyTopics: sharedTopics.slice(0, 5) as string[],
           durationMs: Date.now() - startTime,
           success: true,
         },
         description: `Cross-agent topic analysis: ${allTopics.size} total topics, ${sharedTopics.length} shared across agents. Shared: [${sharedTopics.slice(0, 3).join(", ")}]. ${uniqueTopicsByAgent.map((a) => `${a.agent}: ${a.uniqueTopics.length} unique`).join(", ")}.`,
-      }
+      },
+      receiptCtx,
     );
 
-    // ── Step 5: Generate LLM analysis (CLEARLY LABELED as non-deterministic) ──
+    // â”€â”€ Step 5: Generate LLM analysis (CLEARLY LABELED as non-deterministic) â”€â”€
     let analysis: string | undefined;
 
     if (generateAnalysis) {
@@ -281,8 +288,8 @@ Remember: You are analyzing metadata summaries, not raw data. Be transparent abo
 
         analysis = text;
 
-        await ctx.runMutation(
-          api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+        await emitWithReceipt(
+          ctx,
           {
             executionId,
             executionType,
@@ -297,11 +304,12 @@ Remember: You are analyzing metadata summaries, not raw data. Be transparent abo
               success: true,
             },
             description: `Generated LLM analysis (NON-DETERMINISTIC, labeled as AI-generated). ${analysis.length} chars. Model: ${TRACE_MODEL}. This content is clearly separated from deterministic outputs in the UI.`,
-          }
+          },
+          receiptCtx,
         );
       } catch (error: any) {
-        await ctx.runMutation(
-          api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+        await emitWithReceipt(
+          ctx,
           {
             executionId,
             executionType,
@@ -314,17 +322,18 @@ Remember: You are analyzing metadata summaries, not raw data. Be transparent abo
               errorMessage: error.message,
             },
             description: `LLM analysis generation failed: ${error.message}. Raw data and audit log remain valid.`,
-          }
+          },
+          receiptCtx,
         );
       }
     }
 
-    // ── Step 6: Finalize ──
+    // â”€â”€ Step 6: Finalize â”€â”€
     const totalDuration = Date.now() - startTime;
     const selfCorrections = successfulAgents.length < expectedAgentCount ? 1 : 0;
 
-    await ctx.runMutation(
-      api.domains.agents.traceAuditLog.appendAuditEntryPublic,
+    await emitWithReceipt(
+      ctx,
       {
         executionId,
         executionType,
@@ -336,12 +345,13 @@ Remember: You are analyzing metadata summaries, not raw data. Be transparent abo
           charCount: mergedRawData.length,
           durationMs: totalDuration,
           success: true,
-          // Completion traceability — link finalize entry back to original query
-          originalRequest: query.length > 500 ? query.slice(0, 500) + "…" : query,
+          // Completion traceability â€” link finalize entry back to original query
+          originalRequest: query.length > 500 ? query.slice(0, 500) + "â€¦" : query,
           deliverySummary: `${successfulAgents.length} agent(s), ${seq} steps, ${mergedRawData.length} chars raw data`,
         },
         description: `TRACE finalization complete. ${seq} steps, ${totalDuration}ms, ${selfCorrections} self-correction(s). Raw data: ${mergedRawData.length} chars from ${successfulAgents.length} agents. Audit log: ${seq} entries.`,
-      }
+      },
+      receiptCtx,
     );
 
     // Calculate confidence from deterministic metrics
@@ -349,7 +359,7 @@ Remember: You are analyzing metadata summaries, not raw data. Be transparent abo
     const topicOverlap = sharedTopics.length / Math.max(allTopics.size, 1);
     const confidence = Math.min(0.95, agentCoverage * 0.6 + topicOverlap * 0.4);
 
-    // ── Build the three-part output ──
+    // â”€â”€ Build the three-part output â”€â”€
     const traceOutput: TraceOutput = {
       executionId,
       executionType,
@@ -397,11 +407,11 @@ export function buildTraceEnhancedResult(
 
   // Part 2: AI Analysis (clearly labeled)
   if (analysis) {
-    parts.push(`\n\n---\n\n⚡ **AI Analysis** _(This content was generated by AI and is non-deterministic. The raw data above is the source of truth.)_\n\n${analysis}`);
+    parts.push(`\n\n---\n\nâš¡ **AI Analysis** _(This content was generated by AI and is non-deterministic. The raw data above is the source of truth.)_\n\n${analysis}`);
   }
 
   // Part 3: Audit trail summary
-  parts.push(`\n\n---\n\n🔒 **Execution Trace** _(Deterministic audit log — ${auditSummary.totalSteps} steps, ${auditSummary.totalDurationMs}ms, ${auditSummary.selfCorrections} self-correction(s). Tools: ${auditSummary.toolsUsed.join(", ")})_`);
+  parts.push(`\n\n---\n\nðŸ”’ **Execution Trace** _(Deterministic audit log â€” ${auditSummary.totalSteps} steps, ${auditSummary.totalDurationMs}ms, ${auditSummary.selfCorrections} self-correction(s). Tools: ${auditSummary.toolsUsed.join(", ")})_`);
 
   return parts.join("");
 }

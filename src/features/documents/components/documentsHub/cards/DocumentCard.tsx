@@ -19,6 +19,7 @@ import { getAIStatus, type DocumentCardData } from "../utils/documentHelpers";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../../convex/_generated/api";
 import { formatDistanceToNow } from "date-fns";
+import { sanitizeDocumentTitle } from "@/lib/displayText";
 import {
   SpreadsheetPreview,
   CodePreview,
@@ -53,25 +54,25 @@ export interface DocumentCardProps {
 /** AI Status badge colors */
 const AI_STATUS_CONFIG = {
   indexed: {
-    dot: 'bg-indigo-500',
-    bg: 'bg-indigo-50',
-    border: 'border-indigo-200',
-    text: 'text-content-secondary',
-    label: 'AI Indexed',
+    dot: 'bg-green-500',
+    bg: 'bg-green-50/80',
+    border: 'border-green-100',
+    text: 'text-green-700',
+    label: 'AI Ready',
   },
   processing: {
     dot: 'bg-amber-500 motion-safe:animate-pulse',
-    bg: 'bg-amber-50',
+    bg: 'bg-amber-50/80',
     border: 'border-amber-200',
     text: 'text-amber-700',
-    label: 'Processing',
+    label: 'AI Processing',
   },
   raw: {
     dot: 'bg-content-muted',
     bg: 'bg-surface-secondary',
     border: 'border-edge',
     text: 'text-content-secondary',
-    label: 'Raw',
+    label: 'AI Pending',
   },
 } as const;
 
@@ -257,7 +258,7 @@ function VisualGlimpse({
         <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
           {/* Red margin line */}
           <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="text-xs text-content-secondary leading-relaxed line-clamp-4 ml-4 italic">
+          <p className="ml-4 line-clamp-4 text-xs leading-relaxed text-content/90 italic">
             {doc.contentPreview}
           </p>
         </div>
@@ -279,7 +280,7 @@ function VisualGlimpse({
         <div className="w-full h-full bg-gradient-to-br from-amber-50/80 via-yellow-50/60 to-orange-50/30 rounded-lg p-2.5 overflow-hidden relative">
           {/* Red margin line */}
           <div className="absolute top-0 bottom-0 left-3 w-[1px] bg-red-200/40" />
-          <p className="text-xs text-content-secondary leading-relaxed line-clamp-4 ml-4 italic">
+          <p className="ml-4 line-clamp-4 text-xs leading-relaxed text-content/90 italic">
             {doc.contentPreview}
           </p>
         </div>
@@ -296,8 +297,8 @@ function VisualGlimpse({
   if (['pdf', 'text', 'document'].includes(typeGuess)) {
     if (doc.contentPreview) {
       return renderWithEmptyState(
-        <div className="w-full h-full bg-gradient-to-br from-surface-secondary to-surface rounded-lg p-2.5 overflow-hidden">
-          <p className="text-xs text-content-secondary leading-relaxed line-clamp-4">
+        <div className="w-full h-full bg-gradient-to-br from-surface-secondary/95 to-surface rounded-lg p-2.5 overflow-hidden">
+          <p className="line-clamp-4 text-xs leading-relaxed text-content/90">
             {doc.contentPreview}
           </p>
         </div>
@@ -425,7 +426,7 @@ export function DocumentCard({
     if (!draggableToAgent) return;
     e.dataTransfer.setData('application/x-document-node', JSON.stringify({
       id: doc._id,
-      title: doc.title,
+          title: sanitizeDocumentTitle(doc.title),
       type: typeGuess,
     }));
     e.dataTransfer.effectAllowed = 'copy';
@@ -477,11 +478,11 @@ export function DocumentCard({
           bg-surface rounded-lg border p-3 h-52
           flex flex-col transition-all duration-200 ease-out cursor-pointer relative overflow-hidden
 
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/30 focus-visible:ring-offset-2
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
           ${isDragging ? "opacity-90 scale-[1.02] shadow-lg ring-2 ring-blue-400" : ""}
           ${isSelected
-            ? "ring-1 ring-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.1)] bg-blue-50/30 border-blue-200"
-            : "border-edge hover:border-edge"
+            ? "ring-1 ring-ring shadow-[0_0_0_4px_rgba(59,130,246,0.1)] bg-blue-50/30 border-blue-200"
+            : "border-edge hover:shadow-md hover:border-primary/20"
           }
         `}
       >
@@ -525,8 +526,8 @@ export function DocumentCard({
 
           {/* Title (2-line max, bold) */}
           <div className="flex-1 min-w-0 pt-0.5">
-            <h3 className="font-semibold text-content text-sm leading-snug line-clamp-2 min-h-[2.5rem]" title={doc.title}>
-              {doc.title}
+            <h3 className="font-semibold text-content text-sm leading-snug line-clamp-2 min-h-[2.5rem]" title={sanitizeDocumentTitle(doc.title)}>
+              {sanitizeDocumentTitle(doc.title)}
             </h3>
           </div>
         </div>
@@ -627,21 +628,14 @@ export function DocumentCard({
 
           {/* Right: Status Indicator */}
           <div className="flex items-center">
-            {aiStatus === 'indexed' ? (
-              <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-full bg-green-50/80 border border-green-100" title="AI Indexed & Ready">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                <span className="text-xs font-semibold text-green-700">AI Ready</span>
-              </div>
-            ) : aiStatus === 'processing' ? (
-              <div className="flex items-center gap-1.5 opacity-70" title="Processing...">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 motion-safe:animate-pulse" />
-                <Clock className="w-3 h-3 text-amber-500" />
-              </div>
-            ) : (
-              <div className="flex items-center gap-1" title="Not indexed yet">
-                <div className="w-1.5 h-1.5 rounded-full bg-content-muted" />
-              </div>
-            )}
+            <div
+              className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-full border ${statusConfig.bg} ${statusConfig.border}`}
+              title={statusConfig.label}
+            >
+              <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+              {aiStatus === 'processing' ? <Clock className={`w-3 h-3 ${statusConfig.text}`} /> : null}
+              <span className={`text-xs font-semibold ${statusConfig.text}`}>{statusConfig.label}</span>
+            </div>
           </div>
         </div>
 
@@ -702,4 +696,3 @@ export function DocumentCard({
 
 // Memoized wrapper to prevent unnecessary re-renders
 export const DocumentCardMemo = memo(DocumentCard);
-

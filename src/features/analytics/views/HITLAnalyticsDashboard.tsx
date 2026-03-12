@@ -51,7 +51,7 @@ function MetricCard({ title, value, subtitle, icon, trend, color = 'blue' }: Met
         <div className="text-sm font-medium opacity-75">{title}</div>
         <div className="opacity-60">{icon}</div>
       </div>
-      <div className="text-2xl font-bold mb-1">{value}</div>
+      <div className="text-2xl font-bold mb-1">{typeof value === 'number' ? value.toLocaleString() : value}</div>
       {subtitle && <div className="text-xs opacity-60">{subtitle}</div>}
       {trend && (
         <div className={`flex items-center gap-1 text-xs mt-2 ${trend.direction === 'up' ? 'text-green-600' : 'text-red-600'
@@ -90,7 +90,7 @@ function RequestTypeBar({ requestType, avgReviewTimeSeconds, approvalRate, count
       </div>
       <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+          className="h-full bg-[var(--accent-primary)] rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -117,7 +117,7 @@ function ModifiedFieldBar({ field, count, maxCount }: ModifiedFieldBarProps) {
       </div>
       <div className="h-2 bg-surface-secondary dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+          className="h-full bg-[var(--accent-primary)] rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -235,7 +235,7 @@ export default function HITLAnalyticsDashboard() {
                   });
                 }
               }}
-              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-surface text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50"
+              className="px-3 py-2 border border-edge dark:border-gray-600 rounded-lg text-sm bg-surface text-content dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="all">All Time</option>
               <option value="7d">Last 7 Days</option>
@@ -261,7 +261,7 @@ export default function HITLAnalyticsDashboard() {
 
         {/* Metrics Content */}
         {!isLoading && metrics && metrics.total === 0 ? (
-          <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-12 text-center">
+          <div className="bg-surface dark:bg-card border border-edge dark:border-border/60 rounded-lg p-12 text-center">
             <Activity className="mx-auto text-content-muted mb-4" size={48} />
             <h3 className="text-lg font-semibold text-content mb-2">
               No reviews yet
@@ -342,7 +342,7 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Decision Breakdown */}
-            <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
+            <div className="bg-surface dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-content">
                   Decision Breakdown
@@ -381,7 +381,7 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Average Review Time by Request Type */}
-            <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
+            <div className="bg-surface dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-content">
                   Review Time by Request Type
@@ -412,7 +412,7 @@ export default function HITLAnalyticsDashboard() {
             </div>
 
             {/* Most Modified Fields */}
-            <div className="bg-white dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
+            <div className="bg-surface dark:bg-card border border-edge dark:border-border/60 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-content">
                   Most Modified Fields

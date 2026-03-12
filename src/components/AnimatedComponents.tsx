@@ -26,8 +26,8 @@ interface AnimatedButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEleme
 export function AnimatedButton({ children, variant = 'primary', className = '', ...props }: AnimatedButtonProps) {
   const baseStyles = 'px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
   const variantStyles = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-    secondary: 'bg-surface-secondary text-content hover:bg-surface-secondary dark:hover:bg-white/[0.1] focus:ring-gray-400',
+    primary: 'bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-ring',
+    secondary: 'bg-surface-secondary text-content hover:bg-surface-secondary dark:hover:bg-white/[0.1] focus:ring-ring',
     ghost: 'bg-transparent text-content-secondary hover:bg-surface-hover focus:ring-edge',
   };
 
@@ -66,7 +66,7 @@ export function AnimatedCard({ children, className = '', onClick }: AnimatedCard
 
   return (
     <motion.div
-      className={`bg-surface rounded-lg border border-edge p-4 ${onClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2' : ''} ${className}`}
+      className={`bg-surface rounded-lg border border-edge p-4 ${onClick ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2' : ''} ${className}`}
       variants={cardHoverVariants}
       initial="idle"
       whileHover="hover"

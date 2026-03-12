@@ -1,7 +1,7 @@
 {
   "name": "@homenshum/openclaw-mcp-nodebench",
-  "version": "0.1.0",
-  "description": "Sandboxed OpenClaw orchestration + workflow auditing MCP server with NodeBench diligence patterns. Tool allowlists, resource budgets, audit trails, Docker scaffolding, and a persistent gotcha DB for safe AI agent orchestration.",
+  "version": "0.2.0",
+  "description": "Sandboxed OpenClaw orchestration + workflow auditing MCP server with DeepTrace trust skills. Tool allowlists, resource budgets, audit trails, Docker scaffolding, gotcha DB, and ClawHub-publishable receipt/evidence/delegation skills.",
   "type": "module",
   "bin": {
     "openclaw-mcp-nodebench": "./dist/index.js"
@@ -31,8 +31,39 @@
     "workflow",
     "gotcha-db",
     "self-instruct",
-    "orchestration"
+    "orchestration",
+    "deeptrace",
+    "receipts",
+    "delegation",
+    "evidence",
+    "trust",
+    "clawhub"
   ],
+  "clawhub": {
+    "skills": [
+      {
+        "name": "deeptrace-receipt-audit",
+        "version": "0.1.0",
+        "description": "Tamper-evident action receipts — log, list, verify, and audit what agents did.",
+        "tools": ["deeptrace_log_receipt", "deeptrace_list_receipts", "deeptrace_verify_receipt", "deeptrace_receipt_stats"],
+        "category": "trust"
+      },
+      {
+        "name": "deeptrace-evidence-pack",
+        "version": "0.1.0",
+        "description": "Evidence bundles with content-addressed hashing for investigation and provenance.",
+        "tools": ["deeptrace_ingest_evidence", "deeptrace_create_evidence_pack", "deeptrace_search_evidence", "deeptrace_get_evidence_pack"],
+        "category": "trust"
+      },
+      {
+        "name": "deeptrace-delegation-check",
+        "version": "0.1.0",
+        "description": "Agent passports with scoped permissions — pre-flight tool authorization checks.",
+        "tools": ["deeptrace_create_passport", "deeptrace_check_permission", "deeptrace_get_passport", "deeptrace_revoke_passport"],
+        "category": "trust"
+      }
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/HomenShum/nodebench-ai.git",

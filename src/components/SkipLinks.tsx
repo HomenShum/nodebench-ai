@@ -43,7 +43,7 @@ export function SkipLinks({ links = DEFAULT_LINKS }: SkipLinksProps) {
             bg-indigo-600 text-white
             rounded-md shadow-lg
             font-medium text-sm
-            focus:outline-none focus:ring-2 focus:ring-indigo-500/50/60 focus:ring-offset-2
+            focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
             transition-transform
           "
         >

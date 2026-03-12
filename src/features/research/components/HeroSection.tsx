@@ -78,7 +78,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 >
                     <button
                         type="button"
-                        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gray-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-black shadow-lg"
+                        className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-content px-8 py-3 text-sm font-bold text-surface transition-all hover:bg-content/90 shadow-lg"
                     >
                         <span>Start Reading</span>
                         <svg

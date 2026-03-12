@@ -1,0 +1,36 @@
+{
+  "name": "@nodebench/hud",
+  "version": "0.1.0",
+  "description": "Iron Man Jarvis-style HUD components — headless hooks + cinematic UI",
+  "keywords": ["hud", "jarvis", "agent", "streaming", "multi-thread", "voice", "react"],
+  "license": "MIT",
+  "type": "module",
+  "main": "index.ts",
+  "types": "index.ts",
+  "sideEffects": false,
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "framer-motion": ">=12",
+    "clsx": ">=2",
+    "tailwind-merge": ">=2"
+  },
+  "peerDependenciesMeta": {
+    "framer-motion": {
+      "optional": true
+    }
+  },
+  "files": [
+    "*.ts",
+    "*.tsx",
+    "hud-tailwind.preset.js"
+  ],
+  "exports": {
+    ".": "./index.ts",
+    "./hooks": {
+      "types": "./useAgentThread.ts",
+      "default": "./useAgentThread.ts"
+    },
+    "./tailwind": "./hud-tailwind.preset.js"
+  }
+}

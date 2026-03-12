@@ -59,8 +59,8 @@ export const DeepAgentProgress: React.FC<DeepAgentProgressProps> = ({ steps, cla
                                         isDone
                                             ? "bg-green-500 border-green-500"
                                             : isActive
-                                                ? "bg-white border-indigo-500/30 ring-4 ring-[var(--accent-primary-bg)]"
-                                                : "bg-white border-edge"
+                                                ? "bg-surface border-indigo-500/30 ring-4 ring-[var(--accent-primary-bg)]"
+                                                : "bg-surface border-edge"
                                     )}
                                 >
                                     {isDone ? (

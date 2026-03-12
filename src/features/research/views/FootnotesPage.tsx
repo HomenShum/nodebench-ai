@@ -88,7 +88,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
                   Sources & References
                 </h1>
                 <p className="text-xs text-content-secondary">
-                  {briefTitle} {briefDate && `• ${briefDate}`}
+                  {briefTitle} {briefDate && `· ${briefDate}`}
                 </p>
               </div>
             </div>
@@ -113,7 +113,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
               placeholder="Search sources by title, author, or content..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-indigo-500/50/50 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm border border-edge rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
               aria-label="Search sources"
             />
           </div>
@@ -140,7 +140,7 @@ export const FootnotesPage: React.FC<FootnotesPageProps> = ({
               <a
                 href="#"
                 onClick={(e) => { e.preventDefault(); window.location.hash = 'research'; }}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 Go to Research Hub

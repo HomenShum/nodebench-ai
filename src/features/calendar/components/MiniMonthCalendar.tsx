@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import CalendarDatePopover from "./CalendarDatePopover";
 import DualCreateMiniPanel from "@/features/documents/editors/DualCreateMiniPanel";
 import DualEditMiniPanel from "@/features/documents/editors/DualEditMiniPanel";
@@ -105,6 +105,44 @@ function tzOffsetMinutesAt(timeZone: string | undefined, date: Date): number {
 function toLocalDateInZone(ms: number, timeZone: string | undefined): Date {
   const offMin = tzOffsetMinutesAt(timeZone, new Date(ms));
   return new Date(ms + offMin * 60 * 1000);
+}
+
+const FRIENDLY_TIMEZONE_LABELS: Record<string, string> = {
+  UTC: "UTC",
+  "America/Los_Angeles": "Pacific Time",
+  "America/Denver": "Mountain Time",
+  "America/Chicago": "Central Time",
+  "America/New_York": "Eastern Time",
+  "Europe/London": "United Kingdom",
+  "Europe/Paris": "Central Europe",
+  "Europe/Berlin": "Central Europe",
+  "Asia/Tokyo": "Japan",
+  "Asia/Shanghai": "China",
+  "Asia/Kolkata": "India",
+  "Australia/Sydney": "Australia East",
+};
+
+function formatTimezoneLabel(timeZone: string): string {
+  if (!timeZone) return "System";
+  if (FRIENDLY_TIMEZONE_LABELS[timeZone]) return FRIENDLY_TIMEZONE_LABELS[timeZone];
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, {
+      timeZone,
+      timeZoneName: "longGeneric",
+    }).formatToParts(new Date());
+    const zoneName = parts.find((p) => p.type === "timeZoneName")?.value?.trim();
+    if (zoneName) return zoneName;
+  } catch {
+    // keep fallback below
+  }
+  const normalized = timeZone.replace(/_/g, " ");
+  const slashIndex = normalized.indexOf("/");
+  if (slashIndex > 0) {
+    const region = normalized.slice(0, slashIndex);
+    const city = normalized.slice(slashIndex + 1).replace(/\//g, " • ");
+    return `${city} (${region})`;
+  }
+  return normalized;
 }
 
 export interface MiniMonthCalendarProps {
@@ -519,7 +557,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
     return d.toLocaleString(undefined, { month: "long", year: "numeric" });
   }, [monthStart, selectedTz]);
 
-  const dayLabels = ["M", "T", "W", "T", "F", "S", "S"] as const;
+  const dayLabels = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const;
 
   // Clock formatting in the selected timezone
   const effectiveTz = selectedTz;
@@ -538,19 +576,20 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
 
   const tzOptions: Array<{ value: string; label: string }> = useMemo(() => {
     const common: Array<{ value: string; label: string }> = [
-      { value: browserTz || "", label: browserTz ? `System (${browserTz})` : "System" },
+      // NOTE(coworker): Keep labels user-friendly; avoid raw IANA strings in the picker.
+      { value: browserTz || "", label: browserTz ? `Local time · ${formatTimezoneLabel(browserTz)}` : "Local time" },
       { value: "UTC", label: "UTC" },
-      { value: "America/Los_Angeles", label: "America/Los_Angeles" },
-      { value: "America/Denver", label: "America/Denver" },
-      { value: "America/Chicago", label: "America/Chicago" },
-      { value: "America/New_York", label: "America/New_York" },
-      { value: "Europe/London", label: "Europe/London" },
-      { value: "Europe/Paris", label: "Europe/Paris" },
-      { value: "Europe/Berlin", label: "Europe/Berlin" },
-      { value: "Asia/Tokyo", label: "Asia/Tokyo" },
-      { value: "Asia/Shanghai", label: "Asia/Shanghai" },
-      { value: "Asia/Kolkata", label: "Asia/Kolkata" },
-      { value: "Australia/Sydney", label: "Australia/Sydney" },
+      { value: "America/Los_Angeles", label: formatTimezoneLabel("America/Los_Angeles") },
+      { value: "America/Denver", label: formatTimezoneLabel("America/Denver") },
+      { value: "America/Chicago", label: formatTimezoneLabel("America/Chicago") },
+      { value: "America/New_York", label: formatTimezoneLabel("America/New_York") },
+      { value: "Europe/London", label: formatTimezoneLabel("Europe/London") },
+      { value: "Europe/Paris", label: formatTimezoneLabel("Europe/Paris") },
+      { value: "Europe/Berlin", label: formatTimezoneLabel("Europe/Berlin") },
+      { value: "Asia/Tokyo", label: formatTimezoneLabel("Asia/Tokyo") },
+      { value: "Asia/Shanghai", label: formatTimezoneLabel("Asia/Shanghai") },
+      { value: "Asia/Kolkata", label: formatTimezoneLabel("Asia/Kolkata") },
+      { value: "Australia/Sydney", label: formatTimezoneLabel("Australia/Sydney") },
     ];
     // Deduplicate if browserTz equals one of the listed
     const seen = new Set<string>();
@@ -617,13 +656,18 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
       </span>
       {/* Clock + Timezone selector */}
       <div className="px-4 py-2 border-b border-edge/80 flex flex-col gap-1.5">
-        <div className="font-mono text-xs font-medium text-content tabular-nums" aria-live="polite" aria-label="Current time">
-          {clockText}
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+            Current time
+          </div>
+          <div className="font-mono text-xs font-medium text-content tabular-nums" aria-live="polite" aria-label="Current time">
+            {clockText}
+          </div>
         </div>
         <select
           id="tz-select"
           aria-label="Timezone"
-          className="h-7 text-xs leading-[1rem] bg-surface text-content border border-edge/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-indigo-500/50/20 focus:border-indigo-500/30 transition-all w-full truncate"
+          className="h-7 text-xs leading-[1rem] bg-surface text-content border border-edge/60 rounded-lg px-2 py-0 shadow-sm focus:ring-2 focus:ring-ring focus:border-indigo-500/30 transition-all w-full truncate"
           value={effectiveTz || browserTz || "UTC"}
           onChange={(e) => { void onChangeTimeZone(e.target.value); }}
         >
@@ -643,7 +687,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
             aria-label="Previous month"
             title="Previous month"
           >
-            <span className="text-content-muted text-lg">‹</span>
+            <ChevronLeft className="h-4 w-4 text-content-muted" />
           </button>
           <button
             className="w-8 h-8 rounded-lg flex items-center justify-center bg-surface hover:bg-surface-hover border border-edge/60 shadow-sm transition-all duration-200 hover:shadow"
@@ -651,14 +695,14 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
             aria-label="Next month"
             title="Next month"
           >
-            <span className="text-content-muted text-lg">›</span>
+            <ChevronRight className="h-4 w-4 text-content-muted" />
           </button>
         </div>
       </div>
       <div className="p-3">
-        <div className="grid grid-cols-7 text-center text-xs text-content-muted mb-2">
+        <div className="mb-2 grid grid-cols-7 text-center text-xs text-content-secondary">
           {dayLabels.map((lbl, i) => (
-            <div key={`lbl_${lbl}_${i}`} className="font-semibold">{lbl}</div>
+            <div key={`lbl_${lbl}_${i}`} className="font-semibold tracking-[0.08em]">{lbl}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-1">
@@ -666,16 +710,17 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
             const m = markers[d.key] ?? { events: 0, tasks: 0, holidays: 0, notes: 0, emailProposed: 0, maxPriority: 0 };
             const _hasMarkers = m.events > 0 || m.tasks > 0 || m.holidays > 0 || m.notes > 0 || m.emailProposed > 0;
             const pr = m.maxPriority ?? 0;
-            const priorityRing = pr >= 1 ? "ring-2 ring-indigo-500/50/70" : "";
+            const priorityRing = pr >= 1 ? "ring-2 ring-ring" : "";
+            const isInteractive = d.inMonth;
             return (
               <div
                 key={d.key}
-                role="button"
-                tabIndex={0}
-                aria-pressed={pinnedKey === d.key}
+                role={isInteractive ? "button" : undefined}
+                tabIndex={isInteractive ? 0 : -1}
+                aria-pressed={isInteractive ? pinnedKey === d.key : undefined}
                 aria-current={d.isToday ? "date" : undefined}
-                aria-label={`Select ${d.date.toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric" })}`}
-                onClick={(e) => {
+                aria-label={`${isInteractive ? "Select" : "Outside current month"} ${d.date.toLocaleDateString('en-US', { month: "short", day: "numeric", year: "numeric" })}`}
+                onClick={isInteractive ? (e) => {
                   e.preventDefault();
                   // Toggle pin on click; keep hover state consistent
                   setPinnedKey((cur) => (cur === d.key ? null : d.key));
@@ -690,8 +735,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                   } catch {
                     // Date computation failed
                   }
-                }}
-                onDoubleClick={(e) => {
+                } : undefined}
+                onDoubleClick={isInteractive ? (e) => {
                   e.preventDefault();
                   try {
                     const localMidnightMs = new Date(
@@ -702,8 +747,8 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                   } catch {
                     // Date computation failed
                   }
-                }}
-                onKeyDown={(e) => {
+                } : undefined}
+                onKeyDown={isInteractive ? (e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     setPinnedKey((cur) => (cur === d.key ? null : d.key));
@@ -718,22 +763,23 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       // Date computation failed
                     }
                   }
-                }}
-                onMouseEnter={() => setHoveredKey(d.key)}
-                onMouseLeave={() => setHoveredKey((cur) => (cur === d.key ? null : cur))}
-                className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 min-h-[44px] min-w-[44px] ${
-                  d.isToday
-                    ? "border-indigo-500/30/40 bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary shadow-sm"
+                } : undefined}
+                onMouseEnter={isInteractive ? () => setHoveredKey(d.key) : undefined}
+                onMouseLeave={isInteractive ? () => setHoveredKey((cur) => (cur === d.key ? null : cur)) : undefined}
+                className={`relative rounded-lg p-1.5 text-left border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[44px] min-w-[44px] ${
+                  d.isToday && isInteractive
+                    ? "border-indigo-500/40 bg-gradient-to-br from-[var(--accent-primary-bg)] to-surface-secondary shadow-sm"
                     : "border-transparent hover:bg-surface-hover hover:border-edge"
-                  } ${d.inMonth ? "text-content" : "text-content-muted dark:text-content-secondary"}`}
+                  } ${isInteractive ? "text-content" : "text-content-muted/50 dark:text-content-muted/50 opacity-60 pointer-events-none"}`}
                 title={d.date.toDateString()}
               >
                 <div className="text-[13px] font-semibold">
                   <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg ${d.isToday ? "bg-indigo-600 text-white shadow-sm" : ""} ${priorityRing}`}>
-                    {d.date.getDate()}
+                    {isInteractive ? d.date.getDate() : ""}
                   </span>
                 </div>
                 {/* Markers (fixed positions; always rendered, zero counts muted) */}
+                {isInteractive && (
                 <div className="absolute bottom-1 left-1 right-1 space-y-0.5">
                     {/* Top row: events (left), email proposed (center), holidays (right) */}
                     <div className="flex items-center justify-between">
@@ -763,6 +809,7 @@ export function MiniMonthCalendar({ tzOffsetMinutes, onSelectDate: _onSelectDate
                       </span>
                     </div>
                   </div>
+                )}
 
                 {/* Hover/Pinned Preview */}
                 {activeKey === d.key && (

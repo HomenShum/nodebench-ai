@@ -1,12 +1,31 @@
 /**
  * useWebMcpProvider — Registers NodeBench tools via navigator.modelContext.
  *
- * When enabled, exposes 4 NodeBench capabilities as WebMCP tools that browser
- * agents can discover and invoke:
+ * Exposes NodeBench capabilities as WebMCP tools that browser agents can
+ * discover and invoke. Inspired by Moltbook's feed-based discovery and
+ * WebMCP's per-page tool registration pattern.
+ *
+ * Tools (11 total):
+ *   Content:
  *   - nodebench_search: search documents and knowledge
  *   - nodebench_create_document: create a new document
  *   - nodebench_get_digest: get the latest morning digest
  *   - nodebench_ask_agent: send a question to the agent
+ *
+ *   Agent Traversability (Phase 1):
+ *   - nodebench_get_app_state: current view, capabilities, auth status
+ *   - nodebench_list_views: full view manifest (27 views with capabilities)
+ *   - nodebench_navigate: navigate to a view, returns target capabilities
+ *
+ *   DOM Introspection (Phase 2):
+ *   - nodebench_query_elements: all data-agent-* annotated elements on page
+ *
+ *   Feed Traversal (Phase 3):
+ *   - nodebench_traverse_feed: Moltbook-style hot/new/top/rising feeds
+ *
+ *   Discovery:
+ *   - nodebench_get_capabilities: meta-tool listing all available tools
+ *   - nodebench_search_views: search views by query
  *
  * Uses the W3C WebMCP draft API: navigator.modelContext.provideContext()
  */
@@ -14,6 +33,13 @@
 import { useEffect, useRef } from "react";
 import { useConvex } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import type { MainView } from "./useMainLayoutRouting";
+import {
+  type ViewCapability,
+  getViewCapability,
+  getAllViewCapabilities,
+  searchViewCapabilities,
+} from "../lib/viewCapabilityRegistry";
 
 declare global {
   interface Navigator {
@@ -30,16 +56,62 @@ declare global {
   }
 }
 
-export function useWebMcpProvider(enabled: boolean) {
+interface WebMcpProviderOptions {
+  enabled: boolean;
+  /** Current view for state API */
+  currentView?: MainView;
+  /** Current URL path */
+  currentPath?: string;
+  /** Is user authenticated? */
+  isAuthenticated?: boolean;
+  /** Is agent panel open? */
+  agentPanelOpen?: boolean;
+  /** Callback to navigate to a view */
+  onNavigate?: (view: MainView) => void;
+}
+
+export function useWebMcpProvider(enabledOrOptions: boolean | WebMcpProviderOptions) {
+  // Support both legacy boolean and new options object
+  const opts: WebMcpProviderOptions = typeof enabledOrOptions === "boolean"
+    ? { enabled: enabledOrOptions }
+    : enabledOrOptions;
+
+  const {
+    enabled,
+    currentView = "research",
+    currentPath = "/",
+    isAuthenticated = false,
+    agentPanelOpen = false,
+    onNavigate,
+  } = opts;
+
   const convex = useConvex();
   const cleanupRef = useRef<(() => void) | null>(null);
+  // Stable ref for values that change frequently but shouldn't re-register all tools
+  const stateRef = useRef({ currentView, currentPath, isAuthenticated, agentPanelOpen, onNavigate });
+  stateRef.current = { currentView, currentPath, isAuthenticated, agentPanelOpen, onNavigate };
 
   useEffect(() => {
     if (!enabled || !navigator.modelContext?.provideContext) {
       return;
     }
 
+    // --- Helper to build a compact view summary ---
+    const summarizeView = (v: ViewCapability) => ({
+      viewId: v.viewId,
+      title: v.title,
+      description: v.description,
+      paths: v.paths,
+      actions: v.actions.map((a) => a.name),
+      dataEndpoints: v.dataEndpoints.map((d) => d.name),
+      tags: v.tags,
+      requiresAuth: v.requiresAuth,
+    });
+
     const tools = [
+      // ---------------------------------------------------------------
+      // Content tools (existing)
+      // ---------------------------------------------------------------
       {
         name: "nodebench_search",
         description:
@@ -137,7 +209,6 @@ export function useWebMcpProvider(enabled: boolean) {
         },
         execute: async (args: { question: string }) => {
           try {
-            // Uses the public research endpoint as a read-only agent proxy
             const result = await convex.query(
               api.domains.research.hybridSearch.hybridSearch,
               { query: args.question, topK: 5 }
@@ -150,6 +221,249 @@ export function useWebMcpProvider(enabled: boolean) {
           } catch (e: any) {
             return { success: false, error: e.message };
           }
+        },
+      },
+
+      // ---------------------------------------------------------------
+      // Agent Traversability — Phase 1: State & Navigation
+      // ---------------------------------------------------------------
+      {
+        name: "nodebench_get_app_state",
+        description:
+          "Get the current application state — which view is active, its capabilities (data endpoints, actions, tools), authentication status, and whether the agent panel is open. Call this first to orient yourself.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+        execute: async () => {
+          const s = stateRef.current;
+          const cap = getViewCapability(s.currentView);
+          return {
+            success: true,
+            state: {
+              currentView: s.currentView,
+              currentPath: s.currentPath,
+              isAuthenticated: s.isAuthenticated,
+              agentPanelOpen: s.agentPanelOpen,
+              viewCapabilities: summarizeView(cap),
+            },
+          };
+        },
+      },
+      {
+        name: "nodebench_list_views",
+        description:
+          "List all available views with their capabilities — titles, descriptions, actions, data endpoints, and tags. Use this to discover what the app offers before navigating. Returns a manifest of all 27+ views.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            includeAuthOnly: {
+              type: "boolean",
+              description: "Include views that require authentication (default: false)",
+            },
+          },
+        },
+        execute: async (args: { includeAuthOnly?: boolean }) => {
+          const all = getAllViewCapabilities();
+          const filtered = args.includeAuthOnly
+            ? all
+            : all.filter((v) => !v.requiresAuth || stateRef.current.isAuthenticated);
+          return {
+            success: true,
+            views: filtered.map(summarizeView),
+            totalViews: filtered.length,
+          };
+        },
+      },
+      {
+        name: "nodebench_navigate",
+        description:
+          "Navigate to a specific view. Returns the target view's full capabilities so you know what data and actions will be available. Use nodebench_list_views first to discover valid view IDs.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            view: {
+              type: "string",
+              description: "Target view ID (e.g. 'research', 'funding', 'agents', 'documents')",
+            },
+            reason: {
+              type: "string",
+              description: "Why you're navigating (shown to user)",
+            },
+          },
+          required: ["view"],
+        },
+        execute: async (args: { view: string; reason?: string }) => {
+          try {
+            const cap = getViewCapability(args.view as MainView);
+            if (!cap) {
+              return { success: false, error: `Unknown view: ${args.view}. Use nodebench_list_views to see valid IDs.` };
+            }
+            // Trigger navigation if callback available
+            stateRef.current.onNavigate?.(args.view as MainView);
+            return {
+              success: true,
+              navigatedTo: args.view,
+              capabilities: summarizeView(cap),
+            };
+          } catch (e: any) {
+            return { success: false, error: e.message };
+          }
+        },
+      },
+
+      // ---------------------------------------------------------------
+      // Phase 2: DOM Introspection
+      // ---------------------------------------------------------------
+      {
+        name: "nodebench_query_elements",
+        description:
+          "Query all agent-annotated interactive elements on the current page. Returns elements with their data-agent-id, action type, label, and target. Use this to understand what you can interact with on the current view.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            filter: {
+              type: "string",
+              description: "Optional filter — only return elements whose ID contains this substring",
+            },
+          },
+        },
+        execute: async (args: { filter?: string }) => {
+          try {
+            const elements = document.querySelectorAll("[data-agent-id]");
+            const results: Array<{
+              agentId: string;
+              action: string | null;
+              label: string | null;
+              target: string | null;
+              tagName: string;
+              visible: boolean;
+            }> = [];
+
+            elements.forEach((el) => {
+              const agentId = el.getAttribute("data-agent-id") ?? "";
+              if (args.filter && !agentId.includes(args.filter)) return;
+
+              const rect = el.getBoundingClientRect();
+              results.push({
+                agentId,
+                action: el.getAttribute("data-agent-action"),
+                label: el.getAttribute("data-agent-label"),
+                target: el.getAttribute("data-agent-target"),
+                tagName: el.tagName.toLowerCase(),
+                visible: rect.width > 0 && rect.height > 0,
+              });
+            });
+
+            return {
+              success: true,
+              elements: results,
+              count: results.length,
+              currentView: stateRef.current.currentView,
+            };
+          } catch (e: any) {
+            return { success: false, error: e.message };
+          }
+        },
+      },
+
+      // ---------------------------------------------------------------
+      // Phase 3: Feed Traversal (Moltbook pattern)
+      // ---------------------------------------------------------------
+      {
+        name: "nodebench_traverse_feed",
+        description:
+          "Traverse content feeds with Moltbook-style sorting (hot, new, top, rising). Supports pagination via cursor. Available feed types: research, signals, documents, agents, funding, activity.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            feedType: {
+              type: "string",
+              enum: ["research", "signals", "documents", "agents", "funding", "activity"],
+              description: "Which feed to traverse",
+            },
+            sort: {
+              type: "string",
+              enum: ["hot", "new", "top", "rising"],
+              description: "Sort order (default: hot)",
+            },
+            limit: {
+              type: "number",
+              description: "Number of items to return (default: 10, max: 50)",
+            },
+          },
+          required: ["feedType"],
+        },
+        execute: async (args: { feedType: string; sort?: string; limit?: number }) => {
+          try {
+            const feedType = args.feedType as "research" | "signals" | "documents" | "agents" | "funding" | "activity";
+            const sort = (args.sort ?? "hot") as "hot" | "new" | "top" | "rising";
+            const limit = Math.min(args.limit ?? 10, 50);
+
+            const result = await convex.query(
+              api.domains.agents.agentFeedTraversal.traverseFeed,
+              { feedType, sort, limit },
+            );
+
+            return {
+              success: true,
+              feedType: result.feedType,
+              sort: result.sort,
+              items: result.items,
+              count: result.items.length,
+              total: result.total,
+              hasMore: result.hasMore,
+            };
+          } catch (e: any) {
+            return { success: false, error: e.message };
+          }
+        },
+      },
+
+      // ---------------------------------------------------------------
+      // Discovery: Meta-tool
+      // ---------------------------------------------------------------
+      {
+        name: "nodebench_get_capabilities",
+        description:
+          "Meta-tool: lists all available WebMCP tools with their descriptions. Call this first to understand what you can do with NodeBench.",
+        inputSchema: {
+          type: "object",
+          properties: {},
+        },
+        execute: async () => {
+          return {
+            success: true,
+            tools: tools.map((t) => ({
+              name: t.name,
+              description: t.description,
+            })),
+            totalTools: tools.length,
+            version: "2.0.0",
+          };
+        },
+      },
+      {
+        name: "nodebench_search_views",
+        description:
+          "Search for views by keyword — matches against titles, descriptions, tags, and tool categories. Use this to find the right view for a task.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "Search query (e.g. 'funding', 'code review', 'calendar')",
+            },
+          },
+          required: ["query"],
+        },
+        execute: async (args: { query: string }) => {
+          const matches = searchViewCapabilities(args.query);
+          return {
+            success: true,
+            matches: matches.map(summarizeView),
+            count: matches.length,
+          };
         },
       },
     ];

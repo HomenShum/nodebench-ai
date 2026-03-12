@@ -226,7 +226,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             onChange={(e) => setResponse(e.target.value)}
             placeholder="Type your response..."
             rows={2}
-            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-edge rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
@@ -255,7 +255,7 @@ export function HumanRequestCard({ request, onRespond }: HumanRequestCardProps) 
             disabled={isSubmitting || (!selectedOption && !response.trim())}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors",
-              "bg-indigo-600 text-white hover:bg-indigo-700",
+              "bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)]",
               "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >

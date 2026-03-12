@@ -17,7 +17,6 @@ import { CommandPalette } from "./CommandPalette";
 import { useCommandPalette } from "../hooks/useCommandPalette";
 import { QuickCaptureWidget } from "./QuickCapture";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
-import { LazyView } from "@/shared/components/LazyView";
 import { usePanelResize } from "../hooks/usePanelResize";
 import { useMainLayoutRouting, type MainView } from "../hooks/useMainLayoutRouting";
 import { useGlobalEventListeners } from "../hooks/useGlobalEventListeners";
@@ -43,45 +42,6 @@ const FastAgentPanel = lazy(() =>
   })),
 );
 const SettingsModal = lazy(() => import("./SettingsModal"));
-const DocumentsHomeHub = lazy(() =>
-  import("@/features/documents/components/DocumentsHomeHub").then((mod) => ({ default: mod.DocumentsHomeHub })),
-);
-const SpreadsheetsHub = lazy(() =>
-  import("@/features/spreadsheets/components/SpreadsheetsHub").then((mod) => ({ default: mod.SpreadsheetsHub })),
-);
-const SpreadsheetSheetView = lazy(() =>
-  import("@/features/spreadsheets/views/SpreadsheetSheetView").then((mod) => ({ default: mod.SpreadsheetSheetView })),
-);
-const CalendarHomeHub = lazy(() =>
-  import("@/features/calendar/components/CalendarHomeHub").then((mod) => ({ default: mod.CalendarHomeHub })),
-);
-const TimelineRoadmapView = lazy(() =>
-  import("@/components/timelineRoadmap/TimelineRoadmapView").then((mod) => ({ default: mod.TimelineRoadmapView })),
-);
-const ResearchHub = lazy(() => import("@/features/research/views/ResearchHub"));
-const CinematicHome = lazy(() => import("@/features/research/views/CinematicHome"));
-const PhaseAllShowcase = lazy(() =>
-  import("@/features/research/views/PhaseAllShowcase").then((mod) => ({ default: mod.PhaseAllShowcase })),
-);
-const FootnotesPage = lazy(() => import("@/features/research/views/FootnotesPage"));
-const EntityProfilePage = lazy(() =>
-  import("@/features/research/views/EntityProfilePage").then((mod) => ({ default: mod.EntityProfilePage })),
-);
-const TabManager = lazy(() =>
-  import("@/components/TabManager").then((mod) => ({ default: mod.TabManager })),
-);
-const ControlPlaneLanding = lazy(() =>
-  import("@/features/controlPlane/views/ControlPlaneLanding").then((mod) => ({ default: mod.ControlPlaneLanding })),
-);
-const PublicDocuments = lazy(() =>
-  import("@/features/documents/views/PublicDocuments").then((mod) => ({ default: mod.PublicDocuments })),
-);
-
-const EMPTY_FOOTNOTES_LIBRARY = {
-  citations: {} as Record<string, unknown>,
-  order: [] as string[],
-  updatedAt: new Date().toISOString(),
-};
 
 // Prefetch likely next routes after idle (perceived-performance optimization).
 // Uses requestIdleCallback where available, falls back to 2s setTimeout.
@@ -117,11 +77,7 @@ if (typeof window !== "undefined") {
   window.setTimeout(prefetchRoutes, 250);
 }
 
-const viewFallbackDefault = <ViewSkeleton variant="default" />;
-const viewFallbackDocuments = <ViewSkeleton variant="documents" />;
-const viewFallbackCalendar = <ViewSkeleton variant="calendar" />;
-const viewFallbackDashboard = <ViewSkeleton variant="dashboard" />;
-const viewFallback = viewFallbackDefault;
+const viewFallback = <ViewSkeleton variant="default" />;
 
 // VIEW_TITLES and VIEW_SUBTITLES imported from @/lib/viewRegistry (single source of truth)
 
@@ -363,10 +319,11 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
   }, [location.pathname, navigate, setCurrentView, setResearchHubInitialTab, setShowResearchDossier]);
 
   const goToWorkspaceRoot = useCallback(() => {
+    const targetPath = VIEW_PATH_MAP.documents ?? "/workspace";
     setCurrentView('documents');
     onDocumentSelect(null);
-    if (location.pathname !== '/documents') {
-      navigate('/documents');
+    if (location.pathname !== targetPath) {
+      navigate(targetPath);
     }
   }, [location.pathname, navigate, onDocumentSelect, setCurrentView]);
 
@@ -904,158 +861,32 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
           )}
 
           {/* Content Area - Resizable Split */}
-          <div
-            className="relative flex-1 overflow-hidden"
-            data-main-content
-            data-current-view={currentView}
-            data-route-view={resolvedRoute.view}
-            data-agent-id={`view:${currentView}:content`}
-            data-agent-label={VIEW_TITLES[currentView] || currentView}
-          >
-            {currentView === "research" ? (
-              <LazyView
-                title="Research Hub failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDashboard}
-              >
-                {!showResearchDossier ? (
-                  <CinematicHome
-                    onEnterHub={goToResearchHub}
-                    onEnterWorkspace={goToWorkspaceRoot}
-                    onOpenFastAgent={() => setShowFastAgent(true)}
-                    onOpenFastAgentWithPrompt={handleOpenFastAgentWithPrompt}
-                    onOpenAgents={() => navigateToView("agents")}
-                    onOpenWorkbench={() => navigateToView("benchmarks")}
-                  />
-                ) : (
-                  <ResearchHub
-                    embedded
-                    initialTab={researchHubInitialTab}
-                    onGoHome={goToResearchHome}
-                    onDocumentSelect={(id) => onDocumentSelect(id as Id<"documents">)}
-                    onEnterWorkspace={goToWorkspaceRoot}
-                    activeSources={activeSources}
-                    onToggleSource={(sourceId) =>
-                      setActiveSources((prev) =>
-                        prev.includes(sourceId)
-                          ? prev.filter((id) => id !== sourceId)
-                          : [...prev, sourceId],
-                      )
-                    }
-                  />
-                )}
-              </LazyView>
-            ) : currentView === "public" ? (
-              <LazyView
-                title="Public documents failed to load"
-                resetKey={viewResetKey}
-                fallback={viewFallbackDocuments}
-              >
-                <PublicDocuments onDocumentSelect={onDocumentSelect} />
-              </LazyView>
-            ) : currentView === "spreadsheets" ? (
-              <LazyView title="Spreadsheets failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                {selectedSpreadsheetId ? (
-                  <SpreadsheetSheetView
-                    sheetId={selectedSpreadsheetId}
-                    onBack={() => {
-                      setSelectedSpreadsheetId(null);
-                      navigate("/spreadsheets");
-                    }}
-                  />
-                ) : (
-                  <SpreadsheetsHub
-                    onOpenSheet={(id: Id<"spreadsheets">) => {
-                      setSelectedSpreadsheetId(id);
-                      navigate(`/spreadsheets/${String(id)}`);
-                    }}
-                  />
-                )}
-              </LazyView>
-            ) : currentView === "calendar" ? (
-              <LazyView title="Calendar failed to load" resetKey={viewResetKey} fallback={viewFallbackCalendar}>
-                <CalendarHomeHub
-                  onDocumentSelect={onDocumentSelect}
-                  onGridModeToggle={() => setIsGridMode((v) => !v)}
-                />
-              </LazyView>
-            ) : currentView === "roadmap" || currentView === "timeline" ? (
-              <LazyView title="Roadmap failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <TimelineRoadmapView />
-              </LazyView>
-            ) : currentView === "showcase" ? (
-              <LazyView title="Showcase failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <PhaseAllShowcase onBack={goToResearchHome} />
-              </LazyView>
-            ) : currentView === "footnotes" ? (
-              <LazyView title="Sources failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <FootnotesPage
-                  library={EMPTY_FOOTNOTES_LIBRARY}
-                  briefTitle="Latest Daily Brief"
-                  onBack={goToResearchHome}
-                />
-              </LazyView>
-            ) : currentView === "entity" && entityName ? (
-              <LazyView title="Entity profile failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <EntityProfilePage
-                  entityName={entityName}
-                  onBack={() => {
-                    setEntityName(null);
-                    goToResearchHome();
-                  }}
-                />
-              </LazyView>
-            ) : currentView === "control-plane" ? (
-              <LazyView title="Landing failed to load" resetKey={viewResetKey} fallback={viewFallbackDefault}>
-                <ControlPlaneLanding onNavigate={(view, path) => navigateToRouteTarget(view as MainView, path)} />
-              </LazyView>
-            ) : VIEW_MAP[currentView]?.component ? (
-              /* ── Registry-driven renderer ────────────────────────────────
-               * All views with a non-null `component` in the VIEW_REGISTRY
-               * are rendered here via a single lookup — no per-view branch.
-               * Adding a new simple view = add 1 entry to viewRegistry.ts.
-               */
-              (() => {
-                const RegistryComponent = VIEW_MAP[currentView].component!;
-                const entry = VIEW_MAP[currentView];
-                return (
-                  <LazyView
-                    title={`${entry.title} failed to load`}
-                    resetKey={viewResetKey}
-                    fallback={viewFallbackDefault}
-                    className="h-full overflow-auto bg-surface pb-24"
-                  >
-                    <RegistryComponent />
-                  </LazyView>
-                );
-              })()
-            ) : (
-              <LazyView title="Workspace failed to load" resetKey={viewResetKey} fallback={viewFallbackDocuments}>
-                <div className="h-full flex">
-                  <div className="flex-1 overflow-hidden">
-                    {isGridMode || !!selectedDocumentId ? (
-                      <TabManager
-                        selectedDocumentId={selectedDocumentId}
-                        onDocumentSelect={onDocumentSelect}
-                        isGridMode={isGridMode}
-                        setIsGridMode={setIsGridMode}
-                        currentView={currentView}
-                      />
-                    ) : (
-                      <DocumentsHomeHub
-                        onDocumentSelect={(id) => onDocumentSelect(id)}
-                        onGridModeToggle={() => setIsGridMode((v) => !v)}
-                        selectedTaskId={selectedTaskId}
-                        selectedTaskSource={selectedTaskSource}
-                        onSelectTask={handleSelectTask}
-                        onClearTaskSelection={clearTaskSelection}
-                      />
-                    )}
-                  </div>
-                </div>
-              </LazyView>
-            )}
-          </div>
+          <FocalArea
+            currentView={currentView}
+            routeView={resolvedRoute.view}
+            viewResetKey={viewResetKey}
+            showResearchDossier={showResearchDossier}
+            setShowResearchDossier={setShowResearchDossier}
+            researchHubInitialTab={researchHubInitialTab}
+            setResearchHubInitialTab={setResearchHubInitialTab}
+            activeSources={activeSources}
+            setActiveSources={setActiveSources}
+            setCurrentView={setCurrentView}
+            entityName={entityName}
+            setEntityName={setEntityName}
+            selectedSpreadsheetId={selectedSpreadsheetId}
+            setSelectedSpreadsheetId={setSelectedSpreadsheetId}
+            selectedDocumentId={selectedDocumentId}
+            onDocumentSelect={onDocumentSelect}
+            isGridMode={isGridMode}
+            setIsGridMode={setIsGridMode}
+            selectedTaskId={selectedTaskId}
+            selectedTaskSource={selectedTaskSource}
+            onSelectTask={handleSelectTask}
+            onClearTaskSelection={clearTaskSelection}
+            onOpenFastAgent={() => setShowFastAgent(true)}
+            onOpenFastAgentWithPrompt={handleOpenFastAgentWithPrompt}
+          />
 
           {/* Floating Context Pills */}
           {/* Context pills rendered inline in views */}
@@ -1115,9 +946,7 @@ export function MainLayout({ selectedDocumentId, onDocumentSelect, onShowWelcome
       <CommandPalette
         isOpen={commandPalette.isOpen}
         onClose={commandPalette.close}
-        onNavigate={(view) => {
-          navigateToView(view as typeof currentView);
-        }}
+        onNavigate={navigateToView}
         onCreateDocument={() => {
           // Navigate to documents and trigger new document creation
           navigateToView('documents');

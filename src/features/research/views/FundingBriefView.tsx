@@ -41,7 +41,7 @@ const ROUND_TYPE_LABELS: Record<string, string> = {
   "series-d-plus": "Series D+",
   growth: "Growth",
   debt: "Debt",
-  unknown: "Unknown",
+  unknown: "Round undisclosed",
 };
 
 // Sector category colors — subtle left-border accent + neutral surface
@@ -56,6 +56,29 @@ const SECTOR_COLORS: Record<string, { bg: string; text: string; border?: string 
   technology: { bg: "bg-surface-secondary", text: "text-content-secondary" },
   other: { bg: "bg-surface-secondary", text: "text-content-secondary" },
 };
+
+const GENERIC_VALUE_RE = /^(unknown(\s+company)?|undisclosed|n\/a|na|null|none|tbd)$/i;
+const UNKNOWN_PREFIX_RE = /^unknown(\s+company)?\b/i;
+
+function isGenericPlaceholder(value?: string | null): boolean {
+  if (!value) return true;
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  const normalized = trimmed.replace(/\s*\([^)]*\)\s*$/g, "").trim();
+  return GENERIC_VALUE_RE.test(normalized) || UNKNOWN_PREFIX_RE.test(normalized);
+}
+
+function toDisplayLabel(value: string | undefined | null, fallback = "Undisclosed"): string {
+  if (isGenericPlaceholder(value)) return fallback;
+  return value!.trim();
+}
+
+function sanitizeNameList(values?: string[]): string[] {
+  if (!Array.isArray(values)) return [];
+  return values
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value) && !isGenericPlaceholder(value));
+}
 
 // Verification status badges
 function VerificationBadge({
@@ -72,19 +95,19 @@ function VerificationBadge({
     },
     pending: {
       icon: Clock,
-      color: "text-content-muted",
+      color: "text-content-secondary",
       bg: "bg-surface-secondary",
       label: "Pending",
     },
     unverified: {
       icon: AlertCircle,
-      color: "text-content-muted",
+      color: "text-content-secondary",
       bg: "bg-surface-secondary",
       label: "Unverified",
     },
   }[status] || {
     icon: AlertCircle,
-    color: "text-content-muted",
+    color: "text-content-secondary",
     bg: "bg-surface-secondary",
     label: status,
   };
@@ -128,20 +151,26 @@ function FundingCard({
   };
 }) {
   const [expanded, setExpanded] = useState(false);
+  const displayCompanyName = toDisplayLabel(event.companyName, "Undisclosed company");
+  const displayRoundLabel = ROUND_TYPE_LABELS[event.roundType] || toDisplayLabel(event.roundType, "Round undisclosed");
+  const displaySector = isGenericPlaceholder(event.sector) ? null : event.sector;
+  const displayLocation = isGenericPlaceholder(event.location) ? null : event.location;
+  const displayLeadInvestors = sanitizeNameList(event.leadInvestors);
+  const displayCoInvestors = sanitizeNameList(event.coInvestors);
 
-  const sectorKey = event.sector?.toLowerCase().includes("health")
+  const sectorKey = displaySector?.toLowerCase().includes("health")
     ? "healthcare"
-    : event.sector?.toLowerCase().includes("fintech")
+    : displaySector?.toLowerCase().includes("fintech")
       ? "fintech"
-      : event.sector?.toLowerCase().includes("ai")
+      : displaySector?.toLowerCase().includes("ai")
         ? "ai_ml"
-        : event.sector?.toLowerCase().includes("enterprise")
+        : displaySector?.toLowerCase().includes("enterprise")
           ? "enterprise"
-          : event.sector?.toLowerCase().includes("consumer")
+          : displaySector?.toLowerCase().includes("consumer")
             ? "consumer"
-            : event.sector?.toLowerCase().includes("deep")
+            : displaySector?.toLowerCase().includes("deep")
               ? "deeptech"
-              : event.sector?.toLowerCase().includes("climate")
+              : displaySector?.toLowerCase().includes("climate")
                 ? "climate"
                 : "technology";
 
@@ -154,10 +183,10 @@ function FundingCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-content truncate">
-              {/^unknown\s*company/i.test(event.companyName) ? 'Undisclosed' : event.companyName}
+              {displayCompanyName}
             </h3>
             <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">
-              {ROUND_TYPE_LABELS[event.roundType] || event.roundType}
+              {displayRoundLabel}
             </span>
             {event.verificationStatus && (
               <VerificationBadge status={event.verificationStatus} />
@@ -196,15 +225,15 @@ function FundingCard({
 
       {/* Metadata Row */}
       <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-content-secondary">
-        {event.sector && (
+        {displaySector && (
           <span className={`px-2 py-0.5 rounded-full text-xs ${sectorColor.bg} ${sectorColor.text} ${sectorColor.border || ""}`}>
-            {event.sector}
+            {displaySector}
           </span>
         )}
-        {event.location && (
+        {displayLocation && (
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
-            {event.location}
+            {displayLocation}
           </span>
         )}
         {event.announcedAt && (
@@ -216,14 +245,14 @@ function FundingCard({
       </div>
 
       {/* Lead Investors */}
-      {event.leadInvestors && event.leadInvestors.length > 0 && (
+      {displayLeadInvestors.length > 0 && (
         <div className="mt-3">
           <div className="flex items-center gap-1.5 text-xs text-content-secondary mb-1">
             <Users className="w-3.5 h-3.5" />
             Lead Investors
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {event.leadInvestors.map((investor, idx) => (
+            {displayLeadInvestors.map((investor, idx) => (
               <span
                 key={idx}
                 className="text-xs px-2 py-0.5 rounded bg-surface-secondary text-content"
@@ -236,7 +265,7 @@ function FundingCard({
       )}
 
       {/* Expandable Details */}
-      {(event.description || (event.coInvestors && event.coInvestors.length > 0) || (event.sourceUrls && event.sourceUrls.length > 0)) && (
+      {(event.description || displayCoInvestors.length > 0 || (event.sourceUrls && event.sourceUrls.length > 0)) && (
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
@@ -258,11 +287,11 @@ function FundingCard({
           )}
 
           {/* Co-Investors */}
-          {event.coInvestors && event.coInvestors.length > 0 && (
+          {displayCoInvestors.length > 0 && (
             <div>
               <div className="text-xs text-content-secondary mb-1">Co-Investors</div>
               <div className="flex flex-wrap gap-1.5">
-                {event.coInvestors.map((investor, idx) => (
+                {displayCoInvestors.map((investor, idx) => (
                   <span
                     key={idx}
                     className="text-xs px-2 py-0.5 rounded bg-surface-secondary text-content-secondary"
@@ -338,8 +367,8 @@ function StatsSummary({
           <Building2 className="w-4 h-4" />
           Total Deals
         </div>
-        <div className="text-2xl font-bold text-content">{stats.total}</div>
-        <div className="text-xs text-content-secondary">Last {stats.lookbackDays} days</div>
+        <div className="text-2xl font-bold text-content">{stats.total.toLocaleString()}</div>
+        <div className="text-xs text-content-secondary">Last {stats.lookbackDays.toLocaleString()} days</div>
       </div>
 
       <div className="bg-surface-secondary rounded-lg p-4">
@@ -359,7 +388,7 @@ function StatsSummary({
           Seed/Pre-Seed
         </div>
         <div className="text-2xl font-bold text-content">
-          {(stats.byRoundType["seed"] || 0) + (stats.byRoundType["pre-seed"] || 0)}
+          {((stats.byRoundType["seed"] || 0) + (stats.byRoundType["pre-seed"] || 0)).toLocaleString()}
         </div>
         <div className="text-xs text-content-secondary">Early stage deals</div>
       </div>
@@ -370,10 +399,10 @@ function StatsSummary({
           Series A+
         </div>
         <div className="text-2xl font-bold text-content">
-          {(stats.byRoundType["series-a"] || 0) +
+          {((stats.byRoundType["series-a"] || 0) +
             (stats.byRoundType["series-b"] || 0) +
             (stats.byRoundType["series-c"] || 0) +
-            (stats.byRoundType["series-d-plus"] || 0)}
+            (stats.byRoundType["series-d-plus"] || 0)).toLocaleString()}
         </div>
         <div className="text-xs text-content-secondary">Later stage deals</div>
       </div>
@@ -406,13 +435,13 @@ export function FundingBriefView() {
   const transformToFundingDealRows = useCallback((events: typeof data.events): FundingDealRow[] => {
     if (!events) return [];
     return events.map((event) => ({
-      companyName: event.companyName,
-      roundType: event.roundType,
+      companyName: toDisplayLabel(event.companyName, "Undisclosed company"),
+      roundType: isGenericPlaceholder(event.roundType) ? "unknown" : event.roundType,
       amountRaw: event.amountRaw || "",
       amountUsd: event.amountUsd,
-      leadInvestors: event.leadInvestors || [],
-      sector: event.sector,
-      location: event.location,
+      leadInvestors: sanitizeNameList(event.leadInvestors),
+      sector: isGenericPlaceholder(event.sector) ? undefined : event.sector,
+      location: isGenericPlaceholder(event.location) ? undefined : event.location,
       announcedAt: event.announcedAt || Date.now(),
       confidence: event.confidence || 0.5,
       verificationStatus: event.verificationStatus || "unverified",
@@ -602,7 +631,7 @@ export function FundingBriefView() {
             <button
               type="button"
               onClick={clearError}
-              className="text-content-muted hover:text-content text-sm font-medium"
+              className="text-content-secondary hover:text-content text-sm font-medium"
             >
               Dismiss
             </button>
@@ -610,7 +639,7 @@ export function FundingBriefView() {
         )}
 
         {/* Filters */}
-        <div className="nb-surface-card mb-6 p-4 flex flex-wrap items-center gap-3">
+        <div className="nb-surface-card mb-6 p-4 flex flex-wrap items-start gap-3 overflow-visible relative z-10">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-content-secondary" />
             <span className="text-sm font-medium text-content">Filters:</span>
@@ -619,7 +648,7 @@ export function FundingBriefView() {
           <select
             value={lookbackDays}
             onChange={(e) => setLookbackDays(Number(e.target.value))}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full sm:w-auto sm:min-w-[11rem] max-w-full text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content hover:border-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors relative z-20"
             aria-label="Time range"
           >
             <option value={7}>Last 7 days</option>
@@ -635,7 +664,7 @@ export function FundingBriefView() {
           <select
             value={roundTypeFilter}
             onChange={(e) => setRoundTypeFilter(e.target.value)}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full sm:w-auto sm:min-w-[11rem] max-w-full text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content hover:border-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors relative z-20"
             aria-label="Round type"
           >
             <option value="">All Rounds</option>
@@ -651,7 +680,7 @@ export function FundingBriefView() {
             placeholder="Filter by sector..."
             value={sectorFilter}
             onChange={(e) => setSectorFilter(e.target.value)}
-            className="text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full sm:w-56 text-sm border border-edge rounded-md px-3 py-1.5 bg-surface text-content placeholder:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Filter by sector"
           />
         </div>

@@ -50,8 +50,8 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
       className={`
         fixed z-[100] flex items-center gap-2.5
         px-5 py-3
-        bg-gray-900
-        text-white rounded-full
+        bg-content
+        text-surface rounded-full
         shadow-2xl shadow-black/25
         hover:shadow-purple-500/20
         active:scale-95
@@ -79,7 +79,7 @@ export const FloatingAgentButton: React.FC<FloatingAgentButtonProps> = ({
       )}
 
       {/* Keyboard shortcut hint */}
-      <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono bg-white/10 rounded border border-white/20 text-white/60">
+      <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono bg-white/10 rounded border border-edge text-white/60">
         ⌘K
       </kbd>
     </button>

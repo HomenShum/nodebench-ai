@@ -820,6 +820,17 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                   }
 
                   usedSlots.push({ x: coord.x, y, w: labelW });
+                  if (compact) {
+                    return (
+                      <g key={annotation.id ?? `${coord.x}-${coord.y}-${idx}`}>
+                        <circle cx={coord.x} cy={coord.y} r={3} fill={color} className="shadow-sm" />
+                        {annotation.description && (
+                          <title>{annotation.description}</title>
+                        )}
+                      </g>
+                    );
+                  }
+
                   return (
                     <g key={annotation.id ?? `${coord.x}-${coord.y}-${idx}`}>
                       <circle cx={coord.x} cy={coord.y} r={3} fill={color} className="shadow-sm" />
@@ -892,7 +903,7 @@ export const EnhancedLineChart: React.FC<EnhancedLineChartProps> = ({
                 marginTop: "-12px",
               }}
             >
-              <div className={`bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs min-w-[120px] ${activePoint.isPinned ? "ring-2 ring-indigo-400" : ""
+              <div className={`bg-slate-900 text-white px-3 py-2 rounded-lg shadow-xl text-xs min-w-[120px] ${activePoint.isPinned ? "ring-2 ring-ring" : ""
                 }`}>
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="text-xs text-indigo-200">

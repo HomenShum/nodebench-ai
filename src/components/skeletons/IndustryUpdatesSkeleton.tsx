@@ -47,7 +47,7 @@ export function IndustryUpdatesSkeleton() {
 
 function UpdateCardSkeleton() {
   return (
-    <div className="rounded-lg border border-edge bg-white p-5 space-y-4">
+    <div className="rounded-lg border border-edge bg-surface p-5 space-y-4">
       {/* Card Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">

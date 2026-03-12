@@ -85,7 +85,7 @@ export function MemoryPill({ event, className }: MemoryPillProps) {
                     "bg-surface-secondary border border-edge",
                     "text-xs font-medium transition-all duration-150",
                     "hover:bg-surface-secondary",
-                    "focus:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50",
+                    "focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                     getStatusColor()
                 )}
             >

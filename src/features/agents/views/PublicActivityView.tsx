@@ -35,12 +35,12 @@ export function PublicActivityView() {
           <PageHeroHeader
             icon={<Globe className="w-6 h-6" />}
             title="Public Activity Feed"
-            subtitle="Automated tasks and scheduled workflows — live as they run"
+            subtitle="Automated tasks and scheduled workflows - live as they run"
             className="mb-6"
           />
 
           {/* Task Manager - Public Mode */}
-          <div className="nb-surface-card overflow-hidden h-[600px]">
+          <div className="nb-surface-card overflow-hidden min-h-[560px] h-[min(68vh,640px)]">
             <TaskManagerView isPublic={true} className="h-full" />
           </div>
         </div>
@@ -50,4 +50,3 @@ export function PublicActivityView() {
 }
 
 export default PublicActivityView;
-

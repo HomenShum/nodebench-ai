@@ -91,7 +91,7 @@ export default function DualCreateMiniPanel({
             </div>
             <input
               type="text"
-              className="w-full text-xs px-2 py-1 rounded border border-edge bg-white"
+              className="w-full text-xs px-2 py-1 rounded border border-edge bg-surface"
               value={taskTitle}
               onChange={(e) => setTaskTitle(e.target.value)}
               placeholder="Task title"
@@ -118,7 +118,7 @@ export default function DualCreateMiniPanel({
             </div>
             <input
               type="text"
-              className="w-full text-xs px-2 py-1 rounded border border-edge bg-white"
+              className="w-full text-xs px-2 py-1 rounded border border-edge bg-surface"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
               placeholder="Event title"

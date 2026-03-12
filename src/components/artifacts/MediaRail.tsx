@@ -101,7 +101,7 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
     group relative flex flex-col bg-surface border border-edge rounded-lg
     overflow-hidden cursor-pointer transition-all duration-200
     hover:border-indigo-500/30
-    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-1
+    focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1
     ${compact ? 'w-40' : 'w-52'}
   `;
 
@@ -131,8 +131,8 @@ function ArtifactCardItem({ artifact, compact, onClick }: ArtifactCardItemProps)
 
         {/* Video Play Overlay */}
         {kind === "video" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-            <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-surface-secondary group-hover:bg-black/30 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-surface/90 flex items-center justify-center">
               <Play className="w-5 h-5 text-content dark:text-content ml-0.5" />
             </div>
           </div>

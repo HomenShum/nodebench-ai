@@ -8,7 +8,7 @@
  * Pure data — no side effects, no hooks, no React imports.
  */
 
-import type { MainView } from "../../hooks/useMainLayoutRouting";
+import type { MainView } from "@/lib/viewRegistry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,12 +57,87 @@ export interface ViewCapability {
 // ---------------------------------------------------------------------------
 
 export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
+  "control-plane": {
+    viewId: "control-plane",
+    title: "DeepTrace",
+    description:
+      "Landing surface for the agent trust control plane. Start from receipts, delegation, investigation, and the packaged operator flows.",
+    paths: ["/", "/control-plane", "/home", "/landing"],
+    dataEndpoints: [],
+    actions: [
+      { name: "openReceipts", description: "Open the action receipt stream" },
+      { name: "openDelegation", description: "Open the passport and approval surface" },
+      { name: "openInvestigation", description: "Open the investigation surface" },
+    ],
+    relatedToolCategories: ["platform", "verification", "learning"],
+    tags: ["deeptrace", "control-plane", "landing", "trust", "receipts"],
+    requiresAuth: false,
+  },
+
+  receipts: {
+    viewId: "receipts",
+    title: "Action Receipts",
+    description:
+      "Receipt stream for denied, approval-gated, and reversible agent actions with evidence, approvals, and tamper checks.",
+    paths: ["/receipts", "/action-receipts", "/control-plane/receipts"],
+    dataEndpoints: [
+      {
+        name: "receipts",
+        convexQuery: "domains.agents.receipts.actionReceipts.list",
+        description: "Newest-first action receipt stream with optional filters",
+      },
+      {
+        name: "receiptStats",
+        convexQuery: "domains.agents.receipts.actionReceipts.stats",
+        description: "Aggregate counts for allowed, escalated, denied, and violations",
+      },
+    ],
+    actions: [
+      {
+        name: "filterReceipts",
+        description: "Filter receipts by policy action, approval state, or session key",
+        inputSchema: {
+          type: "object",
+          properties: {
+            policyAction: { type: "string" },
+            approvalState: { type: "string" },
+            sessionKey: { type: "string" },
+          },
+        },
+      },
+      {
+        name: "verifyReceiptHash",
+        description: "Verify receipt integrity by recomputing its content hash",
+        inputSchema: { type: "object", properties: { receiptId: { type: "string" } }, required: ["receiptId"] },
+      },
+    ],
+    relatedToolCategories: ["verification", "flywheel", "platform"],
+    tags: ["receipts", "audit", "approval", "trust", "evidence"],
+    requiresAuth: false,
+  },
+
+  delegation: {
+    viewId: "delegation",
+    title: "Passport",
+    description:
+      "Delegation and approval surface for scoped tools, denied actions, and human approval gates before an agent acts.",
+    paths: ["/delegation", "/delegate", "/passport", "/control-plane/delegation", "/control-plane/passport"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewScopes", description: "Inspect delegated scopes and approval gates" },
+      { name: "reviewDeniedActions", description: "Inspect denied tools and escalation boundaries" },
+    ],
+    relatedToolCategories: ["verification", "platform"],
+    tags: ["delegation", "passport", "approvals", "permissions", "scope"],
+    requiresAuth: false,
+  },
+
   research: {
     viewId: "research",
-    title: "Home",
+    title: "Research Hub",
     description:
-      "Landing page and research hub with tabbed navigation: overview, signals, briefing, deals, changes, and changelog. The primary entry point for research intelligence.",
-    paths: ["/", "/research", "/hub", "/onboarding"],
+      "Research hub with tabbed navigation for overview, signals, briefing, deals, changes, and changelog. The primary intelligence surface after the DeepTrace landing page.",
+    paths: ["/research", "/hub", "/onboarding", "/research/overview", "/research/signals", "/research/briefing", "/research/deals", "/research/changes", "/research/changelog"],
     dataEndpoints: [
       { name: "forYouFeed", convexQuery: "domains.research.forYouFeed.getPublicForYouFeed", description: "Ranked feed of research signals and content" },
       { name: "morningDigest", convexQuery: "domains.research.morningDigest.getLatestDigest", description: "Latest curated morning briefing" },
@@ -73,6 +148,46 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["research", "recon", "learning"],
     tags: ["home", "research", "signals", "briefing", "overview"],
+    requiresAuth: false,
+  },
+
+  "product-direction": {
+    viewId: "product-direction",
+    title: "Product Direction",
+    description:
+      "Evidence-bounded company direction memo that separates verified facts from inference, scores adjacency, and recommends what to build next.",
+    paths: ["/product-direction", "/strategy", "/strategy/product-direction", "/research/product-direction"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewExecutiveAnswer", description: "Review the one-page recommendation and truth boundary" },
+      { name: "inspectCredibilityFilter", description: "Inspect high, medium, and low credibility product directions" },
+      { name: "exportMemoJson", description: "Export the structured memo contract as JSON" },
+    ],
+    relatedToolCategories: ["research", "verification", "learning"],
+    tags: ["strategy", "product-direction", "memo", "credibility", "evidence"],
+    requiresAuth: false,
+  },
+
+  "execution-trace": {
+    viewId: "execution-trace",
+    title: "Execution Trace",
+    description:
+      "Traceable record of inspect, research, edit, verify, export, and approval steps for a workflow, with progressive disclosure from outcome to full trace.",
+    paths: ["/execution-trace", "/workflow-trace", "/trace/execution"],
+    dataEndpoints: [
+      {
+        name: "taskSessions",
+        convexQuery: "domains.taskManager.queries.getTaskSessions",
+        description: "Saved task runs and sessions that can be adapted into execution traces",
+      },
+    ],
+    actions: [
+      { name: "switchDisclosureLevel", description: "Switch between outcome, why, and full trace views" },
+      { name: "inspectDecisionTrail", description: "Inspect decisions, evidence, and verification records for a run" },
+      { name: "compareArtifactDiffs", description: "Compare before and after artifacts or workflow outputs" },
+    ],
+    relatedToolCategories: ["verification", "flywheel", "learning"],
+    tags: ["execution-trace", "workflow", "audit", "verification", "receipts"],
     requiresAuth: false,
   },
 
@@ -96,10 +211,10 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
 
   documents: {
     viewId: "documents",
-    title: "My Workspace",
+    title: "Workspace",
     description:
       "Document management hub — create, browse, search, and organize documents. Supports markdown with tagging.",
-    paths: ["/documents", "/docs", "/workspace"],
+    paths: ["/workspace", "/documents", "/docs"],
     dataEndpoints: [
       { name: "documents", convexQuery: "domains.documents.documentQueries.listDocuments", description: "User's document collection" },
     ],
@@ -189,7 +304,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     title: "Benchmarks",
     description:
       "Workbench for model evaluation — leaderboard, scenario catalog, eval runs, and capability deep dives.",
-    paths: ["/benchmarks", "/eval"],
+    paths: ["/internal/benchmarks", "/benchmarks", "/eval"],
     dataEndpoints: [
       { name: "leaderboard", convexQuery: "domains.eval.leaderboard.getLeaderboard", description: "Model evaluation leaderboard" },
       { name: "scenarios", convexQuery: "domains.eval.scenarios.listScenarios", description: "Eval scenario catalog" },
@@ -323,7 +438,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "public",
     title: "Shared with You",
     description: "Documents and content shared publicly or with the current user.",
-    paths: [],
+    paths: ["/public", "/shared"],
     dataEndpoints: [
       { name: "publicDocs", convexQuery: "domains.documents.documentQueries.getPublicDocuments", description: "Publicly shared documents" },
     ],
@@ -365,7 +480,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "analytics-hitl",
     title: "Review Queue",
     description: "Human-in-the-loop analytics — review and approve AI-generated content, flag issues, provide feedback.",
-    paths: ["/analytics/hitl", "/analytics/review-queue", "/review-queue"],
+    paths: ["/internal/analytics/hitl", "/analytics/hitl", "/analytics/review-queue", "/review-queue"],
     dataEndpoints: [
       { name: "reviewQueue", convexQuery: "domains.analytics.hitl.getReviewQueue", description: "Items pending human review" },
     ],
@@ -382,7 +497,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "analytics-components",
     title: "Performance Analytics",
     description: "Component-level performance metrics — render times, bundle sizes, interaction latency.",
-    paths: ["/analytics/components"],
+    paths: ["/internal/analytics/components", "/analytics/components"],
     dataEndpoints: [
       { name: "componentMetrics", convexQuery: "domains.analytics.components.getMetrics", description: "Component performance data" },
     ],
@@ -396,7 +511,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "analytics-recommendations",
     title: "Feedback",
     description: "Recommendation feedback dashboard — track how users engage with AI suggestions.",
-    paths: ["/analytics/recommendations"],
+    paths: ["/internal/analytics/recommendations", "/analytics/recommendations"],
     dataEndpoints: [
       { name: "feedbackData", convexQuery: "domains.analytics.recommendations.getFeedback", description: "Recommendation engagement data" },
     ],
@@ -410,7 +525,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "cost-dashboard",
     title: "Usage & Costs",
     description: "API usage and cost tracking — token consumption, model costs, budget alerts.",
-    paths: ["/cost", "/dashboard/cost"],
+    paths: ["/internal/cost", "/cost", "/dashboard/cost"],
     dataEndpoints: [
       { name: "costData", convexQuery: "domains.analytics.costs.getCostSummary", description: "API usage and cost breakdown" },
     ],
@@ -505,9 +620,9 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
 
   "mcp-ledger": {
     viewId: "mcp-ledger",
-    title: "Activity Log",
+    title: "Tool Activity",
     description: "MCP tool call ledger — audit trail of all MCP tool invocations with inputs, outputs, and timing.",
-    paths: ["/mcp/ledger", "/mcp-ledger", "/activity-log"],
+    paths: ["/internal/mcp-ledger", "/mcp-ledger", "/mcp/ledger", "/activity-log"],
     dataEndpoints: [
       { name: "toolCalls", convexQuery: "domains.mcp.ledger.getToolCalls", description: "MCP tool call audit trail" },
     ],
@@ -524,7 +639,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "engine-demo",
     title: "Engine API",
     description: "Headless engine demo surface for testing engine calls, request flow, and API responses.",
-    paths: ["/engine", "/engine-demo"],
+    paths: ["/internal/engine", "/engine", "/engine-demo"],
     dataEndpoints: [
       { name: "engineDemo", convexQuery: "domains.engine.demo.getDemoState", description: "Engine demo state and example responses" },
     ],
@@ -540,7 +655,7 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     viewId: "observability",
     title: "System Health",
     description: "Observability dashboard with component health, self-healing history, and service-level signals.",
-    paths: ["/observability", "/health", "/system-health"],
+    paths: ["/internal/observability", "/observability", "/health", "/system-health"],
     dataEndpoints: [
       { name: "systemHealth", convexQuery: "domains.observability.healthMonitor.getSystemHealth", description: "Current component health and alert state" },
       { name: "healingActions", convexQuery: "domains.observability.selfHealer.getRecentHealingActions", description: "Recent autonomous healing actions" },
@@ -551,6 +666,54 @@ export const VIEW_CAPABILITIES: Record<MainView, ViewCapability> = {
     ],
     relatedToolCategories: ["verification", "flywheel", "platform"],
     tags: ["observability", "health", "alerts", "slo", "self-healing"],
+    requiresAuth: false,
+  },
+
+  investigation: {
+    viewId: "investigation",
+    title: "Investigation",
+    description:
+      "Trace from action to evidence to approval across a single run, escalation, or operator review.",
+    paths: ["/investigation", "/investigate", "/enterprise-demo"],
+    dataEndpoints: [],
+    actions: [
+      { name: "replayRun", description: "Replay a run from evidence to final decision" },
+      { name: "inspectEvidence", description: "Inspect supporting evidence, approvals, and trace steps" },
+    ],
+    relatedToolCategories: ["verification", "flywheel", "research"],
+    tags: ["investigation", "trace", "evidence", "replay", "approval"],
+    requiresAuth: false,
+  },
+
+  oracle: {
+    viewId: "oracle",
+    title: "The Oracle",
+    description:
+      "Operational memory and telemetry surface for long-running AI work, strategy loops, and builder oversight.",
+    paths: ["/oracle", "/career", "/trajectory"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewMemory", description: "Review long-running memory and operational context" },
+      { name: "inspectTelemetry", description: "Inspect strategy loop telemetry and progress" },
+    ],
+    relatedToolCategories: ["platform", "learning", "flywheel"],
+    tags: ["oracle", "memory", "telemetry", "strategy", "operations"],
+    requiresAuth: false,
+  },
+
+  "dev-dashboard": {
+    viewId: "dev-dashboard",
+    title: "Dev Dashboard",
+    description:
+      "Internal development dashboard for repo evolution, domain milestones, and engineering progress tracking.",
+    paths: ["/internal/dev-dashboard", "/dev-dashboard", "/dev", "/evolution"],
+    dataEndpoints: [],
+    actions: [
+      { name: "reviewMilestones", description: "Inspect repo milestones and delivery progress" },
+      { name: "inspectEvolution", description: "Inspect domain branch evolution and timeline context" },
+    ],
+    relatedToolCategories: ["platform", "verification"],
+    tags: ["dev-dashboard", "engineering", "milestones", "timeline", "internal"],
     requiresAuth: false,
   },
 };

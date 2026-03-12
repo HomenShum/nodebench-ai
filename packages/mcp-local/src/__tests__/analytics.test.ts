@@ -9,7 +9,7 @@
  *   - toolTracker.ts:     AnalyticsTracker singleton, record(), session stats, close
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, beforeAll } from "vitest";
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
@@ -598,8 +598,15 @@ describe("AnalyticsTracker API contract", () => {
 // ── toolsetRegistry tests ───────────────────────────────────────────────
 
 describe("toolsetRegistry", () => {
-  it("exports TOOLSET_MAP with expected toolsets", async () => {
-    const { TOOLSET_MAP } = await import("../toolsetRegistry.js");
+  const importRegistry = () => import("../toolsetRegistry.js");
+  let registry: Awaited<ReturnType<typeof importRegistry>>;
+
+  beforeAll(async () => {
+    registry = await importRegistry();
+  }, 20_000);
+
+  it("exports TOOLSET_MAP with expected toolsets", () => {
+    const { TOOLSET_MAP } = registry;
     expect(TOOLSET_MAP).toBeDefined();
     expect(typeof TOOLSET_MAP).toBe("object");
     expect(Object.keys(TOOLSET_MAP).length).toBeGreaterThan(20);
@@ -610,8 +617,8 @@ describe("toolsetRegistry", () => {
     expect(TOOLSET_MAP).toHaveProperty("web");
   });
 
-  it("exports TOOL_TO_TOOLSET map", async () => {
-    const { TOOL_TO_TOOLSET, TOOLSET_MAP } = await import("../toolsetRegistry.js");
+  it("exports TOOL_TO_TOOLSET map", () => {
+    const { TOOL_TO_TOOLSET, TOOLSET_MAP } = registry;
     expect(TOOL_TO_TOOLSET).toBeInstanceOf(Map);
     // Every tool in TOOLSET_MAP should be in the lookup
     for (const [tsName, tools] of Object.entries(TOOLSET_MAP)) {
@@ -621,8 +628,8 @@ describe("toolsetRegistry", () => {
     }
   });
 
-  it("total tool count matches expectations (175)", async () => {
-    const { TOOLSET_MAP } = await import("../toolsetRegistry.js");
+  it("total tool count matches expectations (175)", () => {
+    const { TOOLSET_MAP } = registry;
     const total = Object.values(TOOLSET_MAP).reduce((s, t) => s + t.length, 0);
     // Should be around 169 domain tools (175 - 6 meta/discovery)
     expect(total).toBeGreaterThan(100);

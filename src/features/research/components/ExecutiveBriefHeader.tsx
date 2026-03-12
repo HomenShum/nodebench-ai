@@ -77,9 +77,9 @@ function KPITile({ icon, label, value, sublabel }: KPITileProps) {
         </div>
       </div>
       <div className="min-w-0">
-        <div className="text-xs font-black opacity-40 mb-1 font-outfit">{label}</div>
+        <div className="text-xs font-bold opacity-60 mb-1 font-outfit">{label}</div>
         <div className="text-2xl font-bold leading-none tracking-tight text-content">{value}</div>
-        {sublabel && <div className="text-xs font-bold opacity-30 truncate mt-1.5 font-mono">{sublabel}</div>}
+        {sublabel && <div className="text-xs font-bold opacity-50 truncate mt-1.5 font-mono">{sublabel}</div>}
       </div>
     </div>
   );
@@ -101,7 +101,7 @@ function FilterChip({ label, isSelected, onClick }: FilterChipProps) {
       type="button"
       onClick={onClick}
       className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${isSelected
-        ? "bg-indigo-600 text-white shadow-sm"
+        ? "bg-[var(--accent-primary)] text-white shadow-sm"
         : "bg-surface text-content-secondary hover:text-content hover:bg-surface-hover border border-edge"
         }`}
     >

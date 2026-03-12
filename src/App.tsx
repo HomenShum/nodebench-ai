@@ -1,22 +1,23 @@
-import { Authenticated, Unauthenticated, useQuery, useMutation } from "convex/react";
-import { toast } from "sonner";
-import { useLocation } from "react-router-dom";
-// SignInForm intentionally not used on the landing anymore.
-import { api } from "../convex/_generated/api";
+import { Authenticated, Unauthenticated, useConvexAuth } from "convex/react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { MainLayout } from "./components/MainLayout";
+import { CockpitLayout } from "./layouts/CockpitLayout";
 import { TutorialPage } from "@/features/onboarding/views/TutorialPage";
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { Id } from "../convex/_generated/dataModel";
 import { ContextPillsProvider } from "./hooks/contextPills";
 import { FastAgentProvider, useFastAgent } from "@/features/agents/context/FastAgentContext";
 import { SelectionProvider } from "@/features/agents/context/SelectionContext";
 import { FeedbackListener } from "@/shared/hooks/FeedbackListener";
-import { AgentGuidedOnboarding } from "@/features/onboarding/components/AgentGuidedOnboarding";
-import { ThemeProvider } from "./contexts/ThemeContext";
+import { ThemeProvider, useThemeSafe } from "./contexts/ThemeContext";
+import { OracleSessionProvider } from "./contexts/OracleSessionContext";
 import { SkipLinks } from "./components/SkipLinks";
+import { EvidenceProvider } from "@/features/research/contexts/EvidenceContext";
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary";
 import { ViewSkeleton } from "@/components/skeletons/ViewSkeleton";
 import { useWebMcpProvider } from "./hooks/useWebMcpProvider";
+import type { MainView } from "./hooks/useMainLayoutRouting";
+import { VIEW_PATH_MAP } from "./layouts/cockpitModes";
 
 const FastAgentPanel = lazy(() =>
   import("@/features/agents/components/FastAgentPanel/FastAgentPanel").then((mod) => ({
@@ -55,19 +56,56 @@ function GlobalFastAgentPanel() {
   );
 }
 
+/** Renders CockpitLayout or MainLayout based on theme.layout preference */
+function LayoutSwitch({
+  selectedDocumentId,
+  onDocumentSelect,
+  onShowWelcome,
+  onShowResearchHub,
+}: {
+  selectedDocumentId: Id<"documents"> | null;
+  onDocumentSelect: (id: Id<"documents"> | null) => void;
+  onShowWelcome?: () => void;
+  onShowResearchHub?: () => void;
+}) {
+  const { theme } = useThemeSafe();
+  if (theme.layout === "cockpit") {
+    return (
+      <CockpitLayout
+        selectedDocumentId={selectedDocumentId}
+        onDocumentSelect={onDocumentSelect}
+      />
+    );
+  }
+  return (
+    <MainLayout
+      selectedDocumentId={selectedDocumentId}
+      onDocumentSelect={onDocumentSelect}
+      onShowWelcome={onShowWelcome}
+      onShowResearchHub={onShowResearchHub}
+    />
+  );
+}
+
 function App() {
   const location = useLocation();
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<Id<"documents"> | null>(null);
 
-  const user = useQuery(api.domains.auth.auth.loggedInUser);
-  const documents = useQuery(api.domains.documents.documents.getSidebar);
-  const ensureSeedOnLogin = useMutation(api.domains.auth.onboarding.ensureSeedOnLogin);
-
   // WebMCP provider — expose NodeBench tools to browser agents via navigator.modelContext
   const [webmcpEnabled] = useState(() => localStorage.getItem("nodebench_webmcp_provider_enabled") === "true");
-  useWebMcpProvider(webmcpEnabled);
-  const didEnsureRef = useRef(false);
+  const { isAuthenticated: webmcpIsAuth } = useConvexAuth();
+  const nav = useNavigate();
+  const handleWebMcpNavigate = useCallback((view: MainView) => {
+    const path = VIEW_PATH_MAP[view] ?? `/${view}`;
+    nav(path);
+  }, [nav]);
+  useWebMcpProvider({
+    enabled: webmcpEnabled,
+    currentPath: location.pathname,
+    isAuthenticated: webmcpIsAuth,
+    onNavigate: handleWebMcpNavigate,
+  });
 
   // Deep link: ?doc=ID auto-opens a shared document
   useEffect(() => {
@@ -79,28 +117,14 @@ function App() {
     }
   }, [location.search]);
 
-  // Listen for location changes to switch between tutorial and main app
+  // Any navigation away from /onboarding dismisses the tutorial
   useEffect(() => {
-    const pathname = location.pathname.toLowerCase();
-    if (pathname.startsWith("/onboarding")) {
+    if (location.pathname.toLowerCase().startsWith("/onboarding")) {
       setShowTutorial(true);
-    } else if (
-      pathname.startsWith("/agents") ||
-      pathname.startsWith("/calendar") ||
-      pathname.startsWith("/documents") ||
-      pathname.startsWith("/roadmap") ||
-      pathname.startsWith("/analytics") ||
-      pathname.startsWith("/research") ||
-      pathname.startsWith("/spreadsheets") ||
-      pathname === "/"
-    ) {
+    } else {
       setShowTutorial(false);
     }
   }, [location.pathname]);
-
-
-  // Note: We no longer auto-show tutorial for new users
-  // Users stay on ResearchHub and can access tutorial manually if needed
 
   const handleGetStarted = () => {
     setShowTutorial(false);
@@ -121,60 +145,66 @@ function App() {
 
   return (
     <ThemeProvider>
-      <SkipLinks />
-      <main id="main-content" className="h-screen bg-surface text-content">
-        <Unauthenticated>
-          <FastAgentProvider>
-            <SelectionProvider>
-              <ContextPillsProvider>
-                {/* Use MainLayout for visual consistency - limited features for guests */}
-                <ErrorBoundary title="Something went wrong">
-                  <Suspense fallback={<ViewSkeleton />}>
-                    <MainLayout
-                      selectedDocumentId={null}
-                      onDocumentSelect={() => { }}
-                      onShowWelcome={() => { }}
-                      onShowResearchHub={() => { }}
-                    />
-                  </Suspense>
-                </ErrorBoundary>
-                {/* Global Fast Agent Panel for guests */}
-                <GlobalFastAgentPanel />
-              </ContextPillsProvider>
-            </SelectionProvider>
-          </FastAgentProvider>
-        </Unauthenticated>
-        <Authenticated>
-          <FastAgentProvider>
-            <SelectionProvider>
-              <ContextPillsProvider>
-                <ErrorBoundary title="Something went wrong">
-                  <Suspense fallback={<ViewSkeleton />}>
-                    {showTutorial ? (
-                      <TutorialPage
-                        onGetStarted={handleGetStarted}
-                        onDocumentSelect={handleDocumentSelect}
+      <EvidenceProvider>
+        <SkipLinks />
+        <main id="main-content" className="h-screen bg-surface text-content">
+          <Unauthenticated>
+            <FastAgentProvider>
+              <SelectionProvider>
+                <OracleSessionProvider>
+                <ContextPillsProvider>
+                  {/* Use LayoutSwitch for visual consistency - limited features for guests */}
+                  <ErrorBoundary title="Something went wrong">
+                    <Suspense fallback={<ViewSkeleton />}>
+                      <LayoutSwitch
+                        selectedDocumentId={null}
+                        onDocumentSelect={() => { }}
+                        onShowWelcome={() => { }}
+                        onShowResearchHub={() => { }}
                       />
-                    ) : (
-                      /* Always use MainLayout - it handles research/workspace views internally */
-                      <MainLayout
-                        selectedDocumentId={selectedDocumentId}
-                        onDocumentSelect={setSelectedDocumentId}
-                        onShowWelcome={handleShowTutorial}
-                        onShowResearchHub={handleShowResearchHub}
-                      />
-                    )}
-                  </Suspense>
-                </ErrorBoundary>
-                {/* Global Fast Agent Panel - controlled via context */}
-                <GlobalFastAgentPanel />
-                {/* Global Feedback Listener for audio/visual cues */}
-                <FeedbackListener />
-              </ContextPillsProvider>
-            </SelectionProvider>
-          </FastAgentProvider>
-        </Authenticated>
-      </main>
+                    </Suspense>
+                  </ErrorBoundary>
+                  {/* Global Fast Agent Panel for guests */}
+                  <GlobalFastAgentPanel />
+                </ContextPillsProvider>
+                </OracleSessionProvider>
+              </SelectionProvider>
+            </FastAgentProvider>
+          </Unauthenticated>
+          <Authenticated>
+            <FastAgentProvider>
+              <SelectionProvider>
+                <OracleSessionProvider>
+                <ContextPillsProvider>
+                  <ErrorBoundary title="Something went wrong">
+                    <Suspense fallback={<ViewSkeleton />}>
+                      {showTutorial ? (
+                        <TutorialPage
+                          onGetStarted={handleGetStarted}
+                          onDocumentSelect={handleDocumentSelect}
+                        />
+                      ) : (
+                        /* LayoutSwitch picks cockpit or classic based on theme.layout */
+                        <LayoutSwitch
+                          selectedDocumentId={selectedDocumentId}
+                          onDocumentSelect={setSelectedDocumentId}
+                          onShowWelcome={handleShowTutorial}
+                          onShowResearchHub={handleShowResearchHub}
+                        />
+                      )}
+                    </Suspense>
+                  </ErrorBoundary>
+                  {/* Global Fast Agent Panel - controlled via context */}
+                  <GlobalFastAgentPanel />
+                  {/* Global Feedback Listener for audio/visual cues */}
+                  <FeedbackListener />
+                </ContextPillsProvider>
+                </OracleSessionProvider>
+              </SelectionProvider>
+            </FastAgentProvider>
+          </Authenticated>
+        </main>
+      </EvidenceProvider>
     </ThemeProvider>
   );
 }

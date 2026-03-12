@@ -1,36 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Id } from '../../convex/_generated/dataModel';
+import { resolvePathToView, type MainView, type ResearchTab } from '@/lib/viewRegistry';
 
-export type MainView =
-    | 'documents'
-    | 'spreadsheets'
-    | 'calendar'
-    | 'roadmap'
-    | 'timeline'
-    | 'public'
-    | 'agents'
-    | 'research'
-    | 'dogfood'
-    | 'showcase'
-    | 'footnotes'
-    | 'signals'
-    | 'benchmarks'
-    | 'entity'
-    | 'funding'
-    | 'activity'
-    | 'analytics-hitl'
-    | 'analytics-components'
-    | 'analytics-recommendations'
-    | 'cost-dashboard'
-    | 'industry-updates'
-    | 'for-you-feed'
-    | 'document-recommendations'
-    | 'agent-marketplace'
-    | 'github-explorer'
-    | 'pr-suggestions'
-    | 'linkedin-posts'
-    | 'mcp-ledger';
+// Re-export types so existing imports continue to work
+export type { MainView, ResearchTab };
 
 interface UseMainLayoutRoutingReturn {
     currentView: MainView;
@@ -41,8 +15,8 @@ interface UseMainLayoutRoutingReturn {
     setSelectedSpreadsheetId: (id: Id<"spreadsheets"> | null) => void;
     showResearchDossier: boolean;
     setShowResearchDossier: (show: boolean) => void;
-    researchHubInitialTab: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
-    setResearchHubInitialTab: (tab: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog") => void;
+    researchHubInitialTab: ResearchTab;
+    setResearchHubInitialTab: (tab: ResearchTab) => void;
     isTransitioning: boolean;
     setIsTransitioning: (transitioning: boolean) => void;
 }
@@ -50,64 +24,25 @@ interface UseMainLayoutRoutingReturn {
 export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
     const location = useLocation();
 
-    function parsePathname(rawPathname: string): {
-        view: MainView;
-        entityName: string | null;
-        spreadsheetId: string | null;
-        showResearchDossier: boolean;
-        researchTab: "overview" | "signals" | "briefing" | "deals" | "changes" | "changelog";
-    } {
-        const pathname = (rawPathname || '/').toLowerCase();
-        if (pathname.startsWith('/agents')) return { view: 'agents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/calendar')) return { view: 'calendar', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/roadmap')) return { view: 'roadmap', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/timeline')) return { view: 'timeline', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/signals')) return { view: 'signals', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/spreadsheets')) {
-            const match = (rawPathname || '').match(/^\/spreadsheets[\/](.+)$/i);
-            const id = match ? decodeURIComponent(match[1]) : null;
-            return { view: 'spreadsheets', entityName: null, spreadsheetId: id, showResearchDossier: false, researchTab: "overview" };
-        }
-        if (pathname.startsWith('/workspace')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/documents') || pathname.startsWith('/docs')) return { view: 'documents', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/showcase') || pathname.startsWith('/demo')) return { view: 'showcase', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/footnotes') || pathname.startsWith('/sources')) return { view: 'footnotes', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/benchmarks') || pathname.startsWith('/eval')) return { view: 'benchmarks', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/funding') || pathname.startsWith('/funding-brief')) return { view: 'funding', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith("/onboarding")) return { view: "research", entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/activity') || pathname.startsWith('/public-activity')) return { view: 'activity', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/analytics/hitl') || pathname.startsWith('/analytics/review-queue') || pathname.startsWith('/review-queue')) return { view: 'analytics-hitl', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/analytics/components')) return { view: 'analytics-components', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/analytics/recommendations')) return { view: 'analytics-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/cost') || pathname.startsWith('/dashboard/cost')) return { view: 'cost-dashboard', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/industry') || pathname.startsWith('/dashboard/industry')) return { view: 'industry-updates', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/for-you') || pathname.startsWith('/feed')) return { view: 'for-you-feed', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/recommendations') || pathname.startsWith('/discover')) return { view: 'document-recommendations', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/marketplace') || pathname.startsWith('/agent-marketplace')) return { view: 'agent-marketplace', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/github') || pathname.startsWith('/github-explorer')) return { view: 'github-explorer', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/pr-suggestions') || pathname.startsWith('/prs')) return { view: 'pr-suggestions', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/linkedin')) return { view: 'linkedin-posts', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/mcp/ledger') || pathname.startsWith('/mcp-ledger') || pathname.startsWith('/activity-log')) return { view: 'mcp-ledger', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        if (pathname.startsWith('/dogfood') || pathname.startsWith('/quality-review')) return { view: 'dogfood', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+    function parsePathname(rawPathname: string) {
+        const resolved = resolvePathToView(rawPathname);
+        const normalizedPathname = (rawPathname || '/').toLowerCase();
+        const isResearchHubRoute =
+            /^\/(?:research|hub)\/(?:overview|signals|briefing|deals|changes|changelog)(?:\/|$)/.test(normalizedPathname) ||
+            normalizedPathname.startsWith('/onboarding');
 
-        if (pathname.startsWith('/entity/') || pathname.startsWith('/entity%2f')) {
-            const match = (rawPathname || '').match(/^\/entity[\/](.+)$/i);
-            const name = match ? decodeURIComponent(match[1]) : null;
-            return { view: 'entity', entityName: name, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
-        }
-
-        if (pathname.startsWith('/research') || pathname.startsWith('/hub')) {
-            const tabMatch = pathname.match(/^\/(?:research|hub)\/(overview|signals|briefing|deals|changes|changelog)/);
-            const tab = (tabMatch?.[1] as any) ?? "overview";
-            return { view: 'research', entityName: null, spreadsheetId: null, showResearchDossier: true, researchTab: tab };
-        }
-
-        return { view: 'research', entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" };
+        return {
+            view: resolved.view,
+            entityName: resolved.entityName,
+            spreadsheetId: resolved.spreadsheetId,
+            showResearchDossier: resolved.view === 'research' && isResearchHubRoute,
+            researchTab: resolved.researchTab,
+        };
     }
 
     const initialRoute = (() => {
         if (typeof window === 'undefined') {
-            return { view: 'research' as const, entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" as const };
+            return { view: 'control-plane' as MainView, entityName: null, spreadsheetId: null, showResearchDossier: false, researchTab: "overview" as ResearchTab };
         }
         return parsePathname(location.pathname || '/');
     })();
@@ -115,10 +50,10 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
     const [currentView, setCurrentView] = useState<MainView>(initialRoute.view);
     const [entityName, setEntityName] = useState<string | null>(initialRoute.entityName);
     const [selectedSpreadsheetId, setSelectedSpreadsheetId] = useState<Id<"spreadsheets"> | null>(
-        initialRoute.spreadsheetId ? (initialRoute.spreadsheetId as any) : null
+        initialRoute.spreadsheetId ? (initialRoute.spreadsheetId as Id<"spreadsheets">) : null
     );
     const [showResearchDossier, setShowResearchDossier] = useState<boolean>(initialRoute.showResearchDossier);
-    const [researchHubInitialTab, setResearchHubInitialTab] = useState<"overview" | "signals" | "briefing" | "deals" | "changes" | "changelog">(initialRoute.researchTab);
+    const [researchHubInitialTab, setResearchHubInitialTab] = useState<ResearchTab>(initialRoute.researchTab);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
     // Sync main view with URL pathname
@@ -126,7 +61,7 @@ export function useMainLayoutRouting(): UseMainLayoutRoutingReturn {
         try {
             const next = parsePathname(location.pathname || '/');
             setEntityName(next.entityName);
-            setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as any) : null);
+            setSelectedSpreadsheetId(next.spreadsheetId ? (next.spreadsheetId as Id<"spreadsheets">) : null);
             setResearchHubInitialTab(next.researchTab);
             setShowResearchDossier(next.showResearchDossier);
             setCurrentView(next.view);

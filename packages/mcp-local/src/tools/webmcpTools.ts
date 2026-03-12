@@ -35,6 +35,16 @@ function getPlaywright(): any {
   return _playwright;
 }
 
+function isPlaywrightInstalled(): boolean {
+  try {
+    const req = createRequire(import.meta.url);
+    req.resolve("playwright");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function isPlaywrightAvailable(): boolean {
   return getPlaywright() !== null;
 }
@@ -723,8 +733,9 @@ export const webmcpTools: McpTool[] = [
       properties: {},
     },
     handler: async () => {
-      const pw = getPlaywright();
-      const playwrightInstalled = pw !== null;
+      // Avoid a full optional dependency import here. The setup check only needs
+      // a cheap readiness probe, not the Playwright runtime itself.
+      const playwrightInstalled = isPlaywrightInstalled();
 
       // Check for Chromium
       let chromiumAvailable = false;

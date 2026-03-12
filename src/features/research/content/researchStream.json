@@ -93,7 +93,7 @@
         ],
         "capabilities": [
           { "label": "Reasoning", "score": 85, "icon": "brain" },
-          { "label": "Uptime", "score": 30, "icon": "activity" },
+          { "label": "Reliability", "score": 30, "icon": "activity" },
           { "label": "Safety", "score": 45, "icon": "shield" }
         ],
         "annotations": [
@@ -231,7 +231,7 @@
         ],
         "capabilities": [
           { "label": "Reasoning", "score": 90, "icon": "brain" },
-          { "label": "Uptime", "score": 75, "icon": "activity" },
+          { "label": "Reliability", "score": 75, "icon": "activity" },
           { "label": "Safety", "score": 60, "icon": "shield" }
         ],
         "annotations": [
@@ -365,11 +365,11 @@
         "keyStats": [
           { "label": "Accuracy", "value": "100%", "trend": "flat", "context": "Optimal" },
           { "label": "Market Focus", "value": "Apps", "sub": "Transition" },
-          { "label": "Agent Uptime", "value": "99.99%" }
+          { "label": "Agent Reliability", "value": "99.99%" }
         ],
         "capabilities": [
           { "label": "Reasoning", "score": 98, "icon": "brain" },
-          { "label": "Uptime", "score": 99, "icon": "activity" },
+          { "label": "Reliability", "score": 99, "icon": "activity" },
           { "label": "Safety", "score": 95, "icon": "shield" }
         ],
         "annotations": [
