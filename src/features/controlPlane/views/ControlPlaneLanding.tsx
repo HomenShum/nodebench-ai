@@ -127,6 +127,32 @@ const QUICK_NAV = [
   },
 ] as const;
 
+const STARTER_PROMPTS = [
+  {
+    title: "Latest QA agent fundraising",
+    prompt:
+      "Tell me about the latest startup fundraising in quality assurance AI agents and their backgrounds.",
+  },
+  {
+    title: "Compile a company thesis",
+    prompt:
+      "Build me a thesis on this company using its founders, product, investors, prior news, and what changed recently.",
+  },
+  {
+    title: "Compare credibility",
+    prompt:
+      "Compare the three most credible startups in this category, explain why they matter, and show me the deep trace behind the recommendation.",
+  },
+] as const;
+
+const THESIS_DIMENSIONS = [
+  "Company and product positioning",
+  "Founder background and prior work",
+  "Investors, rounds, and financing momentum",
+  "Prior news, launches, and market signals",
+  "Compiled thesis with receipts, evidence, and trace",
+] as const;
+
 /* ── Enterprise dashboard data ──────────────────────────────────── */
 const ROLE_PATHS = [
   {
@@ -354,9 +380,19 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
       onOpenFastAgent?.();
     }
     setInput("");
-    // Navigate to agents view so the conversation feels full-screen, like ChatGPT
-    onNavigate("agents", AGENTS_PATH);
-  }, [input, onOpenFastAgent, onOpenFastAgentWithPrompt, onNavigate]);
+  }, [input, onOpenFastAgent, onOpenFastAgentWithPrompt]);
+
+  const handleStarterPrompt = useCallback(
+    (prompt: string) => {
+      if (onOpenFastAgentWithPrompt) {
+        onOpenFastAgentWithPrompt(prompt);
+      } else {
+        setInput(prompt);
+        onOpenFastAgent?.();
+      }
+    },
+    [onOpenFastAgent, onOpenFastAgentWithPrompt],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -424,7 +460,8 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             {greeting}
           </h1>
           <p className="mb-8 text-center text-sm leading-relaxed text-content-muted sm:text-base">
-            How can NodeBench help you today?
+            Ask a question naturally. Get an answer, then open the deep trace when you want company, founder,
+            investor, product, and prior-news evidence behind the thesis.
           </p>
 
           {/* Input bar */}
@@ -434,7 +471,7 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message NodeBench..."
+              placeholder='Try: "Tell me about the latest startup fundraising in quality assurance AI agents and their backgrounds"'
               rows={1}
               className="w-full resize-none bg-transparent px-4 py-3.5 pr-12 text-sm text-content placeholder:text-content-muted/60 focus:outline-none sm:text-base"
               aria-label="Message NodeBench"
@@ -448,6 +485,53 @@ export const ControlPlaneLanding = memo(function ControlPlaneLanding({
             >
               <ArrowUp className="h-4 w-4" />
             </button>
+          </div>
+
+          {/* Prompt starters */}
+          <div className="mt-4 grid w-full gap-3 sm:grid-cols-3">
+            {STARTER_PROMPTS.map((item) => (
+              <button
+                key={item.title}
+                type="button"
+                onClick={() => handleStarterPrompt(item.prompt)}
+                className="group rounded-2xl border border-edge bg-surface/60 px-4 py-3 text-left transition-all hover:border-indigo-500/25 hover:bg-surface-secondary"
+              >
+                <div className="text-sm font-medium text-content">{item.title}</div>
+                <div className="mt-1 text-xs leading-relaxed text-content-muted">{item.prompt}</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 w-full rounded-2xl border border-edge bg-surface/40 px-4 py-3 text-left">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+              Deep trace behind every thesis
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {THESIS_DIMENSIONS.map((item) => (
+                <div key={item} className="flex items-start gap-2 text-sm text-content-secondary">
+                  <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-indigo-500 dark:bg-indigo-400" aria-hidden="true" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onNavigate("investigation", INVESTIGATION_PATH)}
+                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition hover:border-primary/30 hover:text-content"
+              >
+                Open Investigation
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onNavigate("execution-trace", EXECUTION_TRACE_PATH)}
+                className="inline-flex items-center gap-2 rounded-full border border-edge bg-surface px-3 py-1.5 text-xs font-medium text-content-secondary transition hover:border-primary/30 hover:text-content"
+              >
+                Open Execution Trace
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            </div>
           </div>
 
           {/* Suggestion chips */}

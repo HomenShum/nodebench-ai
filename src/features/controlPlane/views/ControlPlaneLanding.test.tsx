@@ -41,4 +41,23 @@ describe("ControlPlaneLanding", () => {
     expect(onNavigate).toHaveBeenCalledWith("receipts", "/receipts");
     expect(loadBuyerPreferredPath()).toBe("receipts");
   });
+
+  it("launches a starter prompt through the fast agent without forcing navigation", () => {
+    const onNavigate = vi.fn();
+    const onOpenFastAgentWithPrompt = vi.fn();
+
+    render(
+      <ControlPlaneLanding
+        onNavigate={onNavigate}
+        onOpenFastAgentWithPrompt={onOpenFastAgentWithPrompt}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /latest qa agent fundraising/i }));
+
+    expect(onOpenFastAgentWithPrompt).toHaveBeenCalledWith(
+      "Tell me about the latest startup fundraising in quality assurance AI agents and their backgrounds.",
+    );
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
 });
