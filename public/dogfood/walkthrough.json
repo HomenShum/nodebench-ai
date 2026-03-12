@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-03-12T08:24:34.048Z",
+  "capturedAtIso": "2026-03-12T09:14:38.098Z",
   "baseURL": "http://127.0.0.1:4177",
   "mime": "video/mp4",
   "publish": "static",
@@ -38,19 +38,19 @@
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 10.4
+      "startSec": 10.5
     },
     {
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 12.5
+      "startSec": 12.6
     },
     {
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 14.6
+      "startSec": 14.7
     },
     {
       "index": 9,
@@ -164,7 +164,7 @@
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 54.8
+      "startSec": 54.7
     },
     {
       "index": 28,
@@ -223,5 +223,5 @@
   ],
   "videoUrl": null,
   "videoPath": "/dogfood/walkthrough.mp4",
-  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-03-12_012303.mp4"
+  "_localVideoPath": "D:\\VSCode Projects\\cafecorner_nodebench\\nodebench_ai4\\nodebench-ai\\.tmp\\dogfood-video\\dogfood-walkthrough_2026-03-12_021307.mp4"
 }

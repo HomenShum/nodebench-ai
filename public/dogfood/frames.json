@@ -1,5 +1,5 @@
 {
-  "capturedAtIso": "2026-03-12T08:24:38.947Z",
+  "capturedAtIso": "2026-03-12T09:14:42.628Z",
   "videoPath": "/dogfood/walkthrough.mp4",
   "items": [
     {
@@ -46,7 +46,7 @@
       "index": 6,
       "name": "Research: Deals",
       "path": "/research/deals",
-      "startSec": 10.4,
+      "startSec": 10.5,
       "file": "06-research-deals.jpg",
       "image": "/dogfood/frames/06-research-deals.jpg"
     },
@@ -54,7 +54,7 @@
       "index": 7,
       "name": "Research: Changes",
       "path": "/research/changelog",
-      "startSec": 12.5,
+      "startSec": 12.6,
       "file": "07-research-changes.jpg",
       "image": "/dogfood/frames/07-research-changes.jpg"
     },
@@ -62,7 +62,7 @@
       "index": 8,
       "name": "Workspace: Documents",
       "path": "/documents",
-      "startSec": 14.6,
+      "startSec": 14.7,
       "file": "08-workspace-documents.jpg",
       "image": "/dogfood/frames/08-workspace-documents.jpg"
     },
@@ -214,7 +214,7 @@
       "index": 27,
       "name": "Agent Templates",
       "path": "/marketplace",
-      "startSec": 54.8,
+      "startSec": 54.7,
       "file": "27-agent-templates.jpg",
       "image": "/dogfood/frames/27-agent-templates.jpg"
     },
