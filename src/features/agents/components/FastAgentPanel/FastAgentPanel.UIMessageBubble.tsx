@@ -13,6 +13,7 @@ import { LazySyntaxHighlighter } from './LazySyntaxHighlighter';
 import { User, Bot, Wrench, Image as ImageIcon, AlertCircle, Loader2, RefreshCw, Trash2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Copy, Check, BrainCircuit, Zap, ExternalLink, Globe, Calendar, Eye, ThumbsUp, ThumbsDown, Pencil, Bookmark, Volume2, VolumeX, Pin } from 'lucide-react';
 import { useSmoothText, type UIMessage } from '@convex-dev/agent/react';
 import { cn } from '@/lib/utils';
+import { TokenUsageBadge } from '@/components/TokenUsageBadge';
 import type { FileUIPart, ToolUIPart } from 'ai';
 // Type imports (static)
 import { type YouTubeVideo, type SECDocument } from './MediaGallery';
@@ -1709,6 +1710,13 @@ export function FastAgentUIMessageBubble({
   const [visibleText] = useSmoothText(message.text, {
     startStreaming: message.status === 'streaming',
   });
+  const messageTokens = (message as any).tokensUsed as
+    | { input: number; output: number }
+    | undefined;
+  const messageModel =
+    typeof (message as any).model === 'string'
+      ? ((message as any).model as string)
+      : undefined;
 
   // Read-aloud TTS callback (must be after visibleText)
   const handleReadAloud = useCallback(() => {
@@ -2930,16 +2938,34 @@ export function FastAgentUIMessageBubble({
           );
         })()}
 
-        {/* Response Latency */}
-        {!isUser && message.status !== 'streaming' && message._creationTime && (() => {
-          const msgs = (message as any)._siblingCreationTime;
-          if (!msgs) return null;
-          const latencyMs = message._creationTime - msgs;
-          if (latencyMs <= 0 || latencyMs > 120000) return null;
+        {/* Response telemetry */}
+        {!isUser && message.status !== 'streaming' && (() => {
+          const siblingCreatedAt = (message as any)._siblingCreationTime;
+          const latencyMs =
+            message._creationTime && siblingCreatedAt
+              ? message._creationTime - siblingCreatedAt
+              : null;
+          const showLatency =
+            typeof latencyMs === 'number' && latencyMs > 0 && latencyMs <= 120000;
+
+          if (!showLatency && !messageTokens) return null;
+
           return (
-            <span className="text-[8px] text-content-muted tabular-nums mt-0.5" title={`Response latency: ${latencyMs}ms`}>
-              {latencyMs < 1000 ? `${latencyMs}ms` : `${(latencyMs / 1000).toFixed(1)}s`} latency
-            </span>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[8px] text-content-muted tabular-nums">
+              {showLatency && (
+                <span title={`Response latency: ${latencyMs}ms`}>
+                  {latencyMs < 1000 ? `${latencyMs}ms` : `${(latencyMs / 1000).toFixed(1)}s`} latency
+                </span>
+              )}
+              {messageTokens && (
+                <TokenUsageBadge
+                  inputTokens={messageTokens.input}
+                  outputTokens={messageTokens.output}
+                  model={messageModel}
+                  className="text-[10px]"
+                />
+              )}
+            </div>
           );
         })()}
 

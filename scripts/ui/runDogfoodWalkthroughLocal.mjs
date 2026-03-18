@@ -251,6 +251,8 @@ async function main() {
               DOGFOOD_ROUTE_SHARD_TOTAL: String(routeShards),
               DOGFOOD_INCLUDE_INTERACTIONS: "false",
               DOGFOOD_INCLUDE_ROUTES: "true",
+              PLAYWRIGHT_HTML_OUTPUT_FOLDER: "off",
+              PLAYWRIGHT_JSON_OUTPUT_FILE: "off",
             },
           }).then((code) => {
             if (code !== 0) {
@@ -270,6 +272,8 @@ async function main() {
               DOGFOOD_ROUTE_SHARD_TOTAL: "1",
               DOGFOOD_INCLUDE_INTERACTIONS: "true",
               DOGFOOD_INCLUDE_ROUTES: "false",
+              PLAYWRIGHT_HTML_OUTPUT_FOLDER: "off",
+              PLAYWRIGHT_JSON_OUTPUT_FILE: "off",
             },
           }).then((code) => {
             if (code !== 0) {
@@ -348,7 +352,12 @@ async function main() {
         {
           cwd: repoRoot,
           stdio: "inherit",
-          env: { ...process.env, BASE_URL: baseURL },
+          env: {
+            ...process.env,
+            BASE_URL: baseURL,
+            PLAYWRIGHT_HTML_OUTPUT_FOLDER: "off",
+            PLAYWRIGHT_JSON_OUTPUT_FILE: "off",
+          },
           shell: true,
         },
       );

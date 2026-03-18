@@ -1,16 +1,25 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const htmlReporterOutputFolder = process.env.PLAYWRIGHT_HTML_OUTPUT_FOLDER;
+const jsonReporterOutputFile = process.env.PLAYWRIGHT_JSON_OUTPUT_FILE;
+
+const reporter = [
+  ...(htmlReporterOutputFolder === 'off'
+    ? []
+    : [['html', { outputFolder: htmlReporterOutputFolder || 'playwright-report' }] as const]),
+  ['list'] as const,
+  ...(jsonReporterOutputFile === 'off'
+    ? []
+    : [['json', { outputFile: jsonReporterOutputFile || 'test-results.json' }] as const]),
+];
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30 * 1000,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['html', { outputFolder: 'playwright-report' }],
-    ['list'],
-    ['json', { outputFile: 'test-results.json' }]
-  ],
+  reporter,
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:5173',
     trace: 'on-first-retry',

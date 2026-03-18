@@ -3,19 +3,20 @@
 
 import React from 'react';
 import { useQuery } from 'convex/react';
-import { api } from '../../../../../convex/_generated/api';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Clock, 
+import {
   AlertCircle,
-  Loader2,
   Bot,
-  GitBranch,
+  CheckCircle2,
+  ChevronRight,
+  Circle,
+  Clock,
   Cpu,
+  GitBranch,
+  Loader2,
   Zap,
-  ChevronRight
 } from 'lucide-react';
+import { api } from '../../../../../convex/_generated/api';
+import { TokenUsageBadge } from '@/components/TokenUsageBadge';
 import { cn } from '@/lib/utils';
 
 type AgentTaskStatus = 'pending' | 'running' | 'complete' | 'paused' | 'error';
@@ -47,31 +48,31 @@ const statusConfig: Record<AgentTaskStatus, { icon: React.ReactNode; color: stri
     icon: <Circle className="w-3.5 h-3.5" />,
     color: 'text-content-muted',
     bgColor: 'bg-surface-hover',
-    label: 'Pending'
+    label: 'Pending',
   },
-  running: { 
-    icon: <Clock className="w-3.5 h-3.5 motion-safe:animate-pulse" />, 
+  running: {
+    icon: <Clock className="w-3.5 h-3.5 motion-safe:animate-pulse" />,
     color: 'text-violet-500',
     bgColor: 'bg-violet-100',
-    label: 'Running' 
+    label: 'Running',
   },
-  complete: { 
-    icon: <CheckCircle2 className="w-3.5 h-3.5" />, 
+  complete: {
+    icon: <CheckCircle2 className="w-3.5 h-3.5" />,
     color: 'text-indigo-500',
     bgColor: 'bg-indigo-100',
-    label: 'Complete' 
+    label: 'Complete',
   },
-  paused: { 
-    icon: <Clock className="w-3.5 h-3.5" />, 
+  paused: {
+    icon: <Clock className="w-3.5 h-3.5" />,
     color: 'text-amber-500',
     bgColor: 'bg-amber-100',
-    label: 'Paused' 
+    label: 'Paused',
   },
-  error: { 
-    icon: <AlertCircle className="w-3.5 h-3.5" />, 
+  error: {
+    icon: <AlertCircle className="w-3.5 h-3.5" />,
     color: 'text-red-500',
     bgColor: 'bg-red-100',
-    label: 'Error' 
+    label: 'Error',
   },
 };
 
@@ -79,17 +80,17 @@ const agentTypeConfig: Record<AgentType, { icon: React.ReactNode; color: string;
   orchestrator: {
     icon: <GitBranch className="w-3 h-3" />,
     color: 'text-purple-600 bg-purple-100',
-    label: 'Orchestrator'
+    label: 'Orchestrator',
   },
   main: {
     icon: <Cpu className="w-3 h-3" />,
     color: 'text-blue-600 bg-blue-100',
-    label: 'Main'
+    label: 'Main',
   },
   leaf: {
     icon: <Zap className="w-3 h-3" />,
     color: 'text-indigo-600 bg-indigo-100',
-    label: 'Worker'
+    label: 'Worker',
   },
 };
 
@@ -102,52 +103,51 @@ function formatDuration(ms: number): string {
 function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number }) {
   const statusCfg = statusConfig[task.status];
   const typeCfg = agentTypeConfig[task.agentType];
-  
+
   return (
-    <div 
+    <div
       className={cn(
-        "group flex items-start gap-2 p-2 rounded-lg hover:bg-surface-secondary transition-colors",
-        depth > 0 && "ml-4 border-l-2 border-edge pl-3"
+        'group flex items-start gap-2 rounded-lg p-2 transition-colors hover:bg-surface-secondary',
+        depth > 0 && 'ml-4 border-l-2 border-edge pl-3',
       )}
     >
-      {/* Status indicator */}
-      <div className={cn("mt-0.5", statusCfg.color)}>
+      <div className={cn('mt-0.5', statusCfg.color)}>
         {statusCfg.icon}
       </div>
-      
+
       <div className="flex-1 min-w-0">
-        {/* Task name and type */}
         <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-xs font-medium",
-            task.status === 'complete' ? "text-content-secondary" : "text-content"
-          )}>
+          <span
+            className={cn(
+              'text-xs font-medium',
+              task.status === 'complete' ? 'text-content-secondary' : 'text-content',
+            )}
+          >
             {task.name}
           </span>
-          <span className={cn(
-            "flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium rounded",
-            typeCfg.color
-          )}>
+          <span
+            className={cn(
+              'flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium',
+              typeCfg.color,
+            )}
+          >
             {typeCfg.icon}
             {typeCfg.label}
           </span>
         </div>
-        
-        {/* Description if present */}
+
         {task.description && (
-          <p className="text-xs text-content-secondary mt-0.5 line-clamp-2">
+          <p className="mt-0.5 line-clamp-2 text-xs text-content-secondary">
             {task.description}
           </p>
         )}
-        
-        {/* Progress and metrics */}
-        <div className="flex items-center gap-3 mt-1.5">
-          {/* Progress bar for running tasks */}
+
+        <div className="mt-1.5 flex items-center gap-3">
           {task.status === 'running' && task.progress > 0 && (
             <div className="flex items-center gap-1.5">
-              <div className="w-16 h-1.5 bg-surface-secondary rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-violet-500 rounded-full transition-all"
+              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-secondary">
+                <div
+                  className="h-full rounded-full bg-violet-500 transition-all"
                   style={{ width: `${task.progress * 100}%` }}
                 />
               </div>
@@ -156,41 +156,38 @@ function AgentTaskItem({ task, depth = 0 }: { task: AgentTask; depth?: number })
               </span>
             </div>
           )}
-          
-          {/* Duration */}
+
           {task.elapsedMs && (
             <span className="text-xs text-content-muted">
               {formatDuration(task.elapsedMs)}
             </span>
           )}
 
-          {/* Token usage */}
           {(task.inputTokens || task.outputTokens) && (
-            <span className="text-xs text-content-muted">
-              {task.inputTokens || 0}→{task.outputTokens || 0} tokens
-            </span>
+            <TokenUsageBadge
+              inputTokens={task.inputTokens || 0}
+              outputTokens={task.outputTokens || 0}
+              className="text-[10px]"
+            />
           )}
         </div>
       </div>
-      
-      {/* Expand indicator for tasks with children */}
-      <ChevronRight className="w-3.5 h-3.5 text-content-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+
+      <ChevronRight className="h-3.5 w-3.5 text-content-muted opacity-0 transition-opacity group-hover:opacity-100" />
     </div>
   );
 }
 
 export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
-  // Fetch agent tasks for this thread
   const agentTasks = useQuery(
     api.domains.agents.agentTimelines.listAgentTasksByThread,
-    agentThreadId ? { agentThreadId } : 'skip'
+    agentThreadId ? { agentThreadId } : 'skip',
   );
 
-  // Group tasks by status for summary
   const tasksByStatus: Record<AgentTaskStatus, number> = agentTasks?.reduce((acc, task) => {
     acc[task.status] = (acc[task.status] || 0) + 1;
     return acc;
-  }, { pending: 0, running: 0, complete: 0, paused: 0, error: 0 } as Record<AgentTaskStatus, number>) 
+  }, { pending: 0, running: 0, complete: 0, paused: 0, error: 0 } as Record<AgentTaskStatus, number>)
     || { pending: 0, running: 0, complete: 0, paused: 0, error: 0 };
 
   const totalTasks = agentTasks?.length || 0;
@@ -198,12 +195,11 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
   const runningTasks = tasksByStatus.running;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-surface">
-      {/* Header with summary */}
-      <div className="flex-shrink-0 p-3 border-b border-edge">
-        <div className="flex items-center justify-between mb-2">
+    <div className="flex min-h-0 flex-1 flex-col bg-surface">
+      <div className="flex-shrink-0 border-b border-edge p-3">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Bot className="w-4 h-4 text-purple-500" />
+            <Bot className="h-4 w-4 text-purple-500" />
             <span className="text-sm font-medium text-content">Agent Workflow</span>
           </div>
           {totalTasks > 0 && (
@@ -212,24 +208,23 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
             </span>
           )}
         </div>
-        
-        {/* Status summary pills */}
+
         {totalTasks > 0 && (
           <div className="flex gap-2">
             {runningTasks > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-                <Clock className="w-3 h-3 motion-safe:animate-pulse" />
+              <span className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                <Clock className="h-3 w-3 motion-safe:animate-pulse" />
                 {runningTasks} running
               </span>
             )}
             {tasksByStatus.pending > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-surface-hover text-content-secondary rounded-full">
+              <span className="flex items-center gap-1 rounded-full bg-surface-hover px-2 py-0.5 text-xs font-medium text-content-secondary">
                 {tasksByStatus.pending} pending
               </span>
             )}
             {tasksByStatus.error > 0 && (
-              <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
-                <AlertCircle className="w-3 h-3" />
+              <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                <AlertCircle className="h-3 w-3" />
                 {tasksByStatus.error} failed
               </span>
             )}
@@ -237,25 +232,24 @@ export function AgentTasksTab({ agentThreadId }: AgentTasksTabProps) {
         )}
       </div>
 
-      {/* Task list */}
       <div className="flex-1 overflow-y-auto p-3">
         {!agentThreadId ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Bot className="w-10 h-10 text-content-muted mb-3" />
+            <Bot className="mb-3 h-10 w-10 text-content-muted" />
             <p className="text-sm text-content-secondary">No active thread</p>
-            <p className="text-xs text-content-muted mt-1">
+            <p className="mt-1 text-xs text-content-muted">
               Start a Deep Agent conversation to see orchestration tasks
             </p>
           </div>
         ) : !agentTasks ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-content-muted motion-safe:animate-spin" />
+            <Loader2 className="h-5 w-5 text-content-muted motion-safe:animate-spin" />
           </div>
         ) : agentTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <GitBranch className="w-8 h-8 text-content-muted mb-2" />
+            <GitBranch className="mb-2 h-8 w-8 text-content-muted" />
             <p className="text-sm text-content-secondary">No agent tasks yet</p>
-            <p className="text-xs text-content-muted mt-1">
+            <p className="mt-1 text-xs text-content-muted">
               Tasks will appear here as the agent works
             </p>
           </div>
